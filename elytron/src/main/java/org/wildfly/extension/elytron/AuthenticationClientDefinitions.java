@@ -21,14 +21,14 @@ package org.wildfly.extension.elytron;
 import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
 import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
 import static org.wildfly.common.Assert.checkNotNullParam;
-import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONFIGURATION_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
-import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.AUTHENTICATION_CONFIGURATION_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_DOMAIN_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_FACTORY_CREDENTIAL_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SSL_CONTEXT_CAPABILITY;
+import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
 
 import java.util.HashMap;
 import java.util.List;
@@ -78,71 +78,71 @@ class AuthenticationClientDefinitions {
     /* Authentication Configuration Attributes */
     /* *************************************** */
 
-    static final SimpleAttributeDefinition CONFIGURATION_EXTENDS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.EXTENDS, ModelType.STRING, true)
+    static final SimpleAttributeDefinition CONFIGURATION_EXTENDS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.EXTENDS, ModelType.STRING, true)
             .setRestartAllServices()
             .setCapabilityReference(AUTHENTICATION_CONFIGURATION_CAPABILITY, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition ANONYMOUS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ANONYMOUS, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition ANONYMOUS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ANONYMOUS, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.FALSE)
-            .setAlternatives(ElytronDescriptionConstants.AUTHENTICATION_NAME, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
+            .setAlternatives(ElytronCommonConstants.AUTHENTICATION_NAME, ElytronCommonConstants.KERBEROS_SECURITY_FACTORY)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition AUTHENTICATION_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHENTICATION_NAME, ModelType.STRING, true)
+    static final SimpleAttributeDefinition AUTHENTICATION_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.AUTHENTICATION_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
+            .setAlternatives(ElytronCommonConstants.ANONYMOUS, ElytronCommonConstants.KERBEROS_SECURITY_FACTORY)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition AUTHORIZATION_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHORIZATION_NAME, ModelType.STRING, true)
-            .setAllowExpression(true)
-            .setRestartAllServices()
-            .build();
-
-    static final SimpleAttributeDefinition HOST = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HOST, ModelType.STRING, true)
+    static final SimpleAttributeDefinition AUTHORIZATION_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.AUTHORIZATION_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROTOCOL, ModelType.STRING, true)
+    static final SimpleAttributeDefinition HOST = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HOST, ModelType.STRING, true)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition PORT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PORT, ModelType.INT, true)
+    static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PROTOCOL, ModelType.STRING, true)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition REALM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM, ModelType.STRING, true)
+    static final SimpleAttributeDefinition PORT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PORT, ModelType.INT, true)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECURITY_DOMAIN, ModelType.STRING, true)
+    static final SimpleAttributeDefinition REALM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REALM, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SECURITY_DOMAIN, ModelType.STRING, true)
             .setAllowExpression(false)
             .setRestartAllServices()
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY)
             .build();
 
     static final SimpleAttributeDefinition FORWARDING_MODE =
-            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FORWARDING_MODE, ModelType.STRING, true)
+            new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.FORWARDING_MODE, ModelType.STRING, true)
                 .setAllowExpression(true)
                 .setRestartAllServices()
-                .setAllowedValues(ElytronDescriptionConstants.AUTHENTICATION, ElytronDescriptionConstants.AUTHORIZATION)
-                .setValidator(new StringAllowedValuesValidator(ElytronDescriptionConstants.AUTHENTICATION, ElytronDescriptionConstants.AUTHORIZATION))
-                .setDefaultValue(new ModelNode(ElytronDescriptionConstants.AUTHENTICATION))
+                .setAllowedValues(ElytronCommonConstants.AUTHENTICATION, ElytronCommonConstants.AUTHORIZATION)
+                .setValidator(new StringAllowedValuesValidator(ElytronCommonConstants.AUTHENTICATION, ElytronCommonConstants.AUTHORIZATION))
+                .setDefaultValue(new ModelNode(ElytronCommonConstants.AUTHENTICATION))
                 .build();
 
-    static final SimpleAttributeDefinition SASL_MECHANISM_SELECTOR = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR, ModelType.STRING, true)
+    static final SimpleAttributeDefinition SASL_MECHANISM_SELECTOR = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SASL_MECHANISM_SELECTOR, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final PropertiesAttributeDefinition MECHANISM_PROPERTIES = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_PROPERTIES, true)
-            .setXmlName(ElytronDescriptionConstants.MECHANISM_PROPERTIES)
+    static final PropertiesAttributeDefinition MECHANISM_PROPERTIES = new PropertiesAttributeDefinition.Builder(ElytronCommonConstants.MECHANISM_PROPERTIES, true)
+            .setXmlName(ElytronCommonConstants.MECHANISM_PROPERTIES)
             .setRestartAllServices()
             .build();
 
@@ -150,25 +150,25 @@ class AuthenticationClientDefinitions {
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition KERBEROS_SECURITY_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY, ModelType.STRING, true)
+    static final SimpleAttributeDefinition KERBEROS_SECURITY_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.KERBEROS_SECURITY_FACTORY, ModelType.STRING, true)
             .setRestartAllServices()
-            .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.AUTHENTICATION_NAME)
+            .setAlternatives(ElytronCommonConstants.ANONYMOUS, ElytronCommonConstants.AUTHENTICATION_NAME)
             .setCapabilityReference(SECURITY_FACTORY_CREDENTIAL_CAPABILITY, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY)
             .build();
 
 
-    static final SimpleAttributeDefinition HTTP_MECHANISM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HTTP_MECHANISM, ModelType.STRING, true)
+    static final SimpleAttributeDefinition HTTP_MECHANISM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HTTP_MECHANISM, ModelType.STRING, true)
             .setAllowedValues(new ModelNode("BASIC"))
             .setValidator(new StringAllowedValuesValidator("BASIC"))
             .setRequired(false)
             .build();
 
-    static final SimpleAttributeDefinition WS_SECURITY_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.WS_SECURITY_TYPE, ModelType.STRING, true)
+    static final SimpleAttributeDefinition WS_SECURITY_TYPE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.WS_SECURITY_TYPE, ModelType.STRING, true)
             .setValidator(new StringAllowedValuesValidator("UsernameToken"))
             .setRequired(false)
             .build();
 
-    static final ObjectTypeAttributeDefinition WEBSERVICES = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.WEBSERVICES, HTTP_MECHANISM, WS_SECURITY_TYPE)
+    static final ObjectTypeAttributeDefinition WEBSERVICES = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.WEBSERVICES, HTTP_MECHANISM, WS_SECURITY_TYPE)
             .setRequired(false)
             .setAllowExpression(true)
             .setRestartAllServices()
@@ -184,86 +184,86 @@ class AuthenticationClientDefinitions {
     /* Authentication Context Attributes */
     /* *************************************** */
 
-    static final SimpleAttributeDefinition MATCH_USER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_USER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition MATCH_USER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MATCH_USER, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setAlternatives(ElytronDescriptionConstants.MATCH_NO_USER)
+            .setAlternatives(ElytronCommonConstants.MATCH_NO_USER)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition MATCH_NO_USER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_NO_USER, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition MATCH_NO_USER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MATCH_NO_USER, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.FALSE)
-            .setAlternatives(ElytronDescriptionConstants.MATCH_USER)
+            .setAlternatives(ElytronCommonConstants.MATCH_USER)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition MATCH_URN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_URN, ModelType.STRING, true)
+    static final SimpleAttributeDefinition MATCH_URN = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MATCH_URN, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition MATCH_LOCAL_SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_LOCAL_SECURITY_DOMAIN, ModelType.STRING, true)
+    static final SimpleAttributeDefinition MATCH_LOCAL_SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MATCH_LOCAL_SECURITY_DOMAIN, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition MATCH_PROTOCOL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_PROTOCOL, ModelType.STRING, true)
+    static final SimpleAttributeDefinition MATCH_PROTOCOL = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MATCH_PROTOCOL, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition MATCH_ABSTRACT_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_ABSTRACT_TYPE, ModelType.STRING, true)
+    static final SimpleAttributeDefinition MATCH_ABSTRACT_TYPE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MATCH_ABSTRACT_TYPE, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition MATCH_ABSTRACT_TYPE_AUTHORITY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_ABSTRACT_TYPE_AUTHORITY, ModelType.STRING, true)
+    static final SimpleAttributeDefinition MATCH_ABSTRACT_TYPE_AUTHORITY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MATCH_ABSTRACT_TYPE_AUTHORITY, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition MATCH_HOST = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_HOST, ModelType.STRING, true)
+    static final SimpleAttributeDefinition MATCH_HOST = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MATCH_HOST, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition MATCH_PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_PATH, ModelType.STRING, true)
+    static final SimpleAttributeDefinition MATCH_PATH = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MATCH_PATH, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition MATCH_PORT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_PORT, ModelType.INT, true)
+    static final SimpleAttributeDefinition MATCH_PORT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MATCH_PORT, ModelType.INT, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition CONTEXT_EXTENDS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.EXTENDS, ModelType.STRING, true)
+    static final SimpleAttributeDefinition CONTEXT_EXTENDS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.EXTENDS, ModelType.STRING, true)
             .setRestartAllServices()
             .setCapabilityReference(AUTHENTICATION_CONTEXT_CAPABILITY, AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition AUTHENTICATION_CONFIGURATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, ModelType.STRING, true)
+    static final SimpleAttributeDefinition AUTHENTICATION_CONFIGURATION = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.AUTHENTICATION_CONFIGURATION, ModelType.STRING, true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setCapabilityReference(AUTHENTICATION_CONFIGURATION_CAPABILITY, AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
+    static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SSL_CONTEXT, ModelType.STRING, true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setCapabilityReference(SSL_CONTEXT_CAPABILITY, AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY)
             .build();
 
-    static final ObjectTypeAttributeDefinition MATCH_RULE = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.MATCH_RULE,
+    static final ObjectTypeAttributeDefinition MATCH_RULE = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.MATCH_RULE,
             MATCH_ABSTRACT_TYPE, MATCH_ABSTRACT_TYPE_AUTHORITY, MATCH_HOST, MATCH_LOCAL_SECURITY_DOMAIN, MATCH_NO_USER, MATCH_PATH, MATCH_PORT, MATCH_PROTOCOL, MATCH_URN, MATCH_USER,
             AUTHENTICATION_CONFIGURATION, SSL_CONTEXT).build();
 
-    static final ObjectListAttributeDefinition MATCH_RULES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.MATCH_RULES, MATCH_RULE)
+    static final ObjectListAttributeDefinition MATCH_RULES = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.MATCH_RULES, MATCH_RULE)
             .setRequired(false)
             .setRestartAllServices()
             .build();
 
     static ResourceDefinition getAuthenticationClientDefinition() {
 
-        TrivialAddHandler<AuthenticationConfiguration> add = new TrivialAddHandler<AuthenticationConfiguration>(AuthenticationConfiguration.class, AUTHENTICATION_CONFIGURATION_ALL_ATTRIBUTES,
+        ElytronCommonTrivialAddHandler<AuthenticationConfiguration> add = new ElytronCommonTrivialAddHandler<AuthenticationConfiguration>(AuthenticationConfiguration.class, AUTHENTICATION_CONFIGURATION_ALL_ATTRIBUTES,
                 AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY) {
 
             @Override
@@ -318,7 +318,7 @@ class AuthenticationClientDefinitions {
 
                 if (securityDomain != null) {
                     InjectedValue<SecurityDomain> securityDomainInjector = getSecurityDomain(serviceBuilder, context, securityDomain);
-                    if (ElytronDescriptionConstants.AUTHORIZATION.equals(forwardAuth)) {
+                    if (ElytronCommonConstants.AUTHORIZATION.equals(forwardAuth)) {
                         configuration = configuration.andThen(c -> c.useForwardedAuthorizationIdentity(securityDomainInjector.getValue()));
                     } else {
                         configuration = configuration.andThen(c -> c.useForwardedIdentity(securityDomainInjector.getValue()));
@@ -409,13 +409,13 @@ class AuthenticationClientDefinitions {
                 return securityDomainInjector;
             }
         };
-        return new TrivialResourceDefinition(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, add, AUTHENTICATION_CONFIGURATION_ALL_ATTRIBUTES, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY);
+        return new ElytronCommonTrivialResourceDefinition(ElytronCommonConstants.AUTHENTICATION_CONFIGURATION, add, AUTHENTICATION_CONFIGURATION_ALL_ATTRIBUTES, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY);
     }
 
     static ResourceDefinition getAuthenticationContextDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { CONTEXT_EXTENDS, MATCH_RULES };
 
-        TrivialAddHandler<AuthenticationContext> add = new TrivialAddHandler<AuthenticationContext>(AuthenticationContext.class, attributes, AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY) {
+        ElytronCommonTrivialAddHandler<AuthenticationContext> add = new ElytronCommonTrivialAddHandler<AuthenticationContext>(AuthenticationContext.class, attributes, AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<AuthenticationContext> getValueSupplier(ServiceBuilder<AuthenticationContext> serviceBuilder, OperationContext context, ModelNode model)
@@ -436,8 +436,8 @@ class AuthenticationClientDefinitions {
 
                 Function<AuthenticationContext, AuthenticationContext> authContext = Function.identity();
 
-                if (model.hasDefined(ElytronDescriptionConstants.MATCH_RULES)) {
-                    List<ModelNode> nodes = model.require(ElytronDescriptionConstants.MATCH_RULES).asList();
+                if (model.hasDefined(ElytronCommonConstants.MATCH_RULES)) {
+                    List<ModelNode> nodes = model.require(ElytronCommonConstants.MATCH_RULES).asList();
                     for (ModelNode current : nodes) {
                         String authenticationConfiguration = AUTHENTICATION_CONFIGURATION.resolveModelAttribute(context, current).asStringOrNull();
                         String sslContext = SSL_CONTEXT.resolveModelAttribute(context, current).asStringOrNull();
@@ -506,7 +506,7 @@ class AuthenticationClientDefinitions {
 
         };
 
-        return new TrivialResourceDefinition(ElytronDescriptionConstants.AUTHENTICATION_CONTEXT, add, attributes,
+        return new ElytronCommonTrivialResourceDefinition(ElytronCommonConstants.AUTHENTICATION_CONTEXT, add, attributes,
                 AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY);
     }
 

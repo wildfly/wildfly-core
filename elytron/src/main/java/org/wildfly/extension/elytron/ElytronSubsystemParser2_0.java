@@ -18,7 +18,7 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_PROPERTY;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.SECURITY_PROPERTY;
 
 import org.jboss.as.controller.AttributeMarshallers;
 import org.jboss.as.controller.AttributeParsers;

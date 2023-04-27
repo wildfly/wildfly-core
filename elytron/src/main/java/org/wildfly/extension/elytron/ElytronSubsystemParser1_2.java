@@ -18,7 +18,7 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.POLICY;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.POLICY;
 
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;

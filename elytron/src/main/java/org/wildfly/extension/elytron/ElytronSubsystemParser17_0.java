@@ -19,8 +19,8 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_DOMAIN;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.VIRTUAL_SECURITY_DOMAIN;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.SECURITY_DOMAIN;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.VIRTUAL_SECURITY_DOMAIN;
 
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
@@ -61,7 +61,7 @@ public class ElytronSubsystemParser17_0 extends ElytronSubsystemParser16_0 {
             .addAttribute(VirtualDomainDefinition.AUTH_METHOD)
             .build();
 
-    final PersistentResourceXMLDescription domainParser = decorator(ElytronDescriptionConstants.SECURITY_DOMAINS)
+    final PersistentResourceXMLDescription domainParser = decorator(ElytronCommonConstants.SECURITY_DOMAINS)
             .addChild(securityDomainParser)
             .addChild(virtualSecurityDomainParser)
             .build();

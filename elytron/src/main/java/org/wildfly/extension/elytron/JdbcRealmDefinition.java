@@ -18,18 +18,18 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BASE64;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CLEAR_PASSWORD_MAPPER;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HEX;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULAR_CRYPT_MAPPER;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
-import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.BASE64;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.BCRYPT_MAPPER;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.CLEAR_PASSWORD_MAPPER;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.HEX;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.MODULAR_CRYPT_MAPPER;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.SALTED_SIMPLE_DIGEST_MAPPER;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.SCRAM_MAPPER;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.SIMPLE_DIGEST_MAPPER;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.UTF_8;
+import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
 
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
@@ -91,11 +91,11 @@ import org.wildfly.security.password.spec.Encoding;
 class JdbcRealmDefinition extends SimpleResourceDefinition {
 
     /**
-     * {@link ElytronDescriptionConstants#CLEAR_PASSWORD_MAPPER} complex attribute;
+     * {@link ElytronCommonConstants#CLEAR_PASSWORD_MAPPER} complex attribute;
      */
     static class ClearPasswordObjectDefinition implements PasswordMapperObjectDefinition {
 
-        static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+        static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALGORITHM, ModelType.STRING)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode(ClearPassword.ALGORITHM_CLEAR))
                 .setValidator(new StringAllowedValuesValidator(ClearPassword.ALGORITHM_CLEAR))
@@ -103,7 +103,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD_INDEX, ModelType.INT, false)
+        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PASSWORD_INDEX, ModelType.INT, false)
                 .setMinSize(1)
                 .setValidator(new IntRangeValidator(1))
                 .setAllowExpression(true)
@@ -111,7 +111,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                ElytronDescriptionConstants.CLEAR_PASSWORD_MAPPER, PASSWORD)
+                ElytronCommonConstants.CLEAR_PASSWORD_MAPPER, PASSWORD)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -130,11 +130,11 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
     }
 
     /**
-     * {@link ElytronDescriptionConstants#BCRYPT_MAPPER} complex attribute;
+     * {@link ElytronCommonConstants#BCRYPT_MAPPER} complex attribute;
      */
     static class BcryptPasswordObjectDefinition implements PasswordMapperObjectDefinition {
 
-        static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+        static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALGORITHM, ModelType.STRING)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode(BCryptPassword.ALGORITHM_BCRYPT))
                 .setValidator(new StringAllowedValuesValidator(BCryptPassword.ALGORITHM_BCRYPT))
@@ -142,26 +142,26 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD_INDEX, ModelType.INT, false)
+        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PASSWORD_INDEX, ModelType.INT, false)
                 .setMinSize(1)
                 .setValidator(new IntRangeValidator(1))
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition ITERATION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ITERATION_COUNT_INDEX, ModelType.INT, false)
+        static final SimpleAttributeDefinition ITERATION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ITERATION_COUNT_INDEX, ModelType.INT, false)
                 .setValidator(new IntRangeValidator(1))
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT_INDEX, ModelType.INT, false)
+        static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SALT_INDEX, ModelType.INT, false)
                 .setValidator(new IntRangeValidator(1))
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING)
+        static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HASH_ENCODING, ModelType.STRING)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode(BASE64))
                 .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
@@ -169,7 +169,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition SALT_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT_ENCODING, ModelType.STRING)
+        static final SimpleAttributeDefinition SALT_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SALT_ENCODING, ModelType.STRING)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode(BASE64))
                 .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
@@ -179,13 +179,13 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
 
         @Deprecated
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                ElytronDescriptionConstants.BCRYPT_MAPPER, PASSWORD, SALT, ITERATION_COUNT)
+                ElytronCommonConstants.BCRYPT_MAPPER, PASSWORD, SALT, ITERATION_COUNT)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION_7_0 = new ObjectTypeAttributeDefinition.Builder(
-                ElytronDescriptionConstants.BCRYPT_MAPPER, PASSWORD, SALT, ITERATION_COUNT, HASH_ENCODING, SALT_ENCODING)
+                ElytronCommonConstants.BCRYPT_MAPPER, PASSWORD, SALT, ITERATION_COUNT, HASH_ENCODING, SALT_ENCODING)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -211,11 +211,11 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
     }
 
     /**
-     * {@link ElytronDescriptionConstants#SALTED_SIMPLE_DIGEST_MAPPER} complex attribute;
+     * {@link ElytronCommonConstants#SALTED_SIMPLE_DIGEST_MAPPER} complex attribute;
      */
     static class SaltedSimpleDigestObjectDefinition implements PasswordMapperObjectDefinition {
 
-        static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+        static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALGORITHM, ModelType.STRING)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode(SaltedSimpleDigestPassword.ALGORITHM_PASSWORD_SALT_DIGEST_MD5))
                 .setValidator(new StringAllowedValuesValidator(
@@ -234,20 +234,20 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD_INDEX, ModelType.INT, false)
+        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PASSWORD_INDEX, ModelType.INT, false)
                 .setMinSize(1)
                 .setValidator(new IntRangeValidator(1))
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT_INDEX, ModelType.INT, false)
+        static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SALT_INDEX, ModelType.INT, false)
                 .setValidator(new IntRangeValidator(1))
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING)
+        static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HASH_ENCODING, ModelType.STRING)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode(BASE64))
                 .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
@@ -255,7 +255,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition SALT_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT_ENCODING, ModelType.STRING)
+        static final SimpleAttributeDefinition SALT_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SALT_ENCODING, ModelType.STRING)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode(BASE64))
                 .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
@@ -265,13 +265,13 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
 
         @Deprecated
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD, SALT)
+                ElytronCommonConstants.SALTED_SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD, SALT)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION_7_0 = new ObjectTypeAttributeDefinition.Builder(
-                ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD, SALT, HASH_ENCODING, SALT_ENCODING)
+                ElytronCommonConstants.SALTED_SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD, SALT, HASH_ENCODING, SALT_ENCODING)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -295,11 +295,11 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
     }
 
     /**
-     * {@link ElytronDescriptionConstants#SIMPLE_DIGEST_MAPPER} complex attribute;
+     * {@link ElytronCommonConstants#SIMPLE_DIGEST_MAPPER} complex attribute;
      */
     static class SimpleDigestMapperObjectDefinition implements PasswordMapperObjectDefinition {
 
-        static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+        static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALGORITHM, ModelType.STRING)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode(SimpleDigestPassword.ALGORITHM_SIMPLE_DIGEST_MD5))
                 .setValidator(new StringAllowedValuesValidator(
@@ -314,14 +314,14 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD_INDEX, ModelType.INT, false)
+        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PASSWORD_INDEX, ModelType.INT, false)
                 .setMinSize(1)
                 .setValidator(new IntRangeValidator(1))
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING)
+        static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HASH_ENCODING, ModelType.STRING)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode(BASE64))
                 .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
@@ -331,13 +331,13 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
 
         @Deprecated
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD)
+                ElytronCommonConstants.SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION_7_0 = new ObjectTypeAttributeDefinition.Builder(
-                ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD, HASH_ENCODING)
+                ElytronCommonConstants.SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD, HASH_ENCODING)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -357,11 +357,11 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
     }
 
     /**
-     * {@link ElytronDescriptionConstants#SCRAM_MAPPER} complex attribute;
+     * {@link ElytronCommonConstants#SCRAM_MAPPER} complex attribute;
      */
     static class ScramMapperObjectDefinition implements PasswordMapperObjectDefinition {
 
-        static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+        static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALGORITHM, ModelType.STRING)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode(ScramDigestPassword.ALGORITHM_SCRAM_SHA_256))
                 .setValidator(new StringAllowedValuesValidator(
@@ -374,26 +374,26 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD_INDEX, ModelType.INT, false)
+        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PASSWORD_INDEX, ModelType.INT, false)
                 .setMinSize(1)
                 .setValidator(new IntRangeValidator(1))
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition ITERATION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ITERATION_COUNT_INDEX, ModelType.INT, false)
+        static final SimpleAttributeDefinition ITERATION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ITERATION_COUNT_INDEX, ModelType.INT, false)
                 .setValidator(new IntRangeValidator(1))
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT_INDEX, ModelType.INT, false)
+        static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SALT_INDEX, ModelType.INT, false)
                 .setValidator(new IntRangeValidator(1))
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING)
+        static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HASH_ENCODING, ModelType.STRING)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode(BASE64))
                 .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
@@ -401,7 +401,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition SALT_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT_ENCODING, ModelType.STRING)
+        static final SimpleAttributeDefinition SALT_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SALT_ENCODING, ModelType.STRING)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode(BASE64))
                 .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
@@ -410,12 +410,12 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         @Deprecated
-        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SCRAM_MAPPER, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT)
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.SCRAM_MAPPER, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION_7_0 = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SCRAM_MAPPER, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT, HASH_ENCODING, SALT_ENCODING)
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION_7_0 = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.SCRAM_MAPPER, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT, HASH_ENCODING, SALT_ENCODING)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -441,18 +441,18 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
     }
 
     /**
-     * {@link ElytronDescriptionConstants#MODULAR_CRYPT_MAPPER} complex attribute;
+     * {@link ElytronCommonConstants#MODULAR_CRYPT_MAPPER} complex attribute;
      */
     static class ModularCryptMapperObjectDefinition implements PasswordMapperObjectDefinition {
 
-        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD_INDEX, ModelType.INT, false)
+        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PASSWORD_INDEX, ModelType.INT, false)
                 .setMinSize(1)
                 .setValidator(new IntRangeValidator(1))
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.MODULAR_CRYPT_MAPPER, PASSWORD)
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.MODULAR_CRYPT_MAPPER, PASSWORD)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -472,42 +472,42 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
     }
 
     static class AttributeMappingObjectDefinition {
-        static final SimpleAttributeDefinition INDEX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.INDEX, ModelType.INT, false)
+        static final SimpleAttributeDefinition INDEX = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.INDEX, ModelType.INT, false)
                 .setAllowExpression(true)
                 .setValidator(new IntRangeValidator(1))
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition TO = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TO, ModelType.STRING, false)
+        static final SimpleAttributeDefinition TO = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.TO, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
         static final SimpleAttributeDefinition[] ATTRIBUTES = new SimpleAttributeDefinition[] {TO, INDEX};
 
-        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.ATTRIBUTE, ATTRIBUTES)
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.ATTRIBUTE, ATTRIBUTES)
                 .build();
     }
 
     /**
-     * {@link ElytronDescriptionConstants#PRINCIPAL_QUERY} complex attribute.
+     * {@link ElytronCommonConstants#PRINCIPAL_QUERY} complex attribute.
      */
     static class PrincipalQueryAttributes {
-        static final SimpleAttributeDefinition SQL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SQL, ModelType.STRING, false)
+        static final SimpleAttributeDefinition SQL = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SQL, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setMinSize(1)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition DATA_SOURCE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DATA_SOURCE, ModelType.STRING, false)
+        static final SimpleAttributeDefinition DATA_SOURCE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DATA_SOURCE, ModelType.STRING, false)
                 .setMinSize(1)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                .setCapabilityReference(Capabilities.DATA_SOURCE_CAPABILITY_NAME, Capabilities.SECURITY_REALM_CAPABILITY)
+                .setCapabilityReference(ElytronCommonCapabilities.DATA_SOURCE_CAPABILITY_NAME, ElytronCommonCapabilities.SECURITY_REALM_CAPABILITY)
                 .build();
 
-        static final ObjectListAttributeDefinition ATTRIBUTE_MAPPINGS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.ATTRIBUTE_MAPPING, AttributeMappingObjectDefinition.OBJECT_DEFINITION)
+        static final ObjectListAttributeDefinition ATTRIBUTE_MAPPINGS = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.ATTRIBUTE_MAPPING, AttributeMappingObjectDefinition.OBJECT_DEFINITION)
                 .setRequired(false)
-                .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE)
+                .setAttributeGroup(ElytronCommonConstants.ATTRIBUTE)
                 .setAllowDuplicates(true)
                 .build();
 
@@ -528,7 +528,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
 
         @Deprecated
         static final ObjectTypeAttributeDefinition PRINCIPAL_QUERY = new ObjectTypeAttributeDefinition.Builder(
-                ElytronDescriptionConstants.PRINCIPAL_QUERY,
+                ElytronCommonConstants.PRINCIPAL_QUERY,
                 SQL,
                 DATA_SOURCE,
                 ATTRIBUTE_MAPPINGS,
@@ -542,7 +542,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         static final ObjectTypeAttributeDefinition PRINCIPAL_QUERY_7_0 = new ObjectTypeAttributeDefinition.Builder(
-                ElytronDescriptionConstants.PRINCIPAL_QUERY,
+                ElytronCommonConstants.PRINCIPAL_QUERY,
                 SQL,
                 DATA_SOURCE,
                 ATTRIBUTE_MAPPINGS,
@@ -557,20 +557,20 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         @Deprecated
-        static final ObjectListAttributeDefinition PRINCIPAL_QUERIES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PRINCIPAL_QUERY, PRINCIPAL_QUERY)
+        static final ObjectListAttributeDefinition PRINCIPAL_QUERIES = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.PRINCIPAL_QUERY, PRINCIPAL_QUERY)
                 .setMinSize(1)
                 .setAllowDuplicates(true)
                 .setRestartAllServices()
                 .build();
 
-        static final ObjectListAttributeDefinition PRINCIPAL_QUERIES_7_0 = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PRINCIPAL_QUERY, PRINCIPAL_QUERY_7_0)
+        static final ObjectListAttributeDefinition PRINCIPAL_QUERIES_7_0 = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.PRINCIPAL_QUERY, PRINCIPAL_QUERY_7_0)
                 .setMinSize(1)
                 .setAllowDuplicates(true)
                 .setRestartAllServices()
                 .build();
     }
 
-    static final SimpleAttributeDefinition HASH_CHARSET = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_CHARSET, ModelType.STRING, true)
+    static final SimpleAttributeDefinition HASH_CHARSET = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HASH_CHARSET, ModelType.STRING, true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setValidator(new CharsetValidator())
             .setDefaultValue(new ModelNode(UTF_8))
@@ -584,7 +584,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
     private static final OperationStepHandler WRITE = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
 
     JdbcRealmDefinition() {
-        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.JDBC_REALM))
+        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.JDBC_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.JDBC_REALM))
                 .setAddHandler(ADD)
                 .setRemoveHandler(REMOVE)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -599,7 +599,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
         }
     }
 
-    private static class RealmAddHandler extends BaseAddHandler {
+    private static class RealmAddHandler extends ElytronCommonBaseAddHandler {
 
         private RealmAddHandler() {
             super(SECURITY_REALM_RUNTIME_CAPABILITY, ATTRIBUTES);
@@ -627,7 +627,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                         .withMapper(resolveKeyMappers(context, query));
 
                 String dataSourceName = PrincipalQueryAttributes.DATA_SOURCE.resolveModelAttribute(context, query).asString();
-                String capabilityName = Capabilities.DATA_SOURCE_CAPABILITY_NAME + "." + dataSourceName;
+                String capabilityName = ElytronCommonCapabilities.DATA_SOURCE_CAPABILITY_NAME + "." + dataSourceName;
                 ServiceName dataSourceServiceName = context.getCapabilityServiceName(capabilityName, DataSource.class);
 
                 serviceBuilder.addDependency(dataSourceServiceName, DataSource.class, new Injector<DataSource>() {

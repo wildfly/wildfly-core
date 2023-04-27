@@ -73,11 +73,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_CHARSET;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.HASH_CHARSET;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
-import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
 
 /**
  * A {@link DelegatingResourceDefinition} that decorates a {@link ModifiableSecurityRealm} resource
@@ -99,7 +99,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
-        ResourceDescriptionResolver resolver = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.MODIFIABLE_SECURITY_REALM);
+        ResourceDescriptionResolver resolver = ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.MODIFIABLE_SECURITY_REALM);
         ReadIdentityHandler.register(resourceRegistration, resolver);
         if (isServerOrHostController(resourceRegistration)) {
             AddIdentityHandler.register(resourceRegistration, resolver);
@@ -112,12 +112,12 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
 
     static class AddIdentityHandler extends ElytronRuntimeOnlyHandler {
 
-        static final SimpleAttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.IDENTITY, ModelType.STRING, false)
+        static final SimpleAttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.IDENTITY, ModelType.STRING, false)
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
             resourceRegistration.registerOperationHandler(
-                    new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.ADD_IDENTITY, descriptionResolver)
+                    new SimpleOperationDefinitionBuilder(ElytronCommonConstants.ADD_IDENTITY, descriptionResolver)
                             .setParameters(IDENTITY)
                             .setRuntimeOnly()
                             .build(),
@@ -150,12 +150,12 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
 
     static class RemoveIdentityHandler extends ElytronRuntimeOnlyHandler {
 
-        static final SimpleAttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.IDENTITY, ModelType.STRING, false)
+        static final SimpleAttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.IDENTITY, ModelType.STRING, false)
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
             resourceRegistration.registerOperationHandler(
-                    new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_IDENTITY, descriptionResolver)
+                    new SimpleOperationDefinitionBuilder(ElytronCommonConstants.REMOVE_IDENTITY, descriptionResolver)
                             .setParameters(IDENTITY)
                             .setRuntimeOnly()
                             .build(),
@@ -189,12 +189,12 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
 
     static class ReadIdentityHandler extends ElytronRuntimeOnlyHandler {
 
-        static final SimpleAttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.IDENTITY, ModelType.STRING, false)
+        static final SimpleAttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.IDENTITY, ModelType.STRING, false)
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
             resourceRegistration.registerOperationHandler(
-                    new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_IDENTITY, descriptionResolver)
+                    new SimpleOperationDefinitionBuilder(ElytronCommonConstants.READ_IDENTITY, descriptionResolver)
                             .setParameters(IDENTITY)
                             .setRuntimeOnly()
                             .setReadOnly()
@@ -211,9 +211,9 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                 AuthorizationIdentity identity = realmIdentity.getAuthorizationIdentity();
                 ModelNode result = context.getResult();
 
-                result.get(ElytronDescriptionConstants.NAME).set(principalName);
+                result.get(ElytronCommonConstants.NAME).set(principalName);
 
-                ModelNode attributesNode = result.get(ElytronDescriptionConstants.ATTRIBUTES);
+                ModelNode attributesNode = result.get(ElytronCommonConstants.ATTRIBUTES);
                 for (Attributes.Entry entry : identity.getAttributes().entries()) {
                     ModelNode entryNode = attributesNode.get(entry.getKey()).setEmptyList();
                     for (String s : entry) {
@@ -228,23 +228,23 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
 
     static class AddIdentityAttributeHandler extends ElytronRuntimeOnlyHandler {
 
-        static final SimpleAttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.IDENTITY, ModelType.STRING, false)
+        static final SimpleAttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.IDENTITY, ModelType.STRING, false)
                 .build();
 
-        static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
+        static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.NAME, ModelType.STRING, false)
                 .build();
 
-        static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VALUE, ModelType.STRING, false)
+        static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.VALUE, ModelType.STRING, false)
                 .setMinSize(0)
                 .build();
 
-        static final SimpleListAttributeDefinition VALUES = new SimpleListAttributeDefinition.Builder(ElytronDescriptionConstants.VALUE, VALUE)
+        static final SimpleListAttributeDefinition VALUES = new SimpleListAttributeDefinition.Builder(ElytronCommonConstants.VALUE, VALUE)
                 .setMinSize(1)
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
             resourceRegistration.registerOperationHandler(
-                    new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.ADD_IDENTITY_ATTRIBUTE, descriptionResolver)
+                    new SimpleOperationDefinitionBuilder(ElytronCommonConstants.ADD_IDENTITY_ATTRIBUTE, descriptionResolver)
                             .setParameters(IDENTITY, NAME, VALUES)
                             .setRuntimeOnly()
                             .build(),
@@ -279,23 +279,23 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
 
     static class RemoveIdentityAttributeHandler extends ElytronRuntimeOnlyHandler {
 
-        static final SimpleAttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.IDENTITY, ModelType.STRING, false)
+        static final SimpleAttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.IDENTITY, ModelType.STRING, false)
                 .build();
 
-        public static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
+        public static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.NAME, ModelType.STRING, false)
                 .build();
 
-        static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VALUE, ModelType.STRING, false)
+        static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.VALUE, ModelType.STRING, false)
                 .build();
 
-        static final SimpleListAttributeDefinition VALUES = new SimpleListAttributeDefinition.Builder(ElytronDescriptionConstants.VALUE, VALUE)
+        static final SimpleListAttributeDefinition VALUES = new SimpleListAttributeDefinition.Builder(ElytronCommonConstants.VALUE, VALUE)
                 .setRequired(false)
                 .setMinSize(0)
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
             resourceRegistration.registerOperationHandler(
-                    new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_IDENTITY_ATTRIBUTE, descriptionResolver)
+                    new SimpleOperationDefinitionBuilder(ElytronCommonConstants.REMOVE_IDENTITY_ATTRIBUTE, descriptionResolver)
                             .setParameters(IDENTITY, NAME, VALUES)
                             .setRuntimeOnly()
                             .build(),
@@ -337,43 +337,43 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
 
     static class SetPasswordHandler extends ElytronRuntimeOnlyHandler {
 
-        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD, ModelType.STRING, false)
+        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PASSWORD, ModelType.STRING, false)
                 .build();
 
         static class Bcrypt {
-            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
                     .setDefaultValue(new ModelNode(BCryptPassword.ALGORITHM_BCRYPT))
                     .setValidator(new StringAllowedValuesValidator(BCryptPassword.ALGORITHM_BCRYPT))
                     .build();
 
-            static final SimpleAttributeDefinition ITERATION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ITERATION_COUNT, ModelType.INT, false)
+            static final SimpleAttributeDefinition ITERATION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ITERATION_COUNT, ModelType.INT, false)
                     .build();
 
-            static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT, ModelType.BYTES, false)
+            static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SALT, ModelType.BYTES, false)
                     .build();
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                    ElytronDescriptionConstants.BCRYPT, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT)
+                    ElytronCommonConstants.BCRYPT, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT)
                     .setRequired(false)
                     .build();
         }
 
         static class Clear {
-            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
                     .setDefaultValue(new ModelNode(ClearPassword.ALGORITHM_CLEAR))
                     .setValidator(new StringAllowedValuesValidator(ClearPassword.ALGORITHM_CLEAR))
                     .build();
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                    ElytronDescriptionConstants.CLEAR, PASSWORD)
+                    ElytronCommonConstants.CLEAR, PASSWORD)
                     .setRequired(false)
                     .build();
         }
 
         static class SimpleDigest {
-            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
                     .setDefaultValue(new ModelNode(SimpleDigestPassword.ALGORITHM_SIMPLE_DIGEST_SHA_512))
                     .setValidator(new StringAllowedValuesValidator(
@@ -387,13 +387,13 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     .build();
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                    ElytronDescriptionConstants.SIMPLE_DIGEST, ALGORITHM, PASSWORD)
+                    ElytronCommonConstants.SIMPLE_DIGEST, ALGORITHM, PASSWORD)
                     .setRequired(false)
                     .build();
         }
 
         static class SaltedSimpleDigest {
-            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
                     .setDefaultValue(new ModelNode(SaltedSimpleDigestPassword.ALGORITHM_PASSWORD_SALT_DIGEST_SHA_512))
                     .setValidator(new StringAllowedValuesValidator(
@@ -410,17 +410,17 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     ))
                     .build();
 
-            static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT, ModelType.BYTES, false)
+            static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SALT, ModelType.BYTES, false)
                     .build();
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                    ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST, ALGORITHM, PASSWORD, SALT)
+                    ElytronCommonConstants.SALTED_SIMPLE_DIGEST, ALGORITHM, PASSWORD, SALT)
                     .setRequired(false)
                     .build();
         }
 
         static class ScramDigest {
-            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
                     .setDefaultValue(new ModelNode(ScramDigestPassword.ALGORITHM_SCRAM_SHA_512))
                     .setValidator(new StringAllowedValuesValidator(
@@ -431,20 +431,20 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     ))
                     .build();
 
-            static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT, ModelType.BYTES, false)
+            static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SALT, ModelType.BYTES, false)
                     .build();
 
-            static final SimpleAttributeDefinition ITERATION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ITERATION_COUNT, ModelType.INT, false)
+            static final SimpleAttributeDefinition ITERATION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ITERATION_COUNT, ModelType.INT, false)
                     .build();
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                    ElytronDescriptionConstants.SCRAM_DIGEST, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT)
+                    ElytronCommonConstants.SCRAM_DIGEST, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT)
                     .setRequired(false)
                     .build();
         }
 
         static class Digest {
-            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
                     .setDefaultValue(new ModelNode(DigestPassword.ALGORITHM_DIGEST_SHA_512))
                     .setValidator(new StringAllowedValuesValidator(
@@ -456,17 +456,17 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     ))
                     .build();
 
-            static final SimpleAttributeDefinition REALM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM, ModelType.STRING, false)
+            static final SimpleAttributeDefinition REALM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REALM, ModelType.STRING, false)
                     .build();
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                    ElytronDescriptionConstants.DIGEST, ALGORITHM, PASSWORD, REALM)
+                    ElytronCommonConstants.DIGEST, ALGORITHM, PASSWORD, REALM)
                     .setRequired(false)
                     .build();
         }
 
         static class OTPassword {
-            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
                     .setDefaultValue(new ModelNode(OneTimePassword.ALGORITHM_OTP_SHA1))
                     .setValidator(new StringAllowedValuesValidator(
@@ -479,21 +479,21 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     .setAllowExpression(false)
                     .build();
 
-            static final SimpleAttributeDefinition SEED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEED, ModelType.STRING, false)
+            static final SimpleAttributeDefinition SEED = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SEED, ModelType.STRING, false)
                     .setAllowExpression(true)
                     .build();
 
-            static final SimpleAttributeDefinition SEQUENCE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEQUENCE, ModelType.INT, false)
+            static final SimpleAttributeDefinition SEQUENCE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SEQUENCE, ModelType.INT, false)
                     .setAllowExpression(true)
                     .build();
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                    ElytronDescriptionConstants.OTP, ALGORITHM, PASSWORD, SEED, SEQUENCE)
+                    ElytronCommonConstants.OTP, ALGORITHM, PASSWORD, SEED, SEQUENCE)
                     .setRequired(false)
                     .build();
         }
 
-        static final SimpleAttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.IDENTITY, ModelType.STRING, false)
+        static final SimpleAttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.IDENTITY, ModelType.STRING, false)
                 .build();
 
         static AttributeDefinition[] SUPPORTED_PASSWORDS = new AttributeDefinition[] {
@@ -519,7 +519,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
             resourceRegistration.registerOperationHandler(
-                    new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.SET_PASSWORD, descriptionResolver)
+                    new SimpleOperationDefinitionBuilder(ElytronCommonConstants.SET_PASSWORD, descriptionResolver)
                             .setParameters(ATTRIBUTES)
                             .setRuntimeOnly()
                             .build(),
@@ -557,39 +557,39 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
             final PasswordSpec passwordSpec;
             final String algorithm;
 
-            if (passwordType.equals(ElytronDescriptionConstants.BCRYPT)) {
+            if (passwordType.equals(ElytronCommonConstants.BCRYPT)) {
                 byte[] salt = Bcrypt.SALT.resolveModelAttribute(parentContext, passwordNode).asBytes();
                 int iterationCount = Bcrypt.ITERATION_COUNT.resolveModelAttribute(parentContext, passwordNode).asInt();
                 passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), new IteratedSaltedPasswordAlgorithmSpec(iterationCount, salt), hashCharset);
                 algorithm = Bcrypt.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
-            } else if (passwordType.equals(ElytronDescriptionConstants.CLEAR)) {
+            } else if (passwordType.equals(ElytronCommonConstants.CLEAR)) {
                 passwordSpec = new ClearPasswordSpec(password.toCharArray());
                 algorithm = Clear.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
-            } else if (passwordType.equals(ElytronDescriptionConstants.SIMPLE_DIGEST)) {
+            } else if (passwordType.equals(ElytronCommonConstants.SIMPLE_DIGEST)) {
                 passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), null, hashCharset);
                 algorithm = SimpleDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
-            } else if (passwordType.equals(ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST)) {
+            } else if (passwordType.equals(ElytronCommonConstants.SALTED_SIMPLE_DIGEST)) {
                 byte[] salt = SaltedSimpleDigest.SALT.resolveModelAttribute(parentContext, passwordNode).asBytes();
                 SaltedPasswordAlgorithmSpec spec = new SaltedPasswordAlgorithmSpec(salt);
                 passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), spec, hashCharset);
                 algorithm = SaltedSimpleDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
-            } else if (passwordType.equals(ElytronDescriptionConstants.SCRAM_DIGEST)) {
+            } else if (passwordType.equals(ElytronCommonConstants.SCRAM_DIGEST)) {
                 byte[] salt = ScramDigest.SALT.resolveModelAttribute(parentContext, passwordNode).asBytes();
                 int iterationCount = ScramDigest.ITERATION_COUNT.resolveModelAttribute(parentContext, passwordNode).asInt();
                 passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), new IteratedSaltedPasswordAlgorithmSpec(iterationCount, salt), hashCharset);
                 algorithm = ScramDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
-            } else if (passwordType.equals(ElytronDescriptionConstants.DIGEST)) {
+            } else if (passwordType.equals(ElytronCommonConstants.DIGEST)) {
                 String realm = Digest.REALM.resolveModelAttribute(parentContext, passwordNode).asString();
                 algorithm = Digest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
                 DigestPasswordAlgorithmSpec dpas = new DigestPasswordAlgorithmSpec(principalName, realm);
                 passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), dpas, hashCharset);
 
-            } else if (passwordType.equals(ElytronDescriptionConstants.OTP)) {
+            } else if (passwordType.equals(ElytronCommonConstants.OTP)) {
                 algorithm = OTPassword.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
                 int sequenceNumber = OTPassword.SEQUENCE.resolveModelAttribute(parentContext, passwordNode).asInt();
                 String seed = OTPassword.SEED.resolveModelAttribute(parentContext, passwordNode).asString();

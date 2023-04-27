@@ -19,23 +19,23 @@
 package org.wildfly.extension.elytron;
 
 import static java.security.AccessController.doPrivileged;
-import static org.wildfly.extension.elytron.Capabilities.EVIDENCE_DECODER_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.PERMISSION_MAPPER_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_DECODER_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.REALM_MAPPER_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.ROLE_DECODER_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.ROLE_MAPPER_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_EVENT_LISTENER_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.VIRTUAL_SECURITY_DOMAIN_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.EVIDENCE_DECODER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.PERMISSION_MAPPER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.PRINCIPAL_DECODER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.PRINCIPAL_TRANSFORMER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.REALM_MAPPER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.ROLE_DECODER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.ROLE_MAPPER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_DOMAIN_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_EVENT_LISTENER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.VIRTUAL_SECURITY_DOMAIN_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.INITIAL;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.INITIAL;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
-import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
 
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -110,114 +110,114 @@ class DomainDefinition extends SimpleResourceDefinition {
 
     private static final ServiceUtil<SecurityRealm> REALM_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_REALM_RUNTIME_CAPABILITY, null, SecurityRealm.class);
 
-    static final SimpleAttributeDefinition DEFAULT_REALM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_REALM, ModelType.STRING, true)
+    static final SimpleAttributeDefinition DEFAULT_REALM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DEFAULT_REALM, ModelType.STRING, true)
          .setAllowExpression(false)
          .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
          .build();
 
-    static final SimpleAttributeDefinition PRE_REALM_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRE_REALM_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition PRE_REALM_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PRE_REALM_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition POST_REALM_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.POST_REALM_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition POST_REALM_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.POST_REALM_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition PRINCIPAL_DECODER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRINCIPAL_DECODER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition PRINCIPAL_DECODER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PRINCIPAL_DECODER, ModelType.STRING, true)
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .setCapabilityReference(PRINCIPAL_DECODER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition PERMISSION_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PERMISSION_MAPPER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition PERMISSION_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PERMISSION_MAPPER, ModelType.STRING, true)
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .setCapabilityReference(PERMISSION_MAPPER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition REALM_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM_MAPPER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition REALM_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REALM_MAPPER, ModelType.STRING, true)
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .setCapabilityReference(REALM_MAPPER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition ROLE_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROLE_MAPPER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition ROLE_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ROLE_MAPPER, ModelType.STRING, true)
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .setCapabilityReference(ROLE_MAPPER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition EVIDENCE_DECODER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.EVIDENCE_DECODER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition EVIDENCE_DECODER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.EVIDENCE_DECODER, ModelType.STRING, true)
             .setMinSize(1)
             .setCapabilityReference(EVIDENCE_DECODER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM, ModelType.STRING, false)
-        .setXmlName(ElytronDescriptionConstants.NAME)
+    static final SimpleAttributeDefinition REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REALM, ModelType.STRING, false)
+        .setXmlName(ElytronCommonConstants.NAME)
         .setMinSize(1)
         .setCapabilityReference(SECURITY_REALM_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition REALM_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition REALM_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
         .setMinSize(1)
         .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition REALM_ROLE_DECODER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROLE_DECODER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition REALM_ROLE_DECODER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ROLE_DECODER, ModelType.STRING, true)
         .setMinSize(1)
         .setCapabilityReference(ROLE_DECODER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition ROLE_DECODER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROLE_DECODER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition ROLE_DECODER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ROLE_DECODER, ModelType.STRING, true)
             .setMinSize(1)
             .setCapabilityReference(ROLE_DECODER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
             .build();
 
-    static final ObjectTypeAttributeDefinition REALM = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.REALM, REALM_NAME, REALM_PRINCIPAL_TRANSFORMER, REALM_ROLE_DECODER, ROLE_MAPPER)
+    static final ObjectTypeAttributeDefinition REALM = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.REALM, REALM_NAME, REALM_PRINCIPAL_TRANSFORMER, REALM_ROLE_DECODER, ROLE_MAPPER)
         .setRequired(true)
         .build();
 
-    static final ObjectListAttributeDefinition REALMS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.REALMS, REALM)
+    static final ObjectListAttributeDefinition REALMS = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.REALMS, REALM)
             .setRequired(false)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
             .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();
 
-    static final StringListAttributeDefinition TRUSTED_SECURITY_DOMAINS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.TRUSTED_SECURITY_DOMAINS)
+    static final StringListAttributeDefinition TRUSTED_SECURITY_DOMAINS = new StringListAttributeDefinition.Builder(ElytronCommonConstants.TRUSTED_SECURITY_DOMAINS)
             .setRequired(false)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
             .build();
 
-    static final StringListAttributeDefinition TRUSTED_VIRTUAL_SECURITY_DOMAINS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.TRUSTED_VIRTUAL_SECURITY_DOMAINS)
+    static final StringListAttributeDefinition TRUSTED_VIRTUAL_SECURITY_DOMAINS = new StringListAttributeDefinition.Builder(ElytronCommonConstants.TRUSTED_VIRTUAL_SECURITY_DOMAINS)
             .setRequired(false)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setCapabilityReference(VIRTUAL_SECURITY_DOMAIN_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition OUTFLOW_ANONYMOUS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.OUTFLOW_ANONYMOUS, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition OUTFLOW_ANONYMOUS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.OUTFLOW_ANONYMOUS, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.FALSE)
-            .setRequires(ElytronDescriptionConstants.OUTFLOW_SECURITY_DOMAINS)
+            .setRequires(ElytronCommonConstants.OUTFLOW_SECURITY_DOMAINS)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final StringListAttributeDefinition OUTFLOW_SECURITY_DOMAINS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.OUTFLOW_SECURITY_DOMAINS)
+    static final StringListAttributeDefinition OUTFLOW_SECURITY_DOMAINS = new StringListAttributeDefinition.Builder(ElytronCommonConstants.OUTFLOW_SECURITY_DOMAINS)
             .setRequired(false)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition SECURITY_EVENT_LISTENER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECURITY_EVENT_LISTENER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition SECURITY_EVENT_LISTENER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SECURITY_EVENT_LISTENER, ModelType.STRING, true)
             .setAllowExpression(false)
             .setCapabilityReference(SECURITY_EVENT_LISTENER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
@@ -229,10 +229,10 @@ class DomainDefinition extends SimpleResourceDefinition {
 
     private static final DomainAddHandler ADD = new DomainAddHandler();
     private static final OperationStepHandler REMOVE = new DomainRemoveHandler(ADD);
-    private static final WriteAttributeHandler WRITE = new WriteAttributeHandler(ElytronDescriptionConstants.SECURITY_DOMAIN);
+    private static final WriteAttributeHandler WRITE = new WriteAttributeHandler(ElytronCommonConstants.SECURITY_DOMAIN);
 
     DomainDefinition() {
-        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.SECURITY_DOMAIN), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.SECURITY_DOMAIN))
+        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.SECURITY_DOMAIN), ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.SECURITY_DOMAIN))
             .setAddHandler(ADD)
             .setRemoveHandler(REMOVE)
             .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -523,7 +523,7 @@ class DomainDefinition extends SimpleResourceDefinition {
         domainBuilder.addDependency(roleDecoderServiceName, RoleDecoder.class, injector);
     }
 
-    private static class DomainAddHandler extends BaseAddHandler {
+    private static class DomainAddHandler extends ElytronCommonBaseAddHandler {
 
         private DomainAddHandler() {
             super(SECURITY_DOMAIN_RUNTIME_CAPABILITY, ATTRIBUTES);
@@ -627,13 +627,13 @@ class DomainDefinition extends SimpleResourceDefinition {
 
     static class ReadSecurityDomainIdentityHandler extends ElytronRuntimeOnlyHandler {
 
-        public static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
+        public static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.NAME, ModelType.STRING, false)
                 .setAllowExpression(false)
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
             resourceRegistration.registerOperationHandler(
-                    new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_IDENTITY, descriptionResolver)
+                    new SimpleOperationDefinitionBuilder(ElytronCommonConstants.READ_IDENTITY, descriptionResolver)
                             .setParameters(NAME)
                             .setRuntimeOnly()
                             .setReadOnly()
@@ -672,9 +672,9 @@ class DomainDefinition extends SimpleResourceDefinition {
                 SecurityIdentity identity = authenticationContext.getAuthorizedIdentity();
                 ModelNode result = context.getResult();
 
-                result.get(ElytronDescriptionConstants.NAME).set(principalName);
+                result.get(ElytronCommonConstants.NAME).set(principalName);
 
-                ModelNode attributesNode = result.get(ElytronDescriptionConstants.ATTRIBUTES);
+                ModelNode attributesNode = result.get(ElytronCommonConstants.ATTRIBUTES);
 
                 for (Attributes.Entry entry : identity.getAttributes().entries()) {
                     ModelNode entryNode = attributesNode.get(entry.getKey()).setEmptyList();
@@ -683,7 +683,7 @@ class DomainDefinition extends SimpleResourceDefinition {
                     }
                 }
 
-                ModelNode rolesNode = result.get(ElytronDescriptionConstants.ROLES);
+                ModelNode rolesNode = result.get(ElytronCommonConstants.ROLES);
                 for (String s : identity.getRoles()) {
                     rolesNode.add(s);
                 }

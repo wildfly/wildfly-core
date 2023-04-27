@@ -19,12 +19,12 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_SECURITY_EVENT_LISTENER;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_EVENT_LISTENER;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYSLOG_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.AGGREGATE_SECURITY_EVENT_LISTENER;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.SECURITY_EVENT_LISTENER;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.SYSLOG_AUDIT_LOG;
 
 import org.jboss.as.controller.AttributeMarshallers;
 import org.jboss.as.controller.AttributeParsers;
@@ -98,12 +98,12 @@ class AuditLoggingParser {
             .addAttribute(AuditResourceDefinitions.REFERENCES, new AttributeParsers.NamedStringListParser(SECURITY_EVENT_LISTENER), new AttributeMarshallers.NamedStringListMarshaller(SECURITY_EVENT_LISTENER))
             .build();
 
-    private final PersistentResourceXMLDescription customSecurityEventParser = builder(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_SECURITY_EVENT_LISTENER))
+    private final PersistentResourceXMLDescription customSecurityEventParser = builder(PathElement.pathElement(ElytronCommonConstants.CUSTOM_SECURITY_EVENT_LISTENER))
             .addAttributes(CustomComponentDefinition.ATTRIBUTES)
             .setUseElementsForGroups(false)
             .build();
 
-    final PersistentResourceXMLDescription parser = decorator(ElytronDescriptionConstants.AUDIT_LOGGING)
+    final PersistentResourceXMLDescription parser = decorator(ElytronCommonConstants.AUDIT_LOGGING)
             .addChild(aggregateSecurityEventParser)
             .addChild(fileAuditLogParser)
             .addChild(periodicRotatingFileAuditLogParser)
@@ -111,7 +111,7 @@ class AuditLoggingParser {
             .addChild(syslogAuditLogParser)
             .build();
 
-    final PersistentResourceXMLDescription parser4_0 = decorator(ElytronDescriptionConstants.AUDIT_LOGGING)
+    final PersistentResourceXMLDescription parser4_0 = decorator(ElytronCommonConstants.AUDIT_LOGGING)
             .addChild(aggregateSecurityEventParser)
             .addChild(customSecurityEventParser) // new
             .addChild(fileAuditLogParser)
@@ -120,7 +120,7 @@ class AuditLoggingParser {
             .addChild(syslogAuditLogParser)
             .build();
 
-    final PersistentResourceXMLDescription parser5_0 = decorator(ElytronDescriptionConstants.AUDIT_LOGGING)
+    final PersistentResourceXMLDescription parser5_0 = decorator(ElytronCommonConstants.AUDIT_LOGGING)
             .addChild(aggregateSecurityEventParser)
             .addChild(customSecurityEventParser)
             .addChild(fileAuditLogParser_5_0)
@@ -129,7 +129,7 @@ class AuditLoggingParser {
             .addChild(syslogAuditLogParser)
             .build();
 
-    final PersistentResourceXMLDescription parser8_0 = decorator(ElytronDescriptionConstants.AUDIT_LOGGING)
+    final PersistentResourceXMLDescription parser8_0 = decorator(ElytronCommonConstants.AUDIT_LOGGING)
             .addChild(aggregateSecurityEventParser)
             .addChild(customSecurityEventParser)
             .addChild(fileAuditLogParser_5_0)
@@ -138,7 +138,7 @@ class AuditLoggingParser {
             .addChild(syslogAuditLogParser_8_0)
             .build();
 
-    final PersistentResourceXMLDescription parser18_0 = decorator(ElytronDescriptionConstants.AUDIT_LOGGING)
+    final PersistentResourceXMLDescription parser18_0 = decorator(ElytronCommonConstants.AUDIT_LOGGING)
         .addChild(aggregateSecurityEventParser)
         .addChild(customSecurityEventParser)
         .addChild(fileAuditLogParser_18_0)

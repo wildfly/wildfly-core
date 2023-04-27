@@ -17,7 +17,7 @@
  */
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -46,19 +46,19 @@ import org.wildfly.security.authz.MapAttributes;
  */
 class RealmDefinitions {
 
-    static final AttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.IDENTITY, ModelType.STRING, false)
+    static final AttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.IDENTITY, ModelType.STRING, false)
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final AttributeDefinition ATTRIBUTE_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ATTRIBUTE_NAME, ModelType.STRING, true)
+    static final AttributeDefinition ATTRIBUTE_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ATTRIBUTE_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final StringListAttributeDefinition ATTRIBUTE_VALUES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.ATTRIBUTE_VALUES)
+    static final StringListAttributeDefinition ATTRIBUTE_VALUES = new StringListAttributeDefinition.Builder(ElytronCommonConstants.ATTRIBUTE_VALUES)
             .setMinSize(0)
             .setRequired(false)
             .setAllowExpression(true)
@@ -68,7 +68,7 @@ class RealmDefinitions {
     static AttributeDefinition[] IDENTITY_REALM_ATTRIBUTES = { IDENTITY, ATTRIBUTE_NAME, ATTRIBUTE_VALUES };
 
     static ResourceDefinition getIdentityRealmDefinition() {
-        AbstractAddStepHandler add = new TrivialAddHandler<SecurityRealm>(SecurityRealm.class, IDENTITY_REALM_ATTRIBUTES, SECURITY_REALM_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<SecurityRealm>(SecurityRealm.class, IDENTITY_REALM_ATTRIBUTES, SECURITY_REALM_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SecurityRealm> getValueSupplier(ServiceBuilder<SecurityRealm> serviceBuilder,
@@ -94,6 +94,6 @@ class RealmDefinitions {
             }
         };
 
-        return new TrivialResourceDefinition(ElytronDescriptionConstants.IDENTITY_REALM, add, IDENTITY_REALM_ATTRIBUTES, SECURITY_REALM_RUNTIME_CAPABILITY);
+        return new ElytronCommonTrivialResourceDefinition(ElytronCommonConstants.IDENTITY_REALM, add, IDENTITY_REALM_ATTRIBUTES, SECURITY_REALM_RUNTIME_CAPABILITY);
     }
 }

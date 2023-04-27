@@ -19,7 +19,7 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROVIDERS;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.PROVIDERS;
 
 import org.jboss.as.controller.AttributeMarshallers;
 import org.jboss.as.controller.AttributeParsers;
@@ -34,17 +34,17 @@ import org.jboss.as.controller.PersistentResourceXMLDescription;
  */
 class ProviderParser {
 
-    private final PersistentResourceXMLDescription providerLoaderParser = builder(PathElement.pathElement(ElytronDescriptionConstants.PROVIDER_LOADER))
+    private final PersistentResourceXMLDescription providerLoaderParser = builder(PathElement.pathElement(ElytronCommonConstants.PROVIDER_LOADER))
             .setUseElementsForGroups(false)
-            .addAttributes(ClassLoadingAttributeDefinitions.MODULE, ClassLoadingAttributeDefinitions.CLASS_NAMES, ProviderDefinitions.PATH, ProviderDefinitions.RELATIVE_TO,
-                    ProviderDefinitions.ARGUMENT, ProviderDefinitions.CONFIGURATION)
+            .addAttributes(ClassLoadingAttributeDefinitions.MODULE, ClassLoadingAttributeDefinitions.CLASS_NAMES, ElytronCommonProviderDefinitions.PATH, ElytronCommonProviderDefinitions.RELATIVE_TO,
+                    ElytronCommonProviderDefinitions.ARGUMENT, ElytronCommonProviderDefinitions.CONFIGURATION)
             .build();
-    private final PersistentResourceXMLDescription aggregateProviders = builder(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_PROVIDERS))
-            .addAttribute(ProviderDefinitions.REFERENCES,
+    private final PersistentResourceXMLDescription aggregateProviders = builder(PathElement.pathElement(ElytronCommonConstants.AGGREGATE_PROVIDERS))
+            .addAttribute(ElytronCommonProviderDefinitions.REFERENCES,
                     new AttributeParsers.NamedStringListParser(PROVIDERS),
                     new AttributeMarshallers.NamedStringListMarshaller(PROVIDERS))
             .build();
-    final PersistentResourceXMLDescription parser = decorator(ElytronDescriptionConstants.PROVIDERS)
+    final PersistentResourceXMLDescription parser = decorator(ElytronCommonConstants.PROVIDERS)
             .addChild(aggregateProviders)
             .addChild(providerLoaderParser)
             .build();

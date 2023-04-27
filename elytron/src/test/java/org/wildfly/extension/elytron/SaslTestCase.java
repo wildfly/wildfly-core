@@ -78,7 +78,7 @@ public class SaslTestCase extends AbstractSubsystemTest {
     @Test
     public void testSaslServerDigest() throws Exception {
         init();
-        ServiceName serviceNameServer = Capabilities.SASL_SERVER_FACTORY_RUNTIME_CAPABILITY.getCapabilityServiceName("MySaslServer");
+        ServiceName serviceNameServer = ElytronCommonCapabilities.SASL_SERVER_FACTORY_RUNTIME_CAPABILITY.getCapabilityServiceName("MySaslServer");
         SaslServerFactory serverFactory = (SaslServerFactory) services.getContainer().getService(serviceNameServer).getValue();
 
         Map<String, Object> serverClientProps = new HashMap<String, Object>();
@@ -94,7 +94,7 @@ public class SaslTestCase extends AbstractSubsystemTest {
     @Test
     public void testSaslAuthenticationPlain() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY.getCapabilityServiceName("MySaslAuth");
+        ServiceName serviceName = ElytronCommonCapabilities.SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY.getCapabilityServiceName("MySaslAuth");
         SaslAuthenticationFactory authFactory = (SaslAuthenticationFactory) services.getContainer().getService(serviceName).getValue();
 
         SaslServer server = authFactory.createMechanism(SaslMechanismInformation.Names.PLAIN);
@@ -107,7 +107,7 @@ public class SaslTestCase extends AbstractSubsystemTest {
     @Test
     public void testSaslAuthenticationDigest() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY.getCapabilityServiceName("MySaslAuth");
+        ServiceName serviceName = ElytronCommonCapabilities.SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY.getCapabilityServiceName("MySaslAuth");
         SaslAuthenticationFactory authFactory = (SaslAuthenticationFactory) services.getContainer().getService(serviceName).getValue();
 
         SaslServer server = authFactory.createMechanism(SaslMechanismInformation.Names.DIGEST_SHA);
@@ -120,7 +120,7 @@ public class SaslTestCase extends AbstractSubsystemTest {
     @Test
     public void testSaslAuthenticationScram() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY.getCapabilityServiceName("MySaslAuth");
+        ServiceName serviceName = ElytronCommonCapabilities.SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY.getCapabilityServiceName("MySaslAuth");
         SaslAuthenticationFactory authFactory = (SaslAuthenticationFactory) services.getContainer().getService(serviceName).getValue();
 
         SaslServer server = authFactory.createMechanism(SaslMechanismInformation.Names.SCRAM_SHA_1);

@@ -17,9 +17,9 @@
  */
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.PRINCIPAL_TRANSFORMER_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
 import java.util.ArrayList;
@@ -54,35 +54,35 @@ import org.wildfly.security.auth.realm.AggregateSecurityRealm;
 import org.wildfly.security.auth.server.SecurityRealm;
 
 /**
- * A {@link ResourceDefinition} for a {@link SecruityRealm} which is an aggregation of two other realm instances.
+ * A {@link ResourceDefinition} for a {@link SecurityRealm} which is an aggregation of two other realm instances.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class AggregateRealmDefinition extends SimpleResourceDefinition {
 
-    static final ServiceUtil<SecurityRealm> REALM_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_REALM_RUNTIME_CAPABILITY, ElytronDescriptionConstants.AGGREGATE_REALM, SecurityRealm.class);
+    static final ServiceUtil<SecurityRealm> REALM_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_REALM_RUNTIME_CAPABILITY, ElytronCommonConstants.AGGREGATE_REALM, SecurityRealm.class);
 
-    static final SimpleAttributeDefinition AUTHENTICATION_REALM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHENTICATION_REALM, ModelType.STRING, false)
+    static final SimpleAttributeDefinition AUTHENTICATION_REALM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.AUTHENTICATION_REALM, ModelType.STRING, false)
         .setMinSize(1)
         .setCapabilityReference(SECURITY_REALM_CAPABILITY, SECURITY_REALM_CAPABILITY)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition AUTHORIZATION_REALM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHORIZATION_REALM, ModelType.STRING, false)
+    static final SimpleAttributeDefinition AUTHORIZATION_REALM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.AUTHORIZATION_REALM, ModelType.STRING, false)
         .setMinSize(1)
-        .setAlternatives(ElytronDescriptionConstants.AUTHORIZATION_REALMS)
+        .setAlternatives(ElytronCommonConstants.AUTHORIZATION_REALMS)
         .setCapabilityReference(SECURITY_REALM_CAPABILITY, SECURITY_REALM_CAPABILITY)
         .setRestartAllServices()
         .build();
 
-    static final StringListAttributeDefinition AUTHORIZATION_REALMS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.AUTHORIZATION_REALMS)
-            .setAlternatives(ElytronDescriptionConstants.AUTHORIZATION_REALM)
+    static final StringListAttributeDefinition AUTHORIZATION_REALMS = new StringListAttributeDefinition.Builder(ElytronCommonConstants.AUTHORIZATION_REALMS)
+            .setAlternatives(ElytronCommonConstants.AUTHORIZATION_REALM)
             .setMinSize(1)
             .setCapabilityReference(SECURITY_REALM_CAPABILITY, SECURITY_REALM_CAPABILITY)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
             .setMinSize(1)
             .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SECURITY_REALM_CAPABILITY)
             .setRestartAllServices()
@@ -97,7 +97,7 @@ class AggregateRealmDefinition extends SimpleResourceDefinition {
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_REALM_RUNTIME_CAPABILITY);
 
     AggregateRealmDefinition() {
-        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.AGGREGATE_REALM))
+        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.AGGREGATE_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.AGGREGATE_REALM))
             .setAddHandler(ADD)
             .setRemoveHandler(REMOVE)
             .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -113,7 +113,7 @@ class AggregateRealmDefinition extends SimpleResourceDefinition {
         }
     }
 
-    private static class RealmAddHandler extends BaseAddHandler {
+    private static class RealmAddHandler extends ElytronCommonBaseAddHandler {
 
         private RealmAddHandler() {
             super(SECURITY_REALM_RUNTIME_CAPABILITY, ATTRIBUTES_8_0);

@@ -18,10 +18,10 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
-import static org.wildfly.extension.elytron.Capabilities.HTTP_AUTHENTICATION_FACTORY_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CONFIGURABLE_HTTP_SERVER_MECHANISM_FACTORY;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HTTP_AUTHENTICATION_FACTORY;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HTTP_SERVER_MECHANISM_FACTORY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.HTTP_AUTHENTICATION_FACTORY_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.CONFIGURABLE_HTTP_SERVER_MECHANISM_FACTORY;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.HTTP_AUTHENTICATION_FACTORY;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.HTTP_SERVER_MECHANISM_FACTORY;
 import static org.wildfly.extension.elytron.HttpServerDefinitions.CONFIGURED_FILTERS;
 
 import org.jboss.as.controller.AttributeMarshallers;
@@ -43,7 +43,7 @@ class HttpParser {
             .addAttribute(AuthenticationFactoryDefinitions.getMechanismConfiguration(HTTP_AUTHENTICATION_FACTORY_CAPABILITY))
             .build();
 
-    private PersistentResourceXMLDescription aggregateHttpServerMechanismFactory = PersistentResourceXMLDescription.builder(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_HTTP_SERVER_MECHANISM_FACTORY))
+    private PersistentResourceXMLDescription aggregateHttpServerMechanismFactory = PersistentResourceXMLDescription.builder(PathElement.pathElement(ElytronCommonConstants.AGGREGATE_HTTP_SERVER_MECHANISM_FACTORY))
             .addAttribute(HttpServerDefinitions.getRawAggregateHttpServerFactoryDefinition().getReferencesAttribute(),
                     new AttributeParsers.NamedStringListParser(HTTP_SERVER_MECHANISM_FACTORY),
                     new AttributeMarshallers.NamedStringListMarshaller(HTTP_SERVER_MECHANISM_FACTORY))
@@ -55,16 +55,16 @@ class HttpParser {
             .addAttribute(CONFIGURED_FILTERS)
             .build();
 
-    private PersistentResourceXMLDescription providerHttpServerMechanismFactoryParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(ElytronDescriptionConstants.PROVIDER_HTTP_SERVER_MECHANISM_FACTORY))
+    private PersistentResourceXMLDescription providerHttpServerMechanismFactoryParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(ElytronCommonConstants.PROVIDER_HTTP_SERVER_MECHANISM_FACTORY))
             .addAttribute(HttpServerDefinitions.PROVIDERS)
             .build();
 
-    private PersistentResourceXMLDescription serviceLoaderHttpServerMechanismFactoryParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(ElytronDescriptionConstants.SERVICE_LOADER_HTTP_SERVER_MECHANISM_FACTORY))
+    private PersistentResourceXMLDescription serviceLoaderHttpServerMechanismFactoryParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(ElytronCommonConstants.SERVICE_LOADER_HTTP_SERVER_MECHANISM_FACTORY))
             .setUseElementsForGroups(false)
             .addAttribute(ClassLoadingAttributeDefinitions.MODULE)
             .build();
 
-    final PersistentResourceXMLDescription parser = decorator(ElytronDescriptionConstants.HTTP)
+    final PersistentResourceXMLDescription parser = decorator(ElytronCommonConstants.HTTP)
             .addChild(httpServerMechanismFactoryParser)
             .addChild(aggregateHttpServerMechanismFactory)
             .addChild(configurableHttpServerMechanismFactoryParser)

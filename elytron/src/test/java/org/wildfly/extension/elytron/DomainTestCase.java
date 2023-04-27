@@ -103,21 +103,21 @@ public class DomainTestCase extends AbstractSubsystemTest {
             Assert.fail("Failed to boot, no reason provided");
         }
 
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "MyDomain");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "X500Domain");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "X500DomainTwo");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "X500DomainThree");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "AnotherDomain");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "AggregateEvidenceDecoderDomain");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SubjectAltNameEvidenceDecoderDomain");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SubjectEvidenceDecoderDomain");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SourceAddressRoleDecoderDomain");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "PropEncodingDomain");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "PropEncodingCharsetDomain");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "FilesystemEncodingDomain");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "FilesystemEncodingCharsetDomain");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "LowerCasePrincipalTransformerDomain");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "UpperCasePrincipalTransformerDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "MyDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "X500Domain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "X500DomainTwo");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "X500DomainThree");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "AnotherDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "AggregateEvidenceDecoderDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SubjectAltNameEvidenceDecoderDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SubjectEvidenceDecoderDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SourceAddressRoleDecoderDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "PropEncodingDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "PropEncodingCharsetDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "FilesystemEncodingDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "FilesystemEncodingCharsetDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "LowerCasePrincipalTransformerDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "UpperCasePrincipalTransformerDomain");
     }
 
     /**
@@ -126,7 +126,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testPropRealmBase64EncodingConfiguration() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("PropEncodingDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("PropEncodingDomain");
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(domain);
 
@@ -142,7 +142,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testPropRealmBase64EncodingAndCharsetConfiguration() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("PropEncodingCharsetDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("PropEncodingCharsetDomain");
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(domain);
 
@@ -155,7 +155,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testFilesystemRealmHexEncodingConfiguration() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemEncodingDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemEncodingDomain");
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(domain);
 
@@ -168,7 +168,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testFilesystemRealmHexEncodingAndCharsetConfiguration() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemEncodingCharsetDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemEncodingCharsetDomain");
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(domain);
 
@@ -181,7 +181,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testCasePrincipalTransformerLowerCase() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("LowerCasePrincipalTransformerDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("LowerCasePrincipalTransformerDomain");
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(domain);
 
@@ -198,7 +198,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testCasePrincipalTransformerUpperCase() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("UpperCasePrincipalTransformerDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("UpperCasePrincipalTransformerDomain");
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(domain);
 
@@ -215,7 +215,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testDefaultRealmIdentity() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("MyDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("MyDomain");
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(domain);
 
@@ -241,7 +241,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testNonDefaultRealmIdentity() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("MyDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("MyDomain");
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(domain);
 
@@ -263,7 +263,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testNamePrincipalMapping() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("MyDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("MyDomain");
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(domain);
 
@@ -277,20 +277,20 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testX500PrincipalMapping() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("X500Domain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("X500Domain");
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(domain);
 
         Assert.assertTrue(domain.getIdentity(new X500Principal("cn=firstUser,ou=group")).exists());
 
-        serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("X500DomainTwo");
+        serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("X500DomainTwo");
         domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(domain);
         Assert.assertTrue(domain.getIdentity(new X500Principal("dc=com,dc=redhat,dc=example,ou=group,cn=First User,cn=firstUser,cn=User,cn=Users")).exists());
         // The given principal is missing the required OU component
         Assert.assertFalse(domain.getIdentity(new X500Principal("cn=John Smith,cn=jsmith,dc=example,dc=redhat,dc=com")).exists());
 
-        serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("X500DomainThree");
+        serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("X500DomainThree");
         domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(domain);
         Assert.assertTrue(domain.getIdentity(new X500Principal("cn=John Smith,cn=jsmith,ou=people,dc=example,dc=redhat,dc=com")).exists());
@@ -299,15 +299,15 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testTrustedSecurityDomains() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("MyDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("MyDomain");
         SecurityDomain myDomain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(myDomain);
 
-        serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("X500Domain");
+        serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("X500Domain");
         SecurityDomain x500Domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(x500Domain);
 
-        serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("AnotherDomain");
+        serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("AnotherDomain");
         SecurityDomain anotherDomain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(anotherDomain);
 
@@ -327,34 +327,34 @@ public class DomainTestCase extends AbstractSubsystemTest {
         init();
 
         ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronDescriptionConstants.SECURITY_DOMAIN,"MyDomain");
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronCommonConstants.SECURITY_DOMAIN,"MyDomain");
         operation.get(ClientConstants.OP).set(ClientConstants.WRITE_ATTRIBUTE_OPERATION);
-        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.DEFAULT_REALM);
+        operation.get(ClientConstants.NAME).set(ElytronCommonConstants.DEFAULT_REALM);
         operation.get(ClientConstants.VALUE).set("PropRealm");
         Assert.assertNotNull(assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asString());
 
         operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronDescriptionConstants.SECURITY_DOMAIN,"MyDomain");
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronCommonConstants.SECURITY_DOMAIN,"MyDomain");
         operation.get(ClientConstants.OP).set(ClientConstants.WRITE_ATTRIBUTE_OPERATION);
-        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.DEFAULT_REALM);
+        operation.get(ClientConstants.NAME).set(ElytronCommonConstants.DEFAULT_REALM);
         operation.get(ClientConstants.VALUE).set("NonDomainRealm");
         Assert.assertNotNull(assertFail(services.executeOperation(operation)).get(ClientConstants.RESULT).asString());
 
         operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronDescriptionConstants.SECURITY_DOMAIN,"MyDomain");
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronCommonConstants.SECURITY_DOMAIN,"MyDomain");
         operation.get(ClientConstants.OP).set(ClientConstants.WRITE_ATTRIBUTE_OPERATION);
-        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.REALMS);
+        operation.get(ClientConstants.NAME).set(ElytronCommonConstants.REALMS);
         ModelNode valueRealms = new ModelNode();
-        valueRealms.add(new ModelNode().set(ElytronDescriptionConstants.REALM, "PropRealm"));
+        valueRealms.add(new ModelNode().set(ElytronCommonConstants.REALM, "PropRealm"));
         operation.get(ClientConstants.VALUE).set(valueRealms);
         Assert.assertNotNull(assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asString());
 
         operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronDescriptionConstants.SECURITY_DOMAIN,"MyDomain");
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronCommonConstants.SECURITY_DOMAIN,"MyDomain");
         operation.get(ClientConstants.OP).set(ClientConstants.WRITE_ATTRIBUTE_OPERATION);
-        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.REALMS);
+        operation.get(ClientConstants.NAME).set(ElytronCommonConstants.REALMS);
         valueRealms = new ModelNode();
-        valueRealms.add(new ModelNode().set(ElytronDescriptionConstants.REALM, "FileRealm"));
+        valueRealms.add(new ModelNode().set(ElytronCommonConstants.REALM, "FileRealm"));
         operation.get(ClientConstants.VALUE).set(valueRealms);
         Assert.assertNotNull(assertFail(services.executeOperation(operation)).get(ClientConstants.RESULT).asString());
     }
@@ -369,8 +369,8 @@ public class DomainTestCase extends AbstractSubsystemTest {
         ModelNode realmNode = new ModelNode();
 
         ModelNode operation = Util.createEmptyOperation("list-add", PathAddress.pathAddress("subsystem", "elytron")
-                .append(ElytronDescriptionConstants.SECURITY_DOMAIN, "MyDomain"));
-        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.REALMS);
+                .append(ElytronCommonConstants.SECURITY_DOMAIN, "MyDomain"));
+        operation.get(ClientConstants.NAME).set(ElytronCommonConstants.REALMS);
 
         realmNode.get("realm").set("PropRealm");
         operation.get("value").set(realmNode);
@@ -389,18 +389,18 @@ public class DomainTestCase extends AbstractSubsystemTest {
     public void testPermissionMappers() throws Exception {
         init();
 
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("MyDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("MyDomain");
         SecurityDomain myDomain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         SecurityIdentity firstUser = getIdentityFromDomain(myDomain, "firstUser");
         Roles roles = Roles.fromSet(new HashSet<>(Arrays.asList(new String[]{"role1", "role2"})));
 
-        serviceName = Capabilities.PERMISSION_MAPPER_RUNTIME_CAPABILITY.getCapabilityServiceName("SimplePermissionMapperRole");
+        serviceName = ElytronCommonCapabilities.PERMISSION_MAPPER_RUNTIME_CAPABILITY.getCapabilityServiceName("SimplePermissionMapperRole");
         PermissionMapper mapper = (PermissionMapper) services.getContainer().getService(serviceName).getValue();
         PermissionVerifier verifier = mapper.mapPermissions(firstUser, roles);
         Assert.assertTrue(verifier.implies(new LoginPermission()));
         Assert.assertFalse(verifier.implies(new FilePermission("aaa", "read")));
 
-        serviceName = Capabilities.PERMISSION_MAPPER_RUNTIME_CAPABILITY.getCapabilityServiceName("SimplePermissionMapperPrincipal");
+        serviceName = ElytronCommonCapabilities.PERMISSION_MAPPER_RUNTIME_CAPABILITY.getCapabilityServiceName("SimplePermissionMapperPrincipal");
         mapper = (PermissionMapper) services.getContainer().getService(serviceName).getValue();
         verifier = mapper.mapPermissions(firstUser, roles);
         Assert.assertTrue(verifier.implies(new LoginPermission()));
@@ -410,7 +410,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testSubjectEvidenceDecoder() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("SubjectEvidenceDecoderDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("SubjectEvidenceDecoderDomain");
         SecurityDomain securityDomain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityDomain);
 
@@ -425,7 +425,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testSubjectAltNameEvidenceDecoder() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("SubjectAltNameEvidenceDecoderDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("SubjectAltNameEvidenceDecoderDomain");
         SecurityDomain securityDomain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityDomain);
 
@@ -440,7 +440,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testAggregateEvidenceDecoder() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("AggregateEvidenceDecoderDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("AggregateEvidenceDecoderDomain");
         SecurityDomain securityDomain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityDomain);
 
@@ -464,7 +464,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testSourceAddressRoleDecoderWithMatch() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("SourceAddressRoleDecoderDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("SourceAddressRoleDecoderDomain");
         SecurityDomain securityDomain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityDomain);
 
@@ -504,7 +504,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
     @Test
     public void testSourceAddressRoleDecoderWithMismatch() throws Exception {
         init();
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("SourceAddressRoleDecoderDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("SourceAddressRoleDecoderDomain");
         SecurityDomain securityDomain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityDomain);
 

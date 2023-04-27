@@ -57,7 +57,7 @@ class EmptyResourceDefinition extends SimpleResourceDefinition {
         return new EmptyResourceDefinition(pathKey, runtimeCapability, add, remove);
     }
 
-    private static class ResourceAddHandler<T> extends BaseAddHandler {
+    private static class ResourceAddHandler<T> extends ElytronCommonBaseAddHandler {
 
         private final Class<T> valueType;
         private final RuntimeCapability<?> runtimeCapability;

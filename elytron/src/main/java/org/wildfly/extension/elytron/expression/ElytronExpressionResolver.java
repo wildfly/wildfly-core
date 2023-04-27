@@ -17,7 +17,7 @@
 package org.wildfly.extension.elytron.expression;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
-import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
 import static org.wildfly.security.encryption.CipherUtil.decrypt;
 import static org.wildfly.security.encryption.CipherUtil.encrypt;
 
@@ -35,7 +35,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.wildfly.common.function.ExceptionBiConsumer;
 import org.wildfly.common.function.ExceptionFunction;
-import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
+import org.wildfly.extension.elytron._private.ElytronCommonMessages;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.credential.store.CredentialStoreException;
@@ -228,7 +228,7 @@ public class ElytronExpressionResolver implements ExpressionResolverExtension {
                             // there's a programming bug as this object should be initialized
                             // before any call paths are executed that don't come through
                             // the OperationStepHandlers that provide a context.
-                            throw ElytronSubsystemMessages.ROOT_LOGGER.illegalNonManagementInitialization(getClass());
+                            throw ElytronCommonMessages.ROOT_LOGGER.illegalNonManagementInitialization(getClass());
                         }
                         configurator.accept(this, context);
                         initialised = true;

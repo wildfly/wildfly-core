@@ -16,8 +16,8 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.EXPRESSION_RESOLVER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.CREDENTIAL_STORE_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.EXPRESSION_RESOLVER_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 
 import java.util.HashMap;
@@ -66,51 +66,51 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
 
     // Resource Resolver
     private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER =
-            ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION);
+            ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.EXPRESSION, ElytronCommonConstants.ENCRYPTION);
 
     /*
      * As this resource is attempting to make available an ExpressionResolver for use at runtime we need all values to be known before
      * first use so the use of expressions is disabled on this resource.
      */
 
-    private static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
+    private static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.NAME, ModelType.STRING, false)
             .setAllowExpression(false)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    private static final SimpleAttributeDefinition CREDENTIAL_STORE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CREDENTIAL_STORE, ModelType.STRING, false)
+    private static final SimpleAttributeDefinition CREDENTIAL_STORE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CREDENTIAL_STORE, ModelType.STRING, false)
             .setAllowExpression(false)
             .setMinSize(1)
             .setRestartAllServices()
             .setCapabilityReference(CREDENTIAL_STORE_CAPABILITY, EXPRESSION_RESOLVER_CAPABILITY)
             .build();
 
-    private static final SimpleAttributeDefinition SECRET_KEY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECRET_KEY, ModelType.STRING, false)
+    private static final SimpleAttributeDefinition SECRET_KEY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SECRET_KEY, ModelType.STRING, false)
             .setAllowExpression(false)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    private static final ObjectTypeAttributeDefinition RESOLVER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.RESOLVER, NAME, CREDENTIAL_STORE, SECRET_KEY)
+    private static final ObjectTypeAttributeDefinition RESOLVER = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.RESOLVER, NAME, CREDENTIAL_STORE, SECRET_KEY)
             .setRequired(true)
             .setRestartAllServices()
             .build();
 
-    static final ObjectListAttributeDefinition RESOLVERS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.RESOLVERS, RESOLVER)
+    static final ObjectListAttributeDefinition RESOLVERS = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.RESOLVERS, RESOLVER)
             .setRequired(true)
             .setMinSize(1)
             .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
             .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();
 
-    static final SimpleAttributeDefinition DEFAULT_RESOLVER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_RESOLVER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition DEFAULT_RESOLVER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DEFAULT_RESOLVER, ModelType.STRING, true)
             .setAllowExpression(false)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition PREFIX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PREFIX, ModelType.STRING, true)
+    static final SimpleAttributeDefinition PREFIX = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PREFIX, ModelType.STRING, true)
             .setAllowExpression(false)
             .setDefaultValue(new ModelNode("ENC"))
             .setMinSize(1)
@@ -121,22 +121,22 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
 
     // Operation and Parameters
 
-    static final SimpleAttributeDefinition RESOLVER_PARAM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RESOLVER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition RESOLVER_PARAM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.RESOLVER, ModelType.STRING, true)
             .setMinSize(1)
             .build();
 
-    static final SimpleAttributeDefinition CLEAR_TEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CLEAR_TEXT, ModelType.STRING, false)
+    static final SimpleAttributeDefinition CLEAR_TEXT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CLEAR_TEXT, ModelType.STRING, false)
             .setMinSize(1)
             .build();
 
-    static final SimpleOperationDefinition CREATE_EXPRESSION = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.CREATE_EXPRESSION, RESOURCE_RESOLVER)
+    static final SimpleOperationDefinition CREATE_EXPRESSION = new SimpleOperationDefinitionBuilder(ElytronCommonConstants.CREATE_EXPRESSION, RESOURCE_RESOLVER)
             .setParameters(RESOLVER_PARAM, CLEAR_TEXT)
             .setRuntimeOnly()
             .build();
 
     ExpressionResolverResourceDefinition(OperationStepHandler add, OperationStepHandler remove,
             RuntimeCapability<ExpressionResolverExtension> expressionResolverRuntimeCapability) {
-        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION),
+        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.EXPRESSION, ElytronCommonConstants.ENCRYPTION),
                 RESOURCE_RESOLVER)
                 .setAddHandler(add)
                 .setRemoveHandler(remove)
@@ -184,7 +184,7 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
     }
 
     static ResourceDefinition getExpressionResolverDefinition(PathAddress parentAddress, AtomicReference<ExpressionResolverExtension> resolverRef) {
-        final PathAddress resourceAddress = parentAddress.append(PathElement.pathElement(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION));
+        final PathAddress resourceAddress = parentAddress.append(PathElement.pathElement(ElytronCommonConstants.EXPRESSION, ElytronCommonConstants.ENCRYPTION));
 
         ElytronExpressionResolver expressionResolver = new ElytronExpressionResolver(
                 (e, c) -> configureExpressionResolver(resourceAddress, e, c));
@@ -198,7 +198,7 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
         return new ExpressionResolverResourceDefinition(add, remove, expressionResolverRuntimeCapability);
     }
 
-    private static class ExpressionResolverAddHandler extends BaseAddHandler {
+    private static class ExpressionResolverAddHandler extends ElytronCommonBaseAddHandler {
 
         private final ElytronExpressionResolver expressionResolver;
         private final AtomicReference<ExpressionResolverExtension> resolverRef;
@@ -264,7 +264,7 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
             ElytronExpressionResolver expressionResolver = (ElytronExpressionResolver) context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_CAPABILITY, ExpressionResolverExtension.class);
             String expression = expressionResolver.createExpression(resolver, clearText, context);
 
-            context.getResult().get(ElytronDescriptionConstants.EXPRESSION).set(expression);
+            context.getResult().get(ElytronCommonConstants.EXPRESSION).set(expression);
         }
 
     }

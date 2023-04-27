@@ -20,8 +20,8 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHENTICATION_CONTEXT;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.AUTHENTICATION_CONFIGURATION;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.AUTHENTICATION_CONTEXT;
 
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
@@ -53,12 +53,12 @@ class AuthenticationClientParser {
             .addAttribute(AuthenticationClientDefinitions.MATCH_RULES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();
 
-    final PersistentResourceXMLDescription parser = decorator(ElytronDescriptionConstants.AUTHENTICATION_CLIENT)
+    final PersistentResourceXMLDescription parser = decorator(ElytronCommonConstants.AUTHENTICATION_CLIENT)
             .addChild(authenticationConfigurationParser)
             .addChild(authenticationContextParser)
             .build();
 
-    final PersistentResourceXMLDescription parser_9_0 = decorator(ElytronDescriptionConstants.AUTHENTICATION_CLIENT)
+    final PersistentResourceXMLDescription parser_9_0 = decorator(ElytronCommonConstants.AUTHENTICATION_CLIENT)
             .addChild(authenticationConfigurationParser_9_0)
             .addChild(authenticationContextParser)
             .build();

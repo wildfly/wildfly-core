@@ -17,8 +17,8 @@
  */
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.REALM_MAPPER_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.REALM_MAPPER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.REALM_MAPPER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.REALM_MAPPER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.RegexAttributeDefinitions.PATTERN_CAPTURE_GROUP;
 
@@ -61,18 +61,18 @@ import org.wildfly.security.auth.util.SimpleRegexRealmMapper;
  */
 class RealmMapperDefinitions {
 
-    static final SimpleAttributeDefinition DELEGATE_REALM_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DELEGATE_REALM_MAPPER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition DELEGATE_REALM_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DELEGATE_REALM_MAPPER, ModelType.STRING, true)
         .setMinSize(1)
         .setRestartAllServices()
         .setCapabilityReference(REALM_MAPPER_CAPABILITY, REALM_MAPPER_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM_NAME, ModelType.STRING, false)
+    static final SimpleAttributeDefinition REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REALM_NAME, ModelType.STRING, false)
         .setMinSize(1)
         .setRestartAllServices()
         .build();
 
-    static final PropertiesAttributeDefinition REALM_REALM_MAP = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.REALM_MAP, false)
+    static final PropertiesAttributeDefinition REALM_REALM_MAP = new PropertiesAttributeDefinition.Builder(ElytronCommonConstants.REALM_MAP, false)
         .setMinSize(1)
         .setAllowExpression(true)
         .setRestartAllServices()
@@ -90,7 +90,7 @@ class RealmMapperDefinitions {
     static final AttributeDefinition[] CONSTANT_REALM_MAPPER_ATTRIBUTES = new AttributeDefinition[] { REALM_NAME };
 
     static ResourceDefinition getConstantRealmMapper() {
-        AbstractAddStepHandler add = new TrivialAddHandler<RealmMapper>(RealmMapper.class, CONSTANT_REALM_MAPPER_ATTRIBUTES, REALM_MAPPER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<RealmMapper>(RealmMapper.class, CONSTANT_REALM_MAPPER_ATTRIBUTES, REALM_MAPPER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<RealmMapper> getValueSupplier(ServiceBuilder<RealmMapper> serviceBuilder,
@@ -101,8 +101,8 @@ class RealmMapperDefinitions {
             }
         };
 
-        return TrivialResourceDefinition.builder()
-                .setPathKey(ElytronDescriptionConstants.CONSTANT_REALM_MAPPER)
+        return ElytronCommonTrivialResourceDefinition.builder()
+                .setPathKey(ElytronCommonConstants.CONSTANT_REALM_MAPPER)
                 .setAddHandler(add)
                 .setAttributes(CONSTANT_REALM_MAPPER_ATTRIBUTES)
                 .setRuntimeCapabilities(REALM_MAPPER_RUNTIME_CAPABILITY).build();
@@ -116,7 +116,7 @@ class RealmMapperDefinitions {
         private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, REALM_MAPPER_RUNTIME_CAPABILITY);
 
         private SimpleRegexRealmMapperDefinition() {
-            super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.SIMPLE_REGEX_REALM_MAPPER), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.SIMPLE_REGEX_REALM_MAPPER))
+            super(new Parameters(PathElement.pathElement(ElytronCommonConstants.SIMPLE_REGEX_REALM_MAPPER), ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.SIMPLE_REGEX_REALM_MAPPER))
                 .setAddHandler(ADD)
                 .setRemoveHandler(REMOVE)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -134,7 +134,7 @@ class RealmMapperDefinitions {
 
     }
 
-    private static class SimpleRegexRealmMapperAddHandler extends BaseAddHandler {
+    private static class SimpleRegexRealmMapperAddHandler extends ElytronCommonBaseAddHandler {
 
         private SimpleRegexRealmMapperAddHandler(final AttributeDefinition[] attributes) {
             super(REALM_MAPPER_RUNTIME_CAPABILITY, attributes);
@@ -186,7 +186,7 @@ class RealmMapperDefinitions {
         private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, REALM_MAPPER_RUNTIME_CAPABILITY);
 
         private MappedRegexRealmMapperDefinition() {
-            super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.MAPPED_REGEX_REALM_MAPPER), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.MAPPED_REGEX_REALM_MAPPER))
+            super(new Parameters(PathElement.pathElement(ElytronCommonConstants.MAPPED_REGEX_REALM_MAPPER), ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.MAPPED_REGEX_REALM_MAPPER))
                 .setAddHandler(ADD)
                 .setRemoveHandler(REMOVE)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -204,7 +204,7 @@ class RealmMapperDefinitions {
 
     }
 
-    private static class MappedRegexRealmMapperAddHandler extends BaseAddHandler {
+    private static class MappedRegexRealmMapperAddHandler extends ElytronCommonBaseAddHandler {
 
         private MappedRegexRealmMapperAddHandler(final AttributeDefinition[] attributes) {
             super(REALM_MAPPER_RUNTIME_CAPABILITY, attributes);

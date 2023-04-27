@@ -22,7 +22,7 @@ import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLA
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonRequirements;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
-import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
 
 import java.lang.reflect.Method;
 import java.security.PrivilegedActionException;
@@ -66,7 +66,7 @@ class CustomComponentDefinition<C, T> extends SimpleResourceDefinition {
         .setRestartAllServices()
         .build();
 
-    static final PropertiesAttributeDefinition CONFIGURATION = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.CONFIGURATION, true)
+    static final PropertiesAttributeDefinition CONFIGURATION = new PropertiesAttributeDefinition.Builder(ElytronCommonConstants.CONFIGURATION, true)
         .setAllowExpression(true)
         .setRestartAllServices()
         .build();
@@ -98,7 +98,7 @@ class CustomComponentDefinition<C, T> extends SimpleResourceDefinition {
         }
     }
 
-    private static class ComponentAddHandler<C, T> extends BaseAddHandler {
+    private static class ComponentAddHandler<C, T> extends ElytronCommonBaseAddHandler {
 
         private final RuntimeCapability<?>[] runtimeCapabilities;
         private final Class<C> serviceType;

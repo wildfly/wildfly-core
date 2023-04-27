@@ -19,7 +19,7 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORES;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.CREDENTIAL_STORES;
 
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
@@ -33,7 +33,7 @@ import org.jboss.as.controller.PersistentResourceXMLDescription.PersistentResour
  */
 class CredentialStoreParser {
 
-    final PersistentResourceXMLDescription credentialStoreParser = builder(PathElement.pathElement(ElytronDescriptionConstants.CREDENTIAL_STORE))
+    final PersistentResourceXMLDescription credentialStoreParser = builder(PathElement.pathElement(ElytronCommonConstants.CREDENTIAL_STORE))
             .setUseElementsForGroups(false)
             .addAttribute(CredentialStoreResourceDefinition.TYPE)
             .addAttribute(CredentialStoreResourceDefinition.PROVIDER_NAME)
@@ -47,7 +47,7 @@ class CredentialStoreParser {
             .addAttribute(CredentialStoreResourceDefinition.CREDENTIAL_REFERENCE)
             .build();
 
-    final PersistentResourceXMLDescription credentialStoreParser_13 = builder(PathElement.pathElement(ElytronDescriptionConstants.CREDENTIAL_STORE))
+    final PersistentResourceXMLDescription credentialStoreParser_13 = builder(PathElement.pathElement(ElytronCommonConstants.CREDENTIAL_STORE))
             .setUseElementsForGroups(false)
             .addAttribute(CredentialStoreResourceDefinition.TYPE)
             .addAttribute(CredentialStoreResourceDefinition.PROVIDER_NAME)
@@ -62,7 +62,7 @@ class CredentialStoreParser {
             .addAttribute(CredentialStoreResourceDefinition.CREDENTIAL_REFERENCE)
             .build();
 
-    final PersistentResourceXMLDescription secretKeyCredentialStoreParser = builder(PathElement.pathElement(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE))
+    final PersistentResourceXMLDescription secretKeyCredentialStoreParser = builder(PathElement.pathElement(ElytronCommonConstants.SECRET_KEY_CREDENTIAL_STORE))
             .setUseElementsForGroups(false)
             .addAttributes(SecretKeyCredentialStoreDefinition.CONFIG_ATTRIBUTES)
             .build();

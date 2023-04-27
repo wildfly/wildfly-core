@@ -76,8 +76,8 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
             Assert.fail("Failed to boot, no reason provided");
         }
 
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomain");
-        ServiceName serviceName = Capabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY.getCapabilityServiceName("tree");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomain");
+        ServiceName serviceName = ElytronCommonCapabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY.getCapabilityServiceName("tree");
         PrincipalTransformer transformer = (PrincipalTransformer) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(transformer);
 
@@ -98,8 +98,8 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
             Assert.fail("Failed to boot, no reason provided");
         }
 
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainUpperCase");
-        ServiceName serviceName = Capabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY.getCapabilityServiceName("upperCase");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainUpperCase");
+        ServiceName serviceName = ElytronCommonCapabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY.getCapabilityServiceName("upperCase");
         PrincipalTransformer transformer = (PrincipalTransformer) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(transformer);
 
@@ -117,8 +117,8 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
             Assert.fail("Failed to boot, no reason provided");
         }
 
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainLowerCase");
-        ServiceName serviceName = Capabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY.getCapabilityServiceName("lowerCase");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainLowerCase");
+        ServiceName serviceName = ElytronCommonCapabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY.getCapabilityServiceName("lowerCase");
         PrincipalTransformer transformer = (PrincipalTransformer) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(transformer);
 
@@ -135,22 +135,22 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
             }
             Assert.fail("Failed to boot, no reason provided");
         }
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomain");
 
         X509Certificate[] certificateChain = populateCertificateChain(true);
         X509PeerCertificateChainEvidence evidence = new X509PeerCertificateChainEvidence(certificateChain);
 
-        ServiceName serviceName = Capabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("subjectDecoder");
+        ServiceName serviceName = ElytronCommonCapabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("subjectDecoder");
         EvidenceDecoder evidenceDecoder = (EvidenceDecoder) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(evidenceDecoder);
         Assert.assertEquals("CN=bob0", evidenceDecoder.getPrincipal(evidence).getName());
 
-        serviceName = Capabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("rfc822Decoder");
+        serviceName = ElytronCommonCapabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("rfc822Decoder");
         evidenceDecoder = (EvidenceDecoder) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(evidenceDecoder);
         Assert.assertEquals("bob0@anotherexample.com", evidenceDecoder.getPrincipal(evidence).getName());
 
-        serviceName = Capabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("aggregateEvidenceDecoder");
+        serviceName = ElytronCommonCapabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("aggregateEvidenceDecoder");
         evidenceDecoder = (EvidenceDecoder) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(evidenceDecoder);
         Assert.assertEquals("bob0@anotherexample.com", evidenceDecoder.getPrincipal(evidence).getName());
@@ -158,7 +158,7 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
         certificateChain = populateCertificateChain(false);
         evidence = new X509PeerCertificateChainEvidence(certificateChain);
 
-        serviceName = Capabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("aggregateEvidenceDecoder");
+        serviceName = ElytronCommonCapabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("aggregateEvidenceDecoder");
         evidenceDecoder = (EvidenceDecoder) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(evidenceDecoder);
         Assert.assertEquals("CN=bob0", evidenceDecoder.getPrincipal(evidence).getName());
@@ -174,12 +174,12 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
             }
             Assert.fail("Failed to boot, no reason provided");
         }
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "CustomTestingDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "CustomTestingDomain");
 
         X509Certificate[] certificateChain = populateCertificateChain(true);
         X509PeerCertificateChainEvidence evidence = new X509PeerCertificateChainEvidence(certificateChain);
 
-        ServiceName serviceName = Capabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("customEvidenceDecoder");
+        ServiceName serviceName = ElytronCommonCapabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("customEvidenceDecoder");
         EvidenceDecoder evidenceDecoder = (EvidenceDecoder) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(evidenceDecoder);
         // custom evidence decoder just converts the subject name to upper case
@@ -195,9 +195,9 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
             }
             Assert.fail("Failed to boot, no reason provided");
         }
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomain");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomain");
 
-        ServiceName serviceName = Capabilities.ROLE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("ipRoleDecoder1");
+        ServiceName serviceName = ElytronCommonCapabilities.ROLE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("ipRoleDecoder1");
         RoleDecoder roleDecoder = (RoleDecoder) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(roleDecoder);
 
@@ -219,9 +219,9 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
             }
             Assert.fail("Failed to boot, no reason provided");
         }
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainIPv6");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainIPv6");
 
-        ServiceName serviceName = Capabilities.ROLE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("ipv6RoleDecoder");
+        ServiceName serviceName = ElytronCommonCapabilities.ROLE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("ipv6RoleDecoder");
         RoleDecoder roleDecoder = (RoleDecoder) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(roleDecoder);
 
@@ -243,9 +243,9 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
             }
             Assert.fail("Failed to boot, no reason provided");
         }
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainRegex");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainRegex");
 
-        ServiceName serviceName = Capabilities.ROLE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("regexRoleDecoder");
+        ServiceName serviceName = ElytronCommonCapabilities.ROLE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("regexRoleDecoder");
         RoleDecoder roleDecoder = (RoleDecoder) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(roleDecoder);
 
@@ -275,9 +275,9 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
             }
             Assert.fail("Failed to boot, no reason provided");
         }
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainRegexIPv6");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainRegexIPv6");
 
-        ServiceName serviceName = Capabilities.ROLE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("ipv6RegexRoleDecoder");
+        ServiceName serviceName = ElytronCommonCapabilities.ROLE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("ipv6RegexRoleDecoder");
         RoleDecoder roleDecoder = (RoleDecoder) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(roleDecoder);
 
@@ -308,9 +308,9 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
             }
             Assert.fail("Failed to boot, no reason provided");
         }
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainAggregate");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainAggregate");
 
-        ServiceName serviceName = Capabilities.ROLE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("aggregateRoleDecoder");
+        ServiceName serviceName = ElytronCommonCapabilities.ROLE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("aggregateRoleDecoder");
         RoleDecoder roleDecoder = (RoleDecoder) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(roleDecoder);
 

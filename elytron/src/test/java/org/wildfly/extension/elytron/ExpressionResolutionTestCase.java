@@ -160,7 +160,7 @@ public class ExpressionResolutionTestCase extends AbstractElytronSubsystemBaseTe
 
         ModelNode readAliases = new ModelNode();
         readAliases.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(resourceType, resourceName);
-        readAliases.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
+        readAliases.get(ClientConstants.OP).set(ElytronCommonConstants.READ_ALIASES);
 
         ModelNode readAliasesResult = assertSuccess(services.executeOperation(readAliases));
 
@@ -200,29 +200,29 @@ public class ExpressionResolutionTestCase extends AbstractElytronSubsystemBaseTe
 
         // Start with an empty subsystem and define a secret key credential store with two keys
         ModelNode add = new ModelNode();
-        add.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store");
+        add.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store");
         add.get(ClientConstants.OP).set(ClientConstants.ADD);
-        add.get(ElytronDescriptionConstants.PATH).set(testStorePath);
-        add.get(ElytronDescriptionConstants.POPULATE).set(false);
+        add.get(ElytronCommonConstants.PATH).set(testStorePath);
+        add.get(ElytronCommonConstants.POPULATE).set(false);
 
         assertSuccess(services.executeOperation(add));
 
           // Generate one and export it.
         ModelNode generate = new ModelNode();
-        generate.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store");
-        generate.get(ClientConstants.OP).set(ElytronDescriptionConstants.GENERATE_SECRET_KEY);
-        generate.get(ElytronDescriptionConstants.ALIAS).set("TestKeyOne");
+        generate.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store");
+        generate.get(ClientConstants.OP).set(ElytronCommonConstants.GENERATE_SECRET_KEY);
+        generate.get(ElytronCommonConstants.ALIAS).set("TestKeyOne");
 
         assertSuccess(services.executeOperation(generate));
 
         ModelNode export = new ModelNode();
-        export.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store");
-        export.get(ClientConstants.OP).set(ElytronDescriptionConstants.EXPORT_SECRET_KEY);
-        export.get(ElytronDescriptionConstants.ALIAS).set("TestKeyOne");
+        export.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store");
+        export.get(ClientConstants.OP).set(ElytronCommonConstants.EXPORT_SECRET_KEY);
+        export.get(ElytronCommonConstants.ALIAS).set("TestKeyOne");
 
         ModelNode exportResult = assertSuccess(services.executeOperation(export));
 
-        final String key = exportResult.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.KEY).asString();
+        final String key = exportResult.get(ClientConstants.RESULT).get(ElytronCommonConstants.KEY).asString();
 
         SecretKey testKeyOne = importSecretKey(key);
 
@@ -230,28 +230,28 @@ public class ExpressionResolutionTestCase extends AbstractElytronSubsystemBaseTe
         SecretKey testKeyTwo = SecretKeyUtil.generateSecretKey(192);
 
         ModelNode importOP = new ModelNode();
-        importOP.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store");
-        importOP.get(ClientConstants.OP).set(ElytronDescriptionConstants.IMPORT_SECRET_KEY);
-        importOP.get(ElytronDescriptionConstants.ALIAS).set("TestKeyTwo");
-        importOP.get(ElytronDescriptionConstants.KEY).set(SecretKeyUtil.exportSecretKey(testKeyTwo));
+        importOP.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store");
+        importOP.get(ClientConstants.OP).set(ElytronCommonConstants.IMPORT_SECRET_KEY);
+        importOP.get(ElytronCommonConstants.ALIAS).set("TestKeyTwo");
+        importOP.get(ElytronCommonConstants.KEY).set(SecretKeyUtil.exportSecretKey(testKeyTwo));
 
         assertSuccess(services.executeOperation(importOP));
 
           // Test read-aliases
-        testExpectedAliases(services, ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store", "testkeyone", "testkeytwo");
+        testExpectedAliases(services, ElytronCommonConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store", "testkeyone", "testkeytwo");
 
         // Define an expression=encryption resource with three resolvers (one for each key and one for a missing key)
         add = new ModelNode();
-        add.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION);
+        add.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.EXPRESSION, ElytronCommonConstants.ENCRYPTION);
         add.get(ClientConstants.OP).set(ClientConstants.ADD);
 
         ModelNode resolvers = new ModelNode();
         resolvers.add(resolver("ResolverOne", "my-test-store", "testkeyone"));
         resolvers.add(resolver("ResolverTwo", "my-test-store", "testkeytwo"));
         resolvers.add(resolver("ResolverThree", "my-test-store", "testkeythree"));
-        add.get(ElytronDescriptionConstants.RESOLVERS).set(resolvers);
+        add.get(ElytronCommonConstants.RESOLVERS).set(resolvers);
 
-        add.get(ElytronDescriptionConstants.DEFAULT_RESOLVER).set("ResolverTwo");
+        add.get(ElytronCommonConstants.DEFAULT_RESOLVER).set("ResolverTwo");
 
         assertSuccess(services.executeOperation(add));
 
@@ -270,18 +270,18 @@ public class ExpressionResolutionTestCase extends AbstractElytronSubsystemBaseTe
 
     private static void testCreateExpression(KernelServices services, SecretKey secretKey, String resolver) throws Exception {
         ModelNode createExpression = new ModelNode();
-        createExpression.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION);
-        createExpression.get(ClientConstants.OP).set(ElytronDescriptionConstants.CREATE_EXPRESSION);
+        createExpression.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.EXPRESSION, ElytronCommonConstants.ENCRYPTION);
+        createExpression.get(ClientConstants.OP).set(ElytronCommonConstants.CREATE_EXPRESSION);
         if (resolver != null) {
-            createExpression.get(ElytronDescriptionConstants.RESOLVER).set(resolver);
+            createExpression.get(ElytronCommonConstants.RESOLVER).set(resolver);
         }
-        createExpression.get(ElytronDescriptionConstants.CLEAR_TEXT).set(CLEAR_TEXT);
+        createExpression.get(ElytronCommonConstants.CLEAR_TEXT).set(CLEAR_TEXT);
 
         ModelNode result = services.executeOperation(createExpression);
 
         if (secretKey != null) {
             assertSuccess(result);
-            String expression = result.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.EXPRESSION).asString();
+            String expression = result.get(ClientConstants.RESULT).get(ElytronCommonConstants.EXPRESSION).asString();
 
             String expectedPrefix = resolver != null ? "${ENC::" + resolver + ":" : "${ENC::";
             assertTrue("Expected Prefix", expression.startsWith(expectedPrefix));
@@ -298,9 +298,9 @@ public class ExpressionResolutionTestCase extends AbstractElytronSubsystemBaseTe
 
     private static ModelNode resolver(final String name, final String credentialStore, final String secretKey) {
         ModelNode resolver = new ModelNode();
-        resolver.get(ElytronDescriptionConstants.NAME).set(name);
-        resolver.get(ElytronDescriptionConstants.CREDENTIAL_STORE).set(credentialStore);
-        resolver.get(ElytronDescriptionConstants.SECRET_KEY).set(secretKey);
+        resolver.get(ElytronCommonConstants.NAME).set(name);
+        resolver.get(ElytronCommonConstants.CREDENTIAL_STORE).set(credentialStore);
+        resolver.get(ElytronCommonConstants.SECRET_KEY).set(secretKey);
         return resolver;
     }
     private static ModelNode assertSuccess(ModelNode response) {
@@ -346,14 +346,14 @@ public class ExpressionResolutionTestCase extends AbstractElytronSubsystemBaseTe
 
         // Create an expression=encryption with 3 resolvers, one for each key.
         ModelNode addEE = new ModelNode();
-        addEE.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION);
+        addEE.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.EXPRESSION, ElytronCommonConstants.ENCRYPTION);
         addEE.get(ClientConstants.OP).set(ClientConstants.ADD);
 
         ModelNode resolvers = new ModelNode();
         resolvers.add(resolver("ResolverOne", "store-one", "key"));
         resolvers.add(resolver("ResolverTwo", "store-two", "key"));
         resolvers.add(resolver("ResolverThree", "store-three", "key"));
-        addEE.get(ElytronDescriptionConstants.RESOLVERS).set(resolvers);
+        addEE.get(ElytronCommonConstants.RESOLVERS).set(resolvers);
         steps.add(addEE);
 
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXml(emptySubsystemXml()).build();
@@ -382,9 +382,9 @@ public class ExpressionResolutionTestCase extends AbstractElytronSubsystemBaseTe
         }
 
         ModelNode add = new ModelNode();
-        add.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.CREDENTIAL_STORE, storeName);
+        add.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.CREDENTIAL_STORE, storeName);
         add.get(ClientConstants.OP).set(ClientConstants.ADD);
-        add.get(ElytronDescriptionConstants.PATH).set(path);
+        add.get(ElytronCommonConstants.PATH).set(path);
         add.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set(clearPassword);
 
         steps.add(add);

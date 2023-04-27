@@ -17,8 +17,8 @@
  */
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 
@@ -49,7 +49,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
-import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
+import org.wildfly.extension.elytron._private.ElytronCommonMessages;
 import org.wildfly.security.auth.realm.CacheableSecurityRealm;
 import org.wildfly.security.auth.realm.CachingModifiableSecurityRealm;
 import org.wildfly.security.auth.realm.CachingSecurityRealm;
@@ -65,21 +65,21 @@ import org.wildfly.security.cache.RealmIdentityCache;
  */
 class CachingRealmDefinition extends SimpleResourceDefinition {
 
-    static final ServiceUtil<SecurityRealm> REALM_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_REALM_RUNTIME_CAPABILITY, ElytronDescriptionConstants.CACHING_REALM, SecurityRealm.class);
+    static final ServiceUtil<SecurityRealm> REALM_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_REALM_RUNTIME_CAPABILITY, ElytronCommonConstants.CACHING_REALM, SecurityRealm.class);
 
-    static final SimpleAttributeDefinition REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM, ModelType.STRING, false)
+    static final SimpleAttributeDefinition REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REALM, ModelType.STRING, false)
             .setMinSize(1)
             .setCapabilityReference(SECURITY_REALM_CAPABILITY)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition MAXIMUM_ENTRIES = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_ENTRIES, ModelType.INT, true)
+    static final SimpleAttributeDefinition MAXIMUM_ENTRIES = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MAXIMUM_ENTRIES, ModelType.INT, true)
             .setDefaultValue(new ModelNode(16))
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition MAXIMUM_AGE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_AGE, ModelType.LONG, true)
+    static final SimpleAttributeDefinition MAXIMUM_AGE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MAXIMUM_AGE, ModelType.LONG, true)
             .setDefaultValue(new ModelNode(-1L))
             .setMinSize(1)
             .setRestartAllServices()
@@ -91,7 +91,7 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_REALM_RUNTIME_CAPABILITY);
 
     CachingRealmDefinition() {
-        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.CACHING_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.CACHING_REALM))
+        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.CACHING_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.CACHING_REALM))
             .setAddHandler(ADD)
             .setRemoveHandler(REMOVE)
             .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -113,7 +113,7 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
         ClearCacheHandler.register(resourceRegistration, getResourceDescriptionResolver());
     }
 
-    private static class RealmAddHandler extends BaseAddHandler {
+    private static class RealmAddHandler extends ElytronCommonBaseAddHandler {
 
         private RealmAddHandler() {
             super(SECURITY_REALM_RUNTIME_CAPABILITY, ATTRIBUTES);
@@ -150,7 +150,7 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
                     return new CachingSecurityRealm(cacheableRealm, cache);
                 }
 
-                throw ElytronSubsystemMessages.ROOT_LOGGER.realmDoesNotSupportCache(realmName);
+                throw ElytronCommonMessages.ROOT_LOGGER.realmDoesNotSupportCache(realmName);
             });
         }
 
@@ -169,7 +169,7 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
     private static class ClearCacheHandler extends ElytronRuntimeOnlyHandler {
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
-            resourceRegistration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.CLEAR_CACHE, descriptionResolver)
+            resourceRegistration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ElytronCommonConstants.CLEAR_CACHE, descriptionResolver)
                         .setRuntimeOnly()
                         .build()
                     , new CachingRealmDefinition.ClearCacheHandler());

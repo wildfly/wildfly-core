@@ -49,43 +49,43 @@ import javax.security.auth.callback.CallbackHandler;
 import java.io.File;
 import java.security.PrivilegedExceptionAction;
 
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
-import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
 
 /**
  * A {@link ResourceDefinition} for a {@link SecurityRealm} backed by a JAAS LoginContext.
  */
 public class JaasRealmDefinition extends SimpleResourceDefinition {
 
-    private static final SimpleAttributeDefinition ENTRY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENTRY, ModelType.STRING, false)
+    private static final SimpleAttributeDefinition ENTRY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ENTRY, ModelType.STRING, false)
             .setRequired(true)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATH, FileAttributeDefinitions.PATH)
-            .setAttributeGroup(ElytronDescriptionConstants.FILE)
+    static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PATH, FileAttributeDefinitions.PATH)
+            .setAttributeGroup(ElytronCommonConstants.FILE)
             .setRequired(false)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition RELATIVE_TO = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RELATIVE_TO, FileAttributeDefinitions.RELATIVE_TO)
-            .setAttributeGroup(ElytronDescriptionConstants.FILE)
+    static final SimpleAttributeDefinition RELATIVE_TO = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.RELATIVE_TO, FileAttributeDefinitions.RELATIVE_TO)
+            .setAttributeGroup(ElytronCommonConstants.FILE)
             .setRestartAllServices()
-            .setRequires(ElytronDescriptionConstants.PATH)
+            .setRequires(ElytronCommonConstants.PATH)
             .build();
 
-    static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODULE, ModelType.STRING, false)
+    static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MODULE, ModelType.STRING, false)
             .setRequired(false)
             .setRestartAllServices()
             .build();
 
-    private static final SimpleAttributeDefinition CALLBACK_HANDLER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CALLBACK_HANDLER, ModelType.STRING, true)
+    private static final SimpleAttributeDefinition CALLBACK_HANDLER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CALLBACK_HANDLER, ModelType.STRING, true)
             .setRequired(false)
             .setRestartAllServices()
             .build();
@@ -96,7 +96,7 @@ public class JaasRealmDefinition extends SimpleResourceDefinition {
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_REALM_RUNTIME_CAPABILITY);
 
     JaasRealmDefinition() {
-        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.JAAS_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.JAAS_REALM))
+        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.JAAS_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.JAAS_REALM))
                 .setAddHandler(ADD)
                 .setRemoveHandler(REMOVE)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -112,7 +112,7 @@ public class JaasRealmDefinition extends SimpleResourceDefinition {
         }
     }
 
-    private static class RealmAddHandler extends BaseAddHandler {
+    private static class RealmAddHandler extends ElytronCommonBaseAddHandler {
 
         private RealmAddHandler() {
             super(SECURITY_REALM_RUNTIME_CAPABILITY, ATTRIBUTES);

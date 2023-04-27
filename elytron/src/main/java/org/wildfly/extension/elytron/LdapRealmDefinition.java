@@ -18,15 +18,15 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.DIR_CONTEXT_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.DIR_CONTEXT_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BASE64;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HEX;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
-import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.BASE64;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.HEX;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.UTF_8;
+import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -83,63 +83,63 @@ import org.wildfly.security.password.spec.Encoding;
 class LdapRealmDefinition extends SimpleResourceDefinition {
 
     static class AttributeMappingObjectDefinition {
-        static final SimpleAttributeDefinition FROM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FROM, ModelType.STRING, true)
+        static final SimpleAttributeDefinition FROM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.FROM, ModelType.STRING, true)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition TO = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TO, ModelType.STRING, true)
+        static final SimpleAttributeDefinition TO = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.TO, ModelType.STRING, true)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition REFERENCE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REFERENCE, ModelType.STRING, true)
-                .setAlternatives(ElytronDescriptionConstants.FILTER)
+        static final SimpleAttributeDefinition REFERENCE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REFERENCE, ModelType.STRING, true)
+                .setAlternatives(ElytronCommonConstants.FILTER)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FILTER, ModelType.STRING, true)
-                .setRequires(ElytronDescriptionConstants.TO)
-                .setAlternatives(ElytronDescriptionConstants.REFERENCE)
+        static final SimpleAttributeDefinition FILTER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.FILTER, ModelType.STRING, true)
+                .setRequires(ElytronCommonConstants.TO)
+                .setAlternatives(ElytronCommonConstants.REFERENCE)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition FILTER_BASE_DN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FILTER_BASE_DN, ModelType.STRING, true)
-                .setRequires(ElytronDescriptionConstants.FILTER)
+        static final SimpleAttributeDefinition FILTER_BASE_DN = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.FILTER_BASE_DN, ModelType.STRING, true)
+                .setRequires(ElytronCommonConstants.FILTER)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition RECURSIVE_SEARCH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_RECURSIVE, ModelType.BOOLEAN, true)
-                .setRequires(ElytronDescriptionConstants.FILTER)
+        static final SimpleAttributeDefinition RECURSIVE_SEARCH = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SEARCH_RECURSIVE, ModelType.BOOLEAN, true)
+                .setRequires(ElytronCommonConstants.FILTER)
                 .setDefaultValue(ModelNode.TRUE)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition ROLE_RECURSION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROLE_RECURSION, ModelType.INT, true)
+        static final SimpleAttributeDefinition ROLE_RECURSION = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ROLE_RECURSION, ModelType.INT, true)
                 .setDefaultValue(ModelNode.ZERO)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition ROLE_RECURSION_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROLE_RECURSION_NAME, ModelType.STRING, true)
+        static final SimpleAttributeDefinition ROLE_RECURSION_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ROLE_RECURSION_NAME, ModelType.STRING, true)
                 .setDefaultValue(new ModelNode("cn"))
-                .setRequires(ElytronDescriptionConstants.ROLE_RECURSION)
+                .setRequires(ElytronCommonConstants.ROLE_RECURSION)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition EXTRACT_RDN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.EXTRACT_RDN, ModelType.STRING, true)
+        static final SimpleAttributeDefinition EXTRACT_RDN = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.EXTRACT_RDN, ModelType.STRING, true)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
         static final SimpleAttributeDefinition[] ATTRIBUTES = new SimpleAttributeDefinition[] {FROM, TO, REFERENCE, FILTER, FILTER_BASE_DN, RECURSIVE_SEARCH, ROLE_RECURSION, ROLE_RECURSION_NAME, EXTRACT_RDN};
 
-        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.ATTRIBUTE, ATTRIBUTES)
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.ATTRIBUTE, ATTRIBUTES)
                 .build();
     }
 
@@ -149,18 +149,18 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
 
     static class UserPasswordCredentialMappingObjectDefinition implements CredentialMappingObjectDefinition {
 
-        static final SimpleAttributeDefinition FROM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FROM, ModelType.STRING, false)
+        static final SimpleAttributeDefinition FROM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.FROM, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition WRITABLE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.WRITABLE, ModelType.BOOLEAN, true)
+        static final SimpleAttributeDefinition WRITABLE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.WRITABLE, ModelType.BOOLEAN, true)
                 .setDefaultValue(ModelNode.FALSE)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition VERIFIABLE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VERIFIABLE, ModelType.BOOLEAN, true)
+        static final SimpleAttributeDefinition VERIFIABLE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.VERIFIABLE, ModelType.BOOLEAN, true)
                 .setDefaultValue(ModelNode.TRUE)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
@@ -168,7 +168,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
 
         static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {FROM, WRITABLE, VERIFIABLE};
 
-        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.USER_PASSWORD_MAPPER, ATTRIBUTES)
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.USER_PASSWORD_MAPPER, ATTRIBUTES)
                 .build();
 
         @Override
@@ -196,29 +196,29 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
 
     static class OtpCredentialMappingObjectDefinition implements CredentialMappingObjectDefinition {
 
-        static final SimpleAttributeDefinition ALGORITHM_FROM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM_FROM, ModelType.STRING, false)
+        static final SimpleAttributeDefinition ALGORITHM_FROM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALGORITHM_FROM, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition HASH_FROM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_FROM, ModelType.STRING, false)
+        static final SimpleAttributeDefinition HASH_FROM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HASH_FROM, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition SEED_FROM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEED_FROM, ModelType.STRING, false)
+        static final SimpleAttributeDefinition SEED_FROM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SEED_FROM, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition SEQUENCE_FROM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEQUENCE_FROM, ModelType.STRING, false)
+        static final SimpleAttributeDefinition SEQUENCE_FROM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SEQUENCE_FROM, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
         static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {ALGORITHM_FROM, HASH_FROM, SEED_FROM, SEQUENCE_FROM};
 
-        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.OTP_CREDENTIAL_MAPPER, ATTRIBUTES)
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.OTP_CREDENTIAL_MAPPER, ATTRIBUTES)
                 .build();
 
         @Override
@@ -242,35 +242,35 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
 
     static class X509CredentialMappingObjectDefinition implements CredentialMappingObjectDefinition {
 
-        static final SimpleAttributeDefinition DIGEST_FROM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIGEST_FROM, ModelType.STRING, true)
+        static final SimpleAttributeDefinition DIGEST_FROM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DIGEST_FROM, ModelType.STRING, true)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition DIGEST_ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIGEST_ALGORITHM, ModelType.STRING, true)
+        static final SimpleAttributeDefinition DIGEST_ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DIGEST_ALGORITHM, ModelType.STRING, true)
                 .setAllowExpression(true)
                 .setDefaultValue(new ModelNode("SHA-1"))
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition CERTIFICATE_FROM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_FROM, ModelType.STRING, true)
+        static final SimpleAttributeDefinition CERTIFICATE_FROM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CERTIFICATE_FROM, ModelType.STRING, true)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition SERIAL_NUMBER_FROM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SERIAL_NUMBER_FROM, ModelType.STRING, true)
+        static final SimpleAttributeDefinition SERIAL_NUMBER_FROM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SERIAL_NUMBER_FROM, ModelType.STRING, true)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition SUBJECT_DN_FROM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SUBJECT_DN_FROM, ModelType.STRING, true)
+        static final SimpleAttributeDefinition SUBJECT_DN_FROM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SUBJECT_DN_FROM, ModelType.STRING, true)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
         static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {DIGEST_FROM, DIGEST_ALGORITHM, CERTIFICATE_FROM, SERIAL_NUMBER_FROM, SUBJECT_DN_FROM};
 
-        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.X509_CREDENTIAL_MAPPER, ATTRIBUTES)
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.X509_CREDENTIAL_MAPPER, ATTRIBUTES)
                 .build();
 
         @Override
@@ -299,12 +299,12 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
     }
 
     static class NewIdentityAttributeObjectDefinition {
-        static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
+        static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.NAME, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final StringListAttributeDefinition VALUE = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.VALUE)
+        static final StringListAttributeDefinition VALUE = new StringListAttributeDefinition.Builder(ElytronCommonConstants.VALUE)
                 .setAllowExpression(true)
                 .setMinSize(1)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
@@ -312,52 +312,52 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
 
         static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {NAME, VALUE};
 
-        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.ATTRIBUTE, ATTRIBUTES)
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.ATTRIBUTE, ATTRIBUTES)
                 .build();
     }
 
     static class IdentityMappingObjectDefinition {
 
-        static final SimpleAttributeDefinition RDN_IDENTIFIER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RDN_IDENTIFIER, ModelType.STRING, false)
+        static final SimpleAttributeDefinition RDN_IDENTIFIER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.RDN_IDENTIFIER, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition USE_RECURSIVE_SEARCH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.USE_RECURSIVE_SEARCH, ModelType.BOOLEAN, true)
-                .setRequires(ElytronDescriptionConstants.SEARCH_BASE_DN)
+        static final SimpleAttributeDefinition USE_RECURSIVE_SEARCH = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.USE_RECURSIVE_SEARCH, ModelType.BOOLEAN, true)
+                .setRequires(ElytronCommonConstants.SEARCH_BASE_DN)
                 .setDefaultValue(ModelNode.FALSE)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition SEARCH_BASE_DN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_BASE_DN, ModelType.STRING, true)
-                .setRequires(ElytronDescriptionConstants.RDN_IDENTIFIER)
+        static final SimpleAttributeDefinition SEARCH_BASE_DN = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SEARCH_BASE_DN, ModelType.STRING, true)
+                .setRequires(ElytronCommonConstants.RDN_IDENTIFIER)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final ObjectListAttributeDefinition ATTRIBUTE_MAPPINGS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.ATTRIBUTE_MAPPING, AttributeMappingObjectDefinition.OBJECT_DEFINITION)
+        static final ObjectListAttributeDefinition ATTRIBUTE_MAPPINGS = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.ATTRIBUTE_MAPPING, AttributeMappingObjectDefinition.OBJECT_DEFINITION)
                 .setRequired(false)
-                .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE)
+                .setAttributeGroup(ElytronCommonConstants.ATTRIBUTE)
                 .setAllowDuplicates(true)
                 .build();
 
-        static final ObjectListAttributeDefinition NEW_IDENTITY_ATTRIBUTES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.NEW_IDENTITY_ATTRIBUTES, NewIdentityAttributeObjectDefinition.OBJECT_DEFINITION)
+        static final ObjectListAttributeDefinition NEW_IDENTITY_ATTRIBUTES = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.NEW_IDENTITY_ATTRIBUTES, NewIdentityAttributeObjectDefinition.OBJECT_DEFINITION)
                 .setRequired(false)
                 .setAllowDuplicates(true)
                 .build();
 
-        static final SimpleAttributeDefinition FILTER_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FILTER_NAME, ModelType.STRING, true)
+        static final SimpleAttributeDefinition FILTER_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.FILTER_NAME, ModelType.STRING, true)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition ITERATOR_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ITERATOR_FILTER, ModelType.STRING, true)
+        static final SimpleAttributeDefinition ITERATOR_FILTER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ITERATOR_FILTER, ModelType.STRING, true)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition NEW_IDENTITY_PARENT_DN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NEW_IDENTITY_PARENT_DN, ModelType.STRING, true)
+        static final SimpleAttributeDefinition NEW_IDENTITY_PARENT_DN = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.NEW_IDENTITY_PARENT_DN, ModelType.STRING, true)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -368,7 +368,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
                 FILTER_NAME, ITERATOR_FILTER, NEW_IDENTITY_PARENT_DN, NEW_IDENTITY_ATTRIBUTES
         };
 
-        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.IDENTITY_MAPPING,
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.IDENTITY_MAPPING,
                     RDN_IDENTIFIER, USE_RECURSIVE_SEARCH, SEARCH_BASE_DN,
                     ATTRIBUTE_MAPPINGS,
                     FILTER_NAME, ITERATOR_FILTER,
@@ -382,33 +382,33 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
                 .build();
     }
 
-    static final SimpleAttributeDefinition DIR_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIR_CONTEXT, ModelType.STRING, false)
+    static final SimpleAttributeDefinition DIR_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DIR_CONTEXT, ModelType.STRING, false)
             .setAllowExpression(false)
             .setRestartAllServices()
             .setCapabilityReference(DIR_CONTEXT_CAPABILITY, SECURITY_REALM_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition DIRECT_VERIFICATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIRECT_VERIFICATION, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition DIRECT_VERIFICATION = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DIRECT_VERIFICATION, ModelType.BOOLEAN, true)
         .setDefaultValue(ModelNode.FALSE)
         .setAllowExpression(true)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition ALLOW_BLANK_PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALLOW_BLANK_PASSWORD, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition ALLOW_BLANK_PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALLOW_BLANK_PASSWORD, ModelType.BOOLEAN, true)
             .setDefaultValue(ModelNode.FALSE)
-            .setRequires(ElytronDescriptionConstants.DIRECT_VERIFICATION)
+            .setRequires(ElytronCommonConstants.DIRECT_VERIFICATION)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING, true)
+    static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HASH_ENCODING, ModelType.STRING, true)
             .setDefaultValue(new ModelNode(BASE64))
             .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition HASH_CHARSET = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_CHARSET, ModelType.STRING, true)
+    static final SimpleAttributeDefinition HASH_CHARSET = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HASH_CHARSET, ModelType.STRING, true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setValidator(new CharsetValidator())
             .setDefaultValue(new ModelNode(UTF_8))
@@ -423,7 +423,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
     private static final OperationStepHandler WRITE = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
 
     LdapRealmDefinition() {
-        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.LDAP_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.LDAP_REALM))
+        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.LDAP_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.LDAP_REALM))
             .setAddHandler(ADD)
             .setRemoveHandler(REMOVE)
             .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -438,7 +438,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
         }
     }
 
-    private static class RealmAddHandler extends BaseAddHandler {
+    private static class RealmAddHandler extends ElytronCommonBaseAddHandler {
 
         private RealmAddHandler() {
             super(new HashSet<>(Arrays.asList(MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY)), ATTRIBUTES);

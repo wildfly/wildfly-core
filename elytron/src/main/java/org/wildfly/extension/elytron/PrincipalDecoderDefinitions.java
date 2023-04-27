@@ -17,8 +17,8 @@
  */
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_DECODER_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.PRINCIPAL_DECODER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
-import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
+import org.wildfly.extension.elytron._private.ElytronCommonMessages;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.security.asn1.OidsUtil;
 import org.wildfly.security.auth.server.PrincipalDecoder;
@@ -64,84 +64,84 @@ import org.wildfly.security.x500.principal.X500AttributePrincipalDecoder;
  */
 class PrincipalDecoderDefinitions {
 
-    static final SimpleAttributeDefinition OID = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.OID, ModelType.STRING, false)
+    static final SimpleAttributeDefinition OID = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.OID, ModelType.STRING, false)
         .setAllowExpression(true)
         .setMinSize(1)
-        .setAlternatives(ElytronDescriptionConstants.ATTRIBUTE_NAME)
+        .setAlternatives(ElytronCommonConstants.ATTRIBUTE_NAME)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition ATTRIBUTE_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ATTRIBUTE_NAME, ModelType.STRING, false)
+    static final SimpleAttributeDefinition ATTRIBUTE_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ATTRIBUTE_NAME, ModelType.STRING, false)
         .setAllowExpression(true)
         .setMinSize(1)
-        .setAlternatives(ElytronDescriptionConstants.OID)
+        .setAlternatives(ElytronCommonConstants.OID)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition JOINER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.JOINER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition JOINER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.JOINER, ModelType.STRING, true)
         .setAllowExpression(true)
         .setMinSize(0)
         .setDefaultValue(new ModelNode("."))
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition START_SEGMENT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.START_SEGMENT, ModelType.INT, true)
+    static final SimpleAttributeDefinition START_SEGMENT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.START_SEGMENT, ModelType.INT, true)
         .setAllowExpression(true)
         .setDefaultValue(ModelNode.ZERO)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition MAXIMUM_SEGMENTS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_SEGMENTS, ModelType.INT, true)
+    static final SimpleAttributeDefinition MAXIMUM_SEGMENTS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MAXIMUM_SEGMENTS, ModelType.INT, true)
         .setAllowExpression(true)
         .setDefaultValue(new ModelNode(Integer.MAX_VALUE))
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition REVERSE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REVERSE, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition REVERSE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REVERSE, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
         .setDefaultValue(ModelNode.FALSE)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition CONVERT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CONVERT, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition CONVERT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CONVERT, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 
-    static final StringListAttributeDefinition REQUIRED_OIDS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.REQUIRED_OIDS)
+    static final StringListAttributeDefinition REQUIRED_OIDS = new StringListAttributeDefinition.Builder(ElytronCommonConstants.REQUIRED_OIDS)
         .setRequired(false)
         .setAllowExpression(true)
         .setMinSize(1)
         .setRestartAllServices()
         .build();
 
-    static final StringListAttributeDefinition REQUIRED_ATTRIBUTES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.REQUIRED_ATTRIBUTES)
+    static final StringListAttributeDefinition REQUIRED_ATTRIBUTES = new StringListAttributeDefinition.Builder(ElytronCommonConstants.REQUIRED_ATTRIBUTES)
         .setRequired(false)
         .setMinSize(1)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition CONSTANT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CONSTANT, ModelType.STRING, false)
+    static final SimpleAttributeDefinition CONSTANT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CONSTANT, ModelType.STRING, false)
         .setAllowExpression(true)
         .setMinSize(1)
         .setRestartAllServices()
         .build();
 
-    static final StringListAttributeDefinition PRINCIPAL_DECODERS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.PRINCIPAL_DECODERS)
+    static final StringListAttributeDefinition PRINCIPAL_DECODERS = new StringListAttributeDefinition.Builder(ElytronCommonConstants.PRINCIPAL_DECODERS)
         .setMinSize(2)
         .setRequired(true)
         .setCapabilityReference(PRINCIPAL_DECODER_RUNTIME_CAPABILITY.getName(), PRINCIPAL_DECODER_RUNTIME_CAPABILITY.getName())
             .setAttributeParser(AttributeParsers.STRING_LIST_NAMED_ELEMENT)
             .setAttributeMarshaller(AttributeMarshallers.STRING_LIST_NAMED_ELEMENT)
-            .setXmlName(ElytronDescriptionConstants.PRINCIPAL_DECODER)
+            .setXmlName(ElytronCommonConstants.PRINCIPAL_DECODER)
         .setRestartAllServices()
         .build();
 
-    private static final AggregateComponentDefinition<PrincipalDecoder> AGGREGATE_PRINCIPAL_DECODER = AggregateComponentDefinition.create(PrincipalDecoder.class,
-            ElytronDescriptionConstants.AGGREGATE_PRINCIPAL_DECODER, ElytronDescriptionConstants.PRINCIPAL_DECODERS, PRINCIPAL_DECODER_RUNTIME_CAPABILITY, PrincipalDecoder::aggregate);
+    private static final ElytronCommonAggregateComponentDefinition<PrincipalDecoder> AGGREGATE_PRINCIPAL_DECODER = ElytronCommonAggregateComponentDefinition.create(PrincipalDecoder.class,
+            ElytronCommonConstants.AGGREGATE_PRINCIPAL_DECODER, ElytronCommonConstants.PRINCIPAL_DECODERS, PRINCIPAL_DECODER_RUNTIME_CAPABILITY, PrincipalDecoder::aggregate);
 
-    static AggregateComponentDefinition<PrincipalDecoder> getAggregatePrincipalDecoderDefinition() {
+    static ElytronCommonAggregateComponentDefinition<PrincipalDecoder> getAggregatePrincipalDecoderDefinition() {
         return AGGREGATE_PRINCIPAL_DECODER;
     }
 
@@ -157,7 +157,7 @@ class PrincipalDecoderDefinitions {
 
         };
 
-        return new PrincipalDecoderResourceDefinition(ElytronDescriptionConstants.CONSTANT_PRINCIPAL_DECODER, add, attributes);
+        return new PrincipalDecoderResourceDefinition(ElytronCommonConstants.CONSTANT_PRINCIPAL_DECODER, add, attributes);
     }
 
     static ResourceDefinition getX500AttributePrincipalDecoder() {
@@ -175,10 +175,10 @@ class PrincipalDecoderDefinitions {
                 } else if (attributeNode.isDefined()) {
                     oid = OidsUtil.attributeNameToOid(OidsUtil.Category.RDN, attributeNode.asString());
                     if (oid == null) {
-                        throw ElytronSubsystemMessages.ROOT_LOGGER.unableToObtainOidForX500Attribute(attributeNode.asString());
+                        throw ElytronCommonMessages.ROOT_LOGGER.unableToObtainOidForX500Attribute(attributeNode.asString());
                     }
                 } else {
-                    throw ElytronSubsystemMessages.ROOT_LOGGER.x500AttributeMustBeDefined();
+                    throw ElytronCommonMessages.ROOT_LOGGER.x500AttributeMustBeDefined();
                 }
 
                 final String joiner = JOINER.resolveModelAttribute(context, model).asString();
@@ -199,7 +199,7 @@ class PrincipalDecoderDefinitions {
 
         };
 
-        return new PrincipalDecoderResourceDefinition(ElytronDescriptionConstants.X500_ATTRIBUTE_PRINCIPAL_DECODER, add, attributes);
+        return new PrincipalDecoderResourceDefinition(ElytronCommonConstants.X500_ATTRIBUTE_PRINCIPAL_DECODER, add, attributes);
     }
 
     static ResourceDefinition getConcatenatingPrincipalDecoder() {
@@ -232,7 +232,7 @@ class PrincipalDecoderDefinitions {
 
         };
 
-        return new PrincipalDecoderResourceDefinition(ElytronDescriptionConstants.CONCATENATING_PRINCIPAL_DECODER, add, attributes);
+        return new PrincipalDecoderResourceDefinition(ElytronCommonConstants.CONCATENATING_PRINCIPAL_DECODER, add, attributes);
     }
 
     private static class PrincipalDecoderResourceDefinition extends SimpleResourceDefinition {
@@ -264,7 +264,7 @@ class PrincipalDecoderDefinitions {
 
     }
 
-    private static class PrincipalDecoderAddHandler extends BaseAddHandler {
+    private static class PrincipalDecoderAddHandler extends ElytronCommonBaseAddHandler {
 
         private static final Set<RuntimeCapability> CAPABILITIES;
 

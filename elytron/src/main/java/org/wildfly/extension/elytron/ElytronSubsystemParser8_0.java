@@ -18,8 +18,8 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_DOMAIN;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_DOMAINS;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.SECURITY_DOMAIN;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.SECURITY_DOMAINS;
 
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;

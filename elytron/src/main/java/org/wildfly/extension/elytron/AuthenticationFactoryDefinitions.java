@@ -19,16 +19,16 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.wildfly.extension.elytron.AvailableMechanismsRuntimeResource.wrap;
-import static org.wildfly.extension.elytron.Capabilities.HTTP_AUTHENTICATION_FACTORY_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.HTTP_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.REALM_MAPPER_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SASL_SERVER_FACTORY_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.HTTP_AUTHENTICATION_FACTORY_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.HTTP_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.PRINCIPAL_TRANSFORMER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.REALM_MAPPER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SASL_SERVER_FACTORY_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_DOMAIN_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_FACTORY_CREDENTIAL_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 
@@ -101,70 +101,70 @@ import org.wildfly.security.sasl.util.SortedMechanismSaslServerFactory;
  */
 class AuthenticationFactoryDefinitions {
 
-    static final SimpleAttributeDefinition BASE_SECURITY_DOMAIN_REF = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECURITY_DOMAIN, ModelType.STRING, false)
+    static final SimpleAttributeDefinition BASE_SECURITY_DOMAIN_REF = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SECURITY_DOMAIN, ModelType.STRING, false)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition HTTP_SERVER_MECHANISM_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HTTP_SERVER_MECHANISM_FACTORY, ModelType.STRING, false)
+    static final SimpleAttributeDefinition HTTP_SERVER_MECHANISM_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HTTP_SERVER_MECHANISM_FACTORY, ModelType.STRING, false)
             .setMinSize(1)
             .setRestartAllServices()
             .setCapabilityReference(HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY, HTTP_AUTHENTICATION_FACTORY_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition SASL_SERVER_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SASL_SERVER_FACTORY, ModelType.STRING, false)
+    static final SimpleAttributeDefinition SASL_SERVER_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SASL_SERVER_FACTORY, ModelType.STRING, false)
             .setMinSize(1)
             .setRestartAllServices()
             .setCapabilityReference(SASL_SERVER_FACTORY_CAPABILITY, SASL_AUTHENTICATION_FACTORY_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition MECHANISM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MECHANISM_NAME, ModelType.STRING, true)
+    static final SimpleAttributeDefinition MECHANISM_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MECHANISM_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .setAttributeGroup(ElytronDescriptionConstants.SELECTION_CRITERIA)
+            .setAttributeGroup(ElytronCommonConstants.SELECTION_CRITERIA)
             .build();
 
-    static final SimpleAttributeDefinition HOST_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HOST_NAME, ModelType.STRING, true)
+    static final SimpleAttributeDefinition HOST_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HOST_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .setAttributeGroup(ElytronDescriptionConstants.SELECTION_CRITERIA)
+            .setAttributeGroup(ElytronCommonConstants.SELECTION_CRITERIA)
             .build();
 
-    static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROTOCOL, ModelType.STRING, true)
+    static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PROTOCOL, ModelType.STRING, true)
             .setAllowExpression(true)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .setAttributeGroup(ElytronDescriptionConstants.SELECTION_CRITERIA)
+            .setAttributeGroup(ElytronCommonConstants.SELECTION_CRITERIA)
             .build();
 
-    static final SimpleAttributeDefinition BASE_CREDENTIAL_SECURITY_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CREDENTIAL_SECURITY_FACTORY, ModelType.STRING, true)
+    static final SimpleAttributeDefinition BASE_CREDENTIAL_SECURITY_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CREDENTIAL_SECURITY_FACTORY, ModelType.STRING, true)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition BASE_PRE_REALM_PRINCIPAL_TRANSFORMER= new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRE_REALM_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition BASE_PRE_REALM_PRINCIPAL_TRANSFORMER= new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PRE_REALM_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition BASE_POST_REALM_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.POST_REALM_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition BASE_POST_REALM_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.POST_REALM_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition BASE_FINAL_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FINAL_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition BASE_FINAL_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.FINAL_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition BASE_REALM_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM_MAPPER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition BASE_REALM_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REALM_MAPPER, ModelType.STRING, true)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM_NAME, ModelType.STRING, false)
+    static final SimpleAttributeDefinition REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REALM_NAME, ModelType.STRING, false)
             .setMinSize(1)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
@@ -184,34 +184,34 @@ class AuthenticationFactoryDefinitions {
                 .setCapabilityReference(REALM_MAPPER_CAPABILITY, forCapability)
                 .build();
 
-        ObjectTypeAttributeDefinition mechanismRealmConfiguration = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_REALM_CONFIGURATION, REALM_NAME, preRealmPrincipalTransformerAttribute, postRealmPrincipalTransformerAttribute, finalprincipalTransformerAttribute, realmMapperAttribute)
+        ObjectTypeAttributeDefinition mechanismRealmConfiguration = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.MECHANISM_REALM_CONFIGURATION, REALM_NAME, preRealmPrincipalTransformerAttribute, postRealmPrincipalTransformerAttribute, finalprincipalTransformerAttribute, realmMapperAttribute)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                .setXmlName(ElytronDescriptionConstants.MECHANISM_REALM)
+                .setXmlName(ElytronCommonConstants.MECHANISM_REALM)
                 .build();
 
-        ObjectListAttributeDefinition mechanismRealmConfigurations = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_REALM_CONFIGURATIONS, mechanismRealmConfiguration)
+        ObjectListAttributeDefinition mechanismRealmConfigurations = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.MECHANISM_REALM_CONFIGURATIONS, mechanismRealmConfiguration)
                 .setRequired(false)
                 .setAllowExpression(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
                 .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
-                //.setXmlName(ElytronDescriptionConstants.MECHANISM_REALM)
+                //.setXmlName(ElytronCommonConstants.MECHANISM_REALM)
                 .build();
 
         SimpleAttributeDefinition credentialSecurityFactoryAttribute = new SimpleAttributeDefinitionBuilder(BASE_CREDENTIAL_SECURITY_FACTORY)
                 .setCapabilityReference(SECURITY_FACTORY_CREDENTIAL_CAPABILITY, forCapability)
                 .build();
 
-        ObjectTypeAttributeDefinition mechanismConfiguration = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_CONFIGURATION, MECHANISM_NAME, HOST_NAME, PROTOCOL,
+        ObjectTypeAttributeDefinition mechanismConfiguration = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.MECHANISM_CONFIGURATION, MECHANISM_NAME, HOST_NAME, PROTOCOL,
                 preRealmPrincipalTransformerAttribute, postRealmPrincipalTransformerAttribute, finalprincipalTransformerAttribute, realmMapperAttribute, mechanismRealmConfigurations, credentialSecurityFactoryAttribute)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                .setXmlName(ElytronDescriptionConstants.MECHANISM)
+                .setXmlName(ElytronCommonConstants.MECHANISM)
                 .build();
 
-        return new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_CONFIGURATIONS, mechanismConfiguration)
+        return new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.MECHANISM_CONFIGURATIONS, mechanismConfiguration)
                 .setRequired(false)
                 .setRestartAllServices()
-                .setXmlName(ElytronDescriptionConstants.MECHANISM_CONFIGURATION)
+                .setXmlName(ElytronCommonConstants.MECHANISM_CONFIGURATION)
                 .build();
     }
 
@@ -269,8 +269,8 @@ class AuthenticationFactoryDefinitions {
             injectRealmMapper(BASE_REALM_MAPPER, serviceBuilder, context, currentMechanismConfiguration, resolvedMechanismConfiguration.realmMapper);
             injectSecurityFactory(BASE_CREDENTIAL_SECURITY_FACTORY, serviceBuilder, context, currentMechanismConfiguration, resolvedMechanismConfiguration.securityFactory);
 
-            if (currentMechanismConfiguration.hasDefined(ElytronDescriptionConstants.MECHANISM_REALM_CONFIGURATIONS)) {
-                for (ModelNode currentMechanismRealm : currentMechanismConfiguration.require(ElytronDescriptionConstants.MECHANISM_REALM_CONFIGURATIONS).asList()) {
+            if (currentMechanismConfiguration.hasDefined(ElytronCommonConstants.MECHANISM_REALM_CONFIGURATIONS)) {
+                for (ModelNode currentMechanismRealm : currentMechanismConfiguration.require(ElytronCommonConstants.MECHANISM_REALM_CONFIGURATIONS).asList()) {
                     String realmName = REALM_NAME.resolveModelAttribute(context, currentMechanismRealm).asString();
                     ResolvedMechanismRealmConfiguration resolvedMechanismRealmConfiguration = new ResolvedMechanismRealmConfiguration();
                     injectPrincipalTransformer(BASE_PRE_REALM_PRINCIPAL_TRANSFORMER, serviceBuilder, context, currentMechanismRealm, resolvedMechanismRealmConfiguration.preRealmPrincipalTranformer);
@@ -375,7 +375,7 @@ class AuthenticationFactoryDefinitions {
         AttributeDefinition mechanismConfigurationAttribute = getMechanismConfiguration(HTTP_AUTHENTICATION_FACTORY_CAPABILITY);
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { securityDomainAttribute, HTTP_SERVER_MECHANISM_FACTORY, mechanismConfigurationAttribute };
-        AbstractAddStepHandler add = new BaseAddHandler(HTTP_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY, attributes) {
+        AbstractAddStepHandler add = new ElytronCommonBaseAddHandler(HTTP_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY, attributes) {
 
             @SuppressWarnings("unchecked")
             @Override
@@ -444,7 +444,7 @@ class AuthenticationFactoryDefinitions {
             }
         };
 
-        return wrap(new TrivialResourceDefinition(ElytronDescriptionConstants.HTTP_AUTHENTICATION_FACTORY,
+        return wrap(new ElytronCommonTrivialResourceDefinition(ElytronCommonConstants.HTTP_AUTHENTICATION_FACTORY,
                 add, attributes, HTTP_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY), AuthenticationFactoryDefinitions::getAvailableHttpMechanisms);
     }
 
@@ -471,7 +471,7 @@ class AuthenticationFactoryDefinitions {
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { securityDomainAttribute, SASL_SERVER_FACTORY, mechanismConfigurationAttribute };
 
-        AbstractAddStepHandler add = new TrivialAddHandler<SaslAuthenticationFactory>(SaslAuthenticationFactory.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.PASSIVE, attributes, SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<SaslAuthenticationFactory>(SaslAuthenticationFactory.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.PASSIVE, attributes, SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SaslAuthenticationFactory> getValueSupplier(
@@ -520,7 +520,7 @@ class AuthenticationFactoryDefinitions {
             }
         };
 
-        return wrap(new TrivialResourceDefinition(ElytronDescriptionConstants.SASL_AUTHENTICATION_FACTORY,
+        return wrap(new ElytronCommonTrivialResourceDefinition(ElytronCommonConstants.SASL_AUTHENTICATION_FACTORY,
                 add, attributes, SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY), AuthenticationFactoryDefinitions::getAvailableSaslMechanisms);
     }
 

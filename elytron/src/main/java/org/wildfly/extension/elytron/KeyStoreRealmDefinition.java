@@ -18,9 +18,9 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.KEY_STORE_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.KeyStoreDefinition.KEY_STORE_UTIL;
 
@@ -56,9 +56,9 @@ import org.wildfly.security.auth.server.SecurityRealm;
  */
 class KeyStoreRealmDefinition extends SimpleResourceDefinition {
 
-    static final ServiceUtil<SecurityRealm> REALM_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_REALM_RUNTIME_CAPABILITY, ElytronDescriptionConstants.KEY_STORE_REALM, SecurityRealm.class);
+    static final ServiceUtil<SecurityRealm> REALM_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_REALM_RUNTIME_CAPABILITY, ElytronCommonConstants.KEY_STORE_REALM, SecurityRealm.class);
 
-    static final SimpleAttributeDefinition KEYSTORE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_STORE, ModelType.STRING, false)
+    static final SimpleAttributeDefinition KEYSTORE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.KEY_STORE, ModelType.STRING, false)
         .setMinSize(1)
         .setRestartAllServices()
         .setCapabilityReference(KEY_STORE_CAPABILITY, SECURITY_REALM_CAPABILITY)
@@ -68,7 +68,7 @@ class KeyStoreRealmDefinition extends SimpleResourceDefinition {
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_REALM_RUNTIME_CAPABILITY);
 
     KeyStoreRealmDefinition() {
-        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.KEY_STORE_REALM))
+        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.KEY_STORE_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.KEY_STORE_REALM))
             .setAddHandler(ADD)
             .setRemoveHandler(REMOVE)
             .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -81,7 +81,7 @@ class KeyStoreRealmDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerReadWriteAttribute(KEYSTORE, null, new ElytronReloadRequiredWriteAttributeHandler(KEYSTORE));
     }
 
-    private static class RealmAddHandler extends BaseAddHandler {
+    private static class RealmAddHandler extends ElytronCommonBaseAddHandler {
 
         private RealmAddHandler() {
             super(SECURITY_REALM_RUNTIME_CAPABILITY, KEYSTORE);

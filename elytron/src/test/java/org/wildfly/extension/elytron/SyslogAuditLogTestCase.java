@@ -108,7 +108,7 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
      */
     @Test
     public void testRfc3164SyslogFormat() throws Exception {
-        udpOperation.get(ElytronDescriptionConstants.SYSLOG_FORMAT).set(RFC3164_STRING);
+        udpOperation.get(ElytronCommonConstants.SYSLOG_FORMAT).set(RFC3164_STRING);
         assertSuccess(services.executeOperation(udpOperation));
         verifyUdpMessage(RFC3164_SYSLOG_MESSAGE);
     }
@@ -120,7 +120,7 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
      */
     @Test
     public void testRfc5424SyslogFormat() throws Exception {
-        udpOperation.get(ElytronDescriptionConstants.SYSLOG_FORMAT).set(RFC5424_STRING);
+        udpOperation.get(ElytronCommonConstants.SYSLOG_FORMAT).set(RFC5424_STRING);
         assertSuccess(services.executeOperation(udpOperation));
         verifyUdpMessage(RFC5424_SYSLOG_MESSAGE);
     }
@@ -141,7 +141,7 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
      */
     @Test
     public void testWrongSyslogFormat() {
-        udpOperation.get(ElytronDescriptionConstants.SYSLOG_FORMAT).set(BAD_RFC_STRING);
+        udpOperation.get(ElytronCommonConstants.SYSLOG_FORMAT).set(BAD_RFC_STRING);
         ModelNode response = services.executeOperation(udpOperation);
         assertCorrectError(response, new String[] {"WFLYCTL0158", "RFC1"});
         assertFailed(response);
@@ -152,7 +152,7 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
      */
     @Test
     public void testBadIntegerReconnectAttempts() {
-        udpOperation.get(ElytronDescriptionConstants.RECONNECT_ATTEMPTS).set(BAD_RECONNECT_NUMBER);
+        udpOperation.get(ElytronCommonConstants.RECONNECT_ATTEMPTS).set(BAD_RECONNECT_NUMBER);
         ModelNode response = services.executeOperation(udpOperation);
         assertCorrectError(response, new String[] {"WFLYCTL0117", Integer.toString(BAD_RECONNECT_NUMBER)});
         assertFailed(response);
@@ -163,7 +163,7 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
      */
     @Test
     public void testZeroReconnectAttemptsGoodHost() throws Exception {
-        udpOperation.get(ElytronDescriptionConstants.RECONNECT_ATTEMPTS).set(0);
+        udpOperation.get(ElytronCommonConstants.RECONNECT_ATTEMPTS).set(0);
         assertSuccess(services.executeOperation(udpOperation));
         verifyUdpMessage(RFC5424_SYSLOG_MESSAGE);
     }
@@ -173,7 +173,7 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
      */
     @Test
     public void testNumberedReconnectAttemptsGoodHost() throws Exception {
-        udpOperation.get(ElytronDescriptionConstants.RECONNECT_ATTEMPTS).set(RECONNECT_NUMBER);
+        udpOperation.get(ElytronCommonConstants.RECONNECT_ATTEMPTS).set(RECONNECT_NUMBER);
         assertSuccess(services.executeOperation(udpOperation));
         verifyUdpMessage(RFC5424_SYSLOG_MESSAGE);
     }
@@ -183,7 +183,7 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
      */
     @Test
     public void testInfiniteReconnectAttemptsGoodHost() throws Exception {
-        udpOperation.get(ElytronDescriptionConstants.RECONNECT_ATTEMPTS).set(-1);
+        udpOperation.get(ElytronCommonConstants.RECONNECT_ATTEMPTS).set(-1);
         assertSuccess(services.executeOperation(udpOperation));
         verifyUdpMessage(RFC5424_SYSLOG_MESSAGE);
     }
@@ -195,10 +195,10 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("syslog-audit-log", "syslog-test");
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronDescriptionConstants.SERVER_ADDRESS).set(serverAddress);
-        operation.get(ElytronDescriptionConstants.PORT).set(Integer.toString(port));
-        operation.get(ElytronDescriptionConstants.TRANSPORT).set(transport);
-        operation.get(ElytronDescriptionConstants.HOST_NAME).set(HOST_NAME);
+        operation.get(ElytronCommonConstants.SERVER_ADDRESS).set(serverAddress);
+        operation.get(ElytronCommonConstants.PORT).set(Integer.toString(port));
+        operation.get(ElytronCommonConstants.TRANSPORT).set(transport);
+        operation.get(ElytronCommonConstants.HOST_NAME).set(HOST_NAME);
         return operation;
     }
 

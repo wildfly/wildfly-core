@@ -17,17 +17,17 @@
  */
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_EVENT_LISTENER_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYSLOG_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_EVENT_LISTENER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SSL_CONTEXT_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronCommonConstants.SYSLOG_AUDIT_LOG;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
-import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,7 +64,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
-import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
+import org.wildfly.extension.elytron._private.ElytronCommonMessages;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
 import org.wildfly.security.audit.AuditEndpoint;
 import org.wildfly.security.audit.AuditLogger;
@@ -89,110 +89,110 @@ class AuditResourceDefinitions {
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition AUTOFLUSH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTOFLUSH, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition AUTOFLUSH = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.AUTOFLUSH, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYNCHRONIZED, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SYNCHRONIZED, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.TRUE)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition FORMAT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FORMAT, ModelType.STRING, true)
+    static final SimpleAttributeDefinition FORMAT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.FORMAT, ModelType.STRING, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(Format.SIMPLE.toString()))
             .setAllowedValues(Format.SIMPLE.toString(), Format.JSON.toString())
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENCODING, ModelType.STRING, true)
+    static final SimpleAttributeDefinition ENCODING = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ENCODING, ModelType.STRING, true)
             .setAllowExpression(true)
             .setRestartAllServices()
             .setValidator(new EncodingNameValidator())
             .build();
 
-    static final SimpleAttributeDefinition SERVER_ADDRESS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SERVER_ADDRESS, ModelType.STRING, false)
+    static final SimpleAttributeDefinition SERVER_ADDRESS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SERVER_ADDRESS, ModelType.STRING, false)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition PORT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PORT, ModelType.INT, false)
+    static final SimpleAttributeDefinition PORT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PORT, ModelType.INT, false)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition TRANSPORT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TRANSPORT, ModelType.STRING, true)
+    static final SimpleAttributeDefinition TRANSPORT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.TRANSPORT, ModelType.STRING, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(Transport.TCP.toString()))
             .setAllowedValues(Transport.TCP.toString(), Transport.UDP.toString(), Transport.SSL_TCP.toString())
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition HOST_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HOST_NAME, ModelType.STRING, false)
+    static final SimpleAttributeDefinition HOST_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HOST_NAME, ModelType.STRING, false)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition MAX_BACKUP_INDEX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAX_BACKUP_INDEX, ModelType.INT, true)
+    static final SimpleAttributeDefinition MAX_BACKUP_INDEX = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MAX_BACKUP_INDEX, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(1))
             .setValidator(new IntRangeValidator(1, true))
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition ROTATE_ON_BOOT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROTATE_ON_BOOT, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition ROTATE_ON_BOOT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ROTATE_ON_BOOT, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition ROTATE_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROTATE_SIZE, ModelType.STRING, true)
+    static final SimpleAttributeDefinition ROTATE_SIZE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ROTATE_SIZE, ModelType.STRING, true)
             .setAllowExpression(true)
             .setValidator(new SizeValidator())
             .setDefaultValue(new ModelNode("10m"))
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition SIZE_SUFFIX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SUFFIX, ModelType.STRING, true)
+    static final SimpleAttributeDefinition SIZE_SUFFIX = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SUFFIX, ModelType.STRING, true)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition PERIODIC_SUFFIX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SUFFIX, ModelType.STRING)
+    static final SimpleAttributeDefinition PERIODIC_SUFFIX = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SUFFIX, ModelType.STRING)
             .setAllowExpression(true)
             .setRequired(true)
             .setValidator(new SuffixValidator())
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
+    static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SSL_CONTEXT, ModelType.STRING, true)
             .setAllowExpression(false)
             .setRestartAllServices()
             .setCapabilityReference(SSL_CONTEXT_CAPABILITY, SECURITY_EVENT_LISTENER_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition SYSLOG_FORMAT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYSLOG_FORMAT, ModelType.STRING, true)
+    static final SimpleAttributeDefinition SYSLOG_FORMAT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SYSLOG_FORMAT, ModelType.STRING, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode("RFC5424"))
             .setAllowedValues(SyslogHandler.SyslogType.RFC3164.toString(), SyslogHandler.SyslogType.RFC5424.toString())
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition RECONNECT_ATTEMPTS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RECONNECT_ATTEMPTS, ModelType.INT, true)
+    static final SimpleAttributeDefinition RECONNECT_ATTEMPTS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.RECONNECT_ATTEMPTS, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(0))
             .setValidator(new IntRangeValidator(-1))
             .setRestartAllServices()
             .build();
 
-    private static final AggregateComponentDefinition<SecurityEventListener> AGGREGATE_SECURITY_EVENT_LISTENER = AggregateComponentDefinition.create(SecurityEventListener.class,
-            ElytronDescriptionConstants.AGGREGATE_SECURITY_EVENT_LISTENER, ElytronDescriptionConstants.SECURITY_EVENT_LISTENERS, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY, SecurityEventListener::aggregate, false);
+    private static final ElytronCommonAggregateComponentDefinition<SecurityEventListener> AGGREGATE_SECURITY_EVENT_LISTENER = ElytronCommonAggregateComponentDefinition.create(SecurityEventListener.class,
+            ElytronCommonConstants.AGGREGATE_SECURITY_EVENT_LISTENER, ElytronCommonConstants.SECURITY_EVENT_LISTENERS, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY, SecurityEventListener::aggregate, false);
 
     static final ListAttributeDefinition REFERENCES = AGGREGATE_SECURITY_EVENT_LISTENER.getReferencesAttribute();
 
-    static AggregateComponentDefinition<SecurityEventListener> getAggregateSecurityEventListenerDefinition() {
+    static ElytronCommonAggregateComponentDefinition<SecurityEventListener> getAggregateSecurityEventListenerDefinition() {
         return AGGREGATE_SECURITY_EVENT_LISTENER;
     }
 
@@ -214,7 +214,7 @@ class AuditResourceDefinitions {
 
     static ResourceDefinition getFileAuditLogResourceDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { PATH, RELATIVE_TO, AUTOFLUSH, SYNCHRONIZED, FORMAT, ENCODING };
-        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SecurityEventListener> getValueSupplier(
@@ -268,12 +268,12 @@ class AuditResourceDefinitions {
             }
         };
 
-        return new TrivialResourceDefinition(FILE_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
+        return new ElytronCommonTrivialResourceDefinition(FILE_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
     }
 
     static ResourceDefinition getPeriodicRotatingFileAuditLogResourceDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] {PATH, RELATIVE_TO, AUTOFLUSH, SYNCHRONIZED, FORMAT, ENCODING, PERIODIC_SUFFIX };
-        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SecurityEventListener> getValueSupplier(
@@ -332,12 +332,12 @@ class AuditResourceDefinitions {
             }
         };
 
-        return new TrivialResourceDefinition(PERIODIC_ROTATING_FILE_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
+        return new ElytronCommonTrivialResourceDefinition(PERIODIC_ROTATING_FILE_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
     }
 
     static ResourceDefinition getSizeRotatingFileAuditLogResourceDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { PATH, RELATIVE_TO, AUTOFLUSH, SYNCHRONIZED, FORMAT, ENCODING, MAX_BACKUP_INDEX, ROTATE_ON_BOOT, ROTATE_SIZE, SIZE_SUFFIX };
-        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SecurityEventListener> getValueSupplier(
@@ -404,12 +404,12 @@ class AuditResourceDefinitions {
             }
         };
 
-        return new TrivialResourceDefinition(SIZE_ROTATING_FILE_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
+        return new ElytronCommonTrivialResourceDefinition(SIZE_ROTATING_FILE_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
     }
 
     static ResourceDefinition getSyslogAuditLogResourceDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { SERVER_ADDRESS, PORT, TRANSPORT, HOST_NAME, FORMAT, SSL_CONTEXT, SYSLOG_FORMAT, RECONNECT_ATTEMPTS };
-        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SecurityEventListener> getValueSupplier(
@@ -468,7 +468,7 @@ class AuditResourceDefinitions {
             }
         };
 
-        return new TrivialResourceDefinition(SYSLOG_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
+        return new ElytronCommonTrivialResourceDefinition(SYSLOG_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
     }
 
     private enum Format {
@@ -501,7 +501,7 @@ class AuditResourceDefinitions {
         public static long parseSize(final ModelNode value) throws OperationFailedException {
             final Matcher matcher = SIZE_PATTERN.matcher(value.asString());
             if (!matcher.matches()) {
-                throw ElytronSubsystemMessages.ROOT_LOGGER.invalidSize(value.asString());
+                throw ElytronCommonMessages.ROOT_LOGGER.invalidSize(value.asString());
             }
             long qty = Long.parseLong(matcher.group(1), 10);
             final String chr = matcher.group(2);
@@ -527,7 +527,7 @@ class AuditResourceDefinitions {
                         qty <<= 40L;
                         break;
                     default:
-                        throw ElytronSubsystemMessages.ROOT_LOGGER.invalidSize(value.asString());
+                        throw ElytronCommonMessages.ROOT_LOGGER.invalidSize(value.asString());
                 }
             }
             return qty;
@@ -563,12 +563,12 @@ class AuditResourceDefinitions {
                                 }
                             }
                             if (c == 's' || c == 'S') {
-                                throw ElytronSubsystemMessages.ROOT_LOGGER.suffixContainsMillis(suffix);
+                                throw ElytronCommonMessages.ROOT_LOGGER.suffixContainsMillis(suffix);
                             }
                         }
                     }
                 } catch (IllegalArgumentException e) {
-                    throw ElytronSubsystemMessages.ROOT_LOGGER.invalidSuffix(suffix);
+                    throw ElytronCommonMessages.ROOT_LOGGER.invalidSuffix(suffix);
                 }
             }
         }

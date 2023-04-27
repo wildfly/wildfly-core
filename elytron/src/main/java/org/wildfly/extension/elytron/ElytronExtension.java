@@ -29,7 +29,6 @@ import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SubsystemRegistration;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
@@ -109,22 +108,14 @@ public class ElytronExtension implements Extension {
 
     private static final ModelVersion ELYTRON_CURRENT = ELYTRON_18_0_0;
 
-    static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+    static final String ISO_8601_FORMAT = ElytronCommonDefinitions.ISO_8601_FORMAT;
 
 
     protected static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
-    private static final String RESOURCE_NAME = ElytronExtension.class.getPackage().getName() + ".LocalDescriptions";
     static final ServiceName BASE_SERVICE_NAME = ServiceName.of(SUBSYSTEM_NAME);
 
     static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefixes) {
-        StringBuilder sb = new StringBuilder(SUBSYSTEM_NAME);
-        if (keyPrefixes != null) {
-            for (String current : keyPrefixes) {
-                sb.append(".").append(current);
-            }
-        }
-
-        return new StandardResourceDescriptionResolver(sb.toString(), RESOURCE_NAME, ElytronExtension.class.getClassLoader(), true, false);
+        return ElytronCommonDefinitions.getResourceDescriptionResolver(ElytronExtension.class, keyPrefixes);
     }
 
     /**
@@ -132,7 +123,7 @@ public class ElytronExtension implements Extension {
      * is not for a resource in the {@code profile} resource tree.
      */
     static boolean isServerOrHostController(ImmutableManagementResourceRegistration resourceRegistration) {
-        return resourceRegistration.getProcessType().isServer() || !ModelDescriptionConstants.PROFILE.equals(resourceRegistration.getPathAddress().getElement(0).getKey());
+        return ElytronCommonDefinitions.isServerOrHostController(resourceRegistration);
     }
 
     @Override
@@ -175,10 +166,8 @@ public class ElytronExtension implements Extension {
         context.registerExpressionResolverExtension(resolverRef::get, ExpressionResolverResourceDefinition.INITIAL_PATTERN, false);
     }
 
-    @SuppressWarnings("unchecked")
     static <T> ServiceController<T> getRequiredService(ServiceRegistry serviceRegistry, ServiceName serviceName, Class<T> serviceType) {
-        ServiceController<?> controller = serviceRegistry.getRequiredService(serviceName);
-        return (ServiceController<T>) controller;
+        return ElytronCommonDefinitions.getRequiredService(serviceRegistry, serviceName, serviceType);
     }
 
 }

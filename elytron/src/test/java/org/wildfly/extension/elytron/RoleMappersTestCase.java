@@ -58,23 +58,23 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
             Assert.fail("Failed to boot, no reason provided");
         }
 
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain1");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain2");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain3");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain4");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain5");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain6");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain7");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain8");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain9");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain10");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain1");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain2");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain3");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain4");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain5");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain6");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain7");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain8");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain9");
+        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain10");
     }
 
     @Test
     public void testMappedRoleMapper() throws Exception {
         init("TestDomain1");
 
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain1");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain1");
         Assert.assertNotNull(services.getContainer());
         Assert.assertNotNull(services.getContainer().getService(serviceName));
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
@@ -99,7 +99,7 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testKeepMappedRoleMapper() throws Exception {
         init("TestDomain2");
 
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain2");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain2");
         Assert.assertNotNull(services.getContainer());
         Assert.assertNotNull(services.getContainer().getService(serviceName));
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
@@ -124,7 +124,7 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testKeepNonMappedRoleMapper() throws Exception {
         init("TestDomain3");
 
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain3");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain3");
         Assert.assertNotNull(services.getContainer());
         Assert.assertNotNull(services.getContainer().getService(serviceName));
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
@@ -149,7 +149,7 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testKeepBothMappedRoleMapper() throws Exception {
         init("TestDomain4");
 
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain4");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain4");
         Assert.assertNotNull(services.getContainer());
         Assert.assertNotNull(services.getContainer().getService(serviceName));
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
@@ -174,7 +174,7 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testRegexRoleMapper() throws Exception {
         init("TestDomain5");
 
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain5");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain5");
         Assert.assertNotNull(services.getContainer());
         Assert.assertNotNull(services.getContainer().getService(serviceName));
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
@@ -198,7 +198,7 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testRegexRoleMapper2() throws Exception {
         init("TestDomain6");
 
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain6");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain6");
         Assert.assertNotNull(services.getContainer());
         Assert.assertNotNull(services.getContainer().getService(serviceName));
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
@@ -225,7 +225,7 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testRegexRoleMapper3() throws Exception {
         init("TestDomain7");
 
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain7");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain7");
         Assert.assertNotNull(services.getContainer());
         Assert.assertNotNull(services.getContainer().getService(serviceName));
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
@@ -255,8 +255,8 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
         operation.get(ClientConstants.OP_ADDR)
                 .add("subsystem", "elytron").add("regex-role-mapper", "my-regex-role-mapper");
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronDescriptionConstants.PATTERN).set("*-admin");
-        operation.get(ElytronDescriptionConstants.REPLACEMENT).set("$1");
+        operation.get(ElytronCommonConstants.PATTERN).set("*-admin");
+        operation.get(ElytronCommonConstants.REPLACEMENT).set("$1");
         ModelNode response = services.executeOperation(operation);
         // operation will fail because regex is not valid (starts with asterisk)
         if (! response.get(OUTCOME).asString().equals(FAILED)) {
@@ -268,7 +268,7 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testAddRegexRoleMapperReplaceAll() throws Exception {
         init("TestDomain8");
 
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain8");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain8");
         Assert.assertNotNull(services.getContainer());
         Assert.assertNotNull(services.getContainer().getService(serviceName));
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
@@ -308,7 +308,7 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testAddRegexRoleMapperWithRegexBoundaries() throws Exception {
         init("TestDomain9");
 
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain9");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain9");
         Assert.assertNotNull(services.getContainer());
         Assert.assertNotNull(services.getContainer().getService(serviceName));
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
@@ -348,7 +348,7 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testAddRegexRoleMapperAggregate() throws Exception {
         init("TestDomain10");
 
-        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain10");
+        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain10");
         Assert.assertNotNull(services.getContainer());
         Assert.assertNotNull(services.getContainer().getService(serviceName));
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();

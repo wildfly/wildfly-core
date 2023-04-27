@@ -431,10 +431,10 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
         try {
             ModelNode operation = new ModelNode();
             operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("key-store", KS_NAME);
-            operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.GENERATE_KEY_PAIR);
-            operation.get(ElytronDescriptionConstants.ALIAS).set("bsmith");
-            operation.get(ElytronDescriptionConstants.ALGORITHM).set("Invalid");
-            operation.get(ElytronDescriptionConstants.DISTINGUISHED_NAME).set("CN=bob smith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us");
+            operation.get(ClientConstants.OP).set(ElytronCommonConstants.GENERATE_KEY_PAIR);
+            operation.get(ElytronCommonConstants.ALIAS).set("bsmith");
+            operation.get(ElytronCommonConstants.ALGORITHM).set("Invalid");
+            operation.get(ElytronCommonConstants.DISTINGUISHED_NAME).set("CN=bob smith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us");
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(STORE).set(NON_EMPTY_CS_NAME);
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(ALIAS).set(alias);
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CLEAR_TEXT).set(password);
@@ -463,10 +463,10 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
         try {
             ModelNode operation = new ModelNode();
             operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("key-store", KS_NAME);
-            operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.GENERATE_KEY_PAIR);
-            operation.get(ElytronDescriptionConstants.ALIAS).set("bsmith");
-            operation.get(ElytronDescriptionConstants.ALGORITHM).set("Invalid");
-            operation.get(ElytronDescriptionConstants.DISTINGUISHED_NAME).set("CN=bob smith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us");
+            operation.get(ClientConstants.OP).set(ElytronCommonConstants.GENERATE_KEY_PAIR);
+            operation.get(ElytronCommonConstants.ALIAS).set("bsmith");
+            operation.get(ElytronCommonConstants.ALGORITHM).set("Invalid");
+            operation.get(ElytronCommonConstants.DISTINGUISHED_NAME).set("CN=bob smith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us");
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(STORE).set(NON_EMPTY_CS_NAME);
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(ALIAS).set(EXISTING_ALIAS);
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CLEAR_TEXT).set(password);
@@ -489,10 +489,10 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
         try {
             ModelNode operation = new ModelNode();
             operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("key-store", KS_NAME);
-            operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.GENERATE_KEY_PAIR);
-            operation.get(ElytronDescriptionConstants.ALIAS).set("bsmith");
-            operation.get(ElytronDescriptionConstants.ALGORITHM).set("Invalid");
-            operation.get(ElytronDescriptionConstants.DISTINGUISHED_NAME).set("CN=bob smith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us");
+            operation.get(ClientConstants.OP).set(ElytronCommonConstants.GENERATE_KEY_PAIR);
+            operation.get(ElytronCommonConstants.ALIAS).set("bsmith");
+            operation.get(ElytronCommonConstants.ALGORITHM).set("Invalid");
+            operation.get(ElytronCommonConstants.DISTINGUISHED_NAME).set("CN=bob smith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us");
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CLEAR_TEXT).set("secret");
             assertFailed(services.executeOperation(operation)).get(RESULT);
         } finally {
@@ -589,8 +589,8 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
         operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store", keyStoreName);
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronDescriptionConstants.PATH).set(resources + "/test.keystore");
-        operation.get(ElytronDescriptionConstants.TYPE).set(type);
+        operation.get(ElytronCommonConstants.PATH).set(resources + "/test.keystore");
+        operation.get(ElytronCommonConstants.TYPE).set(type);
         if (store != null) {
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(STORE).set(store);
         }
@@ -626,8 +626,8 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
         operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store", keyStoreName);
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronDescriptionConstants.PATH).set(resources + "/test.keystore");
-        operation.get(ElytronDescriptionConstants.TYPE).set("JKS");
+        operation.get(ElytronCommonConstants.PATH).set(resources + "/test.keystore");
+        operation.get(ElytronCommonConstants.TYPE).set("JKS");
         if (store != null) {
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(STORE).set(store);
         }
@@ -681,9 +681,9 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
     private String generateKeyPairWithCredentialStoreUpdate(String keyStoreName, String store, String alias, String secret, boolean exists) {
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("key-store", keyStoreName);
-        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.GENERATE_KEY_PAIR);
-        operation.get(ElytronDescriptionConstants.ALIAS).set("bsmith");
-        operation.get(ElytronDescriptionConstants.DISTINGUISHED_NAME).set("CN=bob smith");
+        operation.get(ClientConstants.OP).set(ElytronCommonConstants.GENERATE_KEY_PAIR);
+        operation.get(ElytronCommonConstants.ALIAS).set("bsmith");
+        operation.get(ElytronCommonConstants.DISTINGUISHED_NAME).set("CN=bob smith");
         operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(STORE).set(store);
         boolean autoGeneratedAlias = false;
         if (alias != null) {
@@ -747,7 +747,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
     }
 
     private CredentialStore getCredentialStore(String store) {
-        ServiceName serviceName = Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(store);
+        ServiceName serviceName = ElytronCommonCapabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(store);
         return (CredentialStore) services.getContainer().getService(serviceName).getValue();
     }
 
@@ -775,8 +775,8 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
         operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store", keyStoreName);
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronDescriptionConstants.PATH).set(resources + "/test.keystore");
-        operation.get(ElytronDescriptionConstants.TYPE).set("JKS");
+        operation.get(ElytronCommonConstants.PATH).set(resources + "/test.keystore");
+        operation.get(ElytronCommonConstants.TYPE).set("JKS");
         operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set(keyStorePassword);
         assertSuccess(services.executeOperation(operation));
     }

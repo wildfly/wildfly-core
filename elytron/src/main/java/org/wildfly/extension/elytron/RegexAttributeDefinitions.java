@@ -17,7 +17,7 @@
  */
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
 
 import java.util.regex.Pattern;
 
@@ -35,14 +35,14 @@ import org.jboss.dmr.ModelType;
  */
 class RegexAttributeDefinitions {
 
-    static final SimpleAttributeDefinition PATTERN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATTERN, ModelType.STRING, false)
+    static final SimpleAttributeDefinition PATTERN = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PATTERN, ModelType.STRING, false)
             .setAllowExpression(true)
             .setValidator(new RegExValidator())
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition PATTERN_CAPTURE_GROUP = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATTERN, ModelType.STRING, false)
+    static final SimpleAttributeDefinition PATTERN_CAPTURE_GROUP = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PATTERN, ModelType.STRING, false)
             .setAllowExpression(true)
             .setValidator(new CaptureGroupRexExValidator())
             .setMinSize(1)
