@@ -178,6 +178,7 @@ public final class ServerService extends AbstractControllerService {
 
     static final String SUSPEND_CONTROLLER_CAPABILITY_NAME = "org.wildfly.server.suspend-controller";
     static final String EXTERNAL_MODULE_CAPABILITY_NAME = "org.wildfly.management.external-module";
+    public static final String SERVER_ENVIRONMENT_CAPABILITY_NAME = "org.wildfly.server.environment";
 
     static final RuntimeCapability<Void> SUSPEND_CONTROLLER_CAPABILITY =
             RuntimeCapability.Builder.of(SUSPEND_CONTROLLER_CAPABILITY_NAME, SuspendController.class)
@@ -186,6 +187,8 @@ public final class ServerService extends AbstractControllerService {
     static final RuntimeCapability<Void> EXTERNAL_MODULE_CAPABILITY =
             RuntimeCapability.Builder.of(EXTERNAL_MODULE_CAPABILITY_NAME, ExternalModule.class)
                     .build();
+   static final RuntimeCapability<Void> SERVER_ENVIRONMENT_CAPABILITY = RuntimeCapability.Builder.of(SERVER_ENVIRONMENT_CAPABILITY_NAME, ServerEnvironment.class).build();
+
 
     /**
      * Construct a new instance.
@@ -504,6 +507,8 @@ public final class ServerService extends AbstractControllerService {
                 new RuntimeCapabilityRegistration(EXTERNAL_MODULE_CAPABILITY, CapabilityScope.GLOBAL,new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
         capabilityRegistry.registerCapability(
                 new RuntimeCapabilityRegistration(CONSOLE_AVAILABILITY_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+        capabilityRegistry.registerCapability(
+                new RuntimeCapabilityRegistration(SERVER_ENVIRONMENT_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
 
         // Record the core capabilities with the root MRR so reads of it will show it as their provider
         // This also gets them recorded as 'possible capabilities' in the capability registry
@@ -514,6 +519,7 @@ public final class ServerService extends AbstractControllerService {
         rootRegistration.registerCapability(PROCESS_STATE_NOTIFIER_CAPABILITY);
         rootRegistration.registerCapability(EXTERNAL_MODULE_CAPABILITY);
         rootRegistration.registerCapability(CONSOLE_AVAILABILITY_CAPABILITY);
+        rootRegistration.registerCapability(SERVER_ENVIRONMENT_CAPABILITY);
     }
 
     @Override

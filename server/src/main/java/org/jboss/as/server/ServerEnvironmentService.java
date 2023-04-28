@@ -22,6 +22,7 @@
 
 package org.jboss.as.server;
 
+import static org.jboss.as.server.ServerService.SERVER_ENVIRONMENT_CAPABILITY;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -54,7 +55,10 @@ import org.jboss.msc.service.StopContext;
  */
 public class ServerEnvironmentService implements Service<ServerEnvironment> {
 
+
     /** Standard ServiceName under which a ServerEnvironmentService would be registered */
+    /** @deprecated Use {@link #SERVER_ENVIRONMENT_CAPABILITY.getCapabilityServiceName() instead} */
+    @Deprecated
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("server", "environment");
 
     /**
@@ -65,8 +69,9 @@ public class ServerEnvironmentService implements Service<ServerEnvironment> {
      * @param target the batch builder. Cannot be {@code null}
      */
     public static void addService(ServerEnvironment serverEnvironment, ServiceTarget target) {
-        target.addService(SERVICE_NAME, new ServerEnvironmentService(serverEnvironment))
-            .install();
+        target.addService(SERVER_ENVIRONMENT_CAPABILITY.getCapabilityServiceName(), new ServerEnvironmentService(serverEnvironment))
+                .addAliases(SERVICE_NAME)
+                .install();
     }
 
     private final ServerEnvironment serverEnvironment;

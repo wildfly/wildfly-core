@@ -201,7 +201,7 @@ public class DeploymentHandlerUtil {
                 contentService = ContentServitor.addService(serviceTarget, contentsServiceName, contents[0].hash);
             } else {
                 isExplodedContent = true;
-                contentService = ManagedExplodedContentServitor.addService(serviceTarget, contentsServiceName, managementName, contents[0].hash);
+                contentService = ManagedExplodedContentServitor.addService(context, contentsServiceName, managementName, contents[0].hash);
             }
         }
         else {
