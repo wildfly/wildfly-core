@@ -813,8 +813,8 @@ public interface ServerLogger extends BasicLogger {
     /////////////////////////////////////
     // New range of ids
 
-    @Message(id = 120, value = "Bundles directory does not exist: %s")
-    IllegalStateException bundlesDirectoryDoesNotExist(File f);
+//    @Message(id = 120, value = "Bundles directory does not exist: %s")
+//    IllegalStateException bundlesDirectoryDoesNotExist(File f);
 
     @Message(id = 121, value = "Configuration directory does not exist: %s")
     IllegalStateException configDirectoryDoesNotExist(File f);

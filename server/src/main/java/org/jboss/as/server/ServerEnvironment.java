@@ -74,7 +74,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     /**
      * The manner in which a server can be launched
      */
-    public static enum LaunchType {
+    public enum LaunchType {
         /**
          * Launched by a Host Controller in a managed domain
          */
@@ -122,37 +122,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     public static final String HOME_DIR = "jboss.home.dir";
 
     /**
-     * Constant that holds the name of the system property for specifying the directory returned from
-     * {@link #getModulesDir()}.
-     *
-     * <p>
-     * Defaults to <tt><em>HOME_DIR</em>/modules</tt>/
-     * </p>
-     *
-     * <strong>This system property has no real meaning and should not be regarded as providing any sort of useful
-     * information.</strong> The "modules" directory is the default location from which JBoss Modules looks to find
-     * modules. However, this behavior is in no way controlled by this system property, nor is it guaranteed that
-     * modules will be loaded from only one directory, nor is it guaranteed that the "modules" directory will be one
-     * of the directories used. Finally, the structure and contents of any directories from which JBoss Modules loads
-     * resources is not something available from this class. Users wishing to interact with the modular classloading
-     * system should use the APIs provided by JBoss Modules
-     *
-     *
-     * @deprecated has no useful meaning
-     */
-    @Deprecated
-    public static final String MODULES_DIR = "jboss.modules.dir";
-
-    /**
-     * Constant that holds the name of the system property for specifying
-     * {@link #getBundlesDir() the bundles directory}.
-     *
-     * <p>
-     * Defaults to <tt><em>HOME_DIR</em>/bundles</tt>/
-     */
-    public static final String BUNDLES_DIR = "jboss.bundles.dir";
-
-    /**
      * VFS module identifier.
      */
     public static final String VFS_MODULE_IDENTIFIER = "org.jboss.vfs";
@@ -168,7 +137,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
 
     /**
      * Constant that holds the name of the system property for specifying
-     * {@link #getServerConfigurationDir()} () the server configuration directory}.
+     * {@link #getServerConfigurationDir() the server configuration directory}.
      *
      * <p>
      * Defaults to <tt><em>SERVER_BASE_DIR</em>/configuration</tt> .
@@ -192,14 +161,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      * Defaults to <tt><em>SERVER_DATA_DIR</em>/content</tt>.
      */
     public static final String SERVER_CONTENT_DIR = "jboss.server.content.dir";
-
-    /**
-     * Deprecated variant of {@link #SERVER_CONTENT_DIR}.
-     *
-     * @deprecated use {@link #SERVER_CONTENT_DIR}
-     */
-    @Deprecated
-    public static final String SERVER_DEPLOY_DIR = "jboss.server.deploy.dir";
 
     /**
      * Constant that holds the name of the system property for specifying
@@ -298,14 +259,14 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     /**
      * Properties that cannot be set via {@link #systemPropertyUpdated(String, String)}
      */
-    private static final Set<String> ILLEGAL_PROPERTIES = new HashSet<String>(Arrays.asList(DOMAIN_BASE_DIR,
+    private static final Set<String> ILLEGAL_PROPERTIES = new HashSet<>(Arrays.asList(DOMAIN_BASE_DIR,
             DOMAIN_CONFIG_DIR, JAVA_EXT_DIRS, HOME_DIR, "modules.path", SERVER_BASE_DIR, SERVER_CONFIG_DIR,
-            SERVER_DATA_DIR, SERVER_DEPLOY_DIR, SERVER_LOG_DIR, BOOTSTRAP_MAX_THREADS, CONTROLLER_TEMP_DIR,
+            SERVER_DATA_DIR, SERVER_LOG_DIR, BOOTSTRAP_MAX_THREADS, CONTROLLER_TEMP_DIR,
             JBOSS_SERVER_DEFAULT_CONFIG, JBOSS_PERSIST_SERVER_CONFIG, JBOSS_SERVER_MANAGEMENT_UUID));
     /**
      * Properties that can only be set via {@link #systemPropertyUpdated(String, String)} during server boot.
      */
-    private static final Set<String> BOOT_PROPERTIES = new HashSet<String>(Arrays.asList(BUNDLES_DIR, SERVER_TEMP_DIR,
+    private static final Set<String> BOOT_PROPERTIES = new HashSet<>(Arrays.asList(SERVER_TEMP_DIR,
             NODE_NAME, SERVER_NAME, HOST_NAME, QUALIFIED_HOST_NAME));
 
     /**
@@ -332,16 +293,14 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final File[] javaExtDirs;
 
     private final File homeDir;
-    private final File modulesDir;
     private final File serverBaseDir;
     private final File serverConfigurationDir;
     private final ConfigurationFile serverConfigurationFile;
     private final File serverLogDir;
     private final File controllerTempDir;
-    private volatile File serverDataDir;
+    private final File serverDataDir;
     private volatile File serverContentDir;
     private volatile File serverTempDir;
-    private volatile File bundlesDir;
     private final File domainBaseDir;
     private final File domainConfigurationDir;
 
@@ -354,39 +313,13 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final long startTime;
     private final boolean startSuspended;
     private final boolean startGracefully;
-    private GitRepository repository;
+    private final GitRepository repository;
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
             final RunningMode initialRunningMode, ProductConfig productConfig, boolean startSuspended) {
         this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode, productConfig,
-                System.currentTimeMillis(), startSuspended, null, null, null, null);
-    }
-
-    @Deprecated
-    public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
-            final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
-            final RunningMode initialRunningMode, ProductConfig productConfig) {
-        this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode, productConfig,
-                System.currentTimeMillis(), false, null, null, null, null);
-    }
-
-    @Deprecated
-    public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
-            final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
-            final RunningMode initialRunningMode, ProductConfig productConfig, long startTime, String gitRepository,
-            String gitBranch, String gitAuthConfiguration, String supplementalConfiguration) {
-        this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode, productConfig,
-                startTime, false, gitRepository, gitBranch, gitAuthConfiguration, supplementalConfiguration);
-    }
-
-    @Deprecated
-    public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
-            final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
-            final RunningMode initialRunningMode, ProductConfig productConfig, long startTime, boolean startSuspended,
-            String gitRepository, String gitBranch, String gitAuthConfiguration, String supplementalConfiguration) {
-        this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode,
-                productConfig, startTime, startSuspended, false, gitRepository, gitBranch, gitAuthConfiguration, supplementalConfiguration);
+                System.currentTimeMillis(), startSuspended, false, null, null, null, null);
     }
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
@@ -437,7 +370,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             serverTempDir = new File(serverDirProp);
 
             serverDataDir = serverTempDir;
-            modulesDir = null;
             serverConfigurationDir = null;
             serverConfigurationFile = null;
             controllerTempDir = serverTempDir;
@@ -456,16 +388,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                 throw ServerLogger.ROOT_LOGGER.homeDirectoryDoesNotExist(homeDir);
             }
 
-            @SuppressWarnings("deprecation")
-            File tmp = getFileFromProperty(MODULES_DIR, props);
-            if (tmp == null) {
-                tmp = new File(homeDir, "modules");
-            }
-            modulesDir = tmp;
-
-            configureBundlesDir(props.getProperty(BUNDLES_DIR), props);
-
-            tmp = getFileFromProperty(SERVER_BASE_DIR, props);
+            File tmp = getFileFromProperty(SERVER_BASE_DIR, props);
             if (tmp == null) {
                 tmp = new File(homeDir, standalone ? "standalone" : "domain/servers/" + serverName);
             }
@@ -517,11 +440,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             }
 
             tmp = getFileFromProperty(SERVER_CONTENT_DIR, props);
-            if (tmp == null) {
-                @SuppressWarnings("deprecation")
-                String deprecatedProp = SERVER_DEPLOY_DIR;
-                tmp = getFileFromProperty(deprecatedProp, props);
-            }
             if (tmp == null) {
                 tmp = new File(serverDataDir, "content");
             }
@@ -617,6 +535,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         String maxThreads = WildFlySecurityManager.getPropertyPrivileged(BOOTSTRAP_MAX_THREADS, null);
         if (maxThreads != null && maxThreads.length() > 0) {
             try {
+                //noinspection ResultOfMethodCallIgnored
                 Integer.decode(maxThreads);
                 // Property was set to a valid value; user wishes to control core service threads
                 allowExecutor = false;
@@ -649,11 +568,9 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         WildFlySecurityManager.setPropertyPrivileged(SERVER_NAME, serverName);
         WildFlySecurityManager.setPropertyPrivileged(NODE_NAME, nodeName);
         setPathProperty(HOME_DIR, homeDir);
-        setPathProperty(MODULES_DIR, modulesDir);
         setPathProperty(SERVER_BASE_DIR, serverBaseDir);
         setPathProperty(SERVER_CONFIG_DIR, serverConfigurationDir);
         setPathProperty(SERVER_DATA_DIR, serverDataDir);
-        setPathProperty(SERVER_DEPLOY_DIR, serverContentDir);
         setPathProperty(SERVER_LOG_DIR, serverLogDir);
         setPathProperty(SERVER_TEMP_DIR, serverTempDir);
 
@@ -793,7 +710,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      * configuration. For
      * standalone servers, this is the name either provided in the server configuration, or, if not given, the name
      * specified
-     * via {@link #SERVER_NAME system property}, or auto-detected based on {@link #getHostName()} host name}.
+     * via {@link #SERVER_NAME system property}, or auto-detected based on {@link #getHostName() host name}.
      *
      * @return the server name
      */
@@ -929,52 +846,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     }
 
     /**
-     * <strong>A filesystem location that has no real meaning and should not be regarded as providing any sort of useful
-     * information.</strong> The "modules" directory is the default location from which JBoss Modules looks to find
-     * modules. However, this behavior is in no way controlled by the value returned by this method, nor is it
-     * guaranteed that
-     * modules will be loaded from only one directory, nor is it guaranteed that the "modules" directory will be one
-     * of the directories used. Finally, the structure and contents of any directories from which JBoss Modules loads
-     * resources is not something available from this class. Users wishing to interact with the modular classloading
-     * system should use the APIs provided by JBoss Modules.
-     *
-     * @return a file
-     *
-     * @deprecated has no reliable meaning
-     */
-    @Deprecated
-    public File getModulesDir() {
-        return modulesDir;
-    }
-
-    /**
-     * Gets the directory under which OSGi bundles should be located.
-     *
-     * <p>
-     * Defaults to {@link #getHomeDir() homeDir}/bundles</p>
-     *
-     * @return the bundles directory
-     */
-    public File getBundlesDir() {
-        return bundlesDir;
-    }
-
-    private void configureBundlesDir(String dirPath, Properties providedProperties) {
-        boolean haveDirProperty = dirPath != null;
-        File tmp = getFileFromPath(dirPath);
-        if (tmp == null) {
-            if (haveDirProperty) {
-                throw ServerLogger.ROOT_LOGGER.bundlesDirectoryDoesNotExist(new File(dirPath).getAbsoluteFile());
-            }
-            providedProperties.remove(BUNDLES_DIR);
-            tmp = new File(homeDir, "bundles");
-        } else {
-            providedProperties.setProperty(BUNDLES_DIR, dirPath);
-        }
-        bundlesDir = tmp;
-    }
-
-    /**
      * Gets the based directory for this server.
      *
      * <p>
@@ -1032,18 +903,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     }
 
     /**
-     * Deprecated previous name for {@link #getServerContentDir()}.
-     *
-     * @return the server managed content storage directory.
-     *
-     * @deprecated use {@link #getServerContentDir()}
-     */
-    @Deprecated
-    public File getServerDeployDir() {
-        return serverContentDir;
-    }
-
-    /**
      * Gets the directory in which the server can write log files.
      * <p>
      * Defaults to {@link #getServerBaseDir()} serverBaseDir}/log</p>
@@ -1096,6 +955,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         return tmp;
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     private void createAuthDir(File tempDir) {
         File authDir = new File(tempDir, "auth");
         if (authDir.exists()) {
@@ -1294,9 +1154,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     @Override
     protected void systemPropertyUpdated(String propertyName, String propertyValue) {
         if (BOOT_PROPERTIES.contains(propertyName)) {
-            if (BUNDLES_DIR.equals(propertyName)) {
-                configureBundlesDir(propertyValue, providedProperties);
-            } else if (SERVER_TEMP_DIR.equals(propertyName)) {
+            if (SERVER_TEMP_DIR.equals(propertyName)) {
                 configureServerTempDir(propertyValue, providedProperties);
             } else if (QUALIFIED_HOST_NAME.equals(propertyName)) {
                 configureQualifiedHostName(propertyValue, providedProperties.getProperty(HOST_NAME),
