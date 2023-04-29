@@ -192,36 +192,15 @@ public abstract class ModelTestModelControllerService extends AbstractController
         initExtraModel(managementModel);
     }
 
-    /** @deprecated only for legacy version support */
-    @Deprecated
-    protected void initModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
-        this.rootRegistration = rootRegistration;
-        initCoreModel(rootResource, rootRegistration, modelControllerResource);
-        initExtraModel(rootResource, rootRegistration);
-    }
-
-    @SuppressWarnings("deprecation")
     protected void initCoreModel(ManagementModel managementModel, Resource modelControllerResource) {
-        initCoreModel(managementModel.getRootResource(), managementModel.getRootResourceRegistration(), modelControllerResource);
-    }
-
-    /** @deprecated only for legacy version support */
-    @Deprecated
-    protected void initCoreModel(Resource rootResource, ManagementResourceRegistration rootRegistration, Resource modelControllerResource) {
+        ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
         GlobalOperationHandlers.registerGlobalOperations(rootRegistration, ProcessType.STANDALONE_SERVER);
 
         rootRegistration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
         //we don't register notifications as eap 6.2 and 6.3 dont support it, this is done in each legacy controller separatly
     }
 
-    @SuppressWarnings("deprecation")
     protected void initExtraModel(ManagementModel managementModel) {
-        initExtraModel(managementModel.getRootResource(), managementModel.getRootResourceRegistration());
-    }
-
-    /** @deprecated only for legacy version support */
-    @Deprecated
-    protected void initExtraModel(Resource rootResource, ManagementResourceRegistration rootRegistration) {
     }
 
     TransformerRegistry getTransformersRegistry() {
