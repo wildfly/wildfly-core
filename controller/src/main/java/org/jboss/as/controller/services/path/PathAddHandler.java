@@ -74,24 +74,6 @@ public class PathAddHandler implements OperationStepHandler {  // TODO make this
         this.pathAttribute = pathAttribute;
     }
 
-    /**
-     * Create the PathAddHandler
-     *
-     * @param pathManager   the path manager, or {@code null} if interaction with the path manager is not required
-     *                      for the resource
-     * @param services      {@code true} if interaction with the path manager is required for the resource
-     * @param pathAttribute the definition of the attribute to use to represent the portion of the path specification
-     *                      that identifies the absolute path or portion of the path that is relative to the 'relative-to' path.
-     *                      Cannot be {@code null}
-     *
-     * @deprecated not for use outside the kernel; may be removed at any time
-     */
-    @Deprecated
-    protected PathAddHandler(final PathManagerService pathManager, final boolean services, final SimpleAttributeDefinition pathAttribute) {
-        this(services ? null: pathManager, pathAttribute);
-        assert !services || pathManager != null;
-    }
-
     static PathAddHandler createNamedInstance() {
         return new PathAddHandler(null, PathResourceDefinition.PATH_NAMED);
     }
