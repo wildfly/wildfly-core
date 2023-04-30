@@ -164,7 +164,7 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
      * The nested attributes for any, not.
      */
 
-    public static final Set<AttributeDefinition> NESTED_LIST_ATTRIBUTES = new HashSet<AttributeDefinition>(
+    public static final Set<AttributeDefinition> NESTED_LIST_ATTRIBUTES = new HashSet<>(
             Arrays.asList(INET_ADDRESS, NIC, NIC_MATCH, SUBNET_MATCH)
     );
     /**
@@ -192,10 +192,10 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
     }
 
     /**
-     * Test whether the operation has a defined criteria attribute.
+     * Test whether the operation has a defined criteria parameter.
      *
      * @param operation the operation
-     * @return
+     * @return {@code true} if the operation has any defined criteria parameter
      */
     public static boolean isOperationDefined(final ModelNode operation) {
         for (final AttributeDefinition def : ROOT_ATTRIBUTES) {
@@ -229,7 +229,6 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
         registration.registerReadOnlyAttribute(InterfaceDefinition.NAME, ReadResourceNameOperationStepHandler.INSTANCE);
     }
 
-    @Deprecated
     private static AttributeDefinition createNestedComplexType(final String name) {
 
         return new AttributeDefinition(
@@ -306,9 +305,8 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
      * @param def the attribute definition
      * @return the list attribute def
      */
-    @Deprecated
     private static ListAttributeDefinition wrapAsList(final AttributeDefinition def) {
-        final ListAttributeDefinition list = new ListAttributeDefinition(new SimpleListAttributeDefinition.Builder(def.getName(), def)
+        return new ListAttributeDefinition(new SimpleListAttributeDefinition.Builder(def.getName(), def)
                 .setElementValidator(def.getValidator())) {
 
 
@@ -348,11 +346,9 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
                 return def;
             }
         };
-        return list;
     }
 
-    @Deprecated
-    static ParameterValidator createNestedParamValidator() {
+    private static ParameterValidator createNestedParamValidator() {
         return new ModelTypeValidator(ModelType.OBJECT, true, false, true) {
             @Override
             public void validateParameter(final String parameterName, final ModelNode value) throws OperationFailedException {
