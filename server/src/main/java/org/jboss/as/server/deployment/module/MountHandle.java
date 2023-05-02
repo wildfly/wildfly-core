@@ -48,7 +48,6 @@ public class MountHandle implements Closeable {
     };
 
     public static MountHandle create(final Closeable handle) {
-        @SuppressWarnings("deprecation")
         MountHandle mountHandle = new MountHandle(handle);
         if (handle != null) {
             // Use a PhantomReference instead of overriding finalize() to ensure close gets called
@@ -65,10 +64,8 @@ public class MountHandle implements Closeable {
      *
      * @param handle The mount handle to close
      *
-     * @deprecated Use {@link #create(Closeable)}
      */
-    @Deprecated
-    public MountHandle(final Closeable handle) {
+    private MountHandle(final Closeable handle) {
         this.handle = handle;
     }
 
