@@ -8,12 +8,12 @@ import java.util.EnumSet;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
-import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.PersistentResourceXMLDescriptionWriter;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.version.FeatureStream;
 
 /**
  * @author Paul Ferraro

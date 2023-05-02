@@ -20,6 +20,7 @@ import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.persistence.ConfigurationExtension;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 

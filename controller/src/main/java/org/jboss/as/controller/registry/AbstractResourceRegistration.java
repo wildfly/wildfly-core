@@ -22,13 +22,13 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.Assert;
 

@@ -4,8 +4,8 @@
  */
 package org.jboss.as.controller.xml;
 
-import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.FeatureStreamAware;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.staxmapper.Versioned;
 
 /**

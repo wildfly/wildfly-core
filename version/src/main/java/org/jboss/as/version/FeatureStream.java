@@ -2,7 +2,7 @@
  * Copyright The WildFly Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package org.jboss.as.controller;
+package org.jboss.as.version;
 
 /**
  * @author Paul Ferraro
@@ -26,6 +26,11 @@ public enum FeatureStream {
         return this.value;
     }
 
+    /**
+     * Indicates whether this feature stream enables the specified feature stream.
+     * @param stream a feature stream
+     * @return true, if this feature stream enables the specified feature stream, false otherwise.
+     */
     public boolean enables(FeatureStream stream) {
         return stream.ordinal() <= this.ordinal();
     }

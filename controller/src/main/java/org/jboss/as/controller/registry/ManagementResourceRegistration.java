@@ -18,10 +18,10 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
-import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
+import org.jboss.as.version.FeatureStream;
 import org.wildfly.common.Assert;
 
 /**

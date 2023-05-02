@@ -7,9 +7,9 @@ package org.jboss.as.core.model.test;
 import java.io.IOException;
 
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.model.test.ModelFixer;
 import org.jboss.as.model.test.ModelTestUtils;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Before;

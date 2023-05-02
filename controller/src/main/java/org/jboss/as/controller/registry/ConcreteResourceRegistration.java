@@ -31,7 +31,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
-import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -39,6 +38,7 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
 import org.jboss.as.controller.registry.AttributeAccess.Storage;
+import org.jboss.as.version.FeatureStream;
 import org.wildfly.common.Assert;
 
 final class ConcreteResourceRegistration extends AbstractResourceRegistration {

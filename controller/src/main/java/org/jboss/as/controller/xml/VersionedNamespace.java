@@ -7,8 +7,8 @@ package org.jboss.as.controller.xml;
 import java.util.List;
 import java.util.function.Function;
 
-import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.FeatureStreamAware;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.staxmapper.Namespace;
 import org.jboss.staxmapper.Versioned;
 import org.wildfly.common.iteration.CompositeIterable;

@@ -9,7 +9,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.FeatureStreamAware;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
@@ -25,6 +24,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.model.test.ModelTestModelDescriptionValidator.AttributeOrParameterArbitraryDescriptorValidator;
 import org.jboss.as.subsystem.test.ModelDescriptionValidator.ValidationConfiguration;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceTarget;

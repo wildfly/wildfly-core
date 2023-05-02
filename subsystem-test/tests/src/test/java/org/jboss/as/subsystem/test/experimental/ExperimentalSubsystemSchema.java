@@ -6,12 +6,12 @@ package org.jboss.as.subsystem.test.experimental;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 
-import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.as.controller.PersistentResourceXMLDescription.PersistentResourceXMLBuilder;
 import org.jboss.as.controller.PersistentSubsystemSchema;
 import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.controller.xml.VersionedNamespace;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.staxmapper.IntVersion;
 
 /**

@@ -8,7 +8,7 @@ package org.jboss.as.controller.xml;
 import java.util.List;
 import java.util.function.Function;
 
-import org.jboss.as.controller.FeatureStream;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.staxmapper.IntVersion;
 
 /**

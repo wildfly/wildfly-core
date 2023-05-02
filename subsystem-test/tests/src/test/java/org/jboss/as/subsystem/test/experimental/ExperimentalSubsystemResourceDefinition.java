@@ -8,7 +8,6 @@ import java.util.Collection;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredAddStepHandler;
@@ -19,6 +18,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelType;
 
 /**

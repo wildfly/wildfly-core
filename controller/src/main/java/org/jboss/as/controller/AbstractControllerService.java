@@ -60,6 +60,7 @@ import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoadException;

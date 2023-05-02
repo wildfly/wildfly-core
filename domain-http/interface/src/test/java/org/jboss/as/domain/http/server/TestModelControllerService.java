@@ -20,12 +20,12 @@ import org.jboss.as.controller.ResourceBuilder;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
-import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 

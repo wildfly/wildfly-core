@@ -70,7 +70,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
-import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.core.model.bridge.impl.LegacyControllerKernelServicesProxy;
 import org.jboss.as.core.model.bridge.local.ScopedKernelServicesBootstrap;
@@ -88,6 +87,7 @@ import org.jboss.as.model.test.ModelTestModelDescriptionValidator.ValidationConf
 import org.jboss.as.model.test.ModelTestModelDescriptionValidator.ValidationFailure;
 import org.jboss.as.model.test.ModelTestOperationValidatorFilter;
 import org.jboss.as.model.test.ModelTestOperationValidatorFilter.Action;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;

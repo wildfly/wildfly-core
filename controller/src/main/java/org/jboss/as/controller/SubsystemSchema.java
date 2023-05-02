@@ -10,6 +10,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.xml.IntVersionSchema;
 import org.jboss.as.controller.xml.VersionedNamespace;
 import org.jboss.as.controller.xml.XMLElementSchema;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.IntVersion;
 
