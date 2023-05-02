@@ -14,8 +14,10 @@ import java.io.IOException;
 import java.io.UTFDataFormatException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.util.Set;
 
 import org.jboss.as.process.CommandLineConstants;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -448,8 +450,8 @@ public interface ProcessLogger extends BasicLogger {
      *
      * @return the message
      */
-    @Message(id = Message.NONE, value = "Runs the server using a specific feature stream.")
-    String argFeatureStream();
+    @Message(id = Message.NONE, value = "Runs the server using a specific feature stream.  Possible values: %s, Default = %s")
+    String argFeatureStream(Set<FeatureStream> streams, FeatureStream defaultStream);
 
     /**
      * Error message indicating no value was provided for a command line argument.

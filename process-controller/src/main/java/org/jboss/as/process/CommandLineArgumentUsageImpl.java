@@ -6,8 +6,10 @@
 package org.jboss.as.process;
 
 import java.io.PrintStream;
+import java.util.EnumSet;
 
 import org.jboss.as.process.logging.ProcessLogger;
+import org.jboss.as.version.FeatureStream;
 
 public class CommandLineArgumentUsageImpl extends CommandLineArgumentUsage {
 
@@ -80,7 +82,7 @@ public class CommandLineArgumentUsageImpl extends CommandLineArgumentUsage {
         instructions.add(ProcessLogger.ROOT_LOGGER.argSecMgr());
 
         addArguments(CommandLineConstants.FEATURE_STREAM + "=<value>");
-        instructions.add(ProcessLogger.ROOT_LOGGER.argFeatureStream());
+        instructions.add(ProcessLogger.ROOT_LOGGER.argFeatureStream(EnumSet.allOf(FeatureStream.class), FeatureStream.DEFAULT));
     }
 
     public static void printUsage(final PrintStream out) {
