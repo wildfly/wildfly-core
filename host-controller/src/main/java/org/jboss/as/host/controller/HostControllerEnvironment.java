@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -28,6 +29,7 @@ import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.jvm.JvmType;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.network.NetworkUtils;
+import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.FeatureStream;
 import org.jboss.as.version.ProductConfig;
@@ -206,11 +208,6 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      * If the property is not set any previously persisted UUID will be used; otherwise a random UUID will be generated.
      */
     public static final String JBOSS_HOST_MANAGEMENT_UUID = "jboss.host.management.uuid";
-
-    /**
-     * The default system property used to store the feature stream for this host.
-     */
-    public static final String HOST_STREAM = "jboss.host.stream";
 
     private final Map<String, String> hostSystemProperties;
     private final InetAddress processControllerAddress;
@@ -488,14 +485,28 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         this.securityManagerEnabled = securityManagerEnabled || isJavaSecurityManagerConfigured(hostSystemProperties);
         this.processType = processType;
 
-        String streamName = hostSystemProperties.get(HOST_STREAM);
-        this.stream = (streamName != null) ? FeatureStream.valueOf(streamName.toUpperCase(Locale.ROOT)) : FeatureStream.DEFAULT;
-        WildFlySecurityManager.setPropertyPrivileged(HOST_STREAM, this.stream.toString());
+        this.stream = getEnumProperty(hostSystemProperties, ServerEnvironment.FEATURE_STREAM, FeatureStream.DEFAULT);
+        if (this.stream == FeatureStream.DEFAULT) {
+            WildFlySecurityManager.setPropertyPrivileged(ServerEnvironment.FEATURE_STREAM, this.stream.toString());
+        }
     }
 
     private static boolean isJavaSecurityManagerConfigured(final Map<String, String> props) {
         final String value = props.get("java.security.manager");
         return value != null && !"allow".equals(value) && !"disallow".equals(value);
+    }
+
+    private static <E extends Enum<E>> E getEnumProperty(Map<String, String> properties, String key, E defaultValue) {
+        String value = properties.get(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        Class<E> enumClass = defaultValue.getDeclaringClass();
+        try {
+            return Enum.valueOf(enumClass, value.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw ServerLogger.ROOT_LOGGER.failedToParseEnumProperty(key, value, EnumSet.allOf(enumClass));
+        }
     }
 
     /**

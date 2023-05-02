@@ -371,7 +371,7 @@ public final class Main {
                     if (stream == null) {
                         return new ServerEnvironmentWrapper(ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
-                    systemProperties.setProperty(ServerEnvironment.SERVER_STREAM, stream);
+                    systemProperties.setProperty(ServerEnvironment.FEATURE_STREAM, stream);
                 } else if(ConfigurationExtensionFactory.isConfigurationExtensionSupported()
                         && ConfigurationExtensionFactory.commandLineContainsArgument(arg)) {
                     int idx = arg.indexOf("=");

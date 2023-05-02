@@ -32,6 +32,7 @@ import org.jboss.as.process.ExitCodes;
 import org.jboss.as.process.ProcessController;
 import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.process.stdin.Base64InputStream;
+import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.SystemExiter;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.logging.MDC;
@@ -450,7 +451,7 @@ public final class Main {
                     if (streamName == null) {
                         return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
-                    hostSystemProperties.put(HostControllerEnvironment.HOST_STREAM, streamName);
+                    hostSystemProperties.put(ServerEnvironment.FEATURE_STREAM, streamName);
                 } else {
                     STDERR.println(HostControllerLogger.ROOT_LOGGER.invalidOption(arg, usageNote()));
                     return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);

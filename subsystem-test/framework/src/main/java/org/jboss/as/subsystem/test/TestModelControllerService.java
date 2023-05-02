@@ -161,7 +161,7 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
             throw new RuntimeException(e);
         }
         props.put(ServerEnvironment.JBOSS_SERVER_DEFAULT_CONFIG, "standalone.xml");
-        props.put(ServerEnvironment.SERVER_STREAM, this.additionalInit.getFeatureStream().toString());
+        props.put(ServerEnvironment.FEATURE_STREAM, this.additionalInit.getFeatureStream().toString());
 
         return new ServerEnvironment(null, props, new HashMap<>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), null, false);
     }
