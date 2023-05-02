@@ -38,6 +38,7 @@ import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.deployment.module.ExtensionListEntry;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.suspend.ServerActivity;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.invocation.proxy.MethodIdentifier;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
@@ -587,6 +588,14 @@ public interface ServerLogger extends BasicLogger {
      */
     @Message(id = Message.NONE, value = "The elytron configuration file for managing git credentials. Default is 'null'")
     String argGitAuth();
+
+    /**
+     * Instructions for the {@link CommandLineConstants#FEATURE_STREAM} command line argument.
+     *
+     * @return the message
+     */
+    @Message(id = Message.NONE, value = "Runs the server using a specific feature stream.  Possible values: %s, Default = %s")
+    String argFeatureStream(Set<FeatureStream> streams, FeatureStream defaultStream);
 
     /**
      * Creates an error message indicating a value was expected for the given command line option.
