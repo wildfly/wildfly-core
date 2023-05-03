@@ -34,7 +34,7 @@ import org.wildfly.core.instmgr.InstMgrConstants;
 import org.wildfly.core.instmgr.InstMgrListUpdatesHandler;
 
 public class ListUpdatesAction extends AbstractInstMgrCommand {
-    private final File mavenRepoFile;
+    private final List<File> mavenRepoFiles;
     private final List<String> repositories;
     private final Path localCache;
     private final boolean noResolveLocalCache;
@@ -42,7 +42,7 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
     private final ModelNode headers;
 
     public ListUpdatesAction(Builder builder) {
-        this.mavenRepoFile = builder.mavenRepoFile;
+        this.mavenRepoFiles = builder.mavenRepoFiles;
         this.repositories = builder.repositories;
         this.localCache = builder.localCache;
         this.noResolveLocalCache = builder.noResolveLocalCache;
@@ -57,9 +57,13 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
 
         op.get(OP).set(InstMgrListUpdatesHandler.DEFINITION.getName());
 
-        if (mavenRepoFile != null) {
-            op.get(InstMgrConstants.MAVEN_REPO_FILE).set(0);
-            operationBuilder.addFileAsAttachment(mavenRepoFile);
+        if (mavenRepoFiles != null && !mavenRepoFiles.isEmpty()) {
+            final ModelNode filesMn = new ModelNode().addEmptyList();
+            for (int i = 0; i < mavenRepoFiles.size(); i++) {
+                filesMn.add(i);
+                operationBuilder.addFileAsAttachment(mavenRepoFiles.get(i));
+            }
+            op.get(InstMgrConstants.MAVEN_REPO_FILES).set(filesMn);
         }
 
         addRepositoriesToModelNode(op, this.repositories);
@@ -81,7 +85,7 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
     public static class Builder {
         public boolean offline;
         private ModelNode headers;
-        private File mavenRepoFile;
+        private List<File> mavenRepoFiles;
         private List<String> repositories;
         private Path localCache;
 
@@ -91,11 +95,12 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
             this.repositories = new ArrayList<>();
             this.offline = false;
             this.noResolveLocalCache = false;
+            this.mavenRepoFiles = new ArrayList<>();
         }
 
-        public Builder setMavenRepoFile(File mavenRepoFile) {
-            if (mavenRepoFile != null) {
-                this.mavenRepoFile = mavenRepoFile;
+        public Builder setMavenRepoFiles(List<File> mavenRepoFiles) {
+            if (mavenRepoFiles != null) {
+                this.mavenRepoFiles.addAll(mavenRepoFiles);
             }
             return this;
         }

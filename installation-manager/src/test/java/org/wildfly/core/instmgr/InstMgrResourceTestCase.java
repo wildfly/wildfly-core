@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.FileVisitResult;
@@ -84,6 +85,7 @@ import org.wildfly.test.installationmanager.TestInstallationManagerFactory;
  */
 public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     private static final ServiceName PATH_MANAGER_SVC = AbstractControllerService.PATH_MANAGER_CAPABILITY.getCapabilityServiceName();
+    private static final ServiceName MANAGEMENT_EXECUTOR_SVC = AbstractControllerService.EXECUTOR_CAPABILITY.getCapabilityServiceName();
     PathManagerService pathManagerService;
     static final Path TARGET_DIR = Paths.get(System.getProperty("basedir", ".")).resolve("target");
     static final Path JBOSS_HOME = TARGET_DIR.resolve("InstMgrResourceTestCase").normalize().toAbsolutePath();
@@ -106,6 +108,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
     @After
     public void shutdownServiceContainer() throws IOException {
+
         super.shutdownServiceContainer();
         if (JBOSS_HOME.toFile().exists()) {
             try (Stream<Path> walk = Files.walk(JBOSS_HOME)) {
@@ -126,8 +129,8 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
                 super.addHardcodedAbsolutePath(getContainer(), "jboss.controller.temp.dir", JBOSS_CONTROLLER_TEMP_DIR.toString());
             }
         };
-        GlobalOperationHandlers.registerGlobalOperations(registration, processType);
 
+        GlobalOperationHandlers.registerGlobalOperations(registration, processType);
         GlobalNotifications.registerGlobalNotifications(registration, processType);
 
         StabilityMonitor monitor = new StabilityMonitor();
@@ -535,7 +538,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     public void listUpdatesCannotUseMavenRepoFileWithRepositories() {
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
-        op.get(InstMgrConstants.MAVEN_REPO_FILE).set(0);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
 
         ModelNode repositories = new ModelNode();
         ModelNode repository = new ModelNode();
@@ -586,15 +589,15 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     }
 
     @Test
-    public void listUpdatesUploadMavenZip() throws OperationFailedException, IOException, URISyntaxException {
+    public void listUpdatesUploadMavenZip() throws OperationFailedException, IOException {
         Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
+        File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
-        op.get(InstMgrConstants.MAVEN_REPO_FILE).set(0);
-        OperationBuilder operationBuilder = OperationBuilder.create(op);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
+        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
         operationBuilder.addFileAsAttachment(target);
         Operation build = operationBuilder.build();
 
@@ -604,14 +607,71 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(1, TestInstallationManager.findUpdatesRepositories.size());
         Repository mavenZipRepo = TestInstallationManager.findUpdatesRepositories.get(0);
 
-        Assert.assertEquals("id0", mavenZipRepo.getId());
-        Assert.assertTrue(mavenZipRepo.getUrl().toString().matches("file://(.)*list-updates-(.)*maven-repository(.)*"));
-        Assert.assertTrue(new File(new URL(mavenZipRepo.getUrl()).toURI()).isDirectory());
-        Assert.assertTrue(new File(new URL(mavenZipRepo.getUrl()).toURI()).exists());
-
+        verifyListUpdatesUploadedZipRepository(mavenZipRepo, 0, "list-updates-", "artifact-one");
         verifyListUpdatesResult(response, true);
+
+        // remove all temporal files
+        op = Util.createEmptyOperation(InstMgrCleanHandler.OPERATION_NAME, pathElements);
+        executeForResult(op);
+        Assert.assertTrue(!Paths.get(new URL(mavenZipRepo.getUrl()).getFile()).toFile().exists());
     }
 
+
+    @Test
+    public void listUpdatesUploadMultipleMavenZip() throws OperationFailedException, IOException {
+        Path targetOne = TARGET_DIR.resolve("installation-manager-one.zip");
+        File source = new File(getClass().getResource("test-repo-one").getFile());
+        zipDir(source.toPath().toAbsolutePath(), targetOne);
+
+        Path targetTwo = TARGET_DIR.resolve("installation-manager-two.zip");
+        source = new File(getClass().getResource("test-repo-two").getFile());
+        zipDir(source.toPath().toAbsolutePath(), targetTwo);
+
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0).add(1);
+        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
+        operationBuilder.addFileAsAttachment(targetOne);
+        operationBuilder.addFileAsAttachment(targetTwo);
+        Operation build = operationBuilder.build();
+
+        ModelNode response = executeForResult(build);
+
+        // verify we are using a repository pointing out to the maven zip file
+        Assert.assertEquals(2, TestInstallationManager.findUpdatesRepositories.size());
+        Repository mavenZipRepo = TestInstallationManager.findUpdatesRepositories.get(0);
+        verifyListUpdatesUploadedZipRepository(mavenZipRepo, 0, "list-updates-", "artifact-one");
+
+        mavenZipRepo = TestInstallationManager.findUpdatesRepositories.get(1);
+        verifyListUpdatesUploadedZipRepository(mavenZipRepo, 1, "list-updates-", "artifact-two");
+
+        verifyListUpdatesResult(response, true);
+
+        // remove all temporal files
+        op = Util.createEmptyOperation(InstMgrCleanHandler.OPERATION_NAME, pathElements);
+        executeForResult(op);
+        Assert.assertTrue(!Paths.get(new URL(mavenZipRepo.getUrl()).getFile()).toFile().exists());
+    }
+
+    /**
+     * Verifies that we have created the expected structure for a repository created to supply the artifacts included in an Uploaded Maven Zip File.
+     *
+     * @param mavenZipRepo
+     * @param streamIndex
+     * @throws MalformedURLException
+     * @throws URISyntaxException
+     */
+    public void verifyListUpdatesUploadedZipRepository(Repository mavenZipRepo, int streamIndex, String tempDirPrefix, String artifactName) throws MalformedURLException {
+        Assert.assertEquals(InstMgrConstants.INTERNAL_REPO_PREFIX + streamIndex, mavenZipRepo.getId());
+        Path repoUrlPath = Paths.get(new URL(mavenZipRepo.getUrl()).getFile());
+        Assert.assertEquals(repoUrlPath.getFileName().toString(), "maven-repository");
+        Assert.assertEquals(repoUrlPath.getParent().getFileName().toString(), InstMgrConstants.INTERNAL_REPO_PREFIX + streamIndex);
+        Assert.assertTrue(repoUrlPath.getParent().getParent().getFileName().toString().startsWith(tempDirPrefix));
+        Assert.assertTrue(repoUrlPath.toFile().exists());
+        Assert.assertTrue(repoUrlPath.toFile().isDirectory());
+        String[] files = repoUrlPath.toFile().list();
+        Assert.assertEquals(files[0], artifactName);
+    }
 
     @Test
     public void prepareUpdatesMavenOptions() throws OperationFailedException, IOException {
@@ -694,7 +754,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     public void prepareUpdatesCannotUseMavenRepoFileWithRepositories() {
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
-        op.get(InstMgrConstants.MAVEN_REPO_FILE).set(0);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
 
         ModelNode repositories = new ModelNode();
         ModelNode repository = new ModelNode();
@@ -716,7 +776,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     public void prepareUpdatesCannotUseWorkDirWithMavenRepoFileOrRepositories() {
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
-        op.get(InstMgrConstants.MAVEN_REPO_FILE).set(0);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
         op.get(InstMgrConstants.LIST_UPDATES_WORK_DIR).set("/dummy");
 
         ModelNode failed = executeCheckForFailure(op);
@@ -746,7 +806,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
 
         op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
-        op.get(InstMgrConstants.MAVEN_REPO_FILE).set(0);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
         op.get(InstMgrConstants.LIST_UPDATES_WORK_DIR).set("/dummy");
         op.get(InstMgrConstants.REPOSITORIES).set(repositories);
 
@@ -767,12 +827,12 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertTrue(instMgrService.canPrepareServer());
 
         Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
+        File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
-        op.get(InstMgrConstants.MAVEN_REPO_FILE).set(0);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
         OperationBuilder operationBuilder = OperationBuilder.create(op);
         operationBuilder.addFileAsAttachment(target);
         Operation build = operationBuilder.build();
@@ -781,15 +841,68 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(1, TestInstallationManager.prepareUpdatesRepositories.size());
         Repository mavenZipRepo = TestInstallationManager.prepareUpdatesRepositories.get(0);
 
-        Assert.assertEquals("id0", mavenZipRepo.getId());
-        Assert.assertTrue(mavenZipRepo.getUrl().toString().matches("file://(.)*prepare-updates-(.)*maven-repository(.)*"));
+        verifyPrepareUploadedZipRepository(mavenZipRepo, 0, "prepare-updates-", "artifact-one");
 
-        // the temporal directory where the maven Zip file was unzipped should have been deleted
-        Assert.assertFalse(new File(new URL(mavenZipRepo.getUrl()).toURI()).exists());
-
+        // verify the prepared server
         Assert.assertTrue(instMgrService.getPreparedServerDir().toFile().listFiles().length == 1);
         Assert.assertEquals(InstMgrCandidateStatus.Status.PREPARED, instMgrService.getCandidateStatus());
         Assert.assertFalse(instMgrService.canPrepareServer());
+    }
+
+    @Test
+    public void prepareUpdatesMultipleUploadMavenZip() throws OperationFailedException, IOException, URISyntaxException {
+        InstMgrService instMgrService = (InstMgrService) this.recordedServices.get(InstMgrResourceDefinition.INSTALLATION_MANAGER_CAPABILITY.getCapabilityServiceName()).get();
+
+        Assert.assertFalse(instMgrService.getPreparedServerDir().toFile().exists());
+        Assert.assertEquals(InstMgrCandidateStatus.Status.CLEAN, instMgrService.getCandidateStatus());
+        Assert.assertTrue(instMgrService.canPrepareServer());
+
+        Path targetOne = TARGET_DIR.resolve("installation-manager-one.zip");
+        File source = new File(getClass().getResource("test-repo-one").getFile());
+        zipDir(source.toPath().toAbsolutePath(), targetOne);
+
+        Path targetTwo = TARGET_DIR.resolve("installation-manager-two.zip");
+        source = new File(getClass().getResource("test-repo-two").getFile());
+        zipDir(source.toPath().toAbsolutePath(), targetTwo);
+
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0).add(1);
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
+        operationBuilder.addFileAsAttachment(targetOne);
+        operationBuilder.addFileAsAttachment(targetTwo);
+        Operation build = operationBuilder.build();
+        executeForResult(build);
+
+        Assert.assertEquals(2, TestInstallationManager.prepareUpdatesRepositories.size());
+        Repository mavenZipRepo = TestInstallationManager.prepareUpdatesRepositories.get(0);
+        verifyPrepareUploadedZipRepository(mavenZipRepo, 0, "prepare-updates-", "artifact-one");
+
+        mavenZipRepo = TestInstallationManager.prepareUpdatesRepositories.get(1);
+        verifyPrepareUploadedZipRepository(mavenZipRepo, 1, "prepare-updates-", "artifact-two");
+
+        // verify the prepared server
+        Assert.assertTrue(instMgrService.getPreparedServerDir().toFile().listFiles().length == 1);
+        Assert.assertEquals(InstMgrCandidateStatus.Status.PREPARED, instMgrService.getCandidateStatus());
+        Assert.assertFalse(instMgrService.canPrepareServer());
+    }
+
+    /**
+     * Verifies that we have created the expected structure for a repository created to supply the artifacts included in an Uploaded Maven Zip File.
+     *
+     * @param mavenZipRepo
+     * @param streamIndex
+     * @throws MalformedURLException
+     * @throws URISyntaxException
+     */
+    public void verifyPrepareUploadedZipRepository(Repository mavenZipRepo, int streamIndex, String tempDirPrefix, String artifactName) throws MalformedURLException {
+        Assert.assertEquals(InstMgrConstants.INTERNAL_REPO_PREFIX + streamIndex, mavenZipRepo.getId());
+        Path repoUrlPath = Paths.get(new URL(mavenZipRepo.getUrl()).getFile());
+        Assert.assertEquals(repoUrlPath.getFileName().toString(), "maven-repository");
+        Assert.assertEquals(repoUrlPath.getParent().getFileName().toString(), InstMgrConstants.INTERNAL_REPO_PREFIX + streamIndex);
+        Assert.assertTrue(repoUrlPath.getParent().getParent().getFileName().toString().startsWith(tempDirPrefix));
+        // The temporal directory used to prepare the candidate server should have been deleted once the candidate server is prepared.
+        Assert.assertFalse(repoUrlPath.toFile().exists());
     }
 
     @Test
@@ -817,7 +930,6 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
             Assert.assertEquals(JBOSS_HOME.resolve("bin") + TestInstallationManager.APPLY_UPDATE_BASE_GENERATED_COMMAND+instMgrService.getPreparedServerDir(), prop.get(InstMgrCandidateStatus.INST_MGR_COMMAND_KEY));
         }
     }
-
 
     @Test
     public void prepareRevertCannotUseLocalCacheWithNoResolveLocalCache() throws OperationFailedException {
@@ -851,7 +963,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrPrepareRevertHandler.OPERATION_NAME, pathElements);
         op.get(InstMgrConstants.REVISION).set("aaaabbbb");
-        op.get(InstMgrConstants.MAVEN_REPO_FILE).set(0);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
 
         ModelNode repositories = new ModelNode();
         ModelNode repository = new ModelNode();
@@ -896,9 +1008,82 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     }
 
     @Test
+    public void prepareRevertUploadMavenZip() throws OperationFailedException, IOException {
+        InstMgrService instMgrService = (InstMgrService) this.recordedServices.get(InstMgrResourceDefinition.INSTALLATION_MANAGER_CAPABILITY.getCapabilityServiceName()).get();
+
+        Assert.assertFalse(instMgrService.getPreparedServerDir().toFile().exists());
+        Assert.assertEquals(InstMgrCandidateStatus.Status.CLEAN, instMgrService.getCandidateStatus());
+        Assert.assertTrue(instMgrService.canPrepareServer());
+
+        Path target = TARGET_DIR.resolve("installation-manager.zip");
+        File source = new File(getClass().getResource("test-repo-one").getFile());
+        zipDir(source.toPath().toAbsolutePath(), target);
+
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrPrepareRevertHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
+        op.get(InstMgrConstants.REVISION).set("dummy");
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
+        operationBuilder.addFileAsAttachment(target);
+        Operation build = operationBuilder.build();
+        executeForResult(build);
+
+        Assert.assertEquals(1, TestInstallationManager.prepareRevertRepositories.size());
+        Repository mavenZipRepo = TestInstallationManager.prepareRevertRepositories.get(0);
+
+        verifyPrepareUploadedZipRepository(mavenZipRepo, 0, "prepare-revert-", "artifact-one");
+
+        // verify the prepared server
+        Assert.assertTrue(instMgrService.getPreparedServerDir().toFile().listFiles().length == 1);
+        Assert.assertEquals(InstMgrCandidateStatus.Status.PREPARED, instMgrService.getCandidateStatus());
+        Assert.assertFalse(instMgrService.canPrepareServer());
+    }
+
+    @Test
+    public void prepareRevertMultipleUploadMavenZip() throws OperationFailedException, IOException {
+        InstMgrService instMgrService = (InstMgrService) this.recordedServices.get(InstMgrResourceDefinition.INSTALLATION_MANAGER_CAPABILITY.getCapabilityServiceName()).get();
+
+        Assert.assertFalse(instMgrService.getPreparedServerDir().toFile().exists());
+        Assert.assertEquals(InstMgrCandidateStatus.Status.CLEAN, instMgrService.getCandidateStatus());
+        Assert.assertTrue(instMgrService.canPrepareServer());
+
+        Path targetOne = TARGET_DIR.resolve("installation-manager-one.zip");
+        File source = new File(getClass().getResource("test-repo-one").getFile());
+        zipDir(source.toPath().toAbsolutePath(), targetOne);
+
+        Path targetTwo = TARGET_DIR.resolve("installation-manager-two.zip");
+        source = new File(getClass().getResource("test-repo-two").getFile());
+        zipDir(source.toPath().toAbsolutePath(), targetTwo);
+
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrPrepareRevertHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0).add(1);
+        op.get(InstMgrConstants.REVISION).set("dummy");
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
+        operationBuilder.addFileAsAttachment(targetOne);
+        operationBuilder.addFileAsAttachment(targetTwo);
+        Operation build = operationBuilder.build();
+        executeForResult(build);
+
+        Assert.assertEquals(2, TestInstallationManager.prepareRevertRepositories.size());
+
+        Repository mavenZipRepo = TestInstallationManager.prepareRevertRepositories.get(0);
+        verifyPrepareUploadedZipRepository(mavenZipRepo, 0, "prepare-revert-", "artifact-one");
+
+        mavenZipRepo = TestInstallationManager.prepareRevertRepositories.get(1);
+        verifyPrepareUploadedZipRepository(mavenZipRepo, 1, "prepare-revert-", "artifact-two");
+
+        // verify the prepared server
+        Assert.assertTrue(instMgrService.getPreparedServerDir().toFile().listFiles().length == 1);
+        Assert.assertEquals(InstMgrCandidateStatus.Status.PREPARED, instMgrService.getCandidateStatus());
+        Assert.assertFalse(instMgrService.canPrepareServer());
+    }
+
+
+    @Test
     public void uploadCustomPatchInvalidManifest() throws IOException {
         Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
+        File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
@@ -986,7 +1171,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertFalse(customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES).toFile().exists());
 
         Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
+        File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
         // The Channel for the custom patch doesn't exist yet
@@ -1007,7 +1192,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         ModelNode result = executeForResult(build);
         Assert.assertEquals(customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES).toString(), result.asString());
         Assert.assertTrue(customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES).toFile().exists());
-        Assert.assertTrue(customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES).resolve("artifact").toFile().exists());
+        Assert.assertTrue(customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES).resolve("artifact-one").toFile().exists());
 
         boolean found = false;
         for (Channel channel : lstChannels) {

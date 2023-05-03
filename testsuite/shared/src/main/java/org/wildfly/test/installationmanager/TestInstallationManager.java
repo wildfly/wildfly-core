@@ -55,6 +55,9 @@ public class TestInstallationManager implements InstallationManager {
     public static List<ArtifactChange> findUpdatesChanges;
     public static List<Repository> prepareUpdatesRepositories;
     public static Path prepareUpdatesTargetDir;
+
+    public static List<Repository> prepareRevertRepositories;
+    public static Path prepareRevertTargetDir;
     public static boolean noUpdatesFound;
     public static InstallationChanges installationChanges;
     public static HashMap<String, HistoryResult> history;
@@ -146,6 +149,10 @@ public class TestInstallationManager implements InstallationManager {
             prepareUpdatesRepositories = new ArrayList<>();
             prepareUpdatesTargetDir = null;
 
+            // prepare Revert sample data
+            prepareRevertRepositories = new ArrayList<>();
+            prepareRevertTargetDir = null;
+
             initialized = true;
         }
     }
@@ -168,7 +175,9 @@ public class TestInstallationManager implements InstallationManager {
 
     @Override
     public void prepareRevert(String revision, Path targetDir, List<Repository> repositories) throws Exception {
-
+        prepareRevertTargetDir = targetDir;
+        prepareRevertRepositories = new ArrayList<>(repositories);
+        Files.createTempFile(targetDir, "server-prepare-marker-", null);
     }
 
     @Override

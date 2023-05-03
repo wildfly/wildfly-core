@@ -46,9 +46,9 @@ import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.suites.DomainTestSuite;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.module.util.TestModule;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -119,8 +119,8 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         testModule.create(true);
     }
 
-    @Before
-    public void clean() {
+    @After
+    public void clean() throws IOException {
         String host = "secondary";
         // Clean any previous state
         assertTrue(cli.sendLine("installer clean --host=" + host, false));
@@ -130,15 +130,17 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         // Clean any previous state
         assertTrue(cli.sendLine("installer clean --host=" + host, false));
         Assert.assertTrue(!Files.exists(primaryPrepareServerDir));
+
+       for(File testZip : TARGET_DIR.toFile().listFiles((dir, name) -> name.startsWith("installation-manager-") && name.endsWith(".zip"))) {
+           Files.deleteIfExists(testZip.toPath());
+        }
     }
 
     @Test
     public void requireHost() {
-        final List<String> commands = List.of("update", "clean", "revert", "history",
-                "channel-list", "channel-add --channel-name test --manifest test --repositories test",
-                "channel-edit --channel-name test --manifest test --repositories test",
-                "channel-remove --channel-name test",
-                "upload-custom-patch --custom-patch-file=dummy --manifest=manifest");
+        final List<String> commands = List.of("update", "clean", "revert", "history", "channel-list",
+                "channel-add --channel-name test --manifest test --repositories test", "channel-edit --channel-name test --manifest test --repositories test",
+                "channel-remove --channel-name test", "upload-custom-patch --custom-patch-file=dummy --manifest=manifest");
 
         for (String command : commands) {
             AssertionError exception = assertThrows(AssertionError.class, () -> {
@@ -459,30 +461,75 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     public void updateWithConfirmUsingMavenZipFile() throws IOException {
         String host = "primary";
         Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
+        File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
-        cli.sendLine("installer update --confirm --maven-repo-file=" + target + " --host=" + host);
+        cli.sendLine("installer update --confirm --maven-repo-files=" + target + " --host=" + host);
         String output = cli.readOutput();
+        verifyUpdatePrepareDirWasCreated(host, output);
+
+    }
+    @Test
+    public void updateWithConfirmUsingMultipleMavenZipFiles() throws IOException {
+        String host = "primary";
+        Path targetOne = TARGET_DIR.resolve("installation-manager-one.zip");
+        File source = new File(getClass().getResource("test-repo-one").getFile());
+        zipDir(source.toPath().toAbsolutePath(), targetOne);
+
+        Path targetTwo = TARGET_DIR.resolve("installation-manager-two.zip");
+        source = new File(getClass().getResource("test-repo-two").getFile());
+        zipDir(source.toPath().toAbsolutePath(), targetTwo);
+
+        cli.sendLine("installer update --confirm --maven-repo-files=" + targetOne + "," + targetTwo + " --host=" + host);
+        String output = cli.readOutput();
+        verifyUpdatePrepareDirWasCreated(host, output);
+    }
+
+    public void verifyUpdatePrepareDirWasCreated(String host, String output) throws IOException {
+        final Path expectedPreparedServerDir = host.equals("primary") ? primaryPrepareServerDir : secondaryPrepareServerDir;
+
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.installed"));
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.removed"));
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.updated"));
         Assert.assertTrue(output,
                 output.contains("The candidate server has been generated. To apply it, restart the server with 'shutdown --perform-installation' command."));
 
-        Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
-        Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
-                Files.list(primaryPrepareServerDir).allMatch(p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(expectedPreparedServerDir) && Files.isDirectory(expectedPreparedServerDir));
+        Assert.assertTrue(expectedPreparedServerDir + " does not contain the expected file marker",
+                Files.list(expectedPreparedServerDir).allMatch(p -> expectedPreparedServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
+
 
     @Test
     public void updateWithDryRunMavenZipFile() throws IOException {
         String host = "primary";
         Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
+        File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
-        cli.sendLine("installer update --dry-run --maven-repo-file=" + target + " --host=" + host);
+        cli.sendLine("installer update --dry-run --maven-repo-files=" + target + " --host=" + host);
+        String output = cli.readOutput();
+        Assert.assertTrue(output, output.contains("org.findupdates:findupdates.installed"));
+        Assert.assertTrue(output, output.contains("org.findupdates:findupdates.removed"));
+        Assert.assertTrue(output, output.contains("org.findupdates:findupdates.updated"));
+        Assert.assertFalse(output,
+                output.contains("The candidate server has been generated. To apply it, restart the server with 'shutdown --perform-installation' command."));
+
+        Assert.assertFalse(Files.exists(primaryPrepareServerDir));
+    }
+
+    @Test
+    public void updateWithDryRunMultipleMavenZipFile() throws IOException {
+        String host = "primary";
+        Path targetOne = TARGET_DIR.resolve("installation-manager-one.zip");
+        File source = new File(getClass().getResource("test-repo-one").getFile());
+        zipDir(source.toPath().toAbsolutePath(), targetOne);
+
+        Path targetTwo = TARGET_DIR.resolve("installation-manager-two.zip");
+        source = new File(getClass().getResource("test-repo-one").getFile());
+        zipDir(source.toPath().toAbsolutePath(), targetTwo);
+
+        cli.sendLine("installer update --dry-run --maven-repo-files=" + targetOne +","+ targetTwo + " --host=" + host);
         String output = cli.readOutput();
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.installed"));
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.removed"));
@@ -508,30 +555,46 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         String host = "primary";
 
         Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
+        File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
         AssertionError exception = assertThrows(AssertionError.class, () -> {
-            cli.sendLine("installer update --repositories=id0::http://localhost --maven-repo-file=" + target + " --host=" + host);
+            cli.sendLine("installer update --repositories=id0::http://localhost --maven-repo-files=" + target + " --host=" + host);
         });
 
         String expectedMessage = "WFLYIM0012:";
         String actualMessage = exception.getMessage();
-        Assert.assertTrue(
-                getCauseLogFailure(actualMessage, expectedMessage),
-                actualMessage.contains(expectedMessage)
-        );
+        Assert.assertTrue(getCauseLogFailure(actualMessage, expectedMessage), actualMessage.contains(expectedMessage));
     }
 
     @Test
-    public void revertWithRepositories() throws IOException {
+    public void revertWithMavenZipFile() throws IOException {
         String host = "primary";
 
         Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
+        File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
-        Assert.assertTrue(cli.sendLine("installer revert --revision=dummy --maven-repo-file=" + target + " --host=" + host, false));
+        Assert.assertTrue(cli.sendLine("installer revert --revision=dummy --maven-repo-files=" + target + " --host=" + host, false));
+
+        Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
+        Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
+                Files.list(primaryPrepareServerDir).allMatch(p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+    }
+
+    @Test
+    public void revertWithMultipleMavenZipFiles() throws IOException {
+        String host = "primary";
+
+        Path targetOne = TARGET_DIR.resolve("installation-manager-one.zip");
+        File source = new File(getClass().getResource("test-repo-one").getFile());
+        zipDir(source.toPath().toAbsolutePath(), targetOne);
+
+        Path targetTwo = TARGET_DIR.resolve("installation-manager-two.zip");
+        source = new File(getClass().getResource("test-repo-two").getFile());
+        zipDir(source.toPath().toAbsolutePath(), targetTwo);
+
+        Assert.assertTrue(cli.sendLine("installer revert --revision=dummy --maven-repo-files=" + targetOne + "," + targetTwo + " --host=" + host, false));
 
         Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
         Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
@@ -541,10 +604,6 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     @Test
     public void revertWithNoResolveLocalMavenCache() throws IOException {
         String host = "primary";
-
-        Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
-        zipDir(source.toPath().toAbsolutePath(), target);
 
         assertTrue(cli.sendLine("installer revert --revision=dummy --no-resolve-local-cache --host=" + host, false));
 
@@ -557,10 +616,6 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     public void revertWithLocalCacheMavenCache() throws IOException {
         String host = "primary";
 
-        Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
-        zipDir(source.toPath().toAbsolutePath(), target);
-
         assertTrue(cli.sendLine("installer revert --revision=dummy --local-cache=" + TARGET_DIR + " --host=" + host, false));
 
         Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
@@ -571,10 +626,6 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     @Test
     public void revertWithOffline() throws IOException {
         String host = "primary";
-
-        Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
-        zipDir(source.toPath().toAbsolutePath(), target);
 
         assertTrue(cli.sendLine("installer revert --revision=dummy --offline --host=" + host, false));
 
@@ -587,10 +638,6 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     public void revertWithHeaders() throws IOException {
         String host = "secondary";
 
-        Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
-        zipDir(source.toPath().toAbsolutePath(), target);
-
         assertTrue(cli.sendLine("installer revert --revision=dummy --headers={blocking-timeout=100} --host=" + host, false));
 
         Assert.assertTrue(Files.exists(secondaryPrepareServerDir) && Files.isDirectory(secondaryPrepareServerDir));
@@ -599,7 +646,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     }
 
     @Test
-    public void revertWithMavenZipFile() throws IOException {
+    public void revertWithRepositories() throws IOException {
         String host = "primary";
 
         assertTrue(cli.sendLine("installer revert --revision=dummy --repositories=id0::http://localhost --host=" + host, false));
@@ -610,7 +657,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     }
 
     @Test
-    public void revert() throws IOException {
+    public void simpleRevert() throws IOException {
         String host = "primary";
 
         assertTrue(cli.sendLine("installer revert --revision=dummy --host=" + host, false));
@@ -630,10 +677,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
         String expectedMessage = "WFLYCTL0155:";
         String actualMessage = exception.getMessage();
-        Assert.assertTrue(
-                getCauseLogFailure(actualMessage, expectedMessage),
-                actualMessage.contains(expectedMessage)
-        );
+        Assert.assertTrue(getCauseLogFailure(actualMessage, expectedMessage), actualMessage.contains(expectedMessage));
     }
 
     @Test
@@ -641,19 +685,16 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         String host = "primary";
 
         Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
+        File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
         AssertionError exception = assertThrows(AssertionError.class, () -> {
-            cli.sendLine("installer revert --revision=dummy --repositories=id0::http://localhost --maven-repo-file=" + target + " --host=" + host);
+            cli.sendLine("installer revert --revision=dummy --repositories=id0::http://localhost --maven-repo-files=" + target + " --host=" + host);
         });
 
         String expectedMessage = "WFLYIM0012:";
         String actualMessage = exception.getMessage();
-        Assert.assertTrue(
-                getCauseLogFailure(actualMessage, expectedMessage),
-                actualMessage.contains(expectedMessage)
-        );
+        Assert.assertTrue(getCauseLogFailure(actualMessage, expectedMessage), actualMessage.contains(expectedMessage));
     }
 
     @Test
@@ -662,14 +703,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         String patchManifestGA = "group:artifact";
         Path hostCustomPatchDir = primaryCustomPatchBaseDir.resolve(patchManifestGA.replace(":", "_"));
 
-        createAndUploadCustomPatch(patchManifestGA, host, hostCustomPatchDir);
-        removeCustomPatch(patchManifestGA, host, hostCustomPatchDir);
-
-        host = "secondary";
-        patchManifestGA = "group:artifact";
-
-        hostCustomPatchDir = secondaryCustomPatchBaseDir.resolve(patchManifestGA.replace(":", "_"));
-        createAndUploadCustomPatch(patchManifestGA, host, hostCustomPatchDir);
+        createAndUploadCustomPatch(patchManifestGA, host, hostCustomPatchDir, "test-repo-one", "artifact-one");
         removeCustomPatch(patchManifestGA, host, hostCustomPatchDir);
     }
 
@@ -678,11 +712,11 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         String host = "primary";
         String patchManifestGA_1 = "group1:artifact1";
         Path hostCustomPatchDir_1 = primaryCustomPatchBaseDir.resolve(patchManifestGA_1.replace(":", "_"));
-        createAndUploadCustomPatch(patchManifestGA_1, host, hostCustomPatchDir_1);
+        createAndUploadCustomPatch(patchManifestGA_1, host, hostCustomPatchDir_1, "test-repo-one", "artifact-one");
 
         String patchManifestGA_2 = "group2:artifact2";
         Path hostCustomPatchDir_2 = primaryCustomPatchBaseDir.resolve(patchManifestGA_2.replace(":", "_"));
-        createAndUploadCustomPatch(patchManifestGA_2, host, hostCustomPatchDir_2);
+        createAndUploadCustomPatch(patchManifestGA_2, host, hostCustomPatchDir_2, "test-repo-two", "artifact-two");
 
         removeCustomPatch(patchManifestGA_1, host, hostCustomPatchDir_1);
 
@@ -690,15 +724,15 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         final Path customPatchMavenRepo = hostCustomPatchDir_2.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES);
         Assert.assertTrue(Files.exists(customPatchMavenRepo) && Files.isDirectory(customPatchMavenRepo));
         Assert.assertTrue(hostCustomPatchDir_2 + " does not contain the expected maven repository",
-                Files.list(customPatchMavenRepo).allMatch(p -> customPatchMavenRepo.relativize(p).toString().equals("artifact")));
+                Files.list(customPatchMavenRepo).allMatch(p -> customPatchMavenRepo.relativize(p).toString().equals("artifact-two")));
 
         // remove the patch 2
         removeCustomPatch(patchManifestGA_2, host, hostCustomPatchDir_2);
     }
 
-    public void createAndUploadCustomPatch(String customPatchManifest, String host, Path hostCustomPatchDir) throws IOException {
+    public void createAndUploadCustomPatch(String customPatchManifest, String host, Path hostCustomPatchDir, String mavenDirToZip, String expectedArtifact) throws IOException {
         Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo").getFile());
+        File source = new File(getClass().getResource(mavenDirToZip).getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
         // verify the patch doesn't exist yet
@@ -710,8 +744,8 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         // verify clean operation without arguments don't remove the patch
         Assert.assertTrue(cli.sendLine("installer clean --host=" + host, false));
         Assert.assertTrue(Files.exists(customPatchMavenRepo) && Files.isDirectory(customPatchMavenRepo));
-        Assert.assertTrue(hostCustomPatchDir + " does not contain the expected maven repository",
-                Files.list(customPatchMavenRepo).allMatch(p -> customPatchMavenRepo.relativize(p).toString().equals("artifact")));
+        Assert.assertTrue(hostCustomPatchDir + " does not contain the expected artifact included in the custom patch Zip file",
+                Files.list(customPatchMavenRepo).allMatch(p -> customPatchMavenRepo.relativize(p).toString().equals(expectedArtifact)));
     }
 
     public void removeCustomPatch(String customPatchManifest, String host, Path hostCustomPatchDir) {

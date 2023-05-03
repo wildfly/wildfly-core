@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -57,6 +58,7 @@ class InstMgrService implements Service {
     private Path controllerTempDir;
     private final ConcurrentMap<String, Path> tempDirs = new ConcurrentHashMap<>();
     private final InstMgrCandidateStatus candidateStatus;
+    private ExecutorService executor;
 
     InstMgrService(Supplier<PathManager> pathManagerSupplier, Consumer<InstMgrService> consumer) {
         this.pathManagerSupplier = pathManagerSupplier;
@@ -151,7 +153,7 @@ class InstMgrService implements Service {
 
     private void checkStarted() throws IllegalStateException {
         if (!started.get())
-            throw new IllegalStateException();
+            throw InstMgrLogger.ROOT_LOGGER.installationManagerServiceDown();
     }
 
     Path getHomeDir() throws IllegalStateException {
@@ -194,7 +196,7 @@ class InstMgrService implements Service {
         return this.candidateStatus.getStatus();
     }
 
-    public Path getControllerTempDir() {
+    Path getControllerTempDir() {
         checkStarted();
         return controllerTempDir;
     }

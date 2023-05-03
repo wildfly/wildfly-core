@@ -50,8 +50,8 @@ public class RevertCommand extends AbstractInstMgrCommand {
     private boolean noResolveLocalCache;
     @Option(name = "offline", hasValue = false)
     private boolean offline;
-    @Option(name = "maven-repo-file")
-    private File mavenRepoFile;
+    @OptionList(name = "maven-repo-files")
+    private List<File> mavenRepoFiles;
     @Option(name = "revision")
     private String revision;
 
@@ -81,9 +81,13 @@ public class RevertCommand extends AbstractInstMgrCommand {
 
         op.get(OP).set(InstMgrPrepareRevertHandler.DEFINITION.getName());
 
-        if (mavenRepoFile != null) {
-            op.get(InstMgrConstants.MAVEN_REPO_FILE).set(0);
-            operationBuilder.addFileAsAttachment(mavenRepoFile);
+        if (mavenRepoFiles != null && !mavenRepoFiles.isEmpty()) {
+            final ModelNode filesMn = new ModelNode().addEmptyList();
+            for (int i = 0; i < mavenRepoFiles.size(); i++) {
+                filesMn.add(i);
+                operationBuilder.addFileAsAttachment(mavenRepoFiles.get(i));
+            }
+            op.get(InstMgrConstants.MAVEN_REPO_FILES).set(filesMn);
         }
 
         addRepositoriesToModelNode(op, this.repositories);

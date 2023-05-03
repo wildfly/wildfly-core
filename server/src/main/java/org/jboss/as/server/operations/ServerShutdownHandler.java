@@ -131,7 +131,7 @@ public class ServerShutdownHandler implements OperationStepHandler {
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 // WFLY-2741 -- DO NOT call context.getServiceRegistry(true) as that will trigger blocking for
                 // service container stability and one use case for this op is to recover from a
-                // messed up service container from a previous op. Instead just ask for authorization.
+                // messed up service container from a previous op. Instead, just ask for authorization.
                 // Note that we already have the exclusive lock, so we are just skipping waiting for stability.
                 // If another op that is a step in a composite step with this op needs to modify the container
                 // it will have to wait for container stability, so skipping this only matters for the case

@@ -95,6 +95,7 @@ public final class InstMgrInitialization implements ModelControllerServiceInitia
         ServiceBuilder<?> serviceBuilder = target.addService(serviceName);
         Consumer<InstMgrService> consumer = serviceBuilder.provides(serviceName);
         Supplier<PathManager> pathManagerSupplier = serviceBuilder.requires(PATH_MANAGER_CAPABILITY.getCapabilityServiceName());
+
         InstMgrService imService = new InstMgrService(pathManagerSupplier, consumer);
         serviceBuilder.setInstance(imService).setInitialMode(ServiceController.Mode.PASSIVE)
                 .install();
