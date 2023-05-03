@@ -59,13 +59,6 @@ public class ProductConfig implements Serializable {
     public static ProductConfig fromKnownSlot(String slot, ModuleLoader loader, Map<?, ?> providedProperties) {
         return new ProductConfig(loader, new ProductConfProps(slot), providedProperties);
     }
-
-    /** @deprecated use {@link #fromFilesystemSlot(ModuleLoader, String, Map)}. May be removed at any time. */
-    @Deprecated
-    public ProductConfig(ModuleLoader loader, String home, Map<?, ?> providedProperties) {
-        this(loader, getProductConfProperties(home), providedProperties);
-    }
-
     private ProductConfig(ModuleLoader loader, ProductConfProps productConfProps, Map<?, ?> providedProperties) {
         String productName = null;
         String projectName = null;
