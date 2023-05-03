@@ -24,6 +24,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.aesh.command.CommandException;
 import org.jboss.as.cli.Util;
@@ -34,7 +35,7 @@ import org.wildfly.core.instmgr.InstMgrConstants;
 import org.wildfly.core.instmgr.InstMgrPrepareUpdateHandler;
 
 public class PrepareUpdateAction extends AbstractInstMgrCommand {
-    private final File mavenRepoFile;
+    private final List<File> mavenRepoFiles;
     private final List<String> repositories;
     private final Path localCache;
     private final boolean noResolveLocalCache;
@@ -46,7 +47,7 @@ public class PrepareUpdateAction extends AbstractInstMgrCommand {
     private final ModelNode headers;
 
     public PrepareUpdateAction(Builder builder) {
-        this.mavenRepoFile = builder.mavenRepoFile;
+        this.mavenRepoFiles = builder.mavenRepoFiles;
         this.repositories = builder.repositories;
         this.localCache = builder.localCache;
         this.noResolveLocalCache = builder.noResolveLocalCache;
@@ -62,9 +63,13 @@ public class PrepareUpdateAction extends AbstractInstMgrCommand {
 
         op.get(OP).set(InstMgrPrepareUpdateHandler.DEFINITION.getName());
 
-        if (mavenRepoFile != null) {
-            op.get(InstMgrConstants.MAVEN_REPO_FILE).set(0);
-            operationBuilder.addFileAsAttachment(mavenRepoFile);
+        if (mavenRepoFiles != null && !mavenRepoFiles.isEmpty()) {
+            final ModelNode filesMn = new ModelNode().addEmptyList();
+            for (int i = 0; i < mavenRepoFiles.size(); i++) {
+                filesMn.add(i);
+                operationBuilder.addFileAsAttachment(mavenRepoFiles.get(i));
+            }
+            op.get(InstMgrConstants.MAVEN_REPO_FILES).set(filesMn);
         }
 
         addRepositoriesToModelNode(op, this.repositories);
@@ -90,7 +95,7 @@ public class PrepareUpdateAction extends AbstractInstMgrCommand {
     public static class Builder {
         private boolean offline;
         private ModelNode headers;
-        private File mavenRepoFile;
+        private List<File> mavenRepoFiles;
         private List<String> repositories;
         private Path localCache;
 
@@ -101,12 +106,11 @@ public class PrepareUpdateAction extends AbstractInstMgrCommand {
             this.repositories = new ArrayList<>();
             this.offline = false;
             this.noResolveLocalCache = false;
+            this.mavenRepoFiles = new ArrayList<>();
         }
 
-        public Builder setMavenRepoFile(File mavenRepoFile) {
-            if (mavenRepoFile != null) {
-                this.mavenRepoFile = mavenRepoFile;
-            }
+        public Builder setMavenRepoFiles(Set<File> mavenRepoFiles) {
+            this.mavenRepoFiles.addAll(mavenRepoFiles);
             return this;
         }
 

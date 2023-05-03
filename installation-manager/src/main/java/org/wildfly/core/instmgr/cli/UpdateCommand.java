@@ -55,8 +55,8 @@ public class UpdateCommand extends AbstractInstMgrCommand {
     private boolean noResolveLocalCache;
     @Option(name = "offline", hasValue = false)
     private boolean offline;
-    @Option(name = "maven-repo-file")
-    private File mavenRepoFile;
+    @OptionList(name = "maven-repo-files")
+    private List<File> mavenRepoFiles;
 
     @Option(converter = HeadersConverter.class, completer = HeadersCompleter.class)
     public ModelNode headers;
@@ -78,7 +78,7 @@ public class UpdateCommand extends AbstractInstMgrCommand {
                 .setNoResolveLocalCache(noResolveLocalCache)
                 .setLocalCache(localCache)
                 .setRepositories(repositories)
-                .setMavenRepoFile(mavenRepoFile)
+                .setMavenRepoFiles(mavenRepoFiles)
                 .setOffline(offline)
                 .setHeaders(headers);
 

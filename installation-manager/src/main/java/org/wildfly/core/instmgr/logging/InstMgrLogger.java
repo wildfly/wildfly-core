@@ -89,6 +89,8 @@ public interface InstMgrLogger extends BasicLogger {
     @Message(id = 18, value = "The manifest maven coordinates for '%s' are invalid. The expected maven coordinates for this manifest are GAV (GroupId:ArtifactId:Version) where Version is optional.")
     OperationFailedException invalidManifestGAV(String gav);
 
+    @Message(id = 19, value="Installation Manager Service is down")
+    IllegalStateException installationManagerServiceDown();
 
     ////////////////////////////////////////////////
     //Messages without IDs

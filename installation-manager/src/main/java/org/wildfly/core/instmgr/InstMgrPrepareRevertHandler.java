@@ -22,9 +22,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipException;
 
@@ -35,6 +35,7 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
@@ -66,6 +67,12 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
             .setAlternatives(InstMgrConstants.REPOSITORIES)
             .build();
 
+    protected static final AttributeDefinition MAVEN_REPO_FILES =  new SimpleListAttributeDefinition.Builder(InstMgrConstants.MAVEN_REPO_FILES, MAVEN_REPO_FILE)
+            .setStorageRuntime()
+            .setRequired(false)
+            .setAlternatives(InstMgrConstants.REPOSITORIES)
+            .build();
+
     static final AttributeDefinition REPOSITORIES = new ObjectListAttributeDefinition.Builder(InstMgrConstants.REPOSITORIES, REPOSITORY)
             .setStorageRuntime()
             .setRequired(false)
@@ -94,7 +101,7 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
         final String pathLocalRepo = LOCAL_CACHE.resolveModelAttribute(context, operation).asStringOrNull();
         final boolean noResolveLocalCache = NO_RESOLVE_LOCAL_CACHE.resolveModelAttribute(context, operation).asBoolean(false);
         final Path localRepository = pathLocalRepo != null ? Path.of(pathLocalRepo) : null;
-        final Integer mavenRepoFileIndex = MAVEN_REPO_FILE.resolveModelAttribute(context, operation).asIntOrNull();
+        final List<ModelNode> mavenRepoFileIndexes = MAVEN_REPO_FILES.resolveModelAttribute(context, operation).asListOrEmpty();
         final List<ModelNode> repositoriesMn = REPOSITORIES.resolveModelAttribute(context, operation).asListOrEmpty();
         final String revision = REVISION.resolveModelAttribute(context, operation).asString();
 
@@ -102,7 +109,7 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
             throw InstMgrLogger.ROOT_LOGGER.localCacheWithNoResolveLocalCache();
         }
 
-        if (mavenRepoFileIndex != null && !repositoriesMn.isEmpty()) {
+        if (!mavenRepoFileIndexes.isEmpty() && !repositoriesMn.isEmpty()) {
             throw InstMgrLogger.ROOT_LOGGER.mavenRepoFileWithRepositories();
         }
 
@@ -122,18 +129,19 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
                     final MavenOptions mavenOptions = new MavenOptions(localRepository, noResolveLocalCache, offline);
                     final InstallationManager im = imf.create(homeDir, mavenOptions);
 
-                    List<Repository> repositories;
-                    if (mavenRepoFileIndex != null) {
+                    final List<Repository> repositories = new ArrayList<>();
+                    if (!mavenRepoFileIndexes.isEmpty()) {
                         final Path preparationWorkDir = imService.createTempDir("prepare-revert-");
                         addCompleteStep(context, imService, preparationWorkDir.getFileName().toString());
-                        try (InputStream is = context.getAttachmentStream(mavenRepoFileIndex)) {
-                            unzip(is, preparationWorkDir);
+
+                        for (ModelNode indexMn : mavenRepoFileIndexes) {
+                            int index = indexMn.asInt();
+                            Path repoIdPath = preparationWorkDir.resolve(InstMgrConstants.INTERNAL_REPO_PREFIX + index);
+                            Repository uploadedMavenRepo = processMavenRepoFile(context, repoIdPath, index, preparationWorkDir, "prepare-revert-offline-maven-repo-");
+                            repositories.add(uploadedMavenRepo);
                         }
-                        Path uploadedRepoZipRootDir = getUploadedMvnRepoRoot(preparationWorkDir);
-                        Repository uploadedMavenRepo = new Repository("id0", uploadedRepoZipRootDir.toUri().toString());
-                        repositories = List.of(uploadedMavenRepo);
                     } else {
-                        repositories = toRepositories(context, repositoriesMn);
+                        repositories.addAll(toRepositories(context, repositoriesMn));
                     }
 
                     Files.createDirectories(imService.getPreparedServerDir());

@@ -19,6 +19,8 @@
 package org.wildfly.core.instmgr;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -32,8 +34,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationStepHandler;
 import org.wildfly.core.instmgr.logging.InstMgrLogger;
+import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 
 /**
@@ -108,5 +112,36 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
 
             return entries.get(0);
         }
+    }
+
+    /**
+     * Process a Maven Zip file attached as stream to the current Operation Context to create a repository that will be later used by the installation
+     * manager SPI.
+     * The stream is consumed and saved as a Zip file under the baseWorkDir Path. Then, this file is unzipped on repoIdPath and a repository is created to point
+     * out to the directory that contains all the artifacts send by the client in this stream.
+     */
+    protected Repository processMavenRepoFile(OperationContext context, Path repoIdPath, int streamIndex, Path baseWorkDir, String tempFilePrefix)
+            throws Exception {
+        // save and unzip the file in the target dir
+        // Using directly the Operation input stream unzipping without saving it previously to disk seems to
+        // be problematic
+        try (InputStream is = context.getAttachmentStream(streamIndex)) {
+            Path tempFile = Files.createTempFile(baseWorkDir, tempFilePrefix, ".zip");
+            FileOutputStream outputStream = new FileOutputStream(tempFile.toFile());
+            byte[] buffer = new byte[1024];
+
+            int bytesRead;
+            while ((bytesRead = is.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+
+            Files.createDirectory(repoIdPath);
+            try (FileInputStream fileIs = new FileInputStream(tempFile.toFile())) {
+                unzip(fileIs, repoIdPath);
+            }
+        }
+        Path uploadedMvnRepoRoot = getUploadedMvnRepoRoot(repoIdPath);
+        Repository uploadedMavenRepo = new Repository(repoIdPath.getFileName().toString(), uploadedMvnRepoRoot.toUri().toString());
+        return uploadedMavenRepo;
     }
 }

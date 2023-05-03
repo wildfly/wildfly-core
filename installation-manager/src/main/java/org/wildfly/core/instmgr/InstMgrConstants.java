@@ -65,6 +65,7 @@ public interface InstMgrConstants {
     String MANIFEST_URL = "url";
     String MAVEN_REPO_DIR_NAME_IN_ZIP_FILES = "maven-repository";
     String MAVEN_REPO_FILE = "maven-repo-file";
+    String MAVEN_REPO_FILES = "maven-repo-files";
     String NO_RESOLVE_LOCAL_CACHE = "no-resolve-local-cache";
     String OFFLINE = "offline";
     String REPOSITORIES = "repositories";
@@ -73,4 +74,5 @@ public interface InstMgrConstants {
     String REPOSITORY_URL = "url";
     String REVISION = "revision";
     String TOOL_NAME = "installer";
+    String INTERNAL_REPO_PREFIX = "repo-";
 }
