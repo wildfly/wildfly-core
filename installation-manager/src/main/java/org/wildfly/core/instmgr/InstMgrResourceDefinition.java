@@ -23,6 +23,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -220,7 +222,7 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
                                 for (ModelNode mRepository : mRepositories) {
                                     String id = mRepository.get(InstMgrConstants.REPOSITORY_ID).asString();
                                     String url = mRepository.get(InstMgrConstants.REPOSITORY_URL).asString();
-                                    Repository repository = new Repository(id, url);
+                                    Repository repository = new Repository(id, new URI(url).toURL().toExternalForm());
                                     repositories.add(repository);
                                 }
 
@@ -234,7 +236,7 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
                                         manifestGav = mManifest.get(InstMgrConstants.MANIFEST_GAV).asString();
                                         c = new Channel(cName, repositories, manifestGav);
                                     } else {
-                                        manifestUrl = new URL(mManifest.get(InstMgrConstants.REPOSITORY_URL).asString());
+                                        manifestUrl = new URI(mManifest.get(InstMgrConstants.REPOSITORY_URL).asString()).toURL();
                                         c = new Channel(cName, repositories, manifestUrl);
                                     }
                                 } else {
@@ -333,8 +335,8 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
                     throw InstMgrLogger.ROOT_LOGGER.noChannelRepositoryURLDefined(channelName);
                 }
                 try {
-                    new URL(repoUrl);
-                } catch (MalformedURLException e) {
+                    new URI(repoUrl).toURL();
+                } catch (MalformedURLException | URISyntaxException e) {
                     throw InstMgrLogger.ROOT_LOGGER.invalidChannelRepositoryURL(repoUrl, channelName);
                 }
                 String repoId = repository.get(InstMgrConstants.REPOSITORY_ID).asStringOrNull();
@@ -364,8 +366,8 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
                 }
                 if (url != null) {
                     try {
-                        new URL(url);
-                    } catch (MalformedURLException e) {
+                        new URI(url).toURL();
+                    } catch (MalformedURLException | URISyntaxException e) {
                         throw InstMgrLogger.ROOT_LOGGER.invalidChannelManifestURL(url, channelName);
                     }
                 }

@@ -137,6 +137,7 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
                         repositories.addAll(toRepositories(context, repositoriesMn));
                     }
 
+                    InstMgrLogger.ROOT_LOGGER.debug("Calling SPI to list updates with the following repositories:" + repositories);
                     final List<ArtifactChange> updates = im.findUpdates(repositories);
                     final ModelNode resultValue = new ModelNode();
                     final ModelNode updatesMn = new ModelNode().addEmptyList();

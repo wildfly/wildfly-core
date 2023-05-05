@@ -135,18 +135,20 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
 
                     final List<Repository> repositories = new ArrayList<>();
                     if (listUpdatesWorkDir != null) {
+                        InstMgrLogger.ROOT_LOGGER.debug("Preparing a server candidate by using the workdir:" + listUpdatesWorkDir);
                         // We are coming from a previous list-updates management operation where a Maven Zip Repository
                         // has been uploaded and unzipped on a temp dir.
                         final Path mvnRepoWorkDir = imService.getTempDirByName(listUpdatesWorkDir);
                         addCompleteStep(context, imService, listUpdatesWorkDir);
 
-                        for (File file : mvnRepoWorkDir.toFile().listFiles((dir, name) -> name.startsWith("repo-"))) {
+                        for (File file : mvnRepoWorkDir.toFile().listFiles((dir, name) -> name.startsWith(InstMgrConstants.INTERNAL_REPO_PREFIX))) {
                             Path repoIdPath = mvnRepoWorkDir.resolve(file.getName());
                             Path uploadedRepoZipRootDir = getUploadedMvnRepoRoot(repoIdPath);
-                            Repository uploadedMavenRepo = new Repository(file.getName(), uploadedRepoZipRootDir.toUri().toString());
+                            Repository uploadedMavenRepo = new Repository(file.getName(), uploadedRepoZipRootDir.toUri().toURL().toExternalForm());
                             repositories.add(uploadedMavenRepo);
                         }
                     } else if (!mavenRepoFileIndexes.isEmpty()) {
+                        InstMgrLogger.ROOT_LOGGER.debug("Preparing a server candidate by using Operation Streams");
                         // We are uploading a Maven Zip Repository, unzip it in a system temp directory
                         final Path prepareUpdateWorkDir = imService.createTempDir("prepare-updates-");
                         addCompleteStep(context, imService, prepareUpdateWorkDir.getFileName().toString());
@@ -161,6 +163,7 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                         repositories.addAll(toRepositories(context, repositoriesMn));
                     }
 
+                    InstMgrLogger.ROOT_LOGGER.debugf("Calling SPI to prepare an updates at [%s] with the following repositories [%s]", imService.getPreparedServerDir(), repositories);
                     Files.createDirectories(imService.getPreparedServerDir());
                     boolean prepared = im.prepareUpdate(imService.getPreparedServerDir(), repositories);
                     if (prepared) {

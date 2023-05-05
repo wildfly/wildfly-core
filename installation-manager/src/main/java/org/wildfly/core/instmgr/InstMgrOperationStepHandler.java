@@ -141,7 +141,7 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
             }
         }
         Path uploadedMvnRepoRoot = getUploadedMvnRepoRoot(repoIdPath);
-        Repository uploadedMavenRepo = new Repository(repoIdPath.getFileName().toString(), uploadedMvnRepoRoot.toUri().toString());
+        Repository uploadedMavenRepo = new Repository(repoIdPath.getFileName().toString(), uploadedMvnRepoRoot.toUri().toURL().toExternalForm());
         return uploadedMavenRepo;
     }
 }
