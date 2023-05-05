@@ -332,7 +332,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      * Sets the debug JPDA remote socket debugging argument.
      *
      * @param suspend {@code true} to suspend otherwise {@code false}
-     * @param port the port to listen on
+     * @param port    the port to listen on
      *
      * @return the builder
      */
@@ -488,7 +488,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
     /**
      * Adds a security property to be passed to the server.
      *
-     * @param key the property key
+     * @param key   the property key
      * @param value the property value
      *
      * @return the builder
@@ -510,6 +510,15 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         return this;
     }
 
+    /**
+     * Configures the git repository for the standalone server.
+     *
+     * @param gitRepository     the git repository to clone to get the server configuration from
+     * @param gitBranch         the branch to use to get the server configuration
+     * @param gitAuthentication the Elytron configuration file for managing git credentials
+     *
+     * @return the builder
+     */
     public StandaloneCommandBuilder setGitRepository(final String gitRepository, final String gitBranch, final String gitAuthentication) {
         if (gitRepository == null) {
             throw MESSAGES.nullParam("git-repo");
@@ -525,16 +534,37 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         return this;
     }
 
-    public StandaloneCommandBuilder setYamlFiles(Path[] yamlFiles) {
-        if (yamlFiles == null || yamlFiles.length == 0) {
+    /**
+     * Adds the YAML configuration file argument with the given YAML configuration files.
+     *
+     * @param yamlFiles the files to add
+     *
+     * @return the builder
+     */
+    public StandaloneCommandBuilder setYamlFiles(final Collection<Path> yamlFiles) {
+        if (yamlFiles == null || yamlFiles.isEmpty()) {
             return this;
         }
         StringJoiner joiner = new StringJoiner(File.pathSeparator);
         for (Path yamlFile : yamlFiles) {
             joiner.add(yamlFile.toAbsolutePath().toString());
         }
-        addServerArg("--yaml", joiner.toString());
+        setSingleServerArg("--yaml", joiner.toString());
         return this;
+    }
+
+    /**
+     * Adds the YAML configuration file argument with the given YAML configuration files.
+     *
+     * @param yamlFiles the files to add
+     *
+     * @return the builder
+     */
+    public StandaloneCommandBuilder setYamlFiles(final Path... yamlFiles) {
+        if (yamlFiles == null || yamlFiles.length == 0) {
+            return this;
+        }
+        return setYamlFiles(List.of(yamlFiles));
     }
 
     @Override
