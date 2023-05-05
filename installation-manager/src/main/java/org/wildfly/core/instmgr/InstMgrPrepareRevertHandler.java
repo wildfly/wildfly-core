@@ -131,6 +131,7 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
 
                     final List<Repository> repositories = new ArrayList<>();
                     if (!mavenRepoFileIndexes.isEmpty()) {
+                        InstMgrLogger.ROOT_LOGGER.debug("Preparing a server candidate to revert by using Operation Streams");
                         final Path preparationWorkDir = imService.createTempDir("prepare-revert-");
                         addCompleteStep(context, imService, preparationWorkDir.getFileName().toString());
 
@@ -144,6 +145,7 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
                         repositories.addAll(toRepositories(context, repositoriesMn));
                     }
 
+                    InstMgrLogger.ROOT_LOGGER.debugf("Calling SPI to prepare an revert at [%s] with the following repositories [%s] and revision [%s]", imService.getPreparedServerDir(), repositories, revision);
                     Files.createDirectories(imService.getPreparedServerDir());
                     im.prepareRevert(revision, imService.getPreparedServerDir(), repositories);
                     final String applyRevert = im.generateApplyRevertCommand(homeDir.resolve("bin"), imService.getPreparedServerDir());

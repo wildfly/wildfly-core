@@ -118,6 +118,9 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
             }
         }
         Files.deleteIfExists(INSTALLATION_MANAGER_PROPERTIES);
+        for(File testZip : TARGET_DIR.toFile().listFiles((dir, name) -> name.startsWith("installation-manager") && name.endsWith(".zip"))) {
+            Files.deleteIfExists(testZip.toPath());
+        }
     }
 
     @Override
@@ -833,7 +836,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
         op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
-        OperationBuilder operationBuilder = OperationBuilder.create(op);
+        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
         operationBuilder.addFileAsAttachment(target);
         Operation build = operationBuilder.build();
         executeForResult(build);
@@ -868,7 +871,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
         op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0).add(1);
-        OperationBuilder operationBuilder = OperationBuilder.create(op);
+        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
         operationBuilder.addFileAsAttachment(targetOne);
         operationBuilder.addFileAsAttachment(targetTwo);
         Operation build = operationBuilder.build();
@@ -1023,7 +1026,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         ModelNode op = Util.createEmptyOperation(InstMgrPrepareRevertHandler.OPERATION_NAME, pathElements);
         op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
         op.get(InstMgrConstants.REVISION).set("dummy");
-        OperationBuilder operationBuilder = OperationBuilder.create(op);
+        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
         operationBuilder.addFileAsAttachment(target);
         Operation build = operationBuilder.build();
         executeForResult(build);
@@ -1059,7 +1062,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         ModelNode op = Util.createEmptyOperation(InstMgrPrepareRevertHandler.OPERATION_NAME, pathElements);
         op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0).add(1);
         op.get(InstMgrConstants.REVISION).set("dummy");
-        OperationBuilder operationBuilder = OperationBuilder.create(op);
+        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
         operationBuilder.addFileAsAttachment(targetOne);
         operationBuilder.addFileAsAttachment(targetTwo);
         Operation build = operationBuilder.build();
@@ -1091,7 +1094,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
         op.get(InstMgrConstants.MANIFEST).set("invalidgav");
         op.get(InstMgrConstants.CUSTOM_PATCH_FILE).set(0);
-        OperationBuilder operationBuilder = OperationBuilder.create(op);
+        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
         operationBuilder.addFileAsAttachment(target);
 
         Operation build = operationBuilder.build();
@@ -1105,7 +1108,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
         op.get(InstMgrConstants.MANIFEST).set("groupId:artifactId:version");
         op.get(InstMgrConstants.CUSTOM_PATCH_FILE).set(0);
-        operationBuilder = OperationBuilder.create(op);
+        operationBuilder = OperationBuilder.create(op, true);
         operationBuilder.addFileAsAttachment(target);
 
         build = operationBuilder.build();
@@ -1184,7 +1187,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
         op.get(InstMgrConstants.MANIFEST).set(customPatchManifestGA);
         op.get(InstMgrConstants.CUSTOM_PATCH_FILE).set(0);
-        OperationBuilder operationBuilder = OperationBuilder.create(op);
+        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
         operationBuilder.addFileAsAttachment(target);
 
         Operation build = operationBuilder.build();

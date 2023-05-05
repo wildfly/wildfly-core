@@ -26,14 +26,13 @@ import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 
-
 /**
  * Installation Manager logger.
  */
 @SuppressWarnings("DefaultAnnotationParam")
 @MessageLogger(projectCode = "WFLYIM", length = 4)
 public interface InstMgrLogger extends BasicLogger {
-    InstMgrLogger ROOT_LOGGER = Logger.getMessageLogger(InstMgrLogger.class, " org.wildfly.core.installationmanager");
+    InstMgrLogger ROOT_LOGGER = Logger.getMessageLogger(InstMgrLogger.class, "org.wildfly.core.installationmanager");
 
     @Message(id = 1, value = "There is an installation prepared and ready to be applied. The current prepared installation can be discarded by using the 'clean' operation.")
     OperationFailedException serverAlreadyPrepared();
@@ -89,11 +88,11 @@ public interface InstMgrLogger extends BasicLogger {
     @Message(id = 18, value = "The manifest maven coordinates for '%s' are invalid. The expected maven coordinates for this manifest are GAV (GroupId:ArtifactId:Version) where Version is optional.")
     OperationFailedException invalidManifestGAV(String gav);
 
-    @Message(id = 19, value="Installation Manager Service is down")
+    @Message(id = 19, value = "Installation Manager Service is down")
     IllegalStateException installationManagerServiceDown();
 
     ////////////////////////////////////////////////
-    //Messages without IDs
+    // Messages without IDs
 
     @Message(id = Message.NONE, value = "Zip entry %s is outside of the target dir %s")
     ZipException zipEntryOutsideOfTarget(String entry, String target);

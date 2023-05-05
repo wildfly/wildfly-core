@@ -21,7 +21,8 @@ package org.wildfly.core.instmgr;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -92,7 +93,11 @@ abstract class AbstractInstMgrUpdateHandler extends InstMgrOperationStepHandler 
             for (ModelNode repoModelNode : repositoriesMn) {
                 String id = REPOSITORY_ID.resolveModelAttribute(context, repoModelNode).asString();
                 String url = REPOSITORY_URL.resolveModelAttribute(context, repoModelNode).asString();
-                result.add(new Repository(id, url));
+                try {
+                    result.add(new Repository(id, new URI(url).toURL().toExternalForm()));
+                } catch (MalformedURLException | URISyntaxException e) {
+                    throw new OperationFailedException(e);
+                }
             }
         }
 
@@ -109,8 +114,8 @@ abstract class AbstractInstMgrUpdateHandler extends InstMgrOperationStepHandler 
 
             String repoUrl = value.get(InstMgrConstants.REPOSITORY_URL).asStringOrNull();
             try {
-                new URL(repoUrl);
-            } catch (MalformedURLException e) {
+                new URI(repoUrl).toURL();
+            } catch (MalformedURLException | URISyntaxException e) {
                 throw InstMgrLogger.ROOT_LOGGER.invalidRepositoryURL(repoUrl);
             }
         }

@@ -131,7 +131,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         assertTrue(cli.sendLine("installer clean --host=" + host, false));
         Assert.assertTrue(!Files.exists(primaryPrepareServerDir));
 
-       for(File testZip : TARGET_DIR.toFile().listFiles((dir, name) -> name.startsWith("installation-manager-") && name.endsWith(".zip"))) {
+       for(File testZip : TARGET_DIR.toFile().listFiles((dir, name) -> name.startsWith("installation-manager") && name.endsWith(".zip"))) {
            Files.deleteIfExists(testZip.toPath());
         }
     }
