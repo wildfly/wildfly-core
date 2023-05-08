@@ -94,7 +94,6 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
         super(imService, imf);
     }
 
-
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         final boolean offline = OFFLINE.resolveModelAttribute(context, operation).asBoolean(false);
@@ -134,18 +133,13 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
                         InstMgrLogger.ROOT_LOGGER.debug("Preparing a server candidate to revert by using Operation Streams");
                         final Path preparationWorkDir = imService.createTempDir("prepare-revert-");
                         addCompleteStep(context, imService, preparationWorkDir.getFileName().toString());
-
-                        for (ModelNode indexMn : mavenRepoFileIndexes) {
-                            int index = indexMn.asInt();
-                            Path repoIdPath = preparationWorkDir.resolve(InstMgrConstants.INTERNAL_REPO_PREFIX + index);
-                            Repository uploadedMavenRepo = processMavenRepoFile(context, repoIdPath, index, preparationWorkDir, "prepare-revert-offline-maven-repo-");
-                            repositories.add(uploadedMavenRepo);
-                        }
+                        repositories.addAll(getRepositoriesFromOperationStreams(context, mavenRepoFileIndexes, preparationWorkDir));
                     } else {
                         repositories.addAll(toRepositories(context, repositoriesMn));
                     }
 
-                    InstMgrLogger.ROOT_LOGGER.debugf("Calling SPI to prepare an revert at [%s] with the following repositories [%s] and revision [%s]", imService.getPreparedServerDir(), repositories, revision);
+                    InstMgrLogger.ROOT_LOGGER.debugf("Calling SPI to prepare an revert at [%s] with the following repositories [%s] and revision [%s]",
+                            imService.getPreparedServerDir(), repositories, revision);
                     Files.createDirectories(imService.getPreparedServerDir());
                     im.prepareRevert(revision, imService.getPreparedServerDir(), repositories);
                     final String applyRevert = im.generateApplyRevertCommand(homeDir.resolve("bin"), imService.getPreparedServerDir());

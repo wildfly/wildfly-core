@@ -59,7 +59,7 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
             .addArbitraryDescriptor(ATTACHED_STREAMS, ModelNode.TRUE)
             .build();
 
-    protected static final AttributeDefinition MAVEN_REPO_FILES =  new SimpleListAttributeDefinition.Builder(InstMgrConstants.MAVEN_REPO_FILES, MAVEN_REPO_FILE)
+    protected static final AttributeDefinition MAVEN_REPO_FILES = new SimpleListAttributeDefinition.Builder(InstMgrConstants.MAVEN_REPO_FILES, MAVEN_REPO_FILE)
             .setStorageRuntime()
             .setRequired(false)
             .setAlternatives(InstMgrConstants.REPOSITORIES)
@@ -127,12 +127,8 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
 
                     final List<Repository> repositories = new ArrayList<>();
                     if (!mavenRepoFileIndexes.isEmpty()) {
-                        for (ModelNode indexMn : mavenRepoFileIndexes) {
-                            int index = indexMn.asInt();
-                            Path repoIdPath = listUpdatesWorkDir.resolve(InstMgrConstants.INTERNAL_REPO_PREFIX + index);
-                            Repository uploadedMavenRepo = processMavenRepoFile(context, repoIdPath, index, listUpdatesWorkDir, "list-updates-offline-maven-repo-");
-                            repositories.add(uploadedMavenRepo);
-                        }
+                        InstMgrLogger.ROOT_LOGGER.debug("Processing Streams from Operation Context");
+                        repositories.addAll(getRepositoriesFromOperationStreams(context, mavenRepoFileIndexes, listUpdatesWorkDir));
                     } else {
                         repositories.addAll(toRepositories(context, repositoriesMn));
                     }

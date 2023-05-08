@@ -148,22 +148,17 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                             repositories.add(uploadedMavenRepo);
                         }
                     } else if (!mavenRepoFileIndexes.isEmpty()) {
+                        // We are uploading a Maven Zip Repository
                         InstMgrLogger.ROOT_LOGGER.debug("Preparing a server candidate by using Operation Streams");
-                        // We are uploading a Maven Zip Repository, unzip it in a system temp directory
                         final Path prepareUpdateWorkDir = imService.createTempDir("prepare-updates-");
                         addCompleteStep(context, imService, prepareUpdateWorkDir.getFileName().toString());
-
-                        for (ModelNode indexMn : mavenRepoFileIndexes) {
-                            int index = indexMn.asInt();
-                            Path repoIdPath = prepareUpdateWorkDir.resolve(InstMgrConstants.INTERNAL_REPO_PREFIX + index);
-                            Repository uploadedMavenRepo = processMavenRepoFile(context, repoIdPath, index, prepareUpdateWorkDir, "prepare-updates-offline-maven-repo-");
-                            repositories.add(uploadedMavenRepo);
-                        }
+                        repositories.addAll(getRepositoriesFromOperationStreams(context, mavenRepoFileIndexes, prepareUpdateWorkDir));
                     } else {
                         repositories.addAll(toRepositories(context, repositoriesMn));
                     }
 
-                    InstMgrLogger.ROOT_LOGGER.debugf("Calling SPI to prepare an updates at [%s] with the following repositories [%s]", imService.getPreparedServerDir(), repositories);
+                    InstMgrLogger.ROOT_LOGGER.debugf("Calling SPI to prepare an updates at [%s] with the following repositories [%s]",
+                            imService.getPreparedServerDir(), repositories);
                     Files.createDirectories(imService.getPreparedServerDir());
                     boolean prepared = im.prepareUpdate(imService.getPreparedServerDir(), repositories);
                     if (prepared) {
@@ -171,12 +166,12 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                         // No. The documented purpose of the restart-required state is to indicate that the process need to be
                         // restarted to bring its runtime state into alignment with its persistent configuration. This OSH does
                         // not affect the existing server's persistent configuration, so restart-required is not appropriate.
-                        // Using it to inform users of other reasons why they would want to restart the server is beyond the intended
-                        // purpose of restart-required.
+                        // Using it to inform users of other reasons why they would want to restart the server is beyond the
+                        // intended purpose of restart-required.
                         //
-                        // Also, once put in restart required, the clean operation should revert it if it cleans the prepared server,
-                        // but we cannot revert the restart flag from a different Operation since there could be other Operations
-                        // executed which could have been set this flag.
+                        // Also, once put in restart required, the clean operation should revert it if it cleans the prepared
+                        // server, but we cannot revert the restart flag from a different Operation since there could be other
+                        // Operations executed which could have been set this flag.
                         context.getResult().set(imService.getPreparedServerDir().normalize().toAbsolutePath().toString());
 
                         final String applyUpdate = im.generateApplyUpdateCommand(homeDir.resolve("bin"), imService.getPreparedServerDir());

@@ -88,13 +88,16 @@ public interface InstMgrLogger extends BasicLogger {
     @Message(id = 18, value = "The manifest maven coordinates for '%s' are invalid. The expected maven coordinates for this manifest are GAV (GroupId:ArtifactId:Version) where Version is optional.")
     OperationFailedException invalidManifestGAV(String gav);
 
-    @Message(id = 19, value = "Installation Manager Service is down")
+    @Message(id = 19, value = "Installation Manager Service is down.")
     IllegalStateException installationManagerServiceDown();
+
+    @Message(id = 20, value = "Operation has been cancelled.")
+    OperationFailedException operationCancelled();
 
     ////////////////////////////////////////////////
     // Messages without IDs
 
-    @Message(id = Message.NONE, value = "Zip entry %s is outside of the target dir %s")
+    @Message(id = Message.NONE, value = "Zip entry %s is outside of the target dir %s.")
     ZipException zipEntryOutsideOfTarget(String entry, String target);
 
     @Message(id = Message.NONE, value = "The structure of directories and files in the .zip file is invalid. The '%s' directory cannot be found as a second-level entry in the extracted .zip file.")
