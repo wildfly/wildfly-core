@@ -18,9 +18,9 @@
 
 package org.wildfly.core.instmgr;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.UUID;
 
 import org.jboss.as.controller.OperationContext;
@@ -60,9 +60,8 @@ public class InstMgrCreateSnapshotHandler extends InstMgrOperationStepHandler {
                     final InstallationManager im = imf.create(serverHome, mavenOptions);
 
                     Path exportFile = temporalDir.resolve("installer-clone-export" + UUID.randomUUID() + ".zip");
-                    addCleanTempFileCompleteStep(context, exportFile);
                     Path snapshot = im.createSnapshot(exportFile);
-                    String uuid = context.attachResultStream("application/zip", Files.newInputStream(snapshot));
+                    String uuid = context.attachResultStream("application/zip", Files.newInputStream(snapshot, StandardOpenOption.DELETE_ON_CLOSE));
 
                     context.getResult().set(uuid);
                 } catch (IllegalArgumentException e) {
@@ -74,18 +73,5 @@ public class InstMgrCreateSnapshotHandler extends InstMgrOperationStepHandler {
                 }
             }
         }, OperationContext.Stage.RUNTIME);
-    }
-
-    private void addCleanTempFileCompleteStep(OperationContext context, Path tempFile) {
-        context.completeStep(new OperationContext.ResultHandler() {
-            @Override
-            public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-                try {
-                    Files.deleteIfExists(tempFile);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
     }
 }
