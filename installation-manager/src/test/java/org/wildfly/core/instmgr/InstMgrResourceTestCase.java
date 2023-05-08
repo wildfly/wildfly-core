@@ -47,7 +47,11 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -66,6 +70,8 @@ import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.msc.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StabilityMonitor;
 import org.junit.After;
@@ -136,7 +142,17 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         GlobalOperationHandlers.registerGlobalOperations(registration, processType);
         GlobalNotifications.registerGlobalNotifications(registration, processType);
 
+        ExecutorService mgmtExecutor = new ThreadPoolExecutor(1, Integer.MAX_VALUE,
+                5L, TimeUnit.SECONDS,
+                new SynchronousQueue<>());
+
+        ServiceBuilder<?> mgmtExecutorBuilder = getContainer().addService(MANAGEMENT_EXECUTOR_SVC);
+        Consumer<Object> provides = mgmtExecutorBuilder.provides(MANAGEMENT_EXECUTOR_SVC);
+        Service service = Service.newInstance(provides, mgmtExecutor);
+        mgmtExecutorBuilder.setInstance(service);
+
         StabilityMonitor monitor = new StabilityMonitor();
+        monitor.addController(mgmtExecutorBuilder.install());
         monitor.addController(getContainer().addService(PATH_MANAGER_SVC).setInstance(pathManagerService).install());
         recordService(monitor, InstMgrResourceDefinition.INSTALLATION_MANAGER_CAPABILITY.getCapabilityServiceName());
 

@@ -26,8 +26,12 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -35,7 +39,9 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.dmr.ModelNode;
 import org.wildfly.core.instmgr.logging.InstMgrLogger;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
@@ -70,7 +76,7 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
     /**
      * Unzips a Zip file by using an InputStream to a specific target directory.
      *
-     * @param is        Previously open InputStream of the file to unzip.
+     * @param is Previously open InputStream of the file to unzip.
      * @param targetDir Target Directory where the content will stored.
      *
      * @throws ZipException if a ZIP file error has occurred
@@ -105,7 +111,9 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
      */
     protected Path getUploadedMvnRepoRoot(Path source) throws Exception, ZipException {
         try (Stream<Path> content = Files.walk(source, 2)) {
-            List<Path> entries = content.filter(e -> e.toFile().isDirectory() && e.getFileName().toString().equals(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES)).collect(Collectors.toList());
+            List<Path> entries = content
+                    .filter(e -> e.toFile().isDirectory() && e.getFileName().toString().equals(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES))
+                    .collect(Collectors.toList());
             if (entries.isEmpty() || entries.size() != 1) {
                 throw InstMgrLogger.ROOT_LOGGER.invalidZipEntry(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES);
             }
@@ -115,33 +123,87 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
     }
 
     /**
-     * Process a Maven Zip file attached as stream to the current Operation Context to create a repository that will be later used by the installation
-     * manager SPI.
-     * The stream is consumed and saved as a Zip file under the baseWorkDir Path. Then, this file is unzipped on repoIdPath and a repository is created to point
-     * out to the directory that contains all the artifacts send by the client in this stream.
+     * Process Maven Zip files attached as streams to the current Operation Context and creates one repository per stream that
+     * will be later used by the installation manager SPI.
+     *
+     * The streams are consumed in parallel and saved as a Zip file under the workDir Path. This Zip file is unzipped on a
+     * subdirectory under the work dir and a repository is created to point out to the directory that contains all the artifacts
+     * send by the client in this stream.
+     *
+     * @param context The current OperationContext
+     * @param mavenRepoFileIndexes A ModelNode that contains the list of indexes of each stream that corresponds to each Maven
+     *        Zip file sent by the client
+     * @param workDir The workdir where the files will be stored and unzipped
+     * @return A list of Repositories to use by the Installation Manager SPI methods
+     * @throws OperationFailedException If the Operation is cancelled
+     * @throws ExecutionException If any of the tasks that creates the Zip files sent by the client or unzip them fails.
      */
-    protected Repository processMavenRepoFile(OperationContext context, Path repoIdPath, int streamIndex, Path baseWorkDir, String tempFilePrefix)
-            throws Exception {
-        // save and unzip the file in the target dir
-        // Using directly the Operation input stream unzipping without saving it previously to disk seems to
-        // be problematic
-        try (InputStream is = context.getAttachmentStream(streamIndex)) {
-            Path tempFile = Files.createTempFile(baseWorkDir, tempFilePrefix, ".zip");
-            FileOutputStream outputStream = new FileOutputStream(tempFile.toFile());
-            byte[] buffer = new byte[1024];
-
-            int bytesRead;
-            while ((bytesRead = is.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
+    protected List<Repository> getRepositoriesFromOperationStreams(OperationContext context, List<ModelNode> mavenRepoFileIndexes, Path workDir)
+            throws OperationFailedException, ExecutionException {
+        final List<CompletableFuture<Repository>> futureResults = new ArrayList<>();
+        final ExecutorService mgmtExecutor = imService.getMgmtExecutor();
+        for (ModelNode indexMn : mavenRepoFileIndexes) {
+            int index = indexMn.asInt();
+            CompletableFuture<Path> futureZip = CompletableFuture
+                    .supplyAsync(() -> saveMavenZipRepoStream(context, index, workDir, workDir.getFileName().toString()), mgmtExecutor);
+            CompletableFuture<Repository> repository = futureZip
+                    .thenCompose(zipPath -> CompletableFuture.supplyAsync(() -> createRepoFromZip(zipPath, index, workDir), mgmtExecutor));
+            futureResults.add(repository);
+        }
+        List<Repository> result = new ArrayList<>();
+        try {
+            for (CompletableFuture<Repository> future : futureResults) {
+                result.add(future.get());
             }
 
+            return result;
+        } catch (InterruptedException e) {
+            for (CompletableFuture<Repository> future : futureResults) {
+                future.cancel(true);
+            }
+            Thread.currentThread().interrupt();
+            throw InstMgrLogger.ROOT_LOGGER.operationCancelled();
+        } catch (ExecutionException e) {
+            for (CompletableFuture<Repository> future : futureResults) {
+                future.cancel(true);
+            }
+            throw e;
+        }
+    }
+
+    private Path saveMavenZipRepoStream(OperationContext context, int index, Path baseWorkDir, String tempFilePrefix) throws RuntimeException {
+        try {
+            InstMgrLogger.ROOT_LOGGER.debug("Storing as Zip file attachment with index=" + index);
+            try (InputStream is = context.getAttachmentStream(index)) {
+                Path tempFile = Files.createTempFile(baseWorkDir, tempFilePrefix, ".zip");
+                FileOutputStream outputStream = new FileOutputStream(tempFile.toFile());
+                byte[] buffer = new byte[1024];
+
+                int bytesRead;
+                while ((bytesRead = is.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+                return tempFile;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Repository createRepoFromZip(Path sourceFile, int index, Path baseWorkDir) throws RuntimeException {
+        try {
+            InstMgrLogger.ROOT_LOGGER.debug("Unzipping Zip file stored at " + sourceFile + " which was uploaded from index " + index);
+            Path repoIdPath = baseWorkDir.resolve(InstMgrConstants.INTERNAL_REPO_PREFIX + index);
             Files.createDirectory(repoIdPath);
-            try (FileInputStream fileIs = new FileInputStream(tempFile.toFile())) {
+            try (FileInputStream fileIs = new FileInputStream(sourceFile.toFile())) {
                 unzip(fileIs, repoIdPath);
             }
+            Path uploadedMvnRepoRoot = getUploadedMvnRepoRoot(repoIdPath);
+            Repository uploadedMavenRepo = new Repository(repoIdPath.getFileName().toString(), uploadedMvnRepoRoot.toUri().toURL().toExternalForm());
+            InstMgrLogger.ROOT_LOGGER.debug("Zip file stored at " + sourceFile + " which was uploaded from index " + index + " was unzipped at " + repoIdPath);
+            return uploadedMavenRepo;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        Path uploadedMvnRepoRoot = getUploadedMvnRepoRoot(repoIdPath);
-        Repository uploadedMavenRepo = new Repository(repoIdPath.getFileName().toString(), uploadedMvnRepoRoot.toUri().toURL().toExternalForm());
-        return uploadedMavenRepo;
     }
 }

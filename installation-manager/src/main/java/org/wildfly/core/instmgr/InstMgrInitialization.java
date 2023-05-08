@@ -18,10 +18,12 @@
 
 package org.wildfly.core.instmgr;
 
+import static org.jboss.as.controller.AbstractControllerService.EXECUTOR_CAPABILITY;
 import static org.jboss.as.controller.AbstractControllerService.PATH_MANAGER_CAPABILITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -77,10 +79,12 @@ public final class InstMgrInitialization implements ModelControllerServiceInitia
         Optional<InstallationManagerFactory> im = InstallationManagerFinder.reloadAndFind();
         if (im.isPresent()) {
             final PathElement host = PathElement.pathElement(HOST, hostName);
-            final ManagementResourceRegistration hostRegistration = managementModel.getRootResourceRegistration().getSubModel(PathAddress.EMPTY_ADDRESS.append(host));
+            final ManagementResourceRegistration hostRegistration = managementModel.getRootResourceRegistration()
+                    .getSubModel(PathAddress.EMPTY_ADDRESS.append(host));
             final Resource hostResource = managementModel.getRootResource().getChild(host);
             if (hostResource == null) {
-                // this is generally only the case when an embedded HC has been started with an empty config, but /host=foo:add() has not yet been invoked, so we have no
+                // this is generally only the case when an embedded HC has been started with an empty config, but
+                // /host=foo:add() has not yet been invoked, so we have no
                 // real hostname yet.
                 return;
             }
@@ -95,11 +99,10 @@ public final class InstMgrInitialization implements ModelControllerServiceInitia
         ServiceBuilder<?> serviceBuilder = target.addService(serviceName);
         Consumer<InstMgrService> consumer = serviceBuilder.provides(serviceName);
         Supplier<PathManager> pathManagerSupplier = serviceBuilder.requires(PATH_MANAGER_CAPABILITY.getCapabilityServiceName());
+        Supplier<ExecutorService> executorSupplier = serviceBuilder.requires(EXECUTOR_CAPABILITY.getCapabilityServiceName());
 
-        InstMgrService imService = new InstMgrService(pathManagerSupplier, consumer);
-        serviceBuilder.setInstance(imService).setInitialMode(ServiceController.Mode.PASSIVE)
-                .install();
-
+        InstMgrService imService = new InstMgrService(pathManagerSupplier, executorSupplier, consumer);
+        serviceBuilder.setInstance(imService).setInitialMode(ServiceController.Mode.PASSIVE).install();
         return imService;
     }
 }
