@@ -15,10 +15,10 @@ import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 import org.wildfly.core.instmgr.InstMgrConstants;
-import org.wildfly.core.instmgr.InstMgrCustomPatchHandler;
+import org.wildfly.core.instmgr.InstMgrCustomPatchUploadHandler;
 
 @CommandDefinition(name = "upload-custom-patch", description = "Uploads a custom patch Zip file to the server and subscribes the installation creating a channel to handle the patch.")
-public class CustomPatchCommand extends AbstractInstMgrCommand {
+public class CustomPatchUploadCommand extends AbstractInstMgrCommand {
 
     @Option(name = "custom-patch-file", required = true)
     private File customPatch;
@@ -31,7 +31,7 @@ public class CustomPatchCommand extends AbstractInstMgrCommand {
         final ModelNode op = new ModelNode();
         final OperationBuilder operationBuilder = OperationBuilder.create(op);
 
-        op.get(OP).set(InstMgrCustomPatchHandler.DEFINITION.getName());
+        op.get(OP).set(InstMgrCustomPatchUploadHandler.DEFINITION.getName());
         op.get(InstMgrConstants.MANIFEST).set(manifestGA);
         op.get(InstMgrConstants.CUSTOM_PATCH_FILE).set(0);
         operationBuilder.addFileAsAttachment(customPatch);

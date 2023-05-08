@@ -18,9 +18,6 @@
 
 package org.wildfly.core.instmgr;
 
-import java.nio.file.Path;
-import java.util.Collection;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -31,9 +28,6 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.wildfly.installationmanager.Channel;
-import org.wildfly.installationmanager.MavenOptions;
-import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 
 /**
@@ -43,20 +37,12 @@ public class InstMgrCleanHandler extends InstMgrOperationStepHandler {
     static final String OPERATION_NAME = "clean";
     protected static final AttributeDefinition LIST_UPDATES_WORK_DIR = SimpleAttributeDefinitionBuilder.create(InstMgrConstants.LIST_UPDATES_WORK_DIR, ModelType.STRING)
             .setRequired(false)
-            .setAlternatives(InstMgrConstants.CLEAN_CUSTOM_PATCH_MANIFEST)
-            .setStorageRuntime()
-            .build();
-
-    protected static final AttributeDefinition MANIFEST_GA = SimpleAttributeDefinitionBuilder.create(InstMgrConstants.CLEAN_CUSTOM_PATCH_MANIFEST, ModelType.STRING)
-            .setRequired(false)
-            .setAlternatives(InstMgrConstants.LIST_UPDATES_WORK_DIR)
             .setStorageRuntime()
             .build();
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, InstMgrResolver.RESOLVER)
             .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
             .addParameter(LIST_UPDATES_WORK_DIR)
-            .addParameter(MANIFEST_GA)
             .setRuntimeOnly()
             .build();
 
@@ -67,33 +53,12 @@ public class InstMgrCleanHandler extends InstMgrOperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         final String listUpdatesWorkDir = LIST_UPDATES_WORK_DIR.resolveModelAttribute(context, operation).asStringOrNull();
-        final String manifestGA = MANIFEST_GA.resolveModelAttribute(context, operation).asStringOrNull();
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 context.acquireControllerLock();
                 try {
-                    if (manifestGA != null) {
-                        final String translatedManifestGA =  manifestGA.replace(":", "_");
-                        final Path serverHome = imService.getHomeDir();
-                        final Path baseTargetDir = imService.getCustomPatchDir(translatedManifestGA);
-
-                        final MavenOptions mavenOptions = new MavenOptions(null, false);
-                        final InstallationManager im = imf.create(serverHome, mavenOptions);
-
-                        // delete any content
-                        deleteDirIfExits(baseTargetDir);
-
-                        final Collection<Channel> exitingChannels = im.listChannels();
-                        for (Channel channel : exitingChannels) {
-                            String name = channel.getName();
-                            if (channel.getName().equals(InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX + translatedManifestGA)) {
-                                im.removeChannel(name);
-
-                                break;
-                            }
-                        }
-                    } else if (listUpdatesWorkDir != null) {
+                    if (listUpdatesWorkDir != null) {
                         // Notice listUpdatesWorkDir is just a key to locate the real path to be deleted.
                         // The imService maintains a relationship between this key and the temporal directories created to unzip
                         // files and other temporal work.

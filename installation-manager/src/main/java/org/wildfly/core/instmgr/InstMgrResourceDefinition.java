@@ -175,8 +175,11 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
         InstMgrRemoveChannelHandler channelRemoveHandler = new InstMgrRemoveChannelHandler(imService, imf);
         resourceRegistration.registerOperationHandler(channelRemoveHandler.DEFINITION, channelRemoveHandler);
 
-        InstMgrCustomPatchHandler customPatchHandler = new InstMgrCustomPatchHandler(imService, imf);
-        resourceRegistration.registerOperationHandler(customPatchHandler.DEFINITION, customPatchHandler);
+        InstMgrCustomPatchUploadHandler customPatchUploadHandler = new InstMgrCustomPatchUploadHandler(imService, imf);
+        resourceRegistration.registerOperationHandler(customPatchUploadHandler.DEFINITION, customPatchUploadHandler);
+
+        InstMgrCustomPatchRemoveHandler customPatchRemoveHandler = new InstMgrCustomPatchRemoveHandler(imService, imf);
+        resourceRegistration.registerOperationHandler(customPatchRemoveHandler.DEFINITION, customPatchRemoveHandler);
     }
 
     @Override

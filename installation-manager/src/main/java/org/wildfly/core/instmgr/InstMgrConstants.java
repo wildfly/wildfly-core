@@ -31,7 +31,6 @@ public interface InstMgrConstants {
     String CHANNEL = "channel";
     String CHANNELS = "channels";
     String CHANNEL_NAME = "name";
-    String CLEAN_CUSTOM_PATCH_MANIFEST = "custom-patch-manifest";
     String CUSTOM_PATCH_FILE = "custom-patch-file";
     String DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX = "custom-channel-";
     String HISTORY_DETAILED_ARTIFACT_NAME = "name";
