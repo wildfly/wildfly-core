@@ -53,7 +53,8 @@ import org.wildfly.core.instmgr.InstMgrConstants;
         ChannelAddCommand.class,
         ChannelEditCommand.class,
         ChannelRemoveCommand.class,
-        CustomPatchCommand.class
+        CustomPatchUploadCommand.class,
+        CustomPatchRemoveCommand.class
 }, activator = InstMgrGroupCommand.InstMgrGroupCommandActivator.class)
 public class InstMgrGroupCommand implements Command<CLICommandInvocation> {
     private static final Logger LOG = Logger.getLogger(InstMgrGroupCommand.class);

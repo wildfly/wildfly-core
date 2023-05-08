@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import org.aesh.command.CommandDefinition;
 import org.aesh.command.CommandException;
 import org.aesh.command.CommandResult;
-import org.aesh.command.option.Option;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
@@ -38,9 +37,6 @@ import org.wildfly.core.instmgr.InstMgrConstants;
 @CommandDefinition(name = "clean", description = "Clean installation manager content.")
 public class CleanCommand extends AbstractInstMgrCommand {
     final Path lstUpdatesWorkDir;
-
-    @Option(name = "custom-patch-manifest")
-    private String manifestGA;
 
     public CleanCommand() {
         this.lstUpdatesWorkDir = null;
@@ -56,9 +52,6 @@ public class CleanCommand extends AbstractInstMgrCommand {
         op.get(OP).set(InstMgrCleanHandler.DEFINITION.getName());
         if (lstUpdatesWorkDir != null) {
             op.get(InstMgrConstants.LIST_UPDATES_WORK_DIR).set(lstUpdatesWorkDir.toString());
-        }
-        if (manifestGA != null) {
-            op.get(InstMgrConstants.CLEAN_CUSTOM_PATCH_MANIFEST).set(manifestGA);
         }
 
         return OperationBuilder.create(op).build();

@@ -751,7 +751,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     public void removeCustomPatch(String customPatchManifest, String host, Path hostCustomPatchDir) {
         // remove the custom patch
         final Path primaryCustomPatchMavenRepo = hostCustomPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES);
-        Assert.assertTrue(cli.sendLine("installer clean --custom-patch-manifest=" + customPatchManifest + " --host=" + host, false));
+        Assert.assertTrue(cli.sendLine("installer remove-custom-patch --manifest=" + customPatchManifest + " --host=" + host, false));
         Assert.assertFalse(Files.exists(primaryCustomPatchMavenRepo));
     }
 

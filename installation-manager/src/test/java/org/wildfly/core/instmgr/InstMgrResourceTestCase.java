@@ -1106,7 +1106,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         zipDir(source.toPath().toAbsolutePath(), target);
 
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
-        ModelNode op = Util.createEmptyOperation(InstMgrCustomPatchHandler.OPERATION_NAME, pathElements);
+        ModelNode op = Util.createEmptyOperation(InstMgrCustomPatchUploadHandler.OPERATION_NAME, pathElements);
 
         op.get(InstMgrConstants.MANIFEST).set("invalidgav");
         op.get(InstMgrConstants.CUSTOM_PATCH_FILE).set(0);
@@ -1199,7 +1199,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
         // Upload a single custom patch
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
-        ModelNode op = Util.createEmptyOperation(InstMgrCustomPatchHandler.OPERATION_NAME, pathElements);
+        ModelNode op = Util.createEmptyOperation(InstMgrCustomPatchUploadHandler.OPERATION_NAME, pathElements);
 
         op.get(InstMgrConstants.MANIFEST).set(customPatchManifestGA);
         op.get(InstMgrConstants.CUSTOM_PATCH_FILE).set(0);
@@ -1236,8 +1236,8 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Path customPatchDir = instMgrService.getCustomPatchDir(customPatchManifestGAOperationAttr);
 
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
-        ModelNode op = Util.createEmptyOperation(InstMgrCleanHandler.OPERATION_NAME, pathElements);
-        op.get(InstMgrConstants.CLEAN_CUSTOM_PATCH_MANIFEST).set(customPatchManifestGA);
+        ModelNode op = Util.createEmptyOperation(InstMgrCustomPatchRemoveHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.MANIFEST).set(customPatchManifestGA);
         executeForResult(op);
         Assert.assertFalse(customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES).toFile().exists());
 
