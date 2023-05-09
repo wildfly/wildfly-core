@@ -59,21 +59,6 @@ public class PathRemoveHandler implements OperationStepHandler { // TODO make th
         this.pathManager = pathManager;
     }
 
-    /**
-     * Create the PathRemoveHandler
-     *
-     * @param pathManager the path manager, or {@code null} if interaction with the path manager is not required
-     *                    for the resource
-     * @param services    {@code true} if interaction with the path manager is required for the resource
-     *
-     * @deprecated not for use outside the kernel; may be removed at any time
-     */
-    @Deprecated
-    protected PathRemoveHandler(final PathManagerService pathManager, final boolean services) {
-        this(services ? null : pathManager);
-        assert !services || pathManager != null;
-    }
-
     static PathRemoveHandler createNamedInstance() {
         return new PathRemoveHandler(null);
     }
