@@ -52,6 +52,8 @@ setDefaultModularJvmOptions() {
       DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
       # Needed by JBoss Marshalling
       DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.base/java.io=ALL-UNNAMED"
+      # Needed by WildFly Http Client
+      DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.base/java.net=ALL-UNNAMED"
       # Needed by WildFly Security Manager
       DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.base/java.security=ALL-UNNAMED"
       # Needed for marshalling of collections
