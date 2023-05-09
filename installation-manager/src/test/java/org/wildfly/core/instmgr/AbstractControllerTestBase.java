@@ -143,7 +143,7 @@ public abstract class AbstractControllerTestBase {
         return executeCheckNoFailure(operation).get(RESULT);
     }
 
-    public ModelNode executeForResult(Operation operation) throws OperationFailedException {
+    public ModelNode executeForResult(Operation operation) throws OperationFailedException, IOException {
         return executeCheckNoFailure(operation).get(RESULT);
     }
 
@@ -165,14 +165,18 @@ public abstract class AbstractControllerTestBase {
         return rsp;
     }
 
-    public ModelNode executeCheckNoFailure(Operation operation) throws OperationFailedException {
-        OperationResponse response = getController().execute(operation, null, null);
-        ModelNode rsp = response.getResponseNode();
-        if (FAILED.equals(rsp.get(OUTCOME).asString())) {
-            ModelNode fd = rsp.get(FAILURE_DESCRIPTION);
-            throw new OperationFailedException(fd.toString(), fd);
+    public ModelNode executeCheckNoFailure(Operation operation) throws OperationFailedException, IOException {
+        try {
+            OperationResponse response = getController().execute(operation, null, null);
+            ModelNode rsp = response.getResponseNode();
+            if (FAILED.equals(rsp.get(OUTCOME).asString())) {
+                ModelNode fd = rsp.get(FAILURE_DESCRIPTION);
+                throw new OperationFailedException(fd.toString(), fd);
+            }
+            return rsp;
+        } finally {
+            operation.close();
         }
-        return rsp;
     }
 
     public ModelNode executeCheckForFailure(ModelNode operation) {
@@ -183,13 +187,17 @@ public abstract class AbstractControllerTestBase {
         return rsp;
     }
 
-    public ModelNode executeCheckForFailure(Operation operation) {
-        OperationResponse response = getController().execute(operation, null, null);
-        ModelNode rsp = response.getResponseNode();
-        if (!FAILED.equals(rsp.get(OUTCOME).asString())) {
-            Assert.fail("Should have failed!");
+    public ModelNode executeCheckForFailure(Operation operation) throws IOException {
+        try {
+            OperationResponse response = getController().execute(operation, null, null);
+            ModelNode rsp = response.getResponseNode();
+            if (!FAILED.equals(rsp.get(OUTCOME).asString())) {
+                Assert.fail("Should have failed!");
+            }
+            return rsp;
+        } finally {
+            operation.close();
         }
-        return rsp;
     }
 
     public void setupController() throws InterruptedException, IOException {
