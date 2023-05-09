@@ -54,6 +54,7 @@ import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.logmanager.PropertyValues;
 import org.jboss.logmanager.config.FormatterConfiguration;
+import org.jboss.logmanager.config.HandlerConfiguration;
 import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.formatters.StructuredFormatter;
 
@@ -371,7 +372,7 @@ public abstract class StructuredFormatterResourceDefinition extends SimpleResour
         @SuppressWarnings({"OverlyStrongTypeCast", "StatementWithEmptyBody"})
         @Override
         public void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
-            String keyOverrides = null;
+            String keyOverrides = "";
             if (model.hasDefined(KEY_OVERRIDES.getName())) {
                 keyOverrides = modelValueToMetaData(KEY_OVERRIDES.resolveModelAttribute(context, model));
             }
@@ -391,11 +392,16 @@ public abstract class StructuredFormatterResourceDefinition extends SimpleResour
                     configuration = logContextConfiguration.addFormatterConfiguration(null, className, name, "keyOverrides");
                     configuration.setPropertyValueString("keyOverrides", keyOverrides);
                 }
-            } else if (isSamePropertyValue(configuration, "keyOverrides", keyOverrides)) {
+            } else if (!isSamePropertyValue(configuration, "keyOverrides", keyOverrides)) {
                 LoggingLogger.ROOT_LOGGER.tracef("Removing then adding formatter '%s' at '%s'", name, context.getCurrentAddress());
                 logContextConfiguration.removeFormatterConfiguration(name);
                 configuration = logContextConfiguration.addFormatterConfiguration(null, className, name, "keyOverrides");
                 configuration.setPropertyValueString("keyOverrides", keyOverrides);
+                // We need to trigger a re-add of the formatter to the handlers
+                logContextConfiguration.getHandlerNames().forEach(handlerName -> {
+                    final HandlerConfiguration handlerConfiguration = logContextConfiguration.getHandlerConfiguration(handlerName);
+                    handlerConfiguration.setFormatterName(name);
+                });
             }
 
             // Process the attributes
@@ -403,7 +409,7 @@ public abstract class StructuredFormatterResourceDefinition extends SimpleResour
                 if (attribute == META_DATA) {
                     final String metaData = modelValueToMetaData(META_DATA.resolveModelAttribute(context, model));
                     if (metaData != null) {
-                        if (isSamePropertyValue(configuration, "metaData", metaData)) {
+                        if (!isSamePropertyValue(configuration, "metaData", metaData)) {
                             configuration.setPropertyValueString("metaData", metaData);
                         }
                     } else {
@@ -417,7 +423,7 @@ public abstract class StructuredFormatterResourceDefinition extends SimpleResour
                     } else {
                         final ModelNode value = attribute.resolveModelAttribute(context, model);
                         if (value.isDefined()) {
-                            if (isSamePropertyValue(configuration, attribute.getName(), value.asString())) {
+                            if (!isSamePropertyValue(configuration, attribute.getName(), value.asString())) {
                                 configuration.setPropertyValueString(attribute.getName(), value.asString());
                             }
                         } else {
@@ -431,7 +437,7 @@ public abstract class StructuredFormatterResourceDefinition extends SimpleResour
         private static boolean isSamePropertyValue(final FormatterConfiguration configuration, final String name, final String value) {
             final String currentValue = configuration.getPropertyValueString(name);
             if (currentValue == null) {
-                return value != null;
+                return value == null;
             }
             return currentValue.equals(value);
         }
