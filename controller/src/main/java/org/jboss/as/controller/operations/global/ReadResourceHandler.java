@@ -320,17 +320,19 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                         if (ar.getDecision() == AuthorizationResult.Decision.DENY) {
                             localFilteredData.addAccessRestrictedResource(absoluteChildAddr);
                         } else {
-                            ModelNode childMap = directChildren.get(childType);
-                            if (childMap == null) {
-                                nonExistentChildTypes.remove(childType);
-                                childMap = new ModelNode();
-                                childMap.setEmptyObject();
-                                directChildren.put(childType, childMap);
-                            }
-                            // In case of runtime resources adds '=> undefined' if there's no include-runtime parameter,
-                            // in read-resource operation, otherwise adds '{"child" => undefined}'
-                            if (queryRuntime || (childReg != null && (!childReg.isRuntimeOnly() || childReg.isRemote()))) {
-                                childMap.get(child);
+                            if (!childReg.isRuntimeOnly() || queryRuntime) {
+                                ModelNode childMap = directChildren.get(childType);
+                                if (childMap == null) {
+                                    nonExistentChildTypes.remove(childType);
+                                    childMap = new ModelNode();
+                                    childMap.setEmptyObject();
+                                    directChildren.put(childType, childMap);
+                                }
+                                // In case of runtime resources adds '=> undefined' if there's no include-runtime parameter,
+                                // in read-resource operation, otherwise adds '{"child" => undefined}'
+                                if (queryRuntime || (childReg != null && (!childReg.isRuntimeOnly() || childReg.isRemote()))) {
+                                    childMap.get(child);
+                                }
                             }
                         }
                     }
