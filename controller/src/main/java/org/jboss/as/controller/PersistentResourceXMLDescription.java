@@ -39,7 +39,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 public final class PersistentResourceXMLDescription implements ResourceParser, ResourceMarshaller {
 
-    protected final PathElement pathElement;
+    private final PathElement pathElement;
     private final String xmlElementName;
     private final String xmlWrapperElement;
     private final LinkedHashMap<String, LinkedHashMap<String, AttributeDefinition>> attributesByGroup;
@@ -552,16 +552,14 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
      *
      * @param elementName name of xml element that is used as decorator
      * @return PersistentResourceXMLBuilder
-     * @deprecated decorator element support is currently considered as preview
      * @since 4.0
      */
-    @Deprecated
     public static PersistentResourceXMLBuilder decorator(final String elementName) {
         return new PersistentResourceXMLBuilder(PathElement.pathElement(elementName), null).setDecoratorGroup(elementName);
     }
 
     public static final class PersistentResourceXMLBuilder {
-        protected final PathElement pathElement;
+        private final PathElement pathElement;
         private final String namespaceURI;
         private String xmlElementName;
         private String xmlWrapperElement;
@@ -655,16 +653,22 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
             return this;
         }
 
+        /**
+         * @deprecated Use {@link #setNameAttributeName(String)}
+         */
+        @Deprecated(forRemoval = true)
         public PersistentResourceXMLBuilder setUseValueAsElementName(final boolean useValueAsElementName) {
             this.useValueAsElementName = useValueAsElementName;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public PersistentResourceXMLBuilder setNoAddOperation(final boolean noAddOperation) {
             this.noAddOperation = noAddOperation;
             return this;
         }
 
+        @SuppressWarnings("unused")
         public PersistentResourceXMLBuilder setAdditionalOperationsGenerator(final AdditionalOperationsGenerator additionalOperationsGenerator) {
             this.additionalOperationsGenerator = additionalOperationsGenerator;
             return this;
@@ -678,7 +682,10 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
          *
          * @param forcedName the name to be forced as resourceName
          * @return the PersistentResourceXMLBuilder itself
+         *
+         * @deprecated Use an xml attribute to provide the name of the resource.
          */
+        @Deprecated(forRemoval = true)
         public PersistentResourceXMLBuilder setForcedName(String forcedName) {
             this.forcedName = forcedName;
             return this;
