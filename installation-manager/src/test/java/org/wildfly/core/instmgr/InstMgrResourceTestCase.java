@@ -114,7 +114,6 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
     @After
     public void shutdownServiceContainer() throws IOException {
-
         super.shutdownServiceContainer();
         if (JBOSS_HOME.toFile().exists()) {
             try (Stream<Path> walk = Files.walk(JBOSS_HOME)) {
@@ -124,7 +123,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
             }
         }
         Files.deleteIfExists(INSTALLATION_MANAGER_PROPERTIES);
-        for(File testZip : TARGET_DIR.toFile().listFiles((dir, name) -> name.startsWith("installation-manager") && name.endsWith(".zip"))) {
+        for (File testZip : TARGET_DIR.toFile().listFiles((dir, name) -> name.startsWith("installation-manager") && name.endsWith(".zip"))) {
             Files.deleteIfExists(testZip.toPath());
         }
     }
@@ -608,7 +607,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     }
 
     @Test
-    public void listUpdatesUploadMavenZip() throws OperationFailedException, IOException {
+    public void listUpdatesUploadMavenZip() throws OperationFailedException, IOException, URISyntaxException {
         Path target = TARGET_DIR.resolve("installation-manager.zip");
         File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
@@ -632,12 +631,12 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         // remove all temporal files
         op = Util.createEmptyOperation(InstMgrCleanHandler.OPERATION_NAME, pathElements);
         executeForResult(op);
-        Assert.assertTrue(!Paths.get(new URL(mavenZipRepo.getUrl()).getFile()).toFile().exists());
+        Assert.assertTrue(!Paths.get(new URL(mavenZipRepo.getUrl()).toURI()).toFile().exists());
     }
 
 
     @Test
-    public void listUpdatesUploadMultipleMavenZip() throws OperationFailedException, IOException {
+    public void listUpdatesUploadMultipleMavenZip() throws OperationFailedException, IOException, URISyntaxException {
         Path targetOne = TARGET_DIR.resolve("installation-manager-one.zip");
         File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), targetOne);
@@ -669,7 +668,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         // remove all temporal files
         op = Util.createEmptyOperation(InstMgrCleanHandler.OPERATION_NAME, pathElements);
         executeForResult(op);
-        Assert.assertTrue(!Paths.get(new URL(mavenZipRepo.getUrl()).getFile()).toFile().exists());
+        Assert.assertTrue(!Paths.get(new URL(mavenZipRepo.getUrl()).toURI()).toFile().exists());
     }
 
     /**
@@ -680,9 +679,9 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
      * @throws MalformedURLException
      * @throws URISyntaxException
      */
-    public void verifyListUpdatesUploadedZipRepository(Repository mavenZipRepo, int streamIndex, String tempDirPrefix, String artifactName) throws MalformedURLException {
+    public void verifyListUpdatesUploadedZipRepository(Repository mavenZipRepo, int streamIndex, String tempDirPrefix, String artifactName) throws MalformedURLException, URISyntaxException {
         Assert.assertEquals(InstMgrConstants.INTERNAL_REPO_PREFIX + streamIndex, mavenZipRepo.getId());
-        Path repoUrlPath = Paths.get(new URL(mavenZipRepo.getUrl()).getFile());
+        Path repoUrlPath = Paths.get(new URL(mavenZipRepo.getUrl()).toURI());
         Assert.assertEquals(repoUrlPath.getFileName().toString(), "maven-repository");
         Assert.assertEquals(repoUrlPath.getParent().getFileName().toString(), InstMgrConstants.INTERNAL_REPO_PREFIX + streamIndex);
         Assert.assertTrue(repoUrlPath.getParent().getParent().getFileName().toString().startsWith(tempDirPrefix));
@@ -860,7 +859,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(1, TestInstallationManager.prepareUpdatesRepositories.size());
         Repository mavenZipRepo = TestInstallationManager.prepareUpdatesRepositories.get(0);
 
-        verifyPrepareUploadedZipRepository(mavenZipRepo, 0, "prepare-updates-", "artifact-one");
+        verifyPrepareUploadedZipRepository(mavenZipRepo, 0, "prepare-updates-");
 
         // verify the prepared server
         Assert.assertTrue(instMgrService.getPreparedServerDir().toFile().listFiles().length == 1);
@@ -895,10 +894,10 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
         Assert.assertEquals(2, TestInstallationManager.prepareUpdatesRepositories.size());
         Repository mavenZipRepo = TestInstallationManager.prepareUpdatesRepositories.get(0);
-        verifyPrepareUploadedZipRepository(mavenZipRepo, 0, "prepare-updates-", "artifact-one");
+        verifyPrepareUploadedZipRepository(mavenZipRepo, 0, "prepare-updates-");
 
         mavenZipRepo = TestInstallationManager.prepareUpdatesRepositories.get(1);
-        verifyPrepareUploadedZipRepository(mavenZipRepo, 1, "prepare-updates-", "artifact-two");
+        verifyPrepareUploadedZipRepository(mavenZipRepo, 1, "prepare-updates-");
 
         // verify the prepared server
         Assert.assertTrue(instMgrService.getPreparedServerDir().toFile().listFiles().length == 1);
@@ -914,9 +913,9 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
      * @throws MalformedURLException
      * @throws URISyntaxException
      */
-    public void verifyPrepareUploadedZipRepository(Repository mavenZipRepo, int streamIndex, String tempDirPrefix, String artifactName) throws MalformedURLException {
+    public void verifyPrepareUploadedZipRepository(Repository mavenZipRepo, int streamIndex, String tempDirPrefix) throws MalformedURLException, URISyntaxException {
         Assert.assertEquals(InstMgrConstants.INTERNAL_REPO_PREFIX + streamIndex, mavenZipRepo.getId());
-        Path repoUrlPath = Paths.get(new URL(mavenZipRepo.getUrl()).getFile());
+        Path repoUrlPath = Paths.get(new URL(mavenZipRepo.getUrl()).toURI());
         Assert.assertEquals(repoUrlPath.getFileName().toString(), "maven-repository");
         Assert.assertEquals(repoUrlPath.getParent().getFileName().toString(), InstMgrConstants.INTERNAL_REPO_PREFIX + streamIndex);
         Assert.assertTrue(repoUrlPath.getParent().getParent().getFileName().toString().startsWith(tempDirPrefix));
@@ -1027,7 +1026,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     }
 
     @Test
-    public void prepareRevertUploadMavenZip() throws OperationFailedException, IOException {
+    public void prepareRevertUploadMavenZip() throws OperationFailedException, IOException, URISyntaxException {
         InstMgrService instMgrService = (InstMgrService) this.recordedServices.get(InstMgrResourceDefinition.INSTALLATION_MANAGER_CAPABILITY.getCapabilityServiceName()).get();
 
         Assert.assertFalse(instMgrService.getPreparedServerDir().toFile().exists());
@@ -1050,7 +1049,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(1, TestInstallationManager.prepareRevertRepositories.size());
         Repository mavenZipRepo = TestInstallationManager.prepareRevertRepositories.get(0);
 
-        verifyPrepareUploadedZipRepository(mavenZipRepo, 0, "prepare-revert-", "artifact-one");
+        verifyPrepareUploadedZipRepository(mavenZipRepo, 0, "prepare-revert-");
 
         // verify the prepared server
         Assert.assertTrue(instMgrService.getPreparedServerDir().toFile().listFiles().length == 1);
@@ -1059,7 +1058,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     }
 
     @Test
-    public void prepareRevertMultipleUploadMavenZip() throws OperationFailedException, IOException {
+    public void prepareRevertMultipleUploadMavenZip() throws OperationFailedException, IOException, URISyntaxException {
         InstMgrService instMgrService = (InstMgrService) this.recordedServices.get(InstMgrResourceDefinition.INSTALLATION_MANAGER_CAPABILITY.getCapabilityServiceName()).get();
 
         Assert.assertFalse(instMgrService.getPreparedServerDir().toFile().exists());
@@ -1087,10 +1086,10 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(2, TestInstallationManager.prepareRevertRepositories.size());
 
         Repository mavenZipRepo = TestInstallationManager.prepareRevertRepositories.get(0);
-        verifyPrepareUploadedZipRepository(mavenZipRepo, 0, "prepare-revert-", "artifact-one");
+        verifyPrepareUploadedZipRepository(mavenZipRepo, 0, "prepare-revert-");
 
         mavenZipRepo = TestInstallationManager.prepareRevertRepositories.get(1);
-        verifyPrepareUploadedZipRepository(mavenZipRepo, 1, "prepare-revert-", "artifact-two");
+        verifyPrepareUploadedZipRepository(mavenZipRepo, 1, "prepare-revert-");
 
         // verify the prepared server
         Assert.assertTrue(instMgrService.getPreparedServerDir().toFile().listFiles().length == 1);
@@ -1160,14 +1159,15 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
         // check again customPatchManifest1 is still there
         List<Channel> lstChannels = TestInstallationManager.lstChannels;
-        Path customPatchDir = instMgrService.getCustomPatchDir(customPatchManifest1);
-        String customPatchChannelName = InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX + customPatchManifest1.replace(":", "_");
+        final String internalCustomPatchManifestGA = customPatchManifest1.replace(":", "_");
+        Path customPatchDir = instMgrService.getCustomPatchDir(internalCustomPatchManifestGA);
+        String customPatchChannelName = InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX + internalCustomPatchManifestGA;
         boolean found = false;
         for (Channel channel : lstChannels) {
             if (channel.getName().equals(customPatchChannelName)) {
                 List<Repository> repositories = channel.getRepositories();
                 for (Repository repository : repositories) {
-                    repository.getUrl().toString().equals(customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES).toUri().toURL().toString());
+                    Assert.assertEquals(new URL(repository.getUrl()), customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES).toUri().toURL());
                     found = true;
                 }
             }
@@ -1178,30 +1178,36 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         removeCustomPatch("groupId-patch1:artifactId-patch01");
     }
 
-    public void createAndUploadCustomPatch(String customPatchManifest) throws IOException, OperationFailedException {
+    /**
+     * Creates and upload a custom patch associated to the customPatchManifest passed as argument.
+     * It will use as Zip content the content available in the "test-repo-one" resource directory.
+     * The channel name for a custom patch will be the ManifestGA replacing the ':' with '_'
+     * It will be saved in a directory named as the custom patch channel manifest replacing the ':' with '_'.
+     */
+    public void createAndUploadCustomPatch(final String customPatchManifest) throws IOException, OperationFailedException {
         final InstMgrService instMgrService = (InstMgrService) this.recordedServices.get(InstMgrResourceDefinition.INSTALLATION_MANAGER_CAPABILITY.getCapabilityServiceName()).get();
 
-        final String customPatchManifestGA = customPatchManifest;
-        final String internalCustomPatchManifestGA = customPatchManifestGA.replace(":", "_");
+        final String internalCustomPatchManifestGA = customPatchManifest.replace(":", "_");
         final String customPatchChannelName = InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX + internalCustomPatchManifestGA;
 
-        //The patch doesn't exist yet
+        // Ensure the patch doesn't exist yet
         Path customPatchDir = instMgrService.getCustomPatchDir(internalCustomPatchManifestGA);
         Assert.assertFalse(customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES).toFile().exists());
-
-        Path target = TARGET_DIR.resolve("installation-manager.zip");
-        File source = new File(getClass().getResource("test-repo-one").getFile());
-        zipDir(source.toPath().toAbsolutePath(), target);
 
         // The Channel for the custom patch doesn't exist yet
         List<Channel> lstChannels = TestInstallationManager.lstChannels;
         Assert.assertFalse(lstChannels.stream().anyMatch(c -> c.getName().equals(customPatchChannelName)));
 
-        // Upload a single custom patch
+        // Create a custom patch
+        Path target = TARGET_DIR.resolve("installation-manager.zip");
+        File source = new File(getClass().getResource("test-repo-one").getFile());
+        zipDir(source.toPath().toAbsolutePath(), target);
+
+        // Upload it
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrCustomPatchUploadHandler.OPERATION_NAME, pathElements);
 
-        op.get(InstMgrConstants.MANIFEST).set(customPatchManifestGA);
+        op.get(InstMgrConstants.MANIFEST).set(customPatchManifest);
         op.get(InstMgrConstants.CUSTOM_PATCH_FILE).set(0);
         OperationBuilder operationBuilder = OperationBuilder.create(op, true);
         operationBuilder.addFileAsAttachment(target);
@@ -1213,12 +1219,13 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertTrue(customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES).toFile().exists());
         Assert.assertTrue(customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES).resolve("artifact-one").toFile().exists());
 
+        //verify the channel created and its repository
         boolean found = false;
         for (Channel channel : lstChannels) {
             if (channel.getName().equals(customPatchChannelName)) {
                 List<Repository> repositories = channel.getRepositories();
                 for (Repository repository : repositories) {
-                    repository.getUrl().toString().equals(customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES).toUri().toURL().toString());
+                    Assert.assertEquals(new URL(repository.getUrl()), customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES).toUri().toURL());
                     found = true;
                 }
             }
