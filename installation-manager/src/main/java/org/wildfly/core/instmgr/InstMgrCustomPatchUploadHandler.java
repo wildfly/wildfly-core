@@ -1,5 +1,14 @@
 package org.wildfly.core.instmgr;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
+
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.List;
+import java.util.zip.ZipException;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -16,15 +25,6 @@ import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
-
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.util.Collection;
-import java.util.List;
-import java.util.zip.ZipException;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
 
 /**
  * Operation handler that uploads a custom patch and stores it inside the server. It also subscribes the current installation

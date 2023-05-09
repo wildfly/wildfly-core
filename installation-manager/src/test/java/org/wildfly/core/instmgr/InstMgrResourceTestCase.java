@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -615,7 +616,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
         op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
-        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
         operationBuilder.addFileAsAttachment(target);
         Operation build = operationBuilder.build();
 
@@ -648,7 +649,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
         op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0).add(1);
-        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
         operationBuilder.addFileAsAttachment(targetOne);
         operationBuilder.addFileAsAttachment(targetTwo);
         Operation build = operationBuilder.build();
@@ -851,7 +852,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
         op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
-        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
         operationBuilder.addFileAsAttachment(target);
         Operation build = operationBuilder.build();
         executeForResult(build);
@@ -886,7 +887,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
         op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0).add(1);
-        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
         operationBuilder.addFileAsAttachment(targetOne);
         operationBuilder.addFileAsAttachment(targetTwo);
         Operation build = operationBuilder.build();
@@ -1041,7 +1042,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         ModelNode op = Util.createEmptyOperation(InstMgrPrepareRevertHandler.OPERATION_NAME, pathElements);
         op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
         op.get(InstMgrConstants.REVISION).set("dummy");
-        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
         operationBuilder.addFileAsAttachment(target);
         Operation build = operationBuilder.build();
         executeForResult(build);
@@ -1077,7 +1078,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         ModelNode op = Util.createEmptyOperation(InstMgrPrepareRevertHandler.OPERATION_NAME, pathElements);
         op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0).add(1);
         op.get(InstMgrConstants.REVISION).set("dummy");
-        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
         operationBuilder.addFileAsAttachment(targetOne);
         operationBuilder.addFileAsAttachment(targetTwo);
         Operation build = operationBuilder.build();
@@ -1109,7 +1110,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
         op.get(InstMgrConstants.MANIFEST).set("invalidgav");
         op.get(InstMgrConstants.CUSTOM_PATCH_FILE).set(0);
-        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
         operationBuilder.addFileAsAttachment(target);
 
         Operation build = operationBuilder.build();
@@ -1123,7 +1124,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
         op.get(InstMgrConstants.MANIFEST).set("groupId:artifactId:version");
         op.get(InstMgrConstants.CUSTOM_PATCH_FILE).set(0);
-        operationBuilder = OperationBuilder.create(op, true);
+        operationBuilder = OperationBuilder.create(op);
         operationBuilder.addFileAsAttachment(target);
 
         build = operationBuilder.build();
@@ -1209,7 +1210,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
         op.get(InstMgrConstants.MANIFEST).set(customPatchManifest);
         op.get(InstMgrConstants.CUSTOM_PATCH_FILE).set(0);
-        OperationBuilder operationBuilder = OperationBuilder.create(op, true);
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
         operationBuilder.addFileAsAttachment(target);
 
         Operation build = operationBuilder.build();
@@ -1232,6 +1233,10 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         }
 
         Assert.assertTrue("Expected channel created for the custom patch no found in " + lstChannels, found);
+
+        List<InputStream> inputStreams = build.getInputStreams();
+        build.close();
+
     }
 
     public void removeCustomPatch(String customPatchManifest) throws OperationFailedException {
