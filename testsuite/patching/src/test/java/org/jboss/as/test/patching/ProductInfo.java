@@ -1,15 +1,14 @@
 package org.jboss.as.test.patching;
 
 import java.io.File;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Map;
-
 import org.jboss.modules.LocalModuleLoader;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
+
 
 /**
  * @author Emanuel Muckenhuber
@@ -33,9 +32,9 @@ class ProductInfo {
             final Method resolveName = clazz.getMethod("resolveName");
             final Method resolveVersion = clazz.getMethod("resolveVersion");
             final Method productName = clazz.getMethod("getProductName");
-            final Constructor<?> constructor = clazz.getConstructor(ModuleLoader.class, String.class, Map.class);
+            final Method fromFilesystemSlot = clazz.getMethod("fromFilesystemSlot", ModuleLoader.class, String.class, Map.class);
 
-            final Object productConfig = constructor.newInstance(loader, distributionRoot.getAbsolutePath(), Collections.emptyMap());
+            final Object productConfig = fromFilesystemSlot.invoke(null,loader, distributionRoot.getAbsolutePath(), Collections.emptyMap());
 
             PRODUCT_NAME = (String) resolveName.invoke(productConfig);
             PRODUCT_VERSION = (String) resolveVersion.invoke(productConfig);
