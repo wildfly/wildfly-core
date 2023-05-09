@@ -72,6 +72,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
             modularJavaOpts.add("--add-opens=java.base/java.lang.invoke=ALL-UNNAMED");
             modularJavaOpts.add("--add-opens=java.base/java.lang.reflect=ALL-UNNAMED");
             modularJavaOpts.add("--add-opens=java.base/java.io=ALL-UNNAMED");
+            modularJavaOpts.add("--add-opens=java.base/java.net=ALL-UNNAMED");
             modularJavaOpts.add("--add-opens=java.base/java.security=ALL-UNNAMED");
             modularJavaOpts.add("--add-opens=java.base/java.util=ALL-UNNAMED");
             modularJavaOpts.add("--add-opens=java.base/java.util.concurrent=ALL-UNNAMED");
