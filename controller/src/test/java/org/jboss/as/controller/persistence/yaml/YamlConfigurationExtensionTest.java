@@ -157,7 +157,7 @@ public class YamlConfigurationExtensionTest {
         ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
-        assertEquals(4, postExtensionOps.size());
+        assertEquals(5, postExtensionOps.size());
         assertEquals(ADD, postExtensionOps.get(0).operationName);
         assertEquals(PathAddress.pathAddress("basic", "test"), postExtensionOps.get(0).address);
         assertFalse(postExtensionOps.get(0).operation.hasDefined("value"));
@@ -173,6 +173,10 @@ public class YamlConfigurationExtensionTest {
         assertEquals(PathAddress.pathAddress("system-property", "ccc"), postExtensionOps.get(3).address);
         assertTrue(postExtensionOps.get(3).operation.hasDefined("value"));
         assertEquals("test", postExtensionOps.get(3).operation.get("value").asString());
+        assertEquals(ADD, postExtensionOps.get(4).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "value"), postExtensionOps.get(4).address);
+        assertTrue(postExtensionOps.get(4).operation.hasDefined("value"));
+        assertEquals("test", postExtensionOps.get(4).operation.get("value").asString());
     }
 
     /**
@@ -230,7 +234,7 @@ public class YamlConfigurationExtensionTest {
         ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
-        assertEquals(6, postExtensionOps.size());
+        assertEquals(7, postExtensionOps.size());
         assertEquals(ADD, postExtensionOps.get(0).operationName);
         assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(0).address);
         assertFalse(postExtensionOps.get(0).operation.hasDefined("value"));
@@ -252,6 +256,10 @@ public class YamlConfigurationExtensionTest {
         assertEquals(PathAddress.pathAddress("system-property", "ccc"), postExtensionOps.get(5).address);
         assertTrue(postExtensionOps.get(5).operation.hasDefined("value"));
         assertEquals("test", postExtensionOps.get(5).operation.get("value").asString());
+        assertEquals(ADD, postExtensionOps.get(6).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "value"), postExtensionOps.get(6).address);
+        assertTrue(postExtensionOps.get(6).operation.hasDefined("value"));
+        assertEquals("test", postExtensionOps.get(6).operation.get("value").asString());
     }
 
     /**

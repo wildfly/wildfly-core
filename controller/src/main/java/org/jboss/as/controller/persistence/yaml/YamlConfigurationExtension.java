@@ -231,7 +231,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                                 if (!postExtensionOps.isEmpty()) {
                                     ParsedBootOp op = postExtensionOps.get(postExtensionOps.size() - 1);
                                     if (! address.equals(op.getAddress())) { // else already processed
-                                        Map<String, Object> map = new HashMap<>(yaml);
+                                        Map<String, Object> map = value instanceof Map ? new HashMap<>((Map)value) : new HashMap<>(yaml);
                                         //need to process attributes for adding
                                         processAttributes(address, rootRegistration, operationEntry, map, postExtensionOps);
                                         processResource(address, map, rootRegistration, resourceRegistration, xmlOperations, postExtensionOps, false);
