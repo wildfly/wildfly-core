@@ -197,17 +197,6 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
     }
 
     /**
-     * Gets whether the remove operation should fail if there are child resources present.
-     * @return {@code true} if the operation should fail in the presence of child resources
-     *
-     * @deprecated never called; this handler now always removes child resources
-     */
-    @Deprecated
-    protected boolean requireNoChildResources() {
-        return false;
-    }
-
-    /**
      * Gets whether a child resource should be removed via the addition of a step to invoke
      * the "remove" operation for its address. If this method returns {@code false}
      * then the child resource will simply be discarded along with their parent.
