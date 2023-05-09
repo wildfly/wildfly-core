@@ -171,6 +171,7 @@
         <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.commons-io>2.10.0</version.commons-io>
         <version.io.netty>4.1.99.Final</version.io.netty>
+        <version.io.smallrye.smallrye-common>2.1.0</version.io.smallrye.smallrye-common>
         <version.io.smallrye.jandex>3.1.5</version.io.smallrye.jandex>
         <version.io.undertow>2.3.8.Final</version.io.undertow>
         <version.jakarta.json.jakarta-json-api>2.1.2</version.jakarta.json.jakarta-json-api>
@@ -699,6 +700,46 @@
                 <groupId>commons-cli</groupId>
                 <artifactId>commons-cli</artifactId>
                 <version>${version.commons-cli}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.smallrye.common</groupId>
+                <artifactId>smallrye-common-annotation</artifactId>
+                <version>${version.io.smallrye.smallrye-common}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.smallrye.common</groupId>
+                <artifactId>smallrye-common-constraint</artifactId>
+                <version>${version.io.smallrye.smallrye-common}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.smallrye.common</groupId>
+                <artifactId>smallrye-common-cpu</artifactId>
+                <version>${version.io.smallrye.smallrye-common}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.smallrye.common</groupId>
+                <artifactId>smallrye-common-expression</artifactId>
+                <version>${version.io.smallrye.smallrye-common}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.smallrye.common</groupId>
+                <artifactId>smallrye-common-function</artifactId>
+                <version>${version.io.smallrye.smallrye-common}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.smallrye.common</groupId>
+                <artifactId>smallrye-common-net</artifactId>
+                <version>${version.io.smallrye.smallrye-common}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.smallrye.common</groupId>
+                <artifactId>smallrye-common-os</artifactId>
+                <version>${version.io.smallrye.smallrye-common}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.smallrye.common</groupId>
+                <artifactId>smallrye-common-ref</artifactId>
+                <version>${version.io.smallrye.smallrye-common}</version>
             </dependency>
             <dependency>
                 <groupId>io.smallrye</groupId>

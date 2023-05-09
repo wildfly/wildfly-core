@@ -16,7 +16,12 @@
         <module name="java.logging"/>
         <module name="java.xml"/>
         <module name="internal.javax.json.api.ee8"/>
+        <module name="io.smallrye.common.constraint"/>
+        <module name="io.smallrye.common.cpu"/>
+        <module name="io.smallrye.common.expression"/>
+        <module name="io.smallrye.common.net"/>
+        <module name="io.smallrye.common.os"/>
+        <module name="io.smallrye.common.ref"/>
         <module name="org.jboss.modules"/>
-        <module name="org.wildfly.common"/>
     </dependencies>
 </module>
