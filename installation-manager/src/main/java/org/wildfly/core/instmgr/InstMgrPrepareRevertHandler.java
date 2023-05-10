@@ -18,9 +18,6 @@
 
 package org.wildfly.core.instmgr;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,8 +59,6 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
     static final AttributeDefinition MAVEN_REPO_FILE = SimpleAttributeDefinitionBuilder.create(InstMgrConstants.MAVEN_REPO_FILE, ModelType.INT)
             .setStorageRuntime()
             .setRequired(false)
-            .addArbitraryDescriptor(FILESYSTEM_PATH, ModelNode.TRUE)
-            .addArbitraryDescriptor(ATTACHED_STREAMS, ModelNode.TRUE)
             .setAlternatives(InstMgrConstants.REPOSITORIES)
             .build();
 
@@ -85,7 +80,7 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
             .addParameter(REPOSITORIES)
             .addParameter(LOCAL_CACHE)
             .addParameter(NO_RESOLVE_LOCAL_CACHE)
-            .addParameter(MAVEN_REPO_FILE)
+            .addParameter(MAVEN_REPO_FILES)
             .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
             .setRuntimeOnly()
             .build();

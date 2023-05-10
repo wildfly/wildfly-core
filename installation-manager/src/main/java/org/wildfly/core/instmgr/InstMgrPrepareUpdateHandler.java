@@ -18,7 +18,6 @@
 
 package org.wildfly.core.instmgr;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
 
 import java.io.File;
@@ -56,8 +55,6 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
     protected static final AttributeDefinition MAVEN_REPO_FILE = SimpleAttributeDefinitionBuilder.create(InstMgrConstants.MAVEN_REPO_FILE, ModelType.INT)
             .setStorageRuntime()
             .setRequired(false)
-            .addArbitraryDescriptor(FILESYSTEM_PATH, ModelNode.TRUE)
-            .addArbitraryDescriptor(ATTACHED_STREAMS, ModelNode.TRUE)
             .build();
 
     protected static final AttributeDefinition MAVEN_REPO_FILES =  new SimpleListAttributeDefinition.Builder(InstMgrConstants.MAVEN_REPO_FILES, MAVEN_REPO_FILE)
