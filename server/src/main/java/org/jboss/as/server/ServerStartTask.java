@@ -116,10 +116,6 @@ public final class ServerStartTask implements ServerTask, Serializable, ObjectIn
         setPropertyIfFound(launchProperties, ServerEnvironment.QUALIFIED_HOST_NAME, properties);
         setPropertyIfFound(launchProperties, ServerEnvironment.HOST_NAME, properties);
         setPropertyIfFound(launchProperties, ServerEnvironment.NODE_NAME, properties);
-        @SuppressWarnings("deprecation")
-        String deprecated = ServerEnvironment.MODULES_DIR;
-        setPropertyIfFound(launchProperties, deprecated, properties);
-        setPropertyIfFound(launchProperties, ServerEnvironment.BUNDLES_DIR, properties);
         setPropertyIfFound(launchProperties, ServerEnvironment.SERVER_DATA_DIR, properties);
         setPropertyIfFound(launchProperties, ServerEnvironment.SERVER_CONTENT_DIR, properties);
         setPropertyIfFound(launchProperties, ServerEnvironment.SERVER_LOG_DIR, properties);
