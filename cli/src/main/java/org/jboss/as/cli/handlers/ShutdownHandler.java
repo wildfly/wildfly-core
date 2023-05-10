@@ -180,7 +180,7 @@ public class ShutdownHandler extends BaseOperationCommand {
             boolean localClientLaunch = isLocalClientLaunch(ctx);
             executeOperation(client, cliClient, op, !localClientLaunch);
             if (localClientLaunch) {
-                ctx.printLine("The JBoss CLI session will be closed automatically to allow the server be updated. Once the server has been restarted, you can relaunch the JBoss CLI session.");
+                ctx.printLine("The JBoss CLI session will be closed automatically to allow the server be updated. Once the server has been restarted, you can relaunch the JBoss CLI session.", false);
                 try {
                     TimeUnit.SECONDS.sleep(3);
                 } catch (InterruptedException e) {
