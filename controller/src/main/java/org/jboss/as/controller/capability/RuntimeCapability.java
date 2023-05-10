@@ -7,6 +7,7 @@ package org.jboss.as.controller.capability;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -16,6 +17,11 @@ import org.jboss.as.controller.ServiceNameFactory;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.Assert;
+import org.wildfly.service.descriptor.BinaryServiceDescriptor;
+import org.wildfly.service.descriptor.NullaryServiceDescriptor;
+import org.wildfly.service.descriptor.QuaternaryServiceDescriptor;
+import org.wildfly.service.descriptor.TernaryServiceDescriptor;
+import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 
 /**
  * A capability exposed in a running WildFly process.
@@ -55,6 +61,56 @@ public class RuntimeCapability<T> implements Capability {
         return sb.toString();
     }
 
+    /**
+     * Resolves the full capability name from a unary service descriptor and reference.
+     * @param descriptor a service descriptor
+     * @param name the dynamic name component
+     * @return the full capability name.
+     */
+    public static <T> String resolveCapabilityName(UnaryServiceDescriptor<T> descriptor, String name) {
+        Map.Entry<String, String[]> resolved = descriptor.resolve(name);
+        return buildDynamicCapabilityName(resolved.getKey(), resolved.getValue());
+    }
+
+    /**
+     * Resolves the full capability name from a binary service descriptor and references.
+     * @param descriptor a service descriptor
+     * @param parent the first dynamic name component
+     * @param child the second dynamic name component
+     * @return the full capability name.
+     */
+    public static <T> String resolveCapabilityName(BinaryServiceDescriptor<T> descriptor, String parent, String child) {
+        Map.Entry<String, String[]> resolved = descriptor.resolve(parent, child);
+        return buildDynamicCapabilityName(resolved.getKey(), resolved.getValue());
+    }
+
+    /**
+     * Resolves the full capability name from a ternary service descriptor and references.
+     * @param descriptor a service descriptor
+     * @param grandparent the first dynamic name component
+     * @param parent the second dynamic name component
+     * @param child the third dynamic name component
+     * @return the full capability name.
+     */
+    public static <T> String resolveCapabilityName(TernaryServiceDescriptor<T> descriptor, String grandparent, String parent, String child) {
+        Map.Entry<String, String[]> resolved = descriptor.resolve(grandparent, parent, child);
+        return buildDynamicCapabilityName(resolved.getKey(), resolved.getValue());
+    }
+
+    /**
+     * Resolves the full capability name from a ternary service descriptor and references.
+     * @param descriptor a service descriptor
+     * @param greatGrandparent the first dynamic name component
+     * @param grandparent the second dynamic name component
+     * @param parent the third dynamic name component
+     * @param child the fourth dynamic name component
+     * @return the full capability name.
+     */
+    public static <T> String resolveCapabilityName(QuaternaryServiceDescriptor<T> descriptor, String greatGrandparent, String grandparent, String parent, String child) {
+        Map.Entry<String, String[]> resolved = descriptor.resolve(greatGrandparent, grandparent, parent, child);
+        return buildDynamicCapabilityName(resolved.getKey(), resolved.getValue());
+    }
+
     // Default value for allowMultipleRegistrations.
     private static final boolean ALLOW_MULTIPLE = false;
 
@@ -76,7 +132,7 @@ public class RuntimeCapability<T> implements Capability {
         this.name = builder.baseName;
         this.dynamic = builder.dynamic;
         this.requirements = establishRequirements(builder.requirements);
-        this.dynamicNameMapper = Objects.requireNonNullElse(builder.dynamicNameMapper, DynamicNameMappers.SIMPLE);
+        this.dynamicNameMapper = Objects.requireNonNullElse(builder.dynamicNameMapper, UnaryCapabilityNameResolver.DEFAULT);
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceValueType = builder.serviceValueType;
         this.allowMultipleRegistrations = builder.allowMultipleRegistrations;
@@ -102,7 +158,7 @@ public class RuntimeCapability<T> implements Capability {
         this.name = buildDynamicCapabilityName(baseName, dynamicElement);
         this.dynamic = false;
         this.requirements = establishRequirements(requirements);
-        this.dynamicNameMapper = Objects.requireNonNullElse(dynamicNameMapper, DynamicNameMappers.SIMPLE);
+        this.dynamicNameMapper = Objects.requireNonNullElse(dynamicNameMapper, UnaryCapabilityNameResolver.DEFAULT);
         this.runtimeAPI = runtimeAPI;
         this.serviceValueType = serviceValueType;
         if (serviceValueType != null) {
@@ -356,7 +412,7 @@ public class RuntimeCapability<T> implements Capability {
         private Class<?> serviceValueType;
         private Set<String> requirements;
         private boolean allowMultipleRegistrations = ALLOW_MULTIPLE;
-        private Function<PathAddress, String[]> dynamicNameMapper = DynamicNameMappers.SIMPLE;
+        private Function<PathAddress, String[]> dynamicNameMapper = UnaryCapabilityNameResolver.DEFAULT;
 
         /**
          * Create a builder for a non-dynamic capability with no custom runtime API.
@@ -421,6 +477,51 @@ public class RuntimeCapability<T> implements Capability {
          */
         public static <T> Builder<T> of(String name, boolean dynamic, T runtimeAPI) {
             return new Builder<>(name, dynamic, runtimeAPI);
+        }
+
+        /**
+         * Creates a builder for a non-dynamic capability using the name and type of the specified service descriptor.
+         * @param descriptor the service descriptor of this capability
+         * @return the builder
+         */
+        public static Builder<Void> of(NullaryServiceDescriptor<?> descriptor) {
+            return new Builder<Void>(descriptor.getName(), false, null).setServiceType(descriptor.getType());
+        }
+
+        /**
+         * Creates a builder for a dynamic capability using the name and type of the specified service descriptor.
+         * @param descriptor the service descriptor of this capability
+         * @return the builder
+         */
+        public static Builder<Void> of(UnaryServiceDescriptor<?> descriptor) {
+            return new Builder<Void>(descriptor.getName(), true, null).setServiceType(descriptor.getType()).setDynamicNameMapper(UnaryCapabilityNameResolver.DEFAULT);
+        }
+
+        /**
+         * Creates a builder for a dynamic capability using the name and type of the specified service descriptor.
+         * @param descriptor the service descriptor of this capability
+         * @return the builder
+         */
+        public static Builder<Void> of(BinaryServiceDescriptor<?> descriptor) {
+            return new Builder<Void>(descriptor.getName(), true, null).setServiceType(descriptor.getType()).setDynamicNameMapper(BinaryCapabilityNameResolver.PARENT_CHILD);
+        }
+
+        /**
+         * Creates a builder for a dynamic capability using the name and type of the specified service descriptor.
+         * @param descriptor the service descriptor of this capability
+         * @return the builder
+         */
+        public static Builder<Void> of(TernaryServiceDescriptor<?> descriptor) {
+            return new Builder<Void>(descriptor.getName(), true, null).setServiceType(descriptor.getType()).setDynamicNameMapper(TernaryCapabilityNameResolver.GRANDPARENT_PARENT_CHILD);
+        }
+
+        /**
+         * Creates a builder for a dynamic capability using the name and type of the specified service descriptor.
+         * @param descriptor the service descriptor of this capability
+         * @return the builder
+         */
+        public static Builder<Void> of(QuaternaryServiceDescriptor<?> descriptor) {
+            return new Builder<Void>(descriptor.getName(), true, null).setServiceType(descriptor.getType()).setDynamicNameMapper(QuaternaryCapabilityNameResolver.GREATGRANDPARENT_GRANDPARENT_PARENT_CHILD);
         }
 
         private Builder(String baseName, boolean dynamic, T runtimeAPI) {

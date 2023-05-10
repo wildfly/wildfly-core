@@ -5,9 +5,15 @@
 
 package org.jboss.as.controller.capability;
 
+import java.util.Map;
 import java.util.Optional;
 
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.service.descriptor.BinaryServiceDescriptor;
+import org.wildfly.service.descriptor.NullaryServiceDescriptor;
+import org.wildfly.service.descriptor.QuaternaryServiceDescriptor;
+import org.wildfly.service.descriptor.TernaryServiceDescriptor;
+import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 
 /**
  * Provides support for capability integration outside the management layer,
@@ -18,7 +24,7 @@ import org.jboss.msc.service.ServiceName;
  *
  * @author Brian Stansberry
  */
-public interface CapabilityServiceSupport {
+public interface CapabilityServiceSupport extends CapabilityServiceDescriptorResolver {
 
     /**
      * Exception thrown when support for an unregistered capability is requested. This is a checked
@@ -121,4 +127,33 @@ public interface CapabilityServiceSupport {
      * @return the name of the service. Will not return {@code null}
      */
     ServiceName getCapabilityServiceName(String capabilityBaseName, String ... dynamicParts);
+
+    @Override
+    default <T> ServiceName getCapabilityServiceName(NullaryServiceDescriptor<T> descriptor) {
+        return this.getCapabilityServiceName(descriptor.getName());
+    }
+
+    @Override
+    default <T> ServiceName getCapabilityServiceName(UnaryServiceDescriptor<T> descriptor, String name) {
+        Map.Entry<String, String[]> resolved = descriptor.resolve(name);
+        return this.getCapabilityServiceName(resolved.getKey(), resolved.getValue());
+    }
+
+    @Override
+    default <T> ServiceName getCapabilityServiceName(BinaryServiceDescriptor<T> descriptor, String parent, String child) {
+        Map.Entry<String, String[]> resolved = descriptor.resolve(parent, child);
+        return this.getCapabilityServiceName(resolved.getKey(), resolved.getValue());
+    }
+
+    @Override
+    default <T> ServiceName getCapabilityServiceName(TernaryServiceDescriptor<T> descriptor, String grandparent, String parent, String child) {
+        Map.Entry<String, String[]> resolved = descriptor.resolve(grandparent, parent, child);
+        return this.getCapabilityServiceName(resolved.getKey(), resolved.getValue());
+    }
+
+    @Override
+    default <T> ServiceName getCapabilityServiceName(QuaternaryServiceDescriptor<T> descriptor, String greatGrandparent, String grandparent, String parent, String child) {
+        Map.Entry<String, String[]> resolved = descriptor.resolve(greatGrandparent, grandparent, parent, child);
+        return this.getCapabilityServiceName(resolved.getKey(), resolved.getValue());
+    }
 }

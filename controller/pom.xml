@@ -94,6 +94,10 @@
 
         <dependency>
             <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-service</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-version</artifactId>
         </dependency>
 

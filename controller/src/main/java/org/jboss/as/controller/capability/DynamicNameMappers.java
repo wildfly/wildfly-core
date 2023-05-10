@@ -11,49 +11,21 @@ import org.jboss.as.controller.PathAddress;
  * Utility class defining name mappers.
  * @author Emmanuel Hugonnet (c) 2018 Red Hat, inc.
  */
+@Deprecated(forRemoval = true)
 public class DynamicNameMappers {
-
-    private static class SimpleNameMapper implements Function<PathAddress, String[]> {
-        private SimpleNameMapper() {
-        }
-
-        @Override
-        public String[] apply(PathAddress pathAddress) {
-            return new String[]{
-                pathAddress.getLastElement().getValue()
-            };
-        }
-    }
-
-    private static class ParentNameMapper implements Function<PathAddress, String[]> {
-        private ParentNameMapper() {
-        }
-
-        @Override
-        public String[] apply(PathAddress pathAddress) {
-            return new String[]{
-                pathAddress.getParent().getLastElement().getValue(),
-                pathAddress.getLastElement().getValue()
-            };
-        }
-    }
-
-    private static class GrandParentNameMapper implements Function<PathAddress, String[]> {
-        private GrandParentNameMapper() {
-        }
-
-        @Override
-        public String[] apply(PathAddress pathAddress) {
-            return new String[]{
-                pathAddress.getParent().getParent().getLastElement().getValue(),
-                pathAddress.getParent().getLastElement().getValue(),
-                pathAddress.getLastElement().getValue()
-            };
-        }
-    }
-    public static final Function<PathAddress, String[]> SIMPLE = new SimpleNameMapper();
-
-    public static final Function<PathAddress, String[]> PARENT = new ParentNameMapper();
-
-    public static final Function<PathAddress, String[]> GRAND_PARENT = new GrandParentNameMapper();
+    /**
+     * @deprecated Use {@link UnaryCapabilityNameResolver#DEFAULT} instead.
+     */
+    @Deprecated(forRemoval = true)
+    public static final Function<PathAddress, String[]> SIMPLE = UnaryCapabilityNameResolver.DEFAULT;
+    /**
+     * @deprecated Use {@link UnaryCapabilityNameResolver#PARENT} instead.
+     */
+    @Deprecated(forRemoval = true)
+    public static final Function<PathAddress, String[]> PARENT = BinaryCapabilityNameResolver.PARENT_CHILD;
+    /**
+     * @deprecated Use {@link UnaryCapabilityNameResolver#GRANDPARENT} instead.
+     */
+    @Deprecated(forRemoval = true)
+    public static final Function<PathAddress, String[]> GRAND_PARENT = TernaryCapabilityNameResolver.GRANDPARENT_PARENT_CHILD;
 }
