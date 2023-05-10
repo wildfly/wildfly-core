@@ -289,6 +289,7 @@
         <module>request-controller</module>
         <module>security-manager</module>
         <module>server</module>
+        <module>service</module>
         <module>subsystem-test</module>
         <module>testsuite</module>
         <module>threads</module>
@@ -456,8 +457,8 @@
                                             <exclude>stax:stax-api</exclude>
                                             <exclude>sun-jaxb:jaxb-api</exclude>
                                             <exclude>trove:trove</exclude>
-					    <exclude>com.fasterxml.woodstox:woodstox-core</exclude>
-					    <exclude>org.codehaus.woodstox:stax2-api</exclude>
+                                            <exclude>com.fasterxml.woodstox:woodstox-core</exclude>
+                                            <exclude>org.codehaus.woodstox:stax2-api</exclude>
                                             <exclude>woodstox:wstx-lgpl</exclude>
                                             <exclude>xml-apis:xml-apis</exclude>
                                             <!-- Jandex moved to SmallRye -->
@@ -1585,6 +1586,11 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-service</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
