@@ -39,7 +39,7 @@ import org.jboss.dmr.ModelNode;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 import org.wildfly.core.instmgr.InstMgrConstants;
 
-@CommandDefinition(name = "channel-add", description = "Subscribes the installation to a new channel.")
+@CommandDefinition(name = "channel-add", description = "Subscribes the installation to a new channel.", activator = InstMgrActivator.class)
 public class ChannelAddCommand extends AbstractInstMgrCommand {
     @Option(name = "channel-name", required = true)
     String channelName;

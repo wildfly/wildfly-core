@@ -34,7 +34,8 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 import org.wildfly.core.instmgr.InstMgrCleanHandler;
 import org.wildfly.core.instmgr.InstMgrConstants;
 
-@CommandDefinition(name = "clean", description = "Clean installation manager content.")
+@CommandDefinition(name = "clean", description = "Clean installation manager content.",
+        activator = InstMgrActivator.class)
 public class CleanCommand extends AbstractInstMgrCommand {
     final Path lstUpdatesWorkDir;
 

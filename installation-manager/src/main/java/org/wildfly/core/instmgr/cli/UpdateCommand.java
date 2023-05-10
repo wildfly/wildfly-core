@@ -39,7 +39,7 @@ import org.jboss.dmr.ModelNode;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 import org.wildfly.core.instmgr.InstMgrConstants;
 
-@CommandDefinition(name = "update", description = "Apply the latest available patches on a server instance.")
+@CommandDefinition(name = "update", description = "Apply the latest available patches on a server instance.", activator = InstMgrActivator.class)
 public class UpdateCommand extends AbstractInstMgrCommand {
     public static final String DRY_RUN_OPTION = "dry-run";
     public static final String CONFIRM_OPTION = "confirm";

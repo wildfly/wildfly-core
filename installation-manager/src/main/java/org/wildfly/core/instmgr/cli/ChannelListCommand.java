@@ -37,7 +37,8 @@ import org.jboss.dmr.ModelNode;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 import org.wildfly.core.instmgr.InstMgrConstants;
 
-@CommandDefinition(name = "channel-list", description = "List channels subscribed to by the installation.")
+@CommandDefinition(name = "channel-list", description = "List channels subscribed to by the installation.",
+        activator = InstMgrActivator.class)
 public class ChannelListCommand extends AbstractInstMgrCommand {
 
     @Override

@@ -191,7 +191,6 @@ public class ShutdownHandler extends BaseOperationCommand {
                 // In order to prevent keeping using a jboss-modules.jar that could have been updated, we finish the CLI process
                 // Once the server has been restarted the user will launch again the CLI that will use the most recent updates
                 ctx.terminateSession();
-                System.exit(0);
             }
         } else {
             executeOperation(client, cliClient, op, true);
