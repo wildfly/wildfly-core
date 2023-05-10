@@ -52,9 +52,9 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.RUNTIME_NAM
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.LogContext;
-import org.jboss.logmanager.PropertyConfigurator;
+import org.jboss.logmanager.configuration.ContextConfiguration;
+import org.jboss.logmanager.configuration.PropertyContextConfiguration;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleLoader;
 import static org.wildfly.core.jar.runtime.Constants.LOG_BOOT_FILE_PROP;
@@ -242,9 +242,10 @@ public final class BootableJar implements ShutdownHandler {
                 // The LogManager.readConfiguration() uses the LogContext.getSystemLogContext(). Since we create our
                 // own LogContext we need to configure the context and attach the configurator to the root logger. The
                 // logging subsystem will use this configurator to determine what resources may need to be reconfigured.
-                PropertyConfigurator configurator = new PropertyConfigurator(logContext);
-                configurator.configure(in);
-                logContext.getLogger("").attach(Configurator.ATTACHMENT_KEY, configurator);
+                final Properties properties = new Properties();
+                properties.load(new InputStreamReader(in, StandardCharsets.UTF_8));
+                final PropertyContextConfiguration configuration = PropertyContextConfiguration.configure(logContext, properties);
+                logContext.attach(ContextConfiguration.CONTEXT_CONFIGURATION_KEY, configuration);
             }
         }
         return logContext;

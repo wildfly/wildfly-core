@@ -20,7 +20,9 @@ import org.jboss.as.cli.impl.CliLauncher;
 import org.jboss.logging.Logger;
 import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.LogContext;
-import org.jboss.logmanager.PropertyConfigurator;
+import org.jboss.logmanager.configuration.ContextConfiguration;
+import org.jboss.logmanager.configuration.PropertyContextConfiguration;
+
 
 /**
 *
@@ -58,20 +60,10 @@ public class CommandLineMain {
                     // Attempt to configure based on defaults
                     logManager.readConfiguration();
                     // If configured a Configurator will be on the root logger
-                    if (LogContext.getSystemLogContext().getAttachment("", Configurator.ATTACHMENT_KEY) == null) {
+                    if (LogContext.getSystemLogContext().getAttachment(ContextConfiguration.CONTEXT_CONFIGURATION_KEY) == null) {
                         if (!"OFF".equalsIgnoreCase(logLevel)) {
-                            try {
-                                final PropertyConfigurator configurator = new PropertyConfigurator();
-                                // Get the root logger and attach the configurator, note we don't need to be concerned with security exceptions
-                                // as the logManager.readConfiguration() will have already failed the check
-                                final Configurator appearing = LogContext.getSystemLogContext().getLogger("").attachIfAbsent(Configurator.ATTACHMENT_KEY, configurator);
-                                if (appearing == null) {
-                                    configurator.configure(createLogManagerConfig(logLevel));
-                                }
-                            } catch (IOException e) {
-                                System.err.println("ERROR: Could not configure LogManager");
-                                e.printStackTrace();
-                            }
+                            final var configuration = PropertyContextConfiguration.configure(LogContext.getSystemLogContext(), createLogManagerConfig(logLevel));
+                            LogContext.getSystemLogContext().attach(ContextConfiguration.CONTEXT_CONFIGURATION_KEY, configuration);
                         }
                     }
                 }

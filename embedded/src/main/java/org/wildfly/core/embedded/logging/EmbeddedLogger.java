@@ -201,4 +201,8 @@ public interface EmbeddedLogger extends BasicLogger {
     @Message(id = 146, value = "Failed to restore context %s")
     @LogMessage(level = Logger.Level.ERROR)
     void failedToRestoreContext(@Cause Throwable cause, Context context);
+
+    @Message(id = 147, value = "Failed to close the log context")
+    @LogMessage(level = Logger.Level.ERROR)
+    void failedToCloseLogContext(@Cause Throwable cause);
 }
