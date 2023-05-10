@@ -55,7 +55,7 @@ import org.wildfly.core.cli.command.aesh.activator.AbstractRejectOptionActivator
 import org.wildfly.core.cli.command.aesh.activator.DomainOptionActivator;
 import org.wildfly.core.instmgr.InstMgrConstants;
 
-@CommandDefinition(name = "abstract-inst-mgr-cmd", description = "")
+@CommandDefinition(name = "abstract-inst-mgr-cmd", description = "", activator = InstMgrActivator.class)
 public abstract class AbstractInstMgrCommand implements Command<CLICommandInvocation> {
     static final PathElement CORE_SERVICE_INSTALLER = PathElement.pathElement(CORE_SERVICE, InstMgrGroupCommand.COMMAND_NAME);
 

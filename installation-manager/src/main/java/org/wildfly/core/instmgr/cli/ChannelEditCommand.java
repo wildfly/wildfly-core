@@ -39,7 +39,7 @@ import org.jboss.dmr.ModelNode;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 import org.wildfly.core.instmgr.InstMgrConstants;
 
-@CommandDefinition(name = "channel-edit", description = "Edit a channel subscription.")
+@CommandDefinition(name = "channel-edit", description = "Edit a channel subscription.", activator = InstMgrActivator.class)
 public class ChannelEditCommand extends AbstractInstMgrCommand {
     @Option(name = "channel-name", required = true)
     String channelName;

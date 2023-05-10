@@ -33,7 +33,8 @@ import org.jboss.dmr.ModelNode;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 import org.wildfly.core.instmgr.InstMgrRemoveChannelHandler;
 
-@CommandDefinition(name = "channel-remove", description = "Unsubscribe the installation from a channel.")
+@CommandDefinition(name = "channel-remove", description = "Unsubscribe the installation from a channel.",
+        activator = InstMgrActivator.class)
 public class ChannelRemoveCommand extends AbstractInstMgrCommand {
 
     @Option(name = "channel-name", required = true)

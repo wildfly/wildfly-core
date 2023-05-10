@@ -15,7 +15,8 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 import org.wildfly.core.instmgr.InstMgrConstants;
 import org.wildfly.core.instmgr.InstMgrCustomPatchRemoveHandler;
 
-@CommandDefinition(name = "remove-custom-patch", description = "Removes a custom patch and its channel from the server.")
+@CommandDefinition(name = "remove-custom-patch", description = "Removes a custom patch and its channel from the server.",
+        activator = InstMgrActivator.class)
 public class CustomPatchRemoveCommand extends AbstractInstMgrCommand {
 
     @Option(name = "manifest", required = true)

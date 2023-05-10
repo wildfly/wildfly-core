@@ -39,7 +39,7 @@ import org.wildfly.core.instmgr.InstMgrHistoryRevisionHandler;
 import org.wildfly.installationmanager.ArtifactChange;
 import org.wildfly.installationmanager.ChannelChange;
 
-@CommandDefinition(name = "history", description = "List previous installation states.")
+@CommandDefinition(name = "history", description = "List previous installation states.", activator = InstMgrActivator.class)
 public class HistoryCommand extends AbstractInstMgrCommand {
     @Option(name = "revision")
     private String revision;

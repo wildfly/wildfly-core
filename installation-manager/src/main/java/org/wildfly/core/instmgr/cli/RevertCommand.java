@@ -40,7 +40,7 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 import org.wildfly.core.instmgr.InstMgrConstants;
 import org.wildfly.core.instmgr.InstMgrPrepareRevertHandler;
 
-@CommandDefinition(name = "revert", description = "Reverts to a previous installation state.")
+@CommandDefinition(name = "revert", description = "Reverts to a previous installation state.", activator = InstMgrActivator.class)
 public class RevertCommand extends AbstractInstMgrCommand {
     @OptionList(name = "repositories")
     private List<String> repositories;
