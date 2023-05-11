@@ -152,7 +152,7 @@
 		
         <!-- Version for a plugin dependency, which testbom dependencyManagement can't control.
              See https://issues.apache.org/jira/browse/MNG-2496 -->
-        <version.org.apache.xalan>2.7.1.jbossorg-6</version.org.apache.xalan>
+        <version.org.apache.xalan>2.7.3</version.org.apache.xalan>
 
     </properties>
 
