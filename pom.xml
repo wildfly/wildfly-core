@@ -94,6 +94,7 @@
             --add-opens=java.base/java.lang=ALL-UNNAMED
             --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
             --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+            --add-opens=java.base/java.net=ALL-UNNAMED
             --add-opens=java.base/java.security=ALL-UNNAMED
             --add-opens=java.base/java.util=ALL-UNNAMED
             --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
@@ -159,7 +160,7 @@
              NB: In case an update is made to these exports and opens, make sure that the common.sh script is in sync.
         -->
         <embedding.jar.jpms.exports>java.desktop/sun.awt java.naming/com.sun.jndi.ldap java.naming/com.sun.jndi.url.ldap java.naming/com.sun.jndi.url.ldaps jdk.naming.dns/com.sun.jndi.dns</embedding.jar.jpms.exports>
-        <embedding.jar.jpms.opens>java.base/java.lang java.base/java.lang.invoke java.base/java.lang.reflect java.base/java.io java.base/java.security java.base/java.util java.base/java.util.concurrent java.management/javax.management java.naming/javax.naming</embedding.jar.jpms.opens>
+        <embedding.jar.jpms.opens>java.base/java.lang java.base/java.lang.invoke java.base/java.lang.reflect java.base/java.io java.base/java.net java.base/java.security java.base/java.util java.base/java.util.concurrent java.management/javax.management java.naming/javax.naming</embedding.jar.jpms.opens>
 
         <!--
             Dependency versions. Please keep alphabetical.
