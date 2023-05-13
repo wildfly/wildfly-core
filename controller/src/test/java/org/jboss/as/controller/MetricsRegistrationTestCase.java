@@ -208,7 +208,7 @@ public class MetricsRegistrationTestCase {
         ModelNode setup = Util.getEmptyOperation("setup", new ModelNode());
         controller.execute(setup, null, null, null);
 
-        client = controller.createClient(executor);
+        client = svc.getModelControllerClientFactory().createClient(executor);
 
         return svc.managementControllerResource;
     }

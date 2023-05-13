@@ -208,6 +208,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private final CapabilityRegistry capabilityRegistry;
     private final ConfigurationExtension configExtension;
     private final RuntimeCapability<ResolverExtensionRegistry> extensionRegistryCapability;
+    private volatile ModelControllerClientFactory clientFactory;
 
     /**
      * Construct a new instance.
@@ -327,6 +328,9 @@ public abstract class AbstractControllerService implements Service<ModelControll
         // Initialize the model
         initModel(controller.getManagementModel(), controller.getModelControllerResource());
 
+        // We create the client factory even if we don't it expose via MSC, so test classes can access it
+        this.clientFactory = new ModelControllerClientFactoryImpl(controller, securityIdentitySupplier);
+
         // Expose the client factory
         if (isExposingClientServicesAllowed()) {
             capabilityRegistry.registerCapability(
@@ -337,7 +341,6 @@ public abstract class AbstractControllerService implements Service<ModelControll
             // This also gets them recorded as 'possible capabilities' in the capability registry
             rootResourceRegistration.registerCapability(CLIENT_FACTORY_CAPABILITY);
             rootResourceRegistration.registerCapability(NOTIFICATION_REGISTRY_CAPABILITY);
-            ModelControllerClientFactory clientFactory = new ModelControllerClientFactoryImpl(controller, securityIdentitySupplier);
             final ServiceName clientFactorySN = CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName();
             final ServiceBuilder<?> clientFactorySB = target.addService(clientFactorySN);
             clientFactorySB.setInstance(new SimpleService(clientFactorySB.provides(clientFactorySN), clientFactory));
@@ -654,6 +657,11 @@ public abstract class AbstractControllerService implements Service<ModelControll
      */
     protected ModelControllerServiceInitializationParams getModelControllerServiceInitializationParams() {
         return null;
+    }
+
+    // Expose our ModelControllerClientFactory to test code
+    protected ModelControllerClientFactory getModelControllerClientFactory() {
+        return clientFactory;
     }
 
     protected void executeAdditionalCliBootScript() {

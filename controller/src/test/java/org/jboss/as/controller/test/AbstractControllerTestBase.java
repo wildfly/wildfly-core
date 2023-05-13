@@ -51,6 +51,7 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.TestModelControllerService;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.AbstractConfigurationPersister;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
@@ -80,6 +81,7 @@ public abstract class AbstractControllerTestBase {
     protected ModelController controller;
     protected volatile ProcessType processType;
     protected CapabilityRegistry capabilityRegistry;
+    private NotificationHandlerRegistry notificationHandlerRegistry;
 
     protected AbstractControllerTestBase(ProcessType processType) {
         this.processType = processType;
@@ -169,6 +171,7 @@ public abstract class AbstractControllerTestBase {
         svc.awaitStartup(30, TimeUnit.SECONDS);
         controller = svc.getValue();
         capabilityRegistry = svc.getCapabilityRegistry();
+        notificationHandlerRegistry = svc.getNotificationHandlerRegistry();
         ModelNode setup = Util.getEmptyOperation("setup", new ModelNode());
         controller.execute(setup, null, null, null);
     }
@@ -193,6 +196,10 @@ public abstract class AbstractControllerTestBase {
 
     protected void addBootOperations(List<ModelNode> bootOperations) {
 
+    }
+
+    protected NotificationHandlerRegistry getNotificationHandlerRegistry() {
+        return notificationHandlerRegistry;
     }
 
     public class ModelControllerService extends TestModelControllerService {

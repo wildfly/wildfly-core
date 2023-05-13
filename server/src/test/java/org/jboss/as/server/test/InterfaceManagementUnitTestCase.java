@@ -49,6 +49,7 @@ import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
@@ -106,6 +107,7 @@ public class InterfaceManagementUnitTestCase {
 
     private final ServiceContainer container = ServiceContainer.Factory.create();
     private ModelController controller;
+    private ModelControllerClientFactory clientFactory;
     private volatile boolean dependentStarted;
 
     @Before
@@ -143,6 +145,7 @@ public class InterfaceManagementUnitTestCase {
 
         svc.latch.await(20, TimeUnit.SECONDS);
         this.controller = svc.getValue();
+        this.clientFactory = svc.getModelControllerClientFactory();
 
         container.awaitStability(20, TimeUnit.SECONDS);
         Assert.assertTrue(dependentController.getState() == ServiceController.State.DOWN
@@ -156,7 +159,7 @@ public class InterfaceManagementUnitTestCase {
 
     @Test
     public void testInterfacesAlternatives() throws IOException {
-        final ModelControllerClient client = controller.createClient(Executors.newCachedThreadPool());
+        final ModelControllerClient client = clientFactory.createClient(Executors.newCachedThreadPool());
         final ModelNode base = new ModelNode();
         base.get(ModelDescriptionConstants.OP).set("add");
         base.get(ModelDescriptionConstants.OP_ADDR).add("interface", "test");
@@ -184,7 +187,7 @@ public class InterfaceManagementUnitTestCase {
 
     @Test
     public void testUpdateInterface() throws IOException {
-        final ModelControllerClient client = controller.createClient(Executors.newCachedThreadPool());
+        final ModelControllerClient client = clientFactory.createClient(Executors.newCachedThreadPool());
         final ModelNode address = new ModelNode();
         address.add("interface", "test");
         {
@@ -240,7 +243,7 @@ public class InterfaceManagementUnitTestCase {
                 InterfaceDefinition.POINT_TO_POINT);
         populateCritieria(operation.get("any"), Nesting.ANY);
 
-        final ModelControllerClient client = controller.createClient(Executors.newCachedThreadPool());
+        final ModelControllerClient client = clientFactory.createClient(Executors.newCachedThreadPool());
 
         executeForServiceFailure(client, operation);
     }
@@ -340,6 +343,11 @@ public class InterfaceManagementUnitTestCase {
                     persister, environment, processState, null, extensionRegistry, false, MOCK_PATH_MANAGER, null,
                     authorizer, securityIdentitySupplier, AuditLogger.NO_OP_LOGGER, getMutableRootResourceRegistrationProvider(), getBootErrorCollector(), capabilityRegistry));
             super.start(context);
+        }
+
+        @Override
+        protected ModelControllerClientFactory getModelControllerClientFactory() {
+            return super.getModelControllerClientFactory();
         }
     }
 
