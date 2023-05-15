@@ -57,7 +57,6 @@ public interface AttributeDefinitionProvider {
 
     /**
      * Convenience method that exposes a collection of attribute definition providers as a stream of {@link AttributeDefinition} instances.
-     * @param <A> the attribute type
      * @return a stream of attribute definitions.
      */
     static Stream<AttributeDefinition> stream(Collection<? extends AttributeDefinitionProvider> attributes) {
