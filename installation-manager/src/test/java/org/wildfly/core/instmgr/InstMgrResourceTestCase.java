@@ -1116,7 +1116,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Operation build = operationBuilder.build();
 
         ModelNode failed = executeCheckForFailure(build);
-        String expectedCode = "WFLYIM0017:";
+        String expectedCode = "WFLYIM0016:";
         Assert.assertTrue(
                 getCauseLogFailure(failed.get(FAILURE_DESCRIPTION).asString(), expectedCode),
                 failed.get(FAILURE_DESCRIPTION).asString().startsWith(expectedCode)
@@ -1130,7 +1130,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         build = operationBuilder.build();
 
         failed = executeCheckForFailure(build);
-        expectedCode = "WFLYIM0017:";
+        expectedCode = "WFLYIM0016:";
         Assert.assertTrue(
                 getCauseLogFailure(failed.get(FAILURE_DESCRIPTION).asString(), expectedCode),
                 failed.get(FAILURE_DESCRIPTION).asString().startsWith(expectedCode)

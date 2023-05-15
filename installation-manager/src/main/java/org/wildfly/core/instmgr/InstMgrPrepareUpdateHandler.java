@@ -179,7 +179,7 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                         imService.resetCandidateStatus();
                     }
                 } catch (ZipException e) {
-                    throw InstMgrLogger.ROOT_LOGGER.invalidMavenRepoFile(e.getLocalizedMessage());
+                    throw new OperationFailedException(e.getLocalizedMessage());
                 } catch (RuntimeException e) {
                     throw e;
                 } catch (Exception e) {

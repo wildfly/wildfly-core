@@ -30,6 +30,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
@@ -41,7 +42,10 @@ public class InstMgrCreateSnapshotHandler extends InstMgrOperationStepHandler {
     public static final String OPERATION_NAME = "clone-export";
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, InstMgrResolver.RESOLVER)
-            .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY).setRuntimeOnly().build();
+            .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
+            .setRuntimeOnly()
+            .setReplyType(ModelType.STRING)
+            .build();
 
     public InstMgrCreateSnapshotHandler(InstMgrService imService, InstallationManagerFactory imf) {
         super(imService, imf);

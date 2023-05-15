@@ -1,5 +1,5 @@
 setlocal
-rem This script is only for internal usage and should not be invoked directly by the users from the command line.
+rem This script is only for internal usage and should not be invoked directly by users from the command line.
 rem This script launches the operation to apply a candidate server installation to update or revert.
 rem The server JVM writes the required values into the installation-manager.properties file by using InstMgrCandidateStatus.java
 

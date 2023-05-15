@@ -18,6 +18,9 @@
 
 package org.wildfly.core.instmgr;
 
+import java.nio.file.Path;
+import java.util.List;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -30,9 +33,6 @@ import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
-
-import java.nio.file.Path;
-import java.util.List;
 
 /**
  * Operation handler to get the history of the installation manager changes, either artifacts or configuration metadata as

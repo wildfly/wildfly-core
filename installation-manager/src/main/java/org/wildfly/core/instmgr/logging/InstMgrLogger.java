@@ -64,34 +64,31 @@ public interface InstMgrLogger extends BasicLogger {
     @Message(id = 10, value = "The manifest URL '%s' for '%s' channel is invalid.")
     OperationFailedException invalidChannelManifestURL(String url, String channelName);
 
-    @Message(id = 11, value = "You cannot use 'local-cache' option when 'no-resolve-local-cache' is enabled.")
+    @Message(id = 11, value = "You cannot use the 'local-cache' option when the 'no-resolve-local-cache' option is enabled.")
     OperationFailedException localCacheWithNoResolveLocalCache();
 
-    @Message(id = 12, value = "You cannot use 'maven-repo-file' option with 'repositories' option because they are mutually exclusive.")
+    @Message(id = 12, value = "You cannot use the 'maven-repo-file' option with the 'repositories' option because they are mutually exclusive.")
     OperationFailedException mavenRepoFileWithRepositories();
 
     @Message(id = 13, value = "Invalid format for the repository URL: '%s'")
     OperationFailedException invalidRepositoryURL(String repoUrl);
 
-    @Message(id = 14, value = "You cannot use 'work-dir' option with 'repositories' or 'maven-repo-file' options because they are mutually exclusive.")
+    @Message(id = 14, value = "You cannot use the 'work-dir' option with the 'repositories' or 'maven-repo-file' options because they are mutually exclusive.")
     OperationFailedException workDirWithMavenRepoFileOrRepositories();
 
     @Message(id = 15, value = "Channel with name '%s' cannot be found.")
     OperationFailedException channelNameNotFound(String channelName);
 
-    @Message(id = 16, value = "%s")
-    OperationFailedException invalidMavenRepoFile(String localizedMessage);
-
-    @Message(id = 17, value = "The manifest maven coordinates for '%s' are invalid. The expected maven coordinates for this manifest are GA (GroupId:ArtifactId).")
+    @Message(id = 16, value = "The manifest maven coordinates for '%s' are invalid. The expected maven coordinates for this manifest are GA (GroupId:ArtifactId).")
     OperationFailedException invalidManifestGAOnly(String ga);
 
-    @Message(id = 18, value = "The manifest maven coordinates for '%s' are invalid. The expected maven coordinates for this manifest are GAV (GroupId:ArtifactId:Version) where Version is optional.")
+    @Message(id = 17, value = "The manifest maven coordinates for '%s' are invalid. The expected maven coordinates for this manifest are GAV (GroupId:ArtifactId:Version) where Version is optional.")
     OperationFailedException invalidManifestGAV(String gav);
 
-    @Message(id = 19, value = "Installation Manager Service is down.")
+    @Message(id = 18, value = "Installation Manager Service is down.")
     IllegalStateException installationManagerServiceDown();
 
-    @Message(id = 20, value = "Operation has been cancelled.")
+    @Message(id = 19, value = "Operation has been cancelled.")
     OperationFailedException operationCancelled();
 
     ////////////////////////////////////////////////
