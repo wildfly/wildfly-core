@@ -71,7 +71,7 @@ public class ChannelListCommand extends AbstractInstMgrCommand {
 
         ctx.printLine("-------");
         for (ModelNode channel : channelsMn) {
-            ctx.printLine("#" + channel.get(InstMgrConstants.CHANNEL_NAME).asString());
+            ctx.printLine("# " + channel.get(InstMgrConstants.CHANNEL_NAME).asString());
             String manifest;
             if (channel.get(InstMgrConstants.MANIFEST).isDefined()) {
                 ModelNode manifestMn = channel.get(InstMgrConstants.MANIFEST);
