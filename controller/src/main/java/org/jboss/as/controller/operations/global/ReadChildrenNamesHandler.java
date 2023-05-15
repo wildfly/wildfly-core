@@ -42,14 +42,14 @@ import org.jboss.dmr.ModelType;
  */
 public class ReadChildrenNamesHandler implements OperationStepHandler {
 
-    static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_CHILDREN_NAMES_OPERATION, ControllerResolver.getResolver("global"))
+    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_CHILDREN_NAMES_OPERATION, ControllerResolver.getResolver("global"))
             .setParameters(CHILD_TYPE, INCLUDE_SINGLETONS)
             .setReadOnly()
             .setReplyType(ModelType.LIST)
             .setReplyValueType(ModelType.STRING)
             .build();
 
-    static final OperationStepHandler INSTANCE = new ReadChildrenNamesHandler();
+    public static final OperationStepHandler INSTANCE = new ReadChildrenNamesHandler();
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {

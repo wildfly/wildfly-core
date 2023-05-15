@@ -105,13 +105,13 @@ public class ReadResourceDescriptionHandler extends GlobalOperationHandlers.Abst
             .build();
 
 
-    static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_RESOURCE_DESCRIPTION_OPERATION, ControllerResolver.getResolver("global"))
+    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_RESOURCE_DESCRIPTION_OPERATION, ControllerResolver.getResolver("global"))
             .setParameters(OPERATIONS, NOTIFICATIONS, INHERITED, RECURSIVE, RECURSIVE_DEPTH, PROXIES, INCLUDE_ALIASES, ACCESS_CONTROL, LOCALE)
             .setReadOnly()
             .setReplyType(ModelType.OBJECT)
             .build();
 
-    static final OperationStepHandler INSTANCE = new ReadResourceDescriptionHandler();
+    public static final OperationStepHandler INSTANCE = new ReadResourceDescriptionHandler();
 
     //Placeholder for NoSuchResourceExceptions coming from proxies to remove the child in ReadResourceDescriptionAssemblyHandler
     private static final ModelNode PROXY_NO_SUCH_RESOURCE;

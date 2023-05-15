@@ -66,8 +66,8 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
             .setReplyValueType(ModelType.PROPERTY)
             .build();
 
-    static OperationStepHandler INSTANCE = new ReadAttributeGroupHandler();
-    public static OperationStepHandler RESOLVE_INSTANCE = new ReadAttributeGroupHandler(true);
+    static final OperationStepHandler INSTANCE = new ReadAttributeGroupHandler();
+    public static final OperationStepHandler RESOLVE_INSTANCE = new ReadAttributeGroupHandler(true);
 
     private final ParametersValidator validator = new ParametersValidator() {
 

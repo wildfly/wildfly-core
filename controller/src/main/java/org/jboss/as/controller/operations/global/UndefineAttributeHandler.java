@@ -22,7 +22,7 @@ import org.jboss.dmr.ModelNode;
  */
 public class UndefineAttributeHandler extends WriteAttributeHandler {
 
-    static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION, ControllerResolver.getResolver("global"))
+    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION, ControllerResolver.getResolver("global"))
             .setParameters(NAME)
             .build();
 

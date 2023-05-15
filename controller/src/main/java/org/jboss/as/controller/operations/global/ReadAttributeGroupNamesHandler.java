@@ -29,13 +29,13 @@ import org.jboss.dmr.ModelType;
  */
 public class ReadAttributeGroupNamesHandler implements OperationStepHandler {
 
-    static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_ATTRIBUTE_GROUP_NAMES_OPERATION, ControllerResolver.getResolver("global"))
+    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_ATTRIBUTE_GROUP_NAMES_OPERATION, ControllerResolver.getResolver("global"))
             .setReadOnly()
             .setReplyType(ModelType.LIST)
             .setReplyValueType(ModelType.STRING)
             .build();
 
-    static OperationStepHandler INSTANCE = new ReadAttributeGroupNamesHandler();
+    public static final OperationStepHandler INSTANCE = new ReadAttributeGroupNamesHandler();
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
