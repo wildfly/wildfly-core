@@ -298,7 +298,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      * the resource capability requiring it.
      * @param requirements a set of CapabilityReferenceRecorder.
      */
-    void registerRequirements(Set<CapabilityReferenceRecorder> requirements);
+    void registerRequirements(Set<? extends CapabilityReferenceRecorder> requirements);
 
     /**
      * Register
