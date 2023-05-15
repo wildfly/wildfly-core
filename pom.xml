@@ -290,6 +290,7 @@
         <module>security-manager</module>
         <module>server</module>
         <module>service</module>
+        <module>subsystem</module>
         <module>subsystem-test</module>
         <module>testsuite</module>
         <module>threads</module>
@@ -1591,6 +1592,11 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-service</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-subsystem</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
