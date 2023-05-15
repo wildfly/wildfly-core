@@ -29,6 +29,10 @@ public interface AttributeTranslation {
         ModelNode translate(OperationContext context, ModelNode value) throws OperationFailedException;
     }
 
+    /**
+     * Returns the target attribute definition of this translation
+     * @return the target attribute definition
+     */
     AttributeDefinition getTargetAttribute();
 
     /**
