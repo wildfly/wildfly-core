@@ -157,7 +157,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     public static String buildChannelOutput(Channel channel) {
         final String returnChar = Util.isWindows() ? "\r\n" : "\n";
 
-        StringBuilder sb = new StringBuilder("-------").append(returnChar).append("#" + channel.getName()).append(returnChar);
+        StringBuilder sb = new StringBuilder("-------").append(returnChar).append("# " + channel.getName()).append(returnChar);
 
         if (channel.getManifestUrl().isPresent()) {
             sb.append("  manifest: " + channel.getManifestUrl().get()).append(returnChar);
