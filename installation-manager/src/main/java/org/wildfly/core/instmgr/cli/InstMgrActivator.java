@@ -1,14 +1,3 @@
-package org.wildfly.core.instmgr.cli;
-
-import org.aesh.command.impl.internal.ParsedCommand;
-import org.jboss.as.cli.CommandContext;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
-import org.wildfly.core.cli.command.aesh.activator.AbstractCommandActivator;
-import org.wildfly.core.instmgr.InstMgrConstants;
 /*
  * JBoss, Home of Professional Open Source.
  * Copyright 2023 Red Hat, Inc., and individual contributors
@@ -27,8 +16,7 @@ import org.wildfly.core.instmgr.InstMgrConstants;
  * limitations under the License.
  */
 
-import java.io.IOException;
-import java.util.List;
+package org.wildfly.core.instmgr.cli;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
@@ -37,6 +25,19 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.QUERY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SELECT;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.aesh.command.impl.internal.ParsedCommand;
+import org.jboss.as.cli.CommandContext;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
+import org.wildfly.core.cli.command.aesh.activator.AbstractCommandActivator;
+import org.wildfly.core.instmgr.InstMgrConstants;
 
 /**
  * A general activator to disable the Installation Manager commands when the resource [/host=*]/core-service=installer is not

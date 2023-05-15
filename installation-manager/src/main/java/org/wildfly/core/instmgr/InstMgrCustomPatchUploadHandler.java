@@ -37,7 +37,6 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.wildfly.core.instmgr.logging.InstMgrLogger;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.Repository;
@@ -118,7 +117,7 @@ public class InstMgrCustomPatchUploadHandler extends InstMgrCustomPatchHandler {
                     }
                     context.getResult().set(customPatchPath.toString());
                 } catch (ZipException e) {
-                    throw InstMgrLogger.ROOT_LOGGER.invalidMavenRepoFile(e.getLocalizedMessage());
+                    throw new OperationFailedException(e.getLocalizedMessage());
                 } catch (RuntimeException e) {
                     throw e;
                 } catch (Exception e) {

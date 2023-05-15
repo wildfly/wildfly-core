@@ -143,7 +143,7 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
 
                     context.getResult().set(imService.getPreparedServerDir().normalize().toAbsolutePath().toString());
                 } catch (ZipException e) {
-                    throw InstMgrLogger.ROOT_LOGGER.invalidMavenRepoFile(e.getLocalizedMessage());
+                    throw new OperationFailedException(e.getLocalizedMessage());
                 } catch (RuntimeException e) {
                     throw e;
                 } catch (Exception e) {
