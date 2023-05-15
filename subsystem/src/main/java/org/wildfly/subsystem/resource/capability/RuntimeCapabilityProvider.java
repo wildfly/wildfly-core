@@ -2,7 +2,9 @@
  * Copyright The WildFly Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package org.wildfly.subsystem.service.capability;
+package org.wildfly.subsystem.resource.capability;
+
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.wildfly.service.descriptor.ServiceDescriptor;
@@ -10,7 +12,7 @@ import org.wildfly.service.descriptor.ServiceDescriptor;
 /**
  * @author Paul Ferraro
  */
-public interface RuntimeCapabilityProvider<T> extends ServiceDescriptor<T> {
+public interface RuntimeCapabilityProvider<T> extends Supplier<RuntimeCapability<Void>>, ServiceDescriptor<T> {
 
     RuntimeCapability<Void> getCapability();
 

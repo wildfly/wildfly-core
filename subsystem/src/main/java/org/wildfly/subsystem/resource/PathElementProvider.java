@@ -4,26 +4,22 @@
  */
 package org.wildfly.subsystem.resource;
 
+import java.util.function.Supplier;
+
 import org.jboss.as.controller.PathElement;
 
 /**
  * Provides a {@link PathElement}.
  * @author Paul Ferraro
  */
-public interface PathElementProvider {
-
-    /**
-     * Returns the provided registration path.
-     * @return a path element
-     */
-    PathElement getPathElement();
+public interface PathElementProvider extends Supplier<PathElement> {
 
     /**
      * Convenience method returning the key of the provided path.
      * @return the path key
      */
     default String getKey() {
-        return this.getPathElement().getKey();
+        return this.get().getKey();
     }
 
     /**
@@ -31,7 +27,7 @@ public interface PathElementProvider {
      * @return the path value
      */
     default String getValue() {
-        return this.getPathElement().getValue();
+        return this.get().getValue();
     }
 
     /**
@@ -39,6 +35,6 @@ public interface PathElementProvider {
      * @return true, if the provided path uses a {@value PathElement#WILDCARD_VALUE} value, false otherwise.
      */
     default boolean isWildcard() {
-        return this.getPathElement().isWildcard();
+        return this.get().isWildcard();
     }
 }

@@ -4,16 +4,13 @@
  */
 package org.wildfly.subsystem.resource.operation;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.wildfly.subsystem.resource.AttributeTranslation;
@@ -22,23 +19,7 @@ import org.wildfly.subsystem.resource.AttributeTranslation;
  * Describes the properties of a resource {@value org.jboss.as.controller.descriptions.ModelDescriptionConstants#ADD} operation handler.
  * @author Paul Ferraro
  */
-public interface AddResourceOperationStepHandlerDescriptor extends WriteAttributeOperationStepHandlerDescriptor, ResourceOperationStepHandlerDescriptor {
-
-    /**
-     * Returns the restart flag for the {@value org.jboss.as.controller.descriptions.ModelDescriptionConstants#ADD} operation of this resource.
-     * @return an operation flag
-     */
-    default OperationEntry.Flag getAddOperationRestartFlag() {
-        return OperationEntry.Flag.RESTART_NONE;
-    }
-
-    /**
-     * Custom attributes of the add operation, processed using a specific write-attribute handler.
-     * @return a map of attributes and their write-attribute handler
-     */
-    default Map<AttributeDefinition, OperationStepHandler> getCustomAttributes() {
-        return Map.of();
-    }
+public interface AddResourceOperationStepHandlerDescriptor extends OperationStepHandlerDescriptor {
 
     /**
      * Returns the required child resources for this resource description.
@@ -58,20 +39,11 @@ public interface AddResourceOperationStepHandlerDescriptor extends WriteAttribut
     }
 
     /**
-     * Returns a mapping of attribute translations
-     * @return an attribute translation mapping
+     * Returns the attribute translation for the specified attribute, or null if none exists
+     * @return an attribute translation, or null if none exists
      */
-    default Map<AttributeDefinition, AttributeTranslation> getAttributeTranslations() {
-        return Map.of();
-    }
-
-    /**
-     * Returns a transformer for the add operation handler.
-     * This is typically used to adapt legacy operations to conform to the current version of the model.
-     * @return an operation handler transformer.
-     */
-    default UnaryOperator<OperationStepHandler> getAddOperationTransformation() {
-        return UnaryOperator.identity();
+    default AttributeTranslation getAttributeTranslation(AttributeDefinition attribute) {
+        return null;
     }
 
     /**

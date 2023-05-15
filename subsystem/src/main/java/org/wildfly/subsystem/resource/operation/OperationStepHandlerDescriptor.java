@@ -4,8 +4,6 @@
  */
 package org.wildfly.subsystem.resource.operation;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -19,18 +17,19 @@ import org.jboss.dmr.ModelNode;
 public interface OperationStepHandlerDescriptor {
 
     /**
-     * Returns the runtime handling for this resource.
-     * @return a runtime handler
+     * Returns the optional runtime handling for this resource.
+     * @return an optional runtime handler
      */
     default Optional<ResourceOperationRuntimeHandler> getRuntimeHandler() {
         return Optional.empty();
     }
 
     /**
-     * The capabilities provided by this resource, paired with the condition under which they should be [un]registered
-     * @return a map of capabilities to predicates
+     * Returns the resource model filter used to determine whether the specified capability should be [un]registered.
+     * @param capability a runtime capability
+     * @return a resource model predicate
      */
-    default Map<RuntimeCapability<?>, Predicate<ModelNode>> getCapabilities() {
-        return Collections.emptyMap();
+    default Predicate<ModelNode> getCapabilityFilter(RuntimeCapability<?> capability) {
+        return ModelNode::isDefined;
     }
 }
