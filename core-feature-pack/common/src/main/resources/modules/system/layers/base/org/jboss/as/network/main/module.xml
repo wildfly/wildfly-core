@@ -34,7 +34,6 @@
     <dependencies>
         <module name="org.wildfly.security.elytron-private"/>
         <module name="org.wildfly.common"/>
-        <module name="org.jboss.msc"/>
         <module name="org.jboss.logging" />
     </dependencies>
 </module>
