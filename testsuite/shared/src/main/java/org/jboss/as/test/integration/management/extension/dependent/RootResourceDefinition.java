@@ -42,7 +42,7 @@ public class RootResourceDefinition extends PersistentResourceDefinition {
             RuntimeCapability.Builder.of(RUNTIME_CAPABILITY_NAME, false, Integer.class).build();
 
     static final SimpleAttributeDefinition ATTRIBUTE = new SimpleAttributeDefinitionBuilder("osb", ModelType.STRING)
-            .setCapabilityReference("org.wildfly.network.outbound-socket-binding", RUNTIME_CAPABILITY)
+            .setCapabilityReference(OutboundSocketBinding.SERVICE_DESCRIPTOR.getName(), RUNTIME_CAPABILITY)
             .build();
 
     static final PersistentResourceDefinition INSTANCE = new RootResourceDefinition();
@@ -89,7 +89,7 @@ public class RootResourceDefinition extends PersistentResourceDefinition {
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
             String osb = ATTRIBUTE.resolveModelAttribute(context, resource.getModel()).asString();
             ServiceBuilder sb = context.getServiceTarget().addService(ServiceName.of("wfcore-1106"));
-            sb.requires(context.getCapabilityServiceName("org.wildfly.network.outbound-socket-binding", osb, OutboundSocketBinding.class));
+            sb.requires(context.getCapabilityServiceName(OutboundSocketBinding.SERVICE_DESCRIPTOR, osb));
             sb.install();
         }
     }

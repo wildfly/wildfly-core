@@ -12,7 +12,6 @@ import static org.jboss.as.remoting.RemotingServices.REMOTING_BASE;
 import static org.jboss.as.remoting.management.ManagementRemotingServices.MANAGEMENT_CONNECTOR;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING;
-import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
 
 import java.util.Arrays;
 import java.util.List;
@@ -70,7 +69,7 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostName, context.getServiceRegistry(false));
 
         final String bindingName = SOCKET_BINDING.resolveModelAttribute(context, model).asString();
-        ServiceName socketBindingServiceName = context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, bindingName, SocketBinding.class);
+        ServiceName socketBindingServiceName = context.getCapabilityServiceName(SocketBinding.SERVICE_DESCRIPTOR, bindingName);
 
         String saslAuthenticationFactory = commonPolicy.getSaslAuthenticationFactory();
         if (saslAuthenticationFactory == null) {
@@ -82,7 +81,7 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         String sslContext = commonPolicy.getSSLContext();
         ServiceName sslContextName = sslContext != null ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, sslContext, SSLContext.class) : null;
 
-        final ServiceName sbmName = context.getCapabilityServiceName("org.wildfly.management.socket-binding-manager", SocketBindingManager.class);
+        final ServiceName sbmName = context.getCapabilityServiceName(SocketBindingManager.SERVICE_DESCRIPTOR);
 
         ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,

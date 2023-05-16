@@ -7,7 +7,6 @@ package org.jboss.as.server.services.net;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.server.services.net.LocalDestinationOutboundSocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
 import static org.jboss.as.server.services.net.OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY;
 
 import java.util.ArrayList;
@@ -133,9 +132,9 @@ public class LocalDestinationOutboundSocketBindingAddHandler extends AbstractAdd
         // create the service
         final CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(OUTBOUND_SOCKET_BINDING_CAPABILITY);
         final Consumer<OutboundSocketBinding> osbConsumer = builder.provides(OUTBOUND_SOCKET_BINDING_CAPABILITY);
-        final Supplier<SocketBindingManager> sbmSupplier = builder.requiresCapability("org.wildfly.management.socket-binding-manager", SocketBindingManager.class);
-        final Supplier<NetworkInterfaceBinding> nibSupplier = sourceInterfaceName != null ? builder.requiresCapability("org.wildfly.network.interface", NetworkInterfaceBinding.class, sourceInterfaceName) : null;
-        final Supplier<SocketBinding> sbSupplier = builder.requiresCapability(SOCKET_BINDING_CAPABILITY_NAME, SocketBinding.class, socketBindingRef);
+        final Supplier<SocketBindingManager> sbmSupplier = builder.requires(SocketBindingManager.SERVICE_DESCRIPTOR);
+        final Supplier<NetworkInterfaceBinding> nibSupplier = sourceInterfaceName != null ? builder.requires(NetworkInterfaceBinding.SERVICE_DESCRIPTOR, sourceInterfaceName) : null;
+        final Supplier<SocketBinding> sbSupplier = builder.requires(SocketBinding.SERVICE_DESCRIPTOR, socketBindingRef);
         builder.setInstance(new LocalDestinationOutboundSocketBindingService(osbConsumer, sbmSupplier, nibSupplier, sbSupplier, outboundSocketName, sourcePort, fixedSourcePort));
         builder.setInitialMode(ServiceController.Mode.ON_DEMAND);
         builder.addAliases(OUTBOUND_SOCKET_BINDING_CAPABILITY.getCapabilityServiceName(outboundSocketName));

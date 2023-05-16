@@ -49,7 +49,7 @@ public abstract class AbstractSocketBindingResourceDefinition extends SimpleReso
             .setExpressionsDeprecated()
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
-            .setCapabilityReference("org.wildfly.network.interface", SOCKET_BINDING_CAPABILITY_NAME)
+            .setCapabilityReference(InterfaceDefinition.INTERFACE_CAPABILITY_NAME, SOCKET_BINDING_CAPABILITY_NAME)
             .build();
 
     public static final SimpleAttributeDefinition PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT, true)

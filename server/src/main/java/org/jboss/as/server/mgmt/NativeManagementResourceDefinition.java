@@ -18,6 +18,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
+import org.jboss.as.network.SocketBinding;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.operations.NativeManagementAddHandler;
 import org.jboss.as.server.operations.NativeManagementRemoveHandler;
@@ -30,8 +31,6 @@ import org.jboss.dmr.ModelType;
  */
 public class NativeManagementResourceDefinition extends BaseNativeInterfaceResourceDefinition {
 
-    public static final String SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
-
     private static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, NATIVE_INTERFACE);
 
     public static final SimpleAttributeDefinition SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING, ModelType.STRING, false)
@@ -39,7 +38,7 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .setRestartAllServices()
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
-            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
+            .setCapabilityReference(SocketBinding.SERVICE_DESCRIPTOR.getName(), NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = combine(COMMON_ATTRIBUTES, SOCKET_BINDING);

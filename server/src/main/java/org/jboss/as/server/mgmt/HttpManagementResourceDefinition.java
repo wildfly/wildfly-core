@@ -24,6 +24,7 @@ import org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.RuntimePackageDependency;
+import org.jboss.as.network.SocketBinding;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.operations.HttpManagementAddHandler;
 import org.jboss.as.server.operations.HttpManagementRemoveHandler;
@@ -37,13 +38,11 @@ import org.jboss.dmr.ModelType;
  */
 public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceDefinition {
 
-    public static final String SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
-
     public static final SimpleAttributeDefinition SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING, ModelType.STRING, true)
             .setXmlName(Attribute.HTTP.getLocalName())
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
-            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+            .setCapabilityReference(SocketBinding.SERVICE_DESCRIPTOR.getName(), HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
             .setRestartAllServices()
             .build();
 
@@ -51,7 +50,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setXmlName(Attribute.HTTPS.getLocalName())
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
-            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+            .setCapabilityReference(SocketBinding.SERVICE_DESCRIPTOR.getName(), HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
             .setRestartAllServices()
             .build();
 

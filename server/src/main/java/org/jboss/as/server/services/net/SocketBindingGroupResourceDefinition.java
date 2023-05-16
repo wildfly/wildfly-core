@@ -24,9 +24,7 @@ import org.jboss.dmr.ModelType;
  */
 public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingGroupResourceDefinition {
 
-    static final RuntimeCapability<Void> SOCKET_BINDING_MANAGER_CAPABILITY =
-            RuntimeCapability.Builder.of("org.wildfly.management.socket-binding-manager", SocketBindingManager.class).build();
-
+    static final RuntimeCapability<Void> SOCKET_BINDING_MANAGER_CAPABILITY = RuntimeCapability.Builder.of(SocketBindingManager.SERVICE_DESCRIPTOR).build();
 
     public static final SimpleAttributeDefinition DEFAULT_INTERFACE = createDefaultInterface(SOCKET_BINDING_MANAGER_CAPABILITY);
 

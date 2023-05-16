@@ -43,7 +43,7 @@ public abstract class AbstractSocketBindingGroupResourceDefinition extends Simpl
                 .setExpressionsDeprecated()
                 .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
-                .setCapabilityReference("org.wildfly.network.interface", dependentCapability)
+                .setCapabilityReference(InterfaceDefinition.INTERFACE_CAPABILITY_NAME, dependentCapability)
                 .build();
     }
 

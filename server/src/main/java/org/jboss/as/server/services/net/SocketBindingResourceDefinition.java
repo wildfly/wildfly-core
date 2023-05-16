@@ -26,9 +26,7 @@ import org.jboss.dmr.ModelType;
  */
 public class SocketBindingResourceDefinition extends AbstractSocketBindingResourceDefinition {
 
-    public static final RuntimeCapability<Void> SOCKET_BINDING_CAPABILITY =
-            RuntimeCapability.Builder.of(AbstractSocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME, true, SocketBinding.class)
-                    .build();
+    public static final RuntimeCapability<Void> SOCKET_BINDING_CAPABILITY = RuntimeCapability.Builder.of(SocketBinding.SERVICE_DESCRIPTOR).build();
 
     public static final SocketBindingResourceDefinition INSTANCE = new SocketBindingResourceDefinition();
 

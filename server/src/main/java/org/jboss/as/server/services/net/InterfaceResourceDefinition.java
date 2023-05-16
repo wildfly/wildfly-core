@@ -18,13 +18,12 @@ import org.jboss.as.network.NetworkInterfaceBinding;
  */
 public class InterfaceResourceDefinition extends InterfaceDefinition {
 
-    static final RuntimeCapability<Void> INTERFACE_CAPABILITY =
-            RuntimeCapability.Builder.of(INTERFACE_CAPABILITY_NAME, true, NetworkInterfaceBinding.class)
-                    .setAllowMultipleRegistrations(true) // both /host=master/interface=x and /interface=x are legal and in the same scope
-                                                         // In a better world we'd only set this true in an HC process
-                                                         // but that's more trouble than I want to take. Adding an
-                                                         // interface twice in a server will fail in MODEL due to the dup resource anyway
-                    .build();
+    static final RuntimeCapability<Void> INTERFACE_CAPABILITY = RuntimeCapability.Builder.of(NetworkInterfaceBinding.SERVICE_DESCRIPTOR)
+            .setAllowMultipleRegistrations(true) // both /host=master/interface=x and /interface=x are legal and in the same scope
+                                                 // In a better world we'd only set this true in an HC process
+                                                 // but that's more trouble than I want to take. Adding an
+                                                 // interface twice in a server will fail in MODEL due to the dup resource anyway
+            .build();
 
     public InterfaceResourceDefinition(InterfaceAddHandler addHandler, OperationStepHandler removeHandler,
                                        boolean updateRuntime, boolean resolvable) {

@@ -6,7 +6,6 @@
 package org.jboss.as.remoting;
 
 import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
-import static org.jboss.as.remoting.Capabilities.SOCKET_BINDING_MANAGER_CAPABILTIY;
 import static org.jboss.as.remoting.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.as.remoting.logging.RemotingLogger.ROOT_LOGGER;
 
@@ -49,7 +48,7 @@ public class ConnectorAdd extends AbstractAddStepHandler {
         final ServiceTarget target = context.getServiceTarget();
 
         final String socketName = ConnectorResource.SOCKET_BINDING.resolveModelAttribute(context, fullModel).asString();
-        final ServiceName socketBindingName = context.getCapabilityServiceName(ConnectorResource.SOCKET_CAPABILITY_NAME, socketName, SocketBinding.class);
+        final ServiceName socketBindingName = context.getCapabilityServiceName(SocketBinding.SERVICE_DESCRIPTOR, socketName);
 
         ModelNode securityRealmModel = ConnectorResource.SECURITY_REALM.resolveModelAttribute(context, fullModel);
         if (securityRealmModel.isDefined()) {
@@ -65,7 +64,7 @@ public class ConnectorAdd extends AbstractAddStepHandler {
         final ServiceName sslContextName = sslContextModel.isDefined()
                 ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, sslContextModel.asString(), SSLContext.class) : null;
 
-        final ServiceName sbmName = context.getCapabilityServiceName(SOCKET_BINDING_MANAGER_CAPABILTIY, SocketBindingManager.class);
+        final ServiceName sbmName = context.getCapabilityServiceName(SocketBindingManager.SERVICE_DESCRIPTOR);
 
         RemotingServices.installConnectorServicesForSocketBinding(target, context.getCapabilityServiceName(RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY.getName(), Endpoint.class), connectorName,
                 socketBindingName, optionMap, saslAuthenticationFactoryName, sslContextName, sbmName);

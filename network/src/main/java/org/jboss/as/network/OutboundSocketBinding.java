@@ -5,14 +5,15 @@
 
 package org.jboss.as.network;
 
-import org.wildfly.common.Assert;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
+
+import org.wildfly.common.Assert;
+import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 
 /**
  * An outbound socket binding represents the client end of a socket. It represents binding from a local "host"
@@ -23,6 +24,7 @@ import java.net.UnknownHostException;
  * @author Jaikiran Pai
  */
 public class OutboundSocketBinding {
+    public static final UnaryServiceDescriptor<OutboundSocketBinding> SERVICE_DESCRIPTOR = UnaryServiceDescriptor.of("org.wildfly.network.outbound-socket-binding", OutboundSocketBinding.class);
 
     private final String name;
     private final SocketBindingManager socketBindingManager;

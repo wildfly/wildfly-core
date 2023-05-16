@@ -24,6 +24,8 @@ import static org.junit.Assert.assertEquals;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.network.NetworkInterfaceBinding;
+import org.jboss.as.network.SocketBinding;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildFlyRunner;
 
@@ -100,13 +102,13 @@ public class CliCapabilityCompletionTestCase {
         ModelNode result = Operations.readResult(ctx.execute(req, ""));
         assertTrue(result.require("capabilities").asList().size() == 1);
         ModelNode capability  = result.require("capabilities").asList().get(0);
-        assertEquals("We should have a socket-binding capability provided", "org.wildfly.network.socket-binding",
+        assertEquals("We should have a socket-binding capability provided", SocketBinding.SERVICE_DESCRIPTOR.getName(),
                 capability.require("name").asString());
         assertTrue("We should have a dynamic capability provided", capability.require("dynamic").asBoolean());
         List<ModelNode> dynamicElts = capability.require("dynamic-elements").asList();
         assertEquals(1, dynamicElts.size());
         assertEquals("We should have a socket-binding capability provided", "socket-binding", dynamicElts.get(0).asString());
-        assertEquals("We should have an interface capability requirement", "org.wildfly.network.interface",
+        assertEquals("We should have an interface capability requirement", NetworkInterfaceBinding.SERVICE_DESCRIPTOR.getName(),
                 result.require("attributes").require("interface").require("capability-reference").asString());
     }
 }

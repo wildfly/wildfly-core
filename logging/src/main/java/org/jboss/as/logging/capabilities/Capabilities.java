@@ -24,16 +24,6 @@ import org.jboss.as.logging.loggers.LoggerAttributes;
 public class Capabilities {
 
     /**
-     * Reference for an outbound socket.
-     */
-    public static final String OUTBOUND_SOCKET_BINDING_CAPABILITY = "org.wildfly.network.outbound-socket-binding";
-
-    /**
-     * Reference for a socket binding.
-     */
-    public static final String SOCKET_BINDING_MANAGER_CAPABILITY = "org.wildfly.management.socket-binding-manager";
-
-    /**
      * Reference to an SSL context.
      */
     public static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";

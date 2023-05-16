@@ -29,6 +29,7 @@ import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.operations.HttpManagementAddHandler;
 import org.jboss.as.host.controller.operations.HttpManagementRemoveHandler;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
+import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -45,7 +46,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
-            .setCapabilityReference("org.wildfly.network.interface", HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+            .setCapabilityReference(NetworkInterfaceBinding.SERVICE_DESCRIPTOR.getName(), HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
             .setRestartAllServices()
             .build();
 
@@ -66,7 +67,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setAllowExpression(false)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
-            .setCapabilityReference("org.wildfly.network.interface", HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+            .setCapabilityReference(NetworkInterfaceBinding.SERVICE_DESCRIPTOR.getName(), HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
             .setRestartAllServices()
             .build();
 

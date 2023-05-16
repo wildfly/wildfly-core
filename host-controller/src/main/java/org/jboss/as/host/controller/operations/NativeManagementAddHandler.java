@@ -67,8 +67,7 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
 
         OptionMap options = createConnectorOptions(commonPolicy);
 
-        final ServiceName nativeManagementInterfaceBinding = context.getCapabilityServiceName("org.wildfly.network.interface",
-                hostControllerInfo.getNativeManagementInterface(), NetworkInterfaceBinding.class);
+        final ServiceName nativeManagementInterfaceBinding = context.getCapabilityServiceName(NetworkInterfaceBinding.SERVICE_DESCRIPTOR, hostControllerInfo.getNativeManagementInterface());
 
         final String saslAuthenticationFactory = commonPolicy.getSaslAuthenticationFactory();
         if (saslAuthenticationFactory == null) {

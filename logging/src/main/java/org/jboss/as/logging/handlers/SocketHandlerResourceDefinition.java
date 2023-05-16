@@ -92,7 +92,7 @@ public class SocketHandlerResourceDefinition extends SimpleResourceDefinition {
     public static final SimpleAttributeDefinition OUTBOUND_SOCKET_BINDING_REF = SimpleAttributeDefinitionBuilder.create("outbound-socket-binding-ref", ModelType.STRING, false)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
             .setAllowExpression(true)
-            .setCapabilityReference(Capabilities.OUTBOUND_SOCKET_BINDING_CAPABILITY)
+            .setCapabilityReference(OutboundSocketBinding.SERVICE_DESCRIPTOR.getName())
             .addFlag(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
@@ -192,11 +192,10 @@ public class SocketHandlerResourceDefinition extends SimpleResourceDefinition {
                     final ServiceBuilder<?> serviceBuilder = context.getServiceTarget().addService(serviceName);
 
                     final Supplier<OutboundSocketBinding> outboundSocketBinding = serviceBuilder.requires(
-                            context.getCapabilityServiceName(Capabilities.OUTBOUND_SOCKET_BINDING_CAPABILITY, socketBindingName,
-                                    OutboundSocketBinding.class)
+                            context.getCapabilityServiceName(OutboundSocketBinding.SERVICE_DESCRIPTOR, socketBindingName)
                     );
                     final Supplier<SocketBindingManager> socketBindingManager = serviceBuilder.requires(
-                            context.getCapabilityServiceName(Capabilities.SOCKET_BINDING_MANAGER_CAPABILITY, SocketBindingManager.class)
+                            context.getCapabilityServiceName(SocketBindingManager.SERVICE_DESCRIPTOR)
                     );
                     final Supplier<SSLContext> sslContext;
                     if (sslContextRef.isDefined()) {

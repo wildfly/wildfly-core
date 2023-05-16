@@ -72,6 +72,7 @@ import org.jboss.as.controller.operations.common.ResolveExpressionHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.jmx.model.ModelControllerMBeanHelper;
+import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
@@ -1665,7 +1666,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
             RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                     "server", SOCKET_BINDING_CAPABILITY.getCapabilityServiceName("server"), OptionMap.EMPTY,
-                    null, null, ServiceName.parse("org.wildfly.management.socket-binding-manager"));
+                    null, null, ServiceName.parse(SocketBindingManager.SERVICE_DESCRIPTOR.getName()));
         }
 
         @Override

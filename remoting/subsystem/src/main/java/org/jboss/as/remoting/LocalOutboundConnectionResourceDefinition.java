@@ -17,6 +17,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -31,7 +32,7 @@ class LocalOutboundConnectionResourceDefinition extends AbstractOutboundConnecti
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
-            .setCapabilityReference(OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME, OUTBOUND_CONNECTION_CAPABILITY)
+            .setCapabilityReference(OutboundSocketBinding.SERVICE_DESCRIPTOR.getName(), OUTBOUND_CONNECTION_CAPABILITY)
             .build();
 
     static final Collection<AttributeDefinition> ATTRIBUTES = List.of(OUTBOUND_SOCKET_BINDING_REF);
