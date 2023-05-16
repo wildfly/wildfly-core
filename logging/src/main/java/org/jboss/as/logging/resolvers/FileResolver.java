@@ -67,7 +67,7 @@ public class FileResolver implements ModelNodeResolver<String> {
 
     private String resolve(final OperationContext context, final String relativeToPath, final String path) {
         // TODO it would be better if this came via the ExtensionContext
-        ServiceName pathMgrSvc = context.getCapabilityServiceName("org.wildfly.management.path-manager", PathManager.class);
+        ServiceName pathMgrSvc = context.getCapabilityServiceName(PathManager.SERVICE_DESCRIPTOR);
         @SuppressWarnings("unchecked") final ServiceController<PathManager> controller = (ServiceController<PathManager>) context.getServiceRegistry(false).getService(pathMgrSvc);
         if (controller == null) {
             return null;

@@ -209,7 +209,7 @@ public class DeploymentHandlerUtil {
         final ServiceBuilder<?> sb = serviceTarget.addService(deploymentUnitServiceName);
         final Consumer<DeploymentUnit> deploymentUnitConsumer = sb.provides(deploymentUnitServiceName);
         final Supplier<DeploymentMountProvider> serverDeploymentRepositorySupplier = sb.requires(DeploymentMountProvider.SERVICE_NAME);
-        final Supplier<PathManager> pathManagerSupplier = sb.requires(context.getCapabilityServiceName("org.wildfly.management.path-manager", PathManager.class));
+        final Supplier<PathManager> pathManagerSupplier = sb.requires(context.getCapabilityServiceName(PathManager.SERVICE_DESCRIPTOR));
         final Supplier<VirtualFile> contentsSupplier = sb.requires(contentsServiceName);
         final RootDeploymentUnitService service = new RootDeploymentUnitService(deploymentUnitConsumer,
                 serverDeploymentRepositorySupplier, pathManagerSupplier, contentsSupplier,

@@ -10,7 +10,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OWNER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_BOOTING;
 import static org.jboss.as.controller.registry.NotificationHandlerRegistration.ANY_ADDRESS;
-import static org.jboss.as.server.deployment.scanner.DeploymentScannerDefinition.PATH_MANAGER_CAPABILITY;
 import static org.jboss.as.server.deployment.scanner.DeploymentScannerDefinition.SCANNER_CAPABILITY;
 
 import java.io.File;
@@ -119,7 +118,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
         final RuntimeCapability<Void> capName =  SCANNER_CAPABILITY.fromBaseCapability(resourceAddress.getLastElement().getValue());
         final CapabilityServiceBuilder<?> sb = context.getCapabilityServiceTarget().addCapability(capName);
         final Consumer<DeploymentScanner> serviceConsumer = sb.provides(capName);
-        final Supplier<PathManager> pathManager = sb.requiresCapability(PATH_MANAGER_CAPABILITY, PathManager.class);
+        final Supplier<PathManager> pathManager = sb.requires(PathManager.SERVICE_DESCRIPTOR);
         final Supplier<NotificationHandlerRegistry> notificationRegistry = sb.requiresCapability("org.wildfly.management.notification-handler-registry", NotificationHandlerRegistry.class);
         final Supplier<ModelControllerClientFactory> clientFactory = sb.requiresCapability("org.wildfly.management.model-controller-client-factory", ModelControllerClientFactory.class);
         final Supplier<ProcessStateNotifier> processStateNotifier = sb.requiresCapability("org.wildfly.management.process-state-notifier", ProcessStateNotifier.class);

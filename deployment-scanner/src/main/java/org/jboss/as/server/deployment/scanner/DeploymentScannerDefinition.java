@@ -25,10 +25,8 @@ import org.jboss.dmr.ModelType;
  */
 public class DeploymentScannerDefinition extends SimpleResourceDefinition {
 
-    static final String PATH_MANAGER_CAPABILITY = "org.wildfly.management.path-manager";
-
     static final RuntimeCapability<Void> SCANNER_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.management.deployment-scanner", true, DeploymentScanner.class)
-            .addRequirements(PATH_MANAGER_CAPABILITY)
+            .addRequirements(PathManager.SERVICE_DESCRIPTOR.getName())
             .build();
 
     private final PathManager pathManager;
@@ -61,7 +59,7 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
             new SimpleAttributeDefinitionBuilder(CommonAttributes.RELATIVE_TO, ModelType.STRING, true)
                     .setXmlName(CommonAttributes.RELATIVE_TO)
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
-                    .setCapabilityReference("org.wildfly.management.path")
+                    .setCapabilityReference(PathManager.PATH_SERVICE_DESCRIPTOR.getName())
                     .build();
     protected static final SimpleAttributeDefinition SCAN_ENABLED =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.SCAN_ENABLED, ModelType.BOOLEAN, true)

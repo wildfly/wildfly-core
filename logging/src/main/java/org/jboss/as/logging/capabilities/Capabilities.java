@@ -24,11 +24,6 @@ import org.jboss.as.logging.loggers.LoggerAttributes;
 public class Capabilities {
 
     /**
-     * Reference for the {@code relative-to} path capability.
-     */
-    public static final String PATH_CAPABILITY = "org.wildfly.management.path";
-
-    /**
      * Reference for an outbound socket.
      */
     public static final String OUTBOUND_SOCKET_BINDING_CAPABILITY = "org.wildfly.network.outbound-socket-binding";
