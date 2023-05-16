@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-jar-parent</artifactId>
-        <version>20.0.2.Final-SNAPSHOT</version>
+        <version>20.0.2.Final</version>
     </parent>
 
     <artifactId>wildfly-jar-runtime</artifactId>
