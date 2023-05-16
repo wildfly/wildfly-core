@@ -20,5 +20,7 @@
         <module name="org.jboss.logging"/>
         <module name="org.jboss.msc"/>
         <module name="org.wildfly.discovery"/>
+        <module name="org.wildfly.service"/>
+        <module name="org.wildfly.subsystem"/>
     </dependencies>
 </module>

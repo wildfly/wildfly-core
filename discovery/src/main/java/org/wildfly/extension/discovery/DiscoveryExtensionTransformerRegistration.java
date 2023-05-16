@@ -20,14 +20,14 @@ public class DiscoveryExtensionTransformerRegistration implements ExtensionTrans
 
     @Override
     public String getSubsystemName() {
-        return DiscoveryExtension.SUBSYSTEM_NAME;
+        return DiscoverySubsystemRegistrar.NAME;
     }
 
     @Override
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         for (DiscoverySubsystemModel model : EnumSet.complementOf(EnumSet.of(DiscoverySubsystemModel.CURRENT))) {
             ModelVersion version = model.getVersion();
-            TransformationDescription.Tools.register(DiscoverySubsystemDefinition.buildTransformers(version), registration, version);
+            TransformationDescription.Tools.register(DiscoverySubsystemRegistrar.buildTransformers(version), registration, version);
         }
     }
 }
