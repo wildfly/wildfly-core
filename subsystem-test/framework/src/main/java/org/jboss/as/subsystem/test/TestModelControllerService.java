@@ -128,13 +128,6 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         GlobalNotifications.registerGlobalNotifications(managementModel.getRootResourceRegistration(), processType);
     }
 
-    /** @deprecated only for legacy version support */
-    @Override
-    protected void initExtraModel(Resource rootResource, ManagementResourceRegistration rootRegistration) {
-        initExtraModelInternal(rootResource, rootRegistration);
-        additionalInit.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration);
-    }
-
     private void initExtraModelInternal(Resource rootResource, ManagementResourceRegistration rootRegistration) {
         rootResource.getModel().get(SUBSYSTEM);
 
@@ -186,7 +179,7 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         }
         props.put(ServerEnvironment.JBOSS_SERVER_DEFAULT_CONFIG, "standalone.xml");
 
-        return new ServerEnvironment(null, props, new HashMap<String, String>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), null, false);
+        return new ServerEnvironment(null, props, new HashMap<>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), null, false);
     }
 
     private static class MockContentRepository implements ContentRepository {

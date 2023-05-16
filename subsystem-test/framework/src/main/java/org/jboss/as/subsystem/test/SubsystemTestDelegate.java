@@ -626,11 +626,6 @@ final class SubsystemTestDelegate {
             return builder.build();
         }
 
-        @Override
-        public KernelServicesBuilder enableTransformerAttachmentGrabber() {
-            return this;
-        }
-
     }
 
     private class LegacyKernelServiceInitializerImpl implements LegacyKernelServicesInitializer {
