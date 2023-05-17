@@ -133,7 +133,7 @@ public class ModelControllerImplUnitTestCase {
         ModelNode setup = Util.getEmptyOperation("setup", new ModelNode());
         controller.execute(setup, null, null, null);
         notificationHandler = new ServiceNotificationHandler();
-        controller.getNotificationRegistry().registerNotificationHandler(PathAddress.pathAddress(CORE_SERVICE, MANAGEMENT).append(SERVICE, MANAGEMENT_OPERATIONS), notificationHandler, notificationHandler);
+        svc.getNotificationHandlerRegistry().registerNotificationHandler(PathAddress.pathAddress(CORE_SERVICE, MANAGEMENT).append(SERVICE, MANAGEMENT_OPERATIONS), notificationHandler, notificationHandler);
         assertEquals(ControlledProcessState.State.RUNNING, svc.getCurrentProcessState());
     }
 

@@ -49,7 +49,6 @@ import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.impl.ExistingChannelModelControllerClient;
 import org.jboss.as.controller.client.impl.InputStreamEntry;
-import org.jboss.as.controller.registry.NotificationHandlerRegistration;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandler;
 import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.support.RemoteChannelPairSetup;
@@ -371,15 +370,9 @@ public class ModelControllerClientTestCase {
 
     private abstract static class MockModelController extends org.jboss.as.controller.MockModelController {
         protected volatile ModelNode operation;
-        private final NotificationHandlerRegistration notificationRegistry = NotificationHandlerRegistration.Factory.create();
 
         ModelNode getOperation() {
             return operation;
-        }
-
-        @Override
-        public NotificationHandlerRegistration getNotificationRegistry() {
-            return notificationRegistry;
         }
     }
 

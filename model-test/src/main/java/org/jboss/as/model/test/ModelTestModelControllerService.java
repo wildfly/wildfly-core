@@ -36,6 +36,7 @@ import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -205,6 +206,11 @@ public abstract class ModelTestModelControllerService extends AbstractController
 
     TransformerRegistry getTransformersRegistry() {
         return transformerRegistry;
+    }
+
+    @Override
+    protected ModelControllerClientFactory getModelControllerClientFactory() {
+        return super.getModelControllerClientFactory();
     }
 
     @Override
