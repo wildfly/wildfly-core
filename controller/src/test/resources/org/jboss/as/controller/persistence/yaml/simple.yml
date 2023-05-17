@@ -14,6 +14,21 @@ wildfly-configuration:
         value: test
     basic:
       test:
+    property:
+        test-property:
+            props:
+                ip_ttl: '0'
+                tcp_ttl: '5'
+    classpath:
+        runtime:
+            complex-map:
+                main-class:
+                    class-name: org.widlfly.test.Main
+                    module: org.wildfly.test:main
+                test-class:
+                    class-name: org.widlfly.test.MyTest
+                    module: org.wildfly.test:main
+          
 #User defined elements, must be ignored.
 org:
     foo:

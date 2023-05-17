@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.MapAttributeDefinition;
+import org.jboss.as.controller.ObjectMapAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.ParsedBootOp;
 import org.jboss.as.controller.PathAddress;
@@ -207,6 +208,10 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                     Object value = yaml.get(name);
                     if (value instanceof Map) {
                         Map<String, Object> map = (Map<String, Object>) value;
+                        if (resourceRegistration.getAttributeNames(PathAddress.EMPTY_ADDRESS).contains(name) &&
+                                resourceRegistration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, name).getAttributeDefinition().getType() == OBJECT) {
+                            processAttribute(address, rootRegistration, name, value, postExtensionOps, xmlOperations);
+                        }
                         processResource(address, map, rootRegistration, rootRegistration.getSubModel(address), xmlOperations, postExtensionOps, false);
                     } else if (value != null && value instanceof Operation) {
                         Operation yamlOperation = Operation.class.cast(value);
@@ -295,7 +300,13 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                         OperationEntry operationEntry = rootRegistration.getOperationEntry(address, WRITE_ATTRIBUTE_OPERATION);
                         ModelNode op = createOperation(address, operationEntry);
                         op.get(NAME).set(attributeName);
-                        op.get(VALUE).set(processObjectAttribute((ObjectTypeAttributeDefinition) att, (Map<String, Object>) value));
+                        if (att instanceof MapAttributeDefinition) {
+                            ModelNode node = new ModelNode();
+                            processMapAttribute((MapAttributeDefinition) att, node, (Map<String, Object>) value);
+                            op.get(VALUE).set(node.get(attributeName));
+                        } else {
+                            op.get(VALUE).set(processObjectAttribute((ObjectTypeAttributeDefinition) att, (Map<String, Object>) value));
+                        }
                         MGMT_OP_LOGGER.debugf("Updating attribute %s for resource %s with operation %s", attributeName, address, op);
                         postExtensionOps.add(new ParsedBootOp(op, operationEntry.getOperationHandler()));
                     }
@@ -427,9 +438,18 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
     }
 
     @SuppressWarnings("unchecked")
-    private void processMapAttribute(MapAttributeDefinition att, ModelNode map, Map<String, Object> value) {
-        for (Map.Entry<String, Object> entry : value.entrySet()) {
-            map.get(att.getName()).get(entry.getKey()).set(entry.getValue().toString());
+    private void processMapAttribute(MapAttributeDefinition att, ModelNode map, Map<String, Object> yaml) {
+        if(att instanceof ObjectMapAttributeDefinition) {
+            ObjectMapAttributeDefinition objectMapAtt = (ObjectMapAttributeDefinition) att;
+            ModelNode objectMapNode = map.get(att.getName()).setEmptyObject();
+            for (Map.Entry<String, Object> entry : yaml.entrySet()) {
+                ModelNode objectValue= processObjectAttribute(objectMapAtt.getValueType(), ( Map<String, Object>) entry.getValue());
+                objectMapNode.get(entry.getKey()).set(objectValue);
+            }
+        } else {
+            for (Map.Entry<String, Object> entry : yaml.entrySet()) {
+                map.get(att.getName()).get(entry.getKey()).set(entry.getValue().toString());
+            }
         }
     }
 
