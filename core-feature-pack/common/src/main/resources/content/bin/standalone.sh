@@ -5,6 +5,10 @@
 #         standalone.sh --debug 9797
 
 # By default debug mode is disabled.
+
+# Identifies the launch script type.
+export JBOSS_LAUNCH_SCRIPT="linux"
+
 DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
 GC_LOG="$GC_LOG"

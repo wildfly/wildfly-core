@@ -184,7 +184,8 @@ public abstract class AbstractInstMgrCommand implements Command<CLICommandInvoca
         }
 
         ModelNode repositoriesMn = new ModelNode().addEmptyList();
-        for (String repoStr : repositories) {
+        for (int i = 0; i < repositories.size(); i++) {
+            String repoStr = repositories.get(i);
             ModelNode repositoryMn = new ModelNode();
             String idStr;
             String urlStr;
@@ -192,7 +193,7 @@ public abstract class AbstractInstMgrCommand implements Command<CLICommandInvoca
             try {
                 if (split.length == 1) {
                     new URL(repoStr);
-                    idStr = "id0";
+                    idStr = "id" + i;
                     urlStr = repoStr;
                 } else if (split.length == 2) {
                     idStr = split[0];

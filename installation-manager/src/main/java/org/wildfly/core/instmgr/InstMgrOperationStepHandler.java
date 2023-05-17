@@ -123,12 +123,12 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
     }
 
     /**
-     * Process Maven Zip files attached as streams to the current Operation Context and creates one repository per stream that
-     * will be later used by the installation manager SPI.
+     * The attached Maven Zip files are processed as streams within the current Operation Context, and for each stream, a repository is created.
+     * These repositories will be utilized by the installation manager SPI at a later stage.
      *
-     * The streams are consumed in parallel and saved as a Zip file under the workDir Path. This Zip file is unzipped on a
-     * subdirectory under the work dir and a repository is created to point out to the directory that contains all the artifacts
-     * send by the client in this stream.
+     * The streams are consumed in parallel and stored as Zip file under the path specified by the workDir parameter. This Zip file is later
+     * unzipped on a subdirectory under this work dir and a repository object is created to point out to the directory that contains all the artifacts
+     * sent by the client in this stream.
      *
      * @param context The current OperationContext
      * @param mavenRepoFileIndexes A ModelNode that contains the list of indexes of each stream that corresponds to each Maven
@@ -171,6 +171,18 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
         }
     }
 
+    /**
+     * Creates a Zip file from a stream attached to the current Operation Context.
+     *
+     * @param context The Operation Context
+     * @param index The index of the stream
+     * @param baseWorkDir The base work dir path where this zip file will be created.
+     * @param tempFilePrefix The prefix string to be used in generating the file's name.
+     *
+     * @return The absolute path of the Zip file.
+     *
+     * @throws RuntimeException If an error occurs.
+     */
     private Path saveMavenZipRepoStream(OperationContext context, int index, Path baseWorkDir, String tempFilePrefix) throws RuntimeException {
         try {
             InstMgrLogger.ROOT_LOGGER.debug("Storing as Zip file attachment with index=" + index);
@@ -190,6 +202,16 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
         }
     }
 
+    /**
+     * Creates a Repository to be used with the Installation Manager SPI using a Zip file as a repository source.
+     *
+     * @param sourceFile Path of the Zip file that contains the maven repository we want to use as a source.
+     * @param index The stream index used to get the Zip file.
+     * @param baseWorkDir The path of the base work directory
+     *
+     * @return
+     * @throws RuntimeException If an error occurs.
+     */
     private Repository createRepoFromZip(Path sourceFile, int index, Path baseWorkDir) throws RuntimeException {
         try {
             InstMgrLogger.ROOT_LOGGER.debug("Unzipping Zip file stored at " + sourceFile + " which was uploaded from index " + index);

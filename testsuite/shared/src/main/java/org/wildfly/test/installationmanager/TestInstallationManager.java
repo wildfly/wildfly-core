@@ -43,6 +43,7 @@ import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.OperationNotAvailableException;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
+import org.wildfly.installationmanager.spi.OsShell;
 
 /**
  * Mock Installation Manager API implementation to be used in the tests.
@@ -249,6 +250,16 @@ public class TestInstallationManager implements InstallationManager {
 
     @Override
     public String generateApplyRevertCommand(Path scriptHome, Path candidatePath) throws OperationNotAvailableException {
+        return scriptHome + APPLY_REVERT_BASE_GENERATED_COMMAND + candidatePath.toString();
+    }
+
+    @Override
+    public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath, OsShell shell) throws OperationNotAvailableException {
+        return scriptHome + APPLY_UPDATE_BASE_GENERATED_COMMAND + candidatePath.toString();
+    }
+
+    @Override
+    public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell) throws OperationNotAvailableException {
         return scriptHome + APPLY_REVERT_BASE_GENERATED_COMMAND + candidatePath.toString();
     }
 

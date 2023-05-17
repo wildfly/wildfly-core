@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Identifies the launch script type.
+export JBOSS_LAUNCH_SCRIPT="linux"
+
 DIRNAME=`dirname "$0"`
 PROGNAME=`basename "$0"`
 GREP="grep"

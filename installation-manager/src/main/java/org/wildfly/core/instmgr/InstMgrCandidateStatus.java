@@ -77,7 +77,9 @@ class InstMgrCandidateStatus {
     private void setStatus(Status status, String command) {
         try (FileInputStream in = new FileInputStream(properties.toString())) {
             final Properties prop = new Properties();
-            prop.load(in);
+            if (status != Status.CLEAN) {
+                prop.load(in);
+            }
             in.close();
 
             try (FileOutputStream out = new FileOutputStream(properties.toString())) {

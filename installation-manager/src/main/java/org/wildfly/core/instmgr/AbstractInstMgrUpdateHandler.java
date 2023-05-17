@@ -38,6 +38,7 @@ import org.jboss.dmr.ModelType;
 import org.wildfly.core.instmgr.logging.InstMgrLogger;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
+import org.wildfly.installationmanager.spi.OsShell;
 
 /**
  * Abstract class for Installation Manager Handlers used to list updates, prepare updates and prepare a revert.
@@ -119,5 +120,17 @@ abstract class AbstractInstMgrUpdateHandler extends InstMgrOperationStepHandler 
                 throw InstMgrLogger.ROOT_LOGGER.invalidRepositoryURL(repoUrl);
             }
         }
+    }
+
+    protected static OsShell getOsShell() {
+        String env = System.getenv("JBOSS_LAUNCH_SCRIPT");
+        if (env != null) {
+            switch (env) {
+                case "powershell": return OsShell.WindowsPowerShell;
+                case "batch": return OsShell.WindowsBash;
+                default: return OsShell.Linux;
+            }
+        }
+        return OsShell.Linux;
     }
 }
