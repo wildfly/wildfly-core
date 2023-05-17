@@ -67,7 +67,7 @@ if %errorlevel% equ 1 (
     goto EOF
 )
 
-if "%INST_MGR_COMMAND%"=="" (
+IF NOT DEFINED %INST_MGR_COMMAND (
     echo ERROR: Installation Manager command was not set.
 
     goto EOF

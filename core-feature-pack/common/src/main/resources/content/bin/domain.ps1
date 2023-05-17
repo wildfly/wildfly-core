@@ -6,7 +6,7 @@
 
 $scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
 . $scripts'\common.ps1'
-
+Set-Item -Path env:JBOSS_LAUNCH_SCRIPT -Value "powershell"
 $SERVER_OPTS = Process-Script-Parameters -Params $ARGS
 
 $JAVA_OPTS = Get-Java-Opts
@@ -106,4 +106,4 @@ if ($SERVER_OPTS -ne $null){
 $backgroundProcess = Get-Env LAUNCH_JBOSS_IN_BACKGROUND 'false'
 $runInBackGround = $global:RUN_IN_BACKGROUND -or ($backgroundProcess -eq 'true')
 
-Start-WildFly-Process -programArguments $PROG_ARGS -runInBackground $runInBackGround
+Start-WildFly-Process -programArguments $PROG_ARGS -runInBackground $runInBackGround -instMgrLogFile "host-controller.log"

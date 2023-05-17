@@ -20,6 +20,9 @@ pushd "%DIRNAME%.."
 set "RESOLVED_JBOSS_HOME=%CD%"
 popd
 
+rem Identifies the launch script type.
+set JBOSS_LAUNCH_SCRIPT=batch
+
 call "%DIRNAME%common.bat" :commonConf
 
 setlocal EnableDelayedExpansion

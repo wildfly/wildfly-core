@@ -6,6 +6,7 @@
 
 $scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
 . $scripts'\common.ps1'
+Set-Item -Path env:JBOSS_LAUNCH_SCRIPT -Value "powershell"
 $SERVER_OPTS = Process-Script-Parameters -Params $ARGS
 $JAVA_OPTS = Get-Java-Opts
 
@@ -43,4 +44,4 @@ $PROG_ARGS = Get-Java-Arguments -entryModule "org.jboss.as.standalone" -serverOp
 
 Display-Environment $global:FINAL_JAVA_OPTS
 
-Start-WildFly-Process -programArguments $PROG_ARGS -runInBackground $runInBackGround
+Start-WildFly-Process -programArguments $PROG_ARGS -runInBackground $runInBackGround -instMgrLogFile "server.log"
