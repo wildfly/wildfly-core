@@ -149,8 +149,6 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                                 operationType = ProcessMessageHandler.OperationType.ADD;
                                 processName = readUTFZBytes(dataStream);
                                 final int processId = readInt(dataStream);
-                                final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
-                                readFully(dataStream, authBytes);
                                 final int commandCount = readInt(dataStream);
                                 final String[] command = new String[commandCount];
                                 for (int i = 0; i < commandCount; i ++) {
@@ -163,8 +161,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                                 }
                                 final String workingDirectory = readUTFZBytes(dataStream);
                                 ProcessLogger.SERVER_LOGGER.tracef("Received add_process for process %s", processName);
-                                final String authKey = new String(authBytes, StandardCharsets.US_ASCII);
-                                processController.addProcess(processName, processId, authKey, Arrays.asList(command), env, workingDirectory, false, false);
+                                processController.addProcess(processName, processId, Arrays.asList(command), env, workingDirectory, false, false);
                             } else {
                                 ProcessLogger.SERVER_LOGGER.tracef("Ignoring add_process message from untrusted source");
                             }
@@ -226,8 +223,8 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                                 final boolean managementSubsystemEndpoint = readBoolean(dataStream);
                                 final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
                                 readFully(dataStream, authBytes);
-                                final String authKey = new String(authBytes, StandardCharsets.US_ASCII);
-                                processController.sendReconnectProcess(processName, scheme, hostName, port, managementSubsystemEndpoint, authKey);
+                                final String serverAuthToken = new String(authBytes, StandardCharsets.US_ASCII);
+                                processController.sendReconnectProcess(processName, scheme, hostName, port, managementSubsystemEndpoint, serverAuthToken);
                             } else {
                                 ProcessLogger.SERVER_LOGGER.tracef("Ignoring reconnect_process message from untrusted source");
                             }

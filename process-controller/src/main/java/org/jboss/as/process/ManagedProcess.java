@@ -63,7 +63,7 @@ final class ManagedProcess {
     private final Object lock;
 
     private final ProcessController processController;
-    private final String authKey;
+    private final String pcAuthKey;
     private final boolean isPrivileged;
     private final RespawnPolicy respawnPolicy;
     private final int id;
@@ -76,8 +76,8 @@ final class ManagedProcess {
     private boolean stopRequested = false;
     private final AtomicInteger respawnCount = new AtomicInteger(0);
 
-    public String getAuthKey() {
-        return authKey;
+    public String getPCAuthKey() {
+        return pcAuthKey;
     }
 
     public boolean isPrivileged() {
@@ -99,16 +99,16 @@ final class ManagedProcess {
         ;
     }
 
-    ManagedProcess(final String processName, final int id, final List<String> command, final Map<String, String> env, final String workingDirectory, final Object lock, final ProcessController controller, final String authKey, final boolean privileged, final boolean respawn) {
+    ManagedProcess(final String processName, final int id, final List<String> command, final Map<String, String> env, final String workingDirectory, final Object lock, final ProcessController controller, final String pcAuthKey, final boolean privileged, final boolean respawn) {
         Assert.checkNotNullParam("processName", processName);
         Assert.checkNotNullParam("command", command);
         Assert.checkNotNullParam("env", env);
         Assert.checkNotNullParam("workingDirectory", workingDirectory);
         Assert.checkNotNullParam("lock", lock);
         Assert.checkNotNullParam("controller", controller);
-        Assert.checkNotNullParam("authKey", authKey);
-        if (authKey.length() != ProcessController.AUTH_BYTES_ENCODED_LENGTH) {
-            throw ProcessLogger.ROOT_LOGGER.invalidLength("authKey");
+        Assert.checkNotNullParam("pcAuthKey", pcAuthKey);
+        if (pcAuthKey.length() != ProcessController.AUTH_BYTES_ENCODED_LENGTH) {
+            throw ProcessLogger.ROOT_LOGGER.invalidLength("pcAuthKey");
         }
         this.processName = processName;
         this.id = id;
@@ -117,7 +117,7 @@ final class ManagedProcess {
         this.workingDirectory = workingDirectory;
         this.lock = lock;
         processController = controller;
-        this.authKey = authKey;
+        this.pcAuthKey = pcAuthKey;
         isPrivileged = privileged;
         respawnPolicy = respawn ? RespawnPolicy.RESPAWN : RespawnPolicy.NONE;
         log = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.process." + processName + ".status");
@@ -160,7 +160,7 @@ final class ManagedProcess {
         }
     }
 
-    public void reconnect(String scheme, String hostName, int port, boolean managementSubsystemEndpoint, String asAuthKey) {
+    public void reconnect(String scheme, String hostName, int port, boolean managementSubsystemEndpoint, String serverAuthToken) {
         assert holdsLock(lock); // Call under lock
         try {
             // WFLY-2697 All writing is in Base64
@@ -169,7 +169,7 @@ final class ManagedProcess {
             StreamUtils.writeUTFZBytes(base64, hostName);
             StreamUtils.writeInt(base64, port);
             StreamUtils.writeBoolean(base64, managementSubsystemEndpoint);
-            base64.write(asAuthKey.getBytes(StandardCharsets.US_ASCII));
+            base64.write(serverAuthToken.getBytes(StandardCharsets.US_ASCII));
             base64.close(); // not flush(). close() writes extra data to the stream allowing Base64 input stream
                             // to distinguish end of message
         } catch (IOException e) {
@@ -225,7 +225,7 @@ final class ManagedProcess {
         try {
             // WFLY-2697 All writing is in Base64
             OutputStream base64 = getBase64OutputStream(stdin);
-            base64.write(authKey.getBytes(StandardCharsets.US_ASCII));
+            base64.write(pcAuthKey.getBytes(StandardCharsets.US_ASCII));
             base64.close(); // not flush(). close() writes extra data to the stream allowing Base64 input stream
                             // to distinguish end of message
             ok = true;

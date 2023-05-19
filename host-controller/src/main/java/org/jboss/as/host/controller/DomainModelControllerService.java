@@ -1309,8 +1309,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
 
         @Override
-        public void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping) {
-            getServerInventory().reconnectServer(serverName, domainModel, authKey, running, stopping);
+        public void reconnectServer(String serverName, ModelNode domainModel, boolean running, boolean stopping) {
+            getServerInventory().reconnectServer(serverName, domainModel, running, stopping);
         }
 
         @Override
@@ -1652,7 +1652,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             }
 
             @Override
-            public void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping) {
+            public void reconnectServer(String serverName, ModelNode domainModel, boolean running, boolean stopping) {
             }
 
             @Override

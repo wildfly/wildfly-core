@@ -90,9 +90,9 @@ public final class Main {
         //final PrintStream out = System.out;
         //final PrintStream err = System.err;
 
-        byte[] authKey = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
+        byte[] pcAuthKey = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
         try {
-            StreamUtils.readFully(new Base64InputStream(System.in), authKey);
+            StreamUtils.readFully(new Base64InputStream(System.in), pcAuthKey);
         } catch (IOException e) {
             STDERR.println(HostControllerLogger.ROOT_LOGGER.failedToReadAuthenticationKey(e));
             fail();
@@ -114,7 +114,7 @@ public final class Main {
         );
         StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(context));
 
-        create(args, new String(authKey, StandardCharsets.US_ASCII));
+        create(args, new String(pcAuthKey, StandardCharsets.US_ASCII));
 
         while (in.read() != -1) {}
         exit();

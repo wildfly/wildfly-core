@@ -81,7 +81,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
     private final String serverName;
     private final String userName = null; // TODO This likely needs to be further visited.
     private final String serverProcessName;
-    private final String initialAuthKey;
+    private final String initialServerAuthenticationToken;
     private final int connectOperationID;
     private final boolean managementSubsystemEndpoint;
     private volatile ResponseAttachmentInputStreamSupport responseAttachmentSupport;
@@ -90,7 +90,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
     private HostControllerClient client;
 
     public HostControllerConnectionService(final URI connectionURI, final String serverName, final String serverProcessName,
-                                           final String authKey, final int connectOperationID,
+                                           final String serverAuthenticationToken, final int connectOperationID,
                                            final boolean managementSubsystemEndpoint, final Supplier<SSLContext> sslContextSupplier,
                                            final Supplier<ExecutorService> executorSupplier,
                                            final Supplier<ScheduledExecutorService> scheduledExecutorSupplier,
@@ -99,7 +99,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
         this.connectionURI= connectionURI;
         this.serverName = serverName;
         this.serverProcessName = serverProcessName;
-        this.initialAuthKey = authKey;
+        this.initialServerAuthenticationToken = serverAuthenticationToken;
         this.connectOperationID = connectOperationID;
         this.managementSubsystemEndpoint = managementSubsystemEndpoint;
         if (sslContextSupplier != null) {
@@ -124,7 +124,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
             // Create the connection configuration
             final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, connectionURI, OptionMap.EMPTY);
             final String userName = this.userName != null ? this.userName : serverName;
-            configuration.setCallbackHandler(HostControllerConnection.createClientCallbackHandler(userName, initialAuthKey));
+            configuration.setCallbackHandler(HostControllerConnection.createClientCallbackHandler(userName, initialServerAuthenticationToken));
             configuration.setConnectionTimeout(SERVER_CONNECTION_TIMEOUT);
             configuration.setSslContext(sslContextSupplier.get());
             this.responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutorSupplier.get());

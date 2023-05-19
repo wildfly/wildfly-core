@@ -58,12 +58,12 @@ public final class ProcessController {
     private final ProtocolServer server;
     // Synchronized map so we can safely check its size without holding the monitor for field 'lock' */
     private final Map<String, ManagedProcess> processes = Collections.synchronizedMap(new HashMap<String, ManagedProcess>());
-    private final Map<Key, ManagedProcess> processesByKey = new HashMap<Key, ManagedProcess>();
+    private final Map<ProcessControllerKey, ManagedProcess> processesByKey = new HashMap<ProcessControllerKey, ManagedProcess>();
     private final Set<Connection> managedConnections = new CopyOnWriteArraySet<Connection>();
 
     private volatile boolean shutdown;
 
-    public static final short AUTH_BYTES_LENGTH = 16;
+    private static final short AUTH_BYTES_LENGTH = 16;
     public static final short AUTH_BYTES_ENCODED_LENGTH = 24;
 
     private final PrintStream stdout;
@@ -92,20 +92,19 @@ public final class ProcessController {
         managedConnections.remove(connection);
     }
 
-    public void addProcess(final String processName, final List<String> command, final Map<String, String> env, final String workingDirectory, final boolean isPrivileged, final boolean respawn) {
-        // Create a new authKey
-        final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_LENGTH];
-        new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
-        String authKey = Base64.getEncoder().encodeToString(authBytes);
-        addProcess(processName, -1, authKey, command, env, workingDirectory, isPrivileged, respawn);
-    }
-
-    public void addProcess(final String processName, int id, final String authKey, final List<String> command, final Map<String, String> env, final String workingDirectory, final boolean isPrivileged, final boolean respawn) {
+    public void addProcess(final String processName, int id, final List<String> command, final Map<String, String> env, final String workingDirectory, final boolean isPrivileged, final boolean respawn) {
         for (String s : command) {
             if (s == null) {
                 throw ProcessLogger.ROOT_LOGGER.nullCommandComponent();
             }
         }
+
+        // Create a new pcAuthKey for the loop back to the process controller.
+        final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_LENGTH];
+        new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
+        String pcAuthKey = Base64.getEncoder().encodeToString(authBytes);
+        pcAuthKey = "IPK" + pcAuthKey.substring(3);
+
         synchronized (lock) {
             if (shutdown) {
                 return;
@@ -116,9 +115,9 @@ public final class ProcessController {
                 // ignore
                 return;
             }
-            final ManagedProcess process = new ManagedProcess(processName, id, command, env, workingDirectory, lock, this, authKey, isPrivileged, respawn);
+            final ManagedProcess process = new ManagedProcess(processName, id, command, env, workingDirectory, lock, this, pcAuthKey, isPrivileged, respawn);
             processes.put(processName, process);
-            processesByKey.put(new Key(authKey.getBytes(StandardCharsets.US_ASCII)), process);
+            processesByKey.put(new ProcessControllerKey(pcAuthKey.getBytes(StandardCharsets.US_ASCII)), process);
             processAdded(processName);
         }
     }
@@ -186,7 +185,7 @@ public final class ProcessController {
                 return;
             }
             boolean removed = processes.remove(processName) != null;
-            processesByKey.remove(new Key(process.getAuthKey().getBytes(StandardCharsets.US_ASCII)));
+            processesByKey.remove(new ProcessControllerKey(process.getPCAuthKey().getBytes(StandardCharsets.US_ASCII)));
             if(removed) {
                 processRemoved(processName);
             }
@@ -247,7 +246,7 @@ public final class ProcessController {
 
     public ManagedProcess getServerByAuthCode(final byte[] code) {
         synchronized (lock) {
-            return processesByKey.get(new Key(code));
+            return processesByKey.get(new ProcessControllerKey(code));
         }
     }
 
@@ -342,7 +341,9 @@ public final class ProcessController {
                         StreamUtils.writeInt(os, processCollection.size());
                         for (ManagedProcess process : processCollection) {
                             StreamUtils.writeUTFZBytes(os, process.getProcessName());
-                            os.write(process.getAuthKey().getBytes(StandardCharsets.US_ASCII));
+                            // TODO Do we really need to send this?  The HostController generates new tokens anyway
+                            // and no longer uses the same key as the process controller..
+                            os.write(process.getPCAuthKey().getBytes(StandardCharsets.US_ASCII));
                             StreamUtils.writeBoolean(os, process.isRunning());
                             StreamUtils.writeBoolean(os, process.isStopping());
                         }
@@ -358,7 +359,7 @@ public final class ProcessController {
         }
     }
 
-    public void sendReconnectProcess(String processName, String scheme, String hostName, int port, boolean managementSubsystemEndpoint, String asAuthKey) {
+    public void sendReconnectProcess(String processName, String scheme, String hostName, int port, boolean managementSubsystemEndpoint, String serverAuthToken) {
         synchronized (lock) {
             ManagedProcess process = processes.get(processName);
             if (process == null) {
@@ -366,7 +367,7 @@ public final class ProcessController {
                 // ignore
                 return;
             }
-            process.reconnect(scheme, hostName, port, managementSubsystemEndpoint, asAuthKey);
+            process.reconnect(scheme, hostName, port, managementSubsystemEndpoint, serverAuthToken);
         }
     }
 
@@ -412,21 +413,21 @@ public final class ProcessController {
         return stderr;
     }
 
-    private static final class Key {
-        private final byte[] authKey;
+    private static final class ProcessControllerKey {
+        private final byte[] pcAuthKey;
         private final int hashCode;
 
-        public Key(final byte[] authKey) {
-            this.authKey = authKey;
-            hashCode = Arrays.hashCode(authKey);
+        public ProcessControllerKey(final byte[] pcAuthKey) {
+            this.pcAuthKey = pcAuthKey;
+            hashCode = Arrays.hashCode(pcAuthKey);
         }
 
         public boolean equals(Object other) {
-            return other instanceof Key && equals((Key)other);
+            return other instanceof ProcessControllerKey && equals((ProcessControllerKey)other);
         }
 
-        public boolean equals(Key other) {
-            return this == other || other != null && Arrays.equals(authKey, other.authKey);
+        public boolean equals(ProcessControllerKey other) {
+            return this == other || other != null && Arrays.equals(pcAuthKey, other.pcAuthKey);
         }
 
         public int hashCode() {

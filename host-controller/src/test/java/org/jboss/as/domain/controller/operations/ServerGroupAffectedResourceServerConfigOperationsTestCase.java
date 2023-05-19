@@ -586,7 +586,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
-        public void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping) {
+        public void reconnectServer(String serverName, ModelNode domainModel, boolean running, boolean stopping) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
