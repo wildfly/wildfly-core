@@ -184,15 +184,15 @@ class InstMgrService implements Service {
         }
     }
 
-    void beginCandidateServer() {
+    void beginCandidateServer() throws IOException {
         this.candidateStatus.begin();
     }
 
-    void commitCandidateServer(String command) {
+    void commitCandidateServer(String command) throws IOException {
         this.candidateStatus.commit(command);
     }
 
-    void resetCandidateStatus() {
+    void resetCandidateStatus() throws IOException {
         this.candidateStatus.reset();
     }
 

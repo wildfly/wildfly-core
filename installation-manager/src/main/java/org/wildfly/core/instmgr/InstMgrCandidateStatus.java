@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Properties;
 
+import org.wildfly.core.instmgr.logging.InstMgrLogger;
+
 /**
  * Tracks the status of the candidate installation by using the installation-manager.properties file and configures the values that are
  * passed to the installation-manager.sh/bat scripts to apply or revert an installation.
@@ -54,42 +56,41 @@ class InstMgrCandidateStatus {
         }
     }
 
-    void begin() {
+    void begin() throws IOException {
         setStatus(Status.PREPARING);
     }
 
-    void reset() {
+    void reset() throws IOException {
         setStatus(Status.CLEAN);
     }
 
-    void setFailed() {
+    void setFailed() throws IOException {
         setStatus(Status.ERROR);
     }
 
-    void commit(String command) {
+    void commit(String command) throws IOException {
         setStatus(Status.PREPARED, command);
     }
 
-    private void setStatus(Status status) {
+    private void setStatus(Status status) throws IOException {
         setStatus(status, "");
     }
 
-    private void setStatus(Status status, String command) {
-        try (FileInputStream in = new FileInputStream(properties.toString())) {
-            final Properties prop = new Properties();
-            if (status != Status.CLEAN) {
+    private void setStatus(Status status, String command) throws IOException {
+        InstMgrLogger.ROOT_LOGGER.debugf("Setting Installation Manager Status to %s and command %s", status.name(), command);
+
+        final Properties prop = new Properties();
+        if (status != Status.CLEAN) {
+            try (FileInputStream in = new FileInputStream(properties.toString())) {
                 prop.load(in);
             }
-            in.close();
+        }
 
-            try (FileOutputStream out = new FileOutputStream(properties.toString())) {
-                prop.setProperty(INST_MGR_COMMAND_KEY, command);
-                prop.setProperty(INST_MGR_STATUS_KEY, status.name());
-                prop.setProperty(INST_MGR_PREPARED_SERVER_DIR_KEY, this.prepareServerPath.toFile().getAbsolutePath());
-                prop.store(out, null);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        try (FileOutputStream out = new FileOutputStream(properties.toString())) {
+            prop.setProperty(INST_MGR_COMMAND_KEY, command);
+            prop.setProperty(INST_MGR_STATUS_KEY, status.name());
+            prop.setProperty(INST_MGR_PREPARED_SERVER_DIR_KEY, this.prepareServerPath.toFile().getAbsolutePath());
+            prop.store(out, null);
         }
     }
 }
