@@ -173,12 +173,11 @@ public interface ServerInventory {
      *
      * @param serverName the name of the server
      * @param domainModel the configuration model for the domain
-     * @param authKey the authentication key
      * @param running whether the process was running. If {@code false}, the existence of the server will be
      *                recorded but no attempt to contact it will be made
      * @param stopping whether the process is currently stopping
      */
-    void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping);
+    void reconnectServer(String serverName, ModelNode domainModel, boolean running, boolean stopping);
 
     /**
      * Reload a server with the given name.

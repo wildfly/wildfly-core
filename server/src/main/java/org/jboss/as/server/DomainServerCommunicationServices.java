@@ -70,17 +70,17 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
     private final URI managementURI;
     private final String serverName;
     private final String serverProcessName;
-    private final String authKey;
+    private final String serverAuthToken;
     private final Supplier<SSLContext> sslContextSupplier;
 
     private final boolean managementSubsystemEndpoint;
 
-    DomainServerCommunicationServices(ModelNode endpointConfig, URI managementURI, String serverName, String serverProcessName, String authKey, boolean managementSubsystemEndpoint, Supplier<SSLContext> sslContextSupplier) {
+    DomainServerCommunicationServices(ModelNode endpointConfig, URI managementURI, String serverName, String serverProcessName, String serverAuthToken, boolean managementSubsystemEndpoint, Supplier<SSLContext> sslContextSupplier) {
         this.endpointConfig = endpointConfig;
         this.managementURI = managementURI;
         this.serverName = serverName;
         this.serverProcessName = serverProcessName;
-        this.authKey = authKey;
+        this.serverAuthToken = serverAuthToken;
         this.managementSubsystemEndpoint = managementSubsystemEndpoint;
         this.sslContextSupplier = sslContextSupplier;
     }
@@ -107,7 +107,7 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
             final Supplier<ScheduledExecutorService> sesSupplier = sb.requires(ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
             final Supplier<Endpoint> eSupplier = sb.requires(endpointName);
             final Supplier<ProcessStateNotifier> cpsnSupplier = sb.requires(ControlledProcessStateService.INTERNAL_SERVICE_NAME);
-            sb.setInstance(new HostControllerConnectionService(managementURI, serverName, serverProcessName, authKey, initialOperationID, managementSubsystemEndpoint, sslContextSupplier, esSupplier, sesSupplier, eSupplier, cpsnSupplier));
+            sb.setInstance(new HostControllerConnectionService(managementURI, serverName, serverProcessName, serverAuthToken, initialOperationID, managementSubsystemEndpoint, sslContextSupplier, esSupplier, sesSupplier, eSupplier, cpsnSupplier));
             sb.install();
         } catch (OperationFailedException e) {
             throw new ServiceRegistryException(e);
@@ -121,14 +121,14 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
      * @param managementURI the management connection URI
      * @param serverName the server name
      * @param serverProcessName the server process name
-     * @param authKey the authentication key
+     * @param serverAuthToken the authentication token the server will use to connect back to the management interface.
      * @param managementSubsystemEndpoint whether to use the mgmt subsystem endpoint or not
      * @return the service activator
      */
     public static ServiceActivator create(final ModelNode endpointConfig, final URI managementURI, final String serverName, final String serverProcessName,
-                                          final String authKey, final boolean managementSubsystemEndpoint, final Supplier<SSLContext> sslContextSupplier) {
+                                          final String serverAuthToken, final boolean managementSubsystemEndpoint, final Supplier<SSLContext> sslContextSupplier) {
 
-        return new DomainServerCommunicationServices(endpointConfig, managementURI, serverName, serverProcessName, authKey, managementSubsystemEndpoint, sslContextSupplier);
+        return new DomainServerCommunicationServices(endpointConfig, managementURI, serverName, serverProcessName, serverAuthToken, managementSubsystemEndpoint, sslContextSupplier);
     }
 
     public interface OperationIDUpdater {

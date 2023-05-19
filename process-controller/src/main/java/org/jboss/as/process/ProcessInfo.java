@@ -27,13 +27,13 @@ package org.jboss.as.process;
  */
 public final class ProcessInfo {
     private final String processName;
-    private final String authKey;
+    private final String pcAuthKey;
     private final boolean running;
     private final boolean stopping;
 
-    ProcessInfo(final String processName, final String authKey, final boolean running, final boolean stopping) {
+    ProcessInfo(final String processName, final String pcAuthKey, final boolean running, final boolean stopping) {
         this.processName = processName;
-        this.authKey = authKey;
+        this.pcAuthKey = pcAuthKey;
         this.running = running;
         this.stopping = stopping;
     }
@@ -42,8 +42,8 @@ public final class ProcessInfo {
         return processName;
     }
 
-    public String getAuthKey() {
-        return authKey;
+    public String getPCAuthKey() {
+        return pcAuthKey;
     }
 
     public boolean isRunning() {

@@ -72,7 +72,6 @@ import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.management.security.DomainManagedServerCallbackHandler;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.as.process.ProcessController;
 import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.process.ProcessInfo;
 import org.jboss.as.process.ProcessMessageHandler;
@@ -201,12 +200,9 @@ public class ServerInventoryImpl implements ServerInventory {
             server = null;
         }
         if(server == null) {
-            // Create a new authKey
-            final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_LENGTH];
-            new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
-            String authKey = Base64.getEncoder().encodeToString(authBytes);
+
             // Create the managed server
-            final ManagedServer newServer = createManagedServer(serverName, authKey);
+            final ManagedServer newServer = createManagedServer(serverName);
             server = servers.putIfAbsent(serverName, newServer);
             if(server == null) {
                 server = newServer;
@@ -225,6 +221,20 @@ public class ServerInventoryImpl implements ServerInventory {
             server.awaitState(ManagedServer.InternalState.SERVER_STARTING);
         }
         return server.getState();
+    }
+
+    private String createServerAuthToken(final String serverName) {
+        // For now this is hard coded but at a later point Elytron may start to issue
+        // a different token so if we plug in an alternative approach it can come through
+        // this method.
+
+        // Create a new serverAuthToken
+        final byte[] tokenBytes = new byte[16]; // 16 for now but will be making independent.
+        new Random(new SecureRandom().nextLong()).nextBytes(tokenBytes);
+        String serverAuthToken = Base64.getEncoder().encodeToString(tokenBytes);
+        serverAuthToken = "SIK" + serverAuthToken.substring(3);
+
+        return serverAuthToken;
     }
 
     @Override
@@ -275,7 +285,7 @@ public class ServerInventoryImpl implements ServerInventory {
     }
 
     @Override
-    public void reconnectServer(final String serverName, final ModelNode domainModel, final String authKey, final boolean running, final boolean stopping) {
+    public void reconnectServer(final String serverName, final ModelNode domainModel, final boolean running, final boolean stopping) {
         if(shutdown || connectionFinished) {
             throw HostControllerLogger.ROOT_LOGGER.hostAlreadyShutdown();
         }
@@ -284,7 +294,7 @@ public class ServerInventoryImpl implements ServerInventory {
             ROOT_LOGGER.existingServerWithState(serverName, existing.getState());
             return;
         }
-        final ManagedServer server = createManagedServer(serverName, authKey);
+        final ManagedServer server = createManagedServer(serverName);
         if ((existing = servers.putIfAbsent(serverName, server)) != null) {
             ROOT_LOGGER.existingServerWithState(serverName, existing.getState());
             return;
@@ -753,7 +763,8 @@ public class ServerInventoryImpl implements ServerInventory {
         }
     }
 
-    private ManagedServer createManagedServer(final String serverName, final String authKey) {
+    private ManagedServer createManagedServer(final String serverName) {
+        final String serverAuthToken = createServerAuthToken(serverName);
         final String hostControllerName = domainController.getLocalHostInfo().getLocalHostName();
         // final ManagedServerBootConfiguration configuration = combiner.createConfiguration();
         final Map<PathAddress, ModelVersion> subsystems = TransformerRegistry.resolveVersions(extensionRegistry);
@@ -761,7 +772,7 @@ public class ServerInventoryImpl implements ServerInventory {
         //We don't need any transformation between host and server
         final TransformationTarget target = TransformationTargetImpl.create(hostControllerName, extensionRegistry.getTransformerRegistry(),
                 modelVersion, subsystems, TransformationTarget.TransformationTargetType.SERVER);
-        return new ManagedServer(hostControllerName, serverName, authKey, processControllerClient, managementURI, target);
+        return new ManagedServer(hostControllerName, serverName, serverAuthToken, processControllerClient, managementURI, target);
     }
 
     private ManagedServerBootCmdFactory createBootFactory(final String serverName, final ModelNode domainModel, boolean suspend) {
@@ -823,10 +834,10 @@ public class ServerInventoryImpl implements ServerInventory {
                         // Don't support impersonating another identity
                         authorizeCallback.setAuthorized(authorizeCallback.getAuthenticationID().equals(authorizeCallback.getAuthorizationID()));
                     } else if (current instanceof PasswordCallback) {
-                        ((PasswordCallback) current).setPassword(server.getAuthKey().toCharArray());
+                        ((PasswordCallback) current).setPassword(server.getAuthToken().toCharArray());
                     } else if (current instanceof EvidenceVerifyCallback) {
                         EvidenceVerifyCallback vpc = (EvidenceVerifyCallback) current;
-                        vpc.setVerified(server.getAuthKey().equals(vpc.applyToEvidence(PasswordGuessEvidence.class, e -> new String(e.getGuess()))));
+                        vpc.setVerified(server.getAuthToken().equals(vpc.applyToEvidence(PasswordGuessEvidence.class, e -> new String(e.getGuess()))));
                     } else if (current instanceof CredentialCallback) {
                         CredentialCallback dhc = (CredentialCallback) current;
                         try {
@@ -834,7 +845,7 @@ public class ServerInventoryImpl implements ServerInventory {
                                 throw HostControllerLogger.ROOT_LOGGER.insufficientInformationToGenerateHash();
                             }
                             final PasswordFactory instance = PasswordFactory.getInstance(DigestPassword.ALGORITHM_DIGEST_MD5);
-                            final Password password = instance.generatePassword(new EncryptablePasswordSpec(server.getAuthKey().toCharArray(), new DigestPasswordAlgorithmSpec(userName, realm)));
+                            final Password password = instance.generatePassword(new EncryptablePasswordSpec(server.getAuthToken().toCharArray(), new DigestPasswordAlgorithmSpec(userName, realm)));
                             dhc.setCredential(new PasswordCredential(password));
                         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
                             throw HostControllerLogger.ROOT_LOGGER.unableToGenerateHash(e);

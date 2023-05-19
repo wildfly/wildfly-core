@@ -52,7 +52,6 @@ import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
 import org.jboss.as.host.controller.DomainModelControllerService;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.Main;
-import org.jboss.as.process.ProcessController;
 import org.jboss.as.server.FutureServiceContainer;
 import org.jboss.as.server.SystemExiter;
 import org.jboss.as.server.logging.ServerLogger;
@@ -271,10 +270,10 @@ public class EmbeddedHostControllerFactory {
                     HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, startTime);
 
                     FutureServiceContainer futureContainer = new FutureServiceContainer();
-                    final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_LENGTH];
+                    final byte[] authBytes = new byte[16];
                     new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
-                    final String authCode = Base64.getEncoder().encodeToString(authBytes);
-                    hostControllerBootstrap = new EmbeddedHostControllerBootstrap(futureContainer, environment, authCode);
+                    final String pcAuthCode = Base64.getEncoder().encodeToString(authBytes);
+                    hostControllerBootstrap = new EmbeddedHostControllerBootstrap(futureContainer, environment, pcAuthCode);
                     hostControllerBootstrap.bootstrap(processStateListener);
                     serviceContainer = futureContainer.get();
                     executorService = Executors.newCachedThreadPool();

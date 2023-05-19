@@ -118,7 +118,12 @@ class ManagedServer {
         return serverProcessName.substring(SERVER_PROCESS_NAME_PREFIX.length());
     }
 
-    private final String authKey;
+    /*
+     * Token to be used for the server to authenticate back over the management interface.
+     *
+     * This is independent of the pcKey used by processes to loop back to the process controller.
+     */
+    private final String serverAuthToken;
     private final String serverName;
     private final String serverProcessName;
     private final String hostControllerName;
@@ -140,7 +145,7 @@ class ManagedServer {
 
     private final PathAddress address;
 
-    ManagedServer(final String hostControllerName, final String serverName, final String authKey,
+    ManagedServer(final String hostControllerName, final String serverName, final String serverAuthToken,
                   final ProcessControllerClient processControllerClient, final URI managementURI,
                   final TransformationTarget transformationTarget) {
 
@@ -155,7 +160,7 @@ class ManagedServer {
         this.processControllerClient = processControllerClient;
         this.managementURI = managementURI;
 
-        this.authKey = authKey;
+        this.serverAuthToken = serverAuthToken;
 
         // Setup the proxy controller
         final PathElement serverPath = PathElement.pathElement(RUNNING_SERVER, serverName);
@@ -170,8 +175,8 @@ class ManagedServer {
      *
      * @return the auth key
      */
-    String getAuthKey() {
-        return authKey;
+    String getAuthToken() {
+        return serverAuthToken;
     }
 
     /**
@@ -803,7 +808,7 @@ class ManagedServer {
             final HostControllerEnvironment environment = bootConfiguration.getHostControllerEnvironment();
             final int processId = bootConfiguration.getServerProcessId();
             // Add the process to the process controller
-            processControllerClient.addProcess(serverProcessName, processId, authKey, command.toArray(new String[command.size()]), environment.getHomeDir().getAbsolutePath(), env);
+            processControllerClient.addProcess(serverProcessName, processId, command.toArray(new String[command.size()]), environment.getHomeDir().getAbsolutePath(), env);
             return true;
         }
 
@@ -843,7 +848,7 @@ class ManagedServer {
             final boolean useSubsystemEndpoint = bootConfiguration.isManagementSubsystemEndpoint();
             final ModelNode endpointConfig = bootConfiguration.getSubsystemEndpointConfiguration();
             // Send std.in
-            final ServiceActivator hostControllerCommActivator = DomainServerCommunicationServices.create(endpointConfig, managementURI, serverName, serverProcessName, authKey, useSubsystemEndpoint, bootConfiguration.getSSLContextSupplier());
+            final ServiceActivator hostControllerCommActivator = DomainServerCommunicationServices.create(endpointConfig, managementURI, serverName, serverProcessName, serverAuthToken, useSubsystemEndpoint, bootConfiguration.getSSLContextSupplier());
             final ServerStartTask startTask = new ServerStartTask(hostControllerName, serverName, 0, operationID,
                     Collections.<ServiceActivator>singletonList(hostControllerCommActivator), bootUpdates, launchProperties,
                     bootConfiguration.isSuspended(), bootConfiguration.isGracefulStartup());
@@ -929,7 +934,7 @@ class ManagedServer {
         public boolean execute(ManagedServer server) throws Exception {
             assert Thread.holdsLock(ManagedServer.this); // Call under lock
             // Reconnect
-            processControllerClient.reconnectProcess(serverProcessName, managementURI, bootConfiguration.isManagementSubsystemEndpoint(), authKey);
+            processControllerClient.reconnectServerProcess(serverProcessName, managementURI, bootConfiguration.isManagementSubsystemEndpoint(), serverAuthToken);
             return true;
         }
     }

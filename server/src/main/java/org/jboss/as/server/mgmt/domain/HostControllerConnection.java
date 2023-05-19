@@ -146,16 +146,16 @@ class HostControllerConnection extends FutureManagementChannel {
      * and callback will get updated.
      *
      * @param reconnectUri    the updated connection uri
-     * @param authKey         the updated authentication key
+     * @param serverAuthToken the updated authentication token
      * @param callback        the current callback
      */
-    synchronized void asyncReconnect(final URI reconnectUri, String authKey, final ReconnectCallback callback) {
+    synchronized void asyncReconnect(final URI reconnectUri, String serverAuthToken, final ReconnectCallback callback) {
         if (getState() != State.OPEN) {
             return;
         }
         // Update the configuration with the new credentials
         final ProtocolConnectionConfiguration config = ProtocolConnectionConfiguration.copy(configuration);
-        config.setCallbackHandler(createClientCallbackHandler(userName, authKey));
+        config.setCallbackHandler(createClientCallbackHandler(userName, serverAuthToken));
         config.setUri(reconnectUri);
         this.configuration = config;
 
@@ -378,21 +378,23 @@ class HostControllerConnection extends FutureManagementChannel {
      * Create the client callback handler.
      *
      * @param userName the username
-     * @param authKey the authentication key
+     * @param serverAuthToken the token used to authenticate over the management interface.
      * @return the callback handler
      */
-    static CallbackHandler createClientCallbackHandler(final String userName, final String authKey) {
-        return new ClientCallbackHandler(userName, authKey);
+    static CallbackHandler createClientCallbackHandler(final String userName, final String serverAuthToken) {
+        return new ClientCallbackHandler(userName, serverAuthToken);
     }
 
+    // TODO - We will get rid of the callback handler and instead assemble a complete AuthenticationConfiguration
+    // which defines which mechanisms to use and any associated usernames / credentials as appropriate.
     private static class ClientCallbackHandler implements CallbackHandler {
 
         private final String userName;
-        private final String authKey;
+        private final String serverAuthToken;
 
-        private ClientCallbackHandler(String userName, String authKey) {
+        private ClientCallbackHandler(String userName, String serverAuthToken) {
             this.userName = userName;
-            this.authKey = authKey;
+            this.serverAuthToken = serverAuthToken;
         }
 
         public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
@@ -408,7 +410,7 @@ class HostControllerConnection extends FutureManagementChannel {
                     ncb.setName(userName);
                 } else if (current instanceof PasswordCallback) {
                     PasswordCallback pcb = (PasswordCallback) current;
-                    pcb.setPassword(authKey.toCharArray());
+                    pcb.setPassword(serverAuthToken.toCharArray());
                 } else {
                     throw new UnsupportedCallbackException(current);
                 }

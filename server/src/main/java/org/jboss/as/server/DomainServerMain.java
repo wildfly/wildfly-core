@@ -138,9 +138,11 @@ public final class DomainServerMain {
                 final String hostName = StreamUtils.readUTFZBytes(initialInput);
                 final int port = StreamUtils.readInt(initialInput);
                 final boolean managementSubsystemEndpoint = StreamUtils.readBoolean(initialInput);
+                // TODO Will likely make a simple change so this token can become variable length,
+                // i.e. read a length value first.
                 final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
                 StreamUtils.readFully(initialInput, authBytes);
-                final String authKey = new String(authBytes, StandardCharsets.US_ASCII);
+                final String serverAuthToken = new String(authBytes, StandardCharsets.US_ASCII);
                 URI hostControllerUri = new URI(scheme, null, NetworkUtils.formatPossibleIpv6Address(hostName), port, null, null, null);
                 // Get the host-controller server client
                 final ServiceContainer container = containerFuture.get();
@@ -149,7 +151,7 @@ public final class DomainServerMain {
                     final HostControllerClient client = getRequiredService(container,
                             HostControllerConnectionService.SERVICE_NAME, HostControllerClient.class);
                     // Reconnect to the host-controller
-                    client.reconnect(hostControllerUri, authKey, managementSubsystemEndpoint);
+                    client.reconnect(hostControllerUri, serverAuthToken, managementSubsystemEndpoint);
                 }
 
             } catch (InterruptedIOException e) {
