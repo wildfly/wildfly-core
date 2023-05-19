@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
+import java.security.GeneralSecurityException;
 import java.util.concurrent.ExecutionException;
 import javax.security.sasl.SaslException;
 import javax.xml.stream.Location;
@@ -1466,6 +1467,9 @@ public interface HostControllerLogger extends BasicLogger {
 
     @Message(id = 218, value = "No %s installation has been prepared.")
     OperationFailedException noServerInstallationPrepared(String productName);
+
+    @Message(id = 219, value = "Authorization failed for '%s' attempting to connect as a domain server.")
+    GeneralSecurityException identityNotAuthorizedAsServer(final String identityName);
 
     ////////////////////////////////////////////////
     //Messages without IDs
