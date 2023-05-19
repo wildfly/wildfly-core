@@ -70,7 +70,7 @@ public class InstMgrCreateSnapshotHandler extends InstMgrOperationStepHandler {
                     context.getResult().set(uuid);
                 } catch (IllegalArgumentException e) {
                     throw new OperationFailedException(e);
-                } catch (RuntimeException e) {
+                } catch (OperationFailedException | RuntimeException e) {
                     throw e;
                 } catch (Exception e) {
                     throw new RuntimeException(e);

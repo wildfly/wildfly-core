@@ -79,14 +79,14 @@ set "INST_MGR_COMMAND=!INST_MGR_COMMAND:\:=:!"
 set "INST_MGR_COMMAND=!INST_MGR_COMMAND:\\=\!"
 setlocal DisableDelayedExpansion
 
-set JAVA_OPTS=-Dorg.jboss.boot.log.file="%INST_MGR_LOG_FILE%" -Dlogging.configuration=file:"%INST_MGR_LOG_PROPERTIES%" %JAVA_OPTS%
+set JAVA_OPTS=-Dorg.jboss.boot.log.file="%INST_MGR_LOG_FILE%" -Dlogging.configuration=file:"%INST_MGR_LOG_PROPERTIES%" -Dorg.wildfly.prospero.log.file="%INST_MGR_LOG_FILE%" %JAVA_OPTS%
 call %INST_MGR_COMMAND%
 set INST_MGR_RESULT=%errorlevel%
 
 if %INST_MGR_RESULT% equ 0 (
     echo INFO: The Candidate Server was successfully applied.
     rmdir /S /Q "%INST_MGR_PREPARED_SERVER_DIR%"
-    echo|set /p"=INST_MGR_STATUS=CLEAN" > %PROPS_FILE%
+    echo|set /p"=INST_MGR_STATUS=CLEAN" > "%PROPS_FILE%"
     goto EOF
 )
 if %INST_MGR_RESULT% equ 1 (

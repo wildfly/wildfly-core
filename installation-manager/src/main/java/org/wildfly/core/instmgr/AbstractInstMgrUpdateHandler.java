@@ -124,6 +124,7 @@ abstract class AbstractInstMgrUpdateHandler extends InstMgrOperationStepHandler 
 
     protected static OsShell getOsShell() {
         String env = System.getenv("JBOSS_LAUNCH_SCRIPT");
+        InstMgrLogger.ROOT_LOGGER.debug("Detected server launched from " + env + " script");
         if (env != null) {
             switch (env) {
                 case "powershell": return OsShell.WindowsPowerShell;

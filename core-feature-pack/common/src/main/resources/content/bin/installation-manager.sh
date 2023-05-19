@@ -51,7 +51,7 @@ if [ x"${INST_MGR_COMMAND}" == "x" ]; then
  exit
 fi
 
-export JAVA_OPTS="-Dorg.jboss.boot.log.file=${INST_MGR_LOG_FILE} -Dlogging.configuration=file:${INST_MGR_LOG_PROPERTIES} ${JAVA_OPTS}"
+export JAVA_OPTS="-Dorg.jboss.boot.log.file=\"${INST_MGR_LOG_FILE}\" -Dlogging.configuration=file:\"${INST_MGR_LOG_PROPERTIES}\" -Dorg.wildfly.prospero.log.file=\"${INST_MGR_LOG_FILE}\" ${JAVA_OPTS}"
 eval "${INST_MGR_COMMAND}"
 INST_MGR_RESULT=$?
 

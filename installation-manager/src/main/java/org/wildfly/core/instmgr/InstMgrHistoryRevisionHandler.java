@@ -212,7 +212,7 @@ public class InstMgrHistoryRevisionHandler extends InstMgrOperationStepHandler {
                     }
 
                     context.getResult().set(resulList);
-                } catch (RuntimeException e) {
+                } catch (OperationFailedException | RuntimeException e) {
                     throw e;
                 } catch (Exception e) {
                     throw new RuntimeException(e);

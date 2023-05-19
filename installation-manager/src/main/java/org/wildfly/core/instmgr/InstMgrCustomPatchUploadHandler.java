@@ -119,7 +119,7 @@ public class InstMgrCustomPatchUploadHandler extends InstMgrCustomPatchHandler {
                     context.getResult().set(customPatchPath.toString());
                 } catch (ZipException e) {
                     throw new OperationFailedException(e.getLocalizedMessage());
-                } catch (RuntimeException e) {
+                } catch (OperationFailedException | RuntimeException e) {
                     throw e;
                 } catch (Exception e) {
                     throw new RuntimeException(e);

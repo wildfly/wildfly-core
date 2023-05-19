@@ -122,10 +122,10 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                 if (!imService.canPrepareServer()) {
                     throw InstMgrLogger.ROOT_LOGGER.serverAlreadyPrepared();
                 }
-                imService.beginCandidateServer();
-                addCompleteStep(context, imService, null);
-
                 try {
+                    imService.beginCandidateServer();
+                    addCompleteStep(context, imService, null);
+
                     final Path homeDir = imService.getHomeDir();
                     final MavenOptions mavenOptions = new MavenOptions(localRepository, noResolveLocalCache, offline);
                     final InstallationManager im = imf.create(homeDir, mavenOptions);
@@ -138,7 +138,7 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                         final Path mvnRepoWorkDir = imService.getTempDirByName(listUpdatesWorkDir);
                         addCompleteStep(context, imService, listUpdatesWorkDir);
 
-                        for (File file : mvnRepoWorkDir.toFile().listFiles((dir, name) -> name.startsWith(InstMgrConstants.INTERNAL_REPO_PREFIX))) {
+                        for (File file : mvnRepoWorkDir.toFile().listFiles(InstMgrPrepareUpdateHandler::isInternalRepo)) {
                             Path repoIdPath = mvnRepoWorkDir.resolve(file.getName());
                             Path uploadedRepoZipRootDir = getUploadedMvnRepoRoot(repoIdPath);
                             Repository uploadedMavenRepo = new Repository(file.getName(), uploadedRepoZipRootDir.toUri().toURL().toExternalForm());
@@ -172,7 +172,7 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                         context.getResult().set(imService.getPreparedServerDir().normalize().toAbsolutePath().toString());
 
                         final String applyUpdate = im.generateApplyUpdateCommand(homeDir.resolve("bin"), imService.getPreparedServerDir(), getOsShell());
-                        InstMgrLogger.ROOT_LOGGER.debug("Apply Revert Command: " + applyUpdate);
+                        InstMgrLogger.ROOT_LOGGER.debug("Apply Update Command: " + applyUpdate);
 
                         imService.commitCandidateServer(applyUpdate);
                     } else {
@@ -180,7 +180,7 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                     }
                 } catch (ZipException e) {
                     throw new OperationFailedException(e.getLocalizedMessage());
-                } catch (RuntimeException e) {
+                } catch (OperationFailedException | RuntimeException e) {
                     throw e;
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -203,5 +203,9 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                 }
             }
         });
+    }
+
+    private static boolean isInternalRepo(File dir, String name) {
+        return name.startsWith(InstMgrConstants.INTERNAL_REPO_PREFIX);
     }
 }

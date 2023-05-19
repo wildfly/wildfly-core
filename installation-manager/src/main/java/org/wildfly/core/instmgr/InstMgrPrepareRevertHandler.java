@@ -115,10 +115,9 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
                 if (!imService.canPrepareServer()) {
                     throw InstMgrLogger.ROOT_LOGGER.serverAlreadyPrepared();
                 }
-                imService.beginCandidateServer();
-                addCompleteStep(context, imService, null);
-
                 try {
+                    imService.beginCandidateServer();
+                    addCompleteStep(context, imService, null);
                     final Path homeDir = imService.getHomeDir();
                     final MavenOptions mavenOptions = new MavenOptions(localRepository, noResolveLocalCache, offline);
                     final InstallationManager im = imf.create(homeDir, mavenOptions);
@@ -144,7 +143,7 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
                     context.getResult().set(imService.getPreparedServerDir().normalize().toAbsolutePath().toString());
                 } catch (ZipException e) {
                     throw new OperationFailedException(e.getLocalizedMessage());
-                } catch (RuntimeException e) {
+                } catch (OperationFailedException | RuntimeException e) {
                     throw e;
                 } catch (Exception e) {
                     throw new RuntimeException(e);
