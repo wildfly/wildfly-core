@@ -28,14 +28,11 @@ import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOG
 
 import java.io.IOException;
 import java.net.URI;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -46,14 +43,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.sasl.AuthorizeCallback;
-import javax.security.sasl.RealmCallback;
 
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.CurrentOperationIdHolder;
@@ -69,7 +58,6 @@ import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.TransformationTargetImpl;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.domain.controller.DomainController;
-import org.jboss.as.domain.management.security.DomainManagedServerCallbackHandler;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.process.ProcessInfo;
@@ -80,15 +68,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.threads.AsyncFuture;
-import org.wildfly.security.auth.callback.CredentialCallback;
-import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
-import org.wildfly.security.credential.PasswordCredential;
-import org.wildfly.security.evidence.PasswordGuessEvidence;
-import org.wildfly.security.password.Password;
-import org.wildfly.security.password.PasswordFactory;
-import org.wildfly.security.password.interfaces.DigestPassword;
-import org.wildfly.security.password.spec.DigestPasswordAlgorithmSpec;
-import org.wildfly.security.password.spec.EncryptablePasswordSpec;
 
 /**
  * Inventory of the managed servers.
@@ -779,82 +758,6 @@ public class ServerInventoryImpl implements ServerInventory {
         final String hostControllerName = domainController.getLocalHostInfo().getLocalHostName();
         final ModelNode hostModel = domainModel.require(HOST).require(hostControllerName);
         return new ManagedServerBootCmdFactory(serverName, domainModel, hostModel, environment, domainController.getExpressionResolver(), suspend);
-    }
-
-    @Override
-    public CallbackHandler getServerCallbackHandler() {
-        return new CallbackHandler() {
-            public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-                List<Callback> toRespondTo = new LinkedList<Callback>();
-
-                String userName = null;
-                String realm = null;
-                ManagedServer server = null;
-
-                // A single pass may be sufficient but by using a two pass approach the Callbackhandler will not
-                // fail if an unexpected order is encountered.
-
-                // First Pass - is to double check no unsupported callbacks and to retrieve
-                // information from the callbacks passing in information.
-                for (Callback current : callbacks) {
-
-                    if (current instanceof AuthorizeCallback) {
-                        toRespondTo.add(current);
-                    } else if (current instanceof NameCallback) {
-                        NameCallback nameCallback = (NameCallback) current;
-                        userName = nameCallback.getDefaultName();
-                        if (userName.startsWith(DomainManagedServerCallbackHandler.DOMAIN_SERVER_AUTH_PREFIX)) {
-                            server = servers.get(userName.substring(DomainManagedServerCallbackHandler.DOMAIN_SERVER_AUTH_PREFIX.length()));
-                        }
-                    } else if (current instanceof PasswordCallback) {
-                        toRespondTo.add(current);
-                    } else if (current instanceof EvidenceVerifyCallback) {
-                        toRespondTo.add(current);
-                    } else if (current instanceof CredentialCallback) {
-                        toRespondTo.add(current);
-                    } else if (current instanceof RealmCallback) {
-                        realm = ((RealmCallback)current).getDefaultText();
-                    } else {
-                        throw new UnsupportedCallbackException(current);
-                    }
-                }
-
-                /*
-                * At the moment this is a special CallbackHandler where we know the setting of a password will be double checked
-                 * before going back to the base realm.
-                */
-                if (server == null) {
-                    return;
-                }
-
-                // Second Pass - Now iterate the Callback(s) requiring a response.
-                for (Callback current : toRespondTo) {
-                    if (current instanceof AuthorizeCallback) {
-                        AuthorizeCallback authorizeCallback = (AuthorizeCallback) current;
-                        // Don't support impersonating another identity
-                        authorizeCallback.setAuthorized(authorizeCallback.getAuthenticationID().equals(authorizeCallback.getAuthorizationID()));
-                    } else if (current instanceof PasswordCallback) {
-                        ((PasswordCallback) current).setPassword(server.getAuthToken().toCharArray());
-                    } else if (current instanceof EvidenceVerifyCallback) {
-                        EvidenceVerifyCallback vpc = (EvidenceVerifyCallback) current;
-                        vpc.setVerified(server.getAuthToken().equals(vpc.applyToEvidence(PasswordGuessEvidence.class, e -> new String(e.getGuess()))));
-                    } else if (current instanceof CredentialCallback) {
-                        CredentialCallback dhc = (CredentialCallback) current;
-                        try {
-                            if (realm == null) {
-                                throw HostControllerLogger.ROOT_LOGGER.insufficientInformationToGenerateHash();
-                            }
-                            final PasswordFactory instance = PasswordFactory.getInstance(DigestPassword.ALGORITHM_DIGEST_MD5);
-                            final Password password = instance.generatePassword(new EncryptablePasswordSpec(server.getAuthToken().toCharArray(), new DigestPasswordAlgorithmSpec(userName, realm)));
-                            dhc.setCredential(new PasswordCredential(password));
-                        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-                            throw HostControllerLogger.ROOT_LOGGER.unableToGenerateHash(e);
-                        }
-                    }
-                }
-
-            }
-        };
     }
 
     private ModelNode appendServerNameToFailureResponse(String serverName, ModelNode failureResponse) {

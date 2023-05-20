@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.security.auth.callback.CallbackHandler;
-
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
@@ -202,14 +200,6 @@ public interface ServerInventory {
      * @param serverName the server name
      */
     void killServer(String serverName);
-
-    /**
-     * Gets a callback handler security services can use for handling authentication data provided by
-     * a server attempting to connect with this host controller.
-     *
-     * @return the callback handler. Will not be {@code null}
-     */
-    CallbackHandler getServerCallbackHandler();
 
     /**
      * Notification that a channel for communication with a managed server process has been registered.

@@ -45,8 +45,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import javax.security.auth.callback.CallbackHandler;
-
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessState.State;
@@ -602,11 +600,6 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
 
         @Override
         public void killServer(String serverName) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public CallbackHandler getServerCallbackHandler() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
