@@ -22,19 +22,22 @@
 
 package org.jboss.as.server;
 
+import static org.jboss.as.process.protocol.StreamUtils.readBoolean;
+import static org.jboss.as.process.protocol.StreamUtils.readFully;
+import static org.jboss.as.process.protocol.StreamUtils.readInt;
+import static org.jboss.as.process.protocol.StreamUtils.readUTFZBytes;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import org.jboss.as.network.NetworkUtils;
 
+import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.process.ProcessController;
-import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.process.stdin.Base64InputStream;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.domain.HostControllerClient;
@@ -97,7 +100,7 @@ public final class DomainServerMain {
 
         final byte[] asAuthBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
         try {
-            StreamUtils.readFully(initialInput, asAuthBytes);
+            readFully(initialInput, asAuthBytes);
         } catch (IOException e) {
             e.printStackTrace();
             SystemExiter.abort(ExitCodes.FAILED);
@@ -133,16 +136,13 @@ public final class DomainServerMain {
         Throwable caught = null;
         for (;;) {
             try {
-                final String scheme = StreamUtils.readUTFZBytes(initialInput);
-//                String scheme = "remote";
-                final String hostName = StreamUtils.readUTFZBytes(initialInput);
-                final int port = StreamUtils.readInt(initialInput);
-                final boolean managementSubsystemEndpoint = StreamUtils.readBoolean(initialInput);
-                // TODO Will likely make a simple change so this token can become variable length,
-                // i.e. read a length value first.
-                final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
-                StreamUtils.readFully(initialInput, authBytes);
-                final String serverAuthToken = new String(authBytes, StandardCharsets.US_ASCII);
+                final String scheme = readUTFZBytes(initialInput);
+
+                final String hostName = readUTFZBytes(initialInput);
+                final int port = readInt(initialInput);
+                final boolean managementSubsystemEndpoint = readBoolean(initialInput);
+
+                final String serverAuthToken = readUTFZBytes(initialInput);
                 URI hostControllerUri = new URI(scheme, null, NetworkUtils.formatPossibleIpv6Address(hostName), port, null, null, null);
                 // Get the host-controller server client
                 final ServiceContainer container = containerFuture.get();

@@ -271,6 +271,7 @@ public final class ProcessControllerClient implements Closeable {
     }
 
     public void reconnectServerProcess(final String processName, final URI managementURI, final boolean managementSubsystemEndpoint, final String serverAuthToken) throws IOException {
+        // This call is specifically about asking a domain server to reconnect to the host controller.
         Assert.checkNotNullParam("processName", processName);
         final OutputStream os = connection.writeMessage();
         try{
@@ -280,7 +281,7 @@ public final class ProcessControllerClient implements Closeable {
             writeUTFZBytes(os, managementURI.getHost());
             writeInt(os, managementURI.getPort());
             writeBoolean(os, managementSubsystemEndpoint);
-            os.write(serverAuthToken.getBytes(StandardCharsets.US_ASCII));
+            writeUTFZBytes(os, serverAuthToken);
             os.close();
         } finally {
             safeClose(os);
