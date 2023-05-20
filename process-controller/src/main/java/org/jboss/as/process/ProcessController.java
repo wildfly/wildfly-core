@@ -102,8 +102,7 @@ public final class ProcessController {
         // Create a new pcAuthKey for the loop back to the process controller.
         final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_LENGTH];
         new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
-        String pcAuthKey = Base64.getEncoder().encodeToString(authBytes);
-        pcAuthKey = "IPK" + pcAuthKey.substring(3);
+        final String pcAuthKey = Base64.getEncoder().encodeToString(authBytes);
 
         synchronized (lock) {
             if (shutdown) {

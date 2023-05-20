@@ -39,7 +39,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -229,10 +228,11 @@ public class ServerInventoryImpl implements ServerInventory {
         // this method.
 
         // Create a new serverAuthToken
-        final byte[] tokenBytes = new byte[16]; // 16 for now but will be making independent.
-        new Random(new SecureRandom().nextLong()).nextBytes(tokenBytes);
-        String serverAuthToken = Base64.getEncoder().encodeToString(tokenBytes);
-        serverAuthToken = "SIK" + serverAuthToken.substring(3);
+        final byte[] tokenBytes = new byte[32]; // Use 256 bits.
+        new SecureRandom().nextBytes(tokenBytes);
+        // SAT does not add any security but the prefix will help check we are using
+        // the correct token.
+        String serverAuthToken = "SAT" + Base64.getEncoder().encodeToString(tokenBytes);
 
         return serverAuthToken;
     }
