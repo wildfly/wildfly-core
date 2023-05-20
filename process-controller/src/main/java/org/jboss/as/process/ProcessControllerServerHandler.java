@@ -28,11 +28,11 @@ import static org.jboss.as.process.protocol.StreamUtils.readInt;
 import static org.jboss.as.process.protocol.StreamUtils.readUTFZBytes;
 import static org.jboss.as.process.protocol.StreamUtils.readUnsignedByte;
 import static org.jboss.as.process.protocol.StreamUtils.safeClose;
+import static org.jboss.as.process.protocol.StreamUtils.writeUTFZBytes;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +41,6 @@ import org.jboss.as.process.logging.ProcessLogger;
 import org.jboss.as.process.protocol.Connection;
 import org.jboss.as.process.protocol.ConnectionHandler;
 import org.jboss.as.process.protocol.MessageHandler;
-import org.jboss.as.process.protocol.StreamUtils;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -74,18 +73,18 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                 connection.close();
                 return;
             }
-            final int version = StreamUtils.readUnsignedByte(dataStream);
+            final int version = readUnsignedByte(dataStream);
             if (version < 1) {
                 ProcessLogger.SERVER_LOGGER.receivedInvalidVersion(connection.getPeerAddress());
                 connection.close();
                 return;
             }
             final byte[] authCode = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
-            StreamUtils.readFully(dataStream, authCode);
+            readFully(dataStream, authCode);
             final ManagedProcess process = processController.getServerByAuthCode(authCode);
             if (process == null) {
                 ProcessLogger.SERVER_LOGGER.receivedUnknownCredentials(connection.getPeerAddress());
-                StreamUtils.safeClose(connection);
+                safeClose(connection);
                 return;
             }
             ProcessLogger.SERVER_LOGGER.tracef("Received authentic connection from %s", connection.getPeerAddress());
@@ -129,7 +128,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                 ProcessMessageHandler.OperationType operationType = null;
                 String processName = null;
                 try {
-                    final int cmd = StreamUtils.readUnsignedByte(dataStream);
+                    final int cmd = readUnsignedByte(dataStream);
                     switch (cmd) {
                         case Protocol.SEND_STDIN: {
                             // HostController only
@@ -217,14 +216,12 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                             if (isPrivileged) {
                                 operationType = ProcessMessageHandler.OperationType.REMOVE;
                                 processName = readUTFZBytes(dataStream);
-                                final String scheme = StreamUtils.readUTFZBytes(dataStream);
+                                final String scheme = readUTFZBytes(dataStream);
                                 final String hostName = readUTFZBytes(dataStream);
                                 final int port = readInt(dataStream);
                                 final boolean managementSubsystemEndpoint = readBoolean(dataStream);
-                                final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
-                                readFully(dataStream, authBytes);
-                                final String serverAuthToken = new String(authBytes, StandardCharsets.US_ASCII);
-                                processController.sendReconnectProcess(processName, scheme, hostName, port, managementSubsystemEndpoint, serverAuthToken);
+                                final String serverAuthToken = readUTFZBytes(dataStream);
+                                processController.sendReconnectServerProcess(processName, scheme, hostName, port, managementSubsystemEndpoint, serverAuthToken);
                             } else {
                                 ProcessLogger.SERVER_LOGGER.tracef("Ignoring reconnect_process message from untrusted source");
                             }
@@ -280,7 +277,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                             try {
                                 os.write(Protocol.OPERATION_FAILED);
                                 os.write(operationType.getCode());
-                                StreamUtils.writeUTFZBytes(os, processName);
+                                writeUTFZBytes(os, processName);
                                 os.close();
                             } finally {
                                 safeClose(os);

@@ -359,7 +359,8 @@ public final class ProcessController {
         }
     }
 
-    public void sendReconnectProcess(String processName, String scheme, String hostName, int port, boolean managementSubsystemEndpoint, String serverAuthToken) {
+    public void sendReconnectServerProcess(String processName, String scheme, String hostName, int port, boolean managementSubsystemEndpoint, String serverAuthToken) {
+        // This is specifically asking for a domain server to reconnect.
         synchronized (lock) {
             ManagedProcess process = processes.get(processName);
             if (process == null) {
