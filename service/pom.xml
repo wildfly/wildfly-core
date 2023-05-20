@@ -1,4 +1,4 @@
- <?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright The WildFly Authors
   ~ SPDX-License-Identifier: Apache-2.0
@@ -42,6 +42,11 @@
         </dependency>
 
         <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+           <scope>test</scope>
+        </dependency>
         <dependency>
            <groupId>junit</groupId>
            <artifactId>junit</artifactId>
