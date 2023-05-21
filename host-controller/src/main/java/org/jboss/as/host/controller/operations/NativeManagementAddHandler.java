@@ -96,6 +96,7 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         ServiceName sslContextName = sslContext != null ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, sslContext, SSLContext.class) : null;
 
         NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
+        // TODO the wrapper will also be needed here, we need to wrap again as each interface could point to a different sasl-authentication-factory
         ManagementRemotingServices.installDomainConnectorServices(context, serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                 nativeManagementInterfaceBinding, hostControllerInfo.getNativeManagementPort(), options, saslAuthenticationFactoryName, sslContextName);
         return Arrays.asList(REMOTING_BASE.append("server", MANAGEMENT_CONNECTOR), nativeManagementInterfaceBinding);
