@@ -1445,6 +1445,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 303, value = "Invalid authentication mechanism negotiation message received")
     AuthenticationMechanismException mechInvalidMessageReceived();
 
+    @Message(id = 304, value = "No authentication mechanism token was given")
+    AuthenticationMechanismException mechNoTokenGiven();
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

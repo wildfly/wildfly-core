@@ -17,11 +17,11 @@
 package org.jboss.as.host.controller.security;
 
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import javax.security.sasl.SaslServerFactory;
 
-import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.mgmt.RemoteServerPermission;
 import org.jboss.as.server.security.sasl.DomainServerSaslServerFactory;
 import org.jboss.msc.Service;
@@ -33,6 +33,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
+import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.sasl.util.AggregateSaslServerFactory;
 
@@ -48,23 +49,23 @@ public class SaslWrappingService implements Service {
 
     private final Supplier<SaslAuthenticationFactory> originalFactorySupplier;
     private final Consumer<SaslAuthenticationFactory> wrappedFactoryConsumer;
-    private final Supplier<ServerInventory> serverInventorySupplier;
+    private final Supplier<Predicate<Evidence>> evidenceVerifierSupplier;
 
     SaslWrappingService(Supplier<SaslAuthenticationFactory> originalFactorySupplier,
             Consumer<SaslAuthenticationFactory> wrappedFactoryConsumer,
-            Supplier<ServerInventory> serverInventorySupplier) {
+            Supplier<Predicate<Evidence>> evidenceVerifierSupplier) {
         this.originalFactorySupplier = originalFactorySupplier;
         this.wrappedFactoryConsumer = wrappedFactoryConsumer;
-        this.serverInventorySupplier = serverInventorySupplier;
+        this.evidenceVerifierSupplier = evidenceVerifierSupplier;
     }
 
     @Override
     public void start(StartContext context) throws StartException {
         SaslAuthenticationFactory originalFactory = originalFactorySupplier.get();
-        ServerInventory serverInventory = serverInventorySupplier.get();
+        //ServerInventory serverInventory = serverInventorySupplier.get();
         SaslServerFactory originalServerFactory = originalFactory.getFactory();
         SaslServerFactory domainServerSaslFactory = new DomainServerSaslServerFactory(originalFactory.getSecurityDomain(),
-                serverInventory::validateServerEvidence, PermissionVerifier.from(RemoteServerPermission.getInstance()));
+                evidenceVerifierSupplier.get(), PermissionVerifier.from(RemoteServerPermission.getInstance()));
 
 
         SaslAuthenticationFactory combinedFactory = SaslAuthenticationFactory.builder()
@@ -86,8 +87,8 @@ public class SaslWrappingService implements Service {
         ServiceBuilder<?> sb = serviceTarget.addService(wrapperName);
         Supplier<SaslAuthenticationFactory> originalFactorySupplier = sb.requires(originalSaslServerFactory);
         Consumer<SaslAuthenticationFactory> wrappedFactoryConsumer = sb.provides(wrapperName);
-        Supplier<ServerInventory> serverInventorySupplier = sb.requires(SERVER_INVENTORY_SERVICE_NAME);
-        sb.setInstance(new SaslWrappingService(originalFactorySupplier, wrappedFactoryConsumer, serverInventorySupplier))
+        Supplier<Predicate<Evidence>> evidenceVerifierSupplier = sb.requires(ServerVerificationService.SERVICE_NAME);
+        sb.setInstance(new SaslWrappingService(originalFactorySupplier, wrappedFactoryConsumer, evidenceVerifierSupplier))
             .setInitialMode(ServiceController.Mode.ON_DEMAND)
             .install();
 

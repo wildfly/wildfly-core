@@ -34,7 +34,6 @@ import org.jboss.as.process.ProcessInfo;
 import org.jboss.as.process.ProcessMessageHandler;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.dmr.ModelNode;
-import org.wildfly.security.evidence.Evidence;
 
 /**
  * Inventory of the managed servers.
@@ -334,13 +333,5 @@ public interface ServerInventory {
      * all error responses. Will not be {@code null}
      */
     List<ModelNode> suspendServers(Set<String> serverNames, int timeoutInSeconds, BlockingTimeout blockingTimeout);
-
-    /**
-     * Validate the evidence supplied by the domain server connecting back to the host controller.
-     *
-     * @param evidence the evidence supplied from the server attempting to connect.
-     * @return {@code true} if the evidence is validated, {@code false} otherwise.
-     */
-    boolean validateServerEvidence(Evidence evidence);
 
 }

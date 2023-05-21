@@ -118,13 +118,11 @@ public class HostControllerConnectionService implements Service<HostControllerCl
     public synchronized void start(final StartContext context) throws StartException {
         final Endpoint endpoint = endpointSupplier.get();
         try {
-            // we leave local auth enabled as an option for domain servers to use if available. elytron only configuration
-            // will require this to be enabled and available on the server side for servers to connect successfully.
+            // we leave local auth enabled as an option for domain servers to use if available.
             // final OptionMap options = OptionMap.create(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(JBOSS_LOCAL_USER));
             // Create the connection configuration
             final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, connectionURI, OptionMap.EMPTY);
             final String userName = this.userName != null ? this.userName : serverName;
-            configuration.setCallbackHandler(HostControllerConnection.createClientCallbackHandler(userName, initialServerAuthenticationToken));
             configuration.setConnectionTimeout(SERVER_CONNECTION_TIMEOUT);
             configuration.setSslContext(sslContextSupplier.get());
             this.responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutorSupplier.get());
