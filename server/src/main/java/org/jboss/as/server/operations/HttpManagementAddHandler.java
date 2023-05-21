@@ -71,6 +71,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.XnioWorker;
 
@@ -85,8 +86,6 @@ import io.undertow.server.ListenerRegistry;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
-
-    private static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.http-authentication-factory";
 
     public static final HttpManagementAddHandler INSTANCE = new HttpManagementAddHandler();
 
@@ -182,8 +181,12 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 httpConnectorName = ManagementRemotingServices.HTTPS_CONNECTOR;
             }
 
+            String saslAuthFactoryName = commonPolicy.getSaslAuthenticationFactory();
+            ServiceName saslAuthenticationFactory = saslAuthFactoryName != null ? context.getCapabilityServiceName(
+                    SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthFactoryName, SaslAuthenticationFactory.class) : null;
+
             RemotingHttpUpgradeService.installServices(context, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
-                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), commonPolicy.getSaslAuthenticationFactory());
+                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), saslAuthenticationFactory);
 
             return Arrays.asList(UndertowHttpManagementService.SERVICE_NAME, HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
         }
