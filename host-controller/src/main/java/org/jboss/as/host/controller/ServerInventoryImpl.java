@@ -760,7 +760,6 @@ public class ServerInventoryImpl implements ServerInventory {
         return new ManagedServer(hostControllerName, serverName, domainServerCredential, processControllerClient, managementURI, target);
     }
 
-    @Override
     public boolean validateServerEvidence(Evidence evidence) {
         DomainServerEvidence domainServerEvidence = evidence.castAs(DomainServerEvidence.class);
         if (domainServerEvidence != null) {

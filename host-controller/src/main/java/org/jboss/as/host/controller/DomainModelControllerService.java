@@ -163,6 +163,7 @@ import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.host.controller.operations.StartServersHandler;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
+import org.jboss.as.host.controller.security.ServerVerificationService;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.process.ProcessControllerClient;
@@ -191,7 +192,6 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.AsyncFutureTask;
 import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.common.Assert;
-import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -662,6 +662,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
         Throwable cause = null;
 
         try {
+            // Install the intermediate service to connect domain server verification through.
+            ServerVerificationService.install(serviceTarget);
+
             // Parse the host.xml and invoke all the ops. The ops should rollback on any Stage.RUNTIME failure
             List<ModelNode> hostBootOps = hostControllerConfigurationPersister.load();
             if (hostBootOps.isEmpty()) { // booting with empty config
@@ -1384,11 +1387,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
             return getServerInventory().suspendServers(serverNames, timeout, blockingTimeout);
         }
 
-        @Override
-        public boolean validateServerEvidence(Evidence evidence) {
-            return getServerInventory().validateServerEvidence(evidence);
-        }
-
     }
 
     @Override
@@ -1742,11 +1740,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
             @Override
             public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
                 return Collections.emptyList();
-            }
-
-            @Override
-            public boolean validateServerEvidence(Evidence evidence) {
-                return false;
             }
 
         };

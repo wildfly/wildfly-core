@@ -22,13 +22,6 @@
 
 package org.jboss.as.server.mgmt.domain;
 
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.sasl.RealmCallback;
-import javax.security.sasl.RealmChoiceCallback;
 import java.io.DataInput;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -155,7 +148,6 @@ class HostControllerConnection extends FutureManagementChannel {
         }
         // Update the configuration with the new credentials
         final ProtocolConnectionConfiguration config = ProtocolConnectionConfiguration.copy(configuration);
-        config.setCallbackHandler(createClientCallbackHandler(userName, serverAuthToken));
         config.setUri(reconnectUri);
         this.configuration = config;
 
@@ -372,50 +364,6 @@ class HostControllerConnection extends FutureManagementChannel {
             //
         }
 
-    }
-
-    /**
-     * Create the client callback handler.
-     *
-     * @param userName the username
-     * @param serverAuthToken the token used to authenticate over the management interface.
-     * @return the callback handler
-     */
-    static CallbackHandler createClientCallbackHandler(final String userName, final String serverAuthToken) {
-        return new ClientCallbackHandler(userName, serverAuthToken);
-    }
-
-    // TODO - We will get rid of the callback handler and instead assemble a complete AuthenticationConfiguration
-    // which defines which mechanisms to use and any associated usernames / credentials as appropriate.
-    private static class ClientCallbackHandler implements CallbackHandler {
-
-        private final String userName;
-        private final String serverAuthToken;
-
-        private ClientCallbackHandler(String userName, String serverAuthToken) {
-            this.userName = userName;
-            this.serverAuthToken = serverAuthToken;
-        }
-
-        public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-            for (Callback current : callbacks) {
-                if (current instanceof RealmCallback) {
-                    RealmCallback rcb = (RealmCallback) current;
-                    String defaultText = rcb.getDefaultText();
-                    rcb.setText(defaultText); // For now just use the realm suggested.
-                } else if (current instanceof RealmChoiceCallback) {
-                    throw new UnsupportedCallbackException(current, "Realm choice not currently supported.");
-                } else if (current instanceof NameCallback) {
-                    NameCallback ncb = (NameCallback) current;
-                    ncb.setName(userName);
-                } else if (current instanceof PasswordCallback) {
-                    PasswordCallback pcb = (PasswordCallback) current;
-                    pcb.setPassword(serverAuthToken.toCharArray());
-                } else {
-                    throw new UnsupportedCallbackException(current);
-                }
-            }
-        }
     }
 
     interface ReconnectCallback {
