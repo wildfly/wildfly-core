@@ -237,17 +237,6 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         return result;
     }
 
-    /**
-     *
-     * @deprecated use #addValueTypeDescription(ModelNode, String, ResourceBundle, boolean, ResourceDescriptionResolver, Locale)
-     */
-    @Deprecated
-    protected void addValueTypeDescription(final ModelNode node, final String prefix, final ResourceBundle bundle,
-                                               final ResourceDescriptionResolver resolver,
-                                               final Locale locale) {
-        addValueTypeDescription(node, prefix, bundle, false, resolver, locale);
-    }
-
     protected void addValueTypeDescription(final ModelNode node, final String prefix, final ResourceBundle bundle,
                                            boolean forOperation,
                                            final ResourceDescriptionResolver resolver,
