@@ -191,6 +191,7 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.AsyncFutureTask;
 import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.common.Assert;
+import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -1382,6 +1383,12 @@ public class DomainModelControllerService extends AbstractControllerService impl
         public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
             return getServerInventory().suspendServers(serverNames, timeout, blockingTimeout);
         }
+
+        @Override
+        public boolean validateServerEvidence(Evidence evidence) {
+            return getServerInventory().validateServerEvidence(evidence);
+        }
+
     }
 
     @Override
@@ -1736,6 +1743,12 @@ public class DomainModelControllerService extends AbstractControllerService impl
             public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
                 return Collections.emptyList();
             }
+
+            @Override
+            public boolean validateServerEvidence(Evidence evidence) {
+                return false;
+            }
+
         };
         future.setInventory(inventory);
         return future;

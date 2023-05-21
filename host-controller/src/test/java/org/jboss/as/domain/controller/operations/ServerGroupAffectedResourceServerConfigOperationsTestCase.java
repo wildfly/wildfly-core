@@ -70,6 +70,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceRegistry;
 import org.junit.Assert;
 import org.junit.Test;
+import org.wildfly.security.evidence.Evidence;
 
 /**
  *
@@ -682,6 +683,12 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean validateServerEvidence(Evidence evidence) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
     }
 
     private class MockOperationContext extends AbstractOperationTestCase.MockOperationContext {

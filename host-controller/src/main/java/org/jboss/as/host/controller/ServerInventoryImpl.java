@@ -63,11 +63,16 @@ import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.process.ProcessInfo;
 import org.jboss.as.process.ProcessMessageHandler;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
+import org.jboss.as.server.security.DomainServerCredential;
+import org.jboss.as.server.security.DomainServerEvidence;
 import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.threads.AsyncFuture;
+import org.wildfly.security.credential.Credential;
+import org.wildfly.security.evidence.Evidence;
+import org.wildfly.security.provider.util.ProviderUtil;
 
 /**
  * Inventory of the managed servers.
@@ -744,6 +749,7 @@ public class ServerInventoryImpl implements ServerInventory {
 
     private ManagedServer createManagedServer(final String serverName) {
         final String serverAuthToken = createServerAuthToken(serverName);
+        final DomainServerCredential domainServerCredential = new DomainServerCredential(serverAuthToken);
         final String hostControllerName = domainController.getLocalHostInfo().getLocalHostName();
         // final ManagedServerBootConfiguration configuration = combiner.createConfiguration();
         final Map<PathAddress, ModelVersion> subsystems = TransformerRegistry.resolveVersions(extensionRegistry);
@@ -751,7 +757,23 @@ public class ServerInventoryImpl implements ServerInventory {
         //We don't need any transformation between host and server
         final TransformationTarget target = TransformationTargetImpl.create(hostControllerName, extensionRegistry.getTransformerRegistry(),
                 modelVersion, subsystems, TransformationTarget.TransformationTargetType.SERVER);
-        return new ManagedServer(hostControllerName, serverName, serverAuthToken, processControllerClient, managementURI, target);
+        return new ManagedServer(hostControllerName, serverName, domainServerCredential, processControllerClient, managementURI, target);
+    }
+
+    @Override
+    public boolean validateServerEvidence(Evidence evidence) {
+        DomainServerEvidence domainServerEvidence = evidence.castAs(DomainServerEvidence.class);
+        if (domainServerEvidence != null) {
+            String serverName = domainServerEvidence.getDefaultPrincipal().getName();
+            ManagedServer managedServer = servers.get(serverName);
+            if (managedServer != null) {
+                Credential serverCredential = managedServer.getCredential();
+
+                return serverCredential.verify(ProviderUtil.INSTALLED_PROVIDERS,  domainServerEvidence);
+            }
+        }
+
+        return false;
     }
 
     private ManagedServerBootCmdFactory createBootFactory(final String serverName, final ModelNode domainModel, boolean suspend) {

@@ -54,6 +54,7 @@ import org.jboss.as.host.controller.DomainModelControllerService;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.HostControllerService;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
+import org.jboss.as.host.controller.security.SaslWrappingService;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.remoting.RemotingHttpUpgradeService;
 import org.jboss.as.remoting.RemotingServices;
@@ -187,6 +188,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
             String saslAuthFactoryName = commonPolicy.getSaslAuthenticationFactory();
             ServiceName saslAuthenticationFactory = saslAuthFactoryName != null ? context.getCapabilityServiceName(
                     SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthFactoryName, SaslAuthenticationFactory.class) : null;
+            saslAuthenticationFactory = SaslWrappingService.install(serviceTarget, saslAuthenticationFactory);
 
             RemotingHttpUpgradeService.installServices(context, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
                     ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), saslAuthenticationFactory);
