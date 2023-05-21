@@ -1048,9 +1048,8 @@ public class PersistentResourceXMLParserTestCase {
 
         static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder(
                 Constants.PROPERTIES, true)
-                .setWrapXmlElement(true)
-                .setWrapperElement(Constants.PROPERTIES)
-                .setXmlName(Constants.PROPERTY)
+                .setAttributeParser(new AttributeParsers.PropertiesParser(Constants.PROPERTIES, true))
+                .setAttributeMarshaller(new AttributeMarshallers.PropertiesAttributeMarshaller(Constants.PROPERTIES, true))
                 .setAllowExpression(true)
                 .setRestartAllServices()
                 .build();
