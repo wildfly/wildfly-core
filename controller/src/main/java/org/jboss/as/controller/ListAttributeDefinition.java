@@ -89,8 +89,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
      * @see #parseAndAddParameterElement(String, ModelNode, XMLStreamReader)
      * @deprecated use {@link #getParser()}
      */
-    @Deprecated
-    public ModelNode parse(final String value, final XMLStreamReader reader) throws XMLStreamException {
+    private ModelNode parse(final String value, final XMLStreamReader reader) throws XMLStreamException {
 
         try {
             return SimpleAttributeDefinition.parse(this, elementValidator, value);
@@ -236,24 +235,6 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
      */
     protected ModelNode convertParameterElementExpressions(ModelNode parameterElement) {
         return isAllowExpression() ? convertStringExpression(parameterElement) : parameterElement;
-    }
-
-    /**
-     * Parses whole value as list attribute
-     * @deprecated in favour of using  {@link AttributeParser attribute parser}
-     * @param value String with "," separated string elements
-     * @param operation operation to with this list elements are added
-     * @param reader xml reader from where reading is be done
-     * @throws XMLStreamException if {@code value} is not valid
-     */
-    @Deprecated
-    public void parseAndSetParameter(String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {
-        //we use manual parsing here, and not #getParser().. to preserve backward compatibility.
-        if (value != null) {
-            for (String element : value.split(",")) {
-                parseAndAddParameterElement(element.trim(), operation, reader);
-            }
-        }
     }
 
     public abstract static class Builder<BUILDER extends Builder, ATTRIBUTE extends ListAttributeDefinition>
