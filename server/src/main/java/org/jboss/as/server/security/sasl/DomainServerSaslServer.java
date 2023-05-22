@@ -160,7 +160,7 @@ final class DomainServerSaslServer implements SaslServer, SaslWrapper {
         }
 
         if (ciac.isAuthorized() == true) {
-            authorizedId = ciac.getAuthorizationPrincipal().getName();
+            authorizedId = namePrincipal.getName();
         } else {
             throw AS_ROOT_LOGGER.mechAuthorizationFailed(loginName, namePrincipal.getName()).toSaslException();
         }
