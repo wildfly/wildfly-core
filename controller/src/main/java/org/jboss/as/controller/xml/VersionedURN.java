@@ -24,10 +24,12 @@ import org.wildfly.common.iteration.CompositeIterable;
 /**
  * A versioned namespace identified by a URN constructed using a version.
  * @author Paul Ferraro
+ * @deprecated Use {@link IntVersionSchema#createURN(List, IntVersion) instead.
  */
+@Deprecated(forRemoval = true)
 public class VersionedURN<N extends Versioned<IntVersion, N>> extends SimpleVersionedNamespace<IntVersion, N> {
-    public static final String JBOSS_IDENTIFIER = "jboss";
-    public static final String WILDFLY_IDENTIFIER = "wildfly";
+    public static final String JBOSS_IDENTIFIER = IntVersionSchema.JBOSS_IDENTIFIER;
+    public static final String WILDFLY_IDENTIFIER = IntVersionSchema.WILDFLY_IDENTIFIER;
 
     private static final String URN = "urn";
     private static final String URN_DELIMITER = ":";
