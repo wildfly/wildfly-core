@@ -15,6 +15,7 @@
  */
 
 package org.jboss.as.host.controller.security;
+import static org.jboss.as.server.security.sasl.Constants.JBOSS_DOMAIN_SERVER;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -32,6 +33,8 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.wildfly.security.auth.server.MechanismConfiguration;
+import org.wildfly.security.auth.server.MechanismConfigurationSelector;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.permission.PermissionVerifier;
@@ -67,12 +70,16 @@ public class SaslWrappingService implements Service {
         SaslServerFactory domainServerSaslFactory = new DomainServerSaslServerFactory(originalFactory.getSecurityDomain(),
                 evidenceVerifierSupplier.get(), PermissionVerifier.from(RemoteServerPermission.getInstance()));
 
+        MechanismConfigurationSelector originalMechanismConfigurationSelector = originalFactory
+                .getMechanismConfigurationSelector();
+        MechanismConfigurationSelector forJBossDomainServer = MechanismConfigurationSelector
+                .predicateSelector(mi -> JBOSS_DOMAIN_SERVER.equals(mi.getMechanismName()), MechanismConfiguration.EMPTY);
 
         SaslAuthenticationFactory combinedFactory = SaslAuthenticationFactory.builder()
                 .setFactory(new AggregateSaslServerFactory(originalServerFactory, domainServerSaslFactory))
-                .setMechanismConfigurationSelector(originalFactory.getMechanismConfigurationSelector())
-                .setSecurityDomain(originalFactory.getSecurityDomain())
-                .build();
+                .setMechanismConfigurationSelector(
+                        MechanismConfigurationSelector.aggregate(originalMechanismConfigurationSelector, forJBossDomainServer))
+                .setSecurityDomain(originalFactory.getSecurityDomain()).build();
         wrappedFactoryConsumer.accept(combinedFactory);
     }
 
