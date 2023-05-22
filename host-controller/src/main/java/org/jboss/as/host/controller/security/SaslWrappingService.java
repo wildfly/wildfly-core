@@ -23,7 +23,6 @@ import java.util.function.Supplier;
 
 import javax.security.sasl.SaslServerFactory;
 
-import org.jboss.as.host.controller.mgmt.RemoteServerPermission;
 import org.jboss.as.server.security.sasl.DomainServerSaslServerFactory;
 import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
@@ -37,7 +36,6 @@ import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.MechanismConfigurationSelector;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.evidence.Evidence;
-import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.sasl.util.AggregateSaslServerFactory;
 
 /**
@@ -68,7 +66,7 @@ public class SaslWrappingService implements Service {
         //ServerInventory serverInventory = serverInventorySupplier.get();
         SaslServerFactory originalServerFactory = originalFactory.getFactory();
         SaslServerFactory domainServerSaslFactory = new DomainServerSaslServerFactory(originalFactory.getSecurityDomain(),
-                evidenceVerifierSupplier.get(), PermissionVerifier.from(RemoteServerPermission.getInstance()));
+                evidenceVerifierSupplier.get());
 
         MechanismConfigurationSelector originalMechanismConfigurationSelector = originalFactory
                 .getMechanismConfigurationSelector();
