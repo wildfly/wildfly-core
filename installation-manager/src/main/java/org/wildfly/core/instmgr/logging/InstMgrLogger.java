@@ -91,6 +91,9 @@ public interface InstMgrLogger extends BasicLogger {
     @Message(id = 19, value = "Operation has been cancelled.")
     OperationFailedException operationCancelled();
 
+    @Message(id = 20, value = "No custom patches installed found for the specified manifest maven coordinates: '%s'")
+    OperationFailedException noCustomPatchFound(String manifestGA);
+
     ////////////////////////////////////////////////
     // Messages without IDs
 

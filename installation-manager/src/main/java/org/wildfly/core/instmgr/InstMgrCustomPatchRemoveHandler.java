@@ -18,6 +18,7 @@
 
 package org.wildfly.core.instmgr;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 
@@ -28,6 +29,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.core.instmgr.logging.InstMgrLogger;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
@@ -64,19 +66,25 @@ public class InstMgrCustomPatchRemoveHandler extends InstMgrCustomPatchHandler {
                     final MavenOptions mavenOptions = new MavenOptions(null, false);
                     final InstallationManager im = imf.create(serverHome, mavenOptions);
 
-                    // delete any content
+                    final boolean existTargetDir = Files.exists(baseTargetDir);
+                    // delete any content if exists
                     deleteDirIfExits(baseTargetDir);
 
                     final Collection<Channel> exitingChannels = im.listChannels();
+                    boolean channelFound = false;
                     for (Channel channel : exitingChannels) {
                         String name = channel.getName();
                         if (channel.getName().equals(InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX + translatedManifestGA)) {
+                            channelFound = true;
                             im.removeChannel(name);
 
                             break;
                         }
                     }
-                } catch (RuntimeException e) {
+                    if (!existTargetDir && !channelFound) {
+                        throw InstMgrLogger.ROOT_LOGGER.noCustomPatchFound(manifestGA);
+                    }
+                } catch (OperationFailedException | RuntimeException e) {
                     throw e;
                 } catch (Exception e) {
                     throw new RuntimeException(e);
