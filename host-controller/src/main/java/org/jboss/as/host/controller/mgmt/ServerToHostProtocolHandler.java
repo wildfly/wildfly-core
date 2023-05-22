@@ -22,6 +22,7 @@
 
 package org.jboss.as.host.controller.mgmt;
 
+import static org.jboss.as.server.security.sasl.Constants.JBOSS_DOMAIN_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -180,7 +181,7 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
         public void handleRequest(DataInput input, ResultHandler<T> resultHandler, ManagementRequestContext<A> context)
                 throws IOException {
             SecurityIdentity identity = context.getChannel().getConnection().getLocalIdentity();
-            if (!identity.implies(RemoteServerPermission.getInstance())) {
+            if (!identity.getRoles().contains(JBOSS_DOMAIN_SERVER)) {
                 safeWriteResponse(context, ROOT_LOGGER.identityNotAuthorizedAsServer(identity.getPrincipal().getName()));
                 return;
             }

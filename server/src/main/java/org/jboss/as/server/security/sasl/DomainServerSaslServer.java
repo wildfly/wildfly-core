@@ -38,10 +38,11 @@ import org.wildfly.security.auth.callback.CachedIdentityAuthorizeCallback;
 import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.authz.RoleMapper;
+import org.wildfly.security.authz.Roles;
 import org.wildfly.security.cache.CachedIdentity;
 import org.wildfly.security.cache.IdentityCache;
 import org.wildfly.security.evidence.Evidence;
-import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.sasl.util.SaslWrapper;
 
 /**
@@ -56,7 +57,6 @@ final class DomainServerSaslServer implements SaslServer, SaslWrapper {
 
     private final SecurityDomain securityDomain;
     private final Predicate<Evidence> evidenceVerifier;
-    private final PermissionVerifier permissionVerifier;
 
     private final CallbackHandler callbackHandler;
     private boolean complete;
@@ -71,11 +71,10 @@ final class DomainServerSaslServer implements SaslServer, SaslWrapper {
      * @param permissionVerifier the permission verifier to be associated with any identity
      */
     public DomainServerSaslServer(final SecurityDomain securityDomain, final Predicate<Evidence> evidenceVerifier,
-            final CallbackHandler callbackHandler, final PermissionVerifier permissionVerifier) {
+            final CallbackHandler callbackHandler) {
         this.securityDomain = securityDomain;
         this.evidenceVerifier = evidenceVerifier;
         this.callbackHandler = callbackHandler;
-        this.permissionVerifier = permissionVerifier;
     }
 
     @Override
@@ -130,7 +129,7 @@ final class DomainServerSaslServer implements SaslServer, SaslWrapper {
         // Create our fully populated ad-hoc identity.
         SecurityIdentity identity = securityDomain.createAdHocIdentity(namePrincipal);
         identity = identity.withPrivateCredential(new DomainServerCredential(token));
-        identity = identity.intersectWith(permissionVerifier);
+        identity = identity.withDefaultRoleMapper(RoleMapper.constant(Roles.of(JBOSS_DOMAIN_SERVER)));
 
         CachedIdentity cachedIdentity = new CachedIdentity(JBOSS_DOMAIN_SERVER, false, identity);
 

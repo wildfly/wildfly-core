@@ -28,7 +28,6 @@ import javax.security.sasl.SaslServerFactory;
 
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.evidence.Evidence;
-import org.wildfly.security.permission.PermissionVerifier;
 
 /**
  * The server factory for the JBOSS-DOMAIN-SERVER SASL mechanism.
@@ -39,19 +38,17 @@ public class DomainServerSaslServerFactory implements SaslServerFactory {
 
     private final SecurityDomain securityDomain;
     private final Predicate<Evidence> evidenceVerifier;
-    private final PermissionVerifier permissionVerifier;
 
-    public DomainServerSaslServerFactory(SecurityDomain securityDomain, Predicate<Evidence> evidenceVerifier, PermissionVerifier permissionVerifier) {
+    public DomainServerSaslServerFactory(SecurityDomain securityDomain, Predicate<Evidence> evidenceVerifier) {
         super();
         this.securityDomain = securityDomain;
         this.evidenceVerifier = evidenceVerifier;
-        this.permissionVerifier = permissionVerifier;
     }
 
     public SaslServer createSaslServer(String mechanism, String protocol, String serverName, Map<String, ?> props,
             CallbackHandler cbh) throws SaslException {
         // Unless we are sure JBOSS_DOMAIN_SERVER is required don't return a SaslServer
-        return JBOSS_DOMAIN_SERVER.equals(mechanism) ? new DomainServerSaslServer(securityDomain, evidenceVerifier, cbh, permissionVerifier) : null;
+        return JBOSS_DOMAIN_SERVER.equals(mechanism) ? new DomainServerSaslServer(securityDomain, evidenceVerifier, cbh) : null;
     }
 
     public String[] getMechanismNames(final Map<String, ?> props) {
