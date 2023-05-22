@@ -70,7 +70,7 @@ public class InstMgrCustomPatchUploadHandler extends InstMgrCustomPatchHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final String manifestGA = MANIFEST_GA.resolveModelAttribute(context, operation).asString().replace(":", "_");
+        final String manifestGA = MANIFEST_GA.resolveModelAttribute(context, operation).asString();
         final int customPathIndex = CUSTOM_PATCH_FILE.resolveModelAttribute(context, operation).asInt();
         context.addStep(new OperationStepHandler() {
             @Override
@@ -78,7 +78,8 @@ public class InstMgrCustomPatchUploadHandler extends InstMgrCustomPatchHandler {
                 context.acquireControllerLock();
                 try {
                     final Path serverHome = imService.getHomeDir();
-                    final Path baseTargetDir = imService.getCustomPatchDir(manifestGA);
+                    final String internalManifestGA = manifestGA.replace(":", "_");
+                    final Path baseTargetDir = imService.getCustomPatchDir(internalManifestGA);
 
                     final MavenOptions mavenOptions = new MavenOptions(null, false);
                     final InstallationManager im = imf.create(serverHome, mavenOptions);
@@ -108,7 +109,7 @@ public class InstMgrCustomPatchUploadHandler extends InstMgrCustomPatchHandler {
                     // Build the channel
                     Repository customPatchRepository = new Repository("custom-patch", customPatchPath.toUri().toURL().toExternalForm());
 
-                    final Channel customChannel =  new Channel(InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX + manifestGA, List.of(customPatchRepository), manifestGA);
+                    final Channel customChannel =  new Channel(InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX + internalManifestGA, List.of(customPatchRepository), manifestGA);
 
                     if (foundChannel != null) {
                         im.changeChannel(customChannel);
