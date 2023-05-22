@@ -84,10 +84,10 @@ public class SaslWrappingService implements Service {
     @Override
     public void stop(StopContext context) {}
 
-    public static ServiceName install(ServiceTarget serviceTarget, ServiceName originalSaslServerFactory) {
+    public static ServiceName install(ServiceTarget serviceTarget, ServiceName originalSaslServerFactory, String forInterface) {
         if (originalSaslServerFactory == null) return null;
 
-        ServiceName wrapperName = originalSaslServerFactory.append("wrapper");
+        ServiceName wrapperName = originalSaslServerFactory.append("wrapper", forInterface);
 
         ServiceBuilder<?> sb = serviceTarget.addService(wrapperName);
         Supplier<SaslAuthenticationFactory> originalFactorySupplier = sb.requires(originalSaslServerFactory);
