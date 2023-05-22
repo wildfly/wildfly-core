@@ -73,7 +73,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     private Set <String> orderedChildTypes;
 
-    private boolean runtimeOnly;
+    private final boolean runtimeOnly;
     private final boolean ordered;
     private final AccessConstraintUtilizationRegistry constraintUtilizationRegistry;
     private final CapabilityRegistry capabilityRegistry;
@@ -157,17 +157,6 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             return runtimeOnly;
         } finally {
             readLock.unlock();
-        }
-    }
-
-    @Override
-    public void setRuntimeOnly(final boolean runtimeOnly) {
-        checkPermission();
-        writeLock.lock();
-        try {
-            this.runtimeOnly = runtimeOnly;
-        } finally {
-            writeLock.unlock();
         }
     }
 
@@ -1028,7 +1017,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         checkPermission();
         readLock.lock();
         try {
-            return additionalPackages == null ? Collections.emptySet() : Collections.unmodifiableSet(new HashSet<RuntimePackageDependency>(additionalPackages.values()));
+            return additionalPackages == null ? Collections.emptySet() : Collections.unmodifiableSet(new HashSet<>(additionalPackages.values()));
         } finally {
             readLock.unlock();
         }

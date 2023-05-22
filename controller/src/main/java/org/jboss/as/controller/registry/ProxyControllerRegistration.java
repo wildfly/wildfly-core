@@ -52,7 +52,6 @@ import org.jboss.dmr.ModelNode;
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-@SuppressWarnings("deprecation")
 final class ProxyControllerRegistration extends AbstractResourceRegistration implements DescriptionProvider {
 
     private static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("proxy-step",
@@ -113,11 +112,6 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     public boolean isRuntimeOnly() {
         checkPermission();
         return true;
-    }
-
-    @Override
-    public void setRuntimeOnly(final boolean runtimeOnly) {
-        checkPermission();
     }
 
     @Override

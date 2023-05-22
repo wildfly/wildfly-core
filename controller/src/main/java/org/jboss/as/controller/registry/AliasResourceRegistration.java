@@ -50,7 +50,6 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Kabir Khan
  */
-@SuppressWarnings("deprecation")
 final class AliasResourceRegistration extends AbstractResourceRegistration implements DescriptionProvider {
 
     private final AliasEntry aliasEntry;
@@ -92,11 +91,6 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     public boolean isRuntimeOnly() {
         //TODO use target resource?
         return target.isRuntimeOnly();
-    }
-
-    @Override
-    public void setRuntimeOnly(final boolean runtimeOnly) {
-        throw alreadyRegistered();
     }
 
     @Override

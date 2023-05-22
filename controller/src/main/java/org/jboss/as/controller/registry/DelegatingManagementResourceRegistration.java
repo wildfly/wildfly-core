@@ -237,12 +237,6 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    public void setRuntimeOnly(boolean runtimeOnly) {
-        getDelegate().setRuntimeOnly(runtimeOnly);
-    }
-
-    @Override
     public ManagementResourceRegistration registerOverrideModel(String name, OverrideDescriptionProvider descriptionProvider) {
         return getDelegate().registerOverrideModel(name, descriptionProvider);
     }
