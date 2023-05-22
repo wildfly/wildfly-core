@@ -51,6 +51,7 @@ import org.jboss.as.repository.RemoteFileRequestAndHandler;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -114,10 +115,10 @@ public class HostControllerClient implements AbstractControllerService.Controlle
         this.controller = controller;
     }
 
-    public void reconnect(final URI uri, final String serverAuthToken, final boolean mgmtSubsystemEndpoint) throws IOException, URISyntaxException {
+    public void reconnect(final URI uri, final AuthenticationContext authenticationContext, final boolean mgmtSubsystemEndpoint) throws IOException, URISyntaxException {
         // In case the server is out of sync after the reconnect, set reload required
         final boolean mgmtEndpointChanged = this.managementSubsystemEndpoint != mgmtSubsystemEndpoint;
-        connection.asyncReconnect(uri, serverAuthToken, new HostControllerConnection.ReconnectCallback() {
+        connection.asyncReconnect(uri, authenticationContext, new HostControllerConnection.ReconnectCallback() {
 
             @Override
             public void reconnected(boolean inSync) {

@@ -35,6 +35,8 @@ import org.wildfly.common.Assert;
  */
 public final class DomainServerSaslClientFactory implements SaslClientFactory {
 
+    public static final SaslClientFactory INSTANCE = new DomainServerSaslClientFactory();
+
     public SaslClient createSaslClient(final String[] mechanisms, final String authorizationId, final String protocol, final String serverName, Map<String, ?> props, final CallbackHandler cbh) throws SaslException {
         Assert.checkNotNullParam("cbh", cbh);
         if (props == null) props = Collections.emptyMap();
@@ -49,4 +51,14 @@ public final class DomainServerSaslClientFactory implements SaslClientFactory {
     public String[] getMechanismNames(final Map<String, ?> props) {
         return new String[] { JBOSS_DOMAIN_SERVER };
     }
+
+    /**
+     * Get the singleton instance of the {@code SaslClientFactory}
+     *
+     * @return the singleton instance of the {@code SaslClientFactory}
+     */
+    public static SaslClientFactory getInstance() {
+        return INSTANCE;
+    }
+
 }

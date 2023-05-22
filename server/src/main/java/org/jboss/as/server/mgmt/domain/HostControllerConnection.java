@@ -22,10 +22,13 @@
 
 package org.jboss.as.server.mgmt.domain;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
 import java.io.DataInput;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.URI;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -51,6 +54,7 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
+import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -69,7 +73,6 @@ class HostControllerConnection extends FutureManagementChannel {
         reconnectionDelay = Long.parseLong(WildFlySecurityManager.getPropertyPrivileged("jboss.as.domain.host.reconnection.delay", "1500"));
     }
 
-    private final String userName;
     private final String serverProcessName;
     private final ProtocolConnectionManager connectionManager;
     private final ManagementChannelHandler channelHandler;
@@ -78,15 +81,17 @@ class HostControllerConnection extends FutureManagementChannel {
     private final ResponseAttachmentInputStreamSupport responseAttachmentSupport;
 
     private volatile ProtocolConnectionConfiguration configuration;
+    private volatile AuthenticationContext authenticationContext;
     private volatile ReconnectRunner reconnectRunner;
 
-    HostControllerConnection(final String serverProcessName, final String userName, final int initialOperationID,
+    HostControllerConnection(final String serverProcessName, final int initialOperationID,
                              final ProtocolConnectionConfiguration configuration,
+                             final AuthenticationContext authenticationContext,
                              final ResponseAttachmentInputStreamSupport responseAttachmentSupport,
                              final ExecutorService executorService) {
-        this.userName = userName;
         this.serverProcessName = serverProcessName;
         this.configuration = configuration;
+        this.authenticationContext = checkNotNullParam("authenticationContext", authenticationContext);
         this.initialOperationID = initialOperationID;
         this.executorService = executorService;
         this.channelHandler = new ManagementChannelHandler(this, executorService);
@@ -118,7 +123,7 @@ class HostControllerConnection extends FutureManagementChannel {
      */
     synchronized void openConnection(final ModelController controller, final ActiveOperation.CompletedCallback<ModelNode> callback) throws Exception {
         boolean ok = false;
-        final Connection connection = connectionManager.connect();
+        final Connection connection = internalConnect();
         try {
             channelHandler.executeRequest(new ServerRegisterRequest(), null, callback);
             // HC is the same version, so it will support sending the subject
@@ -133,6 +138,24 @@ class HostControllerConnection extends FutureManagementChannel {
         }
     }
 
+    private Connection internalConnect() throws IOException {
+        try {
+            return authenticationContext.run(new PrivilegedExceptionAction<Connection>() {
+
+                @Override
+                public Connection run() throws Exception {
+                    return connectionManager.connect();
+                }
+            });
+        } catch (PrivilegedActionException e) {
+            if (e.getCause() instanceof IOException) {
+                throw (IOException) e.getCause();
+            }
+
+            throw new IllegalStateException(e);
+        }
+    }
+
     /**
      * This continuously tries to reconnect in a separate thread and will only stop if the connection was established
      * successfully or the server gets shutdown. If there is currently a reconnect task active the connection paramaters
@@ -142,14 +165,17 @@ class HostControllerConnection extends FutureManagementChannel {
      * @param serverAuthToken the updated authentication token
      * @param callback        the current callback
      */
-    synchronized void asyncReconnect(final URI reconnectUri, String serverAuthToken, final ReconnectCallback callback) {
+    synchronized void asyncReconnect(final URI reconnectUri, AuthenticationContext authenticationContext, final ReconnectCallback callback) {
         if (getState() != State.OPEN) {
             return;
         }
-        // Update the configuration with the new credentials
+
+        // Update the configuration with the new URI
         final ProtocolConnectionConfiguration config = ProtocolConnectionConfiguration.copy(configuration);
         config.setUri(reconnectUri);
         this.configuration = config;
+        // Update the authentication context with the new credentials
+        this.authenticationContext = authenticationContext;
 
         final ReconnectRunner reconnectTask = this.reconnectRunner;
         if (reconnectTask == null) {
@@ -192,7 +218,7 @@ class HostControllerConnection extends FutureManagementChannel {
         }
 
         boolean ok = false;
-        final Connection connection = connectionManager.connect();
+        final Connection connection = internalConnect();
         try {
             // Reconnect to the host-controller
             final ActiveOperation<Boolean, Void> result = channelHandler.executeRequest(new ServerReconnectRequest(), null);
