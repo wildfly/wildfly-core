@@ -125,29 +125,6 @@ public interface AttributeConverter {
     };
 
     /**
-     * Converter for an existing attribute whose default value has changed.
-     * @author Paul Ferraro
-     * @deprecated Use {@link AttributeConverter#DEFAULT_VALUE} instead.
-     */
-    @Deprecated
-    public class DefaultValueAttributeConverter implements AttributeConverter {
-
-        public DefaultValueAttributeConverter(AttributeDefinition attribute) {
-            // Do nothing
-        }
-
-        @Override
-        public void convertOperationParameter(PathAddress address, String attributeName, ModelNode attributeValue, ModelNode operation, TransformationContext context) {
-            DEFAULT_VALUE.convertOperationParameter(address, attributeName, attributeValue, operation, context);
-        }
-
-        @Override
-        public void convertResourceAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
-            DEFAULT_VALUE.convertResourceAttribute(address, attributeName, attributeValue, context);
-        }
-    }
-
-    /**
      * Factory for common types of AttributeConverters
      */
     public static class Factory {
