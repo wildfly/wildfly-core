@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 
@@ -83,69 +84,35 @@ public abstract class AttributeDefinition {
     // 2) See 1)
     //
     // Use the constructor that takes a builder
-
-    protected AttributeDefinition(AbstractAttributeDefinitionBuilder<?, ?> toCopy) {
-        this(toCopy.getName(), toCopy.getXmlName(), toCopy.getDefaultValue(), toCopy.getType(),
-                toCopy.isNillable(), toCopy.isAllowExpression(), toCopy.getMeasurementUnit(), toCopy.getCorrector(),
-                wrapValidator(toCopy.getValidator(), toCopy.isNillable(), toCopy.getAlternatives(), toCopy.isAllowExpression(),
-                        toCopy.getType(), toCopy.getConfiguredMinSize(), toCopy.getConfiguredMaxSize()),
-                toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
-                toCopy.isResourceOnly(), toCopy.getDeprecated(),
-                wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
-                toCopy.getAttributeGroup(), toCopy.getCapabilityReferenceRecorder(), toCopy.getAllowedValues(), toCopy.getArbitraryDescriptors(),
-                toCopy.getUndefinedMetricValue(), immutableSetOf(toCopy.getFlags()));
+    protected AttributeDefinition(AbstractAttributeDefinitionBuilder<?, ?> builder) {
+        this.name = builder.getName();
+        this.xmlName = Optional.ofNullable(builder.getXmlName()).orElse(this.name);
+        this.type = builder.getType();
+        this.required = !builder.isNillable();
+        this.allowExpression = builder.isAllowExpression();
+        this.parser = Optional.of(builder.getParser()).orElse(AttributeParser.SIMPLE);
+        this.defaultValue = Optional.of(builder.getDefaultValue()).filter(ModelNode::isDefined).map(AttributeDefinition::protect).orElse(null);
+        this.measurementUnit = builder.getMeasurementUnit();
+        this.alternatives = builder.getAlternatives();
+        this.requires = builder.getRequires();
+        this.valueCorrector = builder.getCorrector();
+        this.validator = wrapValidator(builder.getValidator(), !this.required, this.alternatives, this.allowExpression, this.type, builder.getConfiguredMinSize(), builder.getConfiguredMaxSize());
+        this.flags = immutableSetOf(builder.getFlags());
+        this.attributeMarshaller = Optional.ofNullable(builder.getAttributeMarshaller()).orElse(AttributeMarshaller.SIMPLE);
+        this.resourceOnly = builder.isResourceOnly();
+        this.accessConstraints = wrapConstraints(builder.getAccessConstraints());
+        this.deprecationData = builder.getDeprecated();
+        this.nilSignificant = builder.getNullSignificant();
+        this.attributeGroup = builder.getAttributeGroup();
+        this.allowedValues = builder.getAllowedValues();
+        this.undefinedMetricValue = Optional.ofNullable(builder.getUndefinedMetricValue()).filter(ModelNode::isDefined).map(AttributeDefinition::protect).orElse(null);
+        this.referenceRecorder = builder.getCapabilityReferenceRecorder();
+        this.arbitraryDescriptors = Optional.ofNullable(builder.getArbitraryDescriptors()).map(Map::copyOf).orElse(Map.of());
     }
 
-    private AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
-                                final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
-                                final ParameterCorrector valueCorrector, final ParameterValidator validator,
-                                final String[] alternatives, final String[] requires, AttributeMarshaller marshaller,
-                                boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
-                                Boolean nilSignificant, AttributeParser parser, final String attributeGroup, CapabilityReferenceRecorder referenceRecorder,
-                                ModelNode[] allowedValues, final Map<String, ModelNode> arbitraryDescriptors, final ModelNode undefinedMetricValue, final Set<AttributeAccess.Flag> flags) {
-
-        this.name = name;
-        this.xmlName = xmlName == null ? name : xmlName;
-        this.type = type;
-        this.required = !allowNull;
-        this.allowExpression = allowExpression;
-        this.parser = parser != null ? parser : AttributeParser.SIMPLE;
-        if (defaultValue != null && defaultValue.isDefined()) {
-            this.defaultValue = defaultValue;
-            this.defaultValue.protect();
-        } else {
-            this.defaultValue = null;
-        }
-        this.measurementUnit = measurementUnit;
-        this.alternatives = alternatives;
-        this.requires = requires;
-        this.valueCorrector = valueCorrector;
-        this.validator = validator;
-        this.flags = flags;
-        this.attributeMarshaller = marshaller != null ? marshaller : AttributeMarshaller.SIMPLE;
-        this.resourceOnly = resourceOnly;
-        this.accessConstraints = accessConstraints;
-        this.deprecationData = deprecationData;
-        this.nilSignificant = nilSignificant;
-        this.attributeGroup = attributeGroup;
-        this.allowedValues = allowedValues;
-        if (undefinedMetricValue != null && undefinedMetricValue.isDefined()) {
-            this.undefinedMetricValue = undefinedMetricValue;
-            this.undefinedMetricValue.protect();
-        } else {
-            this.undefinedMetricValue = null;
-        }
-        this.referenceRecorder = referenceRecorder;
-        if (arbitraryDescriptors != null && !arbitraryDescriptors.isEmpty()) {
-            if (arbitraryDescriptors.size() == 1) {
-                Map.Entry<String, ModelNode> entry = arbitraryDescriptors.entrySet().iterator().next();
-                this.arbitraryDescriptors = Collections.singletonMap(entry.getKey(), entry.getValue());
-            } else {
-                this.arbitraryDescriptors = Collections.unmodifiableMap(new HashMap<>(arbitraryDescriptors));
-            }
-        } else {
-            this.arbitraryDescriptors = Collections.emptyMap();
-        }
+    private static ModelNode protect(ModelNode value) {
+        value.protect();
+        return value;
     }
 
     private static ParameterValidator wrapValidator(ParameterValidator toWrap, boolean allowNull,
