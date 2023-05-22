@@ -211,7 +211,7 @@ class RemotingSubsystem11Parser extends RemotingSubsystem10Parser implements XML
                     break;
                 }
                 case USERNAME: {
-                    username = RemoteOutboundConnectionResourceDefinition.USERNAME.parse(value, reader);
+                    username = RemoteOutboundConnectionResourceDefinition.USERNAME.getParser().parse(RemoteOutboundConnectionResourceDefinition.USERNAME, value, reader);
                     break;
                 }
                 case SECURITY_REALM: {

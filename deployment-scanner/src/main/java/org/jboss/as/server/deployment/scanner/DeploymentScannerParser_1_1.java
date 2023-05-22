@@ -153,7 +153,7 @@ class DeploymentScannerParser_1_1 implements XMLStreamConstants, XMLElementReade
                     break;
                 }
                 case NAME: {
-                    name = DeploymentScannerDefinition.NAME.parse(value,reader).asString();
+                    name = DeploymentScannerDefinition.NAME.getParser().parse(DeploymentScannerDefinition.NAME,value,reader).asString();
                     break;
                 }
                 case RELATIVE_TO: {

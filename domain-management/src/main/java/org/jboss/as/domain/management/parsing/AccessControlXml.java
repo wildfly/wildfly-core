@@ -437,18 +437,18 @@ public class AccessControlXml {
                     }
                     case REQUIRES_READ: {
                         values.put(SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ.getName(),
-                                SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ.parse(value, reader));
+                                SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ.getParser().parse(SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ, value, reader));
                         break;
                     }
                     case REQUIRES_WRITE: {
                         values.put(SensitivityResourceDefinition.CONFIGURED_REQUIRES_WRITE.getName(),
-                                SensitivityResourceDefinition.CONFIGURED_REQUIRES_WRITE.parse(value, reader));
+                                SensitivityResourceDefinition.CONFIGURED_REQUIRES_WRITE.getParser().parse(SensitivityResourceDefinition.CONFIGURED_REQUIRES_WRITE, value, reader));
                         break;
                     }
                     case REQUIRES_ADDRESSABLE: {
                         if (!vault) {
                             values.put(SensitivityResourceDefinition.CONFIGURED_REQUIRES_ADDRESSABLE.getName(),
-                                SensitivityResourceDefinition.CONFIGURED_REQUIRES_ADDRESSABLE.parse(value, reader));
+                                SensitivityResourceDefinition.CONFIGURED_REQUIRES_ADDRESSABLE.getParser().parse(SensitivityResourceDefinition.CONFIGURED_REQUIRES_ADDRESSABLE, value, reader));
                             break;
                         }
                     }

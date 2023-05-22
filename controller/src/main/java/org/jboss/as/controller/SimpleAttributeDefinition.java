@@ -27,8 +27,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.jboss.as.controller.operations.validation.ParameterValidator;
-import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -42,55 +40,8 @@ import org.jboss.dmr.ModelType;
  */
 public class SimpleAttributeDefinition extends AttributeDefinition {
 
-    // NOTE: Standards for creating a constructor variant are:
-    // 1) Don't.
-    // 2) See 1),
-    //
-    // Use the constructor that takes a builder
-
-    /**
-     * Creates a new attribute definition.
-     *
-     * @param name the name of the attribute. Cannot be {@code null}
-     * @param type the type of the attribute value. Cannot be {@code null}
-     * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
-     *
-     * @deprecated use {@link SimpleAttributeDefinitionBuilder}
-     */
-    @Deprecated
-    public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull) {
-        this(new SimpleAttributeDefinitionBuilder(name, type).setRequired(!allowNull));
-    }
-
     protected SimpleAttributeDefinition(AbstractAttributeDefinitionBuilder<?, ? extends SimpleAttributeDefinition> builder) {
         super(builder);
-    }
-
-    /**
-     * Creates and returns a {@link org.jboss.dmr.ModelNode} using the given {@code value} after first validating the node
-     * against {@link #getValidator() this object's validator}.
-     * <p>
-     * If {@code value} is {@code null} an {@link ModelType#UNDEFINED undefined} node will be returned.
-     * </p>
-     *
-     * @param value the value. Will be {@link String#trim() trimmed} before use if not {@code null}.
-     * @param reader {@link XMLStreamReader} from which the {@link XMLStreamReader#getLocation() location} from which
-     *               the attribute value was read can be obtained and used in any {@code XMLStreamException}, in case
-     *               the given value is invalid.
-     * @return {@code ModelNode} representing the parsed value
-     *
-     * @throws javax.xml.stream.XMLStreamException if {@code value} is not valid
-     *
-     * @see #parseAndSetParameter(String, ModelNode, XMLStreamReader)
-     * @deprecated use {@link #getParser()}
-     */
-    @Deprecated
-    public ModelNode parse(final String value, final XMLStreamReader reader) throws XMLStreamException {
-        try {
-            return parse(this, this.getValidator(), value);
-        } catch (OperationFailedException e) {
-            throw new XMLStreamException(e.getFailureDescription().toString(), reader.getLocation());
-        }
     }
 
     /**
@@ -114,7 +65,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @throws XMLStreamException if {@code value} is not valid
      */
     public void parseAndSetParameter(final String value, final ModelNode operation, final XMLStreamReader reader) throws XMLStreamException {
-        ModelNode paramVal = parse(value, reader);
+        ModelNode paramVal = getParser().parse(this, value, reader);
         operation.get(getName()).set(paramVal);
     }
 
@@ -152,17 +103,9 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @param marshallDefault
      * @throws javax.xml.stream.XMLStreamException
      */
-    @Deprecated
     @Override
     public void marshallAsElement(final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
         getMarshaller().marshallAsElement(this, resourceModel, marshallDefault, writer);
-    }
-
-    @Deprecated
-    static ModelNode parse(AttributeDefinition attribute, ParameterValidator validator, final String value) throws OperationFailedException  {
-        ModelNode node = ParseUtils.parseAttributeValue(value, attribute.isAllowExpression(), attribute.getType());
-        validator.validateParameter(attribute.getXmlName(), node);
-        return node;
     }
 
 }

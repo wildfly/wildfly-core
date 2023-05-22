@@ -31,9 +31,6 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -122,11 +119,6 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
 
     public final AttributeDefinition[] getValueTypes() {
         return valueTypes;
-    }
-
-    @Override
-    public ModelNode parse(final String value, final XMLStreamReader reader) throws XMLStreamException {
-        throw new UnsupportedOperationException();
     }
 
     @Override

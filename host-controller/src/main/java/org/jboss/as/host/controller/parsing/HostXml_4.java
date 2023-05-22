@@ -911,7 +911,8 @@ final class HostXml_4 extends CommonXml implements ManagementXmlDelegate {
                 switch (attribute) {
                     case DIRECTORY_GROUPING: {
                         final ModelNode address = parentAddress.clone();
-                        list.add(Util.getWriteAttributeOperation(address, DIRECTORY_GROUPING, HostResourceDefinition.DIRECTORY_GROUPING.parse(value,reader)));
+                        list.add(Util.getWriteAttributeOperation(address, DIRECTORY_GROUPING,
+                                HostResourceDefinition.DIRECTORY_GROUPING.getParser().parse(HostResourceDefinition.DIRECTORY_GROUPING, value,reader)));
                         break;
                     }
                     default:
