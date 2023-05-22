@@ -1176,7 +1176,25 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
         Assert.assertTrue("Expected channel created for the custom patch no found in " + lstChannels, found);
 
-        removeCustomPatch("groupId-patch1:artifactId-patch01");
+        removeCustomPatch(customPatchManifest1);
+    }
+
+    @Test
+    public void removeNonExistentCustomPatch() throws IOException {
+        TestInstallationManager.initialize();
+
+        String customPatchManifest = "groupId-unknown-patch:artifactId-unknown-patch";
+
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrCustomPatchRemoveHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.MANIFEST).set(customPatchManifest);
+
+        ModelNode failed = executeCheckForFailure(op);
+        String expectedCode = "WFLYIM0020:";
+        Assert.assertTrue(
+                getCauseLogFailure(failed.get(FAILURE_DESCRIPTION).asString(), expectedCode),
+                failed.get(FAILURE_DESCRIPTION).asString().startsWith(expectedCode)
+        );
     }
 
     /**

@@ -708,6 +708,19 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     }
 
     @Test
+    public void removeNonExistingCustomPatch() {
+        String host = "primary";
+        String patchManifestGA = "group-unknown:artifact-unknown";
+        AssertionError exception = assertThrows(AssertionError.class, () -> {
+            cli.sendLine("installer remove-custom-patch --manifest=" + patchManifestGA + " --host=" + host);
+        });
+        String expectedMessage = "WFLYIM0020:";
+        String actualMessage = exception.getMessage();
+        Assert.assertTrue(actualMessage, actualMessage.contains(expectedMessage));
+
+    }
+
+    @Test
     public void uploadAndRemoveMultipleCustomPatches() throws IOException {
         String host = "primary";
         String patchManifestGA_1 = "group1:artifact1";
