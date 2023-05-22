@@ -22,6 +22,8 @@
 
 package org.jboss.as.server;
 
+import static org.jboss.as.server.DomainServerCommunicationServices.createAuthenticationContect;
+
 import static org.jboss.as.process.protocol.StreamUtils.readBoolean;
 import static org.jboss.as.process.protocol.StreamUtils.readFully;
 import static org.jboss.as.process.protocol.StreamUtils.readInt;
@@ -151,7 +153,7 @@ public final class DomainServerMain {
                     final HostControllerClient client = getRequiredService(container,
                             HostControllerConnectionService.SERVICE_NAME, HostControllerClient.class);
                     // Reconnect to the host-controller
-                    client.reconnect(hostControllerUri, serverAuthToken, managementSubsystemEndpoint);
+                    client.reconnect(hostControllerUri, createAuthenticationContect(client.getServerName(), serverAuthToken), managementSubsystemEndpoint);
                 }
 
             } catch (InterruptedIOException e) {

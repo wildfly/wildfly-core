@@ -22,7 +22,7 @@ package org.jboss.as.server.security.sasl;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-interface Constants {
+public interface Constants {
 
     static final String JBOSS_DOMAIN_SERVER = "JBOSS-DOMAIN-SERVER";
 
