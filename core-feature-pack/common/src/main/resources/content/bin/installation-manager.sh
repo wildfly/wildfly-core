@@ -7,8 +7,7 @@ if [ x"${INST_MGR_SCRIPT_DEBUG}" == "xtrue" ]; then
 fi
 
 INSTALLATION_HOME="${1}"
-INST_MGR_LOG_FILE="${2}"
-INST_MGR_LOG_PROPERTIES="${3}"
+INST_MGR_LOG_PROPERTIES="${2}"
 
 # For security, reset the environment variables first
 unset INST_MGR_COMMAND
@@ -51,7 +50,7 @@ if [ x"${INST_MGR_COMMAND}" == "x" ]; then
  exit
 fi
 
-export JAVA_OPTS="-Dorg.jboss.boot.log.file=\"${INST_MGR_LOG_FILE}\" -Dlogging.configuration=file:\"${INST_MGR_LOG_PROPERTIES}\" -Dorg.wildfly.prospero.log.file=\"${INST_MGR_LOG_FILE}\" ${JAVA_OPTS}"
+export JAVA_OPTS="-Dlogging.configuration=file:\"${INST_MGR_LOG_PROPERTIES}\" ${JAVA_OPTS}"
 eval "${INST_MGR_COMMAND}"
 INST_MGR_RESULT=$?
 
