@@ -91,7 +91,7 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
+        protected void recreateParentService(OperationContext context, ModelNode parentModel) throws OperationFailedException {
             JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, securityIdentitySupplier, hostInfoAccessor);
         }
 
@@ -133,7 +133,7 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
+        protected void recreateParentService(OperationContext context, ModelNode parentModel) throws OperationFailedException {
             JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, securityIdentitySupplier, hostInfoAccessor);
         }
 
@@ -159,7 +159,7 @@ abstract class ExposeModelResource extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
+        protected void recreateParentService(OperationContext context, ModelNode parentModel) throws OperationFailedException {
             JMXSubsystemAdd.launchServices(context, parentModel, auditLoggerInfo, authorizer, securityIdentitySupplier, hostInfoAccessor);
         }
 
