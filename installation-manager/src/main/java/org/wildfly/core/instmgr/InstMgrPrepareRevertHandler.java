@@ -124,6 +124,9 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
 
                     final List<Repository> repositories = new ArrayList<>();
                     if (!mavenRepoFileIndexes.isEmpty()) {
+                        InstMgrLogger.ROOT_LOGGER.debug("Adding possible custom patch repositories");
+                        repositories.addAll(retrieveAllCustomPatchRepositories(im));
+
                         InstMgrLogger.ROOT_LOGGER.debug("Preparing a server candidate to revert by using Operation Streams");
                         final Path preparationWorkDir = imService.createTempDir("prepare-revert-");
                         addCompleteStep(context, imService, preparationWorkDir.getFileName().toString());

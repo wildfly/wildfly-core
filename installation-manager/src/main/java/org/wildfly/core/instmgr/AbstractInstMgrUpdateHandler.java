@@ -23,7 +23,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FIL
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -36,7 +39,9 @@ import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.core.instmgr.logging.InstMgrLogger;
+import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.Repository;
+import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 import org.wildfly.installationmanager.spi.OsShell;
 
@@ -133,5 +138,24 @@ abstract class AbstractInstMgrUpdateHandler extends InstMgrOperationStepHandler 
             }
         }
         return OsShell.Linux;
+    }
+
+    protected List<Repository> retrieveAllCustomPatchRepositories(InstallationManager im) throws Exception {
+        Collection<Channel> channels = im.listChannels();
+        List<Repository> customChannelRepositories = new ArrayList<>();
+        for (Channel c : channels) {
+            if (c.getName().startsWith(InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX) && c.getManifestCoordinate().isPresent()) {
+                String customPatchManifest = c.getManifestCoordinate().get().replace(":", "_");
+                // and additional verification just to be sure we are using a custom channel created by us
+                String customPatchManifestChannel = c.getName().replace(InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX, "");
+                if (customPatchManifestChannel.equals(customPatchManifest)) {
+                    Path customPatchDir = imService.getCustomPatchDir(customPatchManifest);
+                    if (Files.exists(customPatchDir)) {
+                        customChannelRepositories.addAll(c.getRepositories());
+                    }
+                }
+            }
+        }
+        return customChannelRepositories;
     }
 }

@@ -132,6 +132,9 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
 
                     final List<Repository> repositories = new ArrayList<>();
                     if (listUpdatesWorkDir != null) {
+                        InstMgrLogger.ROOT_LOGGER.debug("Adding possible custom patch repositories");
+                        repositories.addAll(retrieveAllCustomPatchRepositories(im));
+
                         InstMgrLogger.ROOT_LOGGER.debug("Preparing a server candidate by using the workdir:" + listUpdatesWorkDir);
                         // We are coming from a previous list-updates management operation where a Maven Zip Repository
                         // has been uploaded and unzipped on a temp dir.
@@ -145,6 +148,9 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                             repositories.add(uploadedMavenRepo);
                         }
                     } else if (!mavenRepoFileIndexes.isEmpty()) {
+                        InstMgrLogger.ROOT_LOGGER.debug("Adding possible custom patch repositories");
+                        repositories.addAll(retrieveAllCustomPatchRepositories(im));
+
                         // We are uploading a Maven Zip Repository
                         InstMgrLogger.ROOT_LOGGER.debug("Preparing a server candidate by using Operation Streams");
                         final Path prepareUpdateWorkDir = imService.createTempDir("prepare-updates-");

@@ -122,6 +122,8 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
 
                     final List<Repository> repositories = new ArrayList<>();
                     if (!mavenRepoFileIndexes.isEmpty()) {
+                        InstMgrLogger.ROOT_LOGGER.debug("Adding possible custom patch repositories");
+                        repositories.addAll(retrieveAllCustomPatchRepositories(im));
                         InstMgrLogger.ROOT_LOGGER.debug("Processing Streams from Operation Context");
                         repositories.addAll(getRepositoriesFromOperationStreams(context, mavenRepoFileIndexes, listUpdatesWorkDir));
                     } else {
