@@ -4,8 +4,6 @@
 param (
     [Parameter(Mandatory=$true)]
     [string]$installationHome,
-    [Parameter(Mandatory=$true)]
-    [string]$intMgrLogFile,
     [string]$instMgrLogProperties
 )
 
@@ -80,7 +78,7 @@ if ($INST_MGR_COMMAND -eq $null) {
     return
 }
 
-$JAVA_OPTS="-Dorg.jboss.boot.log.file=$intMgrLogFile -Dlogging.configuration=file:$instMgrLogProperties -Dorg.wildfly.prospero.log.file=$intMgrLogFile $JAVA_OPTS"
+$JAVA_OPTS="-Dlogging.configuration=file:$instMgrLogProperties $JAVA_OPTS"
 Write-Host "$INST_MGR_COMMAND"
 
 try

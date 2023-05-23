@@ -388,7 +388,7 @@ while true; do
       echo "INFO: Restarting..."
    elif [ "$JBOSS_STATUS" -eq 20 ]; then
         echo "INFO: Executing the installation manager"
-        "${JBOSS_HOME}/bin/installation-manager.sh" "${JBOSS_HOME}" "${JBOSS_LOG_DIR}/server.log" "${JBOSS_CONFIG_DIR}/logging.properties"
+        "${JBOSS_HOME}/bin/installation-manager.sh" "${JBOSS_HOME}" "${JBOSS_CONFIG_DIR}/logging.properties"
         echo "INFO: Restarting..."
    else
       exit $JBOSS_STATUS
