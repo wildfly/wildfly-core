@@ -114,9 +114,10 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
             final Supplier<ScheduledExecutorService> sesSupplier = sb.requires(ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
             final Supplier<Endpoint> eSupplier = sb.requires(endpointName);
             final Supplier<ProcessStateNotifier> cpsnSupplier = sb.requires(ControlledProcessStateService.INTERNAL_SERVICE_NAME);
+            AuthenticationContext latestAuthenticationContext = DomainServerMain.getLatestAuthenticationContext();
             sb.setInstance(new HostControllerConnectionService(managementURI, serverName, serverProcessName,
-                    createAuthenticationContect(serverName, serverAuthToken), initialOperationID, managementSubsystemEndpoint,
-                    sslContextSupplier, esSupplier, sesSupplier, eSupplier, cpsnSupplier));
+                    latestAuthenticationContext == null ? createAuthenticationContect(serverName, serverAuthToken) : latestAuthenticationContext,
+                    initialOperationID, managementSubsystemEndpoint, sslContextSupplier, esSupplier, sesSupplier, eSupplier, cpsnSupplier));
             sb.install();
         } catch (OperationFailedException e) {
             throw new ServiceRegistryException(e);
