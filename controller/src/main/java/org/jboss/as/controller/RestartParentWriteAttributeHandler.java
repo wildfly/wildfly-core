@@ -24,6 +24,7 @@ package org.jboss.as.controller;
 
 import java.util.Collection;
 
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -67,8 +68,15 @@ public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAt
         if (restartServices) {
             ModelNode parentModel = getModel(context, address);
             if (parentModel != null && context.markResourceRestarted(address, this)) {
-                removeServices(context, serviceName, parentModel);
-                recreateParentService(context, address, parentModel);
+                // Remove/recreate parent services in separate step using an OperationContext relative to the parent resource
+                // This is necessary to support service installation via CapabilityServiceTarget
+                context.addStep(Util.getReadResourceOperation(address), new OperationStepHandler() {
+                    @Override
+                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                        removeServices(context, serviceName, parentModel);
+                        recreateParentService(context, parentModel);
+                    }
+                }, Stage.RUNTIME);
                 handbackHolder.setHandback(parentModel);
             }
         }
@@ -108,12 +116,26 @@ public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAt
     /**
      * Recreate the parent service(s) using the given model.
      *
+     * @param context the operation context relative to the parent resource
+     * @param parentModel the current configuration model for the parent resource and its children
+     *
+     * @throws OperationFailedException if there is a problem installing the services
+     */
+    protected void recreateParentService(OperationContext context, ModelNode parentModel) throws OperationFailedException {
+        this.recreateParentService(context, context.getCurrentAddress(), parentModel);
+    }
+
+    /**
+     * Recreate the parent service(s) using the given model.
+     *
      * @param context the operation context
      * @param parentAddress the address of the parent resource
      * @param parentModel the current configuration model for the parent resource and its children
      *
      * @throws OperationFailedException if there is a problem installing the services
+     * @deprecated Use {@link #recreateParentService(OperationContext, ModelNode) instead
      */
+    @Deprecated(forRemoval = true)
     protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
     }
 
@@ -136,8 +158,15 @@ public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAt
 
         ModelNode parentModel = getOriginalModel(context, address);
         if (parentModel != null && context.revertResourceRestarted(address, this)) {
-            removeServices(context, serviceName, invalidatedParentModel);
-            recreateParentService(context, address, parentModel);
+            // Remove/recreate parent services in separate step using an OperationContext relative to the parent resource
+            // This is necessary to support service installation via CapabilityServiceTarget
+            context.addStep(Util.getReadResourceOperation(address), new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    removeServices(context, serviceName, invalidatedParentModel);
+                    recreateParentService(context, parentModel);
+                }
+            }, Stage.RUNTIME);
         }
     }
 
