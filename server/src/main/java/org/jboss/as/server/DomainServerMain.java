@@ -64,6 +64,7 @@ import org.jboss.stdio.NullInputStream;
 import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
 import org.jboss.threads.AsyncFuture;
+import org.wildfly.security.auth.client.AuthenticationContext;
 
 /**
  * The main entry point for domain-managed server instances.
@@ -71,6 +72,12 @@ import org.jboss.threads.AsyncFuture;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public final class DomainServerMain {
+
+    /**
+     * Cache of the latest {@code AuthenticationContext} based on updates received
+     * from the process controller.
+     */
+    private static volatile AuthenticationContext latestAuthenticationContext;
 
     private DomainServerMain() {
     }
@@ -153,7 +160,9 @@ public final class DomainServerMain {
                     final HostControllerClient client = getRequiredService(container,
                             HostControllerConnectionService.SERVICE_NAME, HostControllerClient.class);
                     // Reconnect to the host-controller
-                    client.reconnect(hostControllerUri, createAuthenticationContect(client.getServerName(), serverAuthToken), managementSubsystemEndpoint);
+                    AuthenticationContext replacementAuthenticationContext = createAuthenticationContect(client.getServerName(), serverAuthToken);
+                    latestAuthenticationContext = replacementAuthenticationContext;
+                    client.reconnect(hostControllerUri, replacementAuthenticationContext, managementSubsystemEndpoint);
                 }
 
             } catch (InterruptedIOException e) {
@@ -190,6 +199,15 @@ public final class DomainServerMain {
             }
         }
         throw new IllegalStateException(); // not reached
+    }
+
+    /**
+     * Get the latest {@code AuthenticationContext} or {@code null} if an update has not been received.
+     *
+     * @return the latest {@code AuthenticationContext} or {@code null} if an update has not been received.
+     */
+    static AuthenticationContext getLatestAuthenticationContext() {
+        return latestAuthenticationContext;
     }
 
     static <T> T getRequiredService(final ServiceContainer container, final ServiceName serviceName, Class<T> type) {
