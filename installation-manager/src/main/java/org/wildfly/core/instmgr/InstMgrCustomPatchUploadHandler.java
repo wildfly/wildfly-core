@@ -107,7 +107,7 @@ public class InstMgrCustomPatchUploadHandler extends InstMgrCustomPatchHandler {
                     final Path customPatchPath = getUploadedMvnRepoRoot(baseTargetDir);
 
                     // Build the channel
-                    Repository customPatchRepository = new Repository("custom-patch", customPatchPath.toUri().toURL().toExternalForm());
+                    Repository customPatchRepository = new Repository("id-" + internalManifestGA, customPatchPath.toUri().toURL().toExternalForm());
 
                     final Channel customChannel =  new Channel(InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX + internalManifestGA, List.of(customPatchRepository), manifestGA);
 

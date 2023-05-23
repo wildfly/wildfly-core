@@ -672,6 +672,34 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertTrue(!Paths.get(new URL(mavenZipRepo.getUrl()).toURI()).toFile().exists());
     }
 
+
+    @Test
+    public void listUpdatesUploadMavenZipWithCustomPatch() throws OperationFailedException, IOException {
+        Path target = TARGET_DIR.resolve("installation-manager.zip");
+        File source = new File(getClass().getResource("test-repo-one").getFile());
+        zipDir(source.toPath().toAbsolutePath(), target);
+
+        // Install custom Patch
+        TestInstallationManager.initialize();
+        String customPatchManifest = "groupId-patch1:artifactId-patch1";
+        createAndUploadCustomPatch(customPatchManifest);
+
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
+        operationBuilder.addFileAsAttachment(target);
+        Operation build = operationBuilder.build();
+
+        executeForResult(build);
+
+        // verify we are using a repository pointing out to the maven zip file
+        Assert.assertEquals(2, TestInstallationManager.findUpdatesRepositories.size());
+
+        // remove the custom Patch
+        removeCustomPatch(customPatchManifest);
+    }
+
     /**
      * Verifies that we have created the expected structure for a repository created to supply the artifacts included in an Uploaded Maven Zip File.
      *
@@ -906,6 +934,40 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertFalse(instMgrService.canPrepareServer());
     }
 
+
+    @Test
+    public void prepareUpdatesUploadMavenZipWithCustomPatch() throws OperationFailedException, IOException, URISyntaxException {
+        InstMgrService instMgrService = (InstMgrService) this.recordedServices.get(InstMgrResourceDefinition.INSTALLATION_MANAGER_CAPABILITY.getCapabilityServiceName()).get();
+
+        Assert.assertFalse(instMgrService.getPreparedServerDir().toFile().exists());
+        Assert.assertEquals(InstMgrCandidateStatus.Status.CLEAN, instMgrService.getCandidateStatus());
+        Assert.assertTrue(instMgrService.canPrepareServer());
+
+        Path target = TARGET_DIR.resolve("installation-manager.zip");
+        File source = new File(getClass().getResource("test-repo-one").getFile());
+        zipDir(source.toPath().toAbsolutePath(), target);
+
+        // Install custom Patch
+        TestInstallationManager.initialize();
+        String customPatchManifest = "groupId-patch1:artifactId-patch1";
+        createAndUploadCustomPatch(customPatchManifest);
+
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
+        operationBuilder.addFileAsAttachment(target);
+        Operation build = operationBuilder.build();
+        executeForResult(build);
+
+        Assert.assertEquals(2, TestInstallationManager.prepareUpdatesRepositories.size());
+
+        // remove the custom Patch
+        removeCustomPatch(customPatchManifest);
+    }
+
+
+
     /**
      * Verifies that we have created the expected structure for a repository created to supply the artifacts included in an Uploaded Maven Zip File.
      *
@@ -1056,6 +1118,38 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertTrue(instMgrService.getPreparedServerDir().toFile().listFiles().length == 1);
         Assert.assertEquals(InstMgrCandidateStatus.Status.PREPARED, instMgrService.getCandidateStatus());
         Assert.assertFalse(instMgrService.canPrepareServer());
+    }
+
+    @Test
+    public void prepareRevertUploadMavenZipWithCustomPatch() throws OperationFailedException, IOException, URISyntaxException {
+        InstMgrService instMgrService = (InstMgrService) this.recordedServices.get(InstMgrResourceDefinition.INSTALLATION_MANAGER_CAPABILITY.getCapabilityServiceName()).get();
+
+        Assert.assertFalse(instMgrService.getPreparedServerDir().toFile().exists());
+        Assert.assertEquals(InstMgrCandidateStatus.Status.CLEAN, instMgrService.getCandidateStatus());
+        Assert.assertTrue(instMgrService.canPrepareServer());
+
+        Path target = TARGET_DIR.resolve("installation-manager.zip");
+        File source = new File(getClass().getResource("test-repo-one").getFile());
+        zipDir(source.toPath().toAbsolutePath(), target);
+
+        // Install custom Patch
+        TestInstallationManager.initialize();
+        String customPatchManifest = "groupId-patch1:artifactId-patch1";
+        createAndUploadCustomPatch(customPatchManifest);
+
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrPrepareRevertHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.MAVEN_REPO_FILES).add(0);
+        op.get(InstMgrConstants.REVISION).set("dummy");
+        OperationBuilder operationBuilder = OperationBuilder.create(op);
+        operationBuilder.addFileAsAttachment(target);
+        Operation build = operationBuilder.build();
+        executeForResult(build);
+
+        Assert.assertEquals(2, TestInstallationManager.prepareRevertRepositories.size());
+
+        // remove the custom Patch
+        removeCustomPatch(customPatchManifest);
     }
 
     @Test
