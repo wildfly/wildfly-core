@@ -10,8 +10,7 @@ if "%INST_MGR_SCRIPT_DEBUG%"=="true" (
 )
 
 set INSTALLATION_HOME=%~1
-set INST_MGR_LOG_FILE=%~2
-set INST_MGR_LOG_PROPERTIES=%~3
+set INST_MGR_LOG_PROPERTIES=%~2
 
 rem For security, reset the environment variables first
 set INST_MGR_COMMAND=
@@ -79,7 +78,7 @@ set "INST_MGR_COMMAND=!INST_MGR_COMMAND:\:=:!"
 set "INST_MGR_COMMAND=!INST_MGR_COMMAND:\\=\!"
 setlocal DisableDelayedExpansion
 
-set JAVA_OPTS=-Dorg.jboss.boot.log.file="%INST_MGR_LOG_FILE%" -Dlogging.configuration=file:"%INST_MGR_LOG_PROPERTIES%" -Dorg.wildfly.prospero.log.file="%INST_MGR_LOG_FILE%" %JAVA_OPTS%
+set JAVA_OPTS=-Dlogging.configuration=file:"%INST_MGR_LOG_PROPERTIES%" %JAVA_OPTS%
 call %INST_MGR_COMMAND%
 set INST_MGR_RESULT=%errorlevel%
 

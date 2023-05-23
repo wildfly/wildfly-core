@@ -335,8 +335,7 @@ Function Start-WildFly-Process {
  Param(
    [Parameter(Mandatory=$true)]
    [string[]] $programArguments,
-   [boolean] $runInBackground = $false,
-   [string] $instMgrLogFile
+   [boolean] $runInBackground = $false
 
 ) #end param
 
@@ -369,7 +368,7 @@ Function Start-WildFly-Process {
 				Start-WildFly-Process -programArguments $programArguments
 			} elseif ($LastExitCode -eq 20) { # :shutdown(perform-installation=true) was called
                 Write-Host "INFO: Executing the installation manager"
-                & "$JBOSS_HOME\bin\installation-manager.ps1" -installationHome "$JBOSS_HOME" -intMgrLogFile "$JBOSS_LOG_DIR\$instMgrLogFile" -instMgrLogProperties "$JBOSS_CONFIG_DIR\logging.properties"
+                & "$JBOSS_HOME\bin\installation-manager.ps1" -installationHome "$JBOSS_HOME" -instMgrLogProperties "$JBOSS_CONFIG_DIR\logging.properties"
                 Write-Host "INFO: Restarting..."
                 Start-WildFly-Process -programArguments $programArguments
             }

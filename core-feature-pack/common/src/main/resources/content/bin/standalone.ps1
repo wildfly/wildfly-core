@@ -44,4 +44,4 @@ $PROG_ARGS = Get-Java-Arguments -entryModule "org.jboss.as.standalone" -serverOp
 
 Display-Environment $global:FINAL_JAVA_OPTS
 
-Start-WildFly-Process -programArguments $PROG_ARGS -runInBackground $runInBackGround -instMgrLogFile "server.log"
+Start-WildFly-Process -programArguments $PROG_ARGS -runInBackground $runInBackGround
