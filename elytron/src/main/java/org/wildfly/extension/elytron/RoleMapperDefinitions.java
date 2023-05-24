@@ -18,8 +18,8 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.parsing.ParseUtils.parsePossibleExpression;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.ROLE_MAPPER_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.ROLE_MAPPER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.ROLE_MAPPER_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.ROLE_MAPPER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
 import java.util.ArrayList;
@@ -76,13 +76,13 @@ import org.wildfly.security.authz.Roles;
  */
 class RoleMapperDefinitions {
 
-    static final SimpleAttributeDefinition SUFFIX = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SUFFIX, ModelType.STRING, false)
+    static final SimpleAttributeDefinition SUFFIX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SUFFIX, ModelType.STRING, false)
         .setAllowExpression(true)
         .setMinSize(1)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition PREFIX = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PREFIX, ModelType.STRING, false)
+    static final SimpleAttributeDefinition PREFIX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PREFIX, ModelType.STRING, false)
         .setAllowExpression(true)
         .setMinSize(1)
         .setRestartAllServices()
@@ -90,76 +90,76 @@ class RoleMapperDefinitions {
 
     static final SimpleAttributeDefinition PATTERN = new SimpleAttributeDefinitionBuilder(RegexAttributeDefinitions.PATTERN).build();
 
-    static final SimpleAttributeDefinition REPLACEMENT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REPLACEMENT, ModelType.STRING, false)
+    static final SimpleAttributeDefinition REPLACEMENT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REPLACEMENT, ModelType.STRING, false)
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition LEFT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.LEFT, ModelType.STRING, true)
+    static final SimpleAttributeDefinition LEFT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LEFT, ModelType.STRING, true)
         .setMinSize(1)
         .setRestartAllServices()
         .setCapabilityReference(ROLE_MAPPER_CAPABILITY, ROLE_MAPPER_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition RIGHT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.RIGHT, ModelType.STRING, true)
+    static final SimpleAttributeDefinition RIGHT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RIGHT, ModelType.STRING, true)
         .setMinSize(1)
         .setRestartAllServices()
         .setCapabilityReference(ROLE_MAPPER_CAPABILITY, ROLE_MAPPER_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition LOGICAL_OPERATION = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.LOGICAL_OPERATION, ModelType.STRING, false)
+    static final SimpleAttributeDefinition LOGICAL_OPERATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LOGICAL_OPERATION, ModelType.STRING, false)
         .setAllowExpression(true)
-        .setAllowedValues(ElytronCommonConstants.AND, ElytronCommonConstants.MINUS, ElytronCommonConstants.OR, ElytronCommonConstants.XOR)
+        .setAllowedValues(ElytronDescriptionConstants.AND, ElytronDescriptionConstants.MINUS, ElytronDescriptionConstants.OR, ElytronDescriptionConstants.XOR)
         .setValidator(EnumValidator.create(LogicalOperation.class))
         .setMinSize(1)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition FROM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.FROM, ModelType.STRING, false)
+    static final SimpleAttributeDefinition FROM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FROM, ModelType.STRING, false)
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final StringListAttributeDefinition TO = new StringListAttributeDefinition.Builder(ElytronCommonConstants.TO)
+    static final StringListAttributeDefinition TO = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.TO)
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final ObjectTypeAttributeDefinition ROLE_MAPPING = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.ROLE_MAPPING, FROM, TO)
+    static final ObjectTypeAttributeDefinition ROLE_MAPPING = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.ROLE_MAPPING, FROM, TO)
             .setMinSize(1)
-            .setXmlName(ElytronCommonConstants.ROLE_MAPPING)
+            .setXmlName(ElytronDescriptionConstants.ROLE_MAPPING)
             .setRestartAllServices()
             .build();
 
-    static final ObjectListAttributeDefinition ROLE_MAPPING_MAP = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.ROLE_MAP, ROLE_MAPPING)
+    static final ObjectListAttributeDefinition ROLE_MAPPING_MAP = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.ROLE_MAP, ROLE_MAPPING)
             .setRestartAllServices()
             .setCorrector(MapToObjectListCorrector.INSTANCE)
             .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
             .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();
 
-    static final SimpleAttributeDefinition KEEP_MAPPED = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.KEEP_MAPPED, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition KEEP_MAPPED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEEP_MAPPED, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition KEEP_NON_MAPPED = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.KEEP_NON_MAPPED, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition KEEP_NON_MAPPED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEEP_NON_MAPPED, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition REPLACE_ALL = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REPLACE_ALL, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition REPLACE_ALL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REPLACE_ALL, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 
-    static final StringListAttributeDefinition ROLES = new StringListAttributeDefinition.Builder(ElytronCommonConstants.ROLES)
+    static final StringListAttributeDefinition ROLES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.ROLES)
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
@@ -168,8 +168,8 @@ class RoleMapperDefinitions {
             .setAttributeParser(AttributeParsers.STRING_LIST_NAMED_ELEMENT)
             .build();
 
-    private static final ElytronCommonAggregateComponentDefinition<RoleMapper> AGGREGATE_ROLE_MAPPER = ElytronCommonAggregateComponentDefinition.create(RoleMapper.class,
-            ElytronCommonConstants.AGGREGATE_ROLE_MAPPER, ElytronCommonConstants.ROLE_MAPPERS, ROLE_MAPPER_RUNTIME_CAPABILITY,
+    private static final AggregateComponentDefinition<RoleMapper> AGGREGATE_ROLE_MAPPER = AggregateComponentDefinition.create(RoleMapper.class,
+            ElytronDescriptionConstants.AGGREGATE_ROLE_MAPPER, ElytronDescriptionConstants.ROLE_MAPPERS, ROLE_MAPPER_RUNTIME_CAPABILITY,
             (RoleMapper[] r) -> RoleMapper.aggregate(r));
 
     static ResourceDefinition getMappedRoleMapperDefinition() {
@@ -214,7 +214,7 @@ class RoleMapperDefinitions {
             }
         };
 
-        return new RoleMapperResourceDefinition(ElytronCommonConstants.MAPPED_ROLE_MAPPER, add, ROLE_MAPPING_MAP, KEEP_MAPPED, KEEP_NON_MAPPED);
+        return new RoleMapperResourceDefinition(ElytronDescriptionConstants.MAPPED_ROLE_MAPPER, add, ROLE_MAPPING_MAP, KEEP_MAPPED, KEEP_NON_MAPPED);
     }
 
     static ResourceDefinition getRegexRoleMapperDefinition() {
@@ -239,10 +239,10 @@ class RoleMapperDefinitions {
             }
         };
 
-        return new RoleMapperResourceDefinition(ElytronCommonConstants.REGEX_ROLE_MAPPER, add, PATTERN, REPLACEMENT, KEEP_NON_MAPPED, REPLACE_ALL);
+        return new RoleMapperResourceDefinition(ElytronDescriptionConstants.REGEX_ROLE_MAPPER, add, PATTERN, REPLACEMENT, KEEP_NON_MAPPED, REPLACE_ALL);
     }
 
-    static ElytronCommonAggregateComponentDefinition<RoleMapper> getAggregateRoleMapperDefinition() {
+    static AggregateComponentDefinition<RoleMapper> getAggregateRoleMapperDefinition() {
         return AGGREGATE_ROLE_MAPPER;
     }
 
@@ -258,7 +258,7 @@ class RoleMapperDefinitions {
 
         };
 
-        return new RoleMapperResourceDefinition(ElytronCommonConstants.ADD_SUFFIX_ROLE_MAPPER, add, SUFFIX);
+        return new RoleMapperResourceDefinition(ElytronDescriptionConstants.ADD_SUFFIX_ROLE_MAPPER, add, SUFFIX);
     }
 
     static ResourceDefinition getAddPrefixRoleMapperDefinition() {
@@ -273,7 +273,7 @@ class RoleMapperDefinitions {
 
         };
 
-        return new RoleMapperResourceDefinition(ElytronCommonConstants.ADD_PREFIX_ROLE_MAPPER, add, PREFIX);
+        return new RoleMapperResourceDefinition(ElytronDescriptionConstants.ADD_PREFIX_ROLE_MAPPER, add, PREFIX);
     }
 
     static ResourceDefinition getLogicalRoleMapperDefinition() {
@@ -320,7 +320,7 @@ class RoleMapperDefinitions {
 
         };
 
-        return new RoleMapperResourceDefinition(ElytronCommonConstants.LOGICAL_ROLE_MAPPER, add, attributes);
+        return new RoleMapperResourceDefinition(ElytronDescriptionConstants.LOGICAL_ROLE_MAPPER, add, attributes);
     }
 
     static ResourceDefinition getConstantRoleMapperDefinition() {
@@ -335,7 +335,7 @@ class RoleMapperDefinitions {
             }
         };
 
-        return new RoleMapperResourceDefinition(ElytronCommonConstants.CONSTANT_ROLE_MAPPER, add, ROLES);
+        return new RoleMapperResourceDefinition(ElytronDescriptionConstants.CONSTANT_ROLE_MAPPER, add, ROLES);
     }
 
     private static class RoleMapperResourceDefinition extends SimpleResourceDefinition {
@@ -367,7 +367,7 @@ class RoleMapperDefinitions {
 
     }
 
-    private static class RoleMapperAddHandler extends ElytronCommonBaseAddHandler {
+    private static class RoleMapperAddHandler extends BaseAddHandler {
 
 
         private RoleMapperAddHandler(AttributeDefinition ... attributes) {
@@ -418,16 +418,16 @@ class RoleMapperDefinitions {
                     ModelNode singleMap = new ModelNode();
 
                     /* Convert strings to expressions if applicable - cannot be run before correcting value due to AS7-6224 */
-                    singleMap.get(ElytronCommonConstants.FROM).set(parsePossibleExpression(mapping.getName()));
+                    singleMap.get(ElytronDescriptionConstants.FROM).set(parsePossibleExpression(mapping.getName()));
 
                     ArrayList<ModelNode> toRolesList = new ArrayList<>();
                     if (mapping.getValue().getType() == ModelType.LIST) {
                         for (ModelNode toRole : mapping.getValue().asList()) {
                             toRolesList.add(parsePossibleExpression(toRole.asString()));
                         }
-                        singleMap.get(ElytronCommonConstants.TO).set(new ModelNode().set(toRolesList));
+                        singleMap.get(ElytronDescriptionConstants.TO).set(new ModelNode().set(toRolesList));
                     } else { // Directly insert ModelNode to use validation error message
-                        singleMap.get(ElytronCommonConstants.TO).set(mapping.getValue());
+                        singleMap.get(ElytronDescriptionConstants.TO).set(mapping.getValue());
                     }
 
                     convertedList.add(singleMap);

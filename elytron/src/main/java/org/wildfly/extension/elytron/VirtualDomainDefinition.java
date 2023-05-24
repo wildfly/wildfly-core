@@ -18,13 +18,13 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_DOMAIN_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.VIRTUAL_SECURITY_DOMAIN_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.VIRTUAL_SECURITY_DOMAIN_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.VIRTUAL_SECURITY_DOMAIN_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.VIRTUAL_SECURITY_DOMAIN_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.DomainDefinition.OUTFLOW_ANONYMOUS;
 import static org.wildfly.extension.elytron.DomainDefinition.outflow;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.INITIAL;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.INITIAL;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -71,14 +71,14 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  */
 class VirtualDomainDefinition extends SimpleResourceDefinition {
 
-    static final StringListAttributeDefinition OUTFLOW_SECURITY_DOMAINS = new StringListAttributeDefinition.Builder(ElytronCommonConstants.OUTFLOW_SECURITY_DOMAINS)
+    static final StringListAttributeDefinition OUTFLOW_SECURITY_DOMAINS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.OUTFLOW_SECURITY_DOMAINS)
             .setRequired(false)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, VIRTUAL_SECURITY_DOMAIN_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition AUTH_METHOD = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.AUTH_METHOD, ModelType.STRING, true)
+    static final SimpleAttributeDefinition AUTH_METHOD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTH_METHOD, ModelType.STRING, true)
             .setDefaultValue(new ModelNode(VirtualDomainMetaData.AuthMethod.OIDC.toString()))
             .setValidator(EnumValidator.create(VirtualDomainMetaData.AuthMethod.class))
             .build();
@@ -87,11 +87,11 @@ class VirtualDomainDefinition extends SimpleResourceDefinition {
 
     private static final VirtualDomainAddHandler ADD = new VirtualDomainAddHandler();
     private static final OperationStepHandler REMOVE = new VirtualDomainRemoveHandler(ADD);
-    private static final WriteAttributeHandler WRITE = new WriteAttributeHandler(ElytronCommonConstants.VIRTUAL_SECURITY_DOMAIN);
+    private static final WriteAttributeHandler WRITE = new WriteAttributeHandler(ElytronDescriptionConstants.VIRTUAL_SECURITY_DOMAIN);
 
     VirtualDomainDefinition() {
-        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.VIRTUAL_SECURITY_DOMAIN),
-                ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.VIRTUAL_SECURITY_DOMAIN))
+        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.VIRTUAL_SECURITY_DOMAIN),
+                ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.VIRTUAL_SECURITY_DOMAIN))
             .setAddHandler(ADD)
             .setRemoveHandler(REMOVE)
             .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -158,7 +158,7 @@ class VirtualDomainDefinition extends SimpleResourceDefinition {
         return virtualDomainBuilder.install();
     }
 
-    private static class VirtualDomainAddHandler extends ElytronCommonBaseAddHandler {
+    private static class VirtualDomainAddHandler extends BaseAddHandler {
 
         private VirtualDomainAddHandler() {
             super(VIRTUAL_SECURITY_DOMAIN_RUNTIME_CAPABILITY, ATTRIBUTES);

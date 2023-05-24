@@ -46,20 +46,22 @@ import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
  */
 abstract class ElytronCommonTrivialAddHandler<T> extends ElytronCommonBaseAddHandler {
 
+    private final Class<?> extensionClass;
     private final RuntimeCapability<?> runtimeCapability;
     private final Mode initialMode;
     private final Mode adminOnlyInitialMode;
 
-    ElytronCommonTrivialAddHandler(Class<T> serviceType, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
-        this(serviceType, Mode.ACTIVE, attributes, runtimeCapability);
+    ElytronCommonTrivialAddHandler(Class<?> extensionClass, Class<T> serviceType, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
+        this(extensionClass, serviceType, Mode.ACTIVE, attributes, runtimeCapability);
     }
 
-    ElytronCommonTrivialAddHandler(Class<T> serviceType, Mode initialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
-        this(serviceType, initialMode, initialMode, attributes, runtimeCapability);
+    ElytronCommonTrivialAddHandler(Class<?> extensionClass, Class<T> serviceType, Mode initialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
+        this(extensionClass, serviceType, initialMode, initialMode, attributes, runtimeCapability);
     }
 
-    ElytronCommonTrivialAddHandler(Class<T> serviceType, Mode initialMode, Mode adminOnlyInitialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
+    ElytronCommonTrivialAddHandler(Class<?> extensionClass, Class<T> serviceType, Mode initialMode, Mode adminOnlyInitialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
         super(new HashSet<>(Collections.singletonList(checkNotNullParam("runtimeCapabilities", runtimeCapability))), attributes);
+        this.extensionClass = extensionClass;
         this.runtimeCapability = runtimeCapability;
         checkNotNullParam("serviceType", serviceType);
         this.initialMode = checkNotNullParam("initialMode", initialMode);
@@ -76,7 +78,7 @@ abstract class ElytronCommonTrivialAddHandler<T> extends ElytronCommonBaseAddHan
         serviceBuilder.setInstance(trivialService);
 
         trivialService.setValueSupplier(getValueSupplier(serviceBuilder, context, resource.getModel()));
-        installedForResource(commonRequirements(serviceBuilder, dependOnProperties(), dependOnProviderRegistration())
+        installedForResource(commonRequirements(extensionClass, serviceBuilder, dependOnProperties(), dependOnProviderRegistration())
                 .setInitialMode(context.getRunningMode() == RunningMode.ADMIN_ONLY ? adminOnlyInitialMode : initialMode)
                 .install(), resource);
     }

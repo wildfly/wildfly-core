@@ -187,7 +187,7 @@ public class ElytronCommonLdapService implements Closeable {
          * @param port - The port to listen on.
          * @return This Builder for subsequent changes.
          */
-        public Builder addTcpServer(final String serviceName, final String hostName, final int port, final String keyStore, final String keyStorePassword) throws URISyntaxException {
+        public Builder addTcpServer(Class<?> testClass, final String serviceName, final String hostName, final int port, final String keyStore, final String keyStorePassword) throws URISyntaxException {
             assertNotStarted();
             if (directoryService == null) {
                 throw new IllegalStateException("The Directory service has not been created.");
@@ -198,7 +198,7 @@ public class ElytronCommonLdapService implements Closeable {
             Transport ldaps = new TcpTransport( hostName, port, 3, 5 );
             ldaps.enableSSL(true);
             server.addTransports(ldaps);
-            server.setKeystoreFile(new File(getClass().getResource(keyStore).getFile()).getAbsolutePath());
+            server.setKeystoreFile(new File(testClass.getResource(keyStore).getFile()).getAbsolutePath());
             server.setCertificatePassword(keyStorePassword);
             server.setDirectoryService(directoryService);
             servers.add(server);

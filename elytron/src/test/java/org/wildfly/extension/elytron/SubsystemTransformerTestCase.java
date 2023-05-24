@@ -19,7 +19,7 @@ package org.wildfly.extension.elytron;
 import static org.jboss.as.model.test.FailedOperationTransformationConfig.REJECTED_RESOURCE;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_4_0;
 import static org.junit.Assert.assertTrue;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.TRUST_MANAGER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUST_MANAGER;
 
 import java.io.IOException;
 import java.util.List;
@@ -68,36 +68,36 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
     @Test
     public void testRejectingTransformersEAP740() throws Exception {
         testRejectingTransformers(EAP_7_4_0, "elytron-transformers-13.0-reject.xml", new FailedOperationTransformationConfig()
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.SERVER_SSL_SNI_CONTEXT, "SNIwithCaret")),
-                        new FailedOperationTransformationConfig.NewAttributesConfig(ElytronCommonConstants.HOST_CONTEXT_MAP)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT, "SNIwithCaret")),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(ElytronDescriptionConstants.HOST_CONTEXT_MAP)
                 )
-            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.PROPERTIES_REALM, "PropertiesRealmEncodingCharset")),
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.PROPERTIES_REALM, "PropertiesRealmEncodingCharset")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
-            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.FILESYSTEM_REALM, "FilesystemRealmEncodingCharset")),
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM, "FilesystemRealmEncodingCharset")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
-            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.FILESYSTEM_REALM, "FilesystemRealmEncrypted")),
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM, "FilesystemRealmEncrypted")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
-            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.FILESYSTEM_REALM, "FilesystemRealmIntegrity")),
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM, "FilesystemRealmIntegrity")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
-            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.JDBC_REALM, "JDBCRealmCharset")),
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM, "JDBCRealmCharset")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
-            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.LDAP_REALM, "LDAPRealmEncodingCharset")),
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.LDAP_REALM, "LDAPRealmEncodingCharset")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
-            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.DISTRIBUTED_REALM, "DistributedRealmFirstUnavailableIgnoredEventEmitted")),
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.DISTRIBUTED_REALM, "DistributedRealmFirstUnavailableIgnoredEventEmitted")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(TRUST_MANAGER, "TrustManagerCrls")), REJECTED_RESOURCE)
-            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.SERVER_SSL_CONTEXT, "ctxSSLv2Hello")),
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_CONTEXT, "ctxSSLv2Hello")),
                     REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.CLIENT_SSL_CONTEXT, "ClientContextSSLv2Hello")),
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, "ClientContextSSLv2Hello")),
                         REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.JAAS_REALM, "myJaasRealm")), REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.VIRTUAL_SECURITY_DOMAIN, "myVirtualDomain")), REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.SECURITY_DOMAIN, "myDomain")), REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.FILE_AUDIT_LOG)),
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.JAAS_REALM, "myJaasRealm")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.VIRTUAL_SECURITY_DOMAIN, "myVirtualDomain")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SECURITY_DOMAIN, "myDomain")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.FILE_AUDIT_LOG)),
                     new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.ENCODING))
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG)),
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG)),
                     new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.ENCODING))
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronCommonConstants.SIZE_ROTATING_FILE_AUDIT_LOG)),
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG)),
                     new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.ENCODING))
         );
     }
@@ -153,7 +153,7 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
 
         //Boot up empty controllers with the resources needed for the ops coming from the xml to work
         KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.withCapabilities(
-                RuntimeCapability.buildDynamicCapabilityName(ElytronCommonCapabilities.DATA_SOURCE_CAPABILITY_NAME, "ExampleDS")
+                RuntimeCapability.buildDynamicCapabilityName(Capabilities.DATA_SOURCE_CAPABILITY_NAME, "ExampleDS")
         ));
         builder.createLegacyKernelServicesBuilder(AdditionalInitialization.MANAGEMENT, controllerVersion, elytronVersion)
                 .addMavenResourceURL(controllerVersion.getCoreMavenGroupId() + ":wildfly-elytron-integration:" + controllerVersion.getCoreVersion())

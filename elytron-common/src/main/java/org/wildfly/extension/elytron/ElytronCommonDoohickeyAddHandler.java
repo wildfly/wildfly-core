@@ -40,11 +40,13 @@ import org.wildfly.common.function.ExceptionFunction;
  */
 abstract class ElytronCommonDoohickeyAddHandler<T> extends ElytronCommonBaseAddHandler {
 
+    private final Class<?> extensionClass;
     private final RuntimeCapability<?> runtimeCapability;
     private final String apiCapabilityName;
 
-    public ElytronCommonDoohickeyAddHandler(RuntimeCapability<?> runtimeCapability, AttributeDefinition[] configAttributes, String apiCapabilityName) {
+    public ElytronCommonDoohickeyAddHandler(Class<?> extensionClass, RuntimeCapability<?> runtimeCapability, AttributeDefinition[] configAttributes, String apiCapabilityName) {
         super(runtimeCapability, configAttributes);
+        this.extensionClass = extensionClass;
         this.runtimeCapability =  runtimeCapability;
         this.apiCapabilityName = apiCapabilityName;
     }
@@ -81,7 +83,7 @@ abstract class ElytronCommonDoohickeyAddHandler<T> extends ElytronCommonBaseAddH
 
         final TrivialService<T> trivialService = new TrivialService<>(doohickey::get, valueConsumer);
 
-        commonRequirements(serviceBuilder.setInitialMode(Mode.ACTIVE).setInstance(trivialService), true, dependOnProviderRegistration()).install();
+        commonRequirements(extensionClass, serviceBuilder.setInitialMode(Mode.ACTIVE).setInstance(trivialService), true, dependOnProviderRegistration()).install();
     }
 
     protected boolean dependOnProviderRegistration() {

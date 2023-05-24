@@ -18,8 +18,8 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonConstants.PERMISSION_SETS;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.SECURITY_PROPERTY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERMISSION_SETS;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_PROPERTY;
 import static org.wildfly.extension.elytron.PermissionMapperDefinitions.PERMISSIONS;
 
 import org.jboss.as.controller.AttributeMarshallers;

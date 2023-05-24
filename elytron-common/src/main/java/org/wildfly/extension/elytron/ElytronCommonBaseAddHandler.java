@@ -37,7 +37,7 @@ import org.jboss.dmr.ModelNode;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author <a href="mailto:carodrig@redhat.com">Cameron Rodriguez</a>
  */
-class ElytronCommonBaseAddHandler extends AbstractAddStepHandler implements ElytronOperationStepHandler {
+abstract class ElytronCommonBaseAddHandler extends AbstractAddStepHandler implements ElytronOperationStepHandler {
 
     private final Set<RuntimeCapability> runtimeCapabilities;
 
@@ -96,5 +96,4 @@ class ElytronCommonBaseAddHandler extends AbstractAddStepHandler implements Elyt
     protected boolean requiresRuntime(OperationContext context) {
         return isServerOrHostController(context);
     }
-
 }

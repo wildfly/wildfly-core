@@ -17,9 +17,9 @@
  */
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.X500_SUBJECT_EVIDENCE_DECODER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.X509_SUBJECT_ALT_NAME_EVIDENCE_DECODER;
+import static org.wildfly.extension.elytron.Capabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.X500_SUBJECT_EVIDENCE_DECODER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.X509_SUBJECT_ALT_NAME_EVIDENCE_DECODER;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -98,25 +98,25 @@ class EvidenceDecoderDefinitions {
         }
     }
 
-    static final SimpleAttributeDefinition ALT_NAME_TYPE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALT_NAME_TYPE, ModelType.STRING, false)
+    static final SimpleAttributeDefinition ALT_NAME_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALT_NAME_TYPE, ModelType.STRING, false)
             .setValidator(new StringAllowedValuesValidator(RFC_822_NAME, DNS_NAME, DIRECTORY_NAME, URI_NAME, IP_ADDRESS, REGISTERED_ID))
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition SEGMENT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SEGMENT, ModelType.INT, true)
+    static final SimpleAttributeDefinition SEGMENT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEGMENT, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.ZERO)
             .setValidator(new IntRangeValidator(0, true, true))
             .setRestartAllServices()
             .build();
 
-    private static final ElytronCommonAggregateComponentDefinition<EvidenceDecoder> AGGREGATE_EVIDENCE_DECODER = ElytronCommonAggregateComponentDefinition.create(EvidenceDecoder.class,
-            ElytronCommonConstants.AGGREGATE_EVIDENCE_DECODER, ElytronCommonConstants.EVIDENCE_DECODERS, EVIDENCE_DECODER_RUNTIME_CAPABILITY, EvidenceDecoder::aggregate);
+    private static final AggregateComponentDefinition<EvidenceDecoder> AGGREGATE_EVIDENCE_DECODER = AggregateComponentDefinition.create(EvidenceDecoder.class,
+            ElytronDescriptionConstants.AGGREGATE_EVIDENCE_DECODER, ElytronDescriptionConstants.EVIDENCE_DECODERS, EVIDENCE_DECODER_RUNTIME_CAPABILITY, EvidenceDecoder::aggregate);
 
     static ResourceDefinition getX500SubjectEvidenceDecoderDefinition() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] {};
-        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<EvidenceDecoder>(EvidenceDecoder.class, attributes, EVIDENCE_DECODER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<EvidenceDecoder>(EvidenceDecoder.class, attributes, EVIDENCE_DECODER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<EvidenceDecoder> getValueSupplier(ServiceBuilder<EvidenceDecoder> serviceBuilder,
@@ -124,12 +124,12 @@ class EvidenceDecoderDefinitions {
                 return () -> new X500SubjectEvidenceDecoder();
             }
         };
-        return new ElytronCommonTrivialResourceDefinition(X500_SUBJECT_EVIDENCE_DECODER, add, attributes, EVIDENCE_DECODER_RUNTIME_CAPABILITY);
+        return new TrivialResourceDefinition(X500_SUBJECT_EVIDENCE_DECODER, add, attributes, EVIDENCE_DECODER_RUNTIME_CAPABILITY);
     }
 
     static ResourceDefinition getX509SubjectAltNameEvidenceDecoderDefinition() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] { ALT_NAME_TYPE, SEGMENT };
-        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<EvidenceDecoder>(EvidenceDecoder.class, attributes, EVIDENCE_DECODER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<EvidenceDecoder>(EvidenceDecoder.class, attributes, EVIDENCE_DECODER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<EvidenceDecoder> getValueSupplier(ServiceBuilder<EvidenceDecoder> serviceBuilder,
@@ -139,10 +139,10 @@ class EvidenceDecoderDefinitions {
                 return () -> new X509SubjectAltNameEvidenceDecoder(SubjectAltNameType.fromName(altNameType).getType(), segment);
             }
         };
-        return new ElytronCommonTrivialResourceDefinition(X509_SUBJECT_ALT_NAME_EVIDENCE_DECODER, add, attributes, EVIDENCE_DECODER_RUNTIME_CAPABILITY);
+        return new TrivialResourceDefinition(X509_SUBJECT_ALT_NAME_EVIDENCE_DECODER, add, attributes, EVIDENCE_DECODER_RUNTIME_CAPABILITY);
     }
 
-    static ElytronCommonAggregateComponentDefinition<EvidenceDecoder> getAggregateEvidenceDecoderDefinition() {
+    static AggregateComponentDefinition<EvidenceDecoder> getAggregateEvidenceDecoderDefinition() {
         return AGGREGATE_EVIDENCE_DECODER;
     }
 

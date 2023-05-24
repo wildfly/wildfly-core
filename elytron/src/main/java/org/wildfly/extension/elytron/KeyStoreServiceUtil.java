@@ -17,9 +17,9 @@
  */
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.KEY_STORE_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
-import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.KeyStore;
 import org.jboss.as.controller.OperationFailedException;

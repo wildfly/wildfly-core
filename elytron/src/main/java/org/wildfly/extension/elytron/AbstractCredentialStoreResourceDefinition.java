@@ -16,12 +16,12 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.CREDENTIAL_STORE_API_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_API_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.STATE;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.populateResponse;
-import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 import static org.wildfly.security.encryption.SecretKeyUtil.exportSecretKey;
 import static org.wildfly.security.encryption.SecretKeyUtil.generateSecretKey;
 import static org.wildfly.security.encryption.SecretKeyUtil.importSecretKey;
@@ -73,7 +73,7 @@ import org.wildfly.security.password.spec.ClearPasswordSpec;
  */
 abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceDefinition {
 
-    static final ServiceUtil<CredentialStore> CREDENTIAL_STORE_UTIL = ServiceUtil.newInstance(CREDENTIAL_STORE_RUNTIME_CAPABILITY, ElytronCommonConstants.CREDENTIAL_STORE, CredentialStore.class);
+    static final ServiceUtil<CredentialStore> CREDENTIAL_STORE_UTIL = ServiceUtil.newInstance(CREDENTIAL_STORE_RUNTIME_CAPABILITY, ElytronDescriptionConstants.CREDENTIAL_STORE, CredentialStore.class);
 
     protected ServiceUtil<CredentialStore> getCredentialStoreUtil() {
         return CREDENTIAL_STORE_UTIL;
@@ -82,33 +82,33 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
     // Operations
 
     static final StandardResourceDescriptionResolver OPERATION_RESOLVER = ElytronExtension
-            .getResourceDescriptionResolver(ElytronCommonConstants.CREDENTIAL_STORE,
-                    ElytronCommonConstants.OPERATIONS);
+            .getResourceDescriptionResolver(ElytronDescriptionConstants.CREDENTIAL_STORE,
+                    ElytronDescriptionConstants.OPERATIONS);
 
-    static final SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronCommonConstants.READ_ALIASES, OPERATION_RESOLVER)
+    static final SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIASES, OPERATION_RESOLVER)
             .setRuntimeOnly()
             .setReadOnly()
             .build();
 
-    static final SimpleAttributeDefinition ALIAS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ALIAS, ModelType.STRING, false)
+    static final SimpleAttributeDefinition ALIAS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALIAS, ModelType.STRING, false)
             .setMinSize(1)
             .build();
 
-    static final SimpleAttributeDefinition KEY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.KEY, ModelType.STRING, false)
+    static final SimpleAttributeDefinition KEY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY, ModelType.STRING, false)
             .setMinSize(1)
             .build();
 
-    static final SimpleOperationDefinition EXPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronCommonConstants.EXPORT_SECRET_KEY, OPERATION_RESOLVER)
+    static final SimpleOperationDefinition EXPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.EXPORT_SECRET_KEY, OPERATION_RESOLVER)
             .setParameters(ALIAS)
             .setRuntimeOnly()
             .build();
 
-    static final SimpleOperationDefinition IMPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronCommonConstants.IMPORT_SECRET_KEY, OPERATION_RESOLVER)
+    static final SimpleOperationDefinition IMPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.IMPORT_SECRET_KEY, OPERATION_RESOLVER)
             .setParameters(ALIAS, KEY)
             .setRuntimeOnly()
             .build();
 
-    static final SimpleOperationDefinition RELOAD = new SimpleOperationDefinitionBuilder(ElytronCommonConstants.RELOAD, OPERATION_RESOLVER)
+    static final SimpleOperationDefinition RELOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD, OPERATION_RESOLVER)
             .setRuntimeOnly()
             .build();
 
@@ -202,9 +202,9 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
             String exportedKey = exportSecretKey(secretKey);
 
             ModelNode result = context.getResult();
-            result.get(ElytronCommonConstants.KEY).set(exportedKey);
+            result.get(ElytronDescriptionConstants.KEY).set(exportedKey);
         } catch (GeneralSecurityException e) {
-            throw ROOT_LOGGER.secretKeyOperationFailed(ElytronCommonConstants.EXPORT_SECRET_KEY, dumpCause(e), e);
+            throw ROOT_LOGGER.secretKeyOperationFailed(ElytronDescriptionConstants.EXPORT_SECRET_KEY, dumpCause(e), e);
         }
     }
 
@@ -223,7 +223,7 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
             storeSecretKey(credentialStore, alias, secretKey);
 
         } catch (GeneralSecurityException e) {
-            throw ROOT_LOGGER.secretKeyOperationFailed(ElytronCommonConstants.IMPORT_SECRET_KEY, dumpCause(e), e);
+            throw ROOT_LOGGER.secretKeyOperationFailed(ElytronDescriptionConstants.IMPORT_SECRET_KEY, dumpCause(e), e);
         }
     }
 
@@ -240,7 +240,7 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
             storeSecretKey(credentialStore, alias, secretKey);
 
         } catch (GeneralSecurityException e) {
-            throw ROOT_LOGGER.secretKeyOperationFailed(ElytronCommonConstants.GENERATE_SECRET_KEY, dumpCause(e), e);
+            throw ROOT_LOGGER.secretKeyOperationFailed(ElytronDescriptionConstants.GENERATE_SECRET_KEY, dumpCause(e), e);
         }
     }
 

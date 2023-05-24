@@ -29,7 +29,7 @@ class CommonAttributes {
 
     // TODO - Check we really want this and not other suitable common location is available.
 
-    static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder(ElytronCommonConstants.PROPERTIES, true)
+    static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTIES, true)
             .setAllowExpression(true)
             .setRestartAllServices().build();
 

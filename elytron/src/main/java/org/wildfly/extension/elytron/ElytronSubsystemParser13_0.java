@@ -18,10 +18,10 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonConstants.ENCRYPTION;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.EXPRESSION;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.EXPRESSION_RESOLVER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.SECURITY_PROPERTY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ENCRYPTION;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.EXPRESSION;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.EXPRESSION_RESOLVER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_PROPERTY;
 
 import org.jboss.as.controller.AttributeMarshallers;
 import org.jboss.as.controller.AttributeParsers;

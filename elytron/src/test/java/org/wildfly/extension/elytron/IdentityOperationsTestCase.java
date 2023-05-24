@@ -24,11 +24,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.ALGORITHM;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.ATTRIBUTES;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.NAME;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.REALM;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.ROLES;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ALGORITHM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ATTRIBUTES;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLES;
 
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -116,7 +116,7 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
                 .setSubsystemXmlResource("identity-management.xml")
                 .build();
 
-        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "FileSystemDomain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "FileSystemDomain");
 
         PathAddress securityDomainAddress = getSecurityDomainAddress("FileSystemDomain");
         String principalName = "plainUser";
@@ -487,19 +487,19 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
     }
 
     private ModelNode createAddIdentityOperation(PathAddress parentAddress, String principalName) {
-        return SubsystemOperations.OperationBuilder.create(ElytronCommonConstants.ADD_IDENTITY, parentAddress.toModelNode())
+        return SubsystemOperations.OperationBuilder.create(ElytronDescriptionConstants.ADD_IDENTITY, parentAddress.toModelNode())
                 .addAttribute(ModifiableRealmDecorator.AddIdentityHandler.IDENTITY, principalName)
                 .build();
     }
 
     private ModelNode createRemoveIdentityOperation(PathAddress parentAddress, String principalName) {
-        return SubsystemOperations.OperationBuilder.create(ElytronCommonConstants.REMOVE_IDENTITY, parentAddress.toModelNode())
+        return SubsystemOperations.OperationBuilder.create(ElytronDescriptionConstants.REMOVE_IDENTITY, parentAddress.toModelNode())
                 .addAttribute(ModifiableRealmDecorator.RemoveIdentityHandler.IDENTITY, principalName)
                 .build();
     }
 
     private ModelNode createReadIdentityOperation(PathAddress parentAddress, String principalName) {
-        return SubsystemOperations.OperationBuilder.create(ElytronCommonConstants.READ_IDENTITY, parentAddress.toModelNode())
+        return SubsystemOperations.OperationBuilder.create(ElytronDescriptionConstants.READ_IDENTITY, parentAddress.toModelNode())
                 .addAttribute(ModifiableRealmDecorator.RemoveIdentityHandler.IDENTITY, principalName)
                 .build();
     }
@@ -511,7 +511,7 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
             valuesNode.add(value);
         }
 
-        return SubsystemOperations.OperationBuilder.create(ElytronCommonConstants.ADD_IDENTITY_ATTRIBUTE, parentAddress.toModelNode())
+        return SubsystemOperations.OperationBuilder.create(ElytronDescriptionConstants.ADD_IDENTITY_ATTRIBUTE, parentAddress.toModelNode())
                 .addAttribute(ModifiableRealmDecorator.AddIdentityAttributeHandler.IDENTITY, principalName)
                 .addAttribute(ModifiableRealmDecorator.AddIdentityAttributeHandler.NAME, key)
                 .addAttribute(ModifiableRealmDecorator.AddIdentityAttributeHandler.VALUE, valuesNode)
@@ -525,7 +525,7 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
             valuesNode.add(value);
         }
 
-        return SubsystemOperations.OperationBuilder.create(ElytronCommonConstants.REMOVE_IDENTITY_ATTRIBUTE, parentAddress.toModelNode())
+        return SubsystemOperations.OperationBuilder.create(ElytronDescriptionConstants.REMOVE_IDENTITY_ATTRIBUTE, parentAddress.toModelNode())
                 .addAttribute(ModifiableRealmDecorator.RemoveIdentityAttributeHandler.IDENTITY, principalName)
                 .addAttribute(ModifiableRealmDecorator.RemoveIdentityAttributeHandler.NAME, key)
                 .addAttribute(ModifiableRealmDecorator.RemoveIdentityAttributeHandler.VALUE, valuesNode)
@@ -535,15 +535,15 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
     private ModelNode createSetPasswordOperation(String credentialName, PathAddress parentAddress, String principalName, ObjectTypeAttributeDefinition passwordDefinition, String password, byte[] salt, Integer iterationCount, String realm, String algorithm, String seed, Integer sequence) {
         ModelNode passwordNode = new ModelNode();
 
-        passwordNode.get(ElytronCommonConstants.NAME).set(credentialName);
-        passwordNode.get(ElytronCommonConstants.PASSWORD).set(password);
+        passwordNode.get(ElytronDescriptionConstants.NAME).set(credentialName);
+        passwordNode.get(ElytronDescriptionConstants.PASSWORD).set(password);
 
         if (salt != null) {
-            passwordNode.get(ElytronCommonConstants.SALT).set(salt);
+            passwordNode.get(ElytronDescriptionConstants.SALT).set(salt);
         }
 
         if (iterationCount != null) {
-            passwordNode.get(ElytronCommonConstants.ITERATION_COUNT).set(iterationCount);
+            passwordNode.get(ElytronDescriptionConstants.ITERATION_COUNT).set(iterationCount);
         }
 
         if (algorithm != null) {
@@ -555,21 +555,21 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         }
 
         if (seed != null) {
-            passwordNode.get(ElytronCommonConstants.SEED).set(seed);
+            passwordNode.get(ElytronDescriptionConstants.SEED).set(seed);
         }
 
         if (sequence != null) {
-            passwordNode.get(ElytronCommonConstants.SEQUENCE).set(sequence);
+            passwordNode.get(ElytronDescriptionConstants.SEQUENCE).set(sequence);
         }
 
-        return SubsystemOperations.OperationBuilder.create(ElytronCommonConstants.SET_PASSWORD, parentAddress.toModelNode())
+        return SubsystemOperations.OperationBuilder.create(ElytronDescriptionConstants.SET_PASSWORD, parentAddress.toModelNode())
                 .addAttribute(ModifiableRealmDecorator.SetPasswordHandler.IDENTITY, principalName)
                 .addAttribute(passwordDefinition, passwordNode)
                 .build();
     }
 
     private ModelNode createReadSecurityDomainIdentityOperation(PathAddress parentAddress, String principalName) {
-        return SubsystemOperations.OperationBuilder.create(SimpleOperationDefinitionBuilder.of(ElytronCommonConstants.READ_IDENTITY, ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.SECURITY_DOMAIN)).build(),
+        return SubsystemOperations.OperationBuilder.create(SimpleOperationDefinitionBuilder.of(ElytronDescriptionConstants.READ_IDENTITY, ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.SECURITY_DOMAIN)).build(),
                 parentAddress.toModelNode())
                 .addAttribute(DomainDefinition.ReadSecurityDomainIdentityHandler.NAME, principalName)
                 .build();
@@ -577,11 +577,11 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
 
     private PathAddress getSecurityDomainAddress(String securityDomain) {
         return PathAddress.pathAddress(ElytronExtension.SUBSYSTEM_PATH,
-                PathElement.pathElement(ElytronCommonConstants.SECURITY_DOMAIN, securityDomain));
+                PathElement.pathElement(ElytronDescriptionConstants.SECURITY_DOMAIN, securityDomain));
     }
 
     private PathAddress getSecurityRealmAddress(String securityRealm) {
-        return PathAddress.pathAddress(ElytronExtension.SUBSYSTEM_PATH, PathElement.pathElement(ElytronCommonConstants.FILESYSTEM_REALM, securityRealm));
+        return PathAddress.pathAddress(ElytronExtension.SUBSYSTEM_PATH, PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM, securityRealm));
     }
 
     public static class LoginPermissionMapper implements PermissionMapper {

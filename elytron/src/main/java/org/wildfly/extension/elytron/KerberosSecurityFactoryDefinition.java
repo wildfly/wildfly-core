@@ -17,8 +17,8 @@
  */
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.OPTION;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.OPTION;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
@@ -71,54 +71,54 @@ class KerberosSecurityFactoryDefinition {
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition PRINCIPAL = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PRINCIPAL, ModelType.STRING, false)
+    static final SimpleAttributeDefinition PRINCIPAL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRINCIPAL, ModelType.STRING, false)
         .setAllowExpression(true)
         .setMinSize(1)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition MINIMUM_REMAINING_LIFETIME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MINIMUM_REMAINING_LIFETIME, ModelType.INT, true)
+    static final SimpleAttributeDefinition MINIMUM_REMAINING_LIFETIME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MINIMUM_REMAINING_LIFETIME, ModelType.INT, true)
         .setAllowExpression(true)
         .setDefaultValue(ModelNode.ZERO)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition REQUEST_LIFETIME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REQUEST_LIFETIME, ModelType.INT, true)
+    static final SimpleAttributeDefinition REQUEST_LIFETIME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REQUEST_LIFETIME, ModelType.INT, true)
         .setAllowExpression(true)
         .setDefaultValue(new ModelNode(GSSCredential.INDEFINITE_LIFETIME))
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition FAIL_CACHE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.FAIL_CACHE, ModelType.INT, true)
+    static final SimpleAttributeDefinition FAIL_CACHE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FAIL_CACHE, ModelType.INT, true)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition SERVER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SERVER, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition SERVER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SERVER, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
         .setDefaultValue(ModelNode.TRUE)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition OBTAIN_KERBEROS_TICKET = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.OBTAIN_KERBEROS_TICKET, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition OBTAIN_KERBEROS_TICKET = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.OBTAIN_KERBEROS_TICKET, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
         .setDefaultValue(ModelNode.FALSE)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition DEBUG = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DEBUG, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition DEBUG = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEBUG, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
         .setDefaultValue(ModelNode.FALSE)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition WRAP_GSS_CREDENTIAL = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.WRAP_GSS_CREDENTIAL, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition WRAP_GSS_CREDENTIAL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.WRAP_GSS_CREDENTIAL, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition REQUIRED = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REQUIRED, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition REQUIRED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REQUIRED, ModelType.BOOLEAN, true)
             .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setRestartAllServices()
@@ -130,7 +130,7 @@ class KerberosSecurityFactoryDefinition {
         mechanismsDefault.add("KRB5");
         mechanismsDefault.add("SPNEGO");
     }
-    static final StringListAttributeDefinition MECHANISM_NAMES = new StringListAttributeDefinition.Builder(ElytronCommonConstants.MECHANISM_NAMES)
+    static final StringListAttributeDefinition MECHANISM_NAMES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_NAMES)
         .setAllowExpression(true)
         .setRequired(false)
         .setDefaultValue(mechanismsDefault)
@@ -141,13 +141,13 @@ class KerberosSecurityFactoryDefinition {
         .setRestartAllServices()
         .build();
 
-    static final StringListAttributeDefinition MECHANISM_OIDS = new StringListAttributeDefinition.Builder(ElytronCommonConstants.MECHANISM_OIDS)
+    static final StringListAttributeDefinition MECHANISM_OIDS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_OIDS)
         .setAllowExpression(true)
         .setRequired(false)
         .setRestartAllServices()
         .build();
 
-    static final PropertiesAttributeDefinition OPTIONS = new PropertiesAttributeDefinition.Builder(ElytronCommonConstants.OPTIONS, true)
+    static final PropertiesAttributeDefinition OPTIONS = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.OPTIONS, true)
             .setAttributeMarshaller(new AttributeMarshallers.PropertiesAttributeMarshaller(null, OPTION, false))
             .setAttributeParser(new AttributeParsers.PropertiesParser(null, OPTION, false))
             .setRestartAllServices()
@@ -155,7 +155,7 @@ class KerberosSecurityFactoryDefinition {
 
     static ResourceDefinition getKerberosSecurityFactoryDefinition() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, FAIL_CACHE, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_NAMES, MECHANISM_OIDS, WRAP_GSS_CREDENTIAL, REQUIRED, OPTIONS };
-        ElytronCommonTrivialAddHandler<CredentialSecurityFactory> add = new ElytronCommonTrivialAddHandler<CredentialSecurityFactory>(CredentialSecurityFactory.class, attributes, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY) {
+        TrivialAddHandler<CredentialSecurityFactory> add = new TrivialAddHandler<CredentialSecurityFactory>(CredentialSecurityFactory.class, attributes, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<CredentialSecurityFactory> getValueSupplier(ServiceBuilder<CredentialSecurityFactory> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
@@ -233,7 +233,7 @@ class KerberosSecurityFactoryDefinition {
             }
         };
 
-        return new ElytronCommonTrivialResourceDefinition(ElytronCommonConstants.KERBEROS_SECURITY_FACTORY, add, attributes, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY);
+        return new TrivialResourceDefinition(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY, add, attributes, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY);
     }
 
 }

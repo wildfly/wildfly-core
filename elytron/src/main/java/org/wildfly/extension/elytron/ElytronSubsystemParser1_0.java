@@ -19,12 +19,12 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.DIR_CONTEXTS;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.JACC_POLICY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.POLICY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.SECURITY_DOMAIN;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.SECURITY_DOMAINS;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.SECURITY_PROPERTY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DIR_CONTEXTS;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JACC_POLICY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.POLICY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_DOMAIN;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_DOMAINS;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_PROPERTY;
 
 import org.jboss.as.controller.AttributeMarshallers;
 import org.jboss.as.controller.AttributeParsers;
@@ -59,7 +59,7 @@ class ElytronSubsystemParser1_0 extends PersistentResourceXMLParser {
             .build();
 
     final PersistentResourceXMLDescription dirContextParser = PersistentResourceXMLDescription.decorator(DIR_CONTEXTS)
-            .addChild(builder(PathElement.pathElement(ElytronCommonConstants.DIR_CONTEXT))
+            .addChild(builder(PathElement.pathElement(ElytronDescriptionConstants.DIR_CONTEXT))
                     .addAttributes(DirContextDefinition.ATTRIBUTES))
             .build();
 
@@ -73,8 +73,8 @@ class ElytronSubsystemParser1_0 extends PersistentResourceXMLParser {
     }
 
     private static class CustomPolicyDefinition {
-        static ObjectTypeAttributeDefinition POLICY = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.CUSTOM_POLICY, PolicyDefinitions.RESOURCE_NAME, PolicyDefinitions.CustomPolicyDefinition.CLASS_NAME, PolicyDefinitions.CustomPolicyDefinition.MODULE).build();
-        static final ObjectListAttributeDefinition POLICIES = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.CUSTOM_POLICY, POLICY)
+        static ObjectTypeAttributeDefinition POLICY = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.CUSTOM_POLICY, PolicyDefinitions.RESOURCE_NAME, PolicyDefinitions.CustomPolicyDefinition.CLASS_NAME, PolicyDefinitions.CustomPolicyDefinition.MODULE).build();
+        static final ObjectListAttributeDefinition POLICIES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.CUSTOM_POLICY, POLICY)
                 .setRequired(false)
                 .build();
     }

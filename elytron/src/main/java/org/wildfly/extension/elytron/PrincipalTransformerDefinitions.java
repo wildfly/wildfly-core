@@ -17,11 +17,11 @@
  */
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CASE_PRINCIPAL_TRANSFORMER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CONSTANT_PRINCIPAL_TRANSFORMER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.REGEX_PRINCIPAL_TRANSFORMER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.REGEX_VALIDATING_PRINCIPAL_TRANSFORMER;
+import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CASE_PRINCIPAL_TRANSFORMER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CONSTANT_PRINCIPAL_TRANSFORMER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REGEX_PRINCIPAL_TRANSFORMER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REGEX_VALIDATING_PRINCIPAL_TRANSFORMER;
 import static org.wildfly.extension.elytron.RegexAttributeDefinitions.PATTERN;
 
 import java.security.Principal;
@@ -52,54 +52,54 @@ import org.wildfly.security.auth.util.RegexNameValidatingRewriter;
  */
 class PrincipalTransformerDefinitions {
 
-    static final SimpleAttributeDefinition CONSTANT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CONSTANT, ModelType.STRING, false)
+    static final SimpleAttributeDefinition CONSTANT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CONSTANT, ModelType.STRING, false)
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition REPLACEMENT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REPLACEMENT, ModelType.STRING, false)
+    static final SimpleAttributeDefinition REPLACEMENT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REPLACEMENT, ModelType.STRING, false)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(0))
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition REPLACE_ALL = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.REPLACE_ALL, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition REPLACE_ALL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REPLACE_ALL, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition MATCH = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MATCH, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition MATCH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.TRUE)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition UPPER_CASE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.UPPER_CASE, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition UPPER_CASE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.UPPER_CASE, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.TRUE)
             .build();
 
-    static final ElytronCommonAggregateComponentDefinition<PrincipalTransformer> AGGREGATE_PRINCIPAL_TRANSFORMER = ElytronCommonAggregateComponentDefinition.create(PrincipalTransformer.class,
-            ElytronCommonConstants.AGGREGATE_PRINCIPAL_TRANSFORMER, ElytronCommonConstants.PRINCIPAL_TRANSFORMERS, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY,
+    static final AggregateComponentDefinition<PrincipalTransformer> AGGREGATE_PRINCIPAL_TRANSFORMER = AggregateComponentDefinition.create(PrincipalTransformer.class,
+            ElytronDescriptionConstants.AGGREGATE_PRINCIPAL_TRANSFORMER, ElytronDescriptionConstants.PRINCIPAL_TRANSFORMERS, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY,
             (PrincipalTransformer[] pt) -> PrincipalTransformer.aggregate(pt));
 
-    static ElytronCommonAggregateComponentDefinition<PrincipalTransformer> getAggregatePrincipalTransformerDefinition() {
+    static AggregateComponentDefinition<PrincipalTransformer> getAggregatePrincipalTransformerDefinition() {
         return AGGREGATE_PRINCIPAL_TRANSFORMER;
     }
 
-    static final ElytronCommonAggregateComponentDefinition<PrincipalTransformer> CHAINED_PRINCIPAL_TRANSFORMER = ElytronCommonAggregateComponentDefinition.create(PrincipalTransformer.class,
-            ElytronCommonConstants.CHAINED_PRINCIPAL_TRANSFORMER, ElytronCommonConstants.PRINCIPAL_TRANSFORMERS, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY,
+    static final AggregateComponentDefinition<PrincipalTransformer> CHAINED_PRINCIPAL_TRANSFORMER = AggregateComponentDefinition.create(PrincipalTransformer.class,
+            ElytronDescriptionConstants.CHAINED_PRINCIPAL_TRANSFORMER, ElytronDescriptionConstants.PRINCIPAL_TRANSFORMERS, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY,
             (PrincipalTransformer[] pt) -> PrincipalTransformer.chain(pt));
 
-    static ElytronCommonAggregateComponentDefinition<PrincipalTransformer> getChainedPrincipalTransformerDefinition() {
+    static AggregateComponentDefinition<PrincipalTransformer> getChainedPrincipalTransformerDefinition() {
         return CHAINED_PRINCIPAL_TRANSFORMER;
     }
 
     static ResourceDefinition getConstantPrincipalTransformerDefinition() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] { CONSTANT };
-        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<PrincipalTransformer>(PrincipalTransformer.class, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<PrincipalTransformer>(PrincipalTransformer.class, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<PrincipalTransformer> getValueSupplier(ServiceBuilder<PrincipalTransformer> serviceBuilder,
@@ -110,12 +110,12 @@ class PrincipalTransformerDefinitions {
             }
         };
 
-        return new ElytronCommonTrivialResourceDefinition(CONSTANT_PRINCIPAL_TRANSFORMER, add, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY);
+        return new TrivialResourceDefinition(CONSTANT_PRINCIPAL_TRANSFORMER, add, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY);
     }
 
     static ResourceDefinition getRegexPrincipalTransformerDefinition() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] { PATTERN, REPLACEMENT, REPLACE_ALL };
-        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<PrincipalTransformer>(PrincipalTransformer.class, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<PrincipalTransformer>(PrincipalTransformer.class, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<PrincipalTransformer> getValueSupplier(ServiceBuilder<PrincipalTransformer> serviceBuilder,
@@ -129,12 +129,12 @@ class PrincipalTransformerDefinitions {
             }
         };
 
-        return new ElytronCommonTrivialResourceDefinition(REGEX_PRINCIPAL_TRANSFORMER, add, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY);
+        return new TrivialResourceDefinition(REGEX_PRINCIPAL_TRANSFORMER, add, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY);
     }
 
     static ResourceDefinition getRegexValidatingPrincipalTransformerDefinition() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] { PATTERN, MATCH };
-        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<PrincipalTransformer>(PrincipalTransformer.class, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<PrincipalTransformer>(PrincipalTransformer.class, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<PrincipalTransformer> getValueSupplier(ServiceBuilder<PrincipalTransformer> serviceBuilder,
@@ -146,12 +146,12 @@ class PrincipalTransformerDefinitions {
             }
         };
 
-        return new ElytronCommonTrivialResourceDefinition(REGEX_VALIDATING_PRINCIPAL_TRANSFORMER, add, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY);
+        return new TrivialResourceDefinition(REGEX_VALIDATING_PRINCIPAL_TRANSFORMER, add, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY);
     }
 
     static ResourceDefinition getCasePrincipalTransformerDefinition() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] {UPPER_CASE};
-        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<PrincipalTransformer>(PrincipalTransformer.class, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<PrincipalTransformer>(PrincipalTransformer.class, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<PrincipalTransformer> getValueSupplier(ServiceBuilder<PrincipalTransformer> serviceBuilder,
@@ -160,6 +160,6 @@ class PrincipalTransformerDefinitions {
                 return () -> PrincipalTransformer.from(new CaseNameRewriter(upperCase).asPrincipalRewriter());
             }
         };
-        return new ElytronCommonTrivialResourceDefinition(CASE_PRINCIPAL_TRANSFORMER, add, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY);
+        return new TrivialResourceDefinition(CASE_PRINCIPAL_TRANSFORMER, add, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY);
     }
 }

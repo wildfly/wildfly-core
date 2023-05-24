@@ -18,45 +18,21 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.AccessController;
 import java.security.KeyStore;
-import java.security.PrivilegedAction;
 import java.security.Provider;
-import java.security.Security;
-import java.security.cert.X509Certificate;
-import java.util.List;
-
-import javax.security.auth.x500.X500Principal;
 
 import org.jboss.as.controller.Extension;
-import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceName;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.mockserver.integration.ClientAndServer;
 import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.x500.cert.acme.AcmeAccount;
-
-import org.wildfly.security.x500.cert.acme.CertificateAuthority;
 
 
 /**
@@ -65,15 +41,10 @@ import org.wildfly.security.x500.cert.acme.CertificateAuthority;
  */
 public abstract class ElytronCommonCertificateAuthoritiesTestCase extends AbstractSubsystemTest {
 
-    private static final Provider wildFlyElytronProvider = new WildFlyElytronProvider();
+    protected static final Provider wildFlyElytronProvider = new WildFlyElytronProvider();
     private static CredentialStoreUtility csUtil = null;
-    private static final String CS_PASSWORD = "super_secret";
+    protected static final String CS_PASSWORD = "super_secret";
     private static final String CERTIFICATE_AUTHORITY_ACCOUNT_NAME = "CertAuthorityAccount";
-    private static final String CERTIFICATE_AUTHORITY_NAME = "CertAuthority";
-    private static final String SIMULATED_LETS_ENCRYPT_ENDPOINT = "http://localhost:4001/directory"; // simulated Let's Encrypt server instance
-    private static final String CERTIFICATE_AUTHORITY_TEST_URL = "http://www.test.com";
-    private static final String ACCOUNTS_KEYSTORE_NAME = "AccountsKeyStore";
-    private static final String KEYSTORE_PASSWORD = "elytron";
     private static ClientAndServer server; // used to simulate a Let's Encrypt server instance
 
 
@@ -81,571 +52,55 @@ public abstract class ElytronCommonCertificateAuthoritiesTestCase extends Abstra
         super(mainSubsystemName, mainExtension);
     }
 
-    private KernelServices services = null;
-
-    private ModelNode assertSuccess(ModelNode response) {
+    protected ModelNode assertSuccess(ModelNode response) {
         if (!response.get(OUTCOME).asString().equals(SUCCESS)) {
             Assert.fail(response.toJSONString(false));
         }
         return response;
     }
 
-    private ModelNode assertFailed(ModelNode response) {
+    protected ModelNode assertFailed(ModelNode response) {
         if (! response.get(OUTCOME).asString().equals(FAILED)) {
             Assert.fail(response.toJSONString(false));
         }
         return response;
     }
 
-    @BeforeClass
-    public static void initTests() {
-        server = new ClientAndServer(4001);
-        AccessController.doPrivileged(new PrivilegedAction<Integer>() {
-            public Integer run() {
-                return Security.insertProviderAt(wildFlyElytronProvider, 1);
-            }
-        });
-        csUtil = new CredentialStoreUtility("target/tlstest.keystore", CS_PASSWORD);
-        csUtil.addEntry("the-key-alias", "Elytron");
-        csUtil.addEntry("primary-password-alias", "Elytron");
+    protected abstract KernelServices getServices();
+
+    protected static void setServer(ClientAndServer newServer) {
+        server = newServer;
     }
 
-    @AfterClass
-    public static void cleanUpTests() {
-        if (server != null) {
-            server.stop();
-        }
-        csUtil.cleanUp();
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                Security.removeProvider(wildFlyElytronProvider.getName());
-
-                return null;
-            }
-        });
+    protected static ClientAndServer getServer() {
+        return server;
     }
 
-    @Before
-    public void init() throws Exception {
-        String subsystemXml;
-        if (JdkUtils.isIbmJdk()) {
-            subsystemXml = "tls-ibm.xml";
-        } else {
-            subsystemXml = JdkUtils.getJavaSpecVersion() <= 12 ? "tls-sun.xml" : "tls-oracle13plus.xml";
-        }
-        services = super.createKernelServicesBuilder(new ElytronCommonTestEnvironment()).setSubsystemXmlResource(subsystemXml).build();
-        if (!services.isSuccessfulBoot()) {
-            if (services.getBootError() != null) {
-                Assert.fail(services.getBootError().toString());
-            }
-            Assert.fail("Failed to boot, no reason provided");
-        }
+    protected static void setCSUtil(CredentialStoreUtility newCSUtil) {
+        csUtil = newCSUtil;
     }
 
-    @Test
-    public void testCreateAccount() throws Exception {
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityWithoutStagingUrl();
-        addCertificateAuthorityAccountWithCustomCA("account1v2");
-        server = setupTestCreateAccount();
-        AcmeAccount acmeAccount = getAcmeAccount();
-        final String NEW_ACCT_LOCATION = "http://localhost:4001/acme/acct/384";
-        try {
-            assertNull(acmeAccount.getAccountUrl());
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-            operation.get(ClientConstants.OP).set(ElytronCommonConstants.CREATE_ACCOUNT);
-            operation.get(ElytronCommonConstants.AGREE_TO_TERMS_OF_SERVICE).set(true);
-            assertSuccess(services.executeOperation(operation));
-            assertEquals(NEW_ACCT_LOCATION, acmeAccount.getAccountUrl());
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        }
+    protected static CredentialStoreUtility getCsUtil() {
+        return csUtil;
     }
 
-    @Test
-    public void testCreateAccountWithCustomCAWithoutStaging() throws Exception {
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityWithStagingUrl();
-        addCertificateAuthorityAccountWithCustomCA("account1v2");
-        server = setupTestCreateAccount();
-        AcmeAccount acmeAccount = getAcmeAccount();
-        final String NEW_ACCT_LOCATION = "http://localhost:4001/acme/acct/384";
-        try {
-            assertNull(acmeAccount.getAccountUrl());
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-            operation.get(ClientConstants.OP).set(ElytronCommonConstants.CREATE_ACCOUNT);
-            operation.get(ElytronCommonConstants.AGREE_TO_TERMS_OF_SERVICE).set(true);
-            assertSuccess(services.executeOperation(operation));
-            assertEquals(NEW_ACCT_LOCATION, acmeAccount.getAccountUrl());
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        }
+    protected String getCertificateAuthorityAccountName() {
+        return CERTIFICATE_AUTHORITY_ACCOUNT_NAME;
     }
-
-    @Test
-    public void testCreateAccountWithCustomCAWithStaging() throws Exception {
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityWithStagingUrl();
-        addCertificateAuthorityAccountWithCustomCA("account1v2");
-        server = setupTestCreateAccount();
-        AcmeAccount acmeAccount = getAcmeAccount();
-        final String NEW_ACCT_LOCATION = "http://localhost:4001/acme/acct/384";
-        try {
-            assertNull(acmeAccount.getAccountUrl());
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-            operation.get(ClientConstants.OP).set(ElytronCommonConstants.CREATE_ACCOUNT);
-            operation.get(ElytronCommonConstants.AGREE_TO_TERMS_OF_SERVICE).set(true);
-            operation.get(ElytronCommonConstants.STAGING).set(true);
-            assertSuccess(services.executeOperation(operation));
-            assertEquals(NEW_ACCT_LOCATION, acmeAccount.getAccountUrl());
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        }
-    }
-
-    @Test
-    public void testCreateAccountWithEmptyStagingUrlAndStagingValueTrue() throws Exception {
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityWithoutStagingUrl();
-        addCertificateAuthorityAccountWithCustomCA("account1v2");
-        server = setupTestCreateAccount();
-        AcmeAccount acmeAccount = getAcmeAccount();
-        try {
-            assertNull(acmeAccount.getAccountUrl());
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-            operation.get(ClientConstants.OP).set(ElytronCommonConstants.CREATE_ACCOUNT);
-            operation.get(ElytronCommonConstants.AGREE_TO_TERMS_OF_SERVICE).set(true);
-            operation.get(ElytronCommonConstants.STAGING).set(true);
-            ModelNode result = services.executeOperation(operation);
-            assertFailed(result);
-            String failureDescription = result.get(FAILURE_DESCRIPTION).asString();
-            assertTrue(failureDescription.contains("WFLYELY01043") && failureDescription.contains("ELY10057"));
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        }
-    }
-
-    @Test
-    public void testCreateAccountNonExistingAlias() throws Exception {
-        String alias = "nonExisting";
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        KeyStore accountsKeyStore = getKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        assertFalse(accountsKeyStore.containsAlias(alias));
-        addCertificateAuthorityWithoutStagingUrl();
-        addCertificateAuthorityAccountWithCustomCA(alias);
-        final String NEW_ACCT_LOCATION = "http://localhost:4001/acme/acct/25";
-        server = setupTestCreateAccountNonExistingAlias();
-        AcmeAccount acmeAccount = getAcmeAccount();
-        try {
-            assertNull(acmeAccount.getAccountUrl());
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-            operation.get(ClientConstants.OP).set(ElytronCommonConstants.CREATE_ACCOUNT);
-            operation.get(ElytronCommonConstants.AGREE_TO_TERMS_OF_SERVICE).set(true);
-            assertSuccess(services.executeOperation(operation));
-            assertEquals(NEW_ACCT_LOCATION, acmeAccount.getAccountUrl());
-            assertTrue(accountsKeyStore.containsAlias(alias));
-            assertTrue(accountsKeyStore.getEntry(alias, new KeyStore.PasswordProtection(KEYSTORE_PASSWORD.toCharArray())) instanceof KeyStore.PrivateKeyEntry);
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        }
-    }
-
-    @Test
-    public void testCreateAccountWithoutAgreeingToTermsOfService() throws Exception {
-        String alias = "invalid";
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityWithoutStagingUrl();
-        addCertificateAuthorityAccountWithCustomCA(alias);
-        server = setupTestCreateAccountWithoutAgreeingToTermsOfService();
-        AcmeAccount acmeAccount = getAcmeAccount();
-        try {
-            assertNull(acmeAccount.getAccountUrl());
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-            operation.get(ClientConstants.OP).set(ElytronCommonConstants.CREATE_ACCOUNT);
-            operation.get(ElytronCommonConstants.AGREE_TO_TERMS_OF_SERVICE).set(false);
-            ModelNode result = services.executeOperation(operation);
-            assertFailed(result);
-            String failureDescription = result.get(FAILURE_DESCRIPTION).asString();
-            assertTrue(failureDescription.contains("WFLYELY01043") && failureDescription.contains("must agree to terms of service"));
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        }
-    }
-
-    @Test
-    public void testUpdateAccount() throws Exception {
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityWithoutStagingUrl();
-        addCertificateAuthorityAccountWithCustomCA("account1v2", new String[] { "mailto:certificates@anexample.com", "mailto:admin@anexample.com" });
-        server = setupTestUpdateAccount();
-        try {
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-            operation.get(ClientConstants.OP).set(ElytronCommonConstants.UPDATE_ACCOUNT);
-            operation.get(ElytronCommonConstants.AGREE_TO_TERMS_OF_SERVICE).set(false);
-            assertSuccess(services.executeOperation(operation));
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        }
-    }
-
-    @Test
-    public void testChangeAccountKey() throws Exception {
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityWithoutStagingUrl();
-        addCertificateAuthorityAccountWithCustomCA("account6v2");
-        server = setupTestChangeAccountKey();
-        // old account
-        AcmeAccount acmeAccount = getAcmeAccount();
-        X509Certificate oldCertificate = acmeAccount.getCertificate();
-        X500Principal oldDn = acmeAccount.getDn();
-        try {
-            assertNull(acmeAccount.getAccountUrl());
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-            operation.get(ClientConstants.OP).set(ElytronCommonConstants.CHANGE_ACCOUNT_KEY);
-            assertSuccess(services.executeOperation(operation));
-            assertTrue(! oldCertificate.equals(acmeAccount.getCertificate()));
-            assertEquals(oldDn, acmeAccount.getDn());
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        }
-    }
-
-    @Test
-    public void testDeactivateAccount() throws Exception {
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityWithoutStagingUrl();
-        addCertificateAuthorityAccountWithCustomCA("account10v2");
-        final String ACCT_LOCATION = "http://localhost:4001/acme/acct/27";
-        server = setupTestDeactivateAccount();
-        AcmeAccount acmeAccount = getAcmeAccount();
-        acmeAccount.setAccountUrl(ACCT_LOCATION);
-        try {
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-            operation.get(ClientConstants.OP).set(ElytronCommonConstants.DEACTIVATE_ACCOUNT);
-            assertSuccess(services.executeOperation(operation));
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        }
-    }
-
-    @Test
-    public void testGetMetadataAllValuesSet() throws Exception {
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityWithoutStagingUrl();
-        addCertificateAuthorityAccountWithCustomCA("account8v2");
-        server = setupTestGetMetadataAllValuesSet();
-        AcmeAccount acmeAccount = getAcmeAccount();
-        try {
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-            operation.get(ClientConstants.OP).set(ElytronCommonConstants.GET_METADATA);
-            ModelNode result = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
-            assertEquals("https://boulder:4431/terms/v7", result.get(ElytronCommonConstants.TERMS_OF_SERVICE).asString());
-            assertEquals("https://github.com/letsencrypt/boulder", result.get(ElytronCommonConstants.WEBSITE).asString());
-            List<ModelNode> caaIdentities = result.get(ElytronCommonConstants.CAA_IDENTITIES).asList();
-            assertEquals("happy-hacker-ca.invalid", caaIdentities.get(0).asString());
-            assertEquals("happy-hacker2-ca.invalid", caaIdentities.get(1).asString());
-            assertTrue(result.get(ElytronCommonConstants.EXTERNAL_ACCOUNT_REQUIRED).asBoolean());
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        }
-    }
-
-    @Test
-    public void testGetMetadataSomeValuesSet() throws Exception {
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityWithoutStagingUrl();
-        addCertificateAuthorityAccountWithCustomCA("account8v2");
-        server = setupTestGetMetadataSomeValuesSet();
-        AcmeAccount acmeAccount = getAcmeAccount();
-        try {
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-            operation.get(ClientConstants.OP).set(ElytronCommonConstants.GET_METADATA);
-            ModelNode result = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
-            assertEquals("https://boulder:4431/terms/v7", result.get(ElytronCommonConstants.TERMS_OF_SERVICE).asString());
-            assertEquals(ModelType.UNDEFINED, result.get(ElytronCommonConstants.WEBSITE).getType());
-            assertEquals(ModelType.UNDEFINED, result.get(ElytronCommonConstants.CAA_IDENTITIES).getType());
-            assertFalse(result.get(ElytronCommonConstants.EXTERNAL_ACCOUNT_REQUIRED).asBoolean());
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        }
-    }
-
-    @Test
-    public void testGetMetadataNoValuesSet() throws Exception {
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityWithoutStagingUrl();
-        addCertificateAuthorityAccountWithCustomCA("account8v2");
-        server = setupTestGetMetadataNoValuesSet();
-        AcmeAccount acmeAccount = getAcmeAccount();
-        try {
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-            operation.get(ClientConstants.OP).set(ElytronCommonConstants.GET_METADATA);
-            ModelNode result = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
-            assertEquals(ModelType.UNDEFINED, result.get(ElytronCommonConstants.TERMS_OF_SERVICE).getType());
-            assertEquals(ModelType.UNDEFINED, result.get(ElytronCommonConstants.WEBSITE).getType());
-            assertEquals(ModelType.UNDEFINED, result.get(ElytronCommonConstants.CAA_IDENTITIES).getType());
-            assertEquals(ModelType.UNDEFINED, result.get(ElytronCommonConstants.EXTERNAL_ACCOUNT_REQUIRED).getType());
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        }
-    }
-
-    @Test
-    public void testAddCertificateAuthorityWithBothUrlsEmpty() {
-        ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority", CERTIFICATE_AUTHORITY_NAME);
-        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        assertFailed(services.executeOperation(operation));
-    }
-
-    @Test
-    public void testAddCertificateAuthorityWithLetsEncryptName() {
-        ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority", CertificateAuthority.LETS_ENCRYPT.getName());
-        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronCommonConstants.URL).set(CERTIFICATE_AUTHORITY_TEST_URL);
-        assertFailed(services.executeOperation(operation));
-    }
-
-    @Test
-    public void testAddCertificateAuthorityWithStagingUrl() {
-        addCertificateAuthorityWithStagingUrl();
-        try {
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority", CERTIFICATE_AUTHORITY_NAME);
-            operation.get(ClientConstants.OP).set(ClientConstants.READ_RESOURCE_OPERATION);
-            ModelNode result = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
-            assertEquals(SIMULATED_LETS_ENCRYPT_ENDPOINT, result.get(ElytronCommonConstants.URL).asString());
-            assertEquals(SIMULATED_LETS_ENCRYPT_ENDPOINT, result.get(ElytronCommonConstants.STAGING_URL).asString());
-        } finally {
-            removeCertificateAuthority();
-        }
-    }
-
-    @Test
-    public void testAddCertificateAuthorityWithEmptyStagingUrl() {
-        addCertificateAuthorityWithoutStagingUrl();
-        try {
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority", CERTIFICATE_AUTHORITY_NAME);
-            operation.get(ClientConstants.OP).set(ClientConstants.READ_RESOURCE_OPERATION);
-            ModelNode result = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
-            assertEquals(SIMULATED_LETS_ENCRYPT_ENDPOINT, result.get(ElytronCommonConstants.URL).asString());
-            assertEquals(ModelType.UNDEFINED, result.get(ElytronCommonConstants.STAGING_URL).getType());
-        } finally {
-            removeCertificateAuthority();
-        }
-    }
-
-    @Test
-    public void testRemoveCertificateAuthority() {
-        addCertificateAuthorityWithStagingUrl();
-        ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority", CERTIFICATE_AUTHORITY_NAME);
-        operation.get(ClientConstants.OP).set(ClientConstants.REMOVE_OPERATION);
-        assertSuccess(services.executeOperation(operation));
-        operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority", CERTIFICATE_AUTHORITY_NAME);
-        operation.get(ClientConstants.OP).set(ClientConstants.READ_RESOURCE_OPERATION);
-        assertFailed(services.executeOperation(operation));
-    }
-
-    @Test
-    public void testRemoveCertificateAuthorityUsedByCertificateAuthorityAccount() throws Exception {
-        addCertificateAuthorityWithoutStagingUrl();
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityAccountWithCustomCA("account");
-        try {
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority", CERTIFICATE_AUTHORITY_NAME);
-            operation.get(ClientConstants.OP).set(ClientConstants.REMOVE_OPERATION);
-            assertFailed(services.executeOperation(operation));
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        }
-    }
-
-    @Test
-    public void testChangeCertificateAuthorityInCertificateAuthorityAccount() throws Exception {
-        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityAccount("alias");
-        checkCertificateAuthorityIs(CertificateAuthority.LETS_ENCRYPT.getName());
-        addCertificateAuthorityWithoutStagingUrl();
-        try {
-            changeCertificateAuthorityInCertificateAuthorityAccount();
-            checkCertificateAuthorityIs(CERTIFICATE_AUTHORITY_NAME);
-        } finally {
-            removeCertificateAuthorityAccount();
-            removeCertificateAuthority();
-        }
-    }
-
-    private void changeCertificateAuthorityInCertificateAuthorityAccount() {
-        ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-        operation.get(ClientConstants.OP).set(ClientConstants.WRITE_ATTRIBUTE_OPERATION);
-        operation.get(ClientConstants.NAME).set(ElytronCommonConstants.CERTIFICATE_AUTHORITY);
-        operation.get(ClientConstants.VALUE).set(CERTIFICATE_AUTHORITY_NAME);
-        assertSuccess(services.executeOperation(operation));
-    }
-
-    private void addCertificateAuthorityWithoutStagingUrl() {
-        ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority", CERTIFICATE_AUTHORITY_NAME);
-        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronCommonConstants.URL).set(SIMULATED_LETS_ENCRYPT_ENDPOINT);
-        assertSuccess(services.executeOperation(operation));
-    }
-
-    private void addCertificateAuthorityWithStagingUrl() {
-        ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority", CERTIFICATE_AUTHORITY_NAME);
-        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronCommonConstants.URL).set(SIMULATED_LETS_ENCRYPT_ENDPOINT);
-        operation.get(ElytronCommonConstants.STAGING_URL).set(SIMULATED_LETS_ENCRYPT_ENDPOINT);
-        assertSuccess(services.executeOperation(operation));
-    }
-
-    private void removeCertificateAuthority() {
-        ModelNode operation;
-        operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority", CERTIFICATE_AUTHORITY_NAME);
-        operation.get(ClientConstants.OP).set(ClientConstants.REMOVE_OPERATION);
-        assertSuccess(services.executeOperation(operation));
-    }
-
-    private void checkCertificateAuthorityIs(String certificateAuthorityName) {
-        ModelNode operation;
-        operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-        operation.get(ClientConstants.OP).set(ClientConstants.READ_RESOURCE_OPERATION);
-        ModelNode result = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
-        assertEquals(certificateAuthorityName, result.get(ElytronCommonConstants.CERTIFICATE_AUTHORITY).asString());
-    }
-
-    private AcmeAccount getAcmeAccount() {
+    
+    protected AcmeAccount getAcmeAccount() {
         ServiceName serviceName = ElytronCommonCapabilities.CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY.getCapabilityServiceName(CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-        return (AcmeAccount) services.getContainer().getService(serviceName).getValue();
+        return (AcmeAccount) getServices().getContainer().getService(serviceName).getValue();
     }
 
-    private KeyStore getKeyStore(String keyStoreName) {
+    protected KeyStore getKeyStore(String keyStoreName) {
         ServiceName serviceName = ElytronCommonCapabilities.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(keyStoreName);
-        return (KeyStore) services.getContainer().getService(serviceName).getValue();
-    }
-
-    private void addCertificateAuthorityAccount(String alias) throws Exception {
-        ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
-        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronCommonConstants.CONTACT_URLS).add("mailto:admin@anexample.com");
-        operation.get(ElytronCommonConstants.CERTIFICATE_AUTHORITY).set(CertificateAuthority.LETS_ENCRYPT.getName());
-        operation.get(ElytronCommonConstants.KEY_STORE).set(ACCOUNTS_KEYSTORE_NAME);
-        operation.get(ElytronCommonConstants.ALIAS).set(alias);
-        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set(KEYSTORE_PASSWORD);
-        assertSuccess(services.executeOperation(operation));
-    }
-
-    private void addCertificateAuthorityAccountWithCustomCA(String alias) throws Exception {
-        ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronCommonConstants.CONTACT_URLS).add("mailto:admin@anexample.com");
-        operation.get(ElytronCommonConstants.CERTIFICATE_AUTHORITY).set(CERTIFICATE_AUTHORITY_NAME);
-        operation.get(ElytronCommonConstants.KEY_STORE).set(ACCOUNTS_KEYSTORE_NAME);
-        operation.get(ElytronCommonConstants.ALIAS).set(alias);
-        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set(KEYSTORE_PASSWORD);
-        assertSuccess(services.executeOperation(operation));
-    }
-
-    private void addCertificateAuthorityAccountWithCustomCA(String alias, String[] contactUrlsList) throws Exception {
-        ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
-        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        ModelNode contactUrls = new ModelNode();
-        for (String contactUrl : contactUrlsList) {
-            contactUrls = contactUrls.add(contactUrl);
-        }
-        operation.get(ElytronCommonConstants.CONTACT_URLS).set(contactUrls);
-        operation.get(ElytronCommonConstants.CERTIFICATE_AUTHORITY).set(CERTIFICATE_AUTHORITY_NAME);
-        operation.get(ElytronCommonConstants.KEY_STORE).set(ACCOUNTS_KEYSTORE_NAME);
-        operation.get(ElytronCommonConstants.ALIAS).set(alias);
-        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set(KEYSTORE_PASSWORD);
-        assertSuccess(services.executeOperation(operation));
-    }
-
-    private void removeCertificateAuthorityAccount() {
-        ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
-        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-        operation.get(ClientConstants.OP).set(ClientConstants.REMOVE_OPERATION);
-        assertSuccess(services.executeOperation(operation));
-    }
-
-    private void addKeyStore(String keyStoreName) throws Exception {
-        Path resources = Paths.get(ElytronCommonKeyStoresTestCase.class.getResource(".").toURI());
-        Files.copy(resources.resolve("account.keystore"), resources.resolve("test-copy.keystore"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
-        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store", keyStoreName);
-        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronCommonConstants.PATH).set(resources + "/test-copy.keystore");
-        operation.get(ElytronCommonConstants.TYPE).set("JKS");
-        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set(KEYSTORE_PASSWORD);
-        assertSuccess(services.executeOperation(operation));
-    }
-
-    private void removeKeyStore(String keyStoreName) {
-        ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
-        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store", keyStoreName);
-        operation.get(ClientConstants.OP).set(ClientConstants.REMOVE_OPERATION);
-        assertSuccess(services.executeOperation(operation));
+        return (KeyStore) getServices().getContainer().getService(serviceName).getValue();
     }
 
     /* -- Helper methods used to set up the messages that should be sent from the mock Let's Encrypt server to our ACME client. -- */
 
-    private ClientAndServer setupTestCreateAccount() {
+    protected ClientAndServer setupTestCreateAccount() {
 
         // set up a mock Let's Encrypt server
         final String DIRECTORY_RESPONSE_BODY = "{" + System.lineSeparator()  +
@@ -692,7 +147,7 @@ public abstract class ElytronCommonCertificateAuthoritiesTestCase extends Abstra
                 .build();
     }
 
-    private ClientAndServer setupTestCreateAccountNonExistingAlias() {
+    protected ClientAndServer setupTestCreateAccountNonExistingAlias() {
 
         // set up a mock Let's Encrypt server
         final String DIRECTORY_RESPONSE_BODY = "{" + System.lineSeparator()  +
@@ -739,7 +194,7 @@ public abstract class ElytronCommonCertificateAuthoritiesTestCase extends Abstra
                 .build();
     }
 
-    private ClientAndServer setupTestCreateAccountWithoutAgreeingToTermsOfService() {
+    protected ClientAndServer setupTestCreateAccountWithoutAgreeingToTermsOfService() {
 
         // set up a mock Let's Encrypt server
         final String DIRECTORY_RESPONSE_BODY = "{" + System.lineSeparator()  +
@@ -778,7 +233,7 @@ public abstract class ElytronCommonCertificateAuthoritiesTestCase extends Abstra
                 .build();
     }
 
-    private ClientAndServer setupTestUpdateAccount() {
+    protected ClientAndServer setupTestUpdateAccount() {
 
         // set up a mock Let's Encrypt server
         final String DIRECTORY_RESPONSE_BODY = "{" + System.lineSeparator()  +
@@ -835,7 +290,7 @@ public abstract class ElytronCommonCertificateAuthoritiesTestCase extends Abstra
                 .build();
     }
 
-    private ClientAndServer setupTestChangeAccountKey() {
+    protected ClientAndServer setupTestChangeAccountKey() {
 
         // set up a mock Let's Encrypt server
         final String DIRECTORY_RESPONSE_BODY = "{" + System.lineSeparator() +
@@ -905,7 +360,7 @@ public abstract class ElytronCommonCertificateAuthoritiesTestCase extends Abstra
                 .build();
     }
 
-    private ClientAndServer setupTestDeactivateAccount() {
+    protected ClientAndServer setupTestDeactivateAccount() {
         final String ACCT_PATH = "/acme/acct/27";
 
         // set up a mock Let's Encrypt server
@@ -951,7 +406,7 @@ public abstract class ElytronCommonCertificateAuthoritiesTestCase extends Abstra
                 .build();
     }
 
-    private ClientAndServer setupTestGetMetadataAllValuesSet() {
+    protected ClientAndServer setupTestGetMetadataAllValuesSet() {
         // set up a mock Let's Encrypt server
         final String DIRECTORY_RESPONSE_BODY = "{" + System.lineSeparator()  +
                 "  \"JDkpnLkaC1Q\": \"https://community.letsencrypt.org/t/adding-random-entries-to-the-directory/33417\"," + System.lineSeparator()  +
@@ -976,7 +431,7 @@ public abstract class ElytronCommonCertificateAuthoritiesTestCase extends Abstra
                 .build();
     }
 
-    private ClientAndServer setupTestGetMetadataSomeValuesSet() {
+    protected ClientAndServer setupTestGetMetadataSomeValuesSet() {
         // set up a mock Let's Encrypt server
         final String DIRECTORY_RESPONSE_BODY = "{" + System.lineSeparator() +
                 "  \"LRkPnZpS4yE\": \"https://community.letsencrypt.org/t/adding-random-entries-to-the-directory/33417\"," + System.lineSeparator() +
@@ -995,7 +450,7 @@ public abstract class ElytronCommonCertificateAuthoritiesTestCase extends Abstra
                 .build();
     }
 
-    private ClientAndServer setupTestGetMetadataNoValuesSet() {
+    protected ClientAndServer setupTestGetMetadataNoValuesSet() {
         // set up a mock Let's Encrypt server
         final String DIRECTORY_RESPONSE_BODY = "{" + System.lineSeparator() +
                 "  \"N6HzXUZ-eWI\": \"https://community.letsencrypt.org/t/adding-random-entries-to-the-directory/33417\"," + System.lineSeparator() +

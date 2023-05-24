@@ -54,41 +54,41 @@ public class AuthenticationClientTestCase extends AbstractSubsystemTest {
     @Test
     public void testAddWebservicesAuthConfig() {
         ModelNode webservices = new ModelNode();
-        webservices.get(ElytronCommonConstants.HTTP_MECHANISM).set("BASIC");
-        webservices.get(ElytronCommonConstants.WS_SECURITY_TYPE).set("UsernameToken");
+        webservices.get(ElytronDescriptionConstants.HTTP_MECHANISM).set("BASIC");
+        webservices.get(ElytronDescriptionConstants.WS_SECURITY_TYPE).set("UsernameToken");
 
         ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronCommonConstants.WEBSERVICES).set(webservices);
+        operation.get(ElytronDescriptionConstants.WEBSERVICES).set(webservices);
         assertSuccess(services.executeOperation(operation));
 
         operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
         operation.get(ClientConstants.OP).set(ClientConstants.READ_RESOURCE_OPERATION);
         ModelNode result = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
-        assertEquals(webservices, result.get(ElytronCommonConstants.WEBSERVICES));
+        assertEquals(webservices, result.get(ElytronDescriptionConstants.WEBSERVICES));
     }
 
     @Test
     public void testAddInvalidHTTPMechWebservicesAuthConfig() {
         ModelNode webservices = new ModelNode();
-        webservices.get(ElytronCommonConstants.HTTP_MECHANISM).set("DIGEST");
+        webservices.get(ElytronDescriptionConstants.HTTP_MECHANISM).set("DIGEST");
         ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronCommonConstants.WEBSERVICES).set(webservices);
+        operation.get(ElytronDescriptionConstants.WEBSERVICES).set(webservices);
         assertFailed(services.executeOperation(operation));
     }
 
     @Test
     public void testAddInvalidWSSecurityWebservicesAuthConfig() {
         ModelNode webservices = new ModelNode();
-        webservices.get(ElytronCommonConstants.HTTP_MECHANISM).set("InvalidToken");
+        webservices.get(ElytronDescriptionConstants.HTTP_MECHANISM).set("InvalidToken");
         ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronCommonConstants.WEBSERVICES).set(webservices);
+        operation.get(ElytronDescriptionConstants.WEBSERVICES).set(webservices);
         assertFailed(services.executeOperation(operation));
     }
 
@@ -97,24 +97,24 @@ public class AuthenticationClientTestCase extends AbstractSubsystemTest {
         ModelNode webservices = new ModelNode();
 
         ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronCommonConstants.WEBSERVICES).set(webservices);
+        operation.get(ElytronDescriptionConstants.WEBSERVICES).set(webservices);
         assertSuccess(services.executeOperation(operation));
 
         operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
         operation.get(ClientConstants.OP).set(ClientConstants.READ_RESOURCE_OPERATION);
         ModelNode result = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
-        assertEquals(webservices, result.get(ElytronCommonConstants.WEBSERVICES));
+        assertEquals(webservices, result.get(ElytronDescriptionConstants.WEBSERVICES));
 
         operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
         operation.get(ClientConstants.OP).set(ClientConstants.REMOVE_OPERATION);
         assertSuccess(services.executeOperation(operation));
 
         operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronCommonConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, "myAuthConfig");
         operation.get(ClientConstants.OP).set(ClientConstants.READ_RESOURCE_OPERATION);
         assertFailed(services.executeOperation(operation)).get(ClientConstants.RESULT);
     }

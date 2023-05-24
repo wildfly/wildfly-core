@@ -18,7 +18,7 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.util.HashMap;
 import java.util.Map;

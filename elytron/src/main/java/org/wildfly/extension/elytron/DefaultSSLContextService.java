@@ -18,7 +18,7 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.ElytronDefinition.RESTORE_DEFAULT_SSL_CONTEXT;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
-import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
@@ -40,7 +40,7 @@ import org.jboss.msc.service.StopContext;
  */
 class DefaultSSLContextService implements Service {
 
-    static final ServiceName SERVICE_NAME = ElytronExtension.BASE_SERVICE_NAME.append(ElytronCommonConstants.SSL_CONTEXT_REGISTRATION);
+    static final ServiceName SERVICE_NAME = ElytronExtension.BASE_SERVICE_NAME.append(ElytronDescriptionConstants.SSL_CONTEXT_REGISTRATION);
 
     private static final boolean RESTORE_SSL_CONTEXT = doPrivileged((PrivilegedAction<Boolean>) () -> Boolean.getBoolean(RESTORE_DEFAULT_SSL_CONTEXT));
 

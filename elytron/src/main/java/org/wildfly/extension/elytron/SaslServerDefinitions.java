@@ -18,20 +18,20 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.AvailableMechanismsRuntimeResource.wrap;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.PROVIDERS_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SASL_SERVER_FACTORY_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SASL_SERVER_FACTORY_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_DOMAIN_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SASL_SERVER_FACTORY_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SASL_SERVER_FACTORY_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
 import static org.wildfly.extension.elytron.CommonAttributes.PROPERTIES;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.FILTER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.FILTERS;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTERS;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
-import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.PrivilegedExceptionAction;
 import java.security.Provider;
@@ -93,97 +93,97 @@ import org.wildfly.security.sasl.util.SetMechanismInformationSaslServerFactory;
  */
 class SaslServerDefinitions {
 
-    static final SimpleAttributeDefinition SERVER_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SERVER_NAME, ModelType.STRING, true)
+    static final SimpleAttributeDefinition SERVER_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SERVER_NAME, ModelType.STRING, true)
         .setMinSize(1)
         .setAllowExpression(true)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PROTOCOL, ModelType.STRING, true)
+    static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROTOCOL, ModelType.STRING, true)
         .setMinSize(1)
         .setAllowExpression(true)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SECURITY_DOMAIN, ModelType.STRING, false)
+    static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECURITY_DOMAIN, ModelType.STRING, false)
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, SASL_AUTHENTICATION_FACTORY_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition SASL_SERVER_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SASL_SERVER_FACTORY, ModelType.STRING, false)
+    static final SimpleAttributeDefinition SASL_SERVER_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SASL_SERVER_FACTORY, ModelType.STRING, false)
         .setMinSize(1)
         .setRestartAllServices()
         .setCapabilityReference(SASL_SERVER_FACTORY_CAPABILITY, SASL_SERVER_FACTORY_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition PROVIDERS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PROVIDERS, ModelType.STRING, true)
+    static final SimpleAttributeDefinition PROVIDERS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROVIDERS, ModelType.STRING, true)
         .setMinSize(1)
         .setRestartAllServices()
         .setCapabilityReference(PROVIDERS_CAPABILITY, SASL_SERVER_FACTORY_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition ENABLING = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ENABLING, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition ENABLING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENABLING, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
         .setDefaultValue(ModelNode.TRUE)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition MECHANISM_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MECHANISM_NAME, ModelType.STRING, true)
+    static final SimpleAttributeDefinition MECHANISM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MECHANISM_NAME, ModelType.STRING, true)
         .setAllowExpression(true)
         .build();
 
-    static final SimpleAttributeDefinition PROVIDER_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PROVIDER_NAME, ModelType.STRING, false)
+    static final SimpleAttributeDefinition PROVIDER_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROVIDER_NAME, ModelType.STRING, false)
         .setAllowExpression(true)
         .build();
 
-    static final SimpleAttributeDefinition PROVIDER_VERSION = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PROVIDER_VERSION, ModelType.DOUBLE, true)
+    static final SimpleAttributeDefinition PROVIDER_VERSION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROVIDER_VERSION, ModelType.DOUBLE, true)
         .setAllowExpression(true)
         .build();
 
-    static final SimpleAttributeDefinition VERSION_COMPARISON = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.VERSION_COMPARISON, ModelType.STRING, false)
+    static final SimpleAttributeDefinition VERSION_COMPARISON = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VERSION_COMPARISON, ModelType.STRING, false)
         .setRequired(false)
         .setAllowExpression(true)
-        .setDefaultValue(new ModelNode(ElytronCommonConstants.LESS_THAN))
-        .setRequires(ElytronCommonConstants.PROVIDER_VERSION)
-        .setAllowedValues(ElytronCommonConstants.LESS_THAN, ElytronCommonConstants.GREATER_THAN)
+        .setDefaultValue(new ModelNode(ElytronDescriptionConstants.LESS_THAN))
+        .setRequires(ElytronDescriptionConstants.PROVIDER_VERSION)
+        .setAllowedValues(ElytronDescriptionConstants.LESS_THAN, ElytronDescriptionConstants.GREATER_THAN)
         .setValidator(EnumValidator.create(Comparison.class))
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
-    static final ObjectTypeAttributeDefinition MECH_PROVIDER_FILTER = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.FILTER, MECHANISM_NAME, PROVIDER_NAME, PROVIDER_VERSION, VERSION_COMPARISON)
+    static final ObjectTypeAttributeDefinition MECH_PROVIDER_FILTER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.FILTER, MECHANISM_NAME, PROVIDER_NAME, PROVIDER_VERSION, VERSION_COMPARISON)
         .setRequired(false)
         .setXmlName(FILTER)
         .build();
 
-    static final ObjectListAttributeDefinition MECH_PROVIDER_FILTERS = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.FILTERS, MECH_PROVIDER_FILTER)
+    static final ObjectListAttributeDefinition MECH_PROVIDER_FILTERS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.FILTERS, MECH_PROVIDER_FILTER)
         .setMinSize(1)
         .setRequired(false)
         .setRestartAllServices()
         .setXmlName(FILTERS)
         .build();
 
-    static final SimpleAttributeDefinition PREDEFINED_FILTER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PREDEFINED_FILTER, ModelType.STRING, false)
+    static final SimpleAttributeDefinition PREDEFINED_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PREDEFINED_FILTER, ModelType.STRING, false)
         .setAllowExpression(true)
         .setXmlName("predefined")
         .setAllowedValues(NamePredicate.names())
         .setValidator(EnumValidator.create(NamePredicate.class))
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-        .setAlternatives(ElytronCommonConstants.PATTERN_FILTER)
+        .setAlternatives(ElytronDescriptionConstants.PATTERN_FILTER)
         .build();
 
-    static final SimpleAttributeDefinition PATTERN_FILTER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PATTERN_FILTER, RegexAttributeDefinitions.PATTERN)
-        .setAlternatives(ElytronCommonConstants.PREDEFINED_FILTER)
-        .setXmlName(ElytronCommonConstants.PATTERN)
+    static final SimpleAttributeDefinition PATTERN_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATTERN_FILTER, RegexAttributeDefinitions.PATTERN)
+        .setAlternatives(ElytronDescriptionConstants.PREDEFINED_FILTER)
+        .setXmlName(ElytronDescriptionConstants.PATTERN)
         .build();
 
-    static final ObjectTypeAttributeDefinition CONFIGURED_FILTER = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.FILTER, PREDEFINED_FILTER, PATTERN_FILTER, ENABLING)
+    static final ObjectTypeAttributeDefinition CONFIGURED_FILTER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.FILTER, PREDEFINED_FILTER, PATTERN_FILTER, ENABLING)
             .setXmlName(FILTER)
             .build();
 
-    static final ObjectListAttributeDefinition CONFIGURED_FILTERS = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.FILTERS, CONFIGURED_FILTER)
+    static final ObjectListAttributeDefinition CONFIGURED_FILTERS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.FILTERS, CONFIGURED_FILTER)
         .setRequired(false)
         .setValidator(new FiltersValidator())
         .setRestartAllServices()
@@ -199,20 +199,20 @@ class SaslServerDefinitions {
         public void validateParameter(final String parameterName, final ModelNode value) throws OperationFailedException {
             super.validateParameter(parameterName, value);
 
-            if (value.hasDefined(ElytronCommonConstants.PREDEFINED_FILTER)
-                    && value.hasDefined(ElytronCommonConstants.PATTERN_FILTER)) {
-                throw ROOT_LOGGER.invalidDefinition(ElytronCommonConstants.FILTERS, ElytronCommonConstants.PREDEFINED_FILTER, ElytronCommonConstants.PATTERN_FILTER);
+            if (value.hasDefined(ElytronDescriptionConstants.PREDEFINED_FILTER)
+                    && value.hasDefined(ElytronDescriptionConstants.PATTERN_FILTER)) {
+                throw ROOT_LOGGER.invalidDefinition(ElytronDescriptionConstants.FILTERS, ElytronDescriptionConstants.PREDEFINED_FILTER, ElytronDescriptionConstants.PATTERN_FILTER);
             }
         }
     }
 
-    private static final ElytronCommonAggregateComponentDefinition<SaslServerFactory> AGGREGATE_SASL_SERVER_FACTORY = ElytronCommonAggregateComponentDefinition.create(SaslServerFactory.class,
-            ElytronCommonConstants.AGGREGATE_SASL_SERVER_FACTORY, ElytronCommonConstants.SASL_SERVER_FACTORIES, SASL_SERVER_FACTORY_RUNTIME_CAPABILITY,
+    private static final AggregateComponentDefinition<SaslServerFactory> AGGREGATE_SASL_SERVER_FACTORY = AggregateComponentDefinition.create(SaslServerFactory.class,
+            ElytronDescriptionConstants.AGGREGATE_SASL_SERVER_FACTORY, ElytronDescriptionConstants.SASL_SERVER_FACTORIES, SASL_SERVER_FACTORY_RUNTIME_CAPABILITY,
             AggregateSaslServerFactory::new);
 
 
 
-    static ElytronCommonAggregateComponentDefinition<SaslServerFactory> getRawAggregateSaslServerFactoryDefinition() {
+    static AggregateComponentDefinition<SaslServerFactory> getRawAggregateSaslServerFactoryDefinition() {
         return AGGREGATE_SASL_SERVER_FACTORY;
     }
 
@@ -244,9 +244,9 @@ class SaslServerDefinitions {
                 }
 
                 final Predicate<String> finalFilter;
-                if (model.hasDefined(ElytronCommonConstants.FILTERS)) {
+                if (model.hasDefined(ElytronDescriptionConstants.FILTERS)) {
                     Predicate<String> filter = null;
-                    List<ModelNode> nodes = model.require(ElytronCommonConstants.FILTERS).asList();
+                    List<ModelNode> nodes = model.require(ElytronDescriptionConstants.FILTERS).asList();
                     for (ModelNode current : nodes) {
                         Predicate<String> currentFilter = (String s) -> true;
                         String predefinedFilter = PREDEFINED_FILTER.resolveModelAttribute(context, current).asStringOrNull();
@@ -294,7 +294,7 @@ class SaslServerDefinitions {
 
         };
 
-        return wrap(new SaslServerResourceDefinition(ElytronCommonConstants.CONFIGURABLE_SASL_SERVER_FACTORY, add, attributes), SaslServerDefinitions::getSaslServerAvailableMechanisms);
+        return wrap(new SaslServerResourceDefinition(ElytronDescriptionConstants.CONFIGURABLE_SASL_SERVER_FACTORY, add, attributes), SaslServerDefinitions::getSaslServerAvailableMechanisms);
     }
 
     static ResourceDefinition getProviderSaslServerFactoryDefinition() {
@@ -324,7 +324,7 @@ class SaslServerDefinitions {
             }
         };
 
-        return wrap(new SaslServerResourceDefinition(ElytronCommonConstants.PROVIDER_SASL_SERVER_FACTORY, add, PROVIDERS), SaslServerDefinitions::getSaslServerAvailableMechanisms);
+        return wrap(new SaslServerResourceDefinition(ElytronDescriptionConstants.PROVIDER_SASL_SERVER_FACTORY, add, PROVIDERS), SaslServerDefinitions::getSaslServerAvailableMechanisms);
     }
 
     static ResourceDefinition getServiceLoaderSaslServerFactoryDefinition() {
@@ -350,7 +350,7 @@ class SaslServerDefinitions {
             }
         };
 
-        return wrap(new SaslServerResourceDefinition(ElytronCommonConstants.SERVICE_LOADER_SASL_SERVER_FACTORY, add, MODULE), SaslServerDefinitions::getSaslServerAvailableMechanisms);
+        return wrap(new SaslServerResourceDefinition(ElytronDescriptionConstants.SERVICE_LOADER_SASL_SERVER_FACTORY, add, MODULE), SaslServerDefinitions::getSaslServerAvailableMechanisms);
     }
 
     static ResourceDefinition getMechanismProviderFilteringSaslServerFactory() {
@@ -365,8 +365,8 @@ class SaslServerDefinitions {
 
                 BiPredicate<String, Provider> predicate = null;
 
-                if (model.hasDefined(ElytronCommonConstants.FILTERS)) {
-                    List<ModelNode> nodes = model.require(ElytronCommonConstants.FILTERS).asList();
+                if (model.hasDefined(ElytronDescriptionConstants.FILTERS)) {
+                    List<ModelNode> nodes = model.require(ElytronDescriptionConstants.FILTERS).asList();
                     for (ModelNode current : nodes) {
                         final String mechanismName = MECHANISM_NAME.resolveModelAttribute(context, current).asStringOrNull();
                         final String providerName = PROVIDER_NAME.resolveModelAttribute(context, current).asString();
@@ -419,7 +419,7 @@ class SaslServerDefinitions {
 
         };
 
-        return wrap(new SaslServerResourceDefinition(ElytronCommonConstants.MECHANISM_PROVIDER_FILTERING_SASL_SERVER_FACTORY, add, attributes), SaslServerDefinitions::getSaslServerAvailableMechanisms);
+        return wrap(new SaslServerResourceDefinition(ElytronDescriptionConstants.MECHANISM_PROVIDER_FILTERING_SASL_SERVER_FACTORY, add, attributes), SaslServerDefinitions::getSaslServerAvailableMechanisms);
     }
 
     private static String[] getSaslServerAvailableMechanisms(OperationContext context) {
@@ -462,7 +462,7 @@ class SaslServerDefinitions {
 
     }
 
-    private static class SaslServerAddHandler extends ElytronCommonBaseAddHandler {
+    private static class SaslServerAddHandler extends BaseAddHandler {
 
         private SaslServerAddHandler(AttributeDefinition ... attributes) {
             super(SASL_SERVER_FACTORY_RUNTIME_CAPABILITY, attributes);
@@ -527,9 +527,9 @@ class SaslServerDefinitions {
 
     private enum Comparison {
 
-        LESS_THAN(ElytronCommonConstants.LESS_THAN, (Double left, Double right) ->  left < right),
+        LESS_THAN(ElytronDescriptionConstants.LESS_THAN, (Double left, Double right) ->  left < right),
 
-        GREATER_THAN(ElytronCommonConstants.GREATER_THAN, (Double left, Double right) ->  left > right);
+        GREATER_THAN(ElytronDescriptionConstants.GREATER_THAN, (Double left, Double right) ->  left > right);
 
         private final String name;
 
@@ -552,9 +552,9 @@ class SaslServerDefinitions {
 
         static Comparison getComparison(String value) {
             switch (value) {
-                case ElytronCommonConstants.LESS_THAN:
+                case ElytronDescriptionConstants.LESS_THAN:
                     return LESS_THAN;
-                case ElytronCommonConstants.GREATER_THAN:
+                case ElytronDescriptionConstants.GREATER_THAN:
                     return GREATER_THAN;
             }
 

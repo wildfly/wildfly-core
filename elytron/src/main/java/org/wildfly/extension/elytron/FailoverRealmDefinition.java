@@ -18,8 +18,8 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
 
@@ -62,21 +62,21 @@ import java.util.function.Consumer;
  */
 class FailoverRealmDefinition extends SimpleResourceDefinition {
 
-    static final ServiceUtil<SecurityRealm> REALM_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_REALM_RUNTIME_CAPABILITY, ElytronCommonConstants.AGGREGATE_REALM, SecurityRealm.class);
+    static final ServiceUtil<SecurityRealm> REALM_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_REALM_RUNTIME_CAPABILITY, ElytronDescriptionConstants.AGGREGATE_REALM, SecurityRealm.class);
 
-    static final SimpleAttributeDefinition DELEGATE_REALM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DELEGATE_REALM, ModelType.STRING, false)
+    static final SimpleAttributeDefinition DELEGATE_REALM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DELEGATE_REALM, ModelType.STRING, false)
             .setMinSize(1)
             .setCapabilityReference(SECURITY_REALM_CAPABILITY, SECURITY_REALM_CAPABILITY)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition FAILOVER_REALM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.FAILOVER_REALM, ModelType.STRING, false)
+    static final SimpleAttributeDefinition FAILOVER_REALM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FAILOVER_REALM, ModelType.STRING, false)
             .setMinSize(1)
             .setCapabilityReference(SECURITY_REALM_CAPABILITY, SECURITY_REALM_CAPABILITY)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition EMIT_EVENTS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.EMIT_EVENTS, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition EMIT_EVENTS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.EMIT_EVENTS, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
@@ -89,7 +89,7 @@ class FailoverRealmDefinition extends SimpleResourceDefinition {
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_REALM_RUNTIME_CAPABILITY);
 
     FailoverRealmDefinition() {
-        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.FAILOVER_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.FAILOVER_REALM))
+        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.FAILOVER_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.FAILOVER_REALM))
                 .setAddHandler(ADD)
                 .setRemoveHandler(REMOVE)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -105,7 +105,7 @@ class FailoverRealmDefinition extends SimpleResourceDefinition {
         }
     }
 
-    private static class RealmAddHandler extends ElytronCommonBaseAddHandler {
+    private static class RealmAddHandler extends BaseAddHandler {
 
         private RealmAddHandler() {
             super(SECURITY_REALM_RUNTIME_CAPABILITY, ATTRIBUTES);

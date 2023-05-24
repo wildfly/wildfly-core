@@ -18,7 +18,7 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLASS_NAME;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
-import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.util.List;
 import java.util.Map;
@@ -57,45 +57,45 @@ class JaspiDefinition {
 
     private static final Map<String, String> REGISTRATION_MAP = new ConcurrentHashMap<>();
 
-    static final SimpleAttributeDefinition LAYER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.LAYER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition LAYER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LAYER, ModelType.STRING, true)
             .setDefaultValue(new ModelNode("*"))
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition APPLICATION_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.APPLICATION_CONTEXT, ModelType.STRING, true)
+    static final SimpleAttributeDefinition APPLICATION_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.APPLICATION_CONTEXT, ModelType.STRING, true)
             .setDefaultValue(new ModelNode("*"))
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition DESCRIPTION = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DESCRIPTION, ModelType.STRING, true)
+    static final SimpleAttributeDefinition DESCRIPTION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DESCRIPTION, ModelType.STRING, true)
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition FLAG = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.FLAG, ModelType.STRING, true)
+    static final SimpleAttributeDefinition FLAG = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FLAG, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(ElytronCommonConstants.REQUIRED))
-            .setAllowedValues(ElytronCommonConstants.REQUIRED, ElytronCommonConstants.REQUISITE, ElytronCommonConstants.SUFFICIENT, ElytronCommonConstants.OPTIONAL)
+            .setDefaultValue(new ModelNode(ElytronDescriptionConstants.REQUIRED))
+            .setAllowedValues(ElytronDescriptionConstants.REQUIRED, ElytronDescriptionConstants.REQUISITE, ElytronDescriptionConstants.SUFFICIENT, ElytronDescriptionConstants.OPTIONAL)
             .setValidator(EnumValidator.create(Flag.class, Flag.values()))
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final PropertiesAttributeDefinition OPTIONS = new PropertiesAttributeDefinition.Builder(ElytronCommonConstants.OPTIONS, true)
+    static final PropertiesAttributeDefinition OPTIONS = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.OPTIONS, true)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final ObjectTypeAttributeDefinition SERVER_AUTH_MODULE = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.SERVER_AUTH_MODULE, CLASS_NAME, MODULE, FLAG, OPTIONS)
+    static final ObjectTypeAttributeDefinition SERVER_AUTH_MODULE = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SERVER_AUTH_MODULE, CLASS_NAME, MODULE, FLAG, OPTIONS)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final  ObjectListAttributeDefinition SERVER_AUTH_MODULES = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.SERVER_AUTH_MODULES, SERVER_AUTH_MODULE)
+    static final  ObjectListAttributeDefinition SERVER_AUTH_MODULES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.SERVER_AUTH_MODULES, SERVER_AUTH_MODULE)
             .setRequired(false)
             .setRestartAllServices()
             .build();
@@ -133,8 +133,8 @@ class JaspiDefinition {
     };
 
     static ResourceDefinition getJaspiServletConfigurationDefinition() {
-        return ElytronCommonTrivialResourceDefinition.builder()
-                .setPathKey(ElytronCommonConstants.JASPI_CONFIGURATION)
+        return TrivialResourceDefinition.builder()
+                .setPathKey(ElytronDescriptionConstants.JASPI_CONFIGURATION)
                 .setAttributes(ATTRIBUTES)
                 .setAddHandler(ADD)
                 .setRemoveHandler(REMOVE)
@@ -165,7 +165,7 @@ class JaspiDefinition {
         };
     }
 
-    static class JaspiAddHandler extends ElytronCommonBaseAddHandler {
+    static class JaspiAddHandler extends BaseAddHandler {
 
         JaspiAddHandler() {
             super(ATTRIBUTES);

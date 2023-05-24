@@ -43,16 +43,16 @@ import org.jboss.as.controller.registry.OperationEntry;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author <a href="mailto:carodrig@redhat.com">Cameron Rodriguez</a>
  */
-final class ElytronCommonTrivialResourceDefinition extends SimpleResourceDefinition {
+class ElytronCommonTrivialResourceDefinition extends SimpleResourceDefinition {
 
     private final AttributeDefinition[] attributes;
     private final Map<OperationDefinition, OperationStepHandler> operations;
     private final Map<AttributeDefinition, OperationStepHandler> readOnlyAttributes;
     private final List<ResourceDefinition> children;
 
-    private ElytronCommonTrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AbstractRemoveStepHandler remove, AttributeDefinition[] attributes,
-                                                   Map<AttributeDefinition, OperationStepHandler> readOnlyAttributes, Map<OperationDefinition, OperationStepHandler> operations, List<ResourceDefinition> children,
-                                                   RuntimeCapability<?>[] runtimeCapabilities) {
+    protected ElytronCommonTrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AbstractRemoveStepHandler remove, AttributeDefinition[] attributes,
+            Map<AttributeDefinition, OperationStepHandler> readOnlyAttributes, Map<OperationDefinition, OperationStepHandler> operations, List<ResourceDefinition> children,
+            RuntimeCapability<?>[] runtimeCapabilities) {
         super(new Parameters(PathElement.pathElement(pathKey),
                 resourceDescriptionResolver)
             .setAddHandler(add)
@@ -71,8 +71,8 @@ final class ElytronCommonTrivialResourceDefinition extends SimpleResourceDefinit
         this(pathKey, resourceDescriptionResolver, add, new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities);
     }
 
-    ElytronCommonTrivialResourceDefinition(String pathKey, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
-        this(pathKey, ElytronCommonDefinitions.getResourceDescriptionResolver(pathKey), add, new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities);
+    ElytronCommonTrivialResourceDefinition(final Class<?> extensionClass, String pathKey, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
+        this(pathKey, ElytronCommonDefinitions.getResourceDescriptionResolver(extensionClass, pathKey), add, new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities);
     }
 
     @Override
@@ -115,11 +115,13 @@ final class ElytronCommonTrivialResourceDefinition extends SimpleResourceDefinit
         return attributes;
     }
 
-    static Builder builder() {
-        return new Builder();
+    static Builder getCommonBuilder(final Class<?> extensionClass) {
+        return new Builder(extensionClass);
     }
 
     static class Builder {
+
+        private final Class<?> extensionClass;
 
         private String pathKey;
         private ResourceDescriptionResolver resourceDescriptionResolver;
@@ -131,7 +133,9 @@ final class ElytronCommonTrivialResourceDefinition extends SimpleResourceDefinit
         private RuntimeCapability<?>[] runtimeCapabilities;
         private List<ResourceDefinition> children;
 
-        Builder() {}
+        Builder(final Class<?> extensionClass) {
+            this.extensionClass = extensionClass;
+        }
 
         Builder setPathKey(String pathKey) {
             this.pathKey = pathKey;
@@ -198,7 +202,7 @@ final class ElytronCommonTrivialResourceDefinition extends SimpleResourceDefinit
         }
 
         ResourceDefinition build() {
-            ResourceDescriptionResolver resourceDescriptionResolver = this.resourceDescriptionResolver != null ? this.resourceDescriptionResolver : ElytronCommonDefinitions.getResourceDescriptionResolver(pathKey);
+            ResourceDescriptionResolver resourceDescriptionResolver = this.resourceDescriptionResolver != null ? this.resourceDescriptionResolver : ElytronCommonDefinitions.getResourceDescriptionResolver(extensionClass, pathKey);
             return new ElytronCommonTrivialResourceDefinition(pathKey, resourceDescriptionResolver, addHandler,
                     removeHandler != null ? removeHandler : new TrivialCapabilityServiceRemoveHandler(addHandler, runtimeCapabilities),
                     attributes, readOnlyAttributes, operations, children, runtimeCapabilities);

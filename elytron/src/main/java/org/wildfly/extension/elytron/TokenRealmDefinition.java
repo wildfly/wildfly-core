@@ -19,20 +19,20 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.KEY_STORE_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SSL_CONTEXT_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.JWT;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.OAUTH2_INTROSPECTION;
+import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JWT;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.OAUTH2_INTROSPECTION;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.AUDIENCE;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.CERTIFICATE;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.ISSUER;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.KEY_MAP;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.KEY_STORE;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.PUBLIC_KEY;
-import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -101,20 +101,20 @@ import org.wildfly.security.pem.PemEntry;
  */
 class TokenRealmDefinition extends SimpleResourceDefinition {
 
-    static final SimpleAttributeDefinition PRINCIPAL_CLAIM = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PRINCIPAL_CLAIM, ModelType.STRING, true)
+    static final SimpleAttributeDefinition PRINCIPAL_CLAIM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRINCIPAL_CLAIM, ModelType.STRING, true)
             .setDefaultValue(new ModelNode("username"))
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    protected static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CLIENT_SSL_CONTEXT, ModelType.STRING, true)
+    protected static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, ModelType.STRING, true)
             .setCapabilityReference(SSL_CONTEXT_CAPABILITY, SECURITY_REALM_CAPABILITY)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setValidator(new StringLengthValidator(1))
             .build();
 
-    static final SimpleAttributeDefinition HOSTNAME_VERIFICATION_POLICY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HOST_NAME_VERIFICATION_POLICY, ModelType.STRING, true)
+    static final SimpleAttributeDefinition HOSTNAME_VERIFICATION_POLICY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HOST_NAME_VERIFICATION_POLICY, ModelType.STRING, true)
             .setValidator(EnumValidator.create(HostnameVerificationPolicy.class))
             .setAllowExpression(true)
             .setMinSize(1)
@@ -123,49 +123,49 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
 
     static class JwtValidatorAttributes {
 
-        static final StringListAttributeDefinition ISSUER = new StringListAttributeDefinition.Builder(ElytronCommonConstants.ISSUER)
+        static final StringListAttributeDefinition ISSUER = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.ISSUER)
                 .setAllowExpression(true)
                 .setRequired(false)
                 .setMinSize(1)
                 .build();
 
-        static final StringListAttributeDefinition AUDIENCE = new StringListAttributeDefinition.Builder(ElytronCommonConstants.AUDIENCE)
+        static final StringListAttributeDefinition AUDIENCE = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.AUDIENCE)
                 .setAllowExpression(true)
                 .setRequired(false)
                 .setMinSize(1)
                 .build();
 
-        static final SimpleAttributeDefinition PUBLIC_KEY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PUBLIC_KEY, ModelType.STRING, true)
-                .setAlternatives(ElytronCommonConstants.KEY_STORE, ElytronCommonConstants.CERTIFICATE)
+        static final SimpleAttributeDefinition PUBLIC_KEY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PUBLIC_KEY, ModelType.STRING, true)
+                .setAlternatives(ElytronDescriptionConstants.KEY_STORE, ElytronDescriptionConstants.CERTIFICATE)
                 .setAllowExpression(true)
                 .setMinSize(1)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition KEY_STORE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.KEY_STORE, ModelType.STRING, true)
-                .setAlternatives(ElytronCommonConstants.PUBLIC_KEY)
-                .setRequires(ElytronCommonConstants.CERTIFICATE)
+        static final SimpleAttributeDefinition KEY_STORE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_STORE, ModelType.STRING, true)
+                .setAlternatives(ElytronDescriptionConstants.PUBLIC_KEY)
+                .setRequires(ElytronDescriptionConstants.CERTIFICATE)
                 .setMinSize(1)
                 .setCapabilityReference(KEY_STORE_CAPABILITY, SECURITY_REALM_CAPABILITY)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .setAllowExpression(false)
                 .build();
 
-        static final SimpleAttributeDefinition CERTIFICATE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CERTIFICATE, ModelType.STRING, true)
-                .setAlternatives(ElytronCommonConstants.PUBLIC_KEY)
+        static final SimpleAttributeDefinition CERTIFICATE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE, ModelType.STRING, true)
+                .setAlternatives(ElytronDescriptionConstants.PUBLIC_KEY)
                 .setRequires(KEY_STORE.getName())
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .setMinSize(1)
                 .build();
 
-        static final PropertiesAttributeDefinition KEY_MAP = new PropertiesAttributeDefinition.Builder(ElytronCommonConstants.KEY_MAP, true)
+        static final PropertiesAttributeDefinition KEY_MAP = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.KEY_MAP, true)
                 .setAllowExpression(true)
                 .setMinSize(1)
-                .setAttributeParser(new AttributeParsers.PropertiesParser(null, ElytronCommonConstants.KEY, false) {
+                .setAttributeParser(new AttributeParsers.PropertiesParser(null, ElytronDescriptionConstants.KEY, false) {
                     @Override
                     public void parseSingleElement(MapAttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
-                        final String[] array = ParseUtils.requireAttributes(reader, ElytronCommonConstants.KID, ElytronCommonConstants.PUBLIC_KEY);
+                        final String[] array = ParseUtils.requireAttributes(reader, ElytronDescriptionConstants.KID, ElytronDescriptionConstants.PUBLIC_KEY);
                         ModelNode paramVal = operation.get(attribute.getName()).get(array[0]);
                         paramVal.set(array[1]);
                         ParseUtils.requireNoContent(reader);
@@ -174,9 +174,9 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .setAttributeMarshaller(new AttributeMarshallers.PropertiesAttributeMarshaller(null, null, false) {
                     @Override
                     public void marshallSingleElement(AttributeDefinition attribute, ModelNode property, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-                        writer.writeEmptyElement(ElytronCommonConstants.KEY);
-                        writer.writeAttribute(ElytronCommonConstants.KID, property.asProperty().getName());
-                        writer.writeAttribute(ElytronCommonConstants.PUBLIC_KEY, property.asProperty().getValue().asString());
+                        writer.writeEmptyElement(ElytronDescriptionConstants.KEY);
+                        writer.writeAttribute(ElytronDescriptionConstants.KID, property.asProperty().getName());
+                        writer.writeAttribute(ElytronDescriptionConstants.PUBLIC_KEY, property.asProperty().getValue().asString());
                     }
                 })
                 .setRestartAllServices()
@@ -190,19 +190,19 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
 
     static class OAuth2IntrospectionValidatorAttributes {
 
-        static final SimpleAttributeDefinition CLIENT_ID = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CLIENT_ID, ModelType.STRING, false)
+        static final SimpleAttributeDefinition CLIENT_ID = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CLIENT_ID, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setMinSize(1)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition CLIENT_SECRET = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CLIENT_SECRET, ModelType.STRING, false)
+        static final SimpleAttributeDefinition CLIENT_SECRET = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CLIENT_SECRET, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setMinSize(1)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final SimpleAttributeDefinition INTROSPECTION_URL = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.INTROSPECTION_URL, ModelType.STRING, false)
+        static final SimpleAttributeDefinition INTROSPECTION_URL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.INTROSPECTION_URL, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setValidator(new URLValidator())
                 .setMinSize(1)
@@ -238,8 +238,8 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY);
 
     TokenRealmDefinition() {
-        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.TOKEN_REALM),
-                                    ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.TOKEN_REALM))
+        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM),
+                                    ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.TOKEN_REALM))
                       .setAddHandler(ADD)
                       .setRemoveHandler(REMOVE)
                       .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -255,7 +255,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
         }
     }
 
-    private static class RealmAddHandler extends ElytronCommonBaseAddHandler {
+    private static class RealmAddHandler extends BaseAddHandler {
 
         private RealmAddHandler() {
             super(new HashSet<>(Arrays.asList(MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY)), ATTRIBUTES);

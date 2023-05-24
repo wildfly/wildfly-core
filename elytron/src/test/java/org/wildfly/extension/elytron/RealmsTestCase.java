@@ -128,24 +128,24 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
         }
 
         // hex encoded using UTF-8
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("HashedPropertyRealm");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("HashedPropertyRealm");
         SecurityRealm securityRealm = (SecurityRealm) services.getContainer().getService(serviceName).getValue();
         testAbstractPropertyRealm(securityRealm);
 
-        ServiceName serviceName2 = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("ClearPropertyRealm");
+        ServiceName serviceName2 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("ClearPropertyRealm");
         SecurityRealm securityRealm2 = (SecurityRealm) services.getContainer().getService(serviceName2).getValue();
         testAbstractPropertyRealm(securityRealm2);
         testExternalModificationPropertyRealm(securityRealm2, "users-clear.properties", "user999", "password999", "password999");
 
         // base64 encoded using UTF-8
-        ServiceName serviceName3 = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("HashedPropertyRealmBase64Encoded");
+        ServiceName serviceName3 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("HashedPropertyRealmBase64Encoded");
         SecurityRealm securityRealm3 = (SecurityRealm) services.getContainer().getService(serviceName3).getValue();
         performHashedFileTest(securityRealm3, "elytron","passwd12#$");
         testExternalModificationPropertyRealm(securityRealm3, "users-hashedbase64.properties", "user999",
                 "password999", generateHashedPassword("user999", "password999", "ManagementRealm"));
 
         // base64 encoded using charset GB2312
-        ServiceName serviceName4 = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("HashedPropertyRealmBase64EncodedCharset");
+        ServiceName serviceName4 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("HashedPropertyRealmBase64EncodedCharset");
         SecurityRealm securityRealm4 = (SecurityRealm) services.getContainer().getService(serviceName4).getValue();
         performHashedFileTest(securityRealm4, "elytron4", "password密码");
 
@@ -248,7 +248,7 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
             Assert.fail("Failed to boot, no reason provided");
         }
 
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm");
         ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityRealm);
 
@@ -274,14 +274,14 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
         }
 
         // Testing filesystem realm hex encoded using UTF-8 charset
-        ServiceName serviceName3 = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm3");
+        ServiceName serviceName3 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm3");
         ModifiableSecurityRealm securityRealm3 = (ModifiableSecurityRealm) services.getContainer().getService(serviceName3).getValue();
         testAbstractFilesystemRealm(securityRealm3, "plainUser", "secretPassword");
         testAddingAndDeletingEncodedHash(securityRealm3, StandardCharsets.UTF_8, "secretPassword");
 
 
         // Testing filesystem realm hex encoded using GB2312 charset
-        ServiceName serviceName4 = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm4");
+        ServiceName serviceName4 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm4");
         ModifiableSecurityRealm securityRealm4 = (ModifiableSecurityRealm) services.getContainer().getService(serviceName4).getValue();
         testAbstractFilesystemRealm(securityRealm4, "plainUser", "password密码");
         testAddingAndDeletingEncodedHash(securityRealm4, Charset.forName("gb2312"), "password密码");
@@ -302,9 +302,9 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
             Assert.fail("Failed to boot, no reason provided");
         }
 
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm5");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm5");
         ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
-        ServiceName serviceNameGeneratedKey = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm6");
+        ServiceName serviceNameGeneratedKey = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm6");
         ModifiableSecurityRealm securityRealmGeneratedKey = (ModifiableSecurityRealm) services.getContainer().getService(serviceNameGeneratedKey).getValue();
 
         // Test Clear Encrypted Password
@@ -384,9 +384,9 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
             }
             Assert.fail("Failed to boot, no reason provided");
         }
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealmIntegrity");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealmIntegrity");
         ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
-        ServiceName serviceNameBoth = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealmIntegrityAndEncryption");
+        ServiceName serviceNameBoth = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealmIntegrityAndEncryption");
         ModifiableSecurityRealm securityRealmBoth = (ModifiableSecurityRealm) services.getContainer().getService(serviceNameBoth).getValue();
         Assert.assertNotNull(securityRealm);
         Assert.assertNotNull(securityRealmBoth);
@@ -556,11 +556,11 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
             Assert.fail("Failed to boot, no reason provided");
         }
 
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("JwtRealm");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("JwtRealm");
         SecurityRealm securityRealm = (SecurityRealm) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityRealm);
 
-        serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("EmptyJwtRealm");
+        serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("EmptyJwtRealm");
         securityRealm = (SecurityRealm) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityRealm);
     }
@@ -575,7 +575,7 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
             Assert.fail("Failed to boot, no reason provided");
         }
 
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("OAuth2Realm");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("OAuth2Realm");
         SecurityRealm securityRealm = (SecurityRealm) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityRealm);
     }
@@ -590,7 +590,7 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
             Assert.fail("Failed to boot, no reason provided");
         }
 
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("AggregateRealmOne");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("AggregateRealmOne");
         SecurityRealm securityRealm = (SecurityRealm) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityRealm);
 
@@ -615,7 +615,7 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
             Assert.fail("Failed to boot, no reason provided");
         }
 
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("AggregateRealmTwo");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("AggregateRealmTwo");
         SecurityRealm securityRealm = (SecurityRealm) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityRealm);
 
@@ -640,7 +640,7 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
 
             JaasSecurityRealm securityRealm;
             if (!(JdkUtils.isIbmJdk())) {
-                ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("myJaasRealm");
+                ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("myJaasRealm");
                 securityRealm = (JaasSecurityRealm) services.getContainer().getService(serviceName).getValue();
                 Assert.assertNotNull(securityRealm);
             } else {
@@ -696,7 +696,7 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
         operation.get(ClientConstants.OP_ADDR)
                 .add("subsystem", "elytron").add("jaas-realm", "my-jaas-realm");
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        // operation.get(ElytronCommonConstants.ENTRY).set("any_entry");
+        // operation.get(ElytronDescriptionConstants.ENTRY).set("any_entry");
         ModelNode response = services.executeOperation(operation);
         // operation will fail because path does not exist
         if (! response.get(OUTCOME).asString().equals(FAILED)) {
@@ -718,8 +718,8 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
         operation.get(ClientConstants.OP_ADDR)
                 .add("subsystem", "elytron").add("jaas-realm", "my-jaas-realm");
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronCommonConstants.ENTRY).set("any_entry");
-        operation.get(ElytronCommonConstants.PATH).set("this/is/non/existen/path");
+        operation.get(ElytronDescriptionConstants.ENTRY).set("any_entry");
+        operation.get(ElytronDescriptionConstants.PATH).set("this/is/non/existen/path");
         ModelNode response = services.executeOperation(operation);
         // operation will fail because path does not exist
         if (! response.get(OUTCOME).asString().equals(FAILED)) {
@@ -735,20 +735,20 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
             Assert.fail(services.getBootError().toString());
         }
 
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmNoUnavailable");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmNoUnavailable");
         SecurityRealm distributedRealm = (SecurityRealm) services.getContainer().getService(serviceName).getValue();
         testDistributedRealmSuccessful(distributedRealm);
 
-        ServiceName serviceName2 = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmFirstUnavailable");
+        ServiceName serviceName2 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmFirstUnavailable");
         SecurityRealm distributedRealm2 = (SecurityRealm) services.getContainer().getService(serviceName2).getValue();
         testDistributedRealmFailure(distributedRealm2);
 
-        ServiceName serviceName3 = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmFirstUnavailableIgnored");
+        ServiceName serviceName3 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmFirstUnavailableIgnored");
         SecurityRealm distributedRealm3 = (SecurityRealm) services.getContainer().getService(serviceName3).getValue();
         testDistributedRealmSuccessful(distributedRealm3);
 
-        TestEnvironment.activateService(services, ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "DistributedRealmDomain");
-        ServiceName serviceName4 = ElytronCommonCapabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmDomain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "DistributedRealmDomain");
+        ServiceName serviceName4 = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmDomain");
         SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName4).getValue();
         Assert.assertNotNull(domain);
         if (SecurityDomain.getCurrent() == null) {

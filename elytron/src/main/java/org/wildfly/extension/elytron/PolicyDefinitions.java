@@ -18,13 +18,13 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.JACC_POLICY_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.JACC_POLICY_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.POLICY_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CUSTOM_POLICY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.JACC_POLICY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.NAME;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.POLICY;
+import static org.wildfly.extension.elytron.Capabilities.JACC_POLICY_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.JACC_POLICY_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.POLICY_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_POLICY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JACC_POLICY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.POLICY;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 import static org.wildfly.security.authz.jacc.ElytronPolicyContextHandlerFactory.getPolicyContextHandlers;
 
@@ -74,7 +74,7 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.wildfly.extension.elytron._private.ElytronCommonMessages;
+import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.authz.jacc.DelegatingPolicyContextHandler;
 import org.wildfly.security.authz.jacc.ElytronPolicyConfigurationFactory;
 import org.wildfly.security.authz.jacc.JaccDelegatingPolicy;
@@ -89,11 +89,11 @@ class PolicyDefinitions {
 
     // providers
 
-    static final SimpleAttributeDefinition RESOURCE_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.NAME, ModelType.STRING)
+    static final SimpleAttributeDefinition RESOURCE_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING)
             .setMinSize(1)
             .build();
 
-    static final SimpleAttributeDefinition DEFAULT_POLICY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DEFAULT_POLICY, ModelType.STRING)
+    static final SimpleAttributeDefinition DEFAULT_POLICY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_POLICY, ModelType.STRING)
             .setRequired(false)
             .setCorrector(new ParameterCorrector() {
                 @Override
@@ -108,11 +108,11 @@ class PolicyDefinitions {
 
     static class JaccPolicyDefinition {
         static final SimpleAttributeDefinition NAME = RESOURCE_NAME; // TODO Remove this once PolicyParser is deleted
-        static final SimpleAttributeDefinition POLICY_PROVIDER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.POLICY, ModelType.STRING, true)
+        static final SimpleAttributeDefinition POLICY_PROVIDER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.POLICY, ModelType.STRING, true)
                 .setDefaultValue(new ModelNode(JaccDelegatingPolicy.class.getName()))
                 .setMinSize(1)
                 .build();
-        static final SimpleAttributeDefinition CONFIGURATION_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CONFIGURATION_FACTORY, ModelType.STRING, true)
+        static final SimpleAttributeDefinition CONFIGURATION_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CONFIGURATION_FACTORY, ModelType.STRING, true)
                 .setDefaultValue(new ModelNode(ElytronPolicyConfigurationFactory.class.getName()))
                 .setMinSize(1)
                 .build();
@@ -129,7 +129,7 @@ class PolicyDefinitions {
         static final SimpleAttributeDefinition NAME = RESOURCE_NAME; // TODO Remove this once PolicyParser is deleted
         static final SimpleAttributeDefinition CLASS_NAME = ClassLoadingAttributeDefinitions.CLASS_NAME;
         static final SimpleAttributeDefinition MODULE = ClassLoadingAttributeDefinitions.MODULE;
-        static final ObjectTypeAttributeDefinition POLICY = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.CUSTOM_POLICY, CLASS_NAME, MODULE)
+        static final ObjectTypeAttributeDefinition POLICY = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.CUSTOM_POLICY, CLASS_NAME, MODULE)
                 .setRequired(true)
                 .setAlternatives(JACC_POLICY)
                 .setCorrector(ListToObjectCorrector.INSTANCE)
@@ -138,7 +138,7 @@ class PolicyDefinitions {
 
     static ResourceDefinition getPolicy() {
         AttributeDefinition[] attributes = new AttributeDefinition[] {DEFAULT_POLICY, JaccPolicyDefinition.POLICY, CustomPolicyDefinition.POLICY};
-        AbstractAddStepHandler add = new ElytronCommonBaseAddHandler(POLICY_RUNTIME_CAPABILITY, attributes) {
+        AbstractAddStepHandler add = new BaseAddHandler(POLICY_RUNTIME_CAPABILITY, attributes) {
 
             @Override
             protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
@@ -163,7 +163,7 @@ class PolicyDefinitions {
                 final boolean legacyJacc = capabilitySupport.hasCapability("org.wildfly.legacy-security.jacc");
                 final boolean legacyJaccTombstone = capabilitySupport.hasCapability("org.wildfly.legacy-security.jacc.tombstone");
                 if (legacyJacc) {
-                    throw ElytronCommonMessages.ROOT_LOGGER.unableToEnableJaccSupport();
+                    throw ElytronSubsystemMessages.ROOT_LOGGER.unableToEnableJaccSupport();
                 }
                 if (legacyJaccTombstone) {
                     context.restartRequired();
@@ -219,7 +219,7 @@ class PolicyDefinitions {
                                 setPolicyAction(policy).run();
                             }
                         } catch (Exception e) {
-                            throw ElytronCommonMessages.ROOT_LOGGER.failedToSetPolicy(policy, e);
+                            throw ElytronSubsystemMessages.ROOT_LOGGER.failedToSetPolicy(policy, e);
                         }
                     }
 
@@ -329,7 +329,7 @@ class PolicyDefinitions {
                 try {
                     t.accept(newPolicy(className, ClassLoadingAttributeDefinitions.resolveClassLoader(module)));
                 } catch (ModuleLoadException e) {
-                    throw ElytronCommonMessages.ROOT_LOGGER.unableToLoadModuleRuntime(module, e);
+                    throw ElytronSubsystemMessages.ROOT_LOGGER.unableToLoadModuleRuntime(module, e);
                 }
             };
         }
@@ -372,7 +372,7 @@ class PolicyDefinitions {
                         }
 
                     } catch (Exception cause) {
-                        throw ElytronCommonMessages.ROOT_LOGGER.failedToRegisterPolicyHandlers(cause);
+                        throw ElytronSubsystemMessages.ROOT_LOGGER.failedToRegisterPolicyHandlers(cause);
                     }
                 }
 
@@ -380,7 +380,7 @@ class PolicyDefinitions {
                     for (String key : handler.getKeys()) {
                         PolicyContextHandler discovered = discoveredHandlers.remove(key);
                         if (discovered != null) {
-                            ElytronCommonMessages.ROOT_LOGGER.tracef("Registering DelegatingPolicyContextHandler for key '%s'.", key);
+                            ElytronSubsystemMessages.ROOT_LOGGER.tracef("Registering DelegatingPolicyContextHandler for key '%s'.", key);
                             PolicyContext.registerHandler(key, new DelegatingPolicyContextHandler(key, handler, discovered), true);
                         } else {
                             PolicyContext.registerHandler(key, handler, true);
@@ -394,10 +394,10 @@ class PolicyDefinitions {
                     for (PolicyContextHandler handler : serviceLoader) {
                         for (String key : handler.getKeys()) {
                             if (handlerMap.put(key, handler) != null) {
-                                throw ElytronCommonMessages.ROOT_LOGGER.duplicatePolicyContextHandler(key);
+                                throw ElytronSubsystemMessages.ROOT_LOGGER.duplicatePolicyContextHandler(key);
                             }
-                            if (ElytronCommonMessages.ROOT_LOGGER.isTraceEnabled()) {
-                                ElytronCommonMessages.ROOT_LOGGER.tracef("Discovered PolicyContextHandler '%s' for key '%s'.", handler.getClass().getName(), key);
+                            if (ElytronSubsystemMessages.ROOT_LOGGER.isTraceEnabled()) {
+                                ElytronSubsystemMessages.ROOT_LOGGER.tracef("Discovered PolicyContextHandler '%s' for key '%s'.", handler.getClass().getName(), key);
                             }
                         }
                     }
@@ -416,7 +416,7 @@ class PolicyDefinitions {
             Object policy = classLoader.loadClass(className).newInstance();
             return Policy.class.cast(policy);
         } catch (Exception e) {
-            throw ElytronCommonMessages.ROOT_LOGGER.failedToCreatePolicy(className, e);
+            throw ElytronSubsystemMessages.ROOT_LOGGER.failedToCreatePolicy(className, e);
         }
     }
 
@@ -429,7 +429,7 @@ class PolicyDefinitions {
             PolicyConfigurationFactory policyConfigurationFactory = PolicyConfigurationFactory.getPolicyConfigurationFactory();
             String loadedClassName = policyConfigurationFactory.getClass().getName();
             if (className.equals(loadedClassName) == false) {
-                throw ElytronCommonMessages.ROOT_LOGGER.invalidImplementationLoaded(PolicyConfigurationFactory.class.getCanonicalName(), className, loadedClassName);
+                throw ElytronSubsystemMessages.ROOT_LOGGER.invalidImplementationLoaded(PolicyConfigurationFactory.class.getCanonicalName(), className, loadedClassName);
             }
 
             return policyConfigurationFactory;

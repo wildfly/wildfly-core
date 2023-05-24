@@ -36,11 +36,11 @@ class ProviderParser {
 
     private final PersistentResourceXMLDescription providerLoaderParser = builder(PathElement.pathElement(ElytronCommonConstants.PROVIDER_LOADER))
             .setUseElementsForGroups(false)
-            .addAttributes(ClassLoadingAttributeDefinitions.MODULE, ClassLoadingAttributeDefinitions.CLASS_NAMES, ElytronCommonProviderDefinitions.PATH, ElytronCommonProviderDefinitions.RELATIVE_TO,
-                    ElytronCommonProviderDefinitions.ARGUMENT, ElytronCommonProviderDefinitions.CONFIGURATION)
+            .addAttributes(ClassLoadingAttributeDefinitions.MODULE, ClassLoadingAttributeDefinitions.CLASS_NAMES, ProviderDefinitions.PATH, ProviderDefinitions.RELATIVE_TO,
+                    ProviderDefinitions.ARGUMENT, ProviderDefinitions.CONFIGURATION)
             .build();
     private final PersistentResourceXMLDescription aggregateProviders = builder(PathElement.pathElement(ElytronCommonConstants.AGGREGATE_PROVIDERS))
-            .addAttribute(ElytronCommonProviderDefinitions.REFERENCES,
+            .addAttribute(ProviderDefinitions.REFERENCES,
                     new AttributeParsers.NamedStringListParser(PROVIDERS),
                     new AttributeMarshallers.NamedStringListMarshaller(PROVIDERS))
             .build();

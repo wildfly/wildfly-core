@@ -181,7 +181,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testDirContextInsecure() throws Exception {
-        ServiceName serviceNameDirContext = ElytronCommonCapabilities.DIR_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName("DirContextInsecure");
+        ServiceName serviceNameDirContext = Capabilities.DIR_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName("DirContextInsecure");
         ExceptionSupplier<DirContext, NamingException> dirContextSup = (DirContextSupplier) services.getContainer().getService(serviceNameDirContext).getValue();
         DirContext dirContext = dirContextSup.get();
         Assert.assertNotNull(dirContext);
@@ -191,7 +191,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testDirContextSsl() throws Exception {
-        ServiceName serviceNameDirContext = ElytronCommonCapabilities.DIR_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName("DirContextSsl");
+        ServiceName serviceNameDirContext = Capabilities.DIR_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName("DirContextSsl");
         ExceptionSupplier<DirContext, NamingException> dirContextSup = (DirContextSupplier) services.getContainer().getService(serviceNameDirContext).getValue();
         DirContext dirContext = dirContextSup.get();
         Assert.assertNotNull(dirContext);
@@ -201,7 +201,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testDirContextSslCredential() throws Exception {
-        ServiceName serviceNameDirContext = ElytronCommonCapabilities.DIR_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName("DirContextSslCredential");
+        ServiceName serviceNameDirContext = Capabilities.DIR_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName("DirContextSslCredential");
         ExceptionSupplier<DirContext, NamingException> dirContextSup = (DirContextSupplier) services.getContainer().getService(serviceNameDirContext).getValue();
         DirContext dirContext = dirContextSup.get();
         Assert.assertNotNull(dirContext);
@@ -211,7 +211,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testLdapRealm() throws Exception {
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealm");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealm");
         ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityRealm);
 
@@ -248,7 +248,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testLdapRealmWithHashCharset() throws Exception {
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealmCharset");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealmCharset");
         ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityRealm);
 
@@ -261,7 +261,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testLdapRealmWithHashCharsetAndHexEncoding() throws Exception {
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealmEncodingCharset");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealmEncodingCharset");
         ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityRealm);
 
@@ -274,7 +274,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testLdapRealmIterating() throws Exception {
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealm");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealm");
         ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityRealm);
 
@@ -291,7 +291,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testLdapRealmModifiability() throws Exception {
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealm");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealm");
         ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityRealm);
 
@@ -300,7 +300,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testLdapRealmDirectVerification() throws Exception {
-        ServiceName serviceName = ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealmDirectVerification");
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealmDirectVerification");
         ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(securityRealm);
 
@@ -332,7 +332,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
     }
 
     private void testLdapKeyStoreService(String keystoreName, String alias) throws Exception {
-        ServiceName serviceName = ElytronCommonCapabilities.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(keystoreName);
+        ServiceName serviceName = Capabilities.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(keystoreName);
         KeyStore keyStore = (KeyStore) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(keyStore);
 
@@ -349,7 +349,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testLdapKeyManagerService() {
-        ServiceName keyManagerServiceName = ElytronCommonCapabilities.KEY_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapKeyManager");
+        ServiceName keyManagerServiceName = Capabilities.KEY_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapKeyManager");
         KeyManager keyManager = (KeyManager) services.getContainer().getService(keyManagerServiceName).getValue();
         Assert.assertNotNull(keyManager);
     }
@@ -367,7 +367,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
     private void testLdapKeyStoreCli(String keystoreName, String alias) throws Exception {
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", keystoreName);
-        operation.get(ClientConstants.OP).set(ElytronCommonConstants.READ_ALIASES);
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
         List<ModelNode> nodes = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asList();
         Assert.assertEquals(1, nodes.size());
         Assert.assertEquals(alias, nodes.get(0).asString());
@@ -375,33 +375,33 @@ public class LdapTestCase extends AbstractSubsystemTest {
         operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", keystoreName);
         operation.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-        operation.get(ClientConstants.NAME).set(ElytronCommonConstants.STATE);
+        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.STATE);
         Assert.assertEquals(ServiceController.State.UP.toString(), assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asString());
 
         operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", keystoreName);
         operation.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-        operation.get(ClientConstants.NAME).set(ElytronCommonConstants.SIZE);
+        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.SIZE);
         Assert.assertEquals(1, assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asInt());
 
         operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", keystoreName);
-        operation.get(ClientConstants.OP).set(ElytronCommonConstants.READ_ALIAS);
-        operation.get(ElytronCommonConstants.ALIAS).set(alias);
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIAS);
+        operation.get(ElytronDescriptionConstants.ALIAS).set(alias);
 
         ModelNode aliasNode = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
-        Assert.assertNotNull(aliasNode.get(ElytronCommonConstants.CREATION_DATE).asString());
-        Assert.assertEquals(KeyStore.PrivateKeyEntry.class.getSimpleName(), aliasNode.get(ElytronCommonConstants.ENTRY_TYPE).asString());
-        Assert.assertFalse(aliasNode.get(ElytronCommonConstants.CERTIFICATE).isDefined()); // chain defined, certificate should be blank
+        Assert.assertNotNull(aliasNode.get(ElytronDescriptionConstants.CREATION_DATE).asString());
+        Assert.assertEquals(KeyStore.PrivateKeyEntry.class.getSimpleName(), aliasNode.get(ElytronDescriptionConstants.ENTRY_TYPE).asString());
+        Assert.assertFalse(aliasNode.get(ElytronDescriptionConstants.CERTIFICATE).isDefined()); // chain defined, certificate should be blank
 
-        List<ModelNode> chain = aliasNode.get(ElytronCommonConstants.CERTIFICATE_CHAIN).asList();
-        Assert.assertEquals("OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", chain.get(0).get(ElytronCommonConstants.SUBJECT).asString());
-        Assert.assertEquals("O=Root Certificate Authority,1.2.840.113549.1.9.1=#1613656c7974726f6e4077696c64666c792e6f7267,C=UK,ST=Elytron,CN=Elytron CA", chain.get(1).get(ElytronCommonConstants.SUBJECT).asString());
+        List<ModelNode> chain = aliasNode.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN).asList();
+        Assert.assertEquals("OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", chain.get(0).get(ElytronDescriptionConstants.SUBJECT).asString());
+        Assert.assertEquals("O=Root Certificate Authority,1.2.840.113549.1.9.1=#1613656c7974726f6e4077696c64666c792e6f7267,C=UK,ST=Elytron,CN=Elytron CA", chain.get(1).get(ElytronDescriptionConstants.SUBJECT).asString());
     }
 
     @Test
     public void testLdapKeyStoreCopyRemoveAlias() throws Exception {
-        ServiceName serviceName = ElytronCommonCapabilities.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapKeyStoreMaximal");
+        ServiceName serviceName = Capabilities.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapKeyStoreMaximal");
         LdapKeyStoreService ldapKeyStoreService = (LdapKeyStoreService) services.getContainer().getService(serviceName).getService();
         KeyStore keyStore = ldapKeyStoreService.getModifiableValue();
         Assert.assertNotNull(keyStore);
@@ -422,7 +422,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
         ModelNode operation = new ModelNode(); // check count of copies through subsystem
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", "LdapKeyStoreMaximal");
-        operation.get(ClientConstants.OP).set(ElytronCommonConstants.READ_ALIASES);
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
         Assert.assertEquals(3, assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asList().size());
 
         keyStore.deleteEntry("serenity1"); // remove through keystore operation
@@ -431,8 +431,8 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
         operation = new ModelNode(); // remove through subsystem operation
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", "LdapKeyStoreMaximal");
-        operation.get(ClientConstants.OP).set(ElytronCommonConstants.REMOVE_ALIAS);
-        operation.get(ElytronCommonConstants.ALIAS).set("serenity2");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.REMOVE_ALIAS);
+        operation.get(ElytronDescriptionConstants.ALIAS).set("serenity2");
         assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
         Assert.assertNull(keyStore.getKey("serenity2", "password2".toCharArray()));
         Assert.assertEquals(1, keyStore.size());

@@ -19,21 +19,21 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.CREDENTIAL_STORE_API_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.CREDENTIAL_STORE_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.KEY_STORE_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.BASE64;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.HEX;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.UTF_8;
+import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_API_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BASE64;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HEX;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron.KeyStoreServiceUtil.getModifiableKeyStoreService;
-import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -103,40 +103,40 @@ import org.wildfly.security.password.spec.Encoding;
 class FileSystemRealmDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition PATH =
-            new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PATH, FileAttributeDefinitions.PATH)
-                    .setAttributeGroup(ElytronCommonConstants.FILE)
+            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATH, FileAttributeDefinitions.PATH)
+                    .setAttributeGroup(ElytronDescriptionConstants.FILE)
                     .setRequired(true)
                     .setRestartAllServices()
                     .build();
 
     static final SimpleAttributeDefinition RELATIVE_TO =
-            new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.RELATIVE_TO, FileAttributeDefinitions.RELATIVE_TO)
-                    .setAttributeGroup(ElytronCommonConstants.FILE)
+            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RELATIVE_TO, FileAttributeDefinitions.RELATIVE_TO)
+                    .setAttributeGroup(ElytronDescriptionConstants.FILE)
                     .setRestartAllServices()
                     .build();
 
     static final SimpleAttributeDefinition LEVELS =
-            new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.LEVELS, ModelType.INT, true)
+            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LEVELS, ModelType.INT, true)
                     .setDefaultValue(new ModelNode(2))
                     .setAllowExpression(true)
                     .setRestartAllServices()
                     .build();
 
     static final SimpleAttributeDefinition ENCODED =
-            new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ENCODED, ModelType.BOOLEAN, true)
+            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENCODED, ModelType.BOOLEAN, true)
                     .setDefaultValue(ModelNode.TRUE)
                     .setAllowExpression(true)
                     .setRestartAllServices()
                     .build();
 
-    static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HASH_ENCODING, ModelType.STRING, true)
+    static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING, true)
             .setDefaultValue(new ModelNode(BASE64))
             .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition HASH_CHARSET = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HASH_CHARSET, ModelType.STRING, true)
+    static final SimpleAttributeDefinition HASH_CHARSET = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_CHARSET, ModelType.STRING, true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setDefaultValue(new ModelNode(UTF_8))
             .setValidator(new CharsetValidator())
@@ -144,28 +144,28 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
             .build();
 
     static final SimpleAttributeDefinition CREDENTIAL_STORE =
-            new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CREDENTIAL_STORE, ModelType.STRING, false)
+            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CREDENTIAL_STORE, ModelType.STRING, false)
                     .setAllowExpression(true)
                     .setRequired(false)
-                    .setRequires(ElytronCommonConstants.SECRET_KEY)
+                    .setRequires(ElytronDescriptionConstants.SECRET_KEY)
                     .setMinSize(1)
                     .setRestartAllServices()
                     .setCapabilityReference(CREDENTIAL_STORE_CAPABILITY, SECURITY_REALM_CAPABILITY)
                     .build();
 
     static final SimpleAttributeDefinition SECRET_KEY =
-            new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SECRET_KEY, ModelType.STRING, false)
+            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECRET_KEY, ModelType.STRING, false)
                     .setAllowExpression(true)
                     .setRequired(false)
-                    .setRequires(ElytronCommonConstants.CREDENTIAL_STORE)
+                    .setRequires(ElytronDescriptionConstants.CREDENTIAL_STORE)
                     .setMinSize(1)
                     .setRestartAllServices()
                     .build();
 
     static final SimpleAttributeDefinition KEY_STORE =
-            new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.KEY_STORE, ModelType.STRING, true)
+            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_STORE, ModelType.STRING, true)
                     .setAllowExpression(true)
-                    .setRequires(ElytronCommonConstants.KEY_STORE_ALIAS)
+                    .setRequires(ElytronDescriptionConstants.KEY_STORE_ALIAS)
                     .setMinSize(1)
                     .setRestartAllServices()
                     .setCapabilityReference(KEY_STORE_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY)
@@ -173,9 +173,9 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
                     .build();
 
     static final SimpleAttributeDefinition KEY_STORE_ALIAS =
-            new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.KEY_STORE_ALIAS, ModelType.STRING, true)
+            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_STORE_ALIAS, ModelType.STRING, true)
                     .setAllowExpression(true)
-                    .setRequires(ElytronCommonConstants.KEY_STORE)
+                    .setRequires(ElytronDescriptionConstants.KEY_STORE)
                     .setMinSize(1)
                     .setRestartAllServices()
                     .build();
@@ -190,8 +190,8 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY);
 
     FileSystemRealmDefinition() {
-        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.FILESYSTEM_REALM),
-                ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.FILESYSTEM_REALM))
+        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM),
+                ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.FILESYSTEM_REALM))
                 .setAddHandler(ADD)
                 .setRemoveHandler(REMOVE)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -219,7 +219,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
-        ResourceDescriptionResolver resolver = ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.FILESYSTEM_REALM);
+        ResourceDescriptionResolver resolver = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.FILESYSTEM_REALM);
         if (isServerOrHostController(resourceRegistration)) { // server-only operations
             UpdateKeyPairHandler.register(resourceRegistration, resolver);
             VerifyRealmIntegrity.register(resourceRegistration, resolver);
@@ -230,7 +230,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
             resourceRegistration.registerOperationHandler(
-                    new SimpleOperationDefinitionBuilder(ElytronCommonConstants.UPDATE_KEY_PAIR, descriptionResolver)
+                    new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.UPDATE_KEY_PAIR, descriptionResolver)
                             .setRuntimeOnly()
                             .build(),
                     new FileSystemRealmDefinition.UpdateKeyPairHandler());
@@ -255,7 +255,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
             resourceRegistration.registerOperationHandler(
-                    new SimpleOperationDefinitionBuilder(ElytronCommonConstants.VERIFY_INTEGRITY, descriptionResolver)
+                    new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.VERIFY_INTEGRITY, descriptionResolver)
                             .setRuntimeOnly()
                             .build(),
                     new FileSystemRealmDefinition.VerifyRealmIntegrity());
@@ -279,7 +279,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
         }
     }
 
-    private static class RealmAddHandler extends ElytronCommonBaseAddHandler {
+    private static class RealmAddHandler extends BaseAddHandler {
 
         private RealmAddHandler() {
             super(SECURITY_REALM_RUNTIME_CAPABILITY, ALL_ATTRIBUTES);

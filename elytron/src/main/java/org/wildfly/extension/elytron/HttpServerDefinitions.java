@@ -19,17 +19,17 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.PROVIDERS_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
 import static org.wildfly.extension.elytron.CommonAttributes.PROPERTIES;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.FILTER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.FILTERS;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTERS;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
-import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 import static org.wildfly.security.provider.util.ProviderUtil.findProviderService;
 
 import java.security.PrivilegedExceptionAction;
@@ -79,23 +79,23 @@ import org.wildfly.security.http.util.SocketAddressCallbackServerMechanismFactor
  */
 class HttpServerDefinitions {
 
-    static final SimpleAttributeDefinition HTTP_SERVER_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HTTP_SERVER_MECHANISM_FACTORY, ModelType.STRING, false)
+    static final SimpleAttributeDefinition HTTP_SERVER_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HTTP_SERVER_MECHANISM_FACTORY, ModelType.STRING, false)
         .setMinSize(1)
         .setRestartAllServices()
         .setCapabilityReference(HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY, HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition PROVIDERS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PROVIDERS, ModelType.STRING, true)
+    static final SimpleAttributeDefinition PROVIDERS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROVIDERS, ModelType.STRING, true)
         .setMinSize(1)
         .setRestartAllServices()
         .setCapabilityReference(PROVIDERS_CAPABILITY, HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition PATTERN_FILTER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PATTERN_FILTER, RegexAttributeDefinitions.PATTERN)
-        .setXmlName(ElytronCommonConstants.PATTERN)
+    static final SimpleAttributeDefinition PATTERN_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATTERN_FILTER, RegexAttributeDefinitions.PATTERN)
+        .setXmlName(ElytronDescriptionConstants.PATTERN)
         .build();
 
-    static final SimpleAttributeDefinition ENABLING = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ENABLING, ModelType.BOOLEAN)
+    static final SimpleAttributeDefinition ENABLING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENABLING, ModelType.BOOLEAN)
         .setRequired(false)
         .setAllowExpression(true)
         .setDefaultValue(ModelNode.TRUE)
@@ -106,17 +106,17 @@ class HttpServerDefinitions {
             .setXmlName(FILTER)
             .build();
 
-    static final ObjectListAttributeDefinition CONFIGURED_FILTERS = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.FILTERS, CONFIGURED_FILTER)
+    static final ObjectListAttributeDefinition CONFIGURED_FILTERS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.FILTERS, CONFIGURED_FILTER)
             .setRequired(false)
             .setRestartAllServices()
             .setXmlName(FILTERS)
             .build();
 
-    private static final ElytronCommonAggregateComponentDefinition<HttpServerAuthenticationMechanismFactory> AGGREGATE_HTTP_SERVER_FACTORY = ElytronCommonAggregateComponentDefinition.create(HttpServerAuthenticationMechanismFactory.class,
-            ElytronCommonConstants.AGGREGATE_HTTP_SERVER_MECHANISM_FACTORY, ElytronCommonConstants.HTTP_SERVER_MECHANISM_FACTORIES, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY,
+    private static final AggregateComponentDefinition<HttpServerAuthenticationMechanismFactory> AGGREGATE_HTTP_SERVER_FACTORY = AggregateComponentDefinition.create(HttpServerAuthenticationMechanismFactory.class,
+            ElytronDescriptionConstants.AGGREGATE_HTTP_SERVER_MECHANISM_FACTORY, ElytronDescriptionConstants.HTTP_SERVER_MECHANISM_FACTORIES, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY,
             AggregateServerMechanismFactory::new);
 
-    static ElytronCommonAggregateComponentDefinition<HttpServerAuthenticationMechanismFactory> getRawAggregateHttpServerFactoryDefinition() {
+    static AggregateComponentDefinition<HttpServerAuthenticationMechanismFactory> getRawAggregateHttpServerFactoryDefinition() {
         return AGGREGATE_HTTP_SERVER_FACTORY;
     }
 
@@ -126,7 +126,7 @@ class HttpServerDefinitions {
 
     static ResourceDefinition getConfigurableHttpServerMechanismFactoryDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { HTTP_SERVER_FACTORY, CONFIGURED_FILTERS, PROPERTIES };
-        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<HttpServerAuthenticationMechanismFactory> getValueSupplier(
@@ -141,9 +141,9 @@ class HttpServerDefinitions {
                         HttpServerAuthenticationMechanismFactory.class, factoryInjector);
 
                 final Predicate<String> finalFilter;
-                if (model.hasDefined(ElytronCommonConstants.FILTERS)) {
+                if (model.hasDefined(ElytronDescriptionConstants.FILTERS)) {
                     Predicate<String> filter = null;
-                    List<ModelNode> nodes = model.require(ElytronCommonConstants.FILTERS).asList();
+                    List<ModelNode> nodes = model.require(ElytronDescriptionConstants.FILTERS).asList();
                     for (ModelNode current : nodes) {
                         Predicate<String> currentFilter = (String s) -> true;
                         String patternFilter = PATTERN_FILTER.resolveModelAttribute(context, current).asStringOrNull();
@@ -173,13 +173,13 @@ class HttpServerDefinitions {
             }
         };
 
-        return wrapFactory(new ElytronCommonTrivialResourceDefinition(ElytronCommonConstants.CONFIGURABLE_HTTP_SERVER_MECHANISM_FACTORY,
+        return wrapFactory(new TrivialResourceDefinition(ElytronDescriptionConstants.CONFIGURABLE_HTTP_SERVER_MECHANISM_FACTORY,
                 add, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY));
     }
 
     static ResourceDefinition getProviderHttpServerMechanismFactoryDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { PROVIDERS };
-        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<HttpServerAuthenticationMechanismFactory> getValueSupplier(
@@ -211,13 +211,13 @@ class HttpServerDefinitions {
 
         };
 
-        return wrapFactory(new ElytronCommonTrivialResourceDefinition(ElytronCommonConstants.PROVIDER_HTTP_SERVER_MECHANISM_FACTORY, add,
+        return wrapFactory(new TrivialResourceDefinition(ElytronDescriptionConstants.PROVIDER_HTTP_SERVER_MECHANISM_FACTORY, add,
                 attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY));
     }
 
     static ResourceDefinition getServiceLoaderServerMechanismFactoryDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { MODULE };
-        AbstractAddStepHandler add = new ElytronCommonTrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.PASSIVE, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.PASSIVE, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<HttpServerAuthenticationMechanismFactory> getValueSupplier(
@@ -238,7 +238,7 @@ class HttpServerDefinitions {
             }
         };
 
-        return wrapFactory(new ElytronCommonTrivialResourceDefinition(ElytronCommonConstants.SERVICE_LOADER_HTTP_SERVER_MECHANISM_FACTORY,
+        return wrapFactory(new TrivialResourceDefinition(ElytronDescriptionConstants.SERVICE_LOADER_HTTP_SERVER_MECHANISM_FACTORY,
                 add, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY));
     }
 

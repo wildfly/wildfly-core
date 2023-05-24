@@ -17,9 +17,9 @@
  */
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.PERMISSION_MAPPER_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.PERMISSION_MAPPER_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.PERMISSION_SET_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.PERMISSION_MAPPER_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.PERMISSION_MAPPER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.PERMISSION_SET_CAPABILITY;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLASS_NAME;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
 
@@ -61,7 +61,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
-import org.wildfly.extension.elytron._private.ElytronCommonMessages;
+import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.SimplePermissionMapper;
 import org.wildfly.security.permission.InvalidPermissionClassException;
@@ -75,35 +75,35 @@ import org.wildfly.security.permission.PermissionVerifier;
  */
 class PermissionMapperDefinitions {
 
-    static final SimpleAttributeDefinition LEFT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.LEFT, ModelType.STRING, false)
+    static final SimpleAttributeDefinition LEFT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LEFT, ModelType.STRING, false)
             .setMinSize(1)
             .setRestartAllServices()
             .setCapabilityReference(PERMISSION_MAPPER_CAPABILITY, PERMISSION_MAPPER_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition RIGHT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.RIGHT, ModelType.STRING, false)
+    static final SimpleAttributeDefinition RIGHT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RIGHT, ModelType.STRING, false)
             .setMinSize(1)
             .setRestartAllServices()
             .setCapabilityReference(PERMISSION_MAPPER_CAPABILITY, PERMISSION_MAPPER_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition LOGICAL_OPERATION = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.LOGICAL_OPERATION, ModelType.STRING, false)
+    static final SimpleAttributeDefinition LOGICAL_OPERATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LOGICAL_OPERATION, ModelType.STRING, false)
             .setAllowExpression(true)
-            .setAllowedValues(ElytronCommonConstants.AND, ElytronCommonConstants.OR, ElytronCommonConstants.XOR, ElytronCommonConstants.UNLESS)
+            .setAllowedValues(ElytronDescriptionConstants.AND, ElytronDescriptionConstants.OR, ElytronDescriptionConstants.XOR, ElytronDescriptionConstants.UNLESS)
             .setValidator(EnumValidator.create(LogicalMapperOperation.class))
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition MAPPING_MODE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MAPPING_MODE, ModelType.STRING, true)
+    static final SimpleAttributeDefinition MAPPING_MODE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAPPING_MODE, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(ElytronCommonConstants.FIRST))
-            .setAllowedValues(ElytronCommonConstants.AND, ElytronCommonConstants.OR, ElytronCommonConstants.XOR, ElytronCommonConstants.UNLESS, ElytronCommonConstants.FIRST)
+            .setDefaultValue(new ModelNode(ElytronDescriptionConstants.FIRST))
+            .setAllowedValues(ElytronDescriptionConstants.AND, ElytronDescriptionConstants.OR, ElytronDescriptionConstants.XOR, ElytronDescriptionConstants.UNLESS, ElytronDescriptionConstants.FIRST)
             .setValidator(EnumValidator.create(MappingMode.class, EnumSet.allOf(MappingMode.class)))
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition MATCH_ALL = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.MATCH_ALL, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition MATCH_ALL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_ALL, ModelType.BOOLEAN, true)
             .setCorrector(new ParameterCorrector() {
                 public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
                     if (newValue.isDefined() && "false".equals(newValue.asString())) {
@@ -113,65 +113,65 @@ class PermissionMapperDefinitions {
                 }
             })
             .setAllowExpression(false) // Only one value possible if present
-            .setAlternatives(ElytronCommonConstants.PRINCIPALS, ElytronCommonConstants.ROLES)
+            .setAlternatives(ElytronDescriptionConstants.PRINCIPALS, ElytronDescriptionConstants.ROLES)
             .setRestartAllServices()
             .build();
 
 
-    static final StringListAttributeDefinition PRINCIPALS = new StringListAttributeDefinition.Builder(ElytronCommonConstants.PRINCIPALS)
+    static final StringListAttributeDefinition PRINCIPALS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.PRINCIPALS)
             .setAllowExpression(true)
             .setRequired(false)
-            .setAlternatives(ElytronCommonConstants.MATCH_ALL)
+            .setAlternatives(ElytronDescriptionConstants.MATCH_ALL)
             .setMinSize(1)
-            .setXmlName(ElytronCommonConstants.PRINCIPAL)
+            .setXmlName(ElytronDescriptionConstants.PRINCIPAL)
             .setAttributeParser(AttributeParsers.STRING_LIST_NAMED_ELEMENT)
             .setAttributeMarshaller(AttributeMarshallers.STRING_LIST_NAMED_ELEMENT)
             .build();
 
-    static final StringListAttributeDefinition ROLES = new StringListAttributeDefinition.Builder(ElytronCommonConstants.ROLES)
+    static final StringListAttributeDefinition ROLES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.ROLES)
             .setAllowExpression(true)
             .setRequired(false)
-            .setAlternatives(ElytronCommonConstants.MATCH_ALL)
+            .setAlternatives(ElytronDescriptionConstants.MATCH_ALL)
             .setMinSize(1)
             .setXmlName("role")
             .setAttributeParser(AttributeParsers.STRING_LIST_NAMED_ELEMENT)
             .setAttributeMarshaller(AttributeMarshallers.STRING_LIST_NAMED_ELEMENT)
             .build();
 
-    static final SimpleAttributeDefinition TARGET_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.TARGET_NAME, ModelType.STRING, true)
+    static final SimpleAttributeDefinition TARGET_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TARGET_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
             .setMinSize(0)
             .build();
 
-    static final SimpleAttributeDefinition ACTION = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ACTION, ModelType.STRING, true)
+    static final SimpleAttributeDefinition ACTION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ACTION, ModelType.STRING, true)
             .setAllowExpression(true)
             .setMinSize(0)
             .build();
 
-    static final ObjectTypeAttributeDefinition PERMISSION = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.PERMISSION, CLASS_NAME, MODULE, TARGET_NAME, ACTION)
+    static final ObjectTypeAttributeDefinition PERMISSION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION, CLASS_NAME, MODULE, TARGET_NAME, ACTION)
             .build();
 
-    static final ObjectListAttributeDefinition PERMISSIONS = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.PERMISSIONS, PERMISSION)
+    static final ObjectListAttributeDefinition PERMISSIONS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSIONS, PERMISSION)
             .setRequired(false)
-            .setAlternatives(ElytronCommonConstants.PERMISSION_SETS)
+            .setAlternatives(ElytronDescriptionConstants.PERMISSION_SETS)
             .setRestartAllServices()
             .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
             .setDeprecated(ModelVersion.create(3, 0))
             .build();
 
-    static final SimpleAttributeDefinition PERMISSION_SET_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PERMISSION_SET, ModelType.STRING, false)
-            .setXmlName(ElytronCommonConstants.NAME)
+    static final SimpleAttributeDefinition PERMISSION_SET_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PERMISSION_SET, ModelType.STRING, false)
+            .setXmlName(ElytronDescriptionConstants.NAME)
             .setMinSize(1)
             .setCapabilityReference(PERMISSION_SET_CAPABILITY, PERMISSION_MAPPER_RUNTIME_CAPABILITY)
             .build();
 
-    static final ObjectTypeAttributeDefinition PERMISSION_SET = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.PERMISSION_SET, PERMISSION_SET_NAME)
+    static final ObjectTypeAttributeDefinition PERMISSION_SET = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION_SET, PERMISSION_SET_NAME)
             .build();
 
-    static final ObjectListAttributeDefinition PERMISSION_SETS = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.PERMISSION_SETS, PERMISSION_SET)
+    static final ObjectListAttributeDefinition PERMISSION_SETS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION_SETS, PERMISSION_SET)
             .setRequired(false)
-            .setAlternatives(ElytronCommonConstants.PERMISSIONS)
+            .setAlternatives(ElytronDescriptionConstants.PERMISSIONS)
             .setRestartAllServices()
             .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
@@ -214,11 +214,11 @@ class PermissionMapperDefinitions {
     }
 
 
-    static final ObjectTypeAttributeDefinition PERMISSION_MAPPING = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.PERMISSION_MAPPING, MATCH_ALL, PRINCIPALS, ROLES, PERMISSIONS, PERMISSION_SETS)
+    static final ObjectTypeAttributeDefinition PERMISSION_MAPPING = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION_MAPPING, MATCH_ALL, PRINCIPALS, ROLES, PERMISSIONS, PERMISSION_SETS)
             .setCorrector(new MatchAllCorrector())
             .build();
 
-    static final ObjectListAttributeDefinition PERMISSION_MAPPINGS = new ObjectListAttributeDefinition.Builder(ElytronCommonConstants.PERMISSION_MAPPINGS, PERMISSION_MAPPING)
+    static final ObjectListAttributeDefinition PERMISSION_MAPPINGS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION_MAPPINGS, PERMISSION_MAPPING)
             .setRequired(false)
             .setCorrector(new PermissionMappingCorrector())
             .setRestartAllServices()
@@ -229,19 +229,19 @@ class PermissionMapperDefinitions {
 
     //the _1_0 versions only exist to support legacy format of persistence
     static final StringListAttributeDefinition ROLES_1_0 = new StringListAttributeDefinition.Builder(ROLES)
-            .setXmlName(ElytronCommonConstants.ROLES)
+            .setXmlName(ElytronDescriptionConstants.ROLES)
             .setAttributeParser(AttributeParsers.STRING_LIST)
             .setAttributeMarshaller(AttributeMarshallers.STRING_LIST)
             .build();
 
     static final StringListAttributeDefinition PRINCIPALS_1_0 = new StringListAttributeDefinition.Builder(PRINCIPALS)
-            .setXmlName(ElytronCommonConstants.PRINCIPALS)
+            .setXmlName(ElytronDescriptionConstants.PRINCIPALS)
             .setAttributeParser(AttributeParsers.STRING_LIST)
             .setAttributeMarshaller(AttributeMarshallers.STRING_LIST)
             .build();
 
 
-    private static final ObjectTypeAttributeDefinition PERMISSION_MAPPING_1_0 = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.PERMISSION_MAPPING, MATCH_ALL, PRINCIPALS_1_0, ROLES_1_0, PERMISSIONS)
+    private static final ObjectTypeAttributeDefinition PERMISSION_MAPPING_1_0 = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION_MAPPING, MATCH_ALL, PRINCIPALS_1_0, ROLES_1_0, PERMISSIONS)
             .setCorrector(new MatchAllCorrector())
             .build();
 
@@ -249,7 +249,7 @@ class PermissionMapperDefinitions {
             .setValueType(PERMISSION_MAPPING_1_0)
             .build();
 
-    private static final ObjectTypeAttributeDefinition PERMISSION_MAPPING_1_1 = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.PERMISSION_MAPPING, MATCH_ALL, PRINCIPALS, ROLES, PERMISSIONS)
+    private static final ObjectTypeAttributeDefinition PERMISSION_MAPPING_1_1 = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION_MAPPING, MATCH_ALL, PRINCIPALS, ROLES, PERMISSIONS)
             .setCorrector(new MatchAllCorrector())
             .build();
 
@@ -259,7 +259,7 @@ class PermissionMapperDefinitions {
 
     static ResourceDefinition getLogicalPermissionMapper() {
         AttributeDefinition[] attributes = new AttributeDefinition[] {LOGICAL_OPERATION, LEFT, RIGHT};
-        ElytronCommonTrivialAddHandler<PermissionMapper> add = new ElytronCommonTrivialAddHandler<PermissionMapper>(PermissionMapper.class, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY) {
+        TrivialAddHandler<PermissionMapper> add = new TrivialAddHandler<PermissionMapper>(PermissionMapper.class, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<PermissionMapper> getValueSupplier(ServiceBuilder<PermissionMapper> serviceBuilder,
@@ -280,12 +280,12 @@ class PermissionMapperDefinitions {
             }
         };
 
-        return new ElytronCommonTrivialResourceDefinition(ElytronCommonConstants.LOGICAL_PERMISSION_MAPPER, add, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY);
+        return new TrivialResourceDefinition(ElytronDescriptionConstants.LOGICAL_PERMISSION_MAPPER, add, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY);
     }
 
     static ResourceDefinition getSimplePermissionMapper() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] { MAPPING_MODE, PERMISSION_MAPPINGS };
-        ElytronCommonTrivialAddHandler<PermissionMapper> add = new ElytronCommonTrivialAddHandler<PermissionMapper>(PermissionMapper.class, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY) {
+        TrivialAddHandler<PermissionMapper>  add = new TrivialAddHandler<PermissionMapper>(PermissionMapper.class, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<PermissionMapper> getValueSupplier(ServiceBuilder<PermissionMapper> serviceBuilder,
@@ -294,15 +294,15 @@ class PermissionMapperDefinitions {
                 final MappingMode mappingMode = MappingMode.valueOf(MappingMode.class, MAPPING_MODE.resolveModelAttribute(context, model).asString().toUpperCase(Locale.ENGLISH));
 
                 final List<Mapping> permissionMappings = new ArrayList<>();
-                if (model.hasDefined(ElytronCommonConstants.PERMISSION_MAPPINGS)) {
-                    for (ModelNode permissionMapping : model.get(ElytronCommonConstants.PERMISSION_MAPPINGS).asList()) {
+                if (model.hasDefined(ElytronDescriptionConstants.PERMISSION_MAPPINGS)) {
+                    for (ModelNode permissionMapping : model.get(ElytronDescriptionConstants.PERMISSION_MAPPINGS).asList()) {
                         boolean matchAll = MATCH_ALL.resolveModelAttribute(context, permissionMapping).asBoolean(false);
                         Set<String> principals = !matchAll ? new HashSet<>(PRINCIPALS.unwrap(context, permissionMapping)) : Collections.emptySet();
                         Set<String> roles = !matchAll ? new HashSet<>(ROLES.unwrap(context, permissionMapping)) : Collections.emptySet();
 
                         List<Permission> permissions = new ArrayList<>();
-                        if (permissionMapping.hasDefined(ElytronCommonConstants.PERMISSIONS)) {
-                            for (ModelNode permission : permissionMapping.require(ElytronCommonConstants.PERMISSIONS).asList()) {
+                        if (permissionMapping.hasDefined(ElytronDescriptionConstants.PERMISSIONS)) {
+                            for (ModelNode permission : permissionMapping.require(ElytronDescriptionConstants.PERMISSIONS).asList()) {
                                 permissions.add(new Permission(CLASS_NAME.resolveModelAttribute(context, permission).asString(),
                                         MODULE.resolveModelAttribute(context, permission).asStringOrNull(),
                                         TARGET_NAME.resolveModelAttribute(context, permission).asStringOrNull(),
@@ -311,8 +311,8 @@ class PermissionMapperDefinitions {
                         }
 
                         List<InjectedValue<Permissions>> permissionSetInjectors = new ArrayList<>();
-                        if (permissionMapping.hasDefined(ElytronCommonConstants.PERMISSION_SETS)) {
-                            for (ModelNode permissionSet : permissionMapping.require(ElytronCommonConstants.PERMISSION_SETS).asList()) {
+                        if (permissionMapping.hasDefined(ElytronDescriptionConstants.PERMISSION_SETS)) {
+                            for (ModelNode permissionSet : permissionMapping.require(ElytronDescriptionConstants.PERMISSION_SETS).asList()) {
                                 InjectedValue<Permissions> permissionSetInjector = new InjectedValue<>();
                                 String permissionSetName = PERMISSION_SET_NAME.resolveModelAttribute(context, permissionSet).asString();
                                 String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(PERMISSION_SET_CAPABILITY, permissionSetName);
@@ -330,7 +330,7 @@ class PermissionMapperDefinitions {
             }
         };
 
-        return new ElytronCommonTrivialResourceDefinition(ElytronCommonConstants.SIMPLE_PERMISSION_MAPPER, add, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY);
+        return new TrivialResourceDefinition(ElytronDescriptionConstants.SIMPLE_PERMISSION_MAPPER, add, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY);
     }
 
     private static PermissionMapper createSimplePermissionMapper(MappingMode mappingMode, List<Mapping> mappings) throws StartException {
@@ -353,15 +353,15 @@ class PermissionMapperDefinitions {
 
     static ResourceDefinition getConstantPermissionMapper() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] { PERMISSIONS, PERMISSION_SETS };
-        ElytronCommonTrivialAddHandler<PermissionMapper> add = new ElytronCommonTrivialAddHandler<PermissionMapper>(PermissionMapper.class, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY) {
+        TrivialAddHandler<PermissionMapper>  add = new TrivialAddHandler<PermissionMapper>(PermissionMapper.class, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<PermissionMapper> getValueSupplier(ServiceBuilder<PermissionMapper> serviceBuilder,
                                                                        OperationContext context, ModelNode model) throws OperationFailedException {
 
                 List<Permission> permissions = new ArrayList<>();
-                if (model.hasDefined(ElytronCommonConstants.PERMISSIONS)) {
-                    for (ModelNode permission : model.require(ElytronCommonConstants.PERMISSIONS).asList()) {
+                if (model.hasDefined(ElytronDescriptionConstants.PERMISSIONS)) {
+                    for (ModelNode permission : model.require(ElytronDescriptionConstants.PERMISSIONS).asList()) {
                         permissions.add(new Permission(CLASS_NAME.resolveModelAttribute(context, permission).asString(),
                                 MODULE.resolveModelAttribute(context, permission).asStringOrNull(),
                                 TARGET_NAME.resolveModelAttribute(context, permission).asStringOrNull(),
@@ -370,8 +370,8 @@ class PermissionMapperDefinitions {
                 }
 
                 List<InjectedValue<Permissions>> permissionSetInjectors = new ArrayList<>();
-                if (model.hasDefined(ElytronCommonConstants.PERMISSION_SETS)) {
-                    for (ModelNode permissionSet : model.require(ElytronCommonConstants.PERMISSION_SETS).asList()) {
+                if (model.hasDefined(ElytronDescriptionConstants.PERMISSION_SETS)) {
+                    for (ModelNode permissionSet : model.require(ElytronDescriptionConstants.PERMISSION_SETS).asList()) {
                         InjectedValue<Permissions> permissionSetInjector = new InjectedValue<>();
                         String permissionSetName = PERMISSION_SET_NAME.resolveModelAttribute(context, permissionSet).asString();
                         String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(PERMISSION_SET_CAPABILITY, permissionSetName);
@@ -385,7 +385,7 @@ class PermissionMapperDefinitions {
             }
         };
 
-        return new ElytronCommonTrivialResourceDefinition(ElytronCommonConstants.CONSTANT_PERMISSION_MAPPER, add, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY);
+        return new TrivialResourceDefinition(ElytronDescriptionConstants.CONSTANT_PERMISSION_MAPPER, add, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY);
     }
 
     private static PermissionMapper createConstantPermissionMapper(List<Permission> permissionsList, List<InjectedValue<Permissions>> permissionSetInjectors) throws StartException {
@@ -422,7 +422,7 @@ class PermissionMapperDefinitions {
                 currentModule = currentModule.getModule(mi);
             } catch (ModuleLoadException e) {
                 // If we cannot load it, it can never be checked.
-                throw ElytronCommonMessages.ROOT_LOGGER.invalidPermissionModule(permission.getModule(), e);
+                throw ElytronSubsystemMessages.ROOT_LOGGER.invalidPermissionModule(permission.getModule(), e);
             }
         }
 
@@ -430,9 +430,9 @@ class PermissionMapperDefinitions {
         try {
             return PermissionUtil.createPermission(classLoader, permission.getClassName(), permission.getTargetName(), permission.getAction());
         } catch (InvalidPermissionClassException e) {
-            throw ElytronCommonMessages.ROOT_LOGGER.invalidPermissionClass(permission.getClassName());
+            throw ElytronSubsystemMessages.ROOT_LOGGER.invalidPermissionClass(permission.getClassName());
         } catch (Throwable e) {
-            throw ElytronCommonMessages.ROOT_LOGGER.exceptionWhileCreatingPermission(permission.getClassName(), e);
+            throw ElytronSubsystemMessages.ROOT_LOGGER.exceptionWhileCreatingPermission(permission.getClassName(), e);
         }
     }
 

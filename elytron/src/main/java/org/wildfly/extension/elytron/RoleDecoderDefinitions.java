@@ -17,7 +17,7 @@
  */
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.ROLE_DECODER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.ROLE_DECODER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
 import java.util.HashSet;
@@ -55,32 +55,32 @@ import org.wildfly.security.authz.SourceAddressRoleDecoder;
  */
 class RoleDecoderDefinitions {
 
-    static final SimpleAttributeDefinition ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.ATTRIBUTE, ModelType.STRING, false)
+    static final SimpleAttributeDefinition ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ATTRIBUTE, ModelType.STRING, false)
         .setAllowExpression(true)
         .setMinSize(1)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition SOURCE_ADDRESS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SOURCE_ADDRESS, ModelType.STRING)
+    static final SimpleAttributeDefinition SOURCE_ADDRESS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SOURCE_ADDRESS, ModelType.STRING)
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
-            .setAlternatives(ElytronCommonConstants.PATTERN)
+            .setAlternatives(ElytronDescriptionConstants.PATTERN)
             .build();
 
     static final SimpleAttributeDefinition PATTERN = new SimpleAttributeDefinitionBuilder(RegexAttributeDefinitions.PATTERN)
             .setRestartAllServices()
-            .setAlternatives(ElytronCommonConstants.SOURCE_ADDRESS)
+            .setAlternatives(ElytronDescriptionConstants.SOURCE_ADDRESS)
             .build();
 
-    static final StringListAttributeDefinition ROLES = new StringListAttributeDefinition.Builder(ElytronCommonConstants.ROLES)
+    static final StringListAttributeDefinition ROLES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.ROLES)
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
-    private static final ElytronCommonAggregateComponentDefinition<RoleDecoder> AGGREGATE_ROLE_DECODER = ElytronCommonAggregateComponentDefinition.create(RoleDecoder.class,
-            ElytronCommonConstants.AGGREGATE_ROLE_DECODER, ElytronCommonConstants.ROLE_DECODERS, ROLE_DECODER_RUNTIME_CAPABILITY,
+    private static final AggregateComponentDefinition<RoleDecoder> AGGREGATE_ROLE_DECODER = AggregateComponentDefinition.create(RoleDecoder.class,
+            ElytronDescriptionConstants.AGGREGATE_ROLE_DECODER, ElytronDescriptionConstants.ROLE_DECODERS, ROLE_DECODER_RUNTIME_CAPABILITY,
             (RoleDecoder[] r) -> RoleDecoder.aggregate(r));
 
     static ResourceDefinition getSimpleRoleDecoderDefinition() {
@@ -91,7 +91,7 @@ class RoleDecoderDefinitions {
         return new SourceAddressRoleDecoderDefinition();
     }
 
-    static ElytronCommonAggregateComponentDefinition<RoleDecoder> getAggregateRoleDecoderDefinition() {
+    static AggregateComponentDefinition<RoleDecoder> getAggregateRoleDecoderDefinition() {
         return AGGREGATE_ROLE_DECODER;
     }
 
@@ -101,7 +101,7 @@ class RoleDecoderDefinitions {
         private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, ROLE_DECODER_RUNTIME_CAPABILITY);
 
         SimpleRoleDecoderDefinition() {
-            super(new Parameters(PathElement.pathElement(ElytronCommonConstants.SIMPLE_ROLE_DECODER), ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.SIMPLE_ROLE_DECODER))
+            super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.SIMPLE_ROLE_DECODER), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.SIMPLE_ROLE_DECODER))
                 .setAddHandler(ADD)
                 .setRemoveHandler(REMOVE)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -117,7 +117,7 @@ class RoleDecoderDefinitions {
 
     }
 
-    private static class SimpleRoleDecoderAddHandler extends ElytronCommonBaseAddHandler {
+    private static class SimpleRoleDecoderAddHandler extends BaseAddHandler {
 
         private SimpleRoleDecoderAddHandler() {
             super(ROLE_DECODER_RUNTIME_CAPABILITY, ATTRIBUTE);
@@ -149,7 +149,7 @@ class RoleDecoderDefinitions {
         private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{SOURCE_ADDRESS, PATTERN, ROLES};
 
         SourceAddressRoleDecoderDefinition() {
-            super(new Parameters(PathElement.pathElement(ElytronCommonConstants.SOURCE_ADDRESS_ROLE_DECODER), ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.SOURCE_ADDRESS_ROLE_DECODER))
+            super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.SOURCE_ADDRESS_ROLE_DECODER), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.SOURCE_ADDRESS_ROLE_DECODER))
                     .setAddHandler(ADD)
                     .setRemoveHandler(REMOVE)
                     .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -166,7 +166,7 @@ class RoleDecoderDefinitions {
         }
     }
 
-    private static class SourceAddressRoleDecoderAddHandler extends ElytronCommonBaseAddHandler {
+    private static class SourceAddressRoleDecoderAddHandler extends BaseAddHandler {
 
         private SourceAddressRoleDecoderAddHandler() {
             super(ROLE_DECODER_RUNTIME_CAPABILITY, SOURCE_ADDRESS, PATTERN, ROLES);

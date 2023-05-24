@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.net.URL;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,12 +49,11 @@ import org.wildfly.security.x500.cert.X509CertificateBuilder;
 /**
  * @author <a href="mailto:carodrig@redhat.com">Cameron Rodriguez</a>
  */
-class ElytronCommonTestEnvironment extends AdditionalInitialization {
+abstract class ElytronCommonTestEnvironment extends AdditionalInitialization {
 
     static final int LDAPS1_PORT = 11391;
     static final int LDAPS2_PORT = 11392;
 
-    protected static final String WORKING_DIRECTORY_LOCATION = "./target/test-classes/org/wildfly/extension/elytron";
     protected static final char[] GENERATED_KEYSTORE_PASSWORD = "Elytron".toCharArray();
     protected static final X500Principal ISSUER_DN = new X500Principal("O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA");
     protected static final X500Principal LOCALHOST_DN = new X500Principal("OU=Elytron, O=Elytron, C=CZ, ST=Elytron, CN=localhost");
@@ -115,22 +113,6 @@ class ElytronCommonTestEnvironment extends AdditionalInitialization {
         }
     }
 
-    public static void setUpKeyStores() throws Exception {
-        File workingDir = new File(WORKING_DIRECTORY_LOCATION);
-        if (workingDir.exists() == false) {
-            workingDir.mkdirs();
-        }
-
-        SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = createIssuer();
-        File trustFile = new File(workingDir, "ca.truststore");
-        KeyStore trustStore = createTrustStore(issuerSelfSignedX509CertificateAndSigningKey);
-        File localhostFile = new File(workingDir, "localhost.keystore");
-        KeyStore localhostKeyStore = createLocalhostKeyStore(issuerSelfSignedX509CertificateAndSigningKey);
-
-        createTemporaryKeyStoreFile(trustStore, trustFile);
-        createTemporaryKeyStoreFile(localhostKeyStore, localhostFile);
-    }
-
     protected final RunningMode runningMode;
 
     ElytronCommonTestEnvironment() {
@@ -147,49 +129,7 @@ class ElytronCommonTestEnvironment extends AdditionalInitialization {
     }
 
     @Override
-    protected ControllerInitializer createControllerInitializer() {
-        ControllerInitializer initializer = new ControllerInitializer();
-
-        try {
-            URL fsr = getClass().getResource("filesystem-realm-empty");
-            if (fsr != null) emptyDirectory(new File(fsr.getFile()).toPath());
-        } catch (Exception e) {
-            throw new RuntimeException("Could ensure empty testing filesystem directory", e);
-        }
-
-        try {
-            initializer.addPath("jboss.server.config.dir", getClass().getResource(".").getFile(), null);
-            initializer.addPath("jboss.server.data.dir", "target", null);
-        } catch (Exception e) {
-            throw new RuntimeException("Could not create test config directory", e);
-        }
-
-        return initializer;
-    }
-
-    public static void startLdapService() {
-        try {
-            setUpKeyStores();
-            ElytronCommonLdapService.getCommonBuilder()
-                    .setWorkingDir(new File("./target/apache-ds/working1"))
-                    .createDirectoryService("TestService1")
-                    .addPartition("Elytron", "dc=elytron,dc=wildfly,dc=org", 5, "uid")
-                    .importLdif(ElytronCommonTestEnvironment.class.getResourceAsStream("ldap-schemas.ldif"))
-                    .importLdif(ElytronCommonTestEnvironment.class.getResourceAsStream("ldap-data.ldif"))
-                    .addTcpServer("Default TCP", "localhost", LDAPS1_PORT, "localhost.keystore", "Elytron")
-                    .start();
-            ElytronCommonLdapService.getCommonBuilder()
-                    .setWorkingDir(new File("./target/apache-ds/working2"))
-                    .createDirectoryService("TestService2")
-                    .addPartition("Elytron", "dc=elytron,dc=wildfly,dc=org", 5, "uid")
-                    .importLdif(ElytronCommonTestEnvironment.class.getResourceAsStream("ldap-schemas.ldif"))
-                    .importLdif(ElytronCommonTestEnvironment.class.getResourceAsStream("ldap-referred.ldif"))
-                    .addTcpServer("Default TCP", "localhost", LDAPS2_PORT, "localhost.keystore", "Elytron")
-                    .start();
-        } catch (Exception e) {
-            throw new RuntimeException("Could not start LDAP embedded server.", e);
-        }
-    }
+    protected abstract ControllerInitializer createControllerInitializer();
 
     protected void emptyDirectory(Path directory) throws IOException {
         Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {

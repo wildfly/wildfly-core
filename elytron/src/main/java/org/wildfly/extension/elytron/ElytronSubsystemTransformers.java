@@ -20,41 +20,41 @@ import static org.jboss.as.controller.security.CredentialReference.CREDENTIAL_RE
 import static org.jboss.as.controller.security.CredentialReference.REJECT_CREDENTIAL_REFERENCE_WITH_BOTH_STORE_AND_CLEAR_TEXT;
 import static org.wildfly.extension.elytron.DistributedRealmDefinition.EMIT_EVENTS;
 import static org.wildfly.extension.elytron.DistributedRealmDefinition.IGNORE_UNAVAILABLE_REALMS;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.AGGREGATE_REALM;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.ALGORITHM;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.AUTHORIZATION_REALM;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.AUTHORIZATION_REALMS;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.AUTOFLUSH;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.BCRYPT_MAPPER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CERTIFICATE_AUTHORITY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CERTIFICATE_REVOCATION_LISTS;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CREDENTIAL_STORE;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.DISTRIBUTED_REALM;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.FILESYSTEM_REALM;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.FILE_AUDIT_LOG;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.FROM;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.HASH_CHARSET;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.HASH_ENCODING;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.JDBC_REALM;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.KEY_STORE;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.KEY_STORE_ALIAS;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.LDAP_REALM;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.MAPPED_ROLE_MAPPER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.MODULAR_CRYPT_MAPPER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.PRINCIPAL_TRANSFORMER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.PROPERTIES_REALM;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.ROLE_MAP;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.SALTED_SIMPLE_DIGEST_MAPPER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.SALT_ENCODING;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.SCRAM_MAPPER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.SECRET_KEY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.SECURITY_DOMAIN;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.SIMPLE_DIGEST_MAPPER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.SYNCHRONIZED;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.TO;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.TRUSTED_VIRTUAL_SECURITY_DOMAINS;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ALGORITHM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZATION_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZATION_REALMS;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTOFLUSH;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORE;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DISTRIBUTED_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILESYSTEM_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FROM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_CHARSET;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_ENCODING;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY_STORE;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY_STORE_ALIAS;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.LDAP_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MAPPED_ROLE_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULAR_CRYPT_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROPERTIES_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLE_MAP;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALT_ENCODING;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECRET_KEY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_DOMAIN;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYNCHRONIZED;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TO;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUSTED_VIRTUAL_SECURITY_DOMAINS;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_10_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_11_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_12_0_0;
@@ -76,7 +76,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_8_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_9_0_0;
 import static org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttributes.PRINCIPAL_QUERIES;
 import static org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttributes.PRINCIPAL_QUERY;
-import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -160,19 +160,19 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     private static void from18(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_18_0_0, ELYTRON_17_0_0);
 
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.FILE_AUDIT_LOG))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.FILE_AUDIT_LOG))
         .getAttributeBuilder()
-        .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronCommonConstants.ENCODING)
+        .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.ENCODING)
         .setDiscard(DiscardAttributeChecker.UNDEFINED, AuditResourceDefinitions.ENCODING)
         .end();
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG))
         .getAttributeBuilder()
-        .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronCommonConstants.ENCODING)
+        .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.ENCODING)
         .setDiscard(DiscardAttributeChecker.UNDEFINED, AuditResourceDefinitions.ENCODING)
         .end();
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.SIZE_ROTATING_FILE_AUDIT_LOG))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG))
         .getAttributeBuilder()
-        .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronCommonConstants.ENCODING)
+        .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.ENCODING)
         .setDiscard(DiscardAttributeChecker.UNDEFINED, AuditResourceDefinitions.ENCODING)
         .end();
         builder.addChildResource(PathElement.pathElement(DISTRIBUTED_REALM))
@@ -185,7 +185,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from17(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_17_0_0, ELYTRON_16_0_0);
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.VIRTUAL_SECURITY_DOMAIN));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.VIRTUAL_SECURITY_DOMAIN));
         builder.addChildResource(PathElement.pathElement(SECURITY_DOMAIN))
                 .getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.DEFINED, TRUSTED_VIRTUAL_SECURITY_DOMAINS)
@@ -211,18 +211,18 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     private static void from15_1(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_15_1_0, ELYTRON_15_0_0);
 
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.KEY_STORE))
-        .addOperationTransformationOverride(ElytronCommonConstants.READ_ALIAS)
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE))
+        .addOperationTransformationOverride(ElytronDescriptionConstants.READ_ALIAS)
         .setDiscard(DiscardAttributeChecker.UNDEFINED, ModifiableKeyStoreDecorator.ReadAliasHandler.VERBOSE)
-        .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.FALSE), ElytronCommonConstants.VERBOSE)
+        .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.FALSE), ElytronDescriptionConstants.VERBOSE)
         .end();
 
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.KEY_STORE))
-        .addOperationTransformationOverride(ElytronCommonConstants.READ_ALIASES)
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE))
+        .addOperationTransformationOverride(ElytronDescriptionConstants.READ_ALIASES)
         .setDiscard(DiscardAttributeChecker.UNDEFINED, ModifiableKeyStoreDecorator.ReadAliasesHandler.VERBOSE)
         .setDiscard(DiscardAttributeChecker.UNDEFINED, ModifiableKeyStoreDecorator.ReadAliasesHandler.RECURSIVE)
-        .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), ElytronCommonConstants.VERBOSE)
-        .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), ElytronCommonConstants.RECURSIVE)
+        .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), ElytronDescriptionConstants.VERBOSE)
+        .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), ElytronDescriptionConstants.RECURSIVE)
         .end();
 
         builder.addChildResource(PathElement.pathElement(FILESYSTEM_REALM))
@@ -235,13 +235,13 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from15(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_15_0_0, ELYTRON_14_0_0);
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.JAAS_REALM));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.JAAS_REALM));
 
     }
 
     private static void from14(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_14_0_0, ELYTRON_13_0_0);
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.SERVER_SSL_SNI_CONTEXT))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT))
                 .getAttributeBuilder()
                 .addRejectCheck(new RejectAttributeChecker.DefaultRejectAttributeChecker() {
                     @Override
@@ -261,20 +261,20 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                     public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
                         return ROOT_LOGGER.hostContextMapHostnameContainsCaret().getMessage();
                     }
-                }, ElytronCommonConstants.HOST_CONTEXT_MAP);
+                }, ElytronDescriptionConstants.HOST_CONTEXT_MAP);
         builder.addChildResource(PathElement.pathElement(PROPERTIES_REALM))
                 .getAttributeBuilder()
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_ENCODING)
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_CHARSET)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_ENCODING)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_CHARSET);
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.SERVER_SSL_CONTEXT))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_CONTEXT))
                 .getAttributeBuilder()
-                .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(new RejectAttributeChecker.SimpleRejectAttributeChecker( new ModelNode(ElytronCommonConstants.SSL_V2_HELLO))), ElytronCommonConstants.PROTOCOLS)
+                .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(new RejectAttributeChecker.SimpleRejectAttributeChecker( new ModelNode(ElytronDescriptionConstants.SSL_V2_HELLO))), ElytronDescriptionConstants.PROTOCOLS)
                 .end();
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.CLIENT_SSL_CONTEXT))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT))
                 .getAttributeBuilder()
-                .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(new RejectAttributeChecker.SimpleRejectAttributeChecker( new ModelNode(ElytronCommonConstants.SSL_V2_HELLO))), ElytronCommonConstants.PROTOCOLS)
+                .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(new RejectAttributeChecker.SimpleRejectAttributeChecker( new ModelNode(ElytronDescriptionConstants.SSL_V2_HELLO))), ElytronDescriptionConstants.PROTOCOLS)
                 .end();
         builder.addChildResource(PathElement.pathElement(FILESYSTEM_REALM))
                 .getAttributeBuilder()
@@ -294,114 +294,114 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_ENCODING)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_CHARSET)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_ENCODING);
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.TRUST_MANAGER))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.TRUST_MANAGER))
                 .getAttributeBuilder()
-                .addRejectCheck(REJECT_IF_MULTIPLE_CERTIFICATE_REVOCATION_LISTS, ElytronCommonConstants.CERTIFICATE_REVOCATION_LISTS)
-                .addRename(ElytronCommonConstants.CERTIFICATE_REVOCATION_LISTS, ElytronCommonConstants.CERTIFICATE_REVOCATION_LIST)
-                .setValueConverter(CERTIFICATE_REVOCATION_LIST_CONVERTER, ElytronCommonConstants.CERTIFICATE_REVOCATION_LISTS)
+                .addRejectCheck(REJECT_IF_MULTIPLE_CERTIFICATE_REVOCATION_LISTS, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS)
+                .addRename(ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LIST)
+                .setValueConverter(CERTIFICATE_REVOCATION_LIST_CONVERTER, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS)
                 .end();
     }
 
     private static void from13(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_13_0_0, ELYTRON_12_0_0);
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.EXPRESSION, ElytronCommonConstants.ENCRYPTION));
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.SECRET_KEY_CREDENTIAL_STORE));
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.CREDENTIAL_STORE))
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE));
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CREDENTIAL_STORE))
             .getAttributeBuilder()
-            .addRename(ElytronCommonConstants.PATH, ElytronCommonConstants.LOCATION)
+            .addRename(ElytronDescriptionConstants.PATH, ElytronDescriptionConstants.LOCATION)
             .end();
     }
 
     private static void from12(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_12_0_0, ELYTRON_11_0_0);
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.KEY_MANAGER))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KEY_MANAGER))
                 .getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronCommonConstants.GENERATE_SELF_SIGNED_CERTIFICATE_HOST)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.GENERATE_SELF_SIGNED_CERTIFICATE_HOST)
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, SSLDefinitions.GENERATE_SELF_SIGNED_CERTIFICATE_HOST)
                 .end();
 
 
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.CASE_PRINCIPAL_TRANSFORMER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CASE_PRINCIPAL_TRANSFORMER));
     }
 
     private static void from11(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_11_0_0, ELYTRON_10_0_0);
         builder.rejectChildResource(PathElement.pathElement(DISTRIBUTED_REALM));
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.FAILOVER_REALM));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.FAILOVER_REALM));
     }
 
     private static void from10(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_10_0_0, ELYTRON_9_0_0);
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.AUTHENTICATION_CONFIGURATION))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION))
                 .getAttributeBuilder()
                 .addRejectCheck(REJECT_CREDENTIAL_REFERENCE_WITH_BOTH_STORE_AND_CLEAR_TEXT, CREDENTIAL_REFERENCE)
                 .end();
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.KEY_STORE))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE))
                 .getAttributeBuilder()
                 .addRejectCheck(REJECT_CREDENTIAL_REFERENCE_WITH_BOTH_STORE_AND_CLEAR_TEXT, CREDENTIAL_REFERENCE)
                 .end();
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.KEY_MANAGER))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KEY_MANAGER))
                 .getAttributeBuilder()
                 .addRejectCheck(REJECT_CREDENTIAL_REFERENCE_WITH_BOTH_STORE_AND_CLEAR_TEXT, CREDENTIAL_REFERENCE)
                 .end();
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.CREDENTIAL_STORE))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CREDENTIAL_STORE))
                 .getAttributeBuilder()
                 .addRejectCheck(REJECT_CREDENTIAL_REFERENCE_WITH_BOTH_STORE_AND_CLEAR_TEXT, CREDENTIAL_REFERENCE)
                 .end();
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.DIR_CONTEXT))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.DIR_CONTEXT))
                 .getAttributeBuilder()
                 .addRejectCheck(REJECT_CREDENTIAL_REFERENCE_WITH_BOTH_STORE_AND_CLEAR_TEXT, CREDENTIAL_REFERENCE)
                 .end();
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.CERTIFICATE_AUTHORITY_ACCOUNT))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT))
                 .getAttributeBuilder()
                 .addRejectCheck(REJECT_CREDENTIAL_REFERENCE_WITH_BOTH_STORE_AND_CLEAR_TEXT, CREDENTIAL_REFERENCE)
                 .end();
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.SECURITY_DOMAIN))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SECURITY_DOMAIN))
                 .getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronCommonConstants.ROLE_DECODER)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.ROLE_DECODER)
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, DomainDefinition.ROLE_DECODER)
                 .end();
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.SOURCE_ADDRESS_ROLE_DECODER));
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.AGGREGATE_ROLE_DECODER));
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.REGEX_ROLE_MAPPER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.SOURCE_ADDRESS_ROLE_DECODER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_ROLE_DECODER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.REGEX_ROLE_MAPPER));
     }
 
     private static void from9(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_9_0_0, ELYTRON_8_0_0);
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.AUTHENTICATION_CONFIGURATION))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION))
                 .getAttributeBuilder()
                 .setDiscard(DiscardAttributeChecker.ALWAYS, AuthenticationClientDefinitions.WEBSERVICES);
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.SERVER_SSL_CONTEXT))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_CONTEXT))
                 .getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronCommonConstants.CIPHER_SUITE_NAMES)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.CIPHER_SUITE_NAMES)
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, SSLDefinitions.CIPHER_SUITE_NAMES)
                 .end();
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.CLIENT_SSL_CONTEXT))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT))
                 .getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronCommonConstants.CIPHER_SUITE_NAMES)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.CIPHER_SUITE_NAMES)
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, SSLDefinitions.CIPHER_SUITE_NAMES)
                 .end();
     }
 
     private static void from8(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_8_0_0, ELYTRON_7_0_0);
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.SECURITY_DOMAIN))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SECURITY_DOMAIN))
                 .getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronCommonConstants.EVIDENCE_DECODER)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.EVIDENCE_DECODER)
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, DomainDefinition.EVIDENCE_DECODER)
                 .end();
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.X500_SUBJECT_EVIDENCE_DECODER));
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.X509_SUBJECT_ALT_NAME_EVIDENCE_DECODER));
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.CUSTOM_EVIDENCE_DECODER));
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.AGGREGATE_EVIDENCE_DECODER));
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.CERTIFICATE_AUTHORITY));
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.SYSLOG_AUDIT_LOG))
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.X500_SUBJECT_EVIDENCE_DECODER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.X509_SUBJECT_ALT_NAME_EVIDENCE_DECODER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_EVIDENCE_DECODER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_EVIDENCE_DECODER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY));
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SYSLOG_AUDIT_LOG))
                 .getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronCommonConstants.SYSLOG_FORMAT)
-                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronCommonConstants.RECONNECT_ATTEMPTS)
-                .setDiscard(DiscardAttributeChecker.DEFAULT_VALUE, ElytronCommonConstants.SYSLOG_FORMAT, ElytronCommonConstants.RECONNECT_ATTEMPTS)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.SYSLOG_FORMAT)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.RECONNECT_ATTEMPTS)
+                .setDiscard(DiscardAttributeChecker.DEFAULT_VALUE, ElytronDescriptionConstants.SYSLOG_FORMAT, ElytronDescriptionConstants.RECONNECT_ATTEMPTS)
                 .end();
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.CERTIFICATE_AUTHORITY_ACCOUNT))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT))
                 .getAttributeBuilder()
                 .addRejectCheck(new RejectAttributeChecker.DefaultRejectAttributeChecker() {
 
@@ -414,7 +414,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                     public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
                         return ROOT_LOGGER.invalidAttributeValue(CERTIFICATE_AUTHORITY).getMessage();
                     }
-                }, ElytronCommonConstants.CERTIFICATE_AUTHORITY);
+                }, ElytronDescriptionConstants.CERTIFICATE_AUTHORITY);
         builder.addChildResource(PathElement.pathElement(AGGREGATE_REALM))
                 .getAttributeBuilder()
                 .addRejectCheck(REJECT_IF_MULTIPLE_AUTHORIZATION_REALMS, AUTHORIZATION_REALMS)
@@ -422,14 +422,14 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 .addRename(AUTHORIZATION_REALMS, AUTHORIZATION_REALM)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, PRINCIPAL_TRANSFORMER)
                 .end();
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.TRUST_MANAGER))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.TRUST_MANAGER))
                 .getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronCommonConstants.OCSP)
-                .setValueConverter(MAXIMUM_CERT_PATH_CONVERTER, ElytronCommonConstants.MAXIMUM_CERT_PATH, ElytronCommonConstants.CERTIFICATE_REVOCATION_LIST)
-                .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), ElytronCommonConstants.ONLY_LEAF_CERT)
-                .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), ElytronCommonConstants.SOFT_FAIL)
-                .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronCommonConstants.ONLY_LEAF_CERT)
-                .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronCommonConstants.SOFT_FAIL)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.OCSP)
+                .setValueConverter(MAXIMUM_CERT_PATH_CONVERTER, ElytronDescriptionConstants.MAXIMUM_CERT_PATH, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LIST)
+                .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), ElytronDescriptionConstants.ONLY_LEAF_CERT)
+                .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), ElytronDescriptionConstants.SOFT_FAIL)
+                .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDescriptionConstants.ONLY_LEAF_CERT)
+                .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDescriptionConstants.SOFT_FAIL)
                 .end();
     }
 
@@ -453,9 +453,9 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from6(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_6_0_0, ELYTRON_5_0_0);
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.KEY_STORE))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE))
             .getAttributeBuilder()
-            .addRejectCheck(RejectAttributeChecker.UNDEFINED, ElytronCommonConstants.TYPE)
+            .addRejectCheck(RejectAttributeChecker.UNDEFINED, ElytronDescriptionConstants.TYPE)
             .end();
     }
 
@@ -463,22 +463,22 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_5_0_0, ELYTRON_4_0_0);
         builder.getAttributeBuilder()
             .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDefinition.REGISTER_JASPI_FACTORY)
-            .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronCommonConstants.DEFAULT_SSL_CONTEXT)
+            .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.DEFAULT_SSL_CONTEXT)
             .setDiscard(DiscardAttributeChecker.UNDEFINED, ElytronDefinition.DEFAULT_SSL_CONTEXT)
             .end();
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.JASPI_CONFIGURATION));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.JASPI_CONFIGURATION));
         transformAutoFlush(builder, FILE_AUDIT_LOG);
         transformAutoFlush(builder, PERIODIC_ROTATING_FILE_AUDIT_LOG);
         transformAutoFlush(builder, SIZE_ROTATING_FILE_AUDIT_LOG);
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.SERVER_SSL_SNI_CONTEXT));
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.TOKEN_REALM))
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT));
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM))
             .getAttributeBuilder()
-            .addRejectCheck(new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(ElytronCommonConstants.HOST_NAME_VERIFICATION_POLICY,
-                RejectAttributeChecker.DEFINED)), ElytronCommonConstants.JWT)
-            .addRejectCheck(new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(ElytronCommonConstants.SSL_CONTEXT,
-                RejectAttributeChecker.DEFINED)), ElytronCommonConstants.JWT)
-            .addRejectCheck(new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(ElytronCommonConstants.KEY_MAP,
-                RejectAttributeChecker.DEFINED)), ElytronCommonConstants.JWT)
+            .addRejectCheck(new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(ElytronDescriptionConstants.HOST_NAME_VERIFICATION_POLICY,
+                RejectAttributeChecker.DEFINED)), ElytronDescriptionConstants.JWT)
+            .addRejectCheck(new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(ElytronDescriptionConstants.SSL_CONTEXT,
+                RejectAttributeChecker.DEFINED)), ElytronDescriptionConstants.JWT)
+            .addRejectCheck(new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(ElytronDescriptionConstants.KEY_MAP,
+                RejectAttributeChecker.DEFINED)), ElytronDescriptionConstants.JWT)
             .end();
     }
 
@@ -494,7 +494,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     private static void from4(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_4_0_0, ELYTRON_3_0_0);
         builder
-                .addChildResource(PathElement.pathElement(ElytronCommonConstants.JDBC_REALM))
+                .addChildResource(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM))
                 .getAttributeBuilder()
                 .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(
                         new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(SCRAM_MAPPER,
@@ -511,24 +511,24 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                         ))
                 ), PRINCIPAL_QUERIES)
                 .end();
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.CERTIFICATE_AUTHORITY_ACCOUNT));
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.MAPPED_ROLE_MAPPER));
-        builder.rejectChildResource(PathElement.pathElement(ElytronCommonConstants.CUSTOM_SECURITY_EVENT_LISTENER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.MAPPED_ROLE_MAPPER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_SECURITY_EVENT_LISTENER));
     }
 
     private static void from3(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_3_0_0, ELYTRON_2_0_0);
-        builder.discardChildResource(PathElement.pathElement(ElytronCommonConstants.PERMISSION_SET));
+        builder.discardChildResource(PathElement.pathElement(ElytronDescriptionConstants.PERMISSION_SET));
         builder
-                .addChildResource(PathElement.pathElement(ElytronCommonConstants.SIMPLE_PERMISSION_MAPPER))
+                .addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SIMPLE_PERMISSION_MAPPER))
                 .getAttributeBuilder()
-                .setValueConverter(MAPPING_PERMISSION_SET_CONVERTER, ElytronCommonConstants.PERMISSION_MAPPINGS)
+                .setValueConverter(MAPPING_PERMISSION_SET_CONVERTER, ElytronDescriptionConstants.PERMISSION_MAPPINGS)
                 .end();
         builder
-                .addChildResource(PathElement.pathElement(ElytronCommonConstants.CONSTANT_PERMISSION_MAPPER))
+                .addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CONSTANT_PERMISSION_MAPPER))
                 .getAttributeBuilder()
-                .addRename(ElytronCommonConstants.PERMISSION_SETS, ElytronCommonConstants.PERMISSIONS)
-                .setValueConverter(CONSTANT_PERMISSION_SET_CONVERTER, ElytronCommonConstants.PERMISSION_SETS)
+                .addRename(ElytronDescriptionConstants.PERMISSION_SETS, ElytronDescriptionConstants.PERMISSIONS)
+                .setValueConverter(CONSTANT_PERMISSION_SET_CONVERTER, ElytronDescriptionConstants.PERMISSION_SETS)
                 .end();
     }
 
@@ -536,7 +536,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_2_0_0, ELYTRON_1_2_0);
 
         // Discard new "fail-cache" if it's undefined or has a value same as old unconfigurable behavior; reject otherwise
-        builder.addChildResource(PathElement.pathElement(ElytronCommonConstants.KERBEROS_SECURITY_FACTORY))
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY))
             .getAttributeBuilder()
             .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(ModelNode.ZERO), KerberosSecurityFactoryDefinition.FAIL_CACHE)
             .addRejectCheck(RejectAttributeChecker.DEFINED, KerberosSecurityFactoryDefinition.FAIL_CACHE);
@@ -548,17 +548,17 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
             if (attributeValue.isDefined()) {
                 for (ModelNode permissionMapping : attributeValue.asList()) {
-                    if (permissionMapping.hasDefined(ElytronCommonConstants.PERMISSION_SETS)) {
-                        ModelNode permissionSets = permissionMapping.get(ElytronCommonConstants.PERMISSION_SETS);
+                    if (permissionMapping.hasDefined(ElytronDescriptionConstants.PERMISSION_SETS)) {
+                        ModelNode permissionSets = permissionMapping.get(ElytronDescriptionConstants.PERMISSION_SETS);
                         for (ModelNode permissionSet : permissionSets.asList()) {
-                            ModelNode permissionSetName = permissionSet.get(ElytronCommonConstants.PERMISSION_SET);
-                            PathAddress permissionSetAddress = address.getParent().append(ElytronCommonConstants.PERMISSION_SET, permissionSetName.asString());
-                            ModelNode permissions = context.readResourceFromRoot(permissionSetAddress).getModel().get(ElytronCommonConstants.PERMISSIONS);
+                            ModelNode permissionSetName = permissionSet.get(ElytronDescriptionConstants.PERMISSION_SET);
+                            PathAddress permissionSetAddress = address.getParent().append(ElytronDescriptionConstants.PERMISSION_SET, permissionSetName.asString());
+                            ModelNode permissions = context.readResourceFromRoot(permissionSetAddress).getModel().get(ElytronDescriptionConstants.PERMISSIONS);
                             for (ModelNode permission: permissions.asList()) {
-                                permissionMapping.get(ElytronCommonConstants.PERMISSIONS).add(permission);
+                                permissionMapping.get(ElytronDescriptionConstants.PERMISSIONS).add(permission);
                             }
                         }
-                        permissionMapping.remove(ElytronCommonConstants.PERMISSION_SETS);
+                        permissionMapping.remove(ElytronDescriptionConstants.PERMISSION_SETS);
                     }
                 }
             }
@@ -572,9 +572,9 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
             if (attributeValue.isDefined()) {
                 ModelNode allPermissions = new ModelNode();
                 for (ModelNode permissionSet : attributeValue.asList()) {
-                    ModelNode permissionSetName = permissionSet.get(ElytronCommonConstants.PERMISSION_SET);
-                    PathAddress permissionSetAddress = address.getParent().append(ElytronCommonConstants.PERMISSION_SET, permissionSetName.asString());
-                    ModelNode permissions = context.readResourceFromRoot(permissionSetAddress).getModel().get(ElytronCommonConstants.PERMISSIONS);
+                    ModelNode permissionSetName = permissionSet.get(ElytronDescriptionConstants.PERMISSION_SET);
+                    PathAddress permissionSetAddress = address.getParent().append(ElytronDescriptionConstants.PERMISSION_SET, permissionSetName.asString());
+                    ModelNode permissions = context.readResourceFromRoot(permissionSetAddress).getModel().get(ElytronDescriptionConstants.PERMISSIONS);
                     for (ModelNode permission: permissions.asList()) {
                         allPermissions.add(permission);
                     }
@@ -590,15 +590,15 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
         @Override
         protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
-            if (attributeName.equals(ElytronCommonConstants.MAXIMUM_CERT_PATH)) {
+            if (attributeName.equals(ElytronDescriptionConstants.MAXIMUM_CERT_PATH)) {
                 maxCertPath = attributeValue.asIntOrNull();
                 attributeValue.clear();
             } else {
                 if (attributeValue.isDefined()) {
                     if (maxCertPath != null) {
-                        attributeValue.set(ElytronCommonConstants.MAXIMUM_CERT_PATH, new ModelNode(maxCertPath));
+                        attributeValue.set(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, new ModelNode(maxCertPath));
                     } else {
-                        attributeValue.set(ElytronCommonConstants.MAXIMUM_CERT_PATH, new ModelNode(5));
+                        attributeValue.set(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, new ModelNode(5));
                     }
                 }
             }
@@ -614,8 +614,8 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 if (crls.size() == 1) {
                     ModelNode singleCrl = crls.get(0);
                     attributeValue.clear();
-                    attributeValue.get(ElytronCommonConstants.PATH).set(singleCrl.get(ElytronCommonConstants.PATH));
-                    attributeValue.get(ElytronCommonConstants.RELATIVE_TO).set(singleCrl.get(ElytronCommonConstants.RELATIVE_TO));
+                    attributeValue.get(ElytronDescriptionConstants.PATH).set(singleCrl.get(ElytronDescriptionConstants.PATH));
+                    attributeValue.get(ElytronDescriptionConstants.RELATIVE_TO).set(singleCrl.get(ElytronDescriptionConstants.RELATIVE_TO));
                 } else if (crls.isEmpty()) {
                     attributeValue.clear();
                 }

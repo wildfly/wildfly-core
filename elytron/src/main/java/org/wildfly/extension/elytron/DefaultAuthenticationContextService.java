@@ -37,7 +37,7 @@ import org.wildfly.security.auth.client.AuthenticationContext;
  */
 class DefaultAuthenticationContextService implements Service {
 
-    static final ServiceName SERVICE_NAME = ElytronExtension.BASE_SERVICE_NAME.append(ElytronCommonConstants.AUTHENTICATION_CONTEXT_REGISTRATION);
+    static final ServiceName SERVICE_NAME = ElytronExtension.BASE_SERVICE_NAME.append(ElytronDescriptionConstants.AUTHENTICATION_CONTEXT_REGISTRATION);
 
     private final Supplier<AuthenticationContext> defaultAuthenticationContextSupplier;
     private final Consumer<AuthenticationContext> valueConsumer;

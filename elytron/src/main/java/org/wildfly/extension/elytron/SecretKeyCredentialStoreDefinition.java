@@ -16,13 +16,13 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.CREDENTIAL_STORE_API_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_API_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
-import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 import static org.wildfly.security.encryption.SecretKeyUtil.generateSecretKey;
 
 import java.io.File;
@@ -72,7 +72,7 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
 
     private static final String CREDENTIAL_STORE_TYPE = "PropertiesCredentialStore";
 
-    private static final ServiceUtil<CredentialStore> SECRET_KEY_CREDENTIAL_STORE_UTIL = ServiceUtil.newInstance(CREDENTIAL_STORE_RUNTIME_CAPABILITY, ElytronCommonConstants.SECRET_KEY_CREDENTIAL_STORE, CredentialStore.class);
+    private static final ServiceUtil<CredentialStore> SECRET_KEY_CREDENTIAL_STORE_UTIL = ServiceUtil.newInstance(CREDENTIAL_STORE_RUNTIME_CAPABILITY, ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, CredentialStore.class);
 
     @Override
     protected ServiceUtil<CredentialStore> getCredentialStoreUtil() {
@@ -80,43 +80,43 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
     }
 
     static final SimpleAttributeDefinition PATH =
-            new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PATH, FileAttributeDefinitions.PATH)
-                    .setAttributeGroup(ElytronCommonConstants.FILE)
+            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATH, FileAttributeDefinitions.PATH)
+                    .setAttributeGroup(ElytronDescriptionConstants.FILE)
                     .setRequired(true)
                     .setRestartAllServices()
                     .build();
 
-    static final SimpleAttributeDefinition CREATE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.CREATE, ModelType.BOOLEAN, true)
-            .setAttributeGroup(ElytronCommonConstants.IMPLEMENTATION)
+    static final SimpleAttributeDefinition CREATE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CREATE, ModelType.BOOLEAN, true)
+            .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.TRUE)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition POPULATE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.POPULATE, ModelType.BOOLEAN, true)
-            .setAttributeGroup(ElytronCommonConstants.IMPLEMENTATION)
+    static final SimpleAttributeDefinition POPULATE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.POPULATE, ModelType.BOOLEAN, true)
+            .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.TRUE)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition KEY_SIZE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.KEY_SIZE, ModelType.INT, true)
-            .setAttributeGroup(ElytronCommonConstants.IMPLEMENTATION)
+    static final SimpleAttributeDefinition KEY_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_SIZE, ModelType.INT, true)
+            .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(256))
             .setValidator(new IntAllowedValuesValidator(128, 192, 256))
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition DEFAULT_ALIAS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DEFAULT_ALIAS, ModelType.STRING, true)
-            .setAttributeGroup(ElytronCommonConstants.IMPLEMENTATION)
+    static final SimpleAttributeDefinition DEFAULT_ALIAS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_ALIAS, ModelType.STRING, true)
+            .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode("key"))
             .setRestartAllServices()
             .build();
 
     // Resource Resolver
-    private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.SECRET_KEY_CREDENTIAL_STORE);
+    private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE);
 
     static final AttributeDefinition[] CONFIG_ATTRIBUTES = new AttributeDefinition[] { RELATIVE_TO, PATH, CREATE, POPULATE, KEY_SIZE, DEFAULT_ALIAS };
 
@@ -125,24 +125,24 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
 
     // Operation Definitions and Parameters
 
-    private static final SimpleOperationDefinition REMOVE_ALIAS = new SimpleOperationDefinitionBuilder(ElytronCommonConstants.REMOVE_ALIAS, OPERATION_RESOLVER)
+    private static final SimpleOperationDefinition REMOVE_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_ALIAS, OPERATION_RESOLVER)
             .setParameters(ALIAS)
             .setRuntimeOnly()
             .build();
 
-    private static final SimpleAttributeDefinition KEY_SIZE_PARAMETER = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.KEY_SIZE, ModelType.INT, true)
+    private static final SimpleAttributeDefinition KEY_SIZE_PARAMETER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_SIZE, ModelType.INT, true)
             .setAllowExpression(true)
             .setAllowedValues(128, 192, 256)
             .setRestartAllServices()
             .build();
 
-    private static final SimpleOperationDefinition GENERATE_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronCommonConstants.GENERATE_SECRET_KEY, OPERATION_RESOLVER)
+    private static final SimpleOperationDefinition GENERATE_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.GENERATE_SECRET_KEY, OPERATION_RESOLVER)
             .setParameters(ALIAS, KEY_SIZE_PARAMETER)
             .setRuntimeOnly()
             .build();
 
     SecretKeyCredentialStoreDefinition() {
-        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.SECRET_KEY_CREDENTIAL_STORE), RESOURCE_RESOLVER)
+        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE), RESOURCE_RESOLVER)
                 .setAddHandler(ADD)
                 .setRemoveHandler(REMOVE)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
@@ -164,12 +164,12 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
         boolean isServerOrHostController = isServerOrHostController(resourceRegistration);
         Map<String, CredentialStoreRuntimeOperation> operationMethods = new HashMap<>();
 
-        operationMethods.put(ElytronCommonConstants.READ_ALIASES, this::readAliasesOperation);
+        operationMethods.put(ElytronDescriptionConstants.READ_ALIASES, this::readAliasesOperation);
         if (isServerOrHostController) {
-            operationMethods.put(ElytronCommonConstants.REMOVE_ALIAS, this::removeAliasOperation);
-            operationMethods.put(ElytronCommonConstants.EXPORT_SECRET_KEY, this::exportSecretKeyOperation);
-            operationMethods.put(ElytronCommonConstants.GENERATE_SECRET_KEY, this::generateSecretKeyOperation);
-            operationMethods.put(ElytronCommonConstants.IMPORT_SECRET_KEY, this::importSecretKeyOperation);
+            operationMethods.put(ElytronDescriptionConstants.REMOVE_ALIAS, this::removeAliasOperation);
+            operationMethods.put(ElytronDescriptionConstants.EXPORT_SECRET_KEY, this::exportSecretKeyOperation);
+            operationMethods.put(ElytronDescriptionConstants.GENERATE_SECRET_KEY, this::generateSecretKeyOperation);
+            operationMethods.put(ElytronDescriptionConstants.IMPORT_SECRET_KEY, this::importSecretKeyOperation);
         }
 
         OperationStepHandler operationHandler = new CredentialStoreRuntimeHandler(operationMethods);
@@ -204,7 +204,7 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
         generateSecretKeyOperation(context, operation, credentialStore, keySize);
     }
 
-    static class SecretKeyCredentialStoreAddHandler extends ElytronCommonDoohickeyAddHandler<CredentialStore> {
+    static class SecretKeyCredentialStoreAddHandler extends DoohickeyAddHandler<CredentialStore> {
 
         private SecretKeyCredentialStoreAddHandler() {
             super(CREDENTIAL_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES, CREDENTIAL_STORE_API_CAPABILITY);
@@ -288,9 +288,9 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
             CredentialStore credentialStore = CredentialStore.getInstance(CREDENTIAL_STORE_TYPE);
 
             final Map<String, String> configuration = new HashMap<>();
-            configuration.put(ElytronCommonConstants.LOCATION, resolved.getAbsolutePath());
+            configuration.put(ElytronDescriptionConstants.LOCATION, resolved.getAbsolutePath());
             if (create) {
-                configuration.put(ElytronCommonConstants.CREATE, Boolean.TRUE.toString());
+                configuration.put(ElytronDescriptionConstants.CREATE, Boolean.TRUE.toString());
             }
 
             reloader = new ExceptionRunnable<GeneralSecurityException>() {

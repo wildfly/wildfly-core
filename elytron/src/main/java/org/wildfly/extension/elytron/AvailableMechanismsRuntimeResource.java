@@ -39,7 +39,7 @@ class AvailableMechanismsRuntimeResource extends DelegatingResourceDefinition {
 
     private final Function<OperationContext, String[]> availableMechanismsFunction;
 
-    private static final StringListAttributeDefinition AVAILABLE_MECHANISMS = new StringListAttributeDefinition.Builder(ElytronCommonConstants.AVAILABLE_MECHANISMS)
+    private static final StringListAttributeDefinition AVAILABLE_MECHANISMS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.AVAILABLE_MECHANISMS)
         .setStorageRuntime()
         .build();
 

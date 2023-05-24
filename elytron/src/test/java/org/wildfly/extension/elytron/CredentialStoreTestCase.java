@@ -146,10 +146,10 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
             ModelNode export = new ModelNode();
             export.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
             export.get(ClientConstants.OP).set("export-secret-key");
-            export.get(ElytronCommonConstants.ALIAS).set(expectedAlias);
+            export.get(ElytronDescriptionConstants.ALIAS).set(expectedAlias);
             ModelNode exportResult = assertSuccess(services.executeOperation(export));
 
-            final String key = exportResult.get(ClientConstants.RESULT).get(ElytronCommonConstants.KEY).asString();
+            final String key = exportResult.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.KEY).asString();
             SecretKey secretKey = importSecretKey(key);
             // Key Sizes are in bits.
             assertEquals("Expected Key Size", expectedKeySize, secretKey.getEncoded().length * 8);
@@ -195,10 +195,10 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode generate = new ModelNode();
         generate.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         generate.get(ClientConstants.OP).set("generate-secret-key");
-        generate.get(ElytronCommonConstants.ALIAS).set(alias);
+        generate.get(ElytronDescriptionConstants.ALIAS).set(alias);
         if (omitKeySize == false) {
             if (keySize > 0) {
-                generate.get(ElytronCommonConstants.KEY_SIZE).set(keySize);
+                generate.get(ElytronDescriptionConstants.KEY_SIZE).set(keySize);
             }
         }
         assertSuccess(services.executeOperation(generate));
@@ -207,10 +207,10 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode export = new ModelNode();
         export.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         export.get(ClientConstants.OP).set("export-secret-key");
-        export.get(ElytronCommonConstants.ALIAS).set(alias);
+        export.get(ElytronDescriptionConstants.ALIAS).set(alias);
         ModelNode exportResult = assertSuccess(services.executeOperation(export));
 
-        final String key = exportResult.get(ClientConstants.RESULT).get(ElytronCommonConstants.KEY).asString();
+        final String key = exportResult.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.KEY).asString();
 
         SecretKey secretKey = importSecretKey(key);
         // Key Sizes are in bits.
@@ -222,18 +222,18 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode importKey = new ModelNode();
         importKey.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         importKey.get(ClientConstants.OP).set("import-secret-key");
-        importKey.get(ElytronCommonConstants.ALIAS).set(importAlias);
-        importKey.get(ElytronCommonConstants.KEY).set(key);
+        importKey.get(ElytronDescriptionConstants.ALIAS).set(importAlias);
+        importKey.get(ElytronDescriptionConstants.KEY).set(key);
         assertSuccess(services.executeOperation(importKey));
 
         // Re-export so keys can be compared
         ModelNode export2 = new ModelNode();
         export2.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         export2.get(ClientConstants.OP).set("export-secret-key");
-        export2.get(ElytronCommonConstants.ALIAS).set(importAlias);
+        export2.get(ElytronDescriptionConstants.ALIAS).set(importAlias);
         ModelNode exportResult2 = assertSuccess(services.executeOperation(export2));
 
-        final String key2 = exportResult2.get(ClientConstants.RESULT).get(ElytronCommonConstants.KEY).asString();
+        final String key2 = exportResult2.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.KEY).asString();
         assertNotNull("Exported SecretKey", key);
         assertEquals("Matching keys", key, key2);
 
@@ -242,18 +242,18 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         remove.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         remove.get(ClientConstants.OP).set("remove-alias");
         if (entryTypeRequired) {
-            remove.get(ElytronCommonConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
+            remove.get(ElytronDescriptionConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
         }
-        remove.get(ElytronCommonConstants.ALIAS).set(alias);
+        remove.get(ElytronDescriptionConstants.ALIAS).set(alias);
         assertSuccess(services.executeOperation(remove));
 
         ModelNode remove2 = new ModelNode();
         remove2.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         remove2.get(ClientConstants.OP).set("remove-alias");
         if (entryTypeRequired) {
-            remove2.get(ElytronCommonConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
+            remove2.get(ElytronDescriptionConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
         }
-        remove2.get(ElytronCommonConstants.ALIAS).set(importAlias);
+        remove2.get(ElytronDescriptionConstants.ALIAS).set(importAlias);
         assertSuccess(services.executeOperation(remove2));
     }
 
@@ -263,21 +263,21 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode export = new ModelNode();
         export.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("secret-key-credential-store", "test256");
         export.get(ClientConstants.OP).set("export-secret-key");
-        export.get(ElytronCommonConstants.ALIAS).set("key");
+        export.get(ElytronDescriptionConstants.ALIAS).set("key");
         ModelNode exportResult = assertSuccess(services.executeOperation(export));
 
-        final String key = exportResult.get(ClientConstants.RESULT).get(ElytronCommonConstants.KEY).asString();
+        final String key = exportResult.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.KEY).asString();
 
         SecretKey secretKey = importSecretKey(key);
 
         ModelNode createExpression = new ModelNode();
         createExpression.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("expression", "encryption");
         createExpression.get(ClientConstants.OP).set("create-expression");
-        createExpression.get(ElytronCommonConstants.RESOLVER).set("A");
-        createExpression.get(ElytronCommonConstants.CLEAR_TEXT).set(CLEAR_TEXT);
+        createExpression.get(ElytronDescriptionConstants.RESOLVER).set("A");
+        createExpression.get(ElytronDescriptionConstants.CLEAR_TEXT).set(CLEAR_TEXT);
         ModelNode createExpressionResult = assertSuccess(services.executeOperation(createExpression));
 
-        String expression = createExpressionResult.get(ClientConstants.RESULT).get(ElytronCommonConstants.EXPRESSION).asString();
+        String expression = createExpressionResult.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.EXPRESSION).asString();
         assertEquals("Expected Expression Prefix", "${CIPHER::A:", expression.substring(0, 12));
         String cipherTextToken = expression.substring(12, expression.length() - 1);
         assertEquals("Decrypted value", CLEAR_TEXT, CipherUtil.decrypt(cipherTextToken, secretKey));
@@ -285,10 +285,10 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         createExpression = new ModelNode();
         createExpression.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("expression", "encryption");
         createExpression.get(ClientConstants.OP).set("create-expression");
-        createExpression.get(ElytronCommonConstants.CLEAR_TEXT).set(CLEAR_TEXT);
+        createExpression.get(ElytronDescriptionConstants.CLEAR_TEXT).set(CLEAR_TEXT);
         createExpressionResult = assertSuccess(services.executeOperation(createExpression));
 
-        expression = createExpressionResult.get(ClientConstants.RESULT).get(ElytronCommonConstants.EXPRESSION).asString();
+        expression = createExpressionResult.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.EXPRESSION).asString();
         assertEquals("Expected Expression Prefix", "${CIPHER::", expression.substring(0, 10));
         cipherTextToken = expression.substring(10, expression.length() - 1);
         assertEquals("Decrypted value", CLEAR_TEXT, CipherUtil.decrypt(cipherTextToken, secretKey));
@@ -309,7 +309,7 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode generate = new ModelNode();
         generate.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         generate.get(ClientConstants.OP).set("generate-secret-key");
-        generate.get(ElytronCommonConstants.ALIAS).set(alias);
+        generate.get(ElytronDescriptionConstants.ALIAS).set(alias);
         assertSuccess(services.executeOperation(generate));
 
         ModelNode doubleGenerateResult = assertFailed(services.executeOperation(generate));
@@ -319,18 +319,18 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode export = new ModelNode();
         export.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         export.get(ClientConstants.OP).set("export-secret-key");
-        export.get(ElytronCommonConstants.ALIAS).set(alias);
+        export.get(ElytronDescriptionConstants.ALIAS).set(alias);
         ModelNode exportResult = assertSuccess(services.executeOperation(export));
 
-        final String key = exportResult.get(ClientConstants.RESULT).get(ElytronCommonConstants.KEY).asString();
+        final String key = exportResult.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.KEY).asString();
 
         String importAlias = alias + "Import";
         // Import the previously exported SecretKey
         ModelNode importKey = new ModelNode();
         importKey.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         importKey.get(ClientConstants.OP).set("import-secret-key");
-        importKey.get(ElytronCommonConstants.ALIAS).set(importAlias);
-        importKey.get(ElytronCommonConstants.KEY).set(key);
+        importKey.get(ElytronDescriptionConstants.ALIAS).set(importAlias);
+        importKey.get(ElytronDescriptionConstants.KEY).set(key);
         assertSuccess(services.executeOperation(importKey));
 
         ModelNode doubleImportResult = assertFailed(services.executeOperation(importKey));
@@ -341,18 +341,18 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         remove.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         remove.get(ClientConstants.OP).set("remove-alias");
         if (entryTypeRequired) {
-            remove.get(ElytronCommonConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
+            remove.get(ElytronDescriptionConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
         }
-        remove.get(ElytronCommonConstants.ALIAS).set(alias);
+        remove.get(ElytronDescriptionConstants.ALIAS).set(alias);
         assertSuccess(services.executeOperation(remove));
 
         ModelNode remove2 = new ModelNode();
         remove2.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         remove2.get(ClientConstants.OP).set("remove-alias");
         if (entryTypeRequired) {
-            remove2.get(ElytronCommonConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
+            remove2.get(ElytronDescriptionConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
         }
-        remove2.get(ElytronCommonConstants.ALIAS).set(importAlias);
+        remove2.get(ElytronDescriptionConstants.ALIAS).set(importAlias);
         assertSuccess(services.executeOperation(remove2));
 
         ModelNode doubleRemoveResult = assertFailed(services.executeOperation(remove2));
@@ -372,7 +372,7 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode export = new ModelNode();
         export.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         export.get(ClientConstants.OP).set("export-secret-key");
-        export.get(ElytronCommonConstants.ALIAS).set(alias);
+        export.get(ElytronDescriptionConstants.ALIAS).set(alias);
         ModelNode exportResult = assertFailed(services.executeOperation(export));
         assertThat(exportResult.get(ClientConstants.FAILURE_DESCRIPTION).asString(), containsString("WFLYELY00920:"));
     }
@@ -390,17 +390,17 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode generate = new ModelNode();
         generate.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         generate.get(ClientConstants.OP).set("generate-secret-key");
-        generate.get(ElytronCommonConstants.ALIAS).set(alias);
+        generate.get(ElytronDescriptionConstants.ALIAS).set(alias);
         assertSuccess(services.executeOperation(generate));
 
         // Export the generated SecretKey
         ModelNode export = new ModelNode();
         export.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         export.get(ClientConstants.OP).set("export-secret-key");
-        export.get(ElytronCommonConstants.ALIAS).set(alias);
+        export.get(ElytronDescriptionConstants.ALIAS).set(alias);
         ModelNode exportResult = assertSuccess(services.executeOperation(export));
 
-        final String key = exportResult.get(ClientConstants.RESULT).get(ElytronCommonConstants.KEY).asString();
+        final String key = exportResult.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.KEY).asString();
         final String truncatedKey = key.substring(0, key.length() - 2);
 
         String importAlias = alias + "Import";
@@ -408,8 +408,8 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode importKey = new ModelNode();
         importKey.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         importKey.get(ClientConstants.OP).set("import-secret-key");
-        importKey.get(ElytronCommonConstants.ALIAS).set(importAlias);
-        importKey.get(ElytronCommonConstants.KEY).set(truncatedKey);
+        importKey.get(ElytronDescriptionConstants.ALIAS).set(importAlias);
+        importKey.get(ElytronDescriptionConstants.KEY).set(truncatedKey);
         ModelNode importResult = assertFailed(services.executeOperation(importKey));
         assertThat(importResult.get(ClientConstants.FAILURE_DESCRIPTION).asString(), containsString("ELY19004:"));
 
@@ -417,8 +417,8 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode remove = new ModelNode();
         remove.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
         remove.get(ClientConstants.OP).set("remove-alias");
-        remove.get(ElytronCommonConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
-        remove.get(ElytronCommonConstants.ALIAS).set(alias);
+        remove.get(ElytronDescriptionConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
+        remove.get(ElytronDescriptionConstants.ALIAS).set(alias);
         assertSuccess(services.executeOperation(remove));
     }
 
@@ -432,7 +432,7 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode generateSecretKey = new ModelNode();
         generateSecretKey.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("credential-store", "test");
         generateSecretKey.get(ClientConstants.OP).set("generate-secret-key");
-        generateSecretKey.get(ElytronCommonConstants.ALIAS).set(alias);
+        generateSecretKey.get(ElytronDescriptionConstants.ALIAS).set(alias);
         assertSuccess(services.executeOperation(generateSecretKey));
 
         testExpectedAliases("credential-store", "test", alias);
@@ -441,8 +441,8 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode addPassword = new ModelNode();
         addPassword.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("credential-store", "test");
         addPassword.get(ClientConstants.OP).set("add-alias");
-        addPassword.get(ElytronCommonConstants.ALIAS).set(alias);
-        addPassword.get(ElytronCommonConstants.SECRET_VALUE).set("password");
+        addPassword.get(ElytronDescriptionConstants.ALIAS).set(alias);
+        addPassword.get(ElytronDescriptionConstants.SECRET_VALUE).set("password");
         assertSuccess(services.executeOperation(addPassword));
 
         testExpectedAliases("credential-store", "test", alias);
@@ -451,8 +451,8 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode removeSecretKey = new ModelNode();
         removeSecretKey.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("credential-store", "test");
         removeSecretKey.get(ClientConstants.OP).set("remove-alias");
-        removeSecretKey.get(ElytronCommonConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
-        removeSecretKey.get(ElytronCommonConstants.ALIAS).set(alias);
+        removeSecretKey.get(ElytronDescriptionConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
+        removeSecretKey.get(ElytronDescriptionConstants.ALIAS).set(alias);
         assertSuccess(services.executeOperation(removeSecretKey));
 
         testExpectedAliases("credential-store", "test", alias);
@@ -461,7 +461,7 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode generateSecretKeyAgain = new ModelNode();
         generateSecretKeyAgain.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("credential-store", "test");
         generateSecretKeyAgain.get(ClientConstants.OP).set("generate-secret-key");
-        generateSecretKeyAgain.get(ElytronCommonConstants.ALIAS).set(alias);
+        generateSecretKeyAgain.get(ElytronDescriptionConstants.ALIAS).set(alias);
         assertSuccess(services.executeOperation(generateSecretKeyAgain));
 
         testExpectedAliases("credential-store", "test", alias);
@@ -470,7 +470,7 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode removePassword = new ModelNode();
         removePassword.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("credential-store", "test");
         removePassword.get(ClientConstants.OP).set("remove-alias");
-        removePassword.get(ElytronCommonConstants.ALIAS).set(alias);
+        removePassword.get(ElytronDescriptionConstants.ALIAS).set(alias);
         assertSuccess(services.executeOperation(removePassword));
 
         testExpectedAliases("credential-store", "test", alias);
@@ -479,8 +479,8 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         ModelNode removeSecretKeyAgain = new ModelNode();
         removeSecretKeyAgain.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("credential-store", "test");
         removeSecretKeyAgain.get(ClientConstants.OP).set("remove-alias");
-        removeSecretKeyAgain.get(ElytronCommonConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
-        removeSecretKeyAgain.get(ElytronCommonConstants.ALIAS).set(alias);
+        removeSecretKeyAgain.get(ElytronDescriptionConstants.ENTRY_TYPE).set(SecretKeyCredential.class.getSimpleName());
+        removeSecretKeyAgain.get(ElytronDescriptionConstants.ALIAS).set(alias);
         assertSuccess(services.executeOperation(removeSecretKeyAgain));
 
         testExpectedAliases("credential-store", "test");
@@ -491,7 +491,7 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
 
         ModelNode readAliases = new ModelNode();
         readAliases.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(resourceType, resourceName);
-        readAliases.get(ClientConstants.OP).set(ElytronCommonConstants.READ_ALIASES);
+        readAliases.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
 
         ModelNode readAliasesResult = assertSuccess(services.executeOperation(readAliases));
 

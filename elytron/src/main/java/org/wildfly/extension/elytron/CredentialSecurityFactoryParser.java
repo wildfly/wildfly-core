@@ -19,8 +19,8 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CUSTOM_CREDENTIAL_SECURITY_FACTORY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.KERBEROS_SECURITY_FACTORY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_CREDENTIAL_SECURITY_FACTORY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY;
 
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
@@ -51,7 +51,7 @@ class CredentialSecurityFactoryParser {
             .addAttribute(KerberosSecurityFactoryDefinition.MECHANISM_OIDS)
             .addAttribute(KerberosSecurityFactoryDefinition.OPTIONS)
             .build();
-    final PersistentResourceXMLDescription parser = decorator(ElytronCommonConstants.CREDENTIAL_SECURITY_FACTORIES)
+    final PersistentResourceXMLDescription parser = decorator(ElytronDescriptionConstants.CREDENTIAL_SECURITY_FACTORIES)
             .addChild(MapperParser.getCustomComponentParser(CUSTOM_CREDENTIAL_SECURITY_FACTORY))
             .addChild(kerberosSecurityParser)
             .build();

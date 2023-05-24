@@ -18,16 +18,16 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.BASE64;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.HEX;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.UTF_8;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BASE64;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HEX;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
 import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
-import static org.wildfly.extension.elytron._private.ElytronCommonMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -71,7 +71,7 @@ import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
-import org.wildfly.extension.elytron.ElytronCommonTrivialResourceDefinition.Builder;
+import org.wildfly.extension.elytron.TrivialResourceDefinition.Builder;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.realm.LegacyPropertiesSecurityRealm;
@@ -90,49 +90,49 @@ import org.wildfly.security.password.spec.Encoding;
  */
 class PropertiesRealmDefinition {
 
-    static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PATH, FileAttributeDefinitions.PATH)
+    static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATH, FileAttributeDefinitions.PATH)
             .setRequired(true)
             .build();
 
-    private static final SimpleAttributeDefinition PLAIN_TEXT = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PLAIN_TEXT, ModelType.BOOLEAN, true)
+    private static final SimpleAttributeDefinition PLAIN_TEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PLAIN_TEXT, ModelType.BOOLEAN, true)
             .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    private static final SimpleAttributeDefinition DIGEST_REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.DIGEST_REALM_NAME, ModelType.STRING, true)
+    private static final SimpleAttributeDefinition DIGEST_REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIGEST_REALM_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final ObjectTypeAttributeDefinition USERS_PROPERTIES = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.USERS_PROPERTIES, PATH, RELATIVE_TO, DIGEST_REALM_NAME, PLAIN_TEXT)
+    static final ObjectTypeAttributeDefinition USERS_PROPERTIES = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.USERS_PROPERTIES, PATH, RELATIVE_TO, DIGEST_REALM_NAME, PLAIN_TEXT)
         .setRequired(true)
         .setRestartAllServices()
         .build();
 
-    static final ObjectTypeAttributeDefinition GROUPS_PROPERTIES = new ObjectTypeAttributeDefinition.Builder(ElytronCommonConstants.GROUPS_PROPERTIES, PATH, RELATIVE_TO)
+    static final ObjectTypeAttributeDefinition GROUPS_PROPERTIES = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.GROUPS_PROPERTIES, PATH, RELATIVE_TO)
         .setRequired(false)
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition GROUPS_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.GROUPS_ATTRIBUTE, ModelType.STRING, true)
-        .setDefaultValue(new ModelNode(ElytronCommonConstants.GROUPS))
+    static final SimpleAttributeDefinition GROUPS_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.GROUPS_ATTRIBUTE, ModelType.STRING, true)
+        .setDefaultValue(new ModelNode(ElytronDescriptionConstants.GROUPS))
         .setAllowExpression(true)
         .setRestartAllServices()
         .build();
 
-    private static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.SYNCHRONIZED, ModelType.STRING)
+    private static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYNCHRONIZED, ModelType.STRING)
         .setStorageRuntime()
         .build();
 
-    static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HASH_ENCODING, ModelType.STRING, true)
+    static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING, true)
             .setDefaultValue(new ModelNode(HEX))
             .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition HASH_CHARSET = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.HASH_CHARSET, ModelType.STRING, true)
+    static final SimpleAttributeDefinition HASH_CHARSET = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_CHARSET, ModelType.STRING, true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setValidator(new CharsetValidator())
             .setDefaultValue(new ModelNode(UTF_8))
@@ -143,15 +143,15 @@ class PropertiesRealmDefinition {
 
     // Resource Resolver
 
-    private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.PROPERTIES_REALM);
+    private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.PROPERTIES_REALM);
 
     // Operations
 
-    private static final SimpleOperationDefinition LOAD = new SimpleOperationDefinitionBuilder(ElytronCommonConstants.LOAD, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition LOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.LOAD, RESOURCE_RESOLVER)
             .setRuntimeOnly()
             .build();
 
-    private static final AbstractAddStepHandler ADD = new ElytronCommonTrivialAddHandler<SecurityRealm>(SecurityRealm.class, ATTRIBUTES, SECURITY_REALM_RUNTIME_CAPABILITY) {
+    private static final AbstractAddStepHandler ADD = new TrivialAddHandler<SecurityRealm>(SecurityRealm.class, ATTRIBUTES, SECURITY_REALM_RUNTIME_CAPABILITY) {
 
         @Override
         protected ValueSupplier<SecurityRealm> getValueSupplier(ServiceBuilder<SecurityRealm> serviceBuilder,
@@ -263,8 +263,8 @@ class PropertiesRealmDefinition {
     };
 
     static ResourceDefinition create(boolean serverOrHostController) {
-        Builder builder = ElytronCommonTrivialResourceDefinition.builder()
-                .setPathKey(ElytronCommonConstants.PROPERTIES_REALM)
+        Builder builder = TrivialResourceDefinition.builder()
+                .setPathKey(ElytronDescriptionConstants.PROPERTIES_REALM)
                 .setResourceDescriptionResolver(RESOURCE_RESOLVER)
                 .setAddHandler(ADD)
                 .setAttributes(ATTRIBUTES)

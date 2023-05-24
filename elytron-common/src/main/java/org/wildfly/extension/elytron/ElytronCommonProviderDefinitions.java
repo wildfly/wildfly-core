@@ -55,7 +55,6 @@ import java.util.function.Supplier;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityServiceBuilder;
-import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -82,7 +81,7 @@ import org.wildfly.extension.elytron.ElytronCommonTrivialResourceDefinition.Buil
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author <a href="mailto:carodrig@redhat.com">Cameron Rodriguez</a>
  */
-class ElytronCommonProviderDefinitions {
+abstract class ElytronCommonProviderDefinitions {
 
     static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.PATH, FileAttributeDefinitions.PATH)
             .setAttributeGroup(ElytronCommonConstants.CONFIGURATION)
@@ -111,19 +110,15 @@ class ElytronCommonProviderDefinitions {
             .setRestartAllServices()
             .build();
 
-    private static final ElytronCommonAggregateComponentDefinition<Provider[]> AGGREGATE_PROVIDERS = ElytronCommonAggregateComponentDefinition.create(Provider[].class,
-            ElytronCommonConstants.AGGREGATE_PROVIDERS, ElytronCommonConstants.PROVIDERS, PROVIDERS_RUNTIME_CAPABILITY, PROVIDERS_API_CAPABILITY, ElytronCommonProviderDefinitions::aggregate, false);
-
-    static final ListAttributeDefinition REFERENCES = AGGREGATE_PROVIDERS.getReferencesAttribute();
-
-    static ElytronCommonAggregateComponentDefinition<Provider[]> getAggregateProvidersDefinition() {
-        return AGGREGATE_PROVIDERS;
+    static ElytronCommonAggregateComponentDefinition<Provider[]> getAggregateProvidersDefinition(Class<?> extensionClass) {
+        return ElytronCommonAggregateComponentDefinition.createCommonDefinition(extensionClass, Provider[].class, ElytronCommonConstants.AGGREGATE_PROVIDERS,
+                ElytronCommonConstants.PROVIDERS, PROVIDERS_RUNTIME_CAPABILITY, PROVIDERS_API_CAPABILITY, ElytronCommonProviderDefinitions::aggregate, false);
     }
 
-    static ResourceDefinition getProviderLoaderDefinition(boolean serverOrHostController) {
+    static ResourceDefinition getProviderLoaderDefinition(final Class<?> extensionClass, boolean serverOrHostController) {
         AttributeDefinition[] attributes = new AttributeDefinition[] { MODULE, CLASS_NAMES, PATH, RELATIVE_TO, ARGUMENT, CONFIGURATION };
 
-        AbstractAddStepHandler add = new ElytronCommonDoohickeyAddHandler<Provider[]>(PROVIDERS_RUNTIME_CAPABILITY, attributes, PROVIDERS_API_CAPABILITY) {
+        AbstractAddStepHandler add = new ElytronCommonDoohickeyAddHandler<Provider[]>(extensionClass, PROVIDERS_RUNTIME_CAPABILITY, attributes, PROVIDERS_API_CAPABILITY) {
 
             @Override
             protected ElytronDoohickey<Provider[]> createDoohickey(PathAddress resourceAddress) {
@@ -308,10 +303,9 @@ class ElytronCommonProviderDefinitions {
             protected boolean dependOnProviderRegistration() {
                 return false;
             }
-
         };
 
-        Builder builder = ElytronCommonTrivialResourceDefinition.builder()
+        Builder builder = ElytronCommonTrivialResourceDefinition.getCommonBuilder(extensionClass)
                 .setPathKey(ElytronCommonConstants.PROVIDER_LOADER)
                 .setAddHandler(add)
                 .setAttributes(attributes)

@@ -18,8 +18,8 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronCommonCapabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
 
@@ -63,22 +63,22 @@ import java.util.function.Consumer;
  */
 class DistributedRealmDefinition extends SimpleResourceDefinition {
 
-    static final ServiceUtil<SecurityRealm> REALM_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_REALM_RUNTIME_CAPABILITY, ElytronCommonConstants.AGGREGATE_REALM, SecurityRealm.class);
+    static final ServiceUtil<SecurityRealm> REALM_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_REALM_RUNTIME_CAPABILITY, ElytronDescriptionConstants.AGGREGATE_REALM, SecurityRealm.class);
 
-    static final StringListAttributeDefinition REALMS = new StringListAttributeDefinition.Builder(ElytronCommonConstants.REALMS)
+    static final StringListAttributeDefinition REALMS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.REALMS)
             .setMinSize(1)
             .setCapabilityReference(SECURITY_REALM_CAPABILITY)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition IGNORE_UNAVAILABLE_REALMS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.IGNORE_UNAVAILABLE_REALMS, ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition IGNORE_UNAVAILABLE_REALMS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.IGNORE_UNAVAILABLE_REALMS, ModelType.BOOLEAN, true)
             .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition EMIT_EVENTS = new SimpleAttributeDefinitionBuilder(ElytronCommonConstants.EMIT_EVENTS, ModelType.BOOLEAN, true)
-            .setRequires(ElytronCommonConstants.IGNORE_UNAVAILABLE_REALMS)
+    static final SimpleAttributeDefinition EMIT_EVENTS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.EMIT_EVENTS, ModelType.BOOLEAN, true)
+            .setRequires(ElytronDescriptionConstants.IGNORE_UNAVAILABLE_REALMS)
             .setAllowExpression(true)
             .setRestartAllServices()
             .setDefaultValue(ModelNode.TRUE)
@@ -90,7 +90,7 @@ class DistributedRealmDefinition extends SimpleResourceDefinition {
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_REALM_RUNTIME_CAPABILITY);
 
     DistributedRealmDefinition() {
-        super(new Parameters(PathElement.pathElement(ElytronCommonConstants.DISTRIBUTED_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronCommonConstants.DISTRIBUTED_REALM))
+        super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.DISTRIBUTED_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.DISTRIBUTED_REALM))
                 .setAddHandler(ADD)
                 .setRemoveHandler(REMOVE)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
@@ -106,7 +106,7 @@ class DistributedRealmDefinition extends SimpleResourceDefinition {
         }
     }
 
-    private static class RealmAddHandler extends ElytronCommonBaseAddHandler {
+    private static class RealmAddHandler extends BaseAddHandler {
 
         private RealmAddHandler() {
             super(SECURITY_REALM_RUNTIME_CAPABILITY, ATTRIBUTES);

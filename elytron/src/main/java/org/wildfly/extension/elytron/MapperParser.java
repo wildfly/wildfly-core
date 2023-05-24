@@ -19,21 +19,21 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
 import static org.jboss.as.controller.parsing.ParseUtils.requireAttributes;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CUSTOM_EVIDENCE_DECODER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CUSTOM_PERMISSION_MAPPER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CUSTOM_PRINCIPAL_DECODER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CUSTOM_PRINCIPAL_TRANSFORMER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CUSTOM_REALM_MAPPER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CUSTOM_ROLE_DECODER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.CUSTOM_ROLE_MAPPER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.EVIDENCE_DECODER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.FROM;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.PRINCIPAL_DECODER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.PRINCIPAL_TRANSFORMER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.REALM_MAPPING;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.ROLE_DECODER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.ROLE_MAPPER;
-import static org.wildfly.extension.elytron.ElytronCommonConstants.TO;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_EVIDENCE_DECODER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_PERMISSION_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_PRINCIPAL_DECODER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_PRINCIPAL_TRANSFORMER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_REALM_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_ROLE_DECODER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_ROLE_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.EVIDENCE_DECODER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FROM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_DECODER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REALM_MAPPING;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLE_DECODER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLE_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TO;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -271,7 +271,7 @@ class MapperParser {
     }
 
     private PersistentResourceXMLDescription getParser_1_0_to_3_0() {
-        return decorator(ElytronCommonConstants.MAPPERS)
+        return decorator(ElytronDescriptionConstants.MAPPERS)
                 .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
                 .addChild(logicalPermissionMapper)
                 .addChild(getSimpleMapperParser())
@@ -304,7 +304,7 @@ class MapperParser {
     }
 
     private PersistentResourceXMLDescription getParser_4_0() {
-        return decorator(ElytronCommonConstants.MAPPERS)
+        return decorator(ElytronDescriptionConstants.MAPPERS)
                 .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
                 .addChild(logicalPermissionMapper)
                 .addChild(getSimpleMapperParser())
@@ -337,7 +337,7 @@ class MapperParser {
     }
 
     private PersistentResourceXMLDescription getParser_8_0() {
-        return decorator(ElytronCommonConstants.MAPPERS)
+        return decorator(ElytronDescriptionConstants.MAPPERS)
                 .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
                 .addChild(logicalPermissionMapper)
                 .addChild(getSimpleMapperParser())
@@ -374,7 +374,7 @@ class MapperParser {
     }
 
     private PersistentResourceXMLDescription getParser_10_0() {
-        return decorator(ElytronCommonConstants.MAPPERS)
+        return decorator(ElytronDescriptionConstants.MAPPERS)
                 .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
                 .addChild(logicalPermissionMapper)
                 .addChild(getSimpleMapperParser())
@@ -427,7 +427,7 @@ class MapperParser {
                 return getParser_10_0();
         }
 
-        return decorator(ElytronCommonConstants.MAPPERS)
+        return decorator(ElytronDescriptionConstants.MAPPERS)
                 .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
                 .addChild(logicalPermissionMapper)
                 .addChild(getSimpleMapperParser())
