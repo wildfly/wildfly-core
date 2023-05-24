@@ -62,6 +62,7 @@ import java.util.TreeSet;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.operations.common.Util;
@@ -437,18 +438,18 @@ public class AccessControlXml {
                     }
                     case REQUIRES_READ: {
                         values.put(SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ.getName(),
-                                SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ.getParser().parse(SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ, value, reader));
+                                parse(SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ, value, reader));
                         break;
                     }
                     case REQUIRES_WRITE: {
                         values.put(SensitivityResourceDefinition.CONFIGURED_REQUIRES_WRITE.getName(),
-                                SensitivityResourceDefinition.CONFIGURED_REQUIRES_WRITE.getParser().parse(SensitivityResourceDefinition.CONFIGURED_REQUIRES_WRITE, value, reader));
+                                parse(SensitivityResourceDefinition.CONFIGURED_REQUIRES_WRITE, value, reader));
                         break;
                     }
                     case REQUIRES_ADDRESSABLE: {
                         if (!vault) {
                             values.put(SensitivityResourceDefinition.CONFIGURED_REQUIRES_ADDRESSABLE.getName(),
-                                SensitivityResourceDefinition.CONFIGURED_REQUIRES_ADDRESSABLE.getParser().parse(SensitivityResourceDefinition.CONFIGURED_REQUIRES_ADDRESSABLE, value, reader));
+                                parse(SensitivityResourceDefinition.CONFIGURED_REQUIRES_ADDRESSABLE, value, reader));
                             break;
                         }
                     }
@@ -833,5 +834,9 @@ public class AccessControlXml {
         }
 
         return configuredConstraints;
+    }
+
+    private static ModelNode parse(AttributeDefinition ad, String value, XMLExtendedStreamReader reader) throws XMLStreamException {
+        return ad.getParser().parse(ad,value,reader);
     }
 }

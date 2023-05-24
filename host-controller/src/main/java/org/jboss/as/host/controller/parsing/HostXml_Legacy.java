@@ -1803,7 +1803,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                     case DIRECTORY_GROUPING: {
                         final ModelNode address = parentAddress.clone();
                         list.add(Util.getWriteAttributeOperation(address, DIRECTORY_GROUPING,
-                                HostResourceDefinition.DIRECTORY_GROUPING.getParser().parse(HostResourceDefinition.DIRECTORY_GROUPING, value,reader)));
+                                parseAttributeValue(HostResourceDefinition.DIRECTORY_GROUPING, value,reader)));
                         break;
                     }
                     default:

@@ -624,19 +624,19 @@ final class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
 
             final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
             if (attribute == Attribute.PROVIDER) {
-                ModelNode provider = AccessAuthorizationResourceDefinition.PROVIDER.getParser().parse(AccessAuthorizationResourceDefinition.PROVIDER, value, reader);
+                ModelNode provider = parseAttributeValue(AccessAuthorizationResourceDefinition.PROVIDER, value, reader);
                 ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
                         AccessAuthorizationResourceDefinition.PROVIDER.getName(), provider);
 
                 operationsList.add(op);
             } else if (attribute == Attribute.USE_IDENTITY_ROLES) {
-                ModelNode useIdentityRoles = AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES.getParser().parse(AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES, value, reader);
+                ModelNode useIdentityRoles = parseAttributeValue(AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES, value, reader);
                 ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
                         AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES.getName(), useIdentityRoles);
 
                 operationsList.add(op);
             } else if (attribute == Attribute.PERMISSION_COMBINATION_POLICY) {
-                ModelNode provider = AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getParser().parse(AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY, value, reader);
+                ModelNode provider = parseAttributeValue(AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY, value, reader);
                 ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
                         AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName(), provider);
 

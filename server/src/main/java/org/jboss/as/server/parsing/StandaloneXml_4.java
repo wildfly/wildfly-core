@@ -160,13 +160,11 @@ final class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
                     final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                     switch (attribute) {
                         case NAME: {
-                            serverName = ServerRootResourceDefinition.NAME.getParser().parse(ServerRootResourceDefinition.NAME, value, reader);
+                            serverName = parseAttributeValue(ServerRootResourceDefinition.NAME, value, reader);
                             break;
                         }
                         case ORGANIZATION: {
-                            setOrganization(address, list,
-                                    ServerRootResourceDefinition.ORGANIZATION_IDENTIFIER.getParser()
-                                            .parse(ServerRootResourceDefinition.ORGANIZATION_IDENTIFIER, value, reader));
+                            setOrganization(address, list, parseAttributeValue(ServerRootResourceDefinition.ORGANIZATION_IDENTIFIER, value, reader));
                             break;
                         }
                         default:
@@ -625,13 +623,13 @@ final class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
 
             final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
             if (attribute == Attribute.PROVIDER) {
-                ModelNode provider = AccessAuthorizationResourceDefinition.PROVIDER.getParser().parse(AccessAuthorizationResourceDefinition.PROVIDER, value, reader);
+                ModelNode provider = parseAttributeValue(AccessAuthorizationResourceDefinition.PROVIDER, value, reader);
                 ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
                         AccessAuthorizationResourceDefinition.PROVIDER.getName(), provider);
 
                 operationsList.add(op);
             } else if (attribute == Attribute.PERMISSION_COMBINATION_POLICY) {
-                ModelNode provider = AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getParser().parse(AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY, value, reader);
+                ModelNode provider = parseAttributeValue(AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY, value, reader);
                 ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
                         AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName(), provider);
 

@@ -37,6 +37,7 @@ import java.util.TreeSet;
 import javax.xml.XMLConstants;
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.operations.common.NamespaceAddHandler;
 import org.jboss.as.controller.operations.common.SchemaLocationAddHandler;
@@ -272,6 +273,10 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>> {
 
     protected void writeDeploymentOverlays(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
         deploymentOverlaysXml.writeDeploymentOverlays(writer, modelNode);
+    }
+
+    protected static ModelNode parseAttributeValue(AttributeDefinition ad, String value, XMLExtendedStreamReader reader) throws XMLStreamException {
+        return ad.getParser().parse(ad,value,reader);
     }
 
 }
