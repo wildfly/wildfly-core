@@ -738,11 +738,6 @@ class ModelControllerImpl implements ModelController {
         return modelControllerResource;
     }
 
-    @Override
-    public ModelControllerClient createClient(final Executor executor) {
-        return getClientFactory().createSuperUserClient(executor, false);
-    }
-
     ModelControllerClient createBootClient(final Executor executor) {
         return getClientFactory().createBootClient(executor);
     }
@@ -918,8 +913,8 @@ class ModelControllerImpl implements ModelController {
         return serviceTarget;
     }
 
-    @Override
-    public NotificationHandlerRegistration getNotificationRegistry() {
+
+    NotificationHandlerRegistration getNotificationRegistry() {
         return notificationSupport.getNotificationRegistry();
     }
 

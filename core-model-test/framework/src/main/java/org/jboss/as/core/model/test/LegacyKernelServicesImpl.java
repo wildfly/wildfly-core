@@ -49,7 +49,6 @@ import org.jboss.as.controller.operations.validation.OperationValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
-import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.ignored.IgnoreDomainResourceTypeResource;
@@ -81,14 +80,6 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl {
     @Override
     public TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation)
             throws OperationFailedException {
-        //Will throw an error since we are not the main controller
-        checkIsMainController();
-        return null;
-    }
-
-    @Override
-    public TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation,
-                                                   TransformerOperationAttachment attachment) throws OperationFailedException {
         //Will throw an error since we are not the main controller
         checkIsMainController();
         return null;

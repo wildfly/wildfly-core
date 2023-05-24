@@ -80,6 +80,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -147,10 +148,10 @@ public abstract class AbstractProxyControllerTest {
         operation.get(OP).set("setup");
         operation.get(OP_ADDR).setEmptyList();
 
-        mainControllerClient = mainService.getValue().createClient(executor);
+        mainControllerClient = mainService.getModelControllerClientFactory().createSuperUserClient(executor);
         mainControllerClient.execute(operation);
 
-        proxiedControllerClient = proxyService.getValue().createClient(executor);
+        proxiedControllerClient = proxyService.getModelControllerClientFactory().createSuperUserClient(executor);
         proxiedControllerClient.execute(operation);
     }
 
@@ -664,6 +665,8 @@ public abstract class AbstractProxyControllerTest {
     }
 
     public class ProxyModelControllerService extends TestModelControllerService {
+
+        private volatile ModelControllerClientFactory clientFactory;
 
         ProxyModelControllerService(final ControlledProcessState processState) {
             super(ProcessType.EMBEDDED_SERVER, new NullConfigurationPersister(), processState,

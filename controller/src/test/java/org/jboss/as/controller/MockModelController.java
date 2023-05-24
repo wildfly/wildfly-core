@@ -22,13 +22,9 @@
 
 package org.jboss.as.controller;
 
-import java.util.concurrent.Executor;
-
-import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
-import org.jboss.as.controller.registry.NotificationHandlerRegistration;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -42,15 +38,5 @@ public abstract class MockModelController implements ModelController {
     public OperationResponse execute(Operation operation, OperationMessageHandler handler, OperationTransactionControl control) {
         ModelNode simpleResponse = execute(operation.getOperation(), handler, control, operation);
         return OperationResponse.Factory.createSimple(simpleResponse);
-    }
-
-    @Override
-    public ModelControllerClient createClient(Executor executor) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public NotificationHandlerRegistration getNotificationRegistry() {
-        throw new UnsupportedOperationException();
     }
 }

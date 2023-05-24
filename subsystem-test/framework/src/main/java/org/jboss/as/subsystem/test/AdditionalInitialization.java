@@ -321,25 +321,8 @@ public class AdditionalInitialization extends AdditionalParsers {
      * @param rootRegistration the root resource registration which allows you to for example add additional operations to the model
      * @param capabilityRegistry registry for capabilities and requirements exposed by the extra subsystems
      */
-    @SuppressWarnings("deprecation")
     protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration,
                                                     RuntimeCapabilityRegistry capabilityRegistry) {
-        initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration);
-    }
-
-    /**
-     * Allows extra initialization of the model and addition of extra subsystems
-     *
-     * @param extensionRegistry allows installation of extra subsystem extensions, call
-     *                          {@link ExtensionRegistry#getExtensionContext(String, ManagementResourceRegistration, org.jboss.as.controller.extension.ExtensionRegistryType)}
-     *                          and then {@code Extension.initialize(extensionContext)} for each extra extension you have
-     * @param rootResource the root model resource which allows you to for example add child elements to the model
-     * @param rootRegistration the root resource registration which allows you to for example add additional operations to the model
-     *
-     * @deprecated override {@link #initializeExtraSubystemsAndModel(org.jboss.as.controller.extension.ExtensionRegistry, org.jboss.as.controller.registry.Resource, org.jboss.as.controller.registry.ManagementResourceRegistration, org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry)}
-     */
-    @Deprecated
-    protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration) {
     }
 
 }

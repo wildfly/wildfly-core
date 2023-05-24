@@ -35,7 +35,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.eclipse.jgit.api.AddCommand;
@@ -135,10 +134,10 @@ public class GitRepository implements Closeable {
                 Files.copy(basePath, atticPath, StandardCopyOption.REPLACE_EXISTING);
                 clearExistingFiles(basePath, gitConfig.getRepository());
                 try (Git git = Git.init().setDirectory(baseDir).setInitialBranch(branch).call()) {
-                    String remoteName = UUID.randomUUID().toString();
+                    String remoteName = DEFAULT_REMOTE_NAME;
                     StoredConfig config = git.getRepository().getConfig();
-                    config.setString("remote", remoteName, "url", gitConfig.getRepository());
-                    config.setString("remote", remoteName, "fetch", "+" + R_HEADS + "*:" + R_REMOTES + remoteName + "/*");
+                    config.setString(ConfigConstants.CONFIG_REMOTE_SECTION, remoteName, ConfigConstants.CONFIG_KEY_URL, gitConfig.getRepository());
+                    config.setString(ConfigConstants.CONFIG_REMOTE_SECTION, remoteName, ConfigConstants.CONFIG_FETCH_SECTION, "+" + R_HEADS + "*:" + R_REMOTES + remoteName + "/*");
                     config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, gitConfig.isSign());
                     config.setBoolean(ConfigConstants.CONFIG_TAG_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, gitConfig.isSign());
                     config.save();
@@ -300,7 +299,7 @@ public class GitRepository implements Closeable {
         }
         StoredConfig config = repository.getConfig();
         for (String remoteName : repository.getRemoteNames()) {
-            if (gitRepository.equals(config.getString("remote", remoteName, "url"))) {
+            if (gitRepository.equals(config.getString(ConfigConstants.CONFIG_REMOTE_SECTION, remoteName, ConfigConstants.CONFIG_KEY_URL))) {
                 return remoteName;
             }
         }

@@ -32,7 +32,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
-import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceContainer;
 
@@ -76,22 +75,6 @@ public interface ModelTestKernelServices<T extends ModelTestKernelServices<T>> {
      * @throws IllegalStateException if this is not the test's main model controller
      */
     TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation) throws OperationFailedException;
-
-    /**
-     * Transforms an operation in the main controller to the format expected by the model controller containing
-     * the legacy subsystem
-     *
-     * @param modelVersion the subsystem model version of the legacy subsystem model controller
-     * @param operation the operation to transform
-     * @param attachment attachments propagated from the operation context to the created transformer context.
-     *                   This may be {@code null}. In a non-test scenario, this will be added by operation handlers
-     *                   triggering the transformation, but for tests this needs to be hard-coded. Tests will need to
-     *                   ensure themselves that the relevant attachments get set.
-     * @return the transformed operation
-     * @throws IllegalStateException if this is not the test's main model controller
-     */
-    TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation,
-                                            TransformerOperationAttachment attachment) throws OperationFailedException;
 
     /**
      * Transforms the model to the legacy subsystem model version

@@ -88,7 +88,7 @@ public class NotificationCompositeOperationTestCase extends AbstractControllerTe
     @Test
     public void testCompositeOperationThatEmitsNotifications() throws Exception {
         ListBackedNotificationHandler handler = new ListBackedNotificationHandler();
-        getController().getNotificationRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
 
         ModelNode operation = new ModelNode();
         operation.get(OP).set("composite");
@@ -108,13 +108,13 @@ public class NotificationCompositeOperationTestCase extends AbstractControllerTe
         assertEquals("param1", handler.getNotifications().get(0).getMessage());
         assertEquals("param2", handler.getNotifications().get(1).getMessage());
 
-        getController().getNotificationRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
     }
 
     @Test
     public void testCompositeOperationWithFirstOperationFailing() throws Exception {
         ListBackedNotificationHandler handler = new ListBackedNotificationHandler();
-        getController().getNotificationRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
 
         ModelNode operation = new ModelNode();
         operation.get(OP).set("composite");
@@ -131,13 +131,13 @@ public class NotificationCompositeOperationTestCase extends AbstractControllerTe
 
         assertTrue("the notification were emitted", handler.getNotifications().isEmpty());
 
-        getController().getNotificationRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
     }
 
     @Test
     public void testCompositeOperationWithSecondOperationFailing() throws Exception {
         ListBackedNotificationHandler handler = new ListBackedNotificationHandler();
-        getController().getNotificationRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
 
         ModelNode operation = new ModelNode();
         operation.get(OP).set("composite");
@@ -154,7 +154,7 @@ public class NotificationCompositeOperationTestCase extends AbstractControllerTe
 
         assertTrue("the notification were emitted", handler.getNotifications().isEmpty());
 
-        getController().getNotificationRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
     }
 
 }

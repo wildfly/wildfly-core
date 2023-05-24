@@ -207,7 +207,7 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
         } else {
             ExecutorService executor = Executors.newCachedThreadPool();
             try {
-                ModelControllerClient client = controller.createClient(executor);
+                ModelControllerClient client = controllerService.getModelControllerClientFactory().createClient(executor);
                 OperationBuilder builder = OperationBuilder.create(operation);
                 for (InputStream in : inputStreams) {
                     builder.addInputStream(in);

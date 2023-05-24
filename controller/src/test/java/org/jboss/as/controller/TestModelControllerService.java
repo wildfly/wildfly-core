@@ -33,6 +33,7 @@ import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorize
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.persistence.ConfigurationExtension;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
@@ -122,6 +123,15 @@ public abstract class TestModelControllerService extends AbstractControllerServi
 
     public CapabilityRegistry getCapabilityRegistry() {
         return capabilityRegistry;
+    }
+
+    public NotificationHandlerRegistry getNotificationHandlerRegistry() {
+        return getNotificationSupport().getNotificationRegistry();
+    }
+
+    @Override
+    public ModelControllerClientFactory getModelControllerClientFactory() {
+        return super.getModelControllerClientFactory();
     }
 
     static OperationDefinition getOD(String name) {
