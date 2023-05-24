@@ -22,6 +22,7 @@
 
 package org.jboss.as.server;
 
+import static org.jboss.as.server.security.sasl.Constants.JBOSS_DOMAIN_SERVER;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.concurrent.ExecutorService;
@@ -40,6 +41,8 @@ import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.server.mgmt.domain.HostControllerConnectionService;
+import org.jboss.as.server.security.DomainServerCredential;
+import org.jboss.as.server.security.sasl.DomainServerSaslClientFactory;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceActivatorContext;
@@ -48,7 +51,11 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistryException;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.Endpoint;
+import org.wildfly.security.auth.client.AuthenticationConfiguration;
+import org.wildfly.security.auth.client.AuthenticationContext;
+import org.wildfly.security.auth.client.MatchRule;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.security.sasl.SaslMechanismSelector;
 import org.xnio.OptionMap;
 
 /**
@@ -70,17 +77,17 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
     private final URI managementURI;
     private final String serverName;
     private final String serverProcessName;
-    private final String authKey;
+    private final String serverAuthToken;
     private final Supplier<SSLContext> sslContextSupplier;
 
     private final boolean managementSubsystemEndpoint;
 
-    DomainServerCommunicationServices(ModelNode endpointConfig, URI managementURI, String serverName, String serverProcessName, String authKey, boolean managementSubsystemEndpoint, Supplier<SSLContext> sslContextSupplier) {
+    DomainServerCommunicationServices(ModelNode endpointConfig, URI managementURI, String serverName, String serverProcessName, String serverAuthToken, boolean managementSubsystemEndpoint, Supplier<SSLContext> sslContextSupplier) {
         this.endpointConfig = endpointConfig;
         this.managementURI = managementURI;
         this.serverName = serverName;
         this.serverProcessName = serverProcessName;
-        this.authKey = authKey;
+        this.serverAuthToken = serverAuthToken;
         this.managementSubsystemEndpoint = managementSubsystemEndpoint;
         this.sslContextSupplier = sslContextSupplier;
     }
@@ -107,7 +114,10 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
             final Supplier<ScheduledExecutorService> sesSupplier = sb.requires(ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
             final Supplier<Endpoint> eSupplier = sb.requires(endpointName);
             final Supplier<ProcessStateNotifier> cpsnSupplier = sb.requires(ControlledProcessStateService.INTERNAL_SERVICE_NAME);
-            sb.setInstance(new HostControllerConnectionService(managementURI, serverName, serverProcessName, authKey, initialOperationID, managementSubsystemEndpoint, sslContextSupplier, esSupplier, sesSupplier, eSupplier, cpsnSupplier));
+            AuthenticationContext latestAuthenticationContext = DomainServerMain.getLatestAuthenticationContext();
+            sb.setInstance(new HostControllerConnectionService(managementURI, serverName, serverProcessName,
+                    latestAuthenticationContext == null ? createAuthenticationContect(serverName, serverAuthToken) : latestAuthenticationContext,
+                    initialOperationID, managementSubsystemEndpoint, sslContextSupplier, esSupplier, sesSupplier, eSupplier, cpsnSupplier));
             sb.install();
         } catch (OperationFailedException e) {
             throw new ServiceRegistryException(e);
@@ -121,14 +131,34 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
      * @param managementURI the management connection URI
      * @param serverName the server name
      * @param serverProcessName the server process name
-     * @param authKey the authentication key
+     * @param serverAuthToken the authentication token the server will use to connect back to the management interface.
      * @param managementSubsystemEndpoint whether to use the mgmt subsystem endpoint or not
      * @return the service activator
      */
     public static ServiceActivator create(final ModelNode endpointConfig, final URI managementURI, final String serverName, final String serverProcessName,
-                                          final String authKey, final boolean managementSubsystemEndpoint, final Supplier<SSLContext> sslContextSupplier) {
+                                          final String serverAuthToken, final boolean managementSubsystemEndpoint, final Supplier<SSLContext> sslContextSupplier) {
 
-        return new DomainServerCommunicationServices(endpointConfig, managementURI, serverName, serverProcessName, authKey, managementSubsystemEndpoint, sslContextSupplier);
+        return new DomainServerCommunicationServices(endpointConfig, managementURI, serverName, serverProcessName, serverAuthToken, managementSubsystemEndpoint, sslContextSupplier);
+    }
+
+    /**
+     * Create the {@code AuthenticationContext} that configures security for the connection back to the host controller.
+     *
+     * @param username - The username to use to authenticate the server.
+     * @param serverAuthToken - The server auth token to use as the credential to verify the server.
+     * @return A constructed {@code AuthenticationContext}
+     */
+    static AuthenticationContext createAuthenticationContect(final String username, final String serverAuthToken) {
+        AuthenticationConfiguration authConfig = AuthenticationConfiguration.empty()
+                .useName(username)
+                .useCredential(new DomainServerCredential(serverAuthToken))
+                .useSaslClientFactory(DomainServerSaslClientFactory.getInstance())
+                .setSaslMechanismSelector(SaslMechanismSelector.fromString(JBOSS_DOMAIN_SERVER));
+
+        AuthenticationContext authContext = AuthenticationContext.empty()
+                .with(MatchRule.ALL, authConfig);
+
+        return authContext;
     }
 
     public interface OperationIDUpdater {

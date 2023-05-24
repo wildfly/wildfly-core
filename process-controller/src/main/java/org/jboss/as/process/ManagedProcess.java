@@ -23,6 +23,11 @@
 package org.jboss.as.process;
 
 import static java.lang.Thread.holdsLock;
+import static org.jboss.as.process.protocol.StreamUtils.copyStream;
+import static org.jboss.as.process.protocol.StreamUtils.safeClose;
+import static org.jboss.as.process.protocol.StreamUtils.writeBoolean;
+import static org.jboss.as.process.protocol.StreamUtils.writeInt;
+import static org.jboss.as.process.protocol.StreamUtils.writeUTFZBytes;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -41,7 +46,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.as.process.logging.ProcessLogger;
-import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.process.stdin.Base64OutputStream;
 import org.jboss.logging.Logger;
 import org.wildfly.common.Assert;
@@ -63,7 +67,7 @@ final class ManagedProcess {
     private final Object lock;
 
     private final ProcessController processController;
-    private final String authKey;
+    private final String pcAuthKey;
     private final boolean isPrivileged;
     private final RespawnPolicy respawnPolicy;
     private final int id;
@@ -76,8 +80,8 @@ final class ManagedProcess {
     private boolean stopRequested = false;
     private final AtomicInteger respawnCount = new AtomicInteger(0);
 
-    public String getAuthKey() {
-        return authKey;
+    public String getPCAuthKey() {
+        return pcAuthKey;
     }
 
     public boolean isPrivileged() {
@@ -99,16 +103,16 @@ final class ManagedProcess {
         ;
     }
 
-    ManagedProcess(final String processName, final int id, final List<String> command, final Map<String, String> env, final String workingDirectory, final Object lock, final ProcessController controller, final String authKey, final boolean privileged, final boolean respawn) {
+    ManagedProcess(final String processName, final int id, final List<String> command, final Map<String, String> env, final String workingDirectory, final Object lock, final ProcessController controller, final String pcAuthKey, final boolean privileged, final boolean respawn) {
         Assert.checkNotNullParam("processName", processName);
         Assert.checkNotNullParam("command", command);
         Assert.checkNotNullParam("env", env);
         Assert.checkNotNullParam("workingDirectory", workingDirectory);
         Assert.checkNotNullParam("lock", lock);
         Assert.checkNotNullParam("controller", controller);
-        Assert.checkNotNullParam("authKey", authKey);
-        if (authKey.length() != ProcessController.AUTH_BYTES_ENCODED_LENGTH) {
-            throw ProcessLogger.ROOT_LOGGER.invalidLength("authKey");
+        Assert.checkNotNullParam("pcAuthKey", pcAuthKey);
+        if (pcAuthKey.length() != ProcessController.AUTH_BYTES_ENCODED_LENGTH) {
+            throw ProcessLogger.ROOT_LOGGER.invalidLength("pcAuthKey");
         }
         this.processName = processName;
         this.id = id;
@@ -117,7 +121,7 @@ final class ManagedProcess {
         this.workingDirectory = workingDirectory;
         this.lock = lock;
         processController = controller;
-        this.authKey = authKey;
+        this.pcAuthKey = pcAuthKey;
         isPrivileged = privileged;
         respawnPolicy = respawn ? RespawnPolicy.RESPAWN : RespawnPolicy.NONE;
         log = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.process." + processName + ".status");
@@ -151,7 +155,7 @@ final class ManagedProcess {
         try {
             // WFLY-2697 All writing is in Base64
             Base64OutputStream base64 = getBase64OutputStream(stdin);
-            StreamUtils.copyStream(msg, base64);
+            copyStream(msg, base64);
             base64.close(); // not flush(). close() writes extra data to the stream allowing Base64 input stream
                             // to distinguish end of message
         } catch (IOException e) {
@@ -160,16 +164,16 @@ final class ManagedProcess {
         }
     }
 
-    public void reconnect(String scheme, String hostName, int port, boolean managementSubsystemEndpoint, String asAuthKey) {
+    public void reconnect(String scheme, String hostName, int port, boolean managementSubsystemEndpoint, String serverAuthToken) {
         assert holdsLock(lock); // Call under lock
         try {
             // WFLY-2697 All writing is in Base64
             Base64OutputStream base64 = getBase64OutputStream(stdin);
-            StreamUtils.writeUTFZBytes(base64, scheme);
-            StreamUtils.writeUTFZBytes(base64, hostName);
-            StreamUtils.writeInt(base64, port);
-            StreamUtils.writeBoolean(base64, managementSubsystemEndpoint);
-            base64.write(asAuthKey.getBytes(StandardCharsets.US_ASCII));
+            writeUTFZBytes(base64, scheme);
+            writeUTFZBytes(base64, hostName);
+            writeInt(base64, port);
+            writeBoolean(base64, managementSubsystemEndpoint);
+            writeUTFZBytes(base64, serverAuthToken);
             base64.close(); // not flush(). close() writes extra data to the stream allowing Base64 input stream
                             // to distinguish end of message
         } catch (IOException e) {
@@ -225,7 +229,7 @@ final class ManagedProcess {
         try {
             // WFLY-2697 All writing is in Base64
             OutputStream base64 = getBase64OutputStream(stdin);
-            base64.write(authKey.getBytes(StandardCharsets.US_ASCII));
+            base64.write(pcAuthKey.getBytes(StandardCharsets.US_ASCII));
             base64.close(); // not flush(). close() writes extra data to the stream allowing Base64 input stream
                             // to distinguish end of message
             ok = true;
@@ -253,7 +257,7 @@ final class ManagedProcess {
             }
             log.stoppingProcess(processName);
             stopRequested = true;
-            StreamUtils.safeClose(stdin);
+            safeClose(stdin);
             state = State.STOPPING;
         }
     }
@@ -324,7 +328,7 @@ final class ManagedProcess {
             if (state == State.STARTED) {
                 log.stoppingProcess(processName);
                 stopRequested = true;
-                StreamUtils.safeClose(stdin);
+                safeClose(stdin);
                 state = State.STOPPING;
             } else if (state == State.STOPPING) {
                 return;
@@ -495,7 +499,7 @@ final class ManagedProcess {
             } catch (IOException e) {
                 log.streamProcessingFailed(processName, e);
             } finally {
-                StreamUtils.safeClose(source);
+                safeClose(source);
             }
         }
     }

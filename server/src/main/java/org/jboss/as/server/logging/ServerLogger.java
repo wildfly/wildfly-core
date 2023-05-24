@@ -70,6 +70,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.StartException;
 import org.jboss.vfs.VirtualFile;
+import org.wildfly.security.mechanism.AuthenticationMechanismException;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -1416,6 +1417,33 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id=294, value = "The '%s' module alias has been excluded from '%s' deployment via %s. While this is allowed, it is recommended to use its target module instead. Consider replacing this alias with its target module '%s'.")
     void aliasAddedAsExclusion(String aliasModule, String deploymentName, String context, String targetModule);
+
+    @Message(id = 295, value = "Authentication mechanism authentication is not yet complete")
+    IllegalStateException mechAuthenticationNotComplete();
+
+    @Message(id = 296, value = "Authentication mechanism exchange received a message after authentication was already complete")
+    AuthenticationMechanismException mechMessageAfterComplete();
+
+    @Message(id = 297, value = "Authentication mechanism message is too long")
+    AuthenticationMechanismException mechMessageTooLong();
+
+    @Message(id = 298, value = "Authentication mechanism server-side authentication failed")
+    AuthenticationMechanismException mechServerSideAuthenticationFailed(@Cause Exception e);
+
+    @Message(id = 299, value = "Authentication mechanism token not verified")
+    AuthenticationMechanismException mechTokenNotVerified();
+
+    @Message(id = 300, value = "Authentication mechanism authorization failed: \"%s\" running as \"%s\"")
+    AuthenticationMechanismException mechAuthorizationFailed(String userName, String authorizationId);
+
+    @Message(id = 301, value = "Authentication mechanism does not support security layer (wrapping/unwrapping)")
+    IllegalStateException mechNoSecurityLayer();
+
+    @Message(id = 302, value = "Invalid authentication mechanism negotiation message received")
+    AuthenticationMechanismException mechInvalidMessageReceived();
+
+    @Message(id = 303, value = "No authentication mechanism token was given")
+    AuthenticationMechanismException mechNoTokenGiven();
 
     ////////////////////////////////////////////////
     //Messages without IDs

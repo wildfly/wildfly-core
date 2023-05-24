@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.security.auth.callback.CallbackHandler;
-
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
@@ -173,12 +171,11 @@ public interface ServerInventory {
      *
      * @param serverName the name of the server
      * @param domainModel the configuration model for the domain
-     * @param authKey the authentication key
      * @param running whether the process was running. If {@code false}, the existence of the server will be
      *                recorded but no attempt to contact it will be made
      * @param stopping whether the process is currently stopping
      */
-    void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping);
+    void reconnectServer(String serverName, ModelNode domainModel, boolean running, boolean stopping);
 
     /**
      * Reload a server with the given name.
@@ -203,14 +200,6 @@ public interface ServerInventory {
      * @param serverName the server name
      */
     void killServer(String serverName);
-
-    /**
-     * Gets a callback handler security services can use for handling authentication data provided by
-     * a server attempting to connect with this host controller.
-     *
-     * @return the callback handler. Will not be {@code null}
-     */
-    CallbackHandler getServerCallbackHandler();
 
     /**
      * Notification that a channel for communication with a managed server process has been registered.
@@ -344,4 +333,5 @@ public interface ServerInventory {
      * all error responses. Will not be {@code null}
      */
     List<ModelNode> suspendServers(Set<String> serverNames, int timeoutInSeconds, BlockingTimeout blockingTimeout);
+
 }

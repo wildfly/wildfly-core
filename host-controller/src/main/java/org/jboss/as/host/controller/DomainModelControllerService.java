@@ -76,27 +76,24 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.UnsupportedCallbackException;
-
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.BootContext;
 import org.jboss.as.controller.Cancellable;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ModelController.OperationTransactionControl;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ProxyOperationAddressTranslator;
@@ -104,7 +101,6 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.TransformingProxyController;
-import org.jboss.as.controller.ModelController.OperationTransactionControl;
 import org.jboss.as.controller.access.InVmAccess;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
@@ -152,7 +148,6 @@ import org.jboss.as.domain.controller.operations.coordination.PrepareStepHandler
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
 import org.jboss.as.domain.http.server.ConsoleAvailability;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
-import org.jboss.as.domain.management.security.DomainManagedServerCallbackHandler;
 import org.jboss.as.host.controller.RemoteDomainConnectionService.RemoteFileRepository;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.discovery.DomainControllerManagementInterface;
@@ -168,6 +163,7 @@ import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.host.controller.operations.StartServersHandler;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
+import org.jboss.as.host.controller.security.ServerVerificationService;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.process.ProcessControllerClient;
@@ -666,11 +662,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
         Throwable cause = null;
 
         try {
-            // Install server inventory callback
-            ServerInventoryCallbackService.install(serviceTarget);
+            // Install the intermediate service to connect domain server verification through.
+            ServerVerificationService.install(serviceTarget);
 
-            // handler for domain server auth.
-            DomainManagedServerCallbackHandler.install(serviceTarget);
             // Parse the host.xml and invoke all the ops. The ops should rollback on any Stage.RUNTIME failure
             List<ModelNode> hostBootOps = hostControllerConfigurationPersister.load();
             if (hostBootOps.isEmpty()) { // booting with empty config
@@ -1309,8 +1303,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
 
         @Override
-        public void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping) {
-            getServerInventory().reconnectServer(serverName, domainModel, authKey, running, stopping);
+        public void reconnectServer(String serverName, ModelNode domainModel, boolean running, boolean stopping) {
+            getServerInventory().reconnectServer(serverName, domainModel, running, stopping);
         }
 
         @Override
@@ -1331,11 +1325,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
         @Override
         public ServerStatus stopServer(String serverName, int gracefulTimeout, boolean blocking) {
             return getServerInventory().stopServer(serverName, gracefulTimeout, blocking);
-        }
-
-        @Override
-        public CallbackHandler getServerCallbackHandler() {
-            return getServerInventory().getServerCallbackHandler();
         }
 
         @Override
@@ -1397,6 +1386,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
             return getServerInventory().suspendServers(serverNames, timeout, blockingTimeout);
         }
+
     }
 
     @Override
@@ -1652,7 +1642,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             }
 
             @Override
-            public void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping) {
+            public void reconnectServer(String serverName, ModelNode domainModel, boolean running, boolean stopping) {
             }
 
             @Override
@@ -1668,16 +1658,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
             @Override
             public void killServer(String serverName) {
 
-            }
-
-            @Override
-            public CallbackHandler getServerCallbackHandler() {
-                CallbackHandler callback = new CallbackHandler() {
-                    @Override
-                    public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-                    }
-                };
-                return callback;
             }
 
             @Override
@@ -1761,6 +1741,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
                 return Collections.emptyList();
             }
+
         };
         future.setInventory(inventory);
         return future;

@@ -22,6 +22,7 @@
 
 package org.jboss.as.host.controller.operations;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.remoting.RemotingHttpUpgradeService.HTTP_UPGRADE_REGISTRY;
@@ -54,6 +55,7 @@ import org.jboss.as.host.controller.DomainModelControllerService;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.HostControllerService;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
+import org.jboss.as.host.controller.security.SaslWrappingService;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.remoting.RemotingHttpUpgradeService;
 import org.jboss.as.remoting.RemotingServices;
@@ -70,6 +72,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.xnio.XnioWorker;
 
 import io.undertow.server.ListenerRegistry;
@@ -83,8 +86,6 @@ import io.undertow.server.ListenerRegistry;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
-
-    private static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.http-authentication-factory";
 
     public static final String OPERATION_NAME = ModelDescriptionConstants.ADD;
 
@@ -185,8 +186,13 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 httpConnectorName = ManagementRemotingServices.HTTPS_CONNECTOR;
             }
 
+            String saslAuthFactoryName = commonPolicy.getSaslAuthenticationFactory();
+            ServiceName saslAuthenticationFactory = saslAuthFactoryName != null ? context.getCapabilityServiceName(
+                    SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthFactoryName, SaslAuthenticationFactory.class) : null;
+            saslAuthenticationFactory = SaslWrappingService.install(serviceTarget, saslAuthenticationFactory, HTTP_INTERFACE);
+
             RemotingHttpUpgradeService.installServices(context, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
-                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), commonPolicy.getSaslAuthenticationFactory());
+                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), saslAuthenticationFactory);
             return Arrays.asList(UndertowHttpManagementService.SERVICE_NAME, HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
         }
         return Collections.singletonList(UndertowHttpManagementService.SERVICE_NAME);

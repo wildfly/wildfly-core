@@ -22,6 +22,7 @@
 
 package org.jboss.as.host.controller.mgmt;
 
+import static org.jboss.as.server.security.sasl.Constants.JBOSS_DOMAIN_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -54,6 +55,7 @@ import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
+import org.jboss.as.protocol.mgmt.ActiveOperation.ResultHandler;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementProtocol;
@@ -73,6 +75,7 @@ import org.jboss.as.server.mgmt.domain.ServerToHostRemoteFileRequestAndHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.MessageOutputStream;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Handler responsible for the server to host-controller protocol.
@@ -117,19 +120,19 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
         switch (operationId) {
             case DomainServerProtocol.REGISTER_REQUEST:
                 handlers.registerActiveOperation(header.getBatchId(), null);
-                return new ServerRegistrationRequestHandler();
+                return  new AuthorizationRequestHandler<>(new ServerRegistrationRequestHandler());
             case DomainServerProtocol.SERVER_RECONNECT_REQUEST:
                 handlers.registerActiveOperation(header.getBatchId(), null);
-                return new ServerReconnectRequestHandler();
+                return new AuthorizationRequestHandler<>(new ServerReconnectRequestHandler());
             case DomainServerProtocol.GET_FILE_REQUEST:
                 handlers.registerActiveOperation(header.getBatchId(), null);
-                return new GetFileOperation();
+                return new AuthorizationRequestHandler<>(new GetFileOperation());
             case DomainServerProtocol.SERVER_STARTED_REQUEST:
                 handlers.registerActiveOperation(header.getBatchId(), serverInventory);
-                return new ServerStartedHandler(serverProcessName);
+                return new AuthorizationRequestHandler<>(new ServerStartedHandler(serverProcessName));
             case DomainServerProtocol.SERVER_INSTABILITY_REQUEST:
                 handlers.registerActiveOperation(header.getBatchId(), serverInventory);
-                return new ServerUnstableHandler(serverProcessName);
+                return new AuthorizationRequestHandler<>(new ServerUnstableHandler(serverProcessName));
 
         }
         return handlers.resolveNext();
@@ -165,6 +168,29 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
         ModelNode joinActiveOperation(ModelNode operation, OperationMessageHandler handler, ModelController.OperationTransactionControl control, OperationStepHandler step, int permit);
 
     }
+
+    class AuthorizationRequestHandler<T, A> implements ManagementRequestHandler<T, A> {
+
+        final ManagementRequestHandler<T, A> delegate;
+
+        AuthorizationRequestHandler(ManagementRequestHandler<T, A> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void handleRequest(DataInput input, ResultHandler<T> resultHandler, ManagementRequestContext<A> context)
+                throws IOException {
+            SecurityIdentity identity = context.getChannel().getConnection().getLocalIdentity();
+            if (!identity.getRoles().contains(JBOSS_DOMAIN_SERVER)) {
+                safeWriteResponse(context, ROOT_LOGGER.identityNotAuthorizedAsServer(identity.getPrincipal().getName()));
+                return;
+            }
+
+            delegate.handleRequest(input, resultHandler, context);
+        }
+
+    }
+
 
     /**
      * The server registration handler.
