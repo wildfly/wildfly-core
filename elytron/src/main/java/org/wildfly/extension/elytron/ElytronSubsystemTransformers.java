@@ -61,6 +61,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_15_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_15_1_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_16_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_17_0_0;
+import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_18_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_1_2_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_2_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_3_0_0;
@@ -112,6 +113,8 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
+        // 18.0.0 (WildFly 29) to 17.0.0 (WildFly 28)
+        from18(chainedBuilder);
         // 17.0.0 (WildFly 28) to 16.0.0 (WildFly 27)
         from17(chainedBuilder);
         // 16.0.0 (WildFly 27) to 15.1.0 (WildFly 26.1)
@@ -147,8 +150,12 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         // 2.0.0 (WildFly 12) to 1.2.0, (WildFly 11 and EAP 7.1.0)
         from2(chainedBuilder);
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_16_0_0, ELYTRON_15_1_0, ELYTRON_15_0_0, ELYTRON_14_0_0, ELYTRON_13_0_0, ELYTRON_12_0_0, ELYTRON_11_0_0, ELYTRON_10_0_0, ELYTRON_9_0_0,
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_17_0_0, ELYTRON_16_0_0, ELYTRON_15_1_0, ELYTRON_15_0_0, ELYTRON_14_0_0, ELYTRON_13_0_0, ELYTRON_12_0_0, ELYTRON_11_0_0, ELYTRON_10_0_0, ELYTRON_9_0_0,
                 ELYTRON_8_0_0, ELYTRON_7_0_0, ELYTRON_6_0_0, ELYTRON_5_0_0, ELYTRON_4_0_0, ELYTRON_3_0_0, ELYTRON_2_0_0, ELYTRON_1_2_0 });
+    }
+
+    private static void from18(ChainedTransformationDescriptionBuilder chainedBuilder) {
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_18_0_0, ELYTRON_17_0_0);
     }
 
     private static void from17(ChainedTransformationDescriptionBuilder chainedBuilder) {

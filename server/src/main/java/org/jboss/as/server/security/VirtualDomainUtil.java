@@ -41,6 +41,7 @@ public class VirtualDomainUtil {
 
     public static final ServiceName VIRTUAL_SECURITY_DOMAIN_CREATION_SERVICE = ServiceName.of("org.wildfly.security.virtual-security-domain-creation");
     public static final ServiceName OIDC_VIRTUAL_SECURITY_DOMAIN_CREATION_SERVICE = ServiceName.of("org.wildfly.security.oidc-virtual-security-domain-creation");
+    public static final String VIRTUAL = "virtual";
 
     public static VirtualDomainMetaData configureVirtualDomain(DeploymentPhaseContext phaseContext, DeploymentUnit deploymentUnit,
                                                                SecurityDomain.Builder virtualDomainBuilder) throws DeploymentUnitProcessingException {

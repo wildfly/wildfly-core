@@ -1,5 +1,5 @@
 <!-- for needs of SaslTestCase and KeyStoresTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:17.0" default-ssl-context="ClientSslContextNoAuth">
+<subsystem xmlns="urn:wildfly:elytron:18.0" default-ssl-context="ClientSslContextNoAuth">
     <providers>
         <provider-loader name="ManagerProviderLoader" class-names="com.ibm.crypto.provider.IBMJCE com.ibm.jsse.IBMJSSEProvider com.ibm.jsse2.IBMJSSEProvider2 com.ibm.security.jgss.IBMJGSSProvider com.ibm.security.cert.IBMCertPath com.ibm.security.cmskeystore.CMSProvider com.ibm.security.jgss.mech.spnego.IBMSPNEGO" />
         <provider-loader name="openssl" module="org.wildfly.openssl"/>
