@@ -31,7 +31,6 @@
         <exclude path="org/wildfly/extension/elytron/ElytronExtension"/>
         <exclude path="org/wildfly/extension/elytron/ElytronSubsystemTransformers"/>
         <exclude path="org/wildfly/extension/elytron/_private"/>
-        <exclude path="org/wildfly/extension/elytron/capabilities/_private"/>
         <exclude path="org/wildfly/extension/elytron/expression"/>
     </exports>
 
@@ -57,6 +56,7 @@
         <module name="org.jboss.vfs"/>
         <module name="org.jboss.logmanager"/>
         <module name="org.wildfly.common"/>
+        <module name="org.wildfly.extension.elytron-common" services="import"/>
         <module name="org.wildfly.security.elytron-private"/>
     </dependencies>
 </module>
