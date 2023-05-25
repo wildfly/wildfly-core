@@ -27,20 +27,15 @@ import org.jboss.as.subsystem.test.AdditionalInitialization;
  *
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  */
-public class ElytronSubsystem17_0TestCase extends AbstractElytronSubsystemBaseTest {
+public class ElytronSubsystem18_0TestCase extends AbstractElytronSubsystemBaseTest {
 
-    public ElytronSubsystem17_0TestCase() {
+    public ElytronSubsystem18_0TestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("legacy-elytron-subsystem-17.0.xml");
-    }
-
-    @Override
-    protected void compareXml(String configId, String original, String marshalled) throws Exception {
-        //
+        return readResource("elytron-subsystem-18.0.xml");
     }
 
     @Override

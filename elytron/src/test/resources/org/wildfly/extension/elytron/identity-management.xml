@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:17.0" initial-providers="elytron">
+<subsystem xmlns="urn:wildfly:elytron:18.0" initial-providers="elytron">
     <providers>
         <provider-loader name="elytron" class-names="org.wildfly.security.WildFlyElytronProvider" />
     </providers>
