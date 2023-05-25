@@ -28,7 +28,7 @@
         <module name="javax.enterprise.concurrent.api" export="true" optional="true" />
         <module name="javax.inject.api" export="true" optional="true" />
         <module name="jakarta.interceptor.api" export="true" optional="true" />
-        <module name="javax.json.api" export="true" optional="true" />
+        <module name="jakarta.json.api" export="true" optional="true" />
         <module name="javax.jms.api" export="true" optional="true" />
         <module name="javax.jws.api" export="true" optional="true" />
         <module name="javax.mail.api" export="true" optional="true" />
