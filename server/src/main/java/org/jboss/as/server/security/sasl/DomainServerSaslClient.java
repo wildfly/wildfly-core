@@ -18,7 +18,6 @@ package org.jboss.as.server.security.sasl;
 
 import static org.jboss.as.server.logging.ServerLogger.AS_ROOT_LOGGER;
 import static org.jboss.as.server.security.sasl.Constants.JBOSS_DOMAIN_SERVER;
-import static org.wildfly.security.mechanism._private.ElytronMessages.saslPlain;
 
 import java.io.IOException;
 
@@ -72,13 +71,14 @@ final class DomainServerSaslClient implements SaslClient, SaslWrapper {
         } catch (SaslException e) {
             throw e;
         } catch (IOException | UnsupportedCallbackException e) {
-            throw saslPlain.mechCallbackHandlerFailedForUnknownReason(e).toSaslException();
+            throw AS_ROOT_LOGGER.mechCallbackHandlerFailedForUnknownReason(e).toSaslException();
         }
         final String name = nameCallback.getName();
         if (name == null) {
-            throw saslPlain.mechNoLoginNameGiven().toSaslException();
+            throw AS_ROOT_LOGGER.mechNoLoginNameGiven().toSaslException();
         }
-        final String token = credentialCallback.getCredential(DomainServerCredential.class).getToken();
+        DomainServerCredential credential = credentialCallback.getCredential(DomainServerCredential.class);
+        final String token = credential != null ? credential.getToken() : null;
         if (token == null) {
             throw AS_ROOT_LOGGER.mechNoTokenGiven().toSaslException();
         }
@@ -87,10 +87,10 @@ final class DomainServerSaslClient implements SaslClient, SaslWrapper {
             StringPrep.encode(name, b, StringPrep.PROFILE_SASL_STORED);
             b.append((byte) 0);
             StringPrep.encode(token, b, StringPrep.PROFILE_SASL_STORED);
-            saslPlain.tracef("SASL Negotiation Completed");
+            AS_ROOT_LOGGER.tracef("SASL Negotiation Completed");
             return b.toArray();
         } catch (IllegalArgumentException ex) {
-            throw saslPlain.mechMalformedFields(ex).toSaslException();
+            throw AS_ROOT_LOGGER.mechMalformedFields(ex).toSaslException();
         }
     }
 
@@ -100,17 +100,17 @@ final class DomainServerSaslClient implements SaslClient, SaslWrapper {
 
     public byte[] unwrap(final byte[] incoming, final int offset, final int len) throws SaslException {
         if (complete) {
-            throw saslPlain.mechNoSecurityLayer();
+            throw AS_ROOT_LOGGER.mechNoSecurityLayer();
         } else {
-            throw saslPlain.mechAuthenticationNotComplete();
+            throw AS_ROOT_LOGGER.mechAuthenticationNotComplete();
         }
     }
 
     public byte[] wrap(final byte[] outgoing, final int offset, final int len) throws SaslException {
         if (complete) {
-            throw saslPlain.mechNoSecurityLayer();
+            throw AS_ROOT_LOGGER.mechNoSecurityLayer();
         } else {
-            throw saslPlain.mechAuthenticationNotComplete();
+            throw AS_ROOT_LOGGER.mechAuthenticationNotComplete();
         }
     }
 
@@ -118,7 +118,7 @@ final class DomainServerSaslClient implements SaslClient, SaslWrapper {
         if (complete) {
             return null;
         } else {
-            throw saslPlain.mechAuthenticationNotComplete();
+            throw AS_ROOT_LOGGER.mechAuthenticationNotComplete();
         }
     }
 
