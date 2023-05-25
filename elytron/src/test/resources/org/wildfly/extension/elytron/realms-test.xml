@@ -3,6 +3,15 @@
     <providers>
         <provider-loader name="elytron" class-names="org.wildfly.security.WildFlyElytronProvider" />
     </providers>
+    <audit-logging>
+        <file-audit-log name="local-file" path="target/audit.log" synchronized="true" format="JSON" />
+    </audit-logging>
+
+    <security-domains>
+        <security-domain  name="DistributedRealmDomain" default-realm="DistributedRealmFirstUnavailableIgnoredEventEmitted" security-event-listener="local-file">
+            <realm name="DistributedRealmFirstUnavailableIgnoredEventEmitted"/>
+        </security-domain>
+    </security-domains>
     <security-realms>
         <aggregate-realm name="AggregateRealmOne" authentication-realm="FilesystemRealm" authorization-realm="FilesystemRealm2"/>
         <aggregate-realm name="AggregateRealmTwo" authentication-realm="FilesystemRealm" authorization-realm="FilesystemRealm2" principal-transformer ="RegexOne"/>
@@ -23,6 +32,10 @@
             <users-properties path="users-clear.properties" relative-to="jboss.server.config.dir" plain-text="true" />
             <groups-properties path="groups.properties" relative-to="jboss.server.config.dir" />
         </properties-realm>
+
+        <ldap-realm name="LdapRealm" dir-context="dircontext" direct-verification="true">
+            <identity-mapping rdn-identifier="uid" use-recursive-search="true" search-base-dn="dc=elytron,dc=wildfly,dc=org"/>
+        </ldap-realm>
 
         <filesystem-realm name="FilesystemRealm" levels="2" encoded="false">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir" />
@@ -76,6 +89,14 @@
             <oauth2-introspection client-id="a" client-secret="b" introspection-url="https://localhost/token/introspect" client-ssl-context="ClientCaSslContext" host-name-verification-policy="ANY" />
         </token-realm>
 
+        <distributed-realm name="DistributedRealmNoUnavailable" realms="JwtRealm FilesystemRealm"/>
+
+        <distributed-realm name="DistributedRealmFirstUnavailable" realms="LdapRealm FilesystemRealm"/>
+
+        <distributed-realm name="DistributedRealmFirstUnavailableIgnored" realms="LdapRealm FilesystemRealm" ignore-unavailable-realms="true" emit-events="false"/>
+
+        <distributed-realm name="DistributedRealmFirstUnavailableIgnoredEventEmitted" realms="LdapRealm FilesystemRealm" ignore-unavailable-realms="true" emit-events="true"/>
+
         <jaas-realm name="myJaasRealm"  entry="${jaas.realm.login.context.entry:Entry1}" >
             <file path="${path.to.jaas.config.file:target/test-classes/org/wildfly/extension/elytron/jaas-login.config}"/>
         </jaas-realm>
@@ -106,9 +127,11 @@
             <client-ssl-context name="ClientCaSslContext" trust-manager="CaTrustManager" />
         </client-ssl-contexts>
     </tls>
-
     <credential-stores>
         <secret-key-credential-store name="secretkeycredentialstore" path="target/test-classes/org/wildfly/extension/elytron/mycredstore.cs" />
         <secret-key-credential-store name="secretkeycredstore" path="target/test-classes/org/wildfly/extension/elytron/mysecretkeycredstore.cs" create="true" populate="true" />
     </credential-stores>
+    <dir-contexts>
+        <dir-context name="dircontext" url="ldap://localhost:11390"/>
+    </dir-contexts>
 </subsystem>

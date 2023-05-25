@@ -131,6 +131,11 @@ class RealmParser {
     private final PersistentResourceXMLDescription distributedRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.DISTRIBUTED_REALM))
             .addAttribute(DistributedRealmDefinition.REALMS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
             .build();
+    private final PersistentResourceXMLDescription distributedRealmParser_18 = builder(PathElement.pathElement(ElytronDescriptionConstants.DISTRIBUTED_REALM))
+            .addAttribute(DistributedRealmDefinition.REALMS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
+            .addAttribute(DistributedRealmDefinition.IGNORE_UNAVAILABLE_REALMS)
+            .addAttribute(DistributedRealmDefinition.EMIT_EVENTS)
+            .build();
     private final PersistentResourceXMLDescription failoverRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.FAILOVER_REALM))
             .addAttributes(FailoverRealmDefinition.ATTRIBUTES)
             .build();
@@ -259,6 +264,23 @@ class RealmParser {
             .addChild(tokenRealmParser)
             .addChild(cachingRealmParser)
             .addChild(distributedRealmParser)
+            .addChild(failoverRealmParser)
+            .addChild(jaasRealmParser)
+            .build();
+
+    final PersistentResourceXMLDescription realmParser_18 = decorator(ElytronDescriptionConstants.SECURITY_REALMS)
+            .addChild(aggregateRealmParser_8_0)
+            .addChild(customRealmParser)
+            .addChild(customModifiableRealmParser)
+            .addChild(identityRealmParser)
+            .addChild(jdbcRealmParser_14_0)
+            .addChild(keyStoreRealmParser)
+            .addChild(propertiesRealmParser_14_0)
+            .addChild(ldapRealmParser)
+            .addChild(filesystemRealmParser_16)
+            .addChild(tokenRealmParser)
+            .addChild(cachingRealmParser)
+            .addChild(distributedRealmParser_18)
             .addChild(failoverRealmParser)
             .addChild(jaasRealmParser)
             .build();
