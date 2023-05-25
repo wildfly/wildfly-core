@@ -6,7 +6,7 @@
 
 $scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
 . $scripts'\common.ps1'
-
+Set-Item -Path env:JBOSS_LAUNCH_SCRIPT -Value "powershell"
 $SERVER_OPTS = Process-Script-Parameters -Params $ARGS
 
 $JAVA_OPTS = Get-Java-Opts

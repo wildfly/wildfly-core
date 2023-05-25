@@ -1417,6 +1417,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id=294, value = "The '%s' module alias has been excluded from '%s' deployment via %s. While this is allowed, it is recommended to use its target module instead. Consider replacing this alias with its target module '%s'.")
     void aliasAddedAsExclusion(String aliasModule, String deploymentName, String context, String targetModule);
 
+    @Message(id = 295, value = "No %s installation has been prepared.")
+    OperationFailedException noServerInstallationPrepared(String productName);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

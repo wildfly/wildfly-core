@@ -37,6 +37,8 @@ ARGUMENTS
  --host      - is allowed and required only in the domain mode, specifies
                the host name to shutdown;
 
+ --perform-installation  - Restart the server and perform any pending installation.
+
  --restart   - optional, if true, once shutdown the controller will be
                restarted again; if not present, false is assumed.
 
