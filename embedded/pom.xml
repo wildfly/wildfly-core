@@ -195,20 +195,6 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <!-- As far as embedded is concerned, this is compile time only as it's just used
-                 to import a single constant. At runtime the module is used transitively, but not
-                 directly by the code in this maven module. -->
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-process-controller</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-            <scope>provided</scope>
-        </dependency>
 
         <!-- Test dependencies -->
         <dependency>
