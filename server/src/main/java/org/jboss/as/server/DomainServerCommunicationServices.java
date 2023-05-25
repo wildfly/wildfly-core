@@ -116,7 +116,7 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
             final Supplier<ProcessStateNotifier> cpsnSupplier = sb.requires(ControlledProcessStateService.INTERNAL_SERVICE_NAME);
             AuthenticationContext latestAuthenticationContext = DomainServerMain.getLatestAuthenticationContext();
             sb.setInstance(new HostControllerConnectionService(managementURI, serverName, serverProcessName,
-                    latestAuthenticationContext == null ? createAuthenticationContect(serverName, serverAuthToken) : latestAuthenticationContext,
+                    latestAuthenticationContext == null ? createAuthenticationContext(serverName, serverAuthToken) : latestAuthenticationContext,
                     initialOperationID, managementSubsystemEndpoint, sslContextSupplier, esSupplier, sesSupplier, eSupplier, cpsnSupplier));
             sb.install();
         } catch (OperationFailedException e) {
@@ -148,7 +148,7 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
      * @param serverAuthToken - The server auth token to use as the credential to verify the server.
      * @return A constructed {@code AuthenticationContext}
      */
-    static AuthenticationContext createAuthenticationContect(final String username, final String serverAuthToken) {
+    static AuthenticationContext createAuthenticationContext(final String username, final String serverAuthToken) {
         AuthenticationConfiguration authConfig = AuthenticationConfiguration.empty()
                 .useName(username)
                 .useCredential(new DomainServerCredential(serverAuthToken))

@@ -22,7 +22,7 @@
 
 package org.jboss.as.server;
 
-import static org.jboss.as.server.DomainServerCommunicationServices.createAuthenticationContect;
+import static org.jboss.as.server.DomainServerCommunicationServices.createAuthenticationContext;
 
 import static org.jboss.as.process.protocol.StreamUtils.readBoolean;
 import static org.jboss.as.process.protocol.StreamUtils.readFully;
@@ -160,7 +160,7 @@ public final class DomainServerMain {
                     final HostControllerClient client = getRequiredService(container,
                             HostControllerConnectionService.SERVICE_NAME, HostControllerClient.class);
                     // Reconnect to the host-controller
-                    AuthenticationContext replacementAuthenticationContext = createAuthenticationContect(client.getServerName(), serverAuthToken);
+                    AuthenticationContext replacementAuthenticationContext = createAuthenticationContext(client.getServerName(), serverAuthToken);
                     latestAuthenticationContext = replacementAuthenticationContext;
                     client.reconnect(hostControllerUri, replacementAuthenticationContext, managementSubsystemEndpoint);
                 }

@@ -46,8 +46,6 @@ import org.wildfly.security.sasl.util.AggregateSaslServerFactory;
  */
 public class SaslWrappingService implements Service {
 
-    private static final ServiceName SERVER_INVENTORY_SERVICE_NAME = ServiceName.JBOSS.append("host", "controller", "server-inventory");
-
     private final Supplier<SaslAuthenticationFactory> originalFactorySupplier;
     private final Consumer<SaslAuthenticationFactory> wrappedFactoryConsumer;
     private final Supplier<Predicate<Evidence>> evidenceVerifierSupplier;
@@ -63,7 +61,6 @@ public class SaslWrappingService implements Service {
     @Override
     public void start(StartContext context) throws StartException {
         SaslAuthenticationFactory originalFactory = originalFactorySupplier.get();
-        //ServerInventory serverInventory = serverInventorySupplier.get();
         SaslServerFactory originalServerFactory = originalFactory.getFactory();
         SaslServerFactory domainServerSaslFactory = new DomainServerSaslServerFactory(originalFactory.getSecurityDomain(),
                 evidenceVerifierSupplier.get());
