@@ -163,12 +163,6 @@ public class ConfigurationPersisterFactory {
         }
 
         @Override
-        public void registerSubsystemWriter(String name, XMLElementWriter<SubsystemMarshallingContext> deparser) {
-            bootWriter.registerSubsystemWriter(name, deparser);
-            super.registerSubsystemWriter(name, deparser);
-        }
-
-        @Override
         public void registerSubsystemWriter(String name, Supplier<XMLElementWriter<SubsystemMarshallingContext>> writer) {
             bootWriter.registerSubsystemWriter(name, writer);
             super.registerSubsystemWriter(name, writer);
