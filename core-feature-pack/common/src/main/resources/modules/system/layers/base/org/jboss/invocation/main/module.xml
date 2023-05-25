@@ -33,7 +33,7 @@
     </resources>
 
     <dependencies>
-        <module name="javax.interceptor.api"/>
+        <module name="jakarta.interceptor.api"/>
         <module name="javax.transaction.api" optional="true"/>
         <module name="org.jboss.classfilewriter"/>
         <module name="org.jboss.logging"/>
