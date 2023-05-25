@@ -88,6 +88,10 @@
             <identity-mapping rdn-identifier="uid"></identity-mapping>
         </ldap-realm>
         <jaas-realm name="myJaasRealm" entry="Entry" />
+        <ldap-realm name="LdapRealm" dir-context="dirContext" direct-verification="true">
+            <identity-mapping rdn-identifier="uid" use-recursive-search="true" search-base-dn="dc=elytron,dc=wildfly,dc=org"/>
+        </ldap-realm>
+        <distributed-realm name="DistributedRealmFirstUnavailableIgnoredEventEmitted" realms="LdapRealm FilesystemRealmIntegrity" ignore-unavailable-realms="true" emit-events="true"/>
     </security-realms>
     <dir-contexts>
         <dir-context name="dirContext" url="ldap://localhost:11390" principal="uid=server,dc=elytron,dc=wildfly,dc=org" enable-connection-pooling="true">
