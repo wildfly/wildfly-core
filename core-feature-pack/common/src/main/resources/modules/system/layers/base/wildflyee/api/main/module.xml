@@ -38,7 +38,7 @@
         <module name="javax.rmi.api" export="true" optional="true" />
         <module name="jakarta.security.auth.message.api" export="true" optional="true" />
         <module name="jakarta.security.jacc.api" export="true" optional="true" />
-        <module name="javax.servlet.api" export="true" optional="true" />
+        <module name="jakarta.servlet.api" export="true" optional="true" />
         <module name="javax.servlet.jsp.api" export="true" optional="true" />
         <module name="jakarta.transaction.api" export="true" optional="true" />
         <module name="javax.validation.api" export="true" optional="true" />
