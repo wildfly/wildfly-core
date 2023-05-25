@@ -40,7 +40,7 @@
         <module name="javax.security.jacc.api" export="true" optional="true" />
         <module name="javax.servlet.api" export="true" optional="true" />
         <module name="javax.servlet.jsp.api" export="true" optional="true" />
-        <module name="javax.transaction.api" export="true" optional="true" />
+        <module name="jakarta.transaction.api" export="true" optional="true" />
         <module name="javax.validation.api" export="true" optional="true" />
         <module name="javax.ws.rs.api" export="true" services="export" optional="true" />
         <module name="javax.websocket.api" export="true" optional="true" />
