@@ -115,8 +115,8 @@ public class RemoveNonExistingResourceTestCase {
 
 
     public static final String SUBMODEL_NAME = "child";
-    static final AttributeDefinition ATTRIBUTE_DEFINITION = new SimpleAttributeDefinition("attribute", ModelType.BOOLEAN, true);
-    static final AttributeDefinition MODULE = new SimpleAttributeDefinition("module", ModelType.STRING, true);
+    static final AttributeDefinition ATTRIBUTE_DEFINITION = new SimpleAttributeDefinitionBuilder("attribute", ModelType.BOOLEAN, true).build();
+    static final AttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder("module", ModelType.STRING, true).build();
 
     public static class InterleavedSubsystemModelControllerService extends TestModelControllerService {
 

@@ -39,14 +39,6 @@ public class DefaultAttributeMarshaller extends AttributeMarshaller {
         }
     }
 
-    /**
-     * Use {@link #marshallAsElement(AttributeDefinition, ModelNode, boolean, XMLStreamWriter)} instead.
-     */
-    @Deprecated
-    public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, XMLStreamWriter writer) throws XMLStreamException {
-        marshallAsElement(attribute, resourceModel, true, writer);
-    }
-
     @Override
     public void marshallAsElement(final AttributeDefinition attribute, final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
         if (isMarshallable(attribute, resourceModel, marshallDefault)) {

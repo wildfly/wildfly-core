@@ -85,7 +85,7 @@ public class PathRemoveHandler implements OperationStepHandler { // TODO make th
         context.removeResource(PathAddress.EMPTY_ADDRESS);
 
         context.deregisterCapability(PATH_CAPABILITY.getDynamicName(context.getCurrentAddressValue()));
-        RELATIVE_TO_LOCAL.removeCapabilityRequirements(context, model.get(RELATIVE_TO.getName()));
+        RELATIVE_TO_LOCAL.removeCapabilityRequirements(context, null, model.get(RELATIVE_TO.getName()));
 
         if (pathManager != null) {
             final PathEventContextImpl pathEventContext = pathManager.checkRestartRequired(context, name, Event.REMOVED);

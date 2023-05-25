@@ -46,6 +46,7 @@ import javax.xml.stream.XMLStreamException;
 import java.util.Collections;
 import java.util.List;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
@@ -156,7 +157,7 @@ class DeploymentScannerParser_2_0 implements XMLStreamConstants, XMLElementReade
                     break;
                 }
                 case NAME: {
-                    name = DeploymentScannerDefinition.NAME.parse(value,reader).asString();
+                    name = parse(DeploymentScannerDefinition.NAME,value,reader).asString();
                     break;
                 }
                 case RELATIVE_TO: {
@@ -204,6 +205,10 @@ class DeploymentScannerParser_2_0 implements XMLStreamConstants, XMLElementReade
         requireNoContent(reader);
         operation.get(OP_ADDR).set(address).add(CommonAttributes.SCANNER, name);
         list.add(operation);
+    }
+
+    private static ModelNode parse(AttributeDefinition ad, String value, XMLExtendedStreamReader reader) throws XMLStreamException {
+        return ad.getParser().parse(ad,value,reader);
     }
 
 }
