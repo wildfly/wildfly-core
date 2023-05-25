@@ -21,7 +21,6 @@ package org.wildfly.extension.elytron;
 import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
 import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
 import static org.wildfly.extension.elytron.AdvancedModifiableKeyStoreDecorator.resetAcmeAccount;
-import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_RUNTIME_CAPABILITY;
@@ -100,7 +99,7 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
             .setAttributeGroup(ElytronDescriptionConstants.ACCOUNT_KEY)
             .setMinSize(1)
             .setRestartAllServices()
-            .setCapabilityReference(KEY_STORE_CAPABILITY, CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY, true)
+            .setCapabilityReference(KEY_STORE_CAPABILITY, CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY)
             .build();
 
     static final SimpleAttributeDefinition ALIAS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALIAS, ModelType.STRING, false)

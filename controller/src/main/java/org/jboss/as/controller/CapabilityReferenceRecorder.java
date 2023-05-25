@@ -107,18 +107,10 @@ public interface CapabilityReferenceRecorder {
     class DefaultCapabilityReferenceRecorder extends ContextDependencyRecorder {
 
         private final String baseDependentName;
-        private final Boolean dynamicDependent;
 
         DefaultCapabilityReferenceRecorder(String baseRequirementName, String baseDependentName) {
             super(baseRequirementName);
             this.baseDependentName = baseDependentName;
-            this.dynamicDependent = null;
-        }
-
-        @Deprecated DefaultCapabilityReferenceRecorder(String baseRequirementName, String baseDependentName, boolean dynamicDependent) {
-            super(baseRequirementName);
-            this.baseDependentName = baseDependentName;
-            this.dynamicDependent = dynamicDependent;
         }
 
         @Override
@@ -127,15 +119,8 @@ public interface CapabilityReferenceRecorder {
             if (cap != null) {
                 // If the cap is registered with the mrr, we ignore any dynamicDependent setting
                 return getDependentName(cap, context);
-            } else if (dynamicDependent != null) {
-                // Use the legacy approach
-                if (dynamicDependent) {
-                    return RuntimeCapability.buildDynamicCapabilityName(baseDependentName, context.getCurrentAddressValue());
-                } else {
-                    return baseDependentName;
-                }
             }
-            // No cap registered and no legacy info on how to construct the full name. Fail!
+            // No cap registered. Fail!
             throw ControllerLogger.ROOT_LOGGER.unknownCapability(this.baseDependentName);
         }
 

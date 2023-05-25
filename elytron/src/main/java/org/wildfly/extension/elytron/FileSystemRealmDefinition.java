@@ -168,7 +168,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
                     .setRequires(ElytronDescriptionConstants.KEY_STORE_ALIAS)
                     .setMinSize(1)
                     .setRestartAllServices()
-                    .setCapabilityReference(KEY_STORE_CAPABILITY, SECURITY_REALM_CAPABILITY, true)
+                    .setCapabilityReference(KEY_STORE_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY)
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
 

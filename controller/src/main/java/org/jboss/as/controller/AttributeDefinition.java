@@ -254,23 +254,6 @@ public abstract class AttributeDefinition {
     }
 
     /**
-     * <strong>Inverse</strong> of {@link #isRequired()}.
-     * <p>
-     * In a valid model an attribute that is required must be undefined if any alternative
-     * is defined, so this method should not be used for checking if it is valid for
-     * the attribute ever to have an undefined value. Use {@link #isNillable()} for that.
-     *
-     * @return {@code true} if an {@code undefined ModelNode} is valid in the absence of
-     *         alternatives; {@code false} if not
-     *
-     * @deprecated use either {@link #isRequired()} or {@link #isNillable()} depending on which provides the desired information
-     */
-    @Deprecated
-    public boolean isAllowNull() {
-        return !required;
-    }
-
-    /**
      * Whether a {@link org.jboss.dmr.ModelNode} holding the value of this attribute can be
      * {@link org.jboss.dmr.ModelType#UNDEFINED} in any situation. An attribute that ordinarily is
      * {@link #isRequired() required} may still be undefined in a given model if an
@@ -366,23 +349,6 @@ public abstract class AttributeDefinition {
      */
     public ParameterValidator getValidator() {
         return validator;
-    }
-
-    /**
-     * Gets whether the attribute definition is checking for {@link org.jboss.dmr.ModelNode#isDefined() undefined} values.
-     * This will be {@code true} for attributes that are not {@link #isRequired()} (although the validation is
-     * meaningless, since undefined is valid) and for required attributes that have {@link #getAlternatives() alternatives}.
-     * <p>
-     * Validation by the AttributeDefinition of required attributes with alternatives is not possible, as the necessary
-     * context of the overall change being made is not available.
-     *
-     * @return {@code true} if validation will check undefined values.
-     *
-     * @deprecated  this is no longer configurable, so this getter may be removed in a future major release.
-     */
-    @Deprecated
-    public boolean isValidatingNull() {
-        return !required || alternatives == null || alternatives.length == 0;
     }
 
     /**
@@ -1025,21 +991,6 @@ public abstract class AttributeDefinition {
      * <p>
      * This is a no-op in this base class. Subclasses that support attribute types that can represent
      * capability references should override this method.
-     * @param context the operation context
-     * @param attributeValue the value of the attribute described by this object
-     * @deprecated use @{link {@link #addCapabilityRequirements(OperationContext, Resource, ModelNode)}} variant
-     */
-    @Deprecated
-    public void addCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
-        addCapabilityRequirements(context, null, attributeValue);
-    }
-    /**
-     * Based on the given attribute value, add capability requirements. If this definition
-     * is for an attribute whose value is or contains a reference to the name of some capability,
-     * this method should record the addition of a requirement for the capability.
-     * <p>
-     * This is a no-op in this base class. Subclasses that support attribute types that can represent
-     * capability references should override this method.
      *  @param context the operation context
      * @param resource  the resource on which requirements are gathered
      * @param attributeValue the value of the attribute described by this object
@@ -1053,23 +1004,6 @@ public abstract class AttributeDefinition {
                 refRecorder.addCapabilityRequirements(context, resource, name, value.isDefined() ? value.asString() : null);
             }
         }
-    }
-
-    /**
-     * Based on the given attribute value, remove capability requirements. If this definition
-     * is for an attribute whose value is or contains a reference to the name of some capability,
-     * this method should record the removal of a requirement for the capability.
-     * <p>
-     * This is a no-op in this base class. Subclasses that support attribute types that can represent
-     * capability references should override this method.
-     *
-     * @param context        the operation context
-     * @param attributeValue the value of the attribute described by this object
-     * @deprecated use {@link #removeCapabilityRequirements(OperationContext, Resource, ModelNode)} variant
-     */
-    @Deprecated
-    public void removeCapabilityRequirements(OperationContext context, ModelNode attributeValue) {
-        removeCapabilityRequirements(context, null, attributeValue);
     }
 
     /**
@@ -1214,16 +1148,6 @@ public abstract class AttributeDefinition {
         }
 
         return convertToExpectedType(node);
-    }
-
-    /**
-     *
-     * @return AttributeMarshaller that provides means to marshal attribute to xml
-     * @deprecated use {@link #getMarshaller()}
-     */
-    @Deprecated
-    public AttributeMarshaller getAttributeMarshaller() {
-        return attributeMarshaller;
     }
 
     /**

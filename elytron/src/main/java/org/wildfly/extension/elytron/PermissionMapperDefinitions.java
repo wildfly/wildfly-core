@@ -163,7 +163,7 @@ class PermissionMapperDefinitions {
     static final SimpleAttributeDefinition PERMISSION_SET_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PERMISSION_SET, ModelType.STRING, false)
             .setXmlName(ElytronDescriptionConstants.NAME)
             .setMinSize(1)
-            .setCapabilityReference(PERMISSION_SET_CAPABILITY, PERMISSION_MAPPER_CAPABILITY, true)
+            .setCapabilityReference(PERMISSION_SET_CAPABILITY, PERMISSION_MAPPER_RUNTIME_CAPABILITY)
             .build();
 
     static final ObjectTypeAttributeDefinition PERMISSION_SET = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION_SET, PERMISSION_SET_NAME)
