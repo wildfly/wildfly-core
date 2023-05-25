@@ -1448,6 +1448,15 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 304, value = "No authentication mechanism token was given")
     AuthenticationMechanismException mechNoTokenGiven();
 
+    @Message(id = 305, value = "Authentication mechanism authentication failed due to one or more malformed fields")
+    AuthenticationMechanismException mechMalformedFields(@Cause IllegalArgumentException ex);
+
+    @Message(id = 306, value = "Callback handler failed for unknown reason")
+    AuthenticationMechanismException mechCallbackHandlerFailedForUnknownReason(@Cause Throwable cause);
+
+    @Message(id = 307, value = "No authentication mechanism login name was given")
+    AuthenticationMechanismException mechNoLoginNameGiven();
+
     ////////////////////////////////////////////////
     //Messages without IDs
 
