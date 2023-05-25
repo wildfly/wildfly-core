@@ -211,9 +211,12 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                         if (resourceRegistration.getAttributeNames(PathAddress.EMPTY_ADDRESS).contains(name) &&
                                 resourceRegistration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, name).getAttributeDefinition().getType() == OBJECT) {
                             processAttribute(address, rootRegistration, name, value, postExtensionOps, xmlOperations);
+                        } else if( !address.equals(parentAddress)) {
+                            processResource(address, map, rootRegistration, rootRegistration.getSubModel(address), xmlOperations, postExtensionOps, false);
+                        } else {
+                            throw MGMT_OP_LOGGER.noChildResource(name , address.toCLIStyleString());
                         }
-                        processResource(address, map, rootRegistration, rootRegistration.getSubModel(address), xmlOperations, postExtensionOps, false);
-                    } else if (value != null && value instanceof Operation) {
+                    } else if (value instanceof Operation) {
                         Operation yamlOperation = Operation.class.cast(value);
                         yamlOperation.processOperation(rootRegistration, xmlOperations, postExtensionOps, address, name);
                     } else {
@@ -259,7 +262,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                                         MGMT_OP_LOGGER.unexpectedValueForResource(value, address.toCLIStyleString(), name);
                                     }
                                 }
-                            } else {
+                            } else if (name.equals(address.getLastElement().getValue())) {
                                 MGMT_OP_LOGGER.debugf("Resource for address %s needs to be created with parameters %s", address.toCLIStyleString(), Arrays.stream(operationEntry.getOperationDefinition().getParameters()).map(AttributeDefinition::getName).collect(Collectors.joining()));
                                 if (value instanceof Map) {
                                     Map<String, Object> map = (Map<String, Object>) value;
@@ -273,6 +276,8 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                                         processAttributes(address, rootRegistration, operationEntry, null, postExtensionOps);
                                     }
                                 }
+                            } else {
+                                throw MGMT_OP_LOGGER.noChildResource(name, address.toCLIStyleString());
                             }
                         } else {
                             MGMT_OP_LOGGER.noResourceRegistered(address.toCLIStyleString(), resourceRegistration.getPathAddress().toCLIStyleString());

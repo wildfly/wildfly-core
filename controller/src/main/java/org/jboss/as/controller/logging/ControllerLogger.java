@@ -3747,4 +3747,7 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 501, value = "An invalid UUID string '%s' was found at '%s'. A new value will be generated.")
     void uuidNotValid(String corruptedUuid, String path);
+
+    @Message(id = 502, value = "No child resource called %s could be found at address %s'.")
+    IllegalArgumentException noChildResource(String name, String address);
 }
