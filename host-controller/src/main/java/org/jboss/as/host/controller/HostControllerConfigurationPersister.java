@@ -235,11 +235,6 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
     }
 
     @Override
-    public void registerSubsystemWriter(String name, XMLElementWriter<SubsystemMarshallingContext> writer) {
-        domainPersister.registerSubsystemWriter(name, writer);
-    }
-
-    @Override
     public void registerSubsystemWriter(String name, Supplier<XMLElementWriter<SubsystemMarshallingContext>> writer) {
         domainPersister.registerSubsystemWriter(name, writer);
     }

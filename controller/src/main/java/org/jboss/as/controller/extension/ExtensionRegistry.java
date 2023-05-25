@@ -852,8 +852,7 @@ public final class ExtensionRegistry {
 
         @Override
         public void registerXMLElementWriter(XMLElementWriter<SubsystemMarshallingContext> writer) {
-            //noinspection deprecation
-            writerRegistry.registerSubsystemWriter(name, writer);
+            writerRegistry.registerSubsystemWriter(name, Functions.constantSupplier(writer));
         }
 
         @Override
