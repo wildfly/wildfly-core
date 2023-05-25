@@ -46,7 +46,7 @@
         <module name="javax.websocket.api" export="true" optional="true" />
         <module name="javax.xml.bind.api" export="true" optional="true" />
         <module name="javax.xml.soap.api" export="true" optional="true" />
-        <module name="javax.xml.ws.api" export="true" optional="true" />
+        <module name="jakarta.xml.ws.api" export="true" optional="true" />
         <module name="org.glassfish.jakarta.el" export="true" optional="true" />
         <module name="javax.xml.rpc.api" export="true" optional="true" />
         <module name="org.omg.api" export="true" optional="true" />
