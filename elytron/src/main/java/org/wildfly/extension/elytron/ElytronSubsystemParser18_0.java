@@ -18,35 +18,28 @@
 
 package org.wildfly.extension.elytron;
 
-import java.io.IOException;
-
-import org.jboss.as.controller.RunningMode;
-import org.jboss.as.subsystem.test.AdditionalInitialization;
+import org.jboss.as.controller.PersistentResourceXMLDescription;
 
 /**
+ * The subsystem parser, which uses stax to read and write to and from xml.
  *
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  */
-public class ElytronSubsystem17_0TestCase extends AbstractElytronSubsystemBaseTest {
+public class ElytronSubsystemParser18_0 extends ElytronSubsystemParser17_0 {
 
-    public ElytronSubsystem17_0TestCase() {
-        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
+    @Override
+    String getNameSpace() {
+        return ElytronExtension.NAMESPACE_18_0;
     }
 
     @Override
-    protected String getSubsystemXml() throws IOException {
-        return readResource("legacy-elytron-subsystem-17.0.xml");
+    PersistentResourceXMLDescription getAuditLoggingParser() {
+        return new AuditLoggingParser().parser18_0;
     }
 
     @Override
-    protected void compareXml(String configId, String original, String marshalled) throws Exception {
-        //
+    PersistentResourceXMLDescription getRealmParser() {
+        return new RealmParser().realmParser_18;
     }
-
-    @Override
-    protected AdditionalInitialization createAdditionalInitialization() {
-        // Our use of the expression=encryption resource requires kernel capability setup that TestEnvironment provides
-        return new TestEnvironment(RunningMode.ADMIN_ONLY);
-    }
-
 }
+
