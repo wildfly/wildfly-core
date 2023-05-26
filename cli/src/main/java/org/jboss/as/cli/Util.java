@@ -160,6 +160,7 @@ public class Util {
     public static final String GROUPS_PROPERTIES = "groups-properties";
     public static final String GROUPS_TO_ROLES = "groups-to-roles";
     public static final String HEAD_COMMENT_ALLOWED = "head-comment-allowed";
+    public static final String HOME_DIR = "home-dir";
     public static final String HOST = "host";
     public static final String HTTP_AUTHENTICATION_FACTORY = "http-authentication-factory";
     public static final String HTTP_INTERFACE = "http-interface";
@@ -210,6 +211,7 @@ public class Util {
     public static final String OUTCOME = "outcome";
     public static final String PATH = "path";
     public static final String PEM = "pem";
+    public static final String PERFORM_INSTALLATION = "perform-installation";
     public static final String PERMISSION_MAPPER = "permission-mapper";
     public static final String PERSISTENT = "persistent";
     public static final String PLAIN_TEXT = "plain-text";
@@ -323,7 +325,6 @@ public class Util {
     public static final String NOT_OPERATOR = "!";
     public static final String DOMAIN_NAMES = "domain-names";
     public static final String AGREE_TO_TERMS_OF_SERVICE = "agree-to-terms-of-service";
-
     private static TerminalColor ERROR_COLOR;
     private static TerminalColor SUCCESS_COLOR;
     private static TerminalColor WARN_COLOR;

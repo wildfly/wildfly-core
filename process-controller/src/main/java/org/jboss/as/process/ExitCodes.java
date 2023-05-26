@@ -56,6 +56,21 @@ public class ExitCodes {
     public static final int RESTART_PROCESS_FROM_STARTUP_SCRIPT = 10;
 
     /**
+     * Exit code to invoke the installation manager scripts. It serves two functions:
+     * <ul>
+     *   <li>
+     *     <b>standalone mode:</b> - if a standalone server's exit code the startup script will invoke the installation manager script and start up the server again.
+     *  </li>
+     *  <li>
+     *     <b>domain mode:</b> - if the host controller process returns this exit code, the process controller will terminate
+     *      with this exit code, and the domain's startup script will invoke the installation manager script and start up the process controller again,
+     *      which in turn will start up the host controller and any {@code autostart="true"} servers.
+     *  </li>
+     * </ul>
+     */
+    public static final int PERFORM_INSTALLATION_FROM_STARTUP_SCRIPT = 20;
+
+    /**
      * Exit code from host controller which indicates a critical boot failure. The process controller
      * will only try to respawn the host controller if there are no running servers; if there aren't,
      * the process controller will shut down in turn. If there are running servers, the process controller

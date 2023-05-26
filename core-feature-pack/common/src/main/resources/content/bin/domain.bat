@@ -20,6 +20,9 @@ pushd "%DIRNAME%.."
 set "RESOLVED_JBOSS_HOME=%CD%"
 popd
 
+rem Identifies the launch script type.
+set JBOSS_LAUNCH_SCRIPT=batch
+
 call "%DIRNAME%common.bat" :commonConf
 
 setlocal EnableDelayedExpansion
@@ -218,7 +221,13 @@ echo.
     %*
 
 if %errorlevel% equ 10 (
-    echo Restarting...
+    echo INFO: Restarting...
+    goto RESTART
+)
+
+if %errorlevel% equ 20 (
+    echo INFO: Executing Installation Manager...
+    call "%JBOSS_HOME%\bin\installation-manager.bat" "%JBOSS_HOME%" "%JBOSS_CONFIG_DIR%\logging.properties"
     goto RESTART
 )
 

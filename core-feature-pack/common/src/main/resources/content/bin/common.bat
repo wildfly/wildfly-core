@@ -3,6 +3,7 @@ call %*
 goto :eof
 
 :commonConf
+setlocal
 if "x%COMMON_CONF%" == "x" (
    set "COMMON_CONF=%DIRNAME%common.conf.bat"
 ) else (
@@ -13,6 +14,7 @@ if "x%COMMON_CONF%" == "x" (
 if exist "%COMMON_CONF%" (
    call "%COMMON_CONF%" %*
 )
+endlocal
 goto :eof
 
 :setEnhancedSecurityManager

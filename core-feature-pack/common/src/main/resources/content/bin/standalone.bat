@@ -10,6 +10,8 @@ rem         standalone.bat --debug 9797
 @if not "%ECHO%" == ""  echo %ECHO%
 setlocal
 
+rem Identifies the launch script type.
+set JBOSS_LAUNCH_SCRIPT=batch
 rem By default debug mode is disable.
 set DEBUG_MODE=false
 set DEBUG_PORT_VAR=8787
@@ -327,6 +329,12 @@ echo.
 
 if %errorlevel% equ 10 (
     echo Restarting...
+    goto RESTART
+)
+
+if %errorlevel% equ 20 (
+    echo Executing Installation Manager...
+    call "%JBOSS_HOME%\bin\installation-manager.bat" "%JBOSS_HOME%" "%JBOSS_CONFIG_DIR%\logging.properties"
     goto RESTART
 )
 

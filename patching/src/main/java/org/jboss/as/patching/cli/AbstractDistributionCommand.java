@@ -15,16 +15,23 @@ limitations under the License.
  */
 package org.jboss.as.patching.cli;
 
-import java.io.File;
 import static java.lang.System.getProperty;
 import static java.lang.System.getSecurityManager;
 import static java.lang.System.getenv;
 import static java.security.AccessController.doPrivileged;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SELECT;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
+
 import org.aesh.command.Command;
 import org.aesh.command.CommandDefinition;
 import org.aesh.command.CommandException;
@@ -38,6 +45,10 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.operation.ParsedCommandLine;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.tool.PatchOperationBuilder;
@@ -48,9 +59,9 @@ import org.wildfly.core.cli.command.aesh.CLICompleterInvocation;
 import org.wildfly.core.cli.command.aesh.CLIConverterInvocation;
 import org.wildfly.core.cli.command.aesh.activator.AbstractOptionActivator;
 import org.wildfly.core.cli.command.aesh.activator.DomainOptionActivator;
+import org.wildfly.core.instmgr.cli.InstMgrGroupCommand;
 import org.wildfly.security.manager.action.ReadEnvironmentPropertyAction;
 import org.wildfly.security.manager.action.ReadPropertyAction;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 
 /**
  *
@@ -182,6 +193,13 @@ public abstract class AbstractDistributionCommand implements Command<CLICommandI
         } else if (host == null && commandInvocation.getCommandContext().isDomainMode()) {
             throw new CommandException("The --host option must be used in domain mode.");
         }
+
+        try {
+            verifyManagementVersion(commandInvocation);
+        } catch (IOException e) {
+            throw new CommandException(action + " failed", e);
+        }
+
         final PatchOperationTarget target = createPatchOperationTarget(commandInvocation.getCommandContext());
         final PatchOperationBuilder builder = createPatchOperationBuilder(commandInvocation.getCommandContext());
         final ModelNode response;
@@ -296,4 +314,27 @@ public abstract class AbstractDistributionCommand implements Command<CLICommandI
         }
     }
 
+    private void verifyManagementVersion(CLICommandInvocation commandInvocation) throws IOException, CommandException {
+        if (commandInvocation.getCommandContext().isDomainMode()) {
+            // Check the host version to know whether we are allowed to use the command.
+            // Notice the /host=*/core-service=pathing resource won't be available if we do not allow using patching
+            // here we decided to read the host version which is more accurate to do this check.
+
+            ModelControllerClient client = commandInvocation.getCommandContext().getModelControllerClient();
+            commandInvocation.getCommandContext().getModelControllerClient();
+            ModelNode op = new ModelNode();
+            PathAddress address = PathAddress.pathAddress(PathElement.pathElement(HOST, host));
+            op.get(Util.ADDRESS).set(address.toModelNode());
+            op.get(Util.OPERATION).set(ModelDescriptionConstants.QUERY);
+            ModelNode select = new ModelNode().addEmptyList();
+            select.add(MANAGEMENT_MAJOR_VERSION);
+            op.get(SELECT).set(select);
+            ModelNode response = client.execute(op);
+            int major = response.get(RESULT, MANAGEMENT_MAJOR_VERSION).asInt();
+            if (major > 20) {
+                // patch tool unsupported
+                throw new CommandException("The 'patch' command is not supported on this host controller. For the '" + host + "' host you have to use the '" + InstMgrGroupCommand.COMMAND_NAME + "' tool instead.");
+            }
+        }
+    }
 }
