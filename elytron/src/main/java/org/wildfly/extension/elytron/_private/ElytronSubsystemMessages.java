@@ -661,6 +661,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1088, value = "Missing certificate authority challenge")
     AcmeException missingCertificateAuthorityChallenge();
 
+    @Message(id = 1089, value = "Invalid file encoding '%s'.")
+    OperationFailedException invalidEncodingName(String encoding);
+
     /*
      * Expression Resolver Section
      */

@@ -193,6 +193,7 @@ interface ElytronDescriptionConstants {
     String ENCODED = "encoded";
     String ENCRYPTION = "encryption";
     String ENTRY = "entry";
+    String ENCODING = "encoding";
     String ENTRY_TYPE = "entry-type";
     String EVIDENCE_DECODER = "evidence-decoder";
     String EVIDENCE_DECODERS = "evidence-decoders";
@@ -255,6 +256,7 @@ interface ElytronDescriptionConstants {
     String IDENTITY = "identity";
     String IDENTITY_MAPPING = "identity-mapping";
     String IDENTITY_REALM = "identity-realm";
+    String IGNORE_UNAVAILABLE_REALMS = "ignore-unavailable-realms";
     String IMPLEMENTATION = "implementation";
     String IMPLEMENTATION_PROPERTIES = "implementation-properties";
     String IMPORT_CERTIFICATE = "import-certificate";

@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:17.0" default-authentication-context="child">
+<subsystem xmlns="urn:wildfly:elytron:18.0" default-authentication-context="child">
     <authentication-client>
         <authentication-context name="child"/>
     </authentication-client>
@@ -8,9 +8,9 @@
             <security-event-listener name="remote-syslog"/>
         </aggregate-security-event-listener>
         <custom-security-event-listener name="a" module="b" class-name="c.D"/>
-        <file-audit-log name="local-file" path="audit.log" relative-to="jboss.home.dir" synchronized="false" autoflush="true" format="JSON" />
-        <periodic-rotating-file-audit-log name="periodic-rotating" path="audit.log" relative-to="jboss.server.log.dir" format="JSON" suffix="y-M-d"/>
-        <size-rotating-file-audit-log name="size-rotating" path="audit.log" relative-to="jboss.server.log.dir" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d"/>
+        <file-audit-log name="local-file" path="audit.log" relative-to="jboss.home.dir" synchronized="false" autoflush="true" format="JSON" encoding="UTF-8"/>
+        <periodic-rotating-file-audit-log name="periodic-rotating" path="audit.log" relative-to="jboss.server.log.dir" format="JSON" encoding="UTF-8" suffix="y-M-d"/>
+        <size-rotating-file-audit-log name="size-rotating" path="audit.log" relative-to="jboss.server.log.dir" format="JSON" encoding="UTF-8" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d"/>
         <syslog-audit-log name="remote-syslog" server-address="remote-server" port="9898" transport="UDP" format="JSON" host-name="Elytron" />
         <syslog-audit-log name="remote-syslog-ssl" server-address="remote-server" port="9898" transport="SSL_TCP" host-name="Elytron" ssl-context="audit-ssl" />
     </audit-logging>
