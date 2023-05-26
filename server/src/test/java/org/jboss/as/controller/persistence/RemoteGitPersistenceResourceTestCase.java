@@ -136,7 +136,15 @@ public class RemoteGitPersistenceResourceTestCase extends AbstractGitPersistence
             commits = listCommits(remoteRepository);
             Assert.assertEquals(1, commits.size());
             Assert.assertEquals("Repository initialized", commits.get(0));
+            //Publish to default remote
             persister.publish(null);
+            // Publish to an invalid remote location
+            try {
+                persister.publish("invalid_remote");
+                Assert.fail("Should have thrown an exception");
+            } catch (ConfigurationPersistenceException expected){
+                Assert.assertTrue(expected.getMessage().contains("WFLYCTL0503"));
+            }
             commits = listCommits(remoteRepository);
             Assert.assertEquals(5, commits.size());
             Assert.assertEquals("1st snapshot", commits.get(0));

@@ -3750,4 +3750,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 502, value = "No child resource called %s could be found at address %s'.")
     IllegalArgumentException noChildResource(String name, String address);
+
+    @Message(id = 503, value = "Failed to publish configuration, because the remote name %s is not valid.")
+    ConfigurationPersistenceException failedToPublishConfigurationInvalidRemote(String name);
 }
