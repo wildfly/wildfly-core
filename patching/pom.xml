@@ -127,6 +127,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-installation-manager</artifactId>
+        </dependency>
+
+        <dependency>
            <groupId>junit</groupId>
            <artifactId>junit</artifactId>
            <scope>test</scope>

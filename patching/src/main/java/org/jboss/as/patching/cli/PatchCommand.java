@@ -19,8 +19,11 @@ import org.aesh.command.Command;
 import org.aesh.command.CommandException;
 import org.aesh.command.CommandResult;
 import org.aesh.command.GroupCommandDefinition;
+import org.aesh.command.impl.internal.ParsedCommand;
 import org.aesh.command.option.Option;
+import org.jboss.as.cli.CommandContext;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
+import org.wildfly.core.cli.command.aesh.activator.AbstractCommandActivator;
 import org.wildfly.core.cli.command.aesh.activator.HideOptionActivator;
 
 /**
@@ -29,7 +32,7 @@ import org.wildfly.core.cli.command.aesh.activator.HideOptionActivator;
  */
 @GroupCommandDefinition(name = "patch", description = "", groupCommands
         = {PatchApply.class, PatchRollback.class, PatchHistory.class,
-            PatchInfo.class, PatchInspect.class})
+            PatchInfo.class, PatchInspect.class,}, activator = PatchCommand.PatchCommandActivator.class)
 public class PatchCommand implements Command<CLICommandInvocation> {
 
     @Deprecated
@@ -43,5 +46,16 @@ public class PatchCommand implements Command<CLICommandInvocation> {
             return CommandResult.SUCCESS;
         }
         throw new CommandException("Command action is missing.");
+    }
+
+    /**
+     * Hides the high level patch commands on a standalone installation only.
+     */
+    public static class PatchCommandActivator extends AbstractCommandActivator {
+        @Override
+        public boolean isActivated(ParsedCommand command) {
+            CommandContext commandContext = this.getCommandContext();
+            return commandContext.isDomainMode();
+        }
     }
 }

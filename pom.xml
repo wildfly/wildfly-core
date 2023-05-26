@@ -254,6 +254,7 @@
         <version.org.wildfly.client.config>1.0.1.Final</version.org.wildfly.client.config>
         <version.org.wildfly.common>1.6.0.Final</version.org.wildfly.common>
         <version.org.wildfly.discovery>1.2.1.Final</version.org.wildfly.discovery>
+        <version.org.wildfly.installation-manager.installation-manager-api>1.0.1.Final</version.org.wildfly.installation-manager.installation-manager-api>
         <version.org.wildfly.legacy.test>7.0.0.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.openssl>2.2.5.Final</version.org.wildfly.openssl>
         <version.org.wildfly.openssl.natives>2.2.2.Final</version.org.wildfly.openssl.natives>
@@ -293,6 +294,7 @@
         <module>host-controller</module>
         <module>logging</module>
         <module>management-client-content</module>
+        <module>installation-manager</module>
         <module>io</module>
         <module>jmx</module>
         <module>launcher</module>
@@ -2167,6 +2169,19 @@
                 <version>${version.org.jboss.logging.jboss-logging-tools}</version>
                 <scope>provided</scope>
             </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.installation-manager</groupId>
+                <artifactId>installation-manager-api</artifactId>
+                <version>${version.org.wildfly.installation-manager.installation-manager-api}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-installation-manager</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

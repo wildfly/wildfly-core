@@ -1465,7 +1465,10 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 217, value = "Security realms are no longer supported, please migrate references to them from the configuration.")
     XMLStreamException securityRealmReferencesUnsupported();
 
-    @Message(id = 218, value = "Authorization failed for '%s' attempting to connect as a domain server.")
+    @Message(id = 218, value = "No %s installation has been prepared.")
+    OperationFailedException noServerInstallationPrepared(String productName);
+
+    @Message(id = 219, value = "Authorization failed for '%s' attempting to connect as a domain server.")
     GeneralSecurityException identityNotAuthorizedAsServer(final String identityName);
 
     ////////////////////////////////////////////////
