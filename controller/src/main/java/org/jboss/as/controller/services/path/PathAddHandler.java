@@ -98,7 +98,7 @@ public class PathAddHandler implements OperationStepHandler {  // TODO make this
         RELATIVE_TO_LOCAL.validateAndSet(operation, model);
 
         context.registerCapability(PATH_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue()));
-        RELATIVE_TO_LOCAL.addCapabilityRequirements(context, model.get(RELATIVE_TO.getName()));
+        RELATIVE_TO_LOCAL.addCapabilityRequirements(context, null, model.get(RELATIVE_TO.getName()));
 
         if (pathManager != null) {
             final String path = getPathValue(context, PATH_SPECIFIED, model);

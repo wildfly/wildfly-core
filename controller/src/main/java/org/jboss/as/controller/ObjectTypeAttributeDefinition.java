@@ -31,9 +31,6 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -122,11 +119,6 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
 
     public final AttributeDefinition[] getValueTypes() {
         return valueTypes;
-    }
-
-    @Override
-    public ModelNode parse(final String value, final XMLStreamReader reader) throws XMLStreamException {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -235,17 +227,6 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         // Validate the entire object
         getValidator().validateParameter(getName(), result);
         return result;
-    }
-
-    /**
-     *
-     * @deprecated use #addValueTypeDescription(ModelNode, String, ResourceBundle, boolean, ResourceDescriptionResolver, Locale)
-     */
-    @Deprecated
-    protected void addValueTypeDescription(final ModelNode node, final String prefix, final ResourceBundle bundle,
-                                               final ResourceDescriptionResolver resolver,
-                                               final Locale locale) {
-        addValueTypeDescription(node, prefix, bundle, false, resolver, locale);
     }
 
     protected void addValueTypeDescription(final ModelNode node, final String prefix, final ResourceBundle bundle,

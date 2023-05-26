@@ -48,8 +48,8 @@ import org.jboss.dmr.ModelType;
 @SuppressWarnings("unchecked")
 public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends AbstractAttributeDefinitionBuilder, ATTRIBUTE extends AttributeDefinition> {
 
-    private String name;
-    private ModelType type;
+    private final String name;
+    private final ModelType type;
     private String xmlName;
     private boolean allowNull;
     private boolean allowExpression;
@@ -60,7 +60,6 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     private ModelNode[] allowedValues;
     private ParameterCorrector corrector;
     private ParameterValidator validator;
-    private boolean validateNull = true;
     private int minSize = 0;
     private boolean minSizeSet;
     private int maxSize = Integer.MAX_VALUE;
@@ -77,7 +76,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     private Map<String, ModelNode> arbitraryDescriptors = null;
     private ModelNode undefinedMetricValue;
 
-    private static AccessConstraintDefinition[] ZERO_CONSTRAINTS = new AccessConstraintDefinition[0];
+    private static final AccessConstraintDefinition[] ZERO_CONSTRAINTS = new AccessConstraintDefinition[0];
 
     /**
      * Creates a builder for an attribute with the give name and type. Equivalent to
@@ -221,7 +220,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
 
     /**
      * Sets a {@link org.jboss.as.controller.ParameterCorrector} to use to adjust any user provided values
-     * before {@link org.jboss.as.controller.AttributeDefinition#validateOperation(org.jboss.dmr.ModelNode, boolean) validation}
+     * before {@link org.jboss.as.controller.AttributeDefinition#validateOperation(ModelNode) validation}
      * occurs.
      * @param corrector the corrector. May be {@code null}
      * @return a builder that can be used to continue building the attribute definition
@@ -695,7 +694,8 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         if (dependentCapability.isDynamicallyNamed()) {
             return setCapabilityReference(referencedCapability, dependentCapability.getName());
         } else {
-            return setCapabilityReference(referencedCapability, dependentCapability.getName(), false);
+            referenceRecorder = new CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder(referencedCapability, dependentCapability.getName());
+            return (BUILDER) this;
         }
     }
 
@@ -770,31 +770,6 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      */
     public BUILDER setCapabilityReference(RuntimeCapability capability, String referencedCapability, AttributeDefinition ... dependantAttributes) {
         referenceRecorder = new CapabilityReferenceRecorder.CompositeAttributeDependencyRecorder(capability, referencedCapability, dependantAttributes);
-        return (BUILDER) this;
-    }
-
-    /**
-     * Records that this attribute's value represents a reference to an instance of a
-     * {@link org.jboss.as.controller.capability.RuntimeCapability#isDynamicallyNamed() dynamic capability}.
-     * <p>
-     * This method is a convenience method equivalent to calling
-     * {@link #setCapabilityReference(CapabilityReferenceRecorder)}
-     * passing in a {@link org.jboss.as.controller.CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder}
-     * constructed using the parameters passed to this method.
-     *
-     * @param referencedCapability the name of the dynamic capability the dynamic portion of whose name is
-     *                             represented by the attribute's value
-     * @param dependentCapability  the name of the capability that depends on {@code referencedCapability}
-     * @param dynamicDependent     {@code true} if {@code dependentCapability} is a dynamic capability, the dynamic
-     *                             portion of which comes from the name of the resource with which
-     *                             the attribute is associated
-     * @return the builder
-     * @deprecated Use {@link #setCapabilityReference(String, RuntimeCapability)} instead.
-     */
-    @Deprecated
-    public BUILDER setCapabilityReference(String referencedCapability, String dependentCapability, boolean dynamicDependent) {
-        //noinspection deprecation
-        referenceRecorder = new CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder(referencedCapability, dependentCapability, dynamicDependent);
         return (BUILDER) this;
     }
 

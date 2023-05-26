@@ -36,17 +36,6 @@ public interface SubsystemXmlWriterRegistry {
      *
      * @param name the name of the subsystem
      * @param writer the XML writer
-     * @deprecated use {@link #registerSubsystemWriter(String, Supplier)} variant
-     */
-    @Deprecated
-    void registerSubsystemWriter(String name, XMLElementWriter<SubsystemMarshallingContext> writer);
-
-    /**
-     * Registers the writer that can marshal to XML the configuration of the
-     * named subsystem.
-     *
-     * @param name the name of the subsystem
-     * @param writer the XML writer
      */
     void registerSubsystemWriter(String name, Supplier<XMLElementWriter<SubsystemMarshallingContext>> writer);
 

@@ -76,7 +76,7 @@ public interface ConfigurationPersister {
      *
      * @return callback to use to control whether the stored model should be flushed to permanent storage. Will not be
      *          {@code null}
-     * @throws org.jboss.as.controller.persistence.ConfigurationPersistenceException
+     * @throws ConfigurationPersistenceException if a configuration persistence problem occurs
      */
     PersistenceResource store(ModelNode model, Set<PathAddress> affectedAddresses) throws ConfigurationPersistenceException;
 
@@ -93,7 +93,7 @@ public interface ConfigurationPersister {
      * Load the configuration model, returning it as a list of updates to be
      * executed by the controller.
      * @return the configuration model as a list of updates to be executed by the controller.
-     * @throws org.jboss.as.controller.persistence.ConfigurationPersistenceException
+     * @throws ConfigurationPersistenceException if a configuration persistence problem occurs
      */
     List<ModelNode> load() throws ConfigurationPersistenceException;
 
@@ -102,21 +102,9 @@ public interface ConfigurationPersister {
      * and all services have started successfully.
      *
      * @see #isPersisting()
-     * @throws org.jboss.as.controller.persistence.ConfigurationPersistenceException
+     * @throws ConfigurationPersistenceException if a configuration persistence problem occurs
      */
     void successfulBoot() throws ConfigurationPersistenceException;
-
-    /**
-     * Take a snapshot of the current configuration
-     *
-     * @return the file location of the snapshot
-     * @throws ConfigurationPersistenceException if a problem happened when creating the snapshot
-     * @deprecated use #snapshot(String name, String message) instead.
-     */
-    @Deprecated
-    default String snapshot() throws ConfigurationPersistenceException {
-         return snapshot(null, "");
-    }
 
     /**
      * Take a snapshot of the current configuration.

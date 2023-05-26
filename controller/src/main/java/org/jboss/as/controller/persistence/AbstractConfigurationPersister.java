@@ -46,7 +46,6 @@ import org.jboss.staxmapper.XMLMapper;
 public abstract class AbstractConfigurationPersister implements ExtensibleConfigurationPersister {
 
     private final XMLElementWriter<ModelMarshallingContext> rootDeparser;
-    private final ConcurrentHashMap<String, XMLElementWriter<SubsystemMarshallingContext>> subsystemWriters = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Supplier<XMLElementWriter<SubsystemMarshallingContext>>> subsystemWriterSuppliers = new ConcurrentHashMap<>();
 
     /**
@@ -59,18 +58,12 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
     }
 
     @Override
-    public void registerSubsystemWriter(String name, XMLElementWriter<SubsystemMarshallingContext> writer) {
-        subsystemWriters.putIfAbsent(name, writer);
-    }
-
-    @Override
     public void registerSubsystemWriter(String name, Supplier<XMLElementWriter<SubsystemMarshallingContext>> writer) {
         subsystemWriterSuppliers.putIfAbsent(name, writer);
     }
 
     @Override
     public void unregisterSubsystemWriter(String name) {
-        subsystemWriters.remove(name);
         subsystemWriterSuppliers.remove(name);
     }
 
@@ -78,7 +71,7 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
     @Override
     public void marshallAsXml(final ModelNode model, final OutputStream output) throws ConfigurationPersistenceException {
         final XMLMapper mapper = XMLMapper.Factory.create();
-        final Map<String, XMLElementWriter<SubsystemMarshallingContext>> localSubsystemWriters = new HashMap<>(subsystemWriters);
+        final Map<String, XMLElementWriter<SubsystemMarshallingContext>> localSubsystemWriters = new HashMap<>();
         try {
             XMLStreamWriter streamWriter = null;
             try {

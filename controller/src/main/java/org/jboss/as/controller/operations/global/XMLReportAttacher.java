@@ -64,7 +64,7 @@ class XMLReportAttacher extends AbstractReportAttacher {
     public void addReport(ModelNode report) throws OperationFailedException {
         if (record && streamWriter != null) {
             try {
-                attributeDefinition.marshallAsElement(report, true, streamWriter);
+                attributeDefinition.getMarshaller().marshallAsElement(attributeDefinition, report, true, streamWriter);
             } catch (XMLStreamException ex) {
                 throw ControllerLogger.MGMT_OP_LOGGER.failedToBuildReport(ex);
             }

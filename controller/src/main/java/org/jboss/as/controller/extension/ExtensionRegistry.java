@@ -852,8 +852,7 @@ public final class ExtensionRegistry {
 
         @Override
         public void registerXMLElementWriter(XMLElementWriter<SubsystemMarshallingContext> writer) {
-            //noinspection deprecation
-            writerRegistry.registerSubsystemWriter(name, writer);
+            writerRegistry.registerSubsystemWriter(name, Functions.constantSupplier(writer));
         }
 
         @Override
@@ -954,14 +953,6 @@ public final class ExtensionRegistry {
         public boolean isRuntimeOnly() {
             return deployments.isRuntimeOnly();
         }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public void setRuntimeOnly(final boolean runtimeOnly) {
-            deployments.setRuntimeOnly(runtimeOnly);
-            subdeployments.setRuntimeOnly(runtimeOnly);
-        }
-
 
         @Override
         public boolean isRemote() {

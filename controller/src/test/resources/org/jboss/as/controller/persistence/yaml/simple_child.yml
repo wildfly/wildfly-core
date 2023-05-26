@@ -1,0 +1,11 @@
+wildfly-configuration:
+    parent:
+        homer:
+            child:
+                bart:
+                lisa:
+                maggie:
+#User defined elements, must be ignored.
+org:
+    foo:
+        bar: true

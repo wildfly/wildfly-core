@@ -67,11 +67,16 @@ import org.jboss.as.server.mgmt.HttpShutdownService;
 import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.as.server.mgmt.domain.HttpManagement;
+import org.jboss.as.server.security.AdvancedSecurityMetaData;
+import org.jboss.as.server.security.SecurityMetaData;
+import org.jboss.as.server.security.VirtualDomainMarkerUtility;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.XnioWorker;
 
@@ -153,10 +158,19 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         final Supplier<XnioWorker> xwSupplier = builder.requires(ManagementWorkerService.SERVICE_NAME);
         final Supplier<Executor> eSupplier = builder.requires(ExternalManagementRequestExecutor.SERVICE_NAME);
         final Supplier<HttpAuthenticationFactory> hafSupplier = httpAuthenticationFactory != null ? builder.requiresCapability(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, HttpAuthenticationFactory.class, httpAuthenticationFactory) : null;
+        Supplier<SecurityDomain> virtualSecurityDomainSupplier = null;
+        Supplier<HttpServerAuthenticationMechanismFactory> virtualMechanismFactorySupplier = null;
+        if (VirtualDomainMarkerUtility.isVirtualDomainRequired(context)) {
+            SecurityMetaData securityMetaData = context.getAttachment(SecurityMetaData.OPERATION_CONTEXT_ATTACHMENT_KEY);
+            if (securityMetaData instanceof AdvancedSecurityMetaData) {
+                virtualSecurityDomainSupplier = builder.requires(securityMetaData.getSecurityDomain());
+                virtualMechanismFactorySupplier = builder.requires(((AdvancedSecurityMetaData) securityMetaData).getHttpServerAuthenticationMechanismFactory());
+            }
+        }
         final Supplier<SSLContext> scSupplier = sslContext != null ? builder.requiresCapability(SSL_CONTEXT_CAPABILITY, SSLContext.class, sslContext) : null;
         final UndertowHttpManagementService undertowService = new UndertowHttpManagementService(hmConsumer, lrSupplier, mcSupplier, sbSupplier, ssbSupplier, sbmSupplier,
                 null, null, rpSupplier, xwSupplier, eSupplier, hafSupplier, scSupplier, null, null, commonPolicy.getAllowedOrigins(), consoleMode,
-                environment.getProductConfig().getConsoleSlot(), commonPolicy.getConstantHeaders(), caSupplier);
+                environment.getProductConfig().getConsoleSlot(), commonPolicy.getConstantHeaders(), caSupplier, virtualSecurityDomainSupplier, virtualMechanismFactorySupplier);
         builder.setInstance(undertowService);
         builder.install();
 
