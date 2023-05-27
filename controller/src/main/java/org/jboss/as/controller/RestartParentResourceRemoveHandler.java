@@ -21,11 +21,6 @@
  */
 package org.jboss.as.controller;
 
-
-
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
@@ -40,15 +35,13 @@ import org.jboss.dmr.ModelNode;
  */
 public abstract class RestartParentResourceRemoveHandler extends RestartParentResourceHandlerBase {
 
-    private final Set<RuntimeCapability> capabilities;
-
     protected RestartParentResourceRemoveHandler(String parentKeyName) {
-        this(parentKeyName, null);
+        super(parentKeyName);
     }
 
+    @Deprecated(forRemoval = true)
     protected RestartParentResourceRemoveHandler(String parentKeyName, RuntimeCapability ... capabilities) {
         super(parentKeyName);
-        this.capabilities = capabilities == null || capabilities.length == 0 ? RestartParentResourceAddHandler.NULL_CAPABILITIES : Arrays.stream(capabilities).collect(Collectors.toSet());
     }
 
     /**
@@ -59,6 +52,7 @@ public abstract class RestartParentResourceRemoveHandler extends RestartParentRe
      * @param operation  the operation
      * @throws OperationFailedException if there is a problem updating the model
      */
+    @Override
     protected void updateModel(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         // verify that the resource exist before removing it
         context.readResource(PathAddress.EMPTY_ADDRESS, false);
@@ -67,9 +61,7 @@ public abstract class RestartParentResourceRemoveHandler extends RestartParentRe
     }
 
     protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        Set<RuntimeCapability> capabilitySet = capabilities.isEmpty() ? context.getResourceRegistration().getCapabilities() : capabilities;
-
-        for (RuntimeCapability capability : capabilitySet) {
+        for (RuntimeCapability<?> capability : context.getResourceRegistration().getCapabilities()) {
             if (capability.isDynamicallyNamed()) {
                 context.deregisterCapability(capability.getDynamicName(context.getCurrentAddress()));
             } else {
