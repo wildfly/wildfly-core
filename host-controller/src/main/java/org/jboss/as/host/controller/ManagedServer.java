@@ -61,6 +61,7 @@ import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.server.DomainServerCommunicationServices;
 import org.jboss.as.server.ServerStartTask;
+import org.jboss.as.server.security.DomainServerCredential;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.marshalling.Marshaller;
@@ -70,6 +71,7 @@ import org.jboss.marshalling.MarshallingConfiguration;
 import org.jboss.marshalling.SimpleClassResolver;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.threads.AsyncFuture;
+import org.wildfly.security.credential.Credential;
 
 /**
  * Represents a managed server.
@@ -118,7 +120,12 @@ class ManagedServer {
         return serverProcessName.substring(SERVER_PROCESS_NAME_PREFIX.length());
     }
 
-    private final String authKey;
+    /*
+     * Token to be used for the server to authenticate back over the management interface.
+     *
+     * This is independent of the pcKey used by processes to loop back to the process controller.
+     */
+    private final DomainServerCredential domainServerCredential;
     private final String serverName;
     private final String serverProcessName;
     private final String hostControllerName;
@@ -140,7 +147,7 @@ class ManagedServer {
 
     private final PathAddress address;
 
-    ManagedServer(final String hostControllerName, final String serverName, final String authKey,
+    ManagedServer(final String hostControllerName, final String serverName, final DomainServerCredential domainServerCredential,
                   final ProcessControllerClient processControllerClient, final URI managementURI,
                   final TransformationTarget transformationTarget) {
 
@@ -155,7 +162,7 @@ class ManagedServer {
         this.processControllerClient = processControllerClient;
         this.managementURI = managementURI;
 
-        this.authKey = authKey;
+        this.domainServerCredential = domainServerCredential;
 
         // Setup the proxy controller
         final PathElement serverPath = PathElement.pathElement(RUNNING_SERVER, serverName);
@@ -166,12 +173,21 @@ class ManagedServer {
     }
 
     /**
+     * Get the credential associated with the domain server.
+     *
+     * @return the credential associated with the domain server.
+     */
+    Credential getCredential() {
+        return domainServerCredential;
+    }
+
+    /**
      * Get the process auth key.
      *
      * @return the auth key
      */
-    String getAuthKey() {
-        return authKey;
+    String getAuthToken() {
+        return domainServerCredential.getToken();
     }
 
     /**
@@ -803,7 +819,7 @@ class ManagedServer {
             final HostControllerEnvironment environment = bootConfiguration.getHostControllerEnvironment();
             final int processId = bootConfiguration.getServerProcessId();
             // Add the process to the process controller
-            processControllerClient.addProcess(serverProcessName, processId, authKey, command.toArray(new String[command.size()]), environment.getHomeDir().getAbsolutePath(), env);
+            processControllerClient.addProcess(serverProcessName, processId, command.toArray(new String[command.size()]), environment.getHomeDir().getAbsolutePath(), env);
             return true;
         }
 
@@ -843,7 +859,7 @@ class ManagedServer {
             final boolean useSubsystemEndpoint = bootConfiguration.isManagementSubsystemEndpoint();
             final ModelNode endpointConfig = bootConfiguration.getSubsystemEndpointConfiguration();
             // Send std.in
-            final ServiceActivator hostControllerCommActivator = DomainServerCommunicationServices.create(endpointConfig, managementURI, serverName, serverProcessName, authKey, useSubsystemEndpoint, bootConfiguration.getSSLContextSupplier());
+            final ServiceActivator hostControllerCommActivator = DomainServerCommunicationServices.create(endpointConfig, managementURI, serverName, serverProcessName, getAuthToken(), useSubsystemEndpoint, bootConfiguration.getSSLContextSupplier());
             final ServerStartTask startTask = new ServerStartTask(hostControllerName, serverName, 0, operationID,
                     Collections.<ServiceActivator>singletonList(hostControllerCommActivator), bootUpdates, launchProperties,
                     bootConfiguration.isSuspended(), bootConfiguration.isGracefulStartup());
@@ -929,7 +945,7 @@ class ManagedServer {
         public boolean execute(ManagedServer server) throws Exception {
             assert Thread.holdsLock(ManagedServer.this); // Call under lock
             // Reconnect
-            processControllerClient.reconnectProcess(serverProcessName, managementURI, bootConfiguration.isManagementSubsystemEndpoint(), authKey);
+            processControllerClient.reconnectServerProcess(serverProcessName, managementURI, bootConfiguration.isManagementSubsystemEndpoint(), getAuthToken());
             return true;
         }
     }

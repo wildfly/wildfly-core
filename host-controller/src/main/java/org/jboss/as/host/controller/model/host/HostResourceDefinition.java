@@ -370,7 +370,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerOperationHandler(StartServersHandler.DEFINITION, ssh);
 
         if (environment.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER) {
-            HostShutdownHandler hsh = new HostShutdownHandler(domainController, serverInventory);
+            HostShutdownHandler hsh = new HostShutdownHandler(domainController, serverInventory, environment);
             hostRegistration.registerOperationHandler(HostShutdownHandler.DEFINITION, hsh);
         }
 

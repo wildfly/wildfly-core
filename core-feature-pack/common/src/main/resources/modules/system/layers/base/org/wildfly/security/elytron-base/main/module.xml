@@ -111,7 +111,7 @@
         <module name="java.sql"/>
         <module name="java.xml"/>
         <module name="java.xml.crypto"/>
-        <module name="javax.json.api"/>
+        <module name="jakarta.json.api"/>
         <module name="jdk.security.auth"/>
         <module name="jdk.unsupported"/>
         <module name="org.jboss.logging"/>
@@ -119,7 +119,7 @@
         <module name="org.jboss.modules"/>
         <module name="org.jboss.threads"/>
         <module name="org.wildfly.common"/>
-        <module name="javax.xml.ws.api" optional="true"/>
+        <module name="jakarta.xml.ws.api" optional="true"/>
         <module name="org.jboss.ws.spi" optional="true"/>
         <module name="org.apache.sshd"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs" optional="true"/>

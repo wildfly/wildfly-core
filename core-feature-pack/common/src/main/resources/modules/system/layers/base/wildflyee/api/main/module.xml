@@ -20,35 +20,33 @@
 
 <module xmlns="urn:jboss:module:1.9" name="wildflyee.api">
     <dependencies>
-        <module name="javax.activation.api" export="true" optional="true" />
-        <module name="javax.annotation.api" export="true" optional="true" />
-        <module name="javax.batch.api" export="true" optional="true" />
-        <module name="javax.ejb.api" export="true" optional="true" />
-        <module name="javax.enterprise.api" export="true" optional="true" />
-        <module name="javax.enterprise.concurrent.api" export="true" optional="true" />
-        <module name="javax.inject.api" export="true" optional="true" />
-        <module name="javax.interceptor.api" export="true" optional="true" />
-        <module name="javax.json.api" export="true" optional="true" />
-        <module name="javax.jms.api" export="true" optional="true" />
-        <module name="javax.jws.api" export="true" optional="true" />
-        <module name="javax.mail.api" export="true" optional="true" />
-        <module name="javax.management.j2ee.api" export="true" optional="true" />
-        <module name="javax.persistence.api" export="true" optional="true" />
-        <module name="javax.resource.api" export="true" optional="true" />
+        <module name="jakarta.activation.api" export="true" optional="true" />
+        <module name="jakarta.annotation.api" export="true" optional="true" />
+        <module name="jakarta.batch.api" export="true" optional="true" />
+        <module name="jakarta.ejb.api" export="true" optional="true" />
+        <module name="jakarta.enterprise.api" export="true" optional="true" />
+        <module name="jakarta.enterprise.concurrent.api" export="true" optional="true" />
+        <module name="jakarta.inject.api" export="true" optional="true" />
+        <module name="jakarta.interceptor.api" export="true" optional="true" />
+        <module name="jakarta.json.api" export="true" optional="true" />
+        <module name="jakarta.jms.api" export="true" optional="true" />
+        <module name="jakarta.xml.ws.api" export="true" optional="true" />
+        <module name="jakarta.mail.api" export="true" optional="true" />
+        <module name="jakarta.persistence.api" export="true" optional="true" />
+        <module name="jakarta.resource.api" export="true" optional="true" />
         <module name="javax.rmi.api" export="true" optional="true" />
-        <module name="javax.security.auth.message.api" export="true" optional="true" />
-        <module name="javax.security.jacc.api" export="true" optional="true" />
-        <module name="javax.servlet.api" export="true" optional="true" />
-        <module name="javax.servlet.jsp.api" export="true" optional="true" />
-        <module name="javax.transaction.api" export="true" optional="true" />
-        <module name="javax.validation.api" export="true" optional="true" />
-        <module name="javax.ws.rs.api" export="true" services="export" optional="true" />
-        <module name="javax.websocket.api" export="true" optional="true" />
-        <module name="javax.xml.bind.api" export="true" optional="true" />
-        <module name="javax.xml.soap.api" export="true" optional="true" />
-        <module name="javax.xml.ws.api" export="true" optional="true" />
-        <module name="org.glassfish.jakarta.el" export="true" optional="true" />
-        <module name="javax.xml.rpc.api" export="true" optional="true" />
+        <module name="jakarta.security.auth.message.api" export="true" optional="true" />
+        <module name="jakarta.security.jacc.api" export="true" optional="true" />
+        <module name="jakarta.servlet.api" export="true" optional="true" />
+        <module name="jakarta.servlet.jsp.api" export="true" optional="true" />
+        <module name="jakarta.transaction.api" export="true" optional="true" />
+        <module name="jakarta.validation.api" export="true" optional="true" />
+        <module name="jakarta.ws.rs.api" export="true" services="export" optional="true" />
+        <module name="jakarta.websocket.api" export="true" optional="true" />
+        <module name="jakarta.xml.bind.api" export="true" optional="true" />
+        <module name="jakarta.xml.soap.api" export="true" optional="true" />
+        <module name="jakarta.xml.ws.api" export="true" optional="true" />
+        <module name="org.glassfish.expressly" export="true" optional="true" />
         <module name="org.omg.api" export="true" optional="true" />
         <!-- This one always goes last. -->
         <module name="java.se" export="true" optional="true" />

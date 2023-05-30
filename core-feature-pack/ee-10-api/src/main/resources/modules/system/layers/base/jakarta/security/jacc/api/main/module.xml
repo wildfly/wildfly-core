@@ -30,6 +30,6 @@
     </resources>
 
     <dependencies>
-        <module name="javax.servlet.api" optional="true"/>
+        <module name="jakarta.servlet.api" optional="true"/>
     </dependencies>
 </module>

@@ -59,13 +59,13 @@ public class ConnectorAdd extends AbstractAddStepHandler {
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        final String connectorName = context.getCurrentAddressValue();
         final ModelNode fullModel = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
 
-        launchServices(context, connectorName, fullModel);
+        launchServices(context, fullModel);
     }
 
-    void launchServices(OperationContext context, String connectorName, ModelNode fullModel) throws OperationFailedException {
+    void launchServices(OperationContext context, ModelNode fullModel) throws OperationFailedException {
+        final String connectorName = context.getCurrentAddressValue();
         OptionMap optionMap = ConnectorUtils.getFullOptions(context, fullModel);
 
         final ServiceTarget target = context.getServiceTarget();

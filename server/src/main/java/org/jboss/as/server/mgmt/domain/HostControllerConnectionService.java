@@ -57,6 +57,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.remoting3.Endpoint;
+import org.wildfly.security.auth.client.AuthenticationContext;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 
@@ -79,18 +80,17 @@ public class HostControllerConnectionService implements Service<HostControllerCl
 
     private final URI connectionURI;
     private final String serverName;
-    private final String userName = null; // TODO This likely needs to be further visited.
     private final String serverProcessName;
-    private final String initialAuthKey;
     private final int connectOperationID;
     private final boolean managementSubsystemEndpoint;
     private volatile ResponseAttachmentInputStreamSupport responseAttachmentSupport;
     private final Supplier<SSLContext> sslContextSupplier;
+    private volatile AuthenticationContext authenticationContext;
 
     private HostControllerClient client;
 
     public HostControllerConnectionService(final URI connectionURI, final String serverName, final String serverProcessName,
-                                           final String authKey, final int connectOperationID,
+                                           final AuthenticationContext authenticationContext, final int connectOperationID,
                                            final boolean managementSubsystemEndpoint, final Supplier<SSLContext> sslContextSupplier,
                                            final Supplier<ExecutorService> executorSupplier,
                                            final Supplier<ScheduledExecutorService> scheduledExecutorSupplier,
@@ -99,7 +99,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
         this.connectionURI= connectionURI;
         this.serverName = serverName;
         this.serverProcessName = serverProcessName;
-        this.initialAuthKey = authKey;
+        this.authenticationContext = authenticationContext;
         this.connectOperationID = connectOperationID;
         this.managementSubsystemEndpoint = managementSubsystemEndpoint;
         if (sslContextSupplier != null) {
@@ -118,19 +118,14 @@ public class HostControllerConnectionService implements Service<HostControllerCl
     public synchronized void start(final StartContext context) throws StartException {
         final Endpoint endpoint = endpointSupplier.get();
         try {
-            // we leave local auth enabled as an option for domain servers to use if available. elytron only configuration
-            // will require this to be enabled and available on the server side for servers to connect successfully.
-            // final OptionMap options = OptionMap.create(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(JBOSS_LOCAL_USER));
             // Create the connection configuration
             final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, connectionURI, OptionMap.EMPTY);
-            final String userName = this.userName != null ? this.userName : serverName;
-            configuration.setCallbackHandler(HostControllerConnection.createClientCallbackHandler(userName, initialAuthKey));
             configuration.setConnectionTimeout(SERVER_CONNECTION_TIMEOUT);
             configuration.setSslContext(sslContextSupplier.get());
             this.responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutorSupplier.get());
             // Create the connection
-            final HostControllerConnection connection = new HostControllerConnection(serverProcessName, userName, connectOperationID,
-                    configuration, responseAttachmentSupport, executorSupplier.get());
+            final HostControllerConnection connection = new HostControllerConnection(serverProcessName, connectOperationID,
+                    configuration, authenticationContext, responseAttachmentSupport, executorSupplier.get());
             // Trigger the started notification based on the process state listener
             final ProcessStateNotifier processService = processStateNotifierSupplier.get();
             processService.addPropertyChangeListener(new PropertyChangeListener() {

@@ -21,7 +21,6 @@
  */
 package org.jboss.as.remoting;
 
-import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.remoting.Protocol.REMOTE_HTTP;
 import static org.jboss.as.remoting.Protocol.REMOTE_HTTPS;
 import static org.jboss.as.remoting.logging.RemotingLogger.ROOT_LOGGER;
@@ -122,7 +121,7 @@ public class RemotingHttpUpgradeService implements Service {
     public static void installServices(final OperationContext context, final String remotingConnectorName,
                                        final String httpConnectorName, final ServiceName endpointName,
                                        final OptionMap connectorPropertiesOptionMap,
-                                       final String saslAuthenticationFactory) {
+                                       final ServiceName saslAuthenticationFactory) {
         final ServiceTarget serviceTarget = context.getServiceTarget();
         final ServiceName serviceName = UPGRADE_SERVICE_NAME.append(remotingConnectorName);
         final ServiceBuilder<?> sb = serviceTarget.addService(serviceName);
@@ -130,7 +129,7 @@ public class RemotingHttpUpgradeService implements Service {
         final Supplier<ChannelUpgradeHandler> urSupplier = sb.requires(HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
         final Supplier<ListenerRegistry> lrSupplier = sb.requires(RemotingServices.HTTP_LISTENER_REGISTRY);
         final Supplier<Endpoint> eSupplier = sb.requires(endpointName);
-        final Supplier<SaslAuthenticationFactory> safSupplier = saslAuthenticationFactory != null ? sb.requires(context.getCapabilityServiceName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthenticationFactory, SaslAuthenticationFactory.class)) : null;
+        final Supplier<SaslAuthenticationFactory> safSupplier = saslAuthenticationFactory != null ? sb.requires(saslAuthenticationFactory) : null;
         sb.setInstance(new RemotingHttpUpgradeService(serviceConsumer, urSupplier, lrSupplier, eSupplier, safSupplier, httpConnectorName, endpointName.getSimpleName(), connectorPropertiesOptionMap));
         sb.setInitialMode(ServiceController.Mode.ACTIVE);
         sb.install();

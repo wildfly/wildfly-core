@@ -202,6 +202,16 @@
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-auth-server</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.installation-manager</groupId>
+            <artifactId>installation-manager-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-installation-manager</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -443,7 +453,6 @@
                 <module>rbac</module>
                 <module>domain</module>
                 <module>manualmode</module>
-                <module>patching</module>
             </modules>
         </profile>
 
@@ -494,18 +503,6 @@
                 <!-- Domain security manager argument -->
                 <jboss.domain.server.args>-secmgr</jboss.domain.server.args>
             </properties>
-        </profile>
-        <!-- -Dts.patching -->
-        <profile>
-            <id>ts.integ.group.patching</id>
-            <activation>
-                <property>
-                    <name>ts.patching</name>
-                </property>
-            </activation>
-            <modules>
-                <module>patching</module>
-            </modules>
         </profile>
 
         <!-- -Dts.manualmode -->

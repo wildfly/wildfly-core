@@ -192,7 +192,7 @@ public class ProtocolConnectionUtils {
             saslOptions = new HashMap<>(saslOptions);
             // Drop SASL_DISALLOWED_MECHANISMS which we already handled
             saslOptions.remove(Options.SASL_DISALLOWED_MECHANISMS.getName());
-            mergedConfiguration = mergedConfiguration.useMechanismProperties(saslOptions);
+            mergedConfiguration = mergedConfiguration.useSaslMechanismProperties(saslOptions);
         }
 
         SSLContext sslContext = configuration.getSslContext();

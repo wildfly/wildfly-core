@@ -364,10 +364,14 @@ Function Start-WildFly-Process {
 			pushd $JBOSS_HOME
 			& $JAVA $programArguments
 			if ($LastExitCode -eq 10){ # :shutdown(restart=true) was called
-			    Write-Host "Restarting..."
+			    Write-Host "INFO: Restarting..."
 				Start-WildFly-Process -programArguments $programArguments
-			}
-
+			} elseif ($LastExitCode -eq 20) { # :shutdown(perform-installation=true) was called
+                Write-Host "INFO: Executing the installation manager"
+                & "$JBOSS_HOME\bin\installation-manager.ps1" -installationHome "$JBOSS_HOME" -instMgrLogProperties "$JBOSS_CONFIG_DIR\logging.properties"
+                Write-Host "INFO: Restarting..."
+                Start-WildFly-Process -programArguments $programArguments
+            }
 		}finally{
 			popd
 		}
