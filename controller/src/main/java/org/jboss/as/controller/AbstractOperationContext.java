@@ -523,7 +523,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
     @Override
     public final void completeStep(ResultHandler resultHandler) {
         Assert.checkNotNullParam("resultHandler", resultHandler);
-        this.activeStep.resultHandler = resultHandler;
+        this.activeStep.setResultHandler(resultHandler);
         // we return and executeStep picks it up
     }
 
@@ -725,9 +725,8 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
 
         // Locate the next step to execute.
         ModelNode primaryResponse = null;
-        Step step;
         do {
-            step = steps.get(currentStage).pollFirst();
+            Step step = steps.get(currentStage).pollFirst();
             if (step == null) {
 
                 if (currentStage == Stage.MODEL && addModelValidationSteps()) {
@@ -896,7 +895,14 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
             toThrow = t;
             resultAction = ResultAction.ROLLBACK;
         } finally {
-            executeResultHandlerPhase(toThrow);
+            try {
+                executeResultHandlerPhase(toThrow);
+            } finally {
+                // For read-only ops, DoneStagePlaceholder can create cruft 'rolled-back' nodes. Remove them.
+                if (primaryResponse.has(ROLLED_BACK) && !primaryResponse.hasDefined(ROLLED_BACK)) {
+                    primaryResponse.remove(ROLLED_BACK);
+                }
+            }
         }
     }
 
@@ -1038,7 +1044,11 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
     @SuppressWarnings("ConstantConditions")
     private void executeStep(final Step step) {
 
-        step.predecessor = this.activeStep;
+        if (this.activeStep != null) {
+            // As the final activity for the current activeStep, have it link the next step to execute
+            // into the chain of steps that get called in Stage.DONE.
+            this.activeStep.linkNextStep(step);
+        }
         this.activeStep = step;
 
         try {
@@ -1100,7 +1110,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
                 && step.operationDefinition != null
                 // Ignore cases where the step's definition is the same as it's parent, as we don't
                 // want to repeatedly log warnings from internal child steps added by a parent
-                && (step.parent == null || step.operationDefinition != step.parent.operationDefinition)) {
+                && (step.usesOwnDefinition)) {
             DeprecationData deprecationData = step.operationDefinition.getDeprecationData();
             if (deprecationData != null && deprecationData.isNotificationUseful()) {
                 String deprecatedMsg = ControllerLogger.DEPRECATED_LOGGER.operationDeprecatedMessage(step.operationDefinition.getName(),
@@ -1201,7 +1211,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
     @Override
     public final void reloadRequired() {
         if (processState.isReloadSupported()) {
-            activeStep.restartStamp = processState.setReloadRequired();
+            activeStep.setRestartStamp(processState.setReloadRequired());
             activeStep.response.get(RESPONSE_HEADERS, OPERATION_REQUIRES_RELOAD).set(true);
             getManagementModel().getCapabilityRegistry().capabilityReloadRequired(activeStep.address,
                     activeStep.getManagementResourceRegistration(getManagementModel()));
@@ -1212,7 +1222,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
 
     @Override
     public final void restartRequired() {
-        activeStep.restartStamp = processState.setRestartRequired();
+        activeStep.setRestartStamp(processState.setRestartRequired());
         activeStep.response.get(RESPONSE_HEADERS, OPERATION_REQUIRES_RESTART).set(true);
         getManagementModel().getCapabilityRegistry().capabilityRestartRequired(activeStep.address,
                 activeStep.getManagementResourceRegistration(getManagementModel()));
@@ -1355,9 +1365,25 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
         return true;
     }
 
+    private abstract class AbstractStep {
+        AbstractStep predecessor;
+        abstract void finalizeStep();
+        final void finalizeRollbackResponse(ModelNode outcome, ModelNode rolledback) {
+            outcome.set(cancelled ? CANCELLED : FAILED);
+            rolledback.set(true);
+        }
+        final void finalizeNonRollbackResponse(ModelNode outcome, ModelNode rolledback) {
+            // Getting a rolledBack node means we failed; otherwise we succeeded
+            outcome.set(rolledback != null ? FAILED : SUCCESS);
+            if (rolledback != null) {
+                // We didn't roll back despite failure. Report this
+                rolledback.set(false);
+            }
+        }
+    }
 
-    class Step {
-        private final Step parent;
+    class Step extends AbstractStep {
+        private final boolean usesOwnDefinition;
         private final OperationDefinition operationDefinition;
         private final OperationStepHandler handler;
         private final Stage forStage = AbstractOperationContext.this.currentStage;
@@ -1370,15 +1396,16 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
         ServiceTarget serviceTarget;
         private ServiceVerificationHelper serviceVerificationHelper;
         private Set<ServiceName> addedServices;
-        Step predecessor;
         boolean hasRemovals;
         boolean executed;
+        // Whether standard Stage.DONE handling is needed, as opposed to lighter-weight handling.
+        private boolean requiresDoneStage;
         ManagementResourceRegistration resourceRegistration;
 
         private Step(OperationDefinition operationDefinition, final OperationStepHandler handler, final ModelNode response, final ModelNode operation,
                      final PathAddress address) {
-            this.parent = activeStep;
-            this.operationDefinition = operationDefinition != null ? operationDefinition : (this.parent != null ? this.parent.operationDefinition : null);
+            this.operationDefinition = operationDefinition != null ? operationDefinition : (activeStep != null ? activeStep.operationDefinition : null);
+            this.usesOwnDefinition = activeStep == null || this.operationDefinition != activeStep.operationDefinition;
             this.handler = handler;
             this.response = response;
             this.operation = operation;
@@ -1392,6 +1419,11 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
             // 1) execute completes normally, and OSH just didn't register a handler, meaning default behavior was wanted
             // 2) execute throws an exception. Here we just want a handler to avoid NPEs later, but we don't want it to do anything
             this.resultHandler = ResultHandler.NOOP_RESULT_HANDLER;
+            // We assume a READ_ONLY step does not require any handling in Stage.DONE, unless it is in Stage.DOMAIN
+            // Stage.DOMAIN is complex
+            this.requiresDoneStage = forStage == Stage.DOMAIN
+                    || this.operationDefinition == null
+                    || !this.operationDefinition.getFlags().contains(OperationEntry.Flag.READ_ONLY);
         }
 
         /**
@@ -1405,6 +1437,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
             if (serviceTarget == null) {
                 serviceTarget = parent.subTarget();
                 serviceTarget.addMonitor(getServiceVerificationHelper().getMonitor());
+                recordModification("call to getServiceTarget() or getCapabilityServiceTarget()");
             }
             return serviceTarget;
         }
@@ -1417,6 +1450,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
         void serviceAdded(ServiceController<?> controller) {
             if (!executed) {
                 getAddedServices().add(controller.getName());
+                recordModification("call to ServiceBuilder.install()");
             } // else this is rollback stuff we ignore
         }
 
@@ -1432,8 +1466,13 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
                 if (addedServices == null || !addedServices.contains(service.getName())) {
                     getServiceVerificationHelper().getMonitor().addController(service);
                 } // else we already handled this when it was added
-
+                recordModification("call to ServiceController.setMode(...) or compareAndSetMode(...)");
             } // else this is rollback stuff we ignore
+        }
+
+        void hasRemovals() {
+            hasRemovals = true;
+            recordModification("call to removeService(...)");
         }
 
         ManagementResourceRegistration getManagementResourceRegistration(ManagementModel managementModel) {
@@ -1441,17 +1480,6 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
                 resourceRegistration = managementModel.getRootResourceRegistration().getSubModel(address);
             }
             return resourceRegistration;
-        }
-
-        private List<Step> findPathToRootStep() {
-            List<Step> result = new ArrayList<>();
-            Step current = this;
-            while (current.parent != null) {
-                current = current.parent;
-                result.add(0, current);
-            }
-            result.add(this);
-            return result;
         }
 
         private ServiceVerificationHelper getServiceVerificationHelper() {
@@ -1472,6 +1500,44 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
             return this.response.hasDefined(FAILURE_DESCRIPTION);
         }
 
+        private void setRestartStamp(Object stamp) {
+            this.restartStamp = stamp;
+            recordModification("call to setReloadRequired() or setRestartRequired()");
+        }
+
+        private void setResultHandler(ResultHandler resultHandler) {
+            this.resultHandler = resultHandler;
+            this.requiresDoneStage = requiresDoneStage || resultHandler != ResultHandler.NOOP_RESULT_HANDLER;
+        }
+
+        private void recordModification(String reason) {
+            boolean was = requiresDoneStage;
+            requiresDoneStage = true;
+            if (!was) {
+                // TODO this situation indicates incorrect code. At some point make this a WARN.
+                MGMT_OP_LOGGER.debugf("The handler %s for supposedly read-only operation %s has modified model or runtime state. " +
+                        "Requested modification was: %s", handler, operationId.name, reason);
+            }
+
+        }
+
+        /**
+         * Link the next step that is about to become the active step into the chain of steps
+         * that execute in Stage.DONE. Called once initial stage (i.e. not Stage.DONE) handling
+         * of this step is complete and {@code nextStep} is about to become the active step.
+        */
+        private void linkNextStep(Step nextStep) {
+            // A step's predecessor is this one, unless this step isn't needed hereafter for anything
+            // other than recording the operation outcome, in which case the predecessor is a light-weight
+            // placeholder based on this step. If a step isn't needed further, not including itself in the
+            // chain of steps allows it to be gc'd and we can reduce the peak memory needed for operations
+            // with a large number of steps.
+            //
+            // If we're the first step (no predecessor), assume we always needed hereafter.
+            // (Perhaps this isn't true but there's little harm in assuming.)
+            nextStep.predecessor = (requiresDoneStage || predecessor == null) ? this : new DoneStagePlaceholder(this);
+        }
+
         /**
          * Perform any rollback needed to reverse this step (if this context is
          * rolling back), and release any locks taken by this step.
@@ -1482,17 +1548,17 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
          */
         private void finalizeStep(Throwable toThrow) {
             try {
-                finalizeInternal();
+                finalizeStep();
             } catch (RuntimeException | Error t) {
                 if (toThrow == null) {
                     toThrow = t;
                 }
             }
 
-            Step step = this.predecessor;
+            AbstractStep step = this.predecessor;
             while (step != null) {
                 try {
-                    step.finalizeInternal();
+                    step.finalizeStep();
                 } catch (RuntimeException | Error t) {
                     if (toThrow == null) {
                         toThrow = t;
@@ -1504,7 +1570,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
             throwThrowable(toThrow);
         }
 
-        private void finalizeInternal() {
+        void finalizeStep()  {
 
             AbstractOperationContext.this.activeStep = this;
 
@@ -1517,16 +1583,12 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
                     response.get(ROLLED_BACK).set(true);
                     resultAction = getFailedResultAction(null);
                 } else if (resultAction == ResultAction.ROLLBACK) {
-                    response.get(OUTCOME).set(cancelled ? CANCELLED : FAILED);
-                    response.get(ROLLED_BACK).set(true);
+                    finalizeRollbackResponse(response.get(OUTCOME), response.get(ROLLED_BACK));
                 } else {
-                    boolean failed = hasFailed();
-                    response.get(OUTCOME).set(failed ? FAILED : SUCCESS);
-                    if (failed) {
-                        // We didn't roll back despite failure. Report this
-                        response.get(ROLLED_BACK).set(false);
-                    }
+                    ModelNode rolledBackNode = hasFailed() ? response.get(ROLLED_BACK) : null;
+                    finalizeNonRollbackResponse(response.get(OUTCOME), rolledBackNode);
                 }
+
                 if (ControllerLogger.MGMT_OP_LOGGER.isTraceEnabled()
                         && (forStage == Stage.MODEL || forStage == Stage.DOMAIN)) {
                     ControllerLogger.MGMT_OP_LOGGER.tracef("Final response for step handler %s handling %s in address %s is %s",
@@ -1583,7 +1645,39 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
                 }
             }
         }
+    }
 
+    /** Lightweight AbstractStep that only aims to populate the response's OUTCOME and ROLLED_BACK nodes in Stage.DONE */
+    private class DoneStagePlaceholder extends AbstractStep {
+
+        private final ModelNode outcome;
+        private final ModelNode rolledBack;
+        private final boolean failed;
+
+        private DoneStagePlaceholder(Step replaces) {
+            this.predecessor = replaces.predecessor;
+            // Cache the OUTCOME and ROLLED_BACK nodes and the failed status
+            // in order to populate the nodes in finalizeStep.
+            // We don't need any of the other response data.
+            this.outcome = replaces.response.get(OUTCOME);
+            this.rolledBack = replaces.response.get(ROLLED_BACK);
+            this.failed = replaces.hasFailed();
+        }
+
+        @Override
+        void finalizeStep() {
+            // Differences from the implementation in Step
+            // 1) We replaced a step with a no-op result handler, so we don't need to invoke it.
+            // 2) We'll never be the first step finalized, so we don't need to take actions like
+            //    changing the Stage to DONE or setting a result action
+            // 3) We're only used for read-only ops, so we can ignore setting any ROLLED_BACK node.
+            // 4) We skip some trace logging that would require retaining a lot of state.
+            if (resultAction == ResultAction.ROLLBACK) {
+                finalizeRollbackResponse(outcome, rolledBack);
+            } else {
+                finalizeNonRollbackResponse(outcome, failed ? rolledBack : null);
+            }
+        }
     }
 
     private static class RollbackDelegatingResultHandler implements ResultHandler {

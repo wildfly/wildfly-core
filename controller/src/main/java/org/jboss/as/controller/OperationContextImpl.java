@@ -52,6 +52,7 @@ import static org.wildfly.common.Assert.checkNotEmptyParam;
 import static org.wildfly.common.Assert.checkNotNullArrayParam;
 
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -722,7 +723,7 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
 
     private void doRemove(final ServiceController<?> controller) {
         final Step removalStep = activeStep;
-        removalStep.hasRemovals = true;
+        removalStep.hasRemovals();
         final UninterruptibleCountDownLatch latch = new UninterruptibleCountDownLatch(1);
         controller.addListener(new LifecycleListener() {
             public void handleEvent(final ServiceController<?> controller, final LifecycleEvent event) {
@@ -2292,11 +2293,13 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
 
     private static class OperationContextServiceRegistry extends DelegatingServiceRegistry {
         private final Set<OperationContextServiceController> controllers = Collections.synchronizedSet(new HashSet<>());
-        private Step registryActiveStep;
+        // Use a weak ref to the step to allow it to be gc'd before done() is called if the context is done with it.
+        // This allows steps that only access the registry to do reads to be gc'd once the read is done
+        private WeakReference<Step> registryActiveStep;
 
         private OperationContextServiceRegistry(final ServiceRegistry registry, final Step registryActiveStep) {
             super(registry);
-            this.registryActiveStep = registryActiveStep;
+            this.registryActiveStep = new WeakReference<>(registryActiveStep);
         }
 
         /**
@@ -2343,9 +2346,11 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
     }
 
     private static class OperationContextServiceController<S> extends DelegatingServiceController<S> {
-        private volatile Step registryActiveStep;
+        // Use a weak ref to the step to allow it to be gc'd before done() is called if the context is done with it.
+        // This allows steps that only access the registry to do reads to be gc'd once the read is done
+        private volatile WeakReference<Step> registryActiveStep;
 
-        private OperationContextServiceController(final ServiceController<S> controller, final Step registryActiveStep) {
+        private OperationContextServiceController(final ServiceController<S> controller, final WeakReference<Step> registryActiveStep) {
             super(controller);
             this.registryActiveStep = registryActiveStep;
         }
@@ -2357,8 +2362,9 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
         public boolean compareAndSetMode(final Mode expected, final Mode newMode) {
             checkModeTransition(newMode);
             boolean changed = getDelegate().compareAndSetMode(expected, newMode);
-            Step step = registryActiveStep;
-            if (changed && step != null) {
+            WeakReference<Step> stepRef = registryActiveStep;
+            Step step = changed && stepRef != null ? stepRef.get() : null;
+            if (step != null) {
                 step.serviceModeChanged(getDelegate());
             }
             return changed;
@@ -2367,7 +2373,8 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
         public void setMode(final Mode mode) {
             checkModeTransition(mode);
             getDelegate().setMode(mode);
-            Step step = registryActiveStep;
+            WeakReference<Step> stepRef = registryActiveStep;
+            Step step = stepRef != null ? stepRef.get() : null;
             if (step != null) {
                 step.serviceModeChanged(getDelegate());
             }

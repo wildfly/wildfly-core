@@ -28,6 +28,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLED_BACK;
+import static org.junit.Assert.assertFalse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -147,6 +149,7 @@ public abstract class AbstractControllerTestBase {
 
     public ModelNode executeCheckNoFailure(ModelNode operation) throws OperationFailedException {
         ModelNode rsp = getController().execute(operation, null, null, null);
+        assertNoUndefinedRolledBackNode(rsp);
         if (FAILED.equals(rsp.get(OUTCOME).asString())) {
             ModelNode fd = rsp.get(FAILURE_DESCRIPTION);
             throw new OperationFailedException(fd.toString(), fd);
@@ -155,12 +158,13 @@ public abstract class AbstractControllerTestBase {
     }
 
     public ModelNode executeCheckForFailure(ModelNode operation) {
-            ModelNode rsp = getController().execute(operation, null, null, null);
-            if (!FAILED.equals(rsp.get(OUTCOME).asString())) {
-                Assert.fail("Should have failed!");
-            }
-            return rsp;
+        ModelNode rsp = getController().execute(operation, null, null, null);
+        assertNoUndefinedRolledBackNode(rsp);
+        if (!FAILED.equals(rsp.get(OUTCOME).asString())) {
+            Assert.fail("Should have failed!");
         }
+        return rsp;
+    }
 
     @Before
     public void setupController() throws InterruptedException {
@@ -307,6 +311,10 @@ public abstract class AbstractControllerTestBase {
                 }
             }
         }
+    }
+
+    static void assertNoUndefinedRolledBackNode(ModelNode response) {
+        assertFalse("Response has undefined rolled-back node", response.has(ROLLED_BACK) && !response.hasDefined(ROLLED_BACK));
     }
 
 }
