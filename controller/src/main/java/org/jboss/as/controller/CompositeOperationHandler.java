@@ -25,6 +25,7 @@ package org.jboss.as.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLED_BACK;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 
 import java.util.LinkedHashMap;
@@ -102,28 +103,33 @@ public class CompositeOperationHandler implements OperationStepHandler {
         MultistepUtil.recordOperationSteps(context, operationMap, addedResponses,
                 getOperationHandlerResolver(), adjustStepAddresses, rejectPrivateSteps);
 
-        context.completeStep(new OperationContext.RollbackHandler() {
+        context.completeStep(new OperationContext.ResultHandler() {
             @Override
-            public void handleRollback(OperationContext context, ModelNode operation) {
+            public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
 
                 // don't override useful failure information in the domain
                 // or any existing failure message
-                if (context.getAttachment(DOMAIN_EXECUTION_KEY) != null || context.hasFailureDescription()) {
-                    return;
-                }
+                boolean needFailureMessage = resultAction == OperationContext.ResultAction.ROLLBACK
+                        && context.getAttachment(DOMAIN_EXECUTION_KEY) == null && !context.hasFailureDescription();
 
-                final ModelNode failureMsg = new ModelNode();
+                final ModelNode failureMsg = needFailureMessage ? new ModelNode() : null;
                 for (int i = 0; i < size; i++) {
                     String stepName = "step-" + (i+1);
                     ModelNode stepResponse = responseMap.get(stepName);
-                    if (stepResponse.hasDefined(FAILURE_DESCRIPTION)) {
+                    if (failureMsg != null && stepResponse.hasDefined(FAILURE_DESCRIPTION)) {
                         failureMsg.get(ControllerLogger.ROOT_LOGGER.compositeOperationFailed(), ControllerLogger.ROOT_LOGGER.operation(stepName)).set(stepResponse.get(FAILURE_DESCRIPTION));
                     }
+                    // Clean out any cruft rolled-back nodes
+                    if (stepResponse.has(ROLLED_BACK) && !stepResponse.hasDefined(ROLLED_BACK)) {
+                        stepResponse.remove(ROLLED_BACK);
+                    }
                 }
-                if (!failureMsg.isDefined()) {
-                    failureMsg.set(getUnexplainedFailureMessage());
+                if (failureMsg != null) {
+                    if (!failureMsg.isDefined()) {
+                        failureMsg.set(getUnexplainedFailureMessage());
+                    }
+                    context.getFailureDescription().set(failureMsg);
                 }
-                context.getFailureDescription().set(failureMsg);
             }
         });
     }
