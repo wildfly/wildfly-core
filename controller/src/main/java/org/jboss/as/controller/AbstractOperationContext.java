@@ -112,7 +112,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 @SuppressWarnings("deprecation")
-abstract class AbstractOperationContext implements OperationContext {
+abstract class AbstractOperationContext implements OperationContext, AutoCloseable {
 
     private static final Set<String> NON_COPIED_HEADERS =
             Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(ALLOW_RESOURCE_SERVICE_RESTART,
@@ -450,6 +450,14 @@ abstract class AbstractOperationContext implements OperationContext {
     @Override
     public final ModelNode getResponseHeaders() {
         return activeStep.response.get(RESPONSE_HEADERS);
+    }
+
+    @Override
+    public void close() {
+        this.activeStep = null;
+        if (modifiedResourcesForModelValidation != null) {
+            modifiedResourcesForModelValidation.clear();
+        }
     }
 
     /**

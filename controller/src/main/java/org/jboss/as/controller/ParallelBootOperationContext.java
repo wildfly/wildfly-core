@@ -80,8 +80,11 @@ class ParallelBootOperationContext extends AbstractOperationContext {
         AbstractOperationContext.controllingThread.set(controllingThread);
     }
 
-    void close() {
+    @Override
+    public void close() {
         AbstractOperationContext.controllingThread.remove();
+        this.lockStep = null;
+        super.close();
     }
 
     @Override
