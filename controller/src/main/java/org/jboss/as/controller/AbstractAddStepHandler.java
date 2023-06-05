@@ -82,7 +82,7 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
         return this.attributes;
     }
 
-    /** {@inheritDoc */
+    @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         final Resource resource = createResource(context, operation);
         populateModel(context, operation, resource);
@@ -90,6 +90,7 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
         //verify model for alternatives & requires
         if (requiresRuntime(context)) {
             context.addStep(new OperationStepHandler() {
+                @Override
                 public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                     performRuntime(context, operation, resource);
 
@@ -210,9 +211,8 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      *                 not be {@code null}
      */
     protected void recordCapabilitiesAndRequirements(final OperationContext context, final ModelNode operation, Resource resource) throws OperationFailedException {
-        Set<RuntimeCapability> capabilitySet = context.getResourceRegistration().getCapabilities();
 
-        for (RuntimeCapability capability : capabilitySet) {
+        for (RuntimeCapability<?> capability : context.getResourceRegistration().getCapabilities()) {
             if (capability.isDynamicallyNamed()) {
                 context.registerCapability(capability.fromBaseCapability(context.getCurrentAddress()));
             } else {
