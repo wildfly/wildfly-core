@@ -271,7 +271,7 @@ public abstract class ProcessEnvironment {
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
-            final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
+            final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS, false).getModel();
             if (model.hasDefined(NAME.getName())) {
                 context.getResult().set(model.get(NAME.getName()));
             } else {
