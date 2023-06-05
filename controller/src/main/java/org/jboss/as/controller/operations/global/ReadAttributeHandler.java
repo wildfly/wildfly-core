@@ -69,8 +69,6 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             .setReplyType(ModelType.OBJECT)
             .build();
 
-    public static final OperationStepHandler INSTANCE = new ReadAttributeHandler();
-
     private static final SimpleAttributeDefinition RESOLVE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RESOLVE_EXPRESSIONS, ModelType.BOOLEAN)
             .setRequired(false)
             .setDefaultValue(ModelNode.FALSE)
@@ -82,20 +80,11 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             .setReplyType(ModelType.OBJECT)
             .build();
 
+    public static final OperationStepHandler INSTANCE = new ReadAttributeHandler();
+
     public static final OperationStepHandler RESOLVE_INSTANCE = new ReadAttributeHandler(true);
 
-    private final ParametersValidator validator = new ParametersValidator() {
-
-        @Override
-        public void validate(ModelNode operation) throws OperationFailedException {
-            super.validate(operation);
-            if( operation.hasDefined(ModelDescriptionConstants.RESOLVE_EXPRESSIONS)){
-                if(operation.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).asBoolean(false) && !resolvable){
-                    throw ControllerLogger.ROOT_LOGGER.unableToResolveExpressions();
-                }
-            }
-        }
-    };
+    private final ParametersValidator validator;
     private final OperationStepHandler overrideHandler;
     private final boolean resolvable;
 
@@ -108,12 +97,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
     }
     ReadAttributeHandler(FilteredData filteredData, OperationStepHandler overrideHandler, boolean resolvable) {
         super(filteredData);
-        if( resolvable){
-            validator.registerValidator(RESOLVE.getName(), new ModelTypeValidator(ModelType.BOOLEAN, true));
-        }
-        validator.registerValidator(GlobalOperationAttributes.NAME.getName(), new StringLengthValidator(1));
-        validator.registerValidator(GlobalOperationAttributes.INCLUDE_DEFAULTS.getName(), new ModelTypeValidator(ModelType.BOOLEAN, true));
-        validator.registerValidator(GlobalOperationAttributes.INCLUDE_UNDEFINED_METRIC_VALUES.getName(), new ModelTypeValidator(ModelType.BOOLEAN, true));
+        this.validator = resolvable? Validator.RESOLVABLE : Validator.NON_RESOLVABLE;
         assert overrideHandler == null || filteredData != null : "overrideHandler only supported with filteredData";
         this.overrideHandler = overrideHandler;
         this.resolvable = resolvable;
@@ -319,4 +303,32 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             context.getResult(); // this initializes the "result" to ModelType.UNDEFINED
         }
     }
+
+    private static class Validator extends ParametersValidator {
+
+        private static final Validator RESOLVABLE = new Validator(true);
+        private static final Validator NON_RESOLVABLE = new Validator(false);
+
+        private final boolean resolvable;
+
+        private Validator(boolean resolvable) {
+            this.resolvable = resolvable;
+            if (resolvable) {
+                registerValidator(RESOLVE.getName(), new ModelTypeValidator(ModelType.BOOLEAN, true));
+            }
+            registerValidator(GlobalOperationAttributes.NAME.getName(), new StringLengthValidator(1));
+            registerValidator(GlobalOperationAttributes.INCLUDE_DEFAULTS.getName(), new ModelTypeValidator(ModelType.BOOLEAN, true));
+            registerValidator(GlobalOperationAttributes.INCLUDE_UNDEFINED_METRIC_VALUES.getName(), new ModelTypeValidator(ModelType.BOOLEAN, true));
+        }
+
+        @Override
+        public void validate(ModelNode operation) throws OperationFailedException {
+            super.validate(operation);
+            if (operation.hasDefined(ModelDescriptionConstants.RESOLVE_EXPRESSIONS)){
+                if(operation.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).asBoolean(false) && !resolvable){
+                    throw ControllerLogger.ROOT_LOGGER.unableToResolveExpressions();
+                }
+            }
+        }
+    };
 }

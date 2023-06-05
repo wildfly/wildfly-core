@@ -112,29 +112,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
     public static final AttachmentKey<ModelNode> ROLLBACKED_FAILURE_DESC = AttachmentKey.create(ModelNode.class);
 
-    private final ParametersValidator validator = new ParametersValidator() {
-
-        @Override
-        public void validate(ModelNode operation) throws OperationFailedException {
-            super.validate(operation);
-            for (AttributeDefinition def : DEFINITION.getParameters()) {
-                def.validateOperation(operation);
-            }
-            if (operation.hasDefined(ModelDescriptionConstants.ATTRIBUTES_ONLY)) {
-                if (operation.hasDefined(ModelDescriptionConstants.RECURSIVE)) {
-                    throw ControllerLogger.ROOT_LOGGER.cannotHaveBothParameters(ModelDescriptionConstants.ATTRIBUTES_ONLY, ModelDescriptionConstants.RECURSIVE);
-                }
-                if (operation.hasDefined(ModelDescriptionConstants.RECURSIVE_DEPTH)) {
-                    throw ControllerLogger.ROOT_LOGGER.cannotHaveBothParameters(ModelDescriptionConstants.ATTRIBUTES_ONLY, ModelDescriptionConstants.RECURSIVE_DEPTH);
-                }
-            }
-            if( operation.hasDefined(ModelDescriptionConstants.RESOLVE_EXPRESSIONS)){
-                if(operation.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).asBoolean(false) && !resolvable){
-                    throw ControllerLogger.ROOT_LOGGER.unableToResolveExpressions();
-                }
-            }
-        }
-    };
+    private final ParametersValidator validator;
 
     private final OperationStepHandler overrideHandler;
     private final boolean resolvable;
@@ -156,6 +134,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         super(filteredData, ignoreMissingResource);
         this.overrideHandler = overrideHandler;
         this.resolvable = resolvable;
+        this.validator = resolvable ? Validator.RESOLVABLE : Validator.NON_RESOLVABLE;
     }
 
 
@@ -606,6 +585,39 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
             }
             if (!ignoreMissingResource) {
                 throw ControllerLogger.MGMT_OP_LOGGER.managementResourceNotFound(address);
+            }
+        }
+    }
+
+    private static class Validator extends ParametersValidator {
+
+        private static final Validator RESOLVABLE = new Validator(true);
+        private static final Validator NON_RESOLVABLE = new Validator(false);
+
+        private final boolean resolvable;
+
+        private Validator(boolean resolvable) {
+            this.resolvable = resolvable;
+        }
+
+        @Override
+        public void validate(ModelNode operation) throws OperationFailedException {
+            super.validate(operation);
+            for (AttributeDefinition def : DEFINITION.getParameters()) {
+                def.validateOperation(operation);
+            }
+            if (operation.hasDefined(ModelDescriptionConstants.ATTRIBUTES_ONLY)) {
+                if (operation.hasDefined(ModelDescriptionConstants.RECURSIVE)) {
+                    throw ControllerLogger.ROOT_LOGGER.cannotHaveBothParameters(ModelDescriptionConstants.ATTRIBUTES_ONLY, ModelDescriptionConstants.RECURSIVE);
+                }
+                if (operation.hasDefined(ModelDescriptionConstants.RECURSIVE_DEPTH)) {
+                    throw ControllerLogger.ROOT_LOGGER.cannotHaveBothParameters(ModelDescriptionConstants.ATTRIBUTES_ONLY, ModelDescriptionConstants.RECURSIVE_DEPTH);
+                }
+            }
+            if( operation.hasDefined(ModelDescriptionConstants.RESOLVE_EXPRESSIONS)){
+                if(operation.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).asBoolean(false) && !resolvable){
+                    throw ControllerLogger.ROOT_LOGGER.unableToResolveExpressions();
+                }
             }
         }
     }
