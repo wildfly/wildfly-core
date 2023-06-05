@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashSet;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD_INDEX;
@@ -44,28 +45,23 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
  */
 public class AbstractAddStepHandler implements OperationStepHandler, OperationDescriptor {
 
-    private static final Set<? extends AttributeDefinition> NULL_ATTRIBUTES = Collections.emptySet();
-    private static final AttributeDefinition[] NULL_ATTRIBUTE_ARRAY = new AttributeDefinition[0];
-
-    private static AttributeDefinition[] getAttributeDefinitionArray(Collection<? extends AttributeDefinition> attributes) {
-        return (attributes == null || attributes.isEmpty()) ? NULL_ATTRIBUTE_ARRAY : attributes.toArray(NULL_ATTRIBUTE_ARRAY);
-    }
-
     protected final Collection<? extends AttributeDefinition> attributes;
 
     /**
      * Constructs an add handler.
      */
     public AbstractAddStepHandler() { //default constructor to preserve backward compatibility
-        this.attributes = NULL_ATTRIBUTES;
+        this.attributes = List.of();
     }
 
     /**
      * Constructs an add handler
-     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}.attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      */
+    @SuppressWarnings("unchecked")
     public AbstractAddStepHandler(Collection<? extends AttributeDefinition> attributes) {
-        this(new Parameters().addAttribute(getAttributeDefinitionArray(attributes)));
+        // Create defensive copy, if collection was not already immutable
+        this.attributes = (attributes instanceof Set) ? Set.copyOf((Set<AttributeDefinition>) attributes) : List.copyOf(attributes);
     }
 
     /**
@@ -74,18 +70,11 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      */
     public AbstractAddStepHandler(AttributeDefinition... attributes) {
-        this(new Parameters().addAttribute(attributes));
+        this(List.of(attributes));
     }
 
     public AbstractAddStepHandler(Parameters parameters) {
-
-        if (parameters.attributes == null) {
-            attributes = NULL_ATTRIBUTES;
-        } else if (parameters.attributes.size() == 1) {
-            attributes = Collections.singleton(parameters.attributes.iterator().next());
-        } else {
-            attributes = Collections.unmodifiableSet(parameters.attributes);
-        }
+        this.attributes = Collections.unmodifiableCollection(parameters.attributes);
     }
 
     @Override
