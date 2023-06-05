@@ -27,12 +27,13 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
+import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-
-import java.util.LinkedHashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -74,7 +75,7 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
     }
 
     public AbstractAddStepHandler(Parameters parameters) {
-        this.attributes = Collections.unmodifiableCollection(parameters.attributes);
+        this.attributes = parameters.attributes;
     }
 
     @Override
@@ -380,27 +381,58 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
     }
 
     public static class Parameters {
-        protected Set<AttributeDefinition> attributes = null;
+        // Set is not the ideal data structure, but since this is a protected field, we are stuck with it
+        protected Set<AttributeDefinition> attributes = Set.of();
 
         public Parameters() {
         }
 
-        public Parameters addAttribute(AttributeDefinition... attributeDefinitions) {
-            Set<AttributeDefinition> attributeSet = getOrCreateAttributes();
-            attributeSet.addAll(Arrays.asList(attributeDefinitions));
-            return this;
+        public Parameters addAttribute(AttributeDefinition... attributes) {
+            return this.addAttribute(List.of(attributes));
         }
 
-        public Parameters addAttribute(Collection<AttributeDefinition> attributeDefinitions) {
-            getOrCreateAttributes().addAll(attributeDefinitions);
-            return this;
-        }
-
-        private Set<AttributeDefinition> getOrCreateAttributes() {
-            if (attributes == null) {
-                attributes = new LinkedHashSet<>();
+        public Parameters addAttribute(Collection<? extends AttributeDefinition> attributes) {
+            if (this.attributes.isEmpty()) {
+                // Create defensive copy, if collection was not already immutable
+                this.attributes = (attributes instanceof List) ? new ImmutableListSet<>(List.copyOf(attributes)) : Set.copyOf(attributes);
+            } else {
+                // Use copy-on-write semantics
+                // We expect most users to bulk-add attributes
+                List<AttributeDefinition> newAttributes = new ArrayList<>(this.attributes.size() + attributes.size());
+                newAttributes.addAll(this.attributes);
+                newAttributes.addAll(attributes);
+                this.attributes = new ImmutableListSet<>(newAttributes);
             }
-            return attributes;
+            return this;
+        }
+    }
+
+    // Wraps a list as an immutable set
+    private static class ImmutableListSet<T> extends AbstractSet<T> {
+        private final List<T> list;
+
+        ImmutableListSet(List<T> list) {
+            this.list = list;
+        }
+
+        @Override
+        public int size() {
+            return this.list.size();
+        }
+
+        @Override
+        public Iterator<T> iterator() {
+            return this.list.iterator();
+        }
+
+        @Override
+        public boolean add(T e) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends T> c) {
+            throw new UnsupportedOperationException();
         }
     }
 }
