@@ -322,9 +322,10 @@ class ModelControllerImpl implements ModelController {
         };
 
         // Use a read-only context
-        final ReadOnlyContext context = new ReadOnlyContext(processType, runningModeControl.getRunningMode(), txControl, processState, false, model, delegateContext, this, operationId, securityIdentitySupplier);
-        context.addStep(response, operation, prepareStep, OperationContext.Stage.MODEL);
-        context.executeOperation();
+        try (ReadOnlyContext context = new ReadOnlyContext(processType, runningModeControl.getRunningMode(), txControl, processState, false, model, delegateContext, this, operationId, securityIdentitySupplier)) {
+            context.addStep(response, operation, prepareStep, OperationContext.Stage.MODEL);
+            context.executeOperation();
+        }
 
         if (!response.hasDefined(RESPONSE_HEADERS) || !response.get(RESPONSE_HEADERS).hasDefined(PROCESS_STATE)) {
             ControlledProcessState.State state = processState.getState();
@@ -433,7 +434,7 @@ class ModelControllerImpl implements ModelController {
                 //noinspection deprecation
                 CurrentOperationIdHolder.setCurrentOperationID(operationID);
                 boolean shouldUnlock = false;
-                try {
+                try (context) {
                     if (attemptLock) {
                         if (!controllerLock.detectDeadlockAndGetLock(operationID)) {
                             responseNode.get(OUTCOME).set(FAILED);
@@ -518,7 +519,9 @@ class ModelControllerImpl implements ModelController {
             for (ParsedBootOp initialOp : bootOperations.initialOps) {
                 context.addBootStep(initialOp);
             }
-            resultAction = context.executeOperation();
+            try (context) {
+                resultAction = context.executeOperation();
+            }
         }
         //here the meta-model is available
         if (resultAction == OperationContext.ResultAction.KEEP && bootOperations.postExtensionOps != null) {
@@ -555,7 +558,9 @@ class ModelControllerImpl implements ModelController {
                     }
                 }
             }
-            resultAction = postExtContext.executeOperation();
+            try (postExtContext) {
+                resultAction = postExtContext.executeOperation();
+            }
 
             if (!skipModelValidation && resultAction == OperationContext.ResultAction.KEEP && bootOperations.postExtensionOps != null) {
                 //Get the modified resources from the initial operations and add to the resources to be validated by the post operations
@@ -563,13 +568,14 @@ class ModelControllerImpl implements ModelController {
                 Resource root = managementModel.get().getRootResource();
                 addAllAddresses(managementModel.get().getRootResourceRegistration(), PathAddress.EMPTY_ADDRESS, root, validateAddresses);
 
-                final AbstractOperationContext validateContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
+                try (AbstractOperationContext validateContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                         EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                         headers, handler, null, managementModel.get(), control, processState, auditLogger,
                                 bootingFlag.get(), true, hostServerGroupTracker, null, notificationSupport, false,
-                                extraValidationStepHandler, partialModel, securityIdentitySupplier);
-                validateContext.addModifiedResourcesForModelValidation(validateAddresses);
-                resultAction = validateContext.executeOperation();
+                                extraValidationStepHandler, partialModel, securityIdentitySupplier)) {
+                    validateContext.addModifiedResourcesForModelValidation(validateAddresses);
+                    resultAction = validateContext.executeOperation();
+                }
             }
         }
         return  resultAction == OperationContext.ResultAction.KEEP;

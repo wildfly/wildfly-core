@@ -33,7 +33,7 @@ import org.wildfly.common.Assert;
  *
  * @author <a href="mailto:kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class ContextAttachments {
+public class ContextAttachments implements AutoCloseable {
     /**
      * A concurrent map for the attachments.
      */
@@ -60,5 +60,10 @@ public class ContextAttachments {
     public <V> V detach(final OperationContext.AttachmentKey<V> key) {
         Assert.checkNotNullParam("key", key);
         return key.cast(valueAttachments.remove(key));
+    }
+
+    @Override
+    public void close() {
+        valueAttachments.clear();
     }
 }
