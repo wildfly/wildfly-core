@@ -39,8 +39,9 @@ import static org.jboss.as.controller.operations.global.GlobalOperationAttribute
 
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -495,10 +496,16 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                     break;
                 }
             }
+            // Allow prompt gc
+            otherAttributes.clear();
             if (!failed) {
-                for (Map.Entry<PathElement, ModelNode> entry : childResources.entrySet()) {
+                // We make a copy of the ModelNode tree here, so use an iterator and remove promptly
+                // to reduce peak memory use ASAP in large reads
+                for (Iterator<Map.Entry<PathElement, ModelNode>> iter = childResources.entrySet().iterator(); iter.hasNext();) {
+                    Map.Entry<PathElement, ModelNode> entry = iter.next();
                     PathElement path = entry.getKey();
                     ModelNode value = entry.getValue();
+                    iter.remove();
                     if (!value.has(FAILURE_DESCRIPTION)) {
                         if (value.hasDefined(RESULT)) {
                             ModelNode childTypeNode = sortedChildren.get(path.getKey());
@@ -529,13 +536,19 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                     }
                 }
             }
+            // Allow prompt gc
+            childResources.clear();
             if (!failed) {
                 for (Map.Entry<String, ModelNode> directChild : directChildren.entrySet()) {
                     sortedChildren.put(directChild.getKey(), directChild.getValue());
                 }
+                // Allow prompt gc
+                directChildren.clear();
                 for (String nonExistentChildType : nonExistentChildTypes) {
                     sortedChildren.put(nonExistentChildType, new ModelNode());
                 }
+                // Allow prompt gc
+                nonExistentChildTypes.clear();
                 for (Map.Entry<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metric : metrics.entrySet()) {
                     GlobalOperationHandlers.AvailableResponse ar = metric.getValue();
                     if (ar.unavailable) {
@@ -550,27 +563,39 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                     // we ignore metric failures
                     // TODO how to prevent the metric failure screwing up the overall context?
                 }
+                // Allow prompt gc
+                metrics.clear();
 
                 final ModelNode result = context.getResult();
                 result.setEmptyObject();
                 for (Map.Entry<AttributeDefinition.NameAndGroup, ModelNode> entry : sortedAttributes.entrySet()) {
                     result.get(entry.getKey().getName()).set(entry.getValue());
                 }
+                // Allow prompt gc
+                sortedAttributes.clear();
 
-                for (Map.Entry<String, ModelNode> entry : sortedChildren.entrySet()) {
+                // We make a copy of the ModelNode tree here, so use an iterator and remove promptly
+                // to reduce peak memory use ASAP in large reads
+                for (Iterator<Map.Entry<String, ModelNode>> iter = sortedChildren.entrySet().iterator(); iter.hasNext();) {
+                    Map.Entry<String, ModelNode> entry = iter.next();
+                    String type = entry.getKey();
+                    ModelNode value = entry.getValue();
+                    iter.remove();
                     if (!entry.getValue().isDefined()) {
-                        result.get(entry.getKey()).set(entry.getValue());
+                        result.get(type).set(value);
                     } else {
                         ModelNode childTypeNode = new ModelNode();
-                        for (Property property : entry.getValue().asPropertyList()) {
-                            PathElement pe = PathElement.pathElement(entry.getKey(), property.getName());
+                        for (Property property : value.asPropertyList()) {
+                            PathElement pe = PathElement.pathElement(type, property.getName());
                             if (!filteredData.isFilteredResource(address, pe)) {
                                 childTypeNode.get(property.getName()).set(property.getValue());
                             }
                         }
-                        result.get(entry.getKey()).set(childTypeNode);
+                        result.get(type).set(childTypeNode);
                     }
                 }
+                // Allow prompt gc
+                sortedChildren.clear();
 
                 if (filteredData.hasFilteredData()) {
                     context.getResponseHeaders().get(ACCESS_CONTROL).set(filteredData.toModelNode());
