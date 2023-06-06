@@ -219,14 +219,17 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         // If we were not configured with a FilteredData, we are handling the top
         // resource being read, otherwise we are a child resource
         FilteredData fd = getFilteredData();
-        final FilteredData localFilteredData = fd == null ? new FilteredData(address) : fd;
+        final FilteredData localFilteredData = (fd == null) ? new FilteredData(address): fd;
+        // We only want our assembly handler to report filtered data if we just created
+        // the FilteredData for the overall op
+        boolean reportFilteredData = fd == null;
 
         // We're going to add a bunch of steps that should immediately follow this one. We are going to add them
         // in reverse order of how they should execute, as that is the way adding a Stage.IMMEDIATE step works
 
         // Last to execute is the handler that assembles the overall response from the pieces created by all the other steps
         final ReadResourceAssemblyHandler assemblyHandler = new ReadResourceAssemblyHandler(address, metrics,
-                otherAttributes, directChildren, childResources, nonExistentChildTypes, localFilteredData, ignoreMissingResource);
+                otherAttributes, directChildren, childResources, nonExistentChildTypes, reportFilteredData, localFilteredData, ignoreMissingResource);
         context.addStep(assemblyHandler, queryRuntime ? OperationContext.Stage.VERIFY : OperationContext.Stage.MODEL, true);
         final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
 
@@ -435,6 +438,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         private final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes;
         private final Map<PathElement, ModelNode> childResources;
         private final Set<String> nonExistentChildTypes;
+        private final boolean reportFilteredData;
         private final FilteredData filteredData;
         private final boolean ignoreMissingResource;
 
@@ -454,6 +458,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 *                         value is the full read-resource response. Will not be {@code null}
          * @param nonExistentChildTypes names of child types where no data is available
          * @param filteredData     information about resources and attributes that were filtered
+         * @param reportFilteredData {@code }
          * @param ignoreMissingResource {@code true} if we should ignore occasions when the targeted resource
          *                                          does not exist; {@code false} if we should throw
          *                                          {@link org.jboss.as.controller.registry.Resource.NoSuchResourceException}
@@ -461,15 +466,20 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
          */
         private ReadResourceAssemblyHandler(final PathAddress address,
                                             final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metrics,
-                                            final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes, final Map<String, ModelNode> directChildren,
-                                            final Map<PathElement, ModelNode> childResources, final Set<String> nonExistentChildTypes,
-                                            FilteredData filteredData, boolean ignoreMissingResource) {
+                                            final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes,
+                                            final Map<String, ModelNode> directChildren,
+                                            final Map<PathElement, ModelNode> childResources,
+                                            final Set<String> nonExistentChildTypes,
+                                            final boolean reportFilteredData,
+                                            final FilteredData filteredData,
+                                            final boolean ignoreMissingResource) {
             this.address = address;
             this.metrics = metrics;
             this.otherAttributes = otherAttributes;
             this.directChildren = directChildren;
             this.childResources = childResources;
             this.nonExistentChildTypes = nonExistentChildTypes;
+            this.reportFilteredData = reportFilteredData;
             this.filteredData = filteredData;
             this.ignoreMissingResource = ignoreMissingResource;
         }
@@ -597,7 +607,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                 // Allow prompt gc
                 sortedChildren.clear();
 
-                if (filteredData.hasFilteredData()) {
+                if (reportFilteredData && filteredData.hasFilteredData()) {
                     context.getResponseHeaders().get(ACCESS_CONTROL).set(filteredData.toModelNode());
                 }
             }
