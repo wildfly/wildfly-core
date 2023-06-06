@@ -24,7 +24,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 
+import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -128,6 +131,19 @@ public class HostShutdownHandler implements OperationStepHandler {
             } catch (Exception e) {
                 throw HostControllerLogger.ROOT_LOGGER.noServerInstallationPrepared(productName);
             }
+
+            // check the presence of a client marker in our server installation and if so, returns its value so the client
+            // can detect whether he was launched from the same installation dir.
+            final Path cliMarker = environment.getHomeDir().toPath().resolve("bin").resolve("cli-marker");
+            try (BufferedReader reader = new BufferedReader(new FileReader(cliMarker.toFile()))) {
+                String line = reader.readLine();
+                if (line != null) {
+                    context.getResult().set("cli-marker-value", line);
+                }
+            } catch (Exception e) {
+                // explicitly ignored
+                HostControllerLogger.ROOT_LOGGER.debug("Shutdown will not return a file marker due to an exception that has been explicitly ignored.", e);
+            }
         }
 
         context.addStep(new OperationStepHandler() {
@@ -140,7 +156,7 @@ public class HostShutdownHandler implements OperationStepHandler {
                 // If another op that is a step in a composite step with this op needs to modify the container
                 // it will have to wait for container stability, so skipping this only matters for the case
                 // where this step is the only runtime change.
-//                context.getServiceRegistry(true);
+                // context.getServiceRegistry(true);
                 AuthorizationResult authorizationResult = context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
                 if (authorizationResult.getDecision() == AuthorizationResult.Decision.DENY) {
                     throw ControllerLogger.ACCESS_LOGGER.unauthorized(operation.get(OP).asString(),
