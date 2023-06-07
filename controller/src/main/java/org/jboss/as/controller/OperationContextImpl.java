@@ -2105,6 +2105,12 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         @Override
+        public ServiceBuilder<?> addService() {
+            // TODO: We need to rewrite MGMT OPs handling internals in order to support this method
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public ServiceBuilder<?> addService(final ServiceName name) {
             final ServiceBuilder<?> realBuilder = super.getDelegate().addService(name);
             // If done() has been called we are no longer associated with a management op and should just
