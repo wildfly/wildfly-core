@@ -85,7 +85,6 @@
         <module name="jakarta.websocket.api" export="true" optional="true" />
         <module name="jakarta.xml.bind.api" export="true" optional="true" />
         <module name="jakarta.xml.soap.api" export="true" optional="true" />
-        <module name="jakarta.xml.ws.api" export="true" optional="true" />
         <!-- TODO WFCORE-6385 Consider replacing this with jakarta.el.api.
              Modules that need the EL impl in Eclipse Expressly should directly
              declare a dep, and not rely on wildflyee.api for it. -->
