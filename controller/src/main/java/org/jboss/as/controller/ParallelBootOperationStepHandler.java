@@ -376,12 +376,14 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                     }, new ModelNode());
                     return;
                 }
-                pboc.setControllingThread();
-                for (ParsedBootOp op : bootOperations) {
-                    final OperationStepHandler osh = op.handler == null ? rootRegistration.getOperationHandler(op.address, op.operationName) : op.handler;
-                    pboc.addStep(op.response, op.operation, osh, executionStage);
+                try (pboc) {
+                    pboc.setControllingThread();
+                    for (ParsedBootOp op : bootOperations) {
+                        final OperationStepHandler osh = op.handler == null ? rootRegistration.getOperationHandler(op.address, op.operationName) : op.handler;
+                        pboc.addStep(op.response, op.operation, osh, executionStage);
+                    }
+                    pboc.executeOperation();
                 }
-                pboc.executeOperation();
             } catch (RuntimeException | Error t) {
                 MGMT_OP_LOGGER.failedSubsystemBootOperations(t, subsystemName);
                 if (!transactionControl.signalled) {
@@ -410,11 +412,6 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                 } else {
                     transactionControl.operationCompleted(transactionControl.response);
                 }
-
-                if (pboc != null) {
-                    pboc.close();
-                }
-
             }
         }
     }
