@@ -19,6 +19,46 @@
   -->
 
 <module xmlns="urn:jboss:module:1.9" name="wildflyee.api">
+
+    <!--
+      README for this module:
+
+      This module depends upon all the Jakarta EE API modules and exports their
+      APIs, providing access to all the available APIs in one place.
+
+      The dependencies on the EE APIs are all optional, so if a slimmed server
+      is provisioned that only provides a subset of APIs, the missing ones will
+      be ignored and this module will only provide those APIs that are provisioned.
+
+      There are two use cases for this module:
+
+      1) When WildFly dynamically generates modules from a set of
+         resources to provide as a dependency to a deployment, it adds
+         a dependency on this module to the generated module to help
+         ensure it has access to any needed APIs. Examples of this
+         kind of dynamic generation are the WildFly 'ee' subsystem's
+         global module directory feature, as well as modules generated to
+         encapsulate MANIFEST.mf Class-Path entries.
+
+      2) It can be a convenience for static module developers who can
+         add it as a dependency and get access to all the EE APIs without
+         having to identify which specific APIs are needed. This use is
+         a bit of an anti-pattern; module authors should understand and
+         document their dependencies. WildFly's own modules are not
+         allowed to declare dependencies on this module.
+
+      Deployments should not declare dependencies on this module. WildFly
+      subsystems add the appropriate EE API dependencies to deployments.
+    -->
+
+    <properties>
+        <!-- This module is marked as private both because its use case
+             as a convenience for static module developers is questionable,
+             but also because deployments should not declare dependencies
+             on this and should get a log WARN if they do. -->
+        <property name="jboss.api" value="private"/>
+    </properties>
+
     <dependencies>
         <module name="jakarta.activation.api" export="true" optional="true" />
         <module name="jakarta.annotation.api" export="true" optional="true" />
@@ -46,6 +86,9 @@
         <module name="jakarta.xml.bind.api" export="true" optional="true" />
         <module name="jakarta.xml.soap.api" export="true" optional="true" />
         <module name="jakarta.xml.ws.api" export="true" optional="true" />
+        <!-- TODO WFCORE-6385 Consider replacing this with jakarta.el.api.
+             Modules that need the EL impl in Eclipse Expressly should directly
+             declare a dep, and not rely on wildflyee.api for it. -->
         <module name="org.glassfish.expressly" export="true" optional="true" />
         <module name="org.omg.api" export="true" optional="true" />
         <!-- This one always goes last. -->
