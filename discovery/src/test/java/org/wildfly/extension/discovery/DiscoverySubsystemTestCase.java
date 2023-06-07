@@ -18,11 +18,9 @@
 
 package org.wildfly.extension.discovery;
 
-import java.io.IOException;
 import java.util.EnumSet;
-import java.util.Locale;
 
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
+import org.jboss.as.subsystem.test.AbstractSubsystemSchemaTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -32,22 +30,14 @@ import org.junit.runners.Parameterized.Parameters;
  * @author <a href="mailto:paul.ferraro@redhat.com">Paul Ferraro</a>
  */
 @RunWith(Parameterized.class)
-public class DiscoverySubsystemTestCase extends AbstractSubsystemBaseTest {
+public class DiscoverySubsystemTestCase extends AbstractSubsystemSchemaTest<DiscoverySubsystemSchema> {
 
     @Parameters
     public static Iterable<DiscoverySubsystemSchema> parameters() {
         return EnumSet.allOf(DiscoverySubsystemSchema.class);
     }
 
-    private final DiscoverySubsystemSchema schema;
-
     public DiscoverySubsystemTestCase(DiscoverySubsystemSchema schema) {
-        super(DiscoveryExtension.SUBSYSTEM_NAME, new DiscoveryExtension());
-        this.schema = schema;
-    }
-
-    @Override
-    protected String getSubsystemXml() throws IOException {
-        return readResource(String.format(Locale.ROOT, "discovery-%d.%d.xml", this.schema.getVersion().major(), this.schema.getVersion().minor()));
+        super(DiscoveryExtension.SUBSYSTEM_NAME, new DiscoveryExtension(), schema, DiscoverySubsystemSchema.CURRENT);
     }
 }
