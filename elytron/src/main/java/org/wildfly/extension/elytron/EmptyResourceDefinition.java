@@ -33,7 +33,9 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
+import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
+import org.wildfly.extension.elytron.common.TrivialService;
+import org.wildfly.extension.elytron.common.TrivialService.ValueSupplier;
 
 /**
  * A {@link ResourceDefinition} for a resource with no configuration.

@@ -47,6 +47,7 @@ import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.wildfly.extension.elytron.common.ClassLoadingAttributeDefinitions;
 
 /**
  * XML handling for the <mappers /> element.

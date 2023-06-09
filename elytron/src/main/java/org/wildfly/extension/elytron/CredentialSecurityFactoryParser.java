@@ -24,6 +24,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KERBEROS
 
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
+import org.wildfly.extension.elytron.common.FileAttributeDefinitions;
 import org.wildfly.security.SecurityFactory;
 
 /**

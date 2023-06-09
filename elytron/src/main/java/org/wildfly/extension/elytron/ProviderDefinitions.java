@@ -18,6 +18,8 @@ package org.wildfly.extension.elytron;
 import java.security.Provider;
 
 import org.jboss.as.controller.ResourceDefinition;
+import org.wildfly.extension.elytron.common.ElytronCommonAggregateComponentDefinition;
+import org.wildfly.extension.elytron.common.ElytronCommonProviderDefinitions;
 
 /**
  * Resource definition(s) for resources satisfying the Provider[] capability. This is a compatibility wrapper, not

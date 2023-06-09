@@ -35,6 +35,7 @@ import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.extension.elytron.common.AbstractElytronSubsystemBaseTest;
 
 /**
  * Verifies that attributes that allow expressions resolve them correctly.

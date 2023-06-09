@@ -18,10 +18,10 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLASS_NAME;
-import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
+import static org.wildfly.extension.elytron.common.ClassLoadingAttributeDefinitions.CLASS_NAME;
+import static org.wildfly.extension.elytron.common.ClassLoadingAttributeDefinitions.resolveClassLoader;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonRequirements;
-import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
+import static org.wildfly.extension.elytron.common.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.lang.reflect.Method;
@@ -52,6 +52,10 @@ import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartException;
+import org.wildfly.extension.elytron.common.ClassLoadingAttributeDefinitions;
+import org.wildfly.extension.elytron.common.ElytronReloadRequiredWriteAttributeHandler;
+import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
+import org.wildfly.extension.elytron.common.TrivialService;
 
 
 /**

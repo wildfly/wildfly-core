@@ -16,7 +16,7 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
+import static org.wildfly.extension.elytron.common.SecurityActions.doPrivileged;
 
 import java.security.PrivilegedAction;
 import java.util.function.Consumer;

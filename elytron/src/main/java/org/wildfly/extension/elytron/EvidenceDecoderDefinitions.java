@@ -33,7 +33,7 @@ import org.jboss.as.controller.operations.validation.StringAllowedValuesValidato
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceBuilder;
-import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
+import org.wildfly.extension.elytron.common.TrivialService.ValueSupplier;
 import org.wildfly.security.auth.server.EvidenceDecoder;
 import org.wildfly.security.x500.GeneralName;
 import org.wildfly.security.x500.principal.X500SubjectEvidenceDecoder;

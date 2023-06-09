@@ -21,6 +21,7 @@ import java.util.Set;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.wildfly.extension.elytron.common.ElytronCommonBaseAddHandler;
 
 /**
  * An extension of {@link AbstractAddStepHandler} to ensure all Elytron runtime operations are performed in the required server

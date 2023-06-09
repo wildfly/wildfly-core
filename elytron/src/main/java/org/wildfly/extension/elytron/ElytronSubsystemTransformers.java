@@ -97,6 +97,8 @@ import org.jboss.as.controller.transform.description.ResourceTransformationDescr
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.extension.elytron.common.ModifiableKeyStoreDecorator;
+import org.wildfly.extension.elytron.common.SSLDefinitions;
 import org.wildfly.security.password.interfaces.ScramDigestPassword;
 import org.wildfly.security.x500.cert.acme.CertificateAuthority;
 

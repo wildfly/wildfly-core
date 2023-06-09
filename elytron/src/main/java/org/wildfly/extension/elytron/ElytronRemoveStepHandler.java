@@ -20,6 +20,7 @@ package org.wildfly.extension.elytron;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
+import org.wildfly.extension.elytron.common.ElytronOperationStepHandler;
 
 /**
  * Extends the {@link AbstractRemoveStepHandler} overriding the {@link #requiresRuntime(OperationContext)}.

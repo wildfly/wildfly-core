@@ -16,8 +16,8 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLASS_NAME;
-import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
+import static org.wildfly.extension.elytron.common.ClassLoadingAttributeDefinitions.CLASS_NAME;
+import static org.wildfly.extension.elytron.common.ClassLoadingAttributeDefinitions.MODULE;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.util.List;
@@ -43,6 +43,7 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.extension.elytron.common.ClassLoadingAttributeDefinitions;
 import org.wildfly.security.auth.jaspi.Flag;
 import org.wildfly.security.auth.jaspi.JaspiConfigurationBuilder;
 

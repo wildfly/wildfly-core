@@ -22,7 +22,7 @@ import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.KeyStoreDefinition.KEY_STORE_UTIL;
+import static org.wildfly.extension.elytron.common.KeyStoreDefinition.KEY_STORE_UTIL;
 
 import java.security.KeyStore;
 
@@ -45,6 +45,10 @@ import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.extension.elytron.common.ElytronReloadRequiredWriteAttributeHandler;
+import org.wildfly.extension.elytron.common.ServiceUtil;
+import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
+import org.wildfly.extension.elytron.common.TrivialService;
 import org.wildfly.security.auth.realm.KeyStoreBackedSecurityRealm;
 import org.wildfly.security.auth.server.SecurityRealm;
 

@@ -18,8 +18,8 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.PERMISSION_SET_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLASS_NAME;
-import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
+import static org.wildfly.extension.elytron.common.ClassLoadingAttributeDefinitions.CLASS_NAME;
+import static org.wildfly.extension.elytron.common.ClassLoadingAttributeDefinitions.MODULE;
 import static org.wildfly.extension.elytron.PermissionMapperDefinitions.ACTION;
 import static org.wildfly.extension.elytron.PermissionMapperDefinitions.PERMISSION;
 import static org.wildfly.extension.elytron.PermissionMapperDefinitions.TARGET_NAME;
@@ -38,7 +38,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
-import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
+import org.wildfly.extension.elytron.common.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron.PermissionMapperDefinitions.Permission;
 
 /**

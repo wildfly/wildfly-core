@@ -29,6 +29,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.extension.elytron.common.ElytronRuntimeOnlyHandler;
 
 /**
  * A {@link ResourceDefinition} to wrap an existing resource and add a runtime attribute to return the available authentication mechanisms.

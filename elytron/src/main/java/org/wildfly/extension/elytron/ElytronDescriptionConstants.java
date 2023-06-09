@@ -16,6 +16,8 @@
 
 package org.wildfly.extension.elytron;
 
+import org.wildfly.extension.elytron.common.ElytronCommonConstants;
+
 /**
  * Constants used in the Elytron subsystem.
  *

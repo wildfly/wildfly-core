@@ -17,6 +17,7 @@ package org.wildfly.extension.elytron;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.wildfly.extension.elytron.common.ElytronCommonDoohickeyAddHandler;
 
 /**
  * An add handler which makes use of a {@code Doohickey} to coordinate making a resource available

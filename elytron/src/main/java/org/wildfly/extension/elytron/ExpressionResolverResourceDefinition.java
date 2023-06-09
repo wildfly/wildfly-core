@@ -54,6 +54,9 @@ import org.jboss.dmr.ModelType;
 import org.wildfly.extension.elytron.expression.ElytronExpressionResolver;
 import org.wildfly.extension.elytron.expression.ElytronExpressionResolver.ResolverConfiguration;
 import org.wildfly.extension.elytron.expression.ExpressionResolverRuntimeHandler;
+import org.wildfly.extension.elytron.common.ElytronOperationStepHandler;
+import org.wildfly.extension.elytron.common.ElytronReloadRequiredWriteAttributeHandler;
+import org.wildfly.extension.elytron.common.ElytronRuntimeOnlyHandler;
 
 /**
  * The {@link ResourceDefinition} for the expression resolver resource.

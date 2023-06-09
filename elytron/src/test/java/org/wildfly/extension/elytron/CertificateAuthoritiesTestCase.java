@@ -44,7 +44,10 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockserver.integration.ClientAndServer;
-import org.wildfly.extension.elytron.JdkUtils;
+import org.wildfly.extension.elytron.common.CredentialStoreUtility;
+import org.wildfly.extension.elytron.common.ElytronCommonCertificateAuthoritiesTestCase;
+import org.wildfly.extension.elytron.common.ElytronCommonConstants;
+import org.wildfly.extension.elytron.common.JdkUtils;
 import org.wildfly.security.x500.cert.acme.AcmeAccount;
 import org.wildfly.security.x500.cert.acme.CertificateAuthority;
 

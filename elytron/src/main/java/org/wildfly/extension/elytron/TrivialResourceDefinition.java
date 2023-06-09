@@ -26,6 +26,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
+import org.wildfly.extension.elytron.common.ElytronCommonTrivialResourceDefinition;
 
 /**
  * A trivial {@link ResourceDefinition}. This is a compatibility wrapper, not required by new usages of the
@@ -36,7 +37,7 @@ import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
  * @implNote This wrapper mirrors all methods from superclass to avoid issues with downcasting. Other implementations
  * can use {@link ElytronCommonTrivialResourceDefinition} directly.
  */
-final class TrivialResourceDefinition extends ElytronCommonTrivialResourceDefinition{
+final class TrivialResourceDefinition extends ElytronCommonTrivialResourceDefinition {
 
     private TrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AbstractRemoveStepHandler remove, AttributeDefinition[] attributes,
                               Map<AttributeDefinition, OperationStepHandler> readOnlyAttributes, Map<OperationDefinition, OperationStepHandler> operations, List<ResourceDefinition> children,
@@ -53,61 +54,61 @@ final class TrivialResourceDefinition extends ElytronCommonTrivialResourceDefini
     }
 
     static Builder builder() {
-        return new Builder(ElytronExtension.class);
+        return new Builder();
     }
 
     static class Builder extends ElytronCommonTrivialResourceDefinition.Builder {
-        Builder(final Class<?> extensionClass) {
-            super(extensionClass);
+        Builder() {
+            super(ElytronExtension.class);
         }
 
         @Override
-        Builder setPathKey(String pathKey) {
+        protected Builder setPathKey(String pathKey) {
             return (Builder) super.setPathKey(pathKey);
         }
 
         @Override
-        Builder setResourceDescriptionResolver(ResourceDescriptionResolver resourceDescriptionResolver) {
+        protected Builder setResourceDescriptionResolver(ResourceDescriptionResolver resourceDescriptionResolver) {
             return (Builder) super.setResourceDescriptionResolver(resourceDescriptionResolver);
         }
 
         @Override
-        Builder setAddHandler(AbstractAddStepHandler addHandler) {
+        protected Builder setAddHandler(AbstractAddStepHandler addHandler) {
             return (Builder) super.setAddHandler(addHandler);
         }
 
         @Override
-        Builder setRemoveHandler(AbstractRemoveStepHandler removeHandler) {
+        protected Builder setRemoveHandler(AbstractRemoveStepHandler removeHandler) {
             return (Builder) super.setRemoveHandler(removeHandler);
         }
 
         @Override
-        Builder setAttributes(AttributeDefinition... attributes) {
+        protected Builder setAttributes(AttributeDefinition... attributes) {
             return (Builder) super.setAttributes(attributes);
         }
 
         @Override
-        Builder addReadOnlyAttribute(AttributeDefinition attribute, OperationStepHandler handler) {
+        protected Builder addReadOnlyAttribute(AttributeDefinition attribute, OperationStepHandler handler) {
             return (Builder) super.addReadOnlyAttribute(attribute, handler);
         }
 
         @Override
-        Builder addOperation(OperationDefinition operation, OperationStepHandler handler) {
+        protected Builder addOperation(OperationDefinition operation, OperationStepHandler handler) {
             return (Builder) super.addOperation(operation, handler);
         }
 
         @Override
-        Builder setRuntimeCapabilities(RuntimeCapability<?>... runtimeCapabilities) {
+        protected Builder setRuntimeCapabilities(RuntimeCapability<?>... runtimeCapabilities) {
             return (Builder) super.setRuntimeCapabilities(runtimeCapabilities);
         }
 
         @Override
-        Builder addChild(ResourceDefinition child) {
+        protected Builder addChild(ResourceDefinition child) {
             return (Builder) super.addChild(child);
         }
 
         @Override
-        ResourceDefinition build() {
+        protected ResourceDefinition build() {
             return super.build();
         }
     }

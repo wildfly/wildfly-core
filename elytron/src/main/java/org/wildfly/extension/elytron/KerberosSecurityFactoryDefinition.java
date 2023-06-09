@@ -19,9 +19,9 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.OPTION;
-import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
-import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
-import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
+import static org.wildfly.extension.elytron.common.FileAttributeDefinitions.RELATIVE_TO;
+import static org.wildfly.extension.elytron.common.FileAttributeDefinitions.pathName;
+import static org.wildfly.extension.elytron.common.FileAttributeDefinitions.pathResolver;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,9 +53,10 @@ import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
-import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
-import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
-import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
+import org.wildfly.extension.elytron.common.FileAttributeDefinitions;
+import org.wildfly.extension.elytron.common.FileAttributeDefinitions.PathResolver;
+import org.wildfly.extension.elytron.common.TrivialService.ValueSupplier;
+import org.wildfly.extension.elytron.common.capabilities.CredentialSecurityFactory;
 import org.wildfly.security.asn1.OidsUtil;
 import org.wildfly.security.mechanism.gssapi.GSSCredentialSecurityFactory;
 

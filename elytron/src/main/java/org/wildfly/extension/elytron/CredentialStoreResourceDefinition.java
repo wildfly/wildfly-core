@@ -27,8 +27,8 @@ import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIM
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
-import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
-import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
+import static org.wildfly.extension.elytron.common.FileAttributeDefinitions.pathName;
+import static org.wildfly.extension.elytron.common.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.io.File;
@@ -76,7 +76,9 @@ import org.jboss.msc.service.StartException;
 import org.wildfly.common.function.ExceptionFunction;
 import org.wildfly.common.function.ExceptionRunnable;
 import org.wildfly.common.function.ExceptionSupplier;
-import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
+import org.wildfly.extension.elytron.common.ElytronDoohickey;
+import org.wildfly.extension.elytron.common.FileAttributeDefinitions.PathResolver;
+import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
 import org.wildfly.security.EmptyProvider;
 import org.wildfly.security.auth.server.IdentityCredentials;
 import org.wildfly.security.credential.Credential;

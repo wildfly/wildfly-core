@@ -19,9 +19,9 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
-import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
-import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
-import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
+import static org.wildfly.extension.elytron.common.FileAttributeDefinitions.RELATIVE_TO;
+import static org.wildfly.extension.elytron.common.FileAttributeDefinitions.pathName;
+import static org.wildfly.extension.elytron.common.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 import static org.wildfly.security.encryption.SecretKeyUtil.generateSecretKey;
 
@@ -55,7 +55,11 @@ import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.StartException;
 import org.wildfly.common.function.ExceptionRunnable;
 import org.wildfly.common.function.ExceptionSupplier;
-import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
+import org.wildfly.extension.elytron.common.ElytronDoohickey;
+import org.wildfly.extension.elytron.common.FileAttributeDefinitions;
+import org.wildfly.extension.elytron.common.FileAttributeDefinitions.PathResolver;
+import org.wildfly.extension.elytron.common.ServiceUtil;
+import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.store.CredentialStore;
 

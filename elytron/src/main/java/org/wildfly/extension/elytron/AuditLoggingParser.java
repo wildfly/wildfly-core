@@ -30,6 +30,7 @@ import org.jboss.as.controller.AttributeMarshallers;
 import org.jboss.as.controller.AttributeParsers;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
+import org.wildfly.extension.elytron.common.FileAttributeDefinitions;
 
 /**
  * XML Handling for the audit logging resources.

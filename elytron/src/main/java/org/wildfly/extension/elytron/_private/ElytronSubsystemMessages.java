@@ -38,6 +38,7 @@ import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.logging.annotations.Param;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
+import org.wildfly.extension.elytron.common.util.ElytronCommonMessages;
 import org.wildfly.security.auth.server.SecurityRealm;
 
 /**

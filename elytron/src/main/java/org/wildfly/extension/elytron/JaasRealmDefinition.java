@@ -42,6 +42,10 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.extension.elytron.common.ElytronReloadRequiredWriteAttributeHandler;
+import org.wildfly.extension.elytron.common.FileAttributeDefinitions;
+import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
+import org.wildfly.extension.elytron.common.TrivialService;
 import org.wildfly.security.auth.realm.JaasSecurityRealm;
 import org.wildfly.security.auth.server.SecurityRealm;
 
@@ -50,11 +54,11 @@ import java.io.File;
 import java.security.PrivilegedExceptionAction;
 
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
+import static org.wildfly.extension.elytron.common.ClassLoadingAttributeDefinitions.resolveClassLoader;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
-import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
-import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
+import static org.wildfly.extension.elytron.common.FileAttributeDefinitions.pathName;
+import static org.wildfly.extension.elytron.common.FileAttributeDefinitions.pathResolver;
+import static org.wildfly.extension.elytron.common.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 /**

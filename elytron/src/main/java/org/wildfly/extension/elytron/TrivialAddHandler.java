@@ -20,6 +20,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
+import org.wildfly.extension.elytron.common.ElytronCommonTrivialAddHandler;
 
 /**
  * A trivial {@link OperationStepHandler} for adding a {@link Service} for a resource. This is a compatibility wrapper,

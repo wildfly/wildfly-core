@@ -18,6 +18,8 @@ package org.wildfly.extension.elytron;
 
 import java.io.IOException;
 
+import org.wildfly.extension.elytron.common.AbstractElytronSubsystemBaseTest;
+
 /**
  * Tests of use of the wildfly-elytron_1_2.xsd.
  *

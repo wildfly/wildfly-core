@@ -48,6 +48,8 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.extension.elytron.common.AbstractElytronSubsystemBaseTest;
+import org.wildfly.extension.elytron.common.CredentialStoreUtility;
 import org.wildfly.security.credential.store.WildFlyElytronCredentialStoreProvider;
 import org.wildfly.security.encryption.CipherUtil;
 import org.wildfly.security.encryption.SecretKeyUtil;

@@ -24,9 +24,9 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUD
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYSLOG_AUDIT_LOG;
-import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
-import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
-import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
+import static org.wildfly.extension.elytron.common.FileAttributeDefinitions.RELATIVE_TO;
+import static org.wildfly.extension.elytron.common.FileAttributeDefinitions.pathName;
+import static org.wildfly.extension.elytron.common.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.io.File;
@@ -62,10 +62,11 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
-import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
-import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
+import org.wildfly.extension.elytron.common.FileAttributeDefinitions;
+import org.wildfly.extension.elytron.common.FileAttributeDefinitions.PathResolver;
+import org.wildfly.extension.elytron.common.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
-import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
+import org.wildfly.extension.elytron.common.capabilities._private.SecurityEventListener;
 import org.wildfly.security.audit.AuditEndpoint;
 import org.wildfly.security.audit.AuditLogger;
 import org.wildfly.security.audit.EventPriority;

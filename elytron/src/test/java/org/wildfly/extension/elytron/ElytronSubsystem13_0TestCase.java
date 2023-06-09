@@ -22,6 +22,7 @@ import java.io.IOException;
 
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
+import org.wildfly.extension.elytron.common.AbstractElytronSubsystemBaseTest;
 
 /**
  *

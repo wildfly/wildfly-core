@@ -15,6 +15,8 @@
  */
 package org.wildfly.extension.elytron;
 
+import org.wildfly.extension.elytron.common.ElytronCommonSecurityPropertiesTestCase;
+
 /**
  * @author Tomaz Cerar (c) 2017 Red Hat Inc.
  */

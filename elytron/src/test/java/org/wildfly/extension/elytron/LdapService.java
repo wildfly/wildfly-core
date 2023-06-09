@@ -22,6 +22,7 @@ import java.util.Collection;
 
 import org.apache.directory.server.core.api.DirectoryService;
 import org.apache.directory.server.ldap.LdapServer;
+import org.wildfly.extension.elytron.common.ElytronCommonLdapService;
 
 public class LdapService extends ElytronCommonLdapService {
 

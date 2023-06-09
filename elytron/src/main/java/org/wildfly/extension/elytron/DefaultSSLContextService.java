@@ -17,7 +17,7 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.ElytronDefinition.RESTORE_DEFAULT_SSL_CONTEXT;
-import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
+import static org.wildfly.extension.elytron.common.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.NoSuchAlgorithmException;

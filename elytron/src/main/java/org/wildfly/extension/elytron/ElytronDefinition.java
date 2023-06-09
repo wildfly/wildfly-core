@@ -37,7 +37,7 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.BASE_SERVICE_NAME;
 import static org.wildfly.extension.elytron.ElytronExtension.SUBSYSTEM_NAME;
-import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
+import static org.wildfly.extension.elytron.common.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.PrivilegedAction;
@@ -88,9 +88,14 @@ import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
-import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
-import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
-import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
+import org.wildfly.extension.elytron.common.ElytronCommonDefinitions;
+import org.wildfly.extension.elytron.common.ElytronOperationStepHandler;
+import org.wildfly.extension.elytron.common.ProviderRegistrationService;
+import org.wildfly.extension.elytron.common.SecurityPropertiesWriteHandler;
+import org.wildfly.extension.elytron.common.SecurityPropertyService;
+import org.wildfly.extension.elytron.common.capabilities.CredentialSecurityFactory;
+import org.wildfly.extension.elytron.common.capabilities.PrincipalTransformer;
+import org.wildfly.extension.elytron.common.capabilities._private.SecurityEventListener;
 import org.wildfly.extension.elytron.expression.DeploymentExpressionResolverProcessor;
 import org.wildfly.security.SecurityFactory;
 import org.wildfly.security.Version;

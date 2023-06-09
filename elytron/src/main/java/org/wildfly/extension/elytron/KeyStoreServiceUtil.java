@@ -27,6 +27,7 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
+import org.wildfly.extension.elytron.common.ModifiableKeyStoreService;
 
 /**
  * @author <a href="mailto:araskar@redhat.com">Ashpan Raskar</a>

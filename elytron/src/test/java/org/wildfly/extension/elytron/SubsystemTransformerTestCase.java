@@ -38,6 +38,7 @@ import org.jboss.as.subsystem.test.KernelServicesBuilder;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
+import org.wildfly.extension.elytron.common.AbstractElytronSubsystemBaseTest;
 
 /**
  * Tests of transformation of the elytron subsystem to previous API versions.

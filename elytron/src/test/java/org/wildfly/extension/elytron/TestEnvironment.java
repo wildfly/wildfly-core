@@ -21,6 +21,9 @@ import java.security.KeyStore;
 
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.subsystem.test.ControllerInitializer;
+import org.wildfly.extension.elytron.common.ClassLoadingAttributeDefinitions;
+import org.wildfly.extension.elytron.common.ElytronCommonLdapService;
+import org.wildfly.extension.elytron.common.ElytronCommonTestEnvironment;
 import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
 
 import mockit.Mock;

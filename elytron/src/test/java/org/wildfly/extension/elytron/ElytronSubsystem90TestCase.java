@@ -20,6 +20,8 @@ package org.wildfly.extension.elytron;
 
 import java.io.IOException;
 
+import org.wildfly.extension.elytron.common.AbstractElytronSubsystemBaseTest;
+
 /**
  *
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>

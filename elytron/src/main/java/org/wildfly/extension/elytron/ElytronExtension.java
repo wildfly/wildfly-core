@@ -38,6 +38,7 @@ import org.jboss.as.server.deployment.AttachmentKey;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
+import org.wildfly.extension.elytron.common.ElytronCommonDefinitions;
 import org.wildfly.security.auth.client.AuthenticationContext;
 
 /**

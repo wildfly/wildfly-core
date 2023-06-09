@@ -23,6 +23,7 @@ import java.util.Collection;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
+import org.wildfly.extension.elytron.common.ElytronOperationStepHandler;
 
 /**
  * Extends the {@link AbstractWriteAttributeHandler} overriding the {@link #requiresRuntime(OperationContext)}.

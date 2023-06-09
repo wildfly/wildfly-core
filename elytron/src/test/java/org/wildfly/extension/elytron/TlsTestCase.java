@@ -66,6 +66,11 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.extension.elytron.common.CredentialStoreUtility;
+import org.wildfly.extension.elytron.common.ElytronCommonCapabilities;
+import org.wildfly.extension.elytron.common.ElytronCommonConstants;
+import org.wildfly.extension.elytron.common.ElytronCommonTlsTestCase;
+import org.wildfly.extension.elytron.common.JdkUtils;
 import org.wildfly.security.ssl.X509RevocationTrustManager;
 import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
 
