@@ -39,8 +39,9 @@ import static org.jboss.as.controller.operations.global.GlobalOperationAttribute
 
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -112,29 +113,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
     public static final AttachmentKey<ModelNode> ROLLBACKED_FAILURE_DESC = AttachmentKey.create(ModelNode.class);
 
-    private final ParametersValidator validator = new ParametersValidator() {
-
-        @Override
-        public void validate(ModelNode operation) throws OperationFailedException {
-            super.validate(operation);
-            for (AttributeDefinition def : DEFINITION.getParameters()) {
-                def.validateOperation(operation);
-            }
-            if (operation.hasDefined(ModelDescriptionConstants.ATTRIBUTES_ONLY)) {
-                if (operation.hasDefined(ModelDescriptionConstants.RECURSIVE)) {
-                    throw ControllerLogger.ROOT_LOGGER.cannotHaveBothParameters(ModelDescriptionConstants.ATTRIBUTES_ONLY, ModelDescriptionConstants.RECURSIVE);
-                }
-                if (operation.hasDefined(ModelDescriptionConstants.RECURSIVE_DEPTH)) {
-                    throw ControllerLogger.ROOT_LOGGER.cannotHaveBothParameters(ModelDescriptionConstants.ATTRIBUTES_ONLY, ModelDescriptionConstants.RECURSIVE_DEPTH);
-                }
-            }
-            if( operation.hasDefined(ModelDescriptionConstants.RESOLVE_EXPRESSIONS)){
-                if(operation.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).asBoolean(false) && !resolvable){
-                    throw ControllerLogger.ROOT_LOGGER.unableToResolveExpressions();
-                }
-            }
-        }
-    };
+    private final ParametersValidator validator;
 
     private final OperationStepHandler overrideHandler;
     private final boolean resolvable;
@@ -156,6 +135,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         super(filteredData, ignoreMissingResource);
         this.overrideHandler = overrideHandler;
         this.resolvable = resolvable;
+        this.validator = resolvable ? Validator.RESOLVABLE : Validator.NON_RESOLVABLE;
     }
 
 
@@ -239,14 +219,17 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         // If we were not configured with a FilteredData, we are handling the top
         // resource being read, otherwise we are a child resource
         FilteredData fd = getFilteredData();
-        final FilteredData localFilteredData = fd == null ? new FilteredData(address) : fd;
+        final FilteredData localFilteredData = (fd == null) ? new FilteredData(address): fd;
+        // We only want our assembly handler to report filtered data if we just created
+        // the FilteredData for the overall op
+        boolean reportFilteredData = fd == null;
 
         // We're going to add a bunch of steps that should immediately follow this one. We are going to add them
         // in reverse order of how they should execute, as that is the way adding a Stage.IMMEDIATE step works
 
         // Last to execute is the handler that assembles the overall response from the pieces created by all the other steps
         final ReadResourceAssemblyHandler assemblyHandler = new ReadResourceAssemblyHandler(address, metrics,
-                otherAttributes, directChildren, childResources, nonExistentChildTypes, localFilteredData, ignoreMissingResource);
+                otherAttributes, directChildren, childResources, nonExistentChildTypes, reportFilteredData, localFilteredData, ignoreMissingResource);
         context.addStep(assemblyHandler, queryRuntime ? OperationContext.Stage.VERIFY : OperationContext.Stage.MODEL, true);
         final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
 
@@ -455,6 +438,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         private final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes;
         private final Map<PathElement, ModelNode> childResources;
         private final Set<String> nonExistentChildTypes;
+        private final boolean reportFilteredData;
         private final FilteredData filteredData;
         private final boolean ignoreMissingResource;
 
@@ -474,6 +458,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 *                         value is the full read-resource response. Will not be {@code null}
          * @param nonExistentChildTypes names of child types where no data is available
          * @param filteredData     information about resources and attributes that were filtered
+         * @param reportFilteredData {@code }
          * @param ignoreMissingResource {@code true} if we should ignore occasions when the targeted resource
          *                                          does not exist; {@code false} if we should throw
          *                                          {@link org.jboss.as.controller.registry.Resource.NoSuchResourceException}
@@ -481,15 +466,20 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
          */
         private ReadResourceAssemblyHandler(final PathAddress address,
                                             final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metrics,
-                                            final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes, final Map<String, ModelNode> directChildren,
-                                            final Map<PathElement, ModelNode> childResources, final Set<String> nonExistentChildTypes,
-                                            FilteredData filteredData, boolean ignoreMissingResource) {
+                                            final Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes,
+                                            final Map<String, ModelNode> directChildren,
+                                            final Map<PathElement, ModelNode> childResources,
+                                            final Set<String> nonExistentChildTypes,
+                                            final boolean reportFilteredData,
+                                            final FilteredData filteredData,
+                                            final boolean ignoreMissingResource) {
             this.address = address;
             this.metrics = metrics;
             this.otherAttributes = otherAttributes;
             this.directChildren = directChildren;
             this.childResources = childResources;
             this.nonExistentChildTypes = nonExistentChildTypes;
+            this.reportFilteredData = reportFilteredData;
             this.filteredData = filteredData;
             this.ignoreMissingResource = ignoreMissingResource;
         }
@@ -516,10 +506,16 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                     break;
                 }
             }
+            // Allow prompt gc
+            otherAttributes.clear();
             if (!failed) {
-                for (Map.Entry<PathElement, ModelNode> entry : childResources.entrySet()) {
+                // We make a copy of the ModelNode tree here, so use an iterator and remove promptly
+                // to reduce peak memory use ASAP in large reads
+                for (Iterator<Map.Entry<PathElement, ModelNode>> iter = childResources.entrySet().iterator(); iter.hasNext();) {
+                    Map.Entry<PathElement, ModelNode> entry = iter.next();
                     PathElement path = entry.getKey();
                     ModelNode value = entry.getValue();
+                    iter.remove();
                     if (!value.has(FAILURE_DESCRIPTION)) {
                         if (value.hasDefined(RESULT)) {
                             ModelNode childTypeNode = sortedChildren.get(path.getKey());
@@ -550,13 +546,19 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                     }
                 }
             }
+            // Allow prompt gc
+            childResources.clear();
             if (!failed) {
                 for (Map.Entry<String, ModelNode> directChild : directChildren.entrySet()) {
                     sortedChildren.put(directChild.getKey(), directChild.getValue());
                 }
+                // Allow prompt gc
+                directChildren.clear();
                 for (String nonExistentChildType : nonExistentChildTypes) {
                     sortedChildren.put(nonExistentChildType, new ModelNode());
                 }
+                // Allow prompt gc
+                nonExistentChildTypes.clear();
                 for (Map.Entry<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metric : metrics.entrySet()) {
                     GlobalOperationHandlers.AvailableResponse ar = metric.getValue();
                     if (ar.unavailable) {
@@ -571,29 +573,41 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                     // we ignore metric failures
                     // TODO how to prevent the metric failure screwing up the overall context?
                 }
+                // Allow prompt gc
+                metrics.clear();
 
                 final ModelNode result = context.getResult();
                 result.setEmptyObject();
                 for (Map.Entry<AttributeDefinition.NameAndGroup, ModelNode> entry : sortedAttributes.entrySet()) {
                     result.get(entry.getKey().getName()).set(entry.getValue());
                 }
+                // Allow prompt gc
+                sortedAttributes.clear();
 
-                for (Map.Entry<String, ModelNode> entry : sortedChildren.entrySet()) {
+                // We make a copy of the ModelNode tree here, so use an iterator and remove promptly
+                // to reduce peak memory use ASAP in large reads
+                for (Iterator<Map.Entry<String, ModelNode>> iter = sortedChildren.entrySet().iterator(); iter.hasNext();) {
+                    Map.Entry<String, ModelNode> entry = iter.next();
+                    String type = entry.getKey();
+                    ModelNode value = entry.getValue();
+                    iter.remove();
                     if (!entry.getValue().isDefined()) {
-                        result.get(entry.getKey()).set(entry.getValue());
+                        result.get(type).set(value);
                     } else {
                         ModelNode childTypeNode = new ModelNode();
-                        for (Property property : entry.getValue().asPropertyList()) {
-                            PathElement pe = PathElement.pathElement(entry.getKey(), property.getName());
+                        for (Property property : value.asPropertyList()) {
+                            PathElement pe = PathElement.pathElement(type, property.getName());
                             if (!filteredData.isFilteredResource(address, pe)) {
                                 childTypeNode.get(property.getName()).set(property.getValue());
                             }
                         }
-                        result.get(entry.getKey()).set(childTypeNode);
+                        result.get(type).set(childTypeNode);
                     }
                 }
+                // Allow prompt gc
+                sortedChildren.clear();
 
-                if (filteredData.hasFilteredData()) {
+                if (reportFilteredData && filteredData.hasFilteredData()) {
                     context.getResponseHeaders().get(ACCESS_CONTROL).set(filteredData.toModelNode());
                 }
             }
@@ -606,6 +620,39 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
             }
             if (!ignoreMissingResource) {
                 throw ControllerLogger.MGMT_OP_LOGGER.managementResourceNotFound(address);
+            }
+        }
+    }
+
+    private static class Validator extends ParametersValidator {
+
+        private static final Validator RESOLVABLE = new Validator(true);
+        private static final Validator NON_RESOLVABLE = new Validator(false);
+
+        private final boolean resolvable;
+
+        private Validator(boolean resolvable) {
+            this.resolvable = resolvable;
+        }
+
+        @Override
+        public void validate(ModelNode operation) throws OperationFailedException {
+            super.validate(operation);
+            for (AttributeDefinition def : DEFINITION.getParameters()) {
+                def.validateOperation(operation);
+            }
+            if (operation.hasDefined(ModelDescriptionConstants.ATTRIBUTES_ONLY)) {
+                if (operation.hasDefined(ModelDescriptionConstants.RECURSIVE)) {
+                    throw ControllerLogger.ROOT_LOGGER.cannotHaveBothParameters(ModelDescriptionConstants.ATTRIBUTES_ONLY, ModelDescriptionConstants.RECURSIVE);
+                }
+                if (operation.hasDefined(ModelDescriptionConstants.RECURSIVE_DEPTH)) {
+                    throw ControllerLogger.ROOT_LOGGER.cannotHaveBothParameters(ModelDescriptionConstants.ATTRIBUTES_ONLY, ModelDescriptionConstants.RECURSIVE_DEPTH);
+                }
+            }
+            if( operation.hasDefined(ModelDescriptionConstants.RESOLVE_EXPRESSIONS)){
+                if(operation.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).asBoolean(false) && !resolvable){
+                    throw ControllerLogger.ROOT_LOGGER.unableToResolveExpressions();
+                }
             }
         }
     }
