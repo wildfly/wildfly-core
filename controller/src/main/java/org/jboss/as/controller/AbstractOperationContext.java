@@ -64,6 +64,7 @@ import java.util.Deque;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +101,6 @@ import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.common.Assert;
 import org.wildfly.security.auth.server.SecurityIdentity;
@@ -1402,7 +1402,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
         private ResultHandler resultHandler;
         ServiceTarget serviceTarget;
         private ServiceVerificationHelper serviceVerificationHelper;
-        private Set<ServiceName> addedServices;
+        private Set<ServiceController<?>> addedServices;
         boolean hasRemovals;
         boolean executed;
         // Whether standard Stage.DONE handling is needed, as opposed to lighter-weight handling.
@@ -1471,7 +1471,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
          */
         void serviceAdded(ServiceController<?> controller) {
             if (!executed) {
-                getAddedServices().add(controller.getName());
+                getAddedServices().add(controller);
                 recordModification("call to ServiceBuilder.install()");
             } // else this is rollback stuff we ignore
         }
@@ -1485,7 +1485,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
             assert service.getMode() != ServiceController.Mode.REMOVE;
 
             if (!executed) {
-                if (addedServices == null || !addedServices.contains(service.getName())) {
+                if (addedServices == null || !addedServices.contains(service)) {
                     getServiceVerificationHelper().getMonitor().addController(service);
                 } // else we already handled this when it was added
                 recordModification("call to ServiceController.setMode(...) or compareAndSetMode(...)");
@@ -1511,9 +1511,9 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
             return serviceVerificationHelper;
         }
 
-        private Set<ServiceName> getAddedServices() {
+        private Set<ServiceController<?>> getAddedServices() {
             if (addedServices == null) {
-                addedServices = new HashSet<>();
+                addedServices = Collections.newSetFromMap(new IdentityHashMap<>());
             }
             return addedServices;
         }
@@ -1662,8 +1662,8 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
 
         private void rollbackAddedServices() {
             if (resultAction == ResultAction.ROLLBACK && addedServices != null) {
-                for (ServiceName serviceName : addedServices) {
-                    removeService(serviceName);
+                for (ServiceController<?> serviceController : addedServices) {
+                    removeService(serviceController);
                 }
             }
         }
