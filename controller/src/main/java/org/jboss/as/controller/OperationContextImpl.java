@@ -180,8 +180,6 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
 
     /** Tracks whether any steps have gotten write access to the runtime */
     private volatile boolean affectsRuntime;
-    /** The step that acquired the write lock */
-    private Step lockStep;
     /** The step that acquired the container monitor  */
     private Step containerMonitorStep;
     private boolean notifiedModificationBegun;
@@ -841,7 +839,7 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
 //                    }
 //                }
                 exclusiveStartTime = System.nanoTime();
-                lockStep = activeStep;
+                recordWriteLock();
             } catch (InterruptedException e) {
                 cancelled = true;
                 Thread.currentThread().interrupt();
@@ -860,7 +858,7 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
                 if (currentStage == Stage.DONE) {
                     throw ControllerLogger.ROOT_LOGGER.invalidModificationAfterCompletedStep();
                 }
-                containerMonitorStep = activeStep;
+                containerMonitorStep = activeStep.modifyServiceContainer();
                 int timeout = getBlockingTimeout().getLocalBlockingTimeout();
                 ExecutionStatus origStatus = executionStatus;
                 try {
@@ -1223,12 +1221,12 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
     }
 
     @Override
-    void releaseStepLocks(AbstractOperationContext.Step step) {
+    void releaseStepLocks(AbstractOperationContext.AbstractStep step) {
         boolean interrupted = false;
         try {
             // Get container stability before releasing controller lock to ensure another
             // op doesn't get in and destabilize the container.
-            if (this.containerMonitorStep == step) {
+            if (step.matches(this.containerMonitorStep)) {
                 // Note: If we allow this thread to be interrupted, an op that has been cancelled
                 // because of minor user impatience can release the controller lock while the
                 // container is unsettled. OTOH, if we don't allow interruption, if the
@@ -1250,7 +1248,7 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
                     // We can no longer have any sense of MSC state or how the model relates to the runtime and
                     // we need to start from a fresh service container. Notify the controller of this.
                     modelController.containerCannotStabilize();
-                    MGMT_OP_LOGGER.interruptedWaitingStability(activeStep.operationId.name, activeStep.operationId.address);
+                    MGMT_OP_LOGGER.interruptedWaitingStability(containerMonitorStep.operationId.name, containerMonitorStep.operationId.address);
                 } catch (TimeoutException te) {
                     // If we can't attain stability on the way out after rollback ops have run,
                     // we can no longer have any sense of MSC state or how the model relates to the runtime and
@@ -1259,18 +1257,18 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
                     // Just log; this doesn't change the result of the op. And if we're not stable here
                     // it's almost certain we never stabilized during execution or we are rolling back and destabilized there.
                     // Either one means there is already a failure message associated with this op.
-                    MGMT_OP_LOGGER.timeoutCompletingOperation(timeout / 1000, activeStep.operationId.name, activeStep.operationId.address);
+                    MGMT_OP_LOGGER.timeoutCompletingOperation(timeout / 1000, containerMonitorStep.operationId.name, containerMonitorStep.operationId.address);
                     // Produce and log thread dump for diagnostics
                     ThreadDumpUtil.threadDump();
                 }
             }
 
-            if (this.lockStep == step) {
+            if (step.matches(this.lockStep)) {
                 releaseModelControllerLock();
             }
         } finally {
             try {
-                if (this.containerMonitorStep == step) {
+                if (step.matches(this.containerMonitorStep)) {
                     notifyModificationsComplete();
                     resetContainerStateChanges();
                 }
