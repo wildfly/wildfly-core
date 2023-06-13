@@ -54,7 +54,7 @@ public class DeploymentStatusHandler implements OperationStepHandler {
                 } else {
                     final ServiceController<?> controller = context.getServiceRegistry(false).getService(Services.deploymentUnitName(runtimeName));
                     if (controller != null) {
-                        if (controller.getState() == ServiceController.State.DOWN && controller.getUnavailableDependencies().isEmpty()) {
+                        if (controller.getState() == ServiceController.State.DOWN && controller.missing().isEmpty()) {
                             result.set(AbstractDeploymentUnitService.DeploymentStatus.STOPPED.toString());
                         } else {
                             result.set(((AbstractDeploymentUnitService) controller.getService()).getStatus().toString());

@@ -94,7 +94,7 @@ class ServiceVerificationHelper implements OperationStepHandler {
             // generate lists of problems and missing services
             List<String> problemList = new ArrayList<>();
             for (ServiceController<?> controller : problems) {
-                Collection<ServiceName> immediatelyUnavailable = controller.getUnavailableDependencies();
+                Collection<ServiceName> immediatelyUnavailable = controller.missing();
                 StringBuilder missing = new StringBuilder();
                 boolean direct = false;
                 for (Iterator<ServiceName> i = immediatelyUnavailable.iterator(); i.hasNext(); ) {
