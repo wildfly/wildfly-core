@@ -758,12 +758,7 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
     }
 
     @Override
-    public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
-        return getCapabilityServiceTarget();
-    }
-
-    @Override
-    public CapabilityServiceTarget getCapabilityServiceTarget() throws UnsupportedOperationException {
+    public CapabilityServiceTarget getCapabilityServiceTarget() {
         return getServiceTarget(activeStep);
     }
 
@@ -776,7 +771,7 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
      *                           the {@link org.jboss.as.controller.OperationStepHandler} that is making the call.
      * @return the service target
      */
-    CapabilityServiceTarget getServiceTarget(final Step targetActiveStep) throws UnsupportedOperationException {
+    CapabilityServiceTarget getServiceTarget(final Step targetActiveStep) {
 
         readOnly = false;
 

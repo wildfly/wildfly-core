@@ -488,8 +488,12 @@ public interface OperationContext extends ExpressionResolver {
      *
      * @return the service target
      * @throws UnsupportedOperationException if the calling step is not a runtime operation step
+     * @deprecated Use {@link #getCapabilityServiceTarget()} instead.
      */
-    ServiceTarget getServiceTarget() throws UnsupportedOperationException;
+    @Deprecated(forRemoval = true)
+    default ServiceTarget getServiceTarget() throws UnsupportedOperationException {
+        return this.getCapabilityServiceTarget();
+    }
 
     /**
      * Get the service target.  If the step is not a runtime operation handler step, an exception will be thrown.  The
