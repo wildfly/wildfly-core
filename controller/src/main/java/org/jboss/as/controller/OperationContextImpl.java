@@ -2713,6 +2713,12 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
         }
 
         @Override
+        public <V> Consumer<V> provides(final RuntimeCapability<?> capability) {
+            checkNotNullParam("capability", capability);
+            return super.provides(capability.isDynamicallyNamed() ? capability.getCapabilityServiceName(this.targetAddress) : capability.getCapabilityServiceName());
+        }
+
+        @Override
         public <V> Consumer<V> provides(final RuntimeCapability<?>... capabilities) {
             checkNotEmptyParam("capabilities", capabilities);
             return provides(capabilities, null);

@@ -52,6 +52,15 @@ public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
     CapabilityServiceBuilder<T> setInstance(Service service);
 
     /**
+     * Provide value under given capability.
+     *
+     * @param capability capability provided value represents
+     * @param <V> consumed value type
+     * @return consumer providing value
+     */
+    <V> Consumer<V> provides(final RuntimeCapability<?> capability);
+
+    /**
      * Provide value under given capabilities.
      *
      * @param capabilities capabilities provided value represent
