@@ -28,13 +28,12 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
 import org.wildfly.discovery.spi.DiscoveryProvider;
 
 /**
@@ -50,14 +49,13 @@ class AggregateDiscoveryProviderAddHandler extends AbstractAddStepHandler {
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        ServiceName name = DiscoveryExtension.DISCOVERY_PROVIDER_CAPABILITY.getCapabilityServiceName(context.getCurrentAddress());
-        ServiceBuilder<?> builder = context.getCapabilityServiceTarget().addService(name);
-        Consumer<DiscoveryProvider> provider = builder.provides(name);
+        CapabilityServiceBuilder<?> builder = context.getCapabilityServiceTarget().addService();
+        Consumer<DiscoveryProvider> provider = builder.provides(DiscoveryExtension.DISCOVERY_PROVIDER_CAPABILITY);
 
         List<String> providerNames = AggregateDiscoveryProviderDefinition.PROVIDER_NAMES.unwrap(context, resource.getModel());
         List<Supplier<DiscoveryProvider>> providers = new ArrayList<>(providerNames.size());
         for (String providerName : providerNames) {
-            providers.add(builder.requires(context.getCapabilityServiceName(DiscoveryExtension.DISCOVERY_PROVIDER_CAPABILITY.getName(), DiscoveryProvider.class, providerName)));
+            providers.add(builder.requiresCapability(DiscoveryExtension.DISCOVERY_PROVIDER_CAPABILITY.getName(), DiscoveryProvider.class, providerName));
         }
         builder.setInstance(new AggregateDiscoveryProviderService(provider, providers))
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)
