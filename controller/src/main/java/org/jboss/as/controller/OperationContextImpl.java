@@ -2144,17 +2144,17 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
         }
 
         @Override
-        public ServiceBuilder<?> addService() {
+        public CapabilityServiceBuilder<?> addService() {
             final ServiceBuilder<?> realBuilder = new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService());
             // If done() has been called we are no longer associated with a management op and should just
             // return the builder from delegate
             synchronized (this) {
                 if (builderSupplier == null) {
-                    return realBuilder;
+                    return new CapabilityServiceBuilderImpl<>(realBuilder, targetAddress);
                 }
                 ContextServiceBuilder<?> csb = builderSupplier.getContextServiceBuilder(realBuilder);
                 builders.add(csb);
-                return csb;
+                return new CapabilityServiceBuilderImpl<>(csb, targetAddress);
             }
         }
 
