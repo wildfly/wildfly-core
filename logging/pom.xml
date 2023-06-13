@@ -223,12 +223,23 @@
         </dependency>
 
         <!-- Test dependencies -->
+        <!-- Required by the log manager for JSON logging -->
+        <dependency>
+            <groupId>org.eclipse.parsson</groupId>
+            <artifactId>parsson</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Would be brought in transitively by wildfly-controller normally. Required for ParseUtils -->
         <dependency>
             <groupId>org.projectodd.vdx</groupId>
             <artifactId>vdx-core</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-logmanager</artifactId>
         </dependency>
 
         <!-- JSONP API and IMPL -->

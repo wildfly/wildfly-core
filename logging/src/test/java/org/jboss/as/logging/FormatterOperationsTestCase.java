@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.core.logmanager.WildFlyLogContextSelector;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -61,10 +62,10 @@ public class FormatterOperationsTestCase extends AbstractOperationsTestCase {
     @Override
     public void clearLogContext() throws Exception {
         super.clearLogContext();
-        final LoggingProfileContextSelector contextSelector = LoggingProfileContextSelector.getInstance();
-        if (contextSelector.exists(PROFILE)) {
-            contextSelector.get(PROFILE).close();
-            contextSelector.remove(PROFILE);
+        final WildFlyLogContextSelector contextSelector = WildFlyLogContextSelector.getContextSelector();
+        if (contextSelector.profileContextExists(PROFILE)) {
+            contextSelector.getProfileContext(PROFILE).close();
+            contextSelector.removeProfileContext(PROFILE);
         }
     }
 

@@ -75,7 +75,7 @@ public final class LoggingOperations {
         final PathAddress address = context.getCurrentAddress();
         final ConfigurationPersistence configurationPersistence;
         if (LoggingProfileOperations.isLoggingProfileAddress(address)) {
-            final LogContext logContext = LoggingProfileContextSelector.getInstance().getOrCreate(LoggingProfileOperations.getLoggingProfileName(address));
+            final LogContext logContext = Logging.getLogContext(LoggingProfileOperations.getLoggingProfileName(address));
             configurationPersistence = ConfigurationPersistence.getOrCreateConfigurationPersistence(logContext);
         } else {
             configurationPersistence = ConfigurationPersistence.getOrCreateConfigurationPersistence();
@@ -87,7 +87,7 @@ public final class LoggingOperations {
         final PathAddress address = context.getCurrentAddress();
         final LogContext logContext;
         if (LoggingProfileOperations.isLoggingProfileAddress(address)) {
-            logContext = LoggingProfileContextSelector.getInstance().get(LoggingProfileOperations.getLoggingProfileName(address));
+            logContext = Logging.getLogContext(LoggingProfileOperations.getLoggingProfileName(address));
         } else {
             logContext = LogContext.getLogContext();
         }

@@ -11,6 +11,8 @@ import java.util.Set;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.AttributeAccess.Flag;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logmanager.LogContext;
+import org.wildfly.core.logmanager.WildFlyLogContextSelector;
 
 /**
  * A set of utilities for the logging subsystem.
@@ -21,6 +23,14 @@ import org.jboss.dmr.ModelNode;
 public final class Logging {
 
     private Logging() {
+    }
+
+    // TODO (jrp) we should handle this better
+    public static LogContext getLogContext(final String profileName) {
+        if (profileName != null) {
+            return WildFlyLogContextSelector.getContextSelector().getOrCreateProfile(profileName);
+        }
+        return WildFlyLogContextSelector.getContextSelector().getLogContext();
     }
 
     /**

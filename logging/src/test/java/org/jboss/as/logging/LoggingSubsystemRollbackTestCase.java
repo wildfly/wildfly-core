@@ -26,6 +26,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.core.logmanager.WildFlyLogContextSelector;
 
 /**
  * @author <a href="jperkins@redhat.com">James R. Perkins</a>
@@ -62,10 +63,10 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
     @Override
     public void clearLogContext() throws Exception {
         super.clearLogContext();
-        final LoggingProfileContextSelector contextSelector = LoggingProfileContextSelector.getInstance();
-        if (contextSelector.exists(PROFILE_NAME)) {
-            contextSelector.get(PROFILE_NAME).close();
-            contextSelector.remove(PROFILE_NAME);
+        final WildFlyLogContextSelector contextSelector = WildFlyLogContextSelector.getContextSelector();
+        if (contextSelector.profileContextExists(PROFILE_NAME)) {
+            contextSelector.getProfileContext(PROFILE_NAME).close();
+            contextSelector.removeProfileContext(PROFILE_NAME);
         }
     }
 
@@ -367,7 +368,8 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
         ConfigurationPersistence config = ConfigurationPersistence.getConfigurationPersistence(LogContext.getLogContext());
         compare(currentModel, config);
         // Check the profile was rolled back
-        config = ConfigurationPersistence.getConfigurationPersistence(LoggingProfileContextSelector.getInstance().get(PROFILE_NAME));
+        config = ConfigurationPersistence.getConfigurationPersistence(WildFlyLogContextSelector.getContextSelector()
+                .getProfileContext(PROFILE_NAME));
         compare(PROFILE_NAME, currentModel, config);
     }
 
@@ -388,7 +390,7 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
         ModelNode currentModel = getSubsystemModel(kernelServices);
         compare(profileName, validSubsystemModel, currentModel);
 
-        final LogContext logContext = (profileName == null ? LogContext.getLogContext() : LoggingProfileContextSelector.getInstance().get(profileName));
+        final LogContext logContext = Logging.getLogContext(profileName);
         ConfigurationPersistence config = ConfigurationPersistence.getConfigurationPersistence(logContext);
         compare(profileName, currentModel, config);
 
@@ -421,7 +423,7 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
         ModelNode currentModel = getSubsystemModel(kernelServices);
         compare(profileName, validSubsystemModel, currentModel);
 
-        final LogContext logContext = (profileName == null ? LogContext.getLogContext() : LoggingProfileContextSelector.getInstance().get(profileName));
+        final LogContext logContext = Logging.getLogContext(profileName);
         ConfigurationPersistence config = ConfigurationPersistence.getConfigurationPersistence(logContext);
         compare(profileName, currentModel, config);
 
@@ -456,7 +458,7 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
         ModelNode currentModel = getSubsystemModel(kernelServices);
         compare(profileName, validSubsystemModel, currentModel);
 
-        final LogContext logContext = (profileName == null ? LogContext.getLogContext() : LoggingProfileContextSelector.getInstance().get(profileName));
+        final LogContext logContext = Logging.getLogContext(profileName);
         ConfigurationPersistence config = ConfigurationPersistence.getConfigurationPersistence(logContext);
         compare(profileName, currentModel, config);
 
@@ -502,7 +504,7 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
         ModelNode currentModel = getSubsystemModel(kernelServices);
         compare(profileName, validSubsystemModel, currentModel);
 
-        final LogContext logContext = (profileName == null ? LogContext.getLogContext() : LoggingProfileContextSelector.getInstance().get(profileName));
+        final LogContext logContext = Logging.getLogContext(profileName);
         ConfigurationPersistence config = ConfigurationPersistence.getConfigurationPersistence(logContext);
         compare(profileName, currentModel, config);
 

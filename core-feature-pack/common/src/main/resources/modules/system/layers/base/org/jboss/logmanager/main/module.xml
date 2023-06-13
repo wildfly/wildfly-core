@@ -15,7 +15,7 @@
         <module name="java.desktop"/>
         <module name="java.logging"/>
         <module name="java.xml"/>
-        <module name="internal.javax.json.api.ee8"/>
+        <module name="jakarta.json.api"/>
         <module name="io.smallrye.common.constraint"/>
         <module name="io.smallrye.common.cpu"/>
         <module name="io.smallrye.common.expression"/>

@@ -39,7 +39,7 @@ import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
-import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
+import org.wildfly.core.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;

@@ -17,7 +17,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.jboss.as.logging.logging.LoggingLogger;
-import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
+import org.wildfly.core.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -25,7 +25,7 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.logmanager.LogContext;
-import org.jboss.logmanager.PropertyConfigurator;
+import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.modules.Module;
 import org.jboss.vfs.VirtualFile;
 import org.jboss.vfs.VirtualFileFilter;
@@ -200,9 +200,7 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
                 final ClassLoader current = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
                 try {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(classLoader);
-                    final PropertyConfigurator propertyConfigurator = new PropertyConfigurator(logContext);
-                    propertyConfigurator.configure(properties);
-                    return new LoggingConfigurationService(propertyConfigurator.getLogContextConfiguration(), resolveRelativePath(root, configFile));
+                    return new LoggingConfigurationService(LogContextConfiguration.create(logContext, properties), resolveRelativePath(root, configFile));
                 } finally {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(current);
                 }

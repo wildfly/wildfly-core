@@ -58,7 +58,7 @@ import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
 import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
-import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
+import org.wildfly.core.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.logging.stdio.LogContextStdioContextSelector;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
@@ -146,9 +146,9 @@ public class LoggingExtension implements Extension {
         if (embedded) {
             // Use the standard WildFlyLogContextSelector if we should wrap the current log context
             if (getBooleanProperty(EMBEDDED_PROPERTY, true)) {
-                contextSelector = WildFlyLogContextSelector.Factory.createEmbedded();
+                contextSelector = WildFlyLogContextSelector.getEmbeddedContextSelector();
             } else {
-                contextSelector = WildFlyLogContextSelector.Factory.create();
+                contextSelector = WildFlyLogContextSelector.getContextSelector();
             }
         } else {
 
@@ -169,7 +169,7 @@ public class LoggingExtension implements Extension {
                     throw LoggingLogger.ROOT_LOGGER.extensionNotInitialized();
                 }
             }
-            contextSelector = WildFlyLogContextSelector.Factory.create();
+            contextSelector = WildFlyLogContextSelector.getContextSelector();
 
             // Install STDIO context selector
             StdioContext.setStdioContextSelector(new LogContextStdioContextSelector(StdioContext.getStdioContext()));

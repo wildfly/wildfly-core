@@ -42,6 +42,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.core.logmanager.WildFlyLogContextSelector;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -88,10 +89,10 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
     @Override
     public void clearLogContext() throws Exception {
         super.clearLogContext();
-        final LoggingProfileContextSelector contextSelector = LoggingProfileContextSelector.getInstance();
-        if (contextSelector.exists(PROFILE)) {
-            contextSelector.get(PROFILE).close();
-            contextSelector.remove(PROFILE);
+        final WildFlyLogContextSelector contextSelector = WildFlyLogContextSelector.getContextSelector();
+        if (contextSelector.profileContextExists(PROFILE)) {
+            contextSelector.getProfileContext(PROFILE).close();
+            contextSelector.removeProfileContext(PROFILE);
         }
     }
 
@@ -707,7 +708,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
     private Logger getLogger(final String profileName) {
         final LogContext logContext;
         if (profileName != null) {
-            logContext = LoggingProfileContextSelector.getInstance().get(profileName);
+            logContext = WildFlyLogContextSelector.getContextSelector().getProfileContext(profileName);
         } else {
             logContext = LogContext.getSystemLogContext();
         }

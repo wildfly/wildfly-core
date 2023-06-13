@@ -20,6 +20,7 @@ import org.jboss.as.subsystem.test.SubsystemOperations;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.BeforeClass;
+import org.wildfly.core.logmanager.WildFlyLogContextSelector;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -40,10 +41,10 @@ public abstract class AbstractOperationsTestCase extends AbstractLoggingSubsyste
     @Override
     public void clearLogContext() throws Exception {
         super.clearLogContext();
-        final LoggingProfileContextSelector contextSelector = LoggingProfileContextSelector.getInstance();
-        if (contextSelector.exists(PROFILE)) {
-            contextSelector.get(PROFILE).close();
-            contextSelector.remove(PROFILE);
+        final WildFlyLogContextSelector contextSelector = WildFlyLogContextSelector.getContextSelector();
+        if (contextSelector.profileContextExists(PROFILE)) {
+            contextSelector.getProfileContext(PROFILE).close();
+            contextSelector.removeProfileContext(PROFILE);
         }
     }
 

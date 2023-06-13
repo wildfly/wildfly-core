@@ -21,6 +21,7 @@ import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.WildFlyLogContextSelector;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -59,8 +60,8 @@ class LoggingProfileOperations {
             final PathAddress address = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR));
             // Get the logging profile
             final String loggingProfile = getLoggingProfileName(address);
-            final LoggingProfileContextSelector contextSelector = LoggingProfileContextSelector.getInstance();
-            final LogContext logContext = contextSelector.get(loggingProfile);
+            final WildFlyLogContextSelector contextSelector = WildFlyLogContextSelector.getContextSelector();
+            final LogContext logContext = contextSelector.getProfileContext(loggingProfile);
             if (logContext != null) {
                 context.addStep(new OperationStepHandler() {
                     @Override
@@ -96,7 +97,7 @@ class LoggingProfileOperations {
                             @Override
                             public void handleResult(final ResultAction resultAction, final OperationContext context, final ModelNode operation) {
                                 if (resultAction == ResultAction.KEEP) {
-                                    contextSelector.remove(loggingProfile);
+                                    contextSelector.removeProfileContext(loggingProfile);
                                 } else if (configuration != null) {
                                     context.revertReloadRequired();
                                 }

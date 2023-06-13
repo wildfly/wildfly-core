@@ -5,7 +5,6 @@
 
 package org.jboss.as.logging.deployments;
 
-import org.jboss.as.logging.CommonAttributes;
 import org.jboss.as.logging.deployments.resources.LoggingDeploymentResources;
 import org.jboss.as.server.deployment.AttachmentKey;
 import org.jboss.as.server.deployment.Attachments;
@@ -13,9 +12,6 @@ import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentResourceSupport;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
-import org.jboss.logmanager.Configurator;
-import org.jboss.logmanager.LogContext;
-import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.modules.Module;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -52,14 +48,7 @@ public class LoggingDeploymentResourceProcessor implements DeploymentUnitProcess
                 final ClassLoader current = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
                 try {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(module.getClassLoader());
-                    LogContextConfiguration logContextConfiguration = null;
-                    final LogContext logContext = LogContext.getLogContext();
-                    final Configurator configurator = logContext.getAttachment(CommonAttributes.ROOT_LOGGER_NAME, Configurator.ATTACHMENT_KEY);
-                    if (configurator instanceof LogContextConfiguration) {
-                        logContextConfiguration = (LogContextConfiguration) configurator;
-                    } else if (configurator instanceof PropertyConfigurator) {
-                        logContextConfiguration = ((PropertyConfigurator) configurator).getLogContextConfiguration();
-                    }
+                    LogContextConfiguration logContextConfiguration = LogContextConfiguration.getInstance();
                     loggingConfigurationService = new LoggingConfigurationService(logContextConfiguration, "default");
                 } finally {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(current);
@@ -70,7 +59,8 @@ public class LoggingDeploymentResourceProcessor implements DeploymentUnitProcess
             // Register the resources
             LoggingDeploymentResources.registerDeploymentResource(deploymentResourceSupport, loggingConfigurationService);
             phaseContext.getServiceTarget()
-                    .addService(deploymentUnit.getServiceName().append("logging", "configuration"), loggingConfigurationService)
+                    .addService(deploymentUnit.getServiceName()
+                            .append("logging", "configuration"), loggingConfigurationService)
                     .install();
         }
     }

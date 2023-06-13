@@ -27,7 +27,6 @@ import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.logging.annotations.Once;
 import org.jboss.logging.annotations.Transform;
 import org.jboss.logging.annotations.Transform.TransformType;
-import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.LogContext;
 
 /**
@@ -141,7 +140,7 @@ public interface LoggingLogger extends BasicLogger {
      */
     @LogMessage(level = WARN)
     @Message(id = 13, value = "A configurator class, '%s', is not a known configurator and will be replaced.")
-    void replacingConfigurator(@Transform(TransformType.GET_CLASS) Configurator c);
+    void replacingConfigurator(@Transform(TransformType.GET_CLASS) Object c);
 
     /**
      * Logs an error message indicating the {@link org.jboss.logmanager.LogContext log context} associated with the

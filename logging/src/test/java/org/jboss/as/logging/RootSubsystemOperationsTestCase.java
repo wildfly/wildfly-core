@@ -357,7 +357,7 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
     }
 
     private Logger getLogger(final String loggingProfile) {
-        return LoggingProfileContextSelector.getInstance().get(loggingProfile).getLogger("org.jboss.as.logging.test");
+        return Logging.getLogContext(loggingProfile).getLogger("org.jboss.as.logging.test");
     }
 
     private static boolean setReadable(final Path path, final boolean readable) throws IOException {

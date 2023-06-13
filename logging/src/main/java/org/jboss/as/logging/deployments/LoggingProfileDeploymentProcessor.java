@@ -9,9 +9,7 @@ import java.util.List;
 import java.util.jar.Manifest;
 
 import org.jboss.as.logging.logging.LoggingLogger;
-import org.jboss.as.logging.LoggingProfileContextSelector;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
-import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -20,6 +18,7 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.logmanager.LogContext;
 import org.jboss.modules.Module;
+import org.wildfly.core.logmanager.WildFlyLogContextSelector;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -39,11 +38,11 @@ public class LoggingProfileDeploymentProcessor extends AbstractLoggingDeployment
         final String loggingProfile = findLoggingProfile(root);
         if (loggingProfile != null) {
             // Get the profile logging context
-            final LoggingProfileContextSelector loggingProfileContext = LoggingProfileContextSelector.getInstance();
-            if (loggingProfileContext.exists(loggingProfile)) {
+            final WildFlyLogContextSelector loggingProfileContext = WildFlyLogContextSelector.getContextSelector();
+            if (loggingProfileContext.profileContextExists(loggingProfile)) {
                 // Get the module
                 final Module module = deploymentUnit.getAttachment(Attachments.MODULE);
-                final LogContext logContext = loggingProfileContext.get(loggingProfile);
+                final LogContext logContext = loggingProfileContext.getProfileContext(loggingProfile);
                 LoggingLogger.ROOT_LOGGER.tracef("Registering log context '%s' on '%s' for profile '%s'", logContext, root, loggingProfile);
                 registerLogContext(deploymentUnit, module, logContext);
                 loggingConfigurationService = new LoggingConfigurationService(ConfigurationPersistence.getConfigurationPersistence(logContext), "profile-" + loggingProfile);
