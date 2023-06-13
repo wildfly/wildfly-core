@@ -83,7 +83,7 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
     /** {@inheritDoc} */
     @Override
     public synchronized void start(StartContext context) throws StartException {
-        MGMT_OP_LOGGER.debugf("Starting operation handler service %s", context.getController().getName());
+        MGMT_OP_LOGGER.debugf("Starting operation handler service %s", context.getController().provides());
         responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutorSupplier.get());
 
         final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {

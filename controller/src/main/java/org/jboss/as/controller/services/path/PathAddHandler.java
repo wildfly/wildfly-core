@@ -131,7 +131,7 @@ public class PathAddHandler implements OperationStepHandler {  // TODO make this
                             pathManager.removePathService(context, name);
                             if (pathEventContext.isInstallServices()) {
                                 if (legacyService != null) {
-                                    context.removeService(legacyService.getName());
+                                    context.removeService(legacyService);
                                 }
                             } else {
                                 pathEventContext.revert();

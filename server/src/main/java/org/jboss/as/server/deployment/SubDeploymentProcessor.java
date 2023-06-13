@@ -70,7 +70,7 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
             final ServiceName serviceName = Services.deploymentUnitName(deploymentUnit.getName(), childRoot.getRootName());
             final ServiceBuilder<?> sb = serviceTarget.addService(serviceName);
             final Consumer<DeploymentUnit> deploymentUnitConsumer = sb.provides(serviceName);
-            final SubDeploymentUnitService service = new SubDeploymentUnitService(deploymentUnitConsumer, childRoot, deploymentUnit, registration, mutableRegistration, resource, capabilityServiceSupport, pathManager);
+            final SubDeploymentUnitService service = new SubDeploymentUnitService(deploymentUnitConsumer, childRoot, deploymentUnit, registration, mutableRegistration, resource, capabilityServiceSupport, pathManager, serviceName.getSimpleName());
             sb.setInstance(service);
             sb.install();
             phaseContext.addDeploymentDependency(serviceName, Attachments.SUB_DEPLOYMENTS);

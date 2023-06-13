@@ -46,7 +46,6 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
     private final Supplier<DeploymentMountProvider> serverDeploymentRepositorySupplier;
     private final Supplier<PathManager> pathManagerSupplier;
     private final Supplier<VirtualFile> contentsSupplier;
-    private final String name;
     private final String managementName;
     private final DeploymentUnit parent;
     private final DeploymentOverlayIndex deploymentOverlays;
@@ -55,7 +54,6 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
 
     /**
      * Construct a new instance.
-     *  @param name the deployment unit simple name
      * @param managementName the deployment's domain-wide unique name
      * @param parent the parent deployment unit
      * @param registration the registration
@@ -76,12 +74,11 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
                                      final DeploymentOverlayIndex deploymentOverlays,
                                      final AnnotationIndexSupport annotationIndexSupport,
                                      final boolean exploded) {
-        super(deploymentUnitConsumer, registration, mutableRegistration, resource, capabilityServiceSupport);
+        super(deploymentUnitConsumer, registration, mutableRegistration, resource, capabilityServiceSupport, name);
         assert name != null : "name is null";
         this.serverDeploymentRepositorySupplier = serverDeploymentRepositorySupplier;
         this.pathManagerSupplier = pathManagerSupplier;
         this.contentsSupplier = contentsSupplier;
-        this.name = name;
         this.managementName = managementName;
         this.parent = parent;
         this.deploymentOverlays = deploymentOverlays;

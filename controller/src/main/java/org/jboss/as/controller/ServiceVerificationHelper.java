@@ -84,9 +84,11 @@ class ServiceVerificationHelper implements OperationStepHandler {
                 if (failedList == null) {
                     failedList = failureDescription.get(ControllerLogger.ROOT_LOGGER.failedServices());
                 }
-                ServiceName serviceName = controller.getName();
-                failedSet.add(serviceName);
-                failedList.get(serviceName.getCanonicalName()).set(getServiceFailureDescription(controller.getStartException()));
+                for (ServiceName serviceName : controller.provides()) {
+                    failedSet.add(serviceName);
+                    failedList.get(serviceName.getCanonicalName()).set(getServiceFailureDescription(controller.getStartException()));
+                    break; // it is sufficient to report just first provided value
+                }
             }
             ServiceRegistry registry = context.getServiceRegistry(false);
             // generate lists of problems and missing services
@@ -109,7 +111,10 @@ class ServiceVerificationHelper implements OperationStepHandler {
                 }
                 if (direct) {
                     final StringBuilder problem = new StringBuilder();
-                    problem.append(controller.getName().getCanonicalName());
+                    for (ServiceName serviceName : controller.provides()) {
+                        problem.append(serviceName);
+                        break; // it is sufficient to report just first provided value
+                    }
                     problem.append(" ").append(ControllerLogger.ROOT_LOGGER.servicesMissing(missing));
                     problemList.add(problem.toString());
                 }

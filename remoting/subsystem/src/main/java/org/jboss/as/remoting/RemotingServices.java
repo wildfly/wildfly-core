@@ -151,7 +151,7 @@ public class RemotingServices {
         final Supplier<SocketBindingManager> sbmSupplier = builder.requires(socketBindingManager);
         final Supplier<SocketBinding> sbSupplier = builder.requires(socketBindingName);
         builder.setInstance(new InjectedSocketBindingStreamServerService(streamServerConsumer,
-                eSupplier, safSupplier, scSupplier, sbmSupplier, sbSupplier, connectorPropertiesOptionMap));
+                eSupplier, safSupplier, scSupplier, sbmSupplier, sbSupplier, connectorPropertiesOptionMap, connectorName));
         builder.install();
     }
 
