@@ -250,22 +250,24 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
 
     @Override
     public void close() {
-        this.originalModel = this.managementModel = null;
-        this.lockStep = this.containerMonitorStep = null;
-        this.contextAttachments.close();
-        synchronized (this.realRemovingControllers) {
-            this.realRemovingControllers.clear();
-            this.removalSteps.clear();
-        }
-        this.addedRequirements.clear();
-        this.removedCapabilities.clear();
-        this.affectsModel.clear();
-        this.authorizations.clear();
-        this.serviceTargets.clear();
-        this.serviceRegistries.clear();
+        if (!isDelegatedContext()) {
+            this.originalModel = this.managementModel = null;
+            this.lockStep = this.containerMonitorStep = null;
+            this.contextAttachments.close();
+            synchronized (this.realRemovingControllers) {
+                this.realRemovingControllers.clear();
+                this.removalSteps.clear();
+            }
+            this.addedRequirements.clear();
+            this.removedCapabilities.clear();
+            this.affectsModel.clear();
+            this.authorizations.clear();
+            this.serviceTargets.clear();
+            this.serviceRegistries.clear();
 
-        // DON'T close 'attachments' -- that object is owned by ModelControllerImpl
-        super.close();
+            // DON'T close 'attachments' -- that object is owned by ModelControllerImpl
+            super.close();
+        }
     }
 
     public InputStream getAttachmentStream(final int index) {

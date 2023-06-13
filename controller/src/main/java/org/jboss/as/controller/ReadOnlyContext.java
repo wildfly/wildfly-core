@@ -73,6 +73,7 @@ class ReadOnlyContext extends AbstractOperationContext {
                 booting, controller.getAuditLogger(), controller.getNotificationSupport(),
                 controller, true, null, null, securityIdentitySupplier);
         this.primaryContext = primaryContext;
+        this.primaryContext.setDelegatedContext(true);
         this.controller = controller;
         this.operationId = operationId;
         this.managementModel = managementModel;

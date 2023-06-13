@@ -189,6 +189,11 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
      */
     private final Set<PathAddress> modifiedResourcesForModelValidation;
 
+    /**
+     * Flags this Operation Context as a context that will be used as a delegate on another Operation Context
+     */
+    private volatile boolean delegatedContext;
+
 
     enum ContextFlag {
         ROLLBACK_ON_FAIL, ALLOW_RESOURCE_SERVICE_RESTART,
@@ -460,6 +465,14 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
         if (modifiedResourcesForModelValidation != null) {
             modifiedResourcesForModelValidation.clear();
         }
+    }
+
+    void setDelegatedContext(boolean delegated) {
+        this.delegatedContext = delegated;
+    }
+
+    boolean isDelegatedContext() {
+        return this.delegatedContext;
     }
 
     /**
