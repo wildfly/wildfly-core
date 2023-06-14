@@ -2183,6 +2183,18 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
             }
         }
 
+        @Override
+        public ContextServiceTarget addListener(LifecycleListener listener) {
+            super.addListener(listener);
+            return this;
+        }
+
+        @Override
+        public ContextServiceTarget removeListener(LifecycleListener listener) {
+            super.removeListener(listener);
+            return this;
+        }
+
         private static final class ProvidedValuesTrackingServiceBuilder extends DelegatingServiceBuilder {
             private final Set<ServiceName> providedValues = new HashSet<>();
 
@@ -2704,6 +2716,12 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
         @Override
         public CapabilityServiceBuilder<T> setInstance(org.jboss.msc.Service service) {
             super.setInstance(service);
+            return this;
+        }
+
+        @Override
+        public CapabilityServiceBuilder<T> addListener(LifecycleListener listener) {
+            super.addListener(listener);
             return this;
         }
 

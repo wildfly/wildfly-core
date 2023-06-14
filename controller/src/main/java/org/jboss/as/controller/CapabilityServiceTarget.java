@@ -19,6 +19,7 @@
 package org.jboss.as.controller;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.ServiceTarget;
 
 /**
@@ -46,4 +47,10 @@ public interface CapabilityServiceTarget extends ServiceTarget {
 
     @Override
     CapabilityServiceBuilder<?> addService();
+
+    @Override
+    CapabilityServiceTarget addListener(LifecycleListener listener);
+
+    @Override
+    CapabilityServiceTarget removeListener(LifecycleListener listener);
 }

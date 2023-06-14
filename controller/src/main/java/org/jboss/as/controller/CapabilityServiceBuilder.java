@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.Service;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -37,19 +38,15 @@ import org.jboss.msc.service.ServiceName;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
-    /**
-     * {@inheritDoc}
-     * @return this builder
-     */
+
     @Override
     CapabilityServiceBuilder<T> setInitialMode(ServiceController.Mode mode);
 
-    /**
-     * {@inheritDoc}
-     * @return this builder
-     */
     @Override
     CapabilityServiceBuilder<T> setInstance(Service service);
+
+    @Override
+    CapabilityServiceBuilder<T> addListener(LifecycleListener listener);
 
     /**
      * Provide value under given capability.
