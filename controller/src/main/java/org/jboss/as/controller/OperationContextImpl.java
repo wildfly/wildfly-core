@@ -116,7 +116,6 @@ import org.jboss.msc.service.DelegatingServiceBuilder;
 import org.jboss.msc.service.DelegatingServiceController;
 import org.jboss.msc.service.DelegatingServiceRegistry;
 import org.jboss.msc.service.DelegatingServiceTarget;
-import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -2169,7 +2168,7 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
         }
 
         @Override
-        public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final Service<T> service) throws IllegalArgumentException {
+        public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final org.jboss.msc.service.Service<T> service) throws IllegalArgumentException {
             final ServiceBuilder<T> realBuilder = new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService(name, service), name);
             // If done() has been called we are no longer associated with a management op and should just
             // return the builder from delegate
