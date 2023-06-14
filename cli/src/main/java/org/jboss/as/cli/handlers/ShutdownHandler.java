@@ -23,7 +23,6 @@
 package org.jboss.as.cli.handlers;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -172,28 +171,40 @@ public class ShutdownHandler extends BaseOperationCommand {
             disconnect = false;
         }
 
+        // Check if we are using a client launched from the server/host installation we want shutdown to perform an update.
+        // In such a case, we will exit from the current JBoss CLI process to avoid interfering with the server/host update.
+        // This will also force the user to relaunch the CLI session using the most recent updates once the server/host has
+        // been updated.
+        // The shutdown mgmt Operation will return the content of the same client marker file created by this CLI instance if
+        // both are using the same server installation. Otherwise, no file marker value will be returned by the ShutDown operations.
+        // This check is only relevant when we are performing a installation.
+        ModelNode clientMarker = executeOperation(client, cliClient, op, true);
         if (Util.TRUE.equalsIgnoreCase(performInstallation.getValue(ctx.getParsedCommandLine()))) {
-            // Check if I am using a client launched from the server/host installation we want to shutdown to perform an update.
-            // In such a case, we will exit from the current JBoss CLI process to avoid interfering with the server/host update.
-            // This will also force the user to relaunch the CLI session using the most recent updates once the server/host has
-            // been updated.
-            boolean localClientLaunch = isLocalClientLaunch(ctx);
-            executeOperation(client, cliClient, op, !localClientLaunch);
-            if (localClientLaunch) {
+            boolean isLocalClient = true;
+            if (clientMarker != null) {
+                final String clientMarkerData = WildFlySecurityManager.getPropertyPrivileged(Util.CLI_MARKER_VALUE, null);
+                if (clientMarkerData != null) {
+                    if (!clientMarker.asString().equals(clientMarkerData)) {
+                        isLocalClient = false;
+                    }
+                }
+            } else {
+                isLocalClient = false;
+            }
+
+            if(isLocalClient) {
                 ctx.printLine("The JBoss CLI session will be closed automatically to allow the server be updated. Once the server has been restarted, you can relaunch the JBoss CLI session.", false);
                 try {
                     TimeUnit.SECONDS.sleep(3);
                 } catch (InterruptedException e) {
                     // Ignored
                 }
-
                 // We are using a CLI which was launched from the server installation we have requested to be updated.
                 // In order to prevent keeping using a jboss-modules.jar that could have been updated, we finish the CLI process
                 // Once the server has been restarted the user will launch again the CLI that will use the most recent updates
                 ctx.terminateSession();
+                return;
             }
-        } else {
-            executeOperation(client, cliClient, op, true);
         }
 
         if (disconnect) {
@@ -228,11 +239,14 @@ public class ShutdownHandler extends BaseOperationCommand {
         }
     }
 
-    private static void executeOperation(ModelControllerClient client, AwaiterModelControllerClient cliClient, ModelNode op, boolean awaitClose) throws CommandLineException {
+    private static ModelNode executeOperation(ModelControllerClient client, AwaiterModelControllerClient cliClient, ModelNode op, boolean awaitClose) throws CommandLineException {
         try {
             final ModelNode response = cliClient.execute(op, awaitClose);
             if (!Util.isSuccess(response)) {
                 throw new CommandLineException(Util.getFailureDescription(response));
+            }
+            if (response.hasDefined(Util.RESULT, Util.CLI_MARKER_VALUE)) {
+                return response.get(Util.RESULT, Util.CLI_MARKER_VALUE);
             }
         } catch (IOException e) {
             // if it's not connected, it's assumed the connection has already been shutdown
@@ -241,6 +255,7 @@ public class ShutdownHandler extends BaseOperationCommand {
                 throw new CommandLineException("Failed to execute :shutdown", e);
             }
         }
+        return null;
     }
 
     @Override
@@ -303,56 +318,6 @@ public class ShutdownHandler extends BaseOperationCommand {
         }
 
         return result.asString().equals(host);
-    }
-
-    /**
-     * Reads the server JBoss Home directory and compared it with the JBoss CLI Jboss Home directory to determine whether
-     * the local JBoss CLI process has been launched from the same Jboss server/host.
-     *
-     * If the paths of both JBoss Home directories are equals, it is assumed the current JBoss CLI process was launched from
-     * the server/host where it is connected to.
-     *
-     * @param ctx
-     * @return
-     * @throws CommandLineException
-     */
-    protected boolean isLocalClientLaunch(CommandContext ctx) throws CommandLineException {
-        final ModelNode op = new ModelNode();
-        final ParsedCommandLine args = ctx.getParsedCommandLine();
-        final ModelControllerClient client = ctx.getModelControllerClient();
-        if(ctx.isDomainMode()) {
-            final String hostName = host.getValue(args);
-            if (hostName == null) {
-                throw new CommandFormatException("Missing required argument " + host.getFullName());
-            }
-            op.get(Util.ADDRESS).add(Util.HOST, hostName);
-            op.get(Util.ADDRESS).add(Util.CORE_SERVICE, "host-environment");
-
-        } else {
-            op.get(Util.ADDRESS).add(Util.CORE_SERVICE, "server-environment");
-        }
-        op.get(Util.OPERATION).set(Util.READ_ATTRIBUTE);
-        op.get(Util.NAME).set(Util.HOME_DIR);
-
-        ModelNode response;
-        try {
-            response = client.execute(op);
-        } catch (IOException e) {
-            throw new CommandLineException("Failed to read attribute " + Util.HOME_DIR, e);
-        }
-        if(!Util.isSuccess(response)) {
-            throw new CommandLineException("Failed to read attribute " + Util.HOME_DIR
-                    + ": " + Util.getFailureDescription(response));
-        }
-        ModelNode result = response.get(Util.RESULT);
-        if(!result.isDefined()) {
-            throw new CommandLineException("The result is not defined for attribute " + Util.HOME_DIR + ": " + result);
-        }
-
-        final String jbossHome = WildFlySecurityManager.getEnvPropertyPrivileged("JBOSS_HOME", null);
-        return jbossHome != null && Paths.get(jbossHome).normalize().toAbsolutePath().equals(
-                Paths.get(result.asString()).normalize().toAbsolutePath()
-        );
     }
 
     protected void setBooleanArgument(final ParsedCommandLine args, final ModelNode op, ArgumentWithValue arg, String paramName)

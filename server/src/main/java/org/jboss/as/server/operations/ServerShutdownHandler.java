@@ -32,7 +32,10 @@ import static org.jboss.as.server.controller.resources.ServerRootResourceDefinit
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.renameTimeoutToSuspendTimeout;
 
+import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -120,6 +123,19 @@ public class ServerShutdownHandler implements OperationStepHandler {
                 }
             } catch (Exception e) {
                 throw ServerLogger.ROOT_LOGGER.noServerInstallationPrepared(productName);
+            }
+
+            // check the presence of a client marker in our server installation and if so, returns its value so the client
+            // can detect whether he was launched from the same installation dir.
+            final Path cliMarker = environment.getHomeDir().toPath().resolve("bin").resolve("cli-marker");
+            try (BufferedReader reader = new BufferedReader(new FileReader(cliMarker.toFile()))) {
+                String line = reader.readLine();
+                if (line != null) {
+                    context.getResult().set("cli-marker-value", line);
+                }
+            } catch (Exception e) {
+                // explicitly ignored
+                ServerLogger.ROOT_LOGGER.debug("Shutdown will not return a file marker due to an exception that has been explicitly ignored.", e);
             }
         }
 

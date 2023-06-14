@@ -108,6 +108,8 @@ public class Util {
     public static final String CHILDREN = "children";
     public static final String CHILD_TYPE = "child-type";
     public static final String CLEAR_TEXT = "clear-text";
+    public static final String CLI_MARKER = "cli-marker";
+    public static final String CLI_MARKER_VALUE = "cli-marker-value";
     public static final String COMBINED_DESCRIPTIONS = "combined-descriptions";
     public static final String COMPOSITE = "composite";
     public static final String CONCURRENT_GROUPS = "concurrent-groups";
