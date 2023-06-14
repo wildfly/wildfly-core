@@ -131,7 +131,7 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-final class OperationContextImpl extends AbstractOperationContext implements AutoCloseable {
+final class OperationContextImpl extends AbstractOperationContext {
 
     private static final Object NULL = new Object();
 
