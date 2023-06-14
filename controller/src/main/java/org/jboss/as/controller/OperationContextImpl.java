@@ -109,7 +109,6 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.ContextAttachments;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.LifecycleEvent;
 import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.DelegatingServiceBuilder;
@@ -2644,20 +2643,6 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
         CapabilityServiceBuilderImpl(ServiceBuilder<T> delegate, PathAddress targetAddress) {
             super(delegate);
             this.targetAddress = targetAddress;
-        }
-
-        public <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityBaseName, Class<I> serviceType, Injector<I> target, String... referenceNames) {
-            String capabilityName = RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, referenceNames);
-            final ServiceName serviceName = getCapabilityServiceName(capabilityName, serviceType);
-            addDependency(serviceName, serviceType, target);
-            return this;
-        }
-
-        @Override
-        public <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type, Injector<I> target) {
-            final ServiceName serviceName = getCapabilityServiceName(capabilityName, type);
-            addDependency(serviceName, type, target);
-            return this;
         }
 
         @Override
