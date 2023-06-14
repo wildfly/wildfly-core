@@ -63,32 +63,8 @@
     <xsl:template name="remap-local-filename">
         <xsl:param name="name"/>
         <xsl:choose>
-            <xsl:when test="$name = 'BSD 3-Clause &quot;New&quot; or &quot;Revised&quot; License'">
-                <xsl:text>bsd 3-clause new or revised license.html</xsl:text>
-            </xsl:when>
-            <xsl:when test="$name = 'BSD 3-Clause No Nuclear License'">
-                <xsl:text>bsd 3-clause no nuclear license.html</xsl:text>
-            </xsl:when>
-            <xsl:when test="$name = 'Creative Commons Attribution 2.5'">
-                <xsl:text>creative commons attribution 2.5.html</xsl:text>
-            </xsl:when>
-            <xsl:when test="$name = 'GNU Lesser General Public License v2.1 or later'">
-                <xsl:text>gnu lesser general public license v2.1 or later.txt</xsl:text>
-            </xsl:when>
-            <xsl:when test="$name = 'GNU General Public License v2.0 only'">
-                <xsl:text>gnu general public license v2.0 only.html</xsl:text>
-            </xsl:when>
             <xsl:when test="$name = 'Indiana University Extreme! Lab Software License 1.1.1'">
                 <xsl:text>indiana university extreme lab software license 1.1.1.html</xsl:text>
-            </xsl:when>
-            <xsl:when test="$name = 'Mozilla Public License 2.0'">
-                <xsl:text>mozilla public license 2.0.html</xsl:text>
-            </xsl:when>
-            <xsl:when test="$name = 'Plexus Classworlds License'">
-                <xsl:text>plexus classworlds license.html</xsl:text>
-            </xsl:when>
-            <xsl:when test="$name = 'The JSoup MIT License'">
-                <xsl:text>the jsoup mit license.html</xsl:text>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:value-of select="concat(translate($name, $uppercase, $lowercase), '.txt')"/>

@@ -142,6 +142,11 @@
           <url>http://www.opensource.org/licenses/MIT</url>
           <distribution>repo</distribution>
         </license>
+        <license>
+          <name>Apache License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+          <distribution>repo</distribution>
+        </license>
       </licenses>
     </dependency>
     <dependency>
@@ -204,8 +209,8 @@
       <artifactId>parsson</artifactId>
       <licenses>
         <license>
-          <name>Eclipse Distribution License, Version 1.0</name>
-          <url>https://repository.jboss.org/licenses/edl-1.0.txt</url>
+          <name>Eclipse Public License 2.0</name>
+          <url>http://www.eclipse.org/legal/epl-v20.html</url>
           <distribution>repo</distribution>
         </license>
         <license>
@@ -225,7 +230,7 @@
           <distribution>repo</distribution>
         </license>
         <license>
-          <name>Eclipse Public License - v 1.0</name>
+          <name>Eclipse Public License 1.0</name>
           <url>https://www.eclipse.org/legal/epl-v10.html</url>
           <distribution>repo</distribution>
         </license>
@@ -476,8 +481,8 @@
       <artifactId>jboss-threads</artifactId>
       <licenses>
         <license>
-          <name>GNU Lesser General Public License v2.1 only</name>
-          <url>http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html</url>
+          <name>Apache License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
           <distribution>repo</distribution>
         </license>
       </licenses>
@@ -574,7 +579,7 @@
           <distribution>repo</distribution>
         </license>
         <license>
-          <name>Eclipse Public License - v 1.0</name>
+          <name>Eclipse Public License 1.0</name>
           <url>https://www.eclipse.org/legal/epl-v10.html</url>
           <distribution>repo</distribution>
         </license>
@@ -1111,6 +1116,17 @@
     <dependency>
       <groupId>org.wildfly.discovery</groupId>
       <artifactId>wildfly-discovery-client</artifactId>
+      <licenses>
+        <license>
+          <name>Apache License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+          <distribution>repo</distribution>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.wildfly.installation-manager</groupId>
+      <artifactId>installation-manager-api</artifactId>
       <licenses>
         <license>
           <name>Apache License 2.0</name>
