@@ -21,7 +21,7 @@ import org.jboss.staxmapper.Versioned;
  * A versioned schema, whose namespace is a versioned namespace.
  * @author Paul Ferraro
  */
-public interface VersionedSchema<V extends Comparable<V>, S extends Versioned<V, S>> extends Versioned<V, S>, Schema {
+public interface VersionedSchema<V extends Comparable<V>, S extends VersionedSchema<V, S>> extends Versioned<V, S>, Schema {
 
     /**
      * Returns the versioned namespace of this attribute/element.

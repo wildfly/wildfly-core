@@ -22,9 +22,9 @@
 
 package org.wildfly.extension.discovery;
 
-import org.jboss.as.controller.LegacySubsystemURN;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.as.controller.PersistentSubsystemSchema;
+import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.controller.xml.VersionedNamespace;
 import org.jboss.staxmapper.IntVersion;
 
@@ -40,7 +40,7 @@ enum DiscoverySubsystemSchema implements PersistentSubsystemSchema<DiscoverySubs
     private final VersionedNamespace<IntVersion, DiscoverySubsystemSchema> namespace;
 
     DiscoverySubsystemSchema(int major, int minor) {
-        this.namespace = new LegacySubsystemURN<>(DiscoveryExtension.SUBSYSTEM_NAME, new IntVersion(major, minor));
+        this.namespace = SubsystemSchema.createLegacySubsystemURN(DiscoveryExtension.SUBSYSTEM_NAME, new IntVersion(major, minor));
     }
 
     @Override

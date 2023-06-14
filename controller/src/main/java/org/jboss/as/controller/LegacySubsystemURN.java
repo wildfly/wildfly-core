@@ -25,7 +25,9 @@ import org.jboss.staxmapper.Versioned;
 /**
  * A versioned subsystem namespace identified by a URN constructed using a version.
  * @author Paul Ferraro
+ * @deprecated Use {@link SubsystemSchema#createLegacySubsystemURN(String, IntVersion)} instead.
  */
+@Deprecated(forRemoval = true)
 public class LegacySubsystemURN<N extends Versioned<IntVersion, N>> extends VersionedURN<N> {
 
     /**
