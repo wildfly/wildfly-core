@@ -44,7 +44,6 @@ import org.jboss.logmanager.PropertyConfigurator;
 * @author Alexey Loubyansky
 */
 public class CommandLineMain {
-    private static final Logger LOG = Logger.getLogger(CommandLineMain.class);
 
     public static void main(String[] args) throws Exception {
         configureLogManager(args);
@@ -182,7 +181,7 @@ public class CommandLineMain {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            LOG.debug("Creation of cli marker failed and will be ignored.", e);
+            Logger.getLogger(CommandLineMain.class).debug("Creation of cli marker failed and will be ignored.", e);
         }
     }
 }
