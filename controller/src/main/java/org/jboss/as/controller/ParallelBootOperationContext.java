@@ -58,7 +58,6 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     private final OperationContextImpl primaryContext;
     private final List<ParsedBootOp> runtimeOps;
     private final Thread controllingThread;
-    private Step lockStep;
     private final int operationId;
     private final ModelControllerImpl controller;
 
@@ -215,7 +214,7 @@ class ParallelBootOperationContext extends AbstractOperationContext {
         if(lockStep == null) {
             try {
                 controller.acquireWriteLock(operationId, true);
-                lockStep = activeStep;
+                recordWriteLock();
             } catch (InterruptedException e) {
                 cancelled = true;
                 Thread.currentThread().interrupt();
@@ -423,8 +422,8 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     }
 
     @Override
-    void releaseStepLocks(Step step) {
-        if(lockStep == step) {
+    void releaseStepLocks(AbstractStep step) {
+        if(step.matches(lockStep)) {
             controller.releaseWriteLock(operationId);
             lockStep = null;
         }
