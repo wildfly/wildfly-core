@@ -162,8 +162,6 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
     boolean cancelled;
     /** Currently executing step */
     Step activeStep;
-    /** The step that acquired the write lock */
-    Step lockStep;
     private final Supplier<SecurityIdentity> securityIdentitySupplier;
     /** Whether operation execution has begun; i.e. whether completeStep() has been called */
     private boolean executing;
@@ -622,7 +620,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
      *
      * @param step the step
      */
-    abstract void releaseStepLocks(AbstractStep step);
+    abstract void releaseStepLocks(Step step);
 
     /**
      * Wait for completion of removal of any services removed by this context.
@@ -685,10 +683,6 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
      */
     private void recordControllerOperation(ModelNode operation) {
         controllerOperations.add(operation.clone()); // clone so we don't log op nodes mutated during execution
-    }
-
-    void recordWriteLock() {
-        this.lockStep = activeStep.recordWriteLock();
     }
 
     void trackConfigurationChange() {
@@ -1371,10 +1365,9 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
         return true;
     }
 
-    abstract class AbstractStep {
+    private abstract class AbstractStep {
         AbstractStep predecessor;
         abstract void finalizeStep();
-        abstract boolean matches(Step step);
         final void finalizeRollbackResponse(ModelNode outcome, ModelNode rolledback) {
             outcome.set(cancelled ? CANCELLED : FAILED);
             rolledback.set(true);
@@ -1408,7 +1401,6 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
         // Whether standard Stage.DONE handling is needed, as opposed to lighter-weight handling.
         private boolean requiresDoneStage;
         ManagementResourceRegistration resourceRegistration;
-        private DoneStagePlaceholder placeholder;
 
         private Step(OperationDefinition operationDefinition, final OperationStepHandler handler, final ModelNode response, final ModelNode operation,
                      final PathAddress address) {
@@ -1432,20 +1424,6 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
             this.requiresDoneStage = forStage == Stage.DOMAIN
                     || this.operationDefinition == null
                     || !this.operationDefinition.getFlags().contains(OperationEntry.Flag.READ_ONLY);
-        }
-
-        boolean matches(Step other) {
-            return this == other;
-        }
-
-        Step recordWriteLock() {
-            recordModification("call to recordWriteLock()");
-            return this;
-        }
-
-        Step modifyServiceContainer() {
-            recordModification("ServiceContainer modification");
-            return this;
         }
 
         /**
@@ -1684,7 +1662,6 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
             this.outcome = replaces.response.get(OUTCOME);
             this.rolledBack = replaces.response.get(ROLLED_BACK);
             this.failed = replaces.hasFailed();
-            replaces.placeholder = this;
         }
 
         @Override
@@ -1693,31 +1670,13 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
             // 1) We replaced a step with a no-op result handler, so we don't need to invoke it.
             // 2) We'll never be the first step finalized, so we don't need to take actions like
             //    changing the Stage to DONE or setting a result action
-            // 3) We skip some trace logging that would require retaining a lot of state.
-            try {
-                if (resultAction == ResultAction.ROLLBACK) {
-                    finalizeRollbackResponse(outcome, rolledBack);
-                } else {
-                    finalizeNonRollbackResponse(outcome, failed ? rolledBack : null);
-                }
-            } finally {
-                // It shouldn't be possible that the Step that created us is holding locks,
-                // as Step.linkNextStep wouldn't have created us if it was used for writes.
-                // But to be safe, give the context a chance to release locks.
-                releaseStepLocks(this);
-
-                if (predecessor == null) {
-                    // We're returning from the outermost completeStep()
-                    // Null out the current stage to disallow further access to
-                    // the context
-                    currentStage = null;
-                }
+            // 3) We're only used for read-only ops, so we can ignore setting any ROLLED_BACK node.
+            // 4) We skip some trace logging that would require retaining a lot of state.
+            if (resultAction == ResultAction.ROLLBACK) {
+                finalizeRollbackResponse(outcome, rolledBack);
+            } else {
+                finalizeNonRollbackResponse(outcome, failed ? rolledBack : null);
             }
-        }
-
-        @Override
-        boolean matches(Step step) {
-            return step != null && this == step.placeholder;
         }
     }
 

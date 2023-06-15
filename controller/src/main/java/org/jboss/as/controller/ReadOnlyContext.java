@@ -63,6 +63,7 @@ class ReadOnlyContext extends AbstractOperationContext {
     private final ModelControllerImpl controller;
     private final AbstractOperationContext primaryContext;
     private final ModelControllerImpl.ManagementModelImpl managementModel;
+    private Step lockStep;
 
     private final ConcurrentMap<AttachmentKey<?>, Object> valueAttachments = new ConcurrentHashMap<AttachmentKey<?>, Object>();
 
@@ -202,7 +203,7 @@ class ReadOnlyContext extends AbstractOperationContext {
         if (lockStep == null) {
             try {
                 controller.acquireWriteLock(operationId, true);
-                recordWriteLock();
+                lockStep = activeStep;
             } catch (InterruptedException e) {
                 cancelled = true;
                 Thread.currentThread().interrupt();
@@ -212,8 +213,8 @@ class ReadOnlyContext extends AbstractOperationContext {
     }
 
     @Override
-    void releaseStepLocks(AbstractStep step) {
-        if (step.matches(lockStep)) {
+    void releaseStepLocks(Step step) {
+        if (step == lockStep) {
             lockStep = null;
             controller.releaseWriteLock(operationId);
         }
