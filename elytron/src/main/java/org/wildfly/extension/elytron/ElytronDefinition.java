@@ -92,6 +92,7 @@ import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
 import org.wildfly.extension.elytron.expression.DeploymentExpressionResolverProcessor;
+import org.wildfly.security.SecurityFactory;
 import org.wildfly.security.Version;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.jaspi.ElytronAuthConfigFactory;
@@ -223,7 +224,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(new JaasRealmDefinition());
 
         // Security Factories
-        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(CredentialSecurityFactory.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_CREDENTIAL_SECURITY_FACTORY, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY));
+        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(SecurityFactory.class, CredentialSecurityFactory::from, ElytronDescriptionConstants.CUSTOM_CREDENTIAL_SECURITY_FACTORY, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY));
         resourceRegistration.registerSubModel(KerberosSecurityFactoryDefinition.getKerberosSecurityFactoryDefinition());
 
         // Permission Mappers
@@ -246,7 +247,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getAggregatePrincipalTransformerDefinition());
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getChainedPrincipalTransformerDefinition());
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getConstantPrincipalTransformerDefinition());
-        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(PrincipalTransformer.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_PRINCIPAL_TRANSFORMER, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY));
+        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(Function.class, PrincipalTransformer::from, ElytronDescriptionConstants.CUSTOM_PRINCIPAL_TRANSFORMER, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY));
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getRegexPrincipalTransformerDefinition());
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getRegexValidatingPrincipalTransformerDefinition());
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getCasePrincipalTransformerDefinition());
