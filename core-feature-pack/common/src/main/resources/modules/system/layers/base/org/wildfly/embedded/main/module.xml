@@ -33,6 +33,5 @@
         <module name="org.jboss.modules"/>
         <module name="org.jboss.stdio"/>
         <module name="org.jboss.threads"/>
-        <module name="org.wildfly.core.logmanager" services="import"/>
     </dependencies>
 </module>

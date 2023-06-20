@@ -6,7 +6,6 @@ package org.jboss.as.cli;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -18,7 +17,6 @@ import java.util.logging.LogManager;
 
 import org.jboss.as.cli.impl.CliLauncher;
 import org.jboss.logging.Logger;
-import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.configuration.ContextConfiguration;
 import org.jboss.logmanager.configuration.PropertyContextConfiguration;
