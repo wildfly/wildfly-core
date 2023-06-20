@@ -37,6 +37,7 @@ import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelControllerClientFactory;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -83,6 +84,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
     private volatile ManagementResourceRegistration rootRegistration;
     private volatile Throwable error;
     private volatile boolean bootSuccess;
+    private static final OperationFailedException unknownBootFailure = new OperationFailedException("Unknown failure while executing boot operations");
 
     /**
      * This is the constructor to use for 23.0.x core model tests.
@@ -236,6 +238,9 @@ public abstract class ModelTestModelControllerService extends AbstractController
                 validator.validateOperation(op);
             }
 
+            if (!bootSuccess) {
+                error = unknownBootFailure;
+            }
             return bootSuccess;
         } catch (Exception e) {
             error = e;
@@ -284,7 +289,8 @@ public abstract class ModelTestModelControllerService extends AbstractController
 
     public void waitForSetup() throws Exception {
         latch.await();
-        if (error != null) {
+        // Don't throw exception if a reason for the boot failure is not provided
+        if (error != null && !error.equals(unknownBootFailure)) {
             if (error instanceof Exception)
                 throw (Exception) error;
             throw new RuntimeException(error);
