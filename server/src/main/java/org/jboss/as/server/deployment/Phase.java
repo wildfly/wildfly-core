@@ -374,6 +374,7 @@ public enum Phase {
     public static final int DEPENDENCIES_EJB_SERVER_INTERCEPTORS        = 0x0280;
     public static final int DEPENDENCIES_MODULE                         = 0x0300;
     public static final int DEPENDENCIES_RAR_CONFIG                     = 0x0400;
+    public static final int DEPENDENCIES_JDBC_DRIVER                    = 0x0450;
     public static final int DEPENDENCIES_MANAGED_BEAN                   = 0x0500;
     public static final int DEPENDENCIES_BEAN_VALIDATION                = 0x0580;
     public static final int DEPENDENCIES_SAR_MODULE                     = 0x0600;
