@@ -136,10 +136,10 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
 
     private static final ResourceDefinition TEST_RESOURCE1 = ResourceBuilder.Factory.create(TEST_ADDRESS1.getElement(0),
             NonResolvingResourceDescriptionResolver.INSTANCE)
-            .setAddOperation(new AbstractAddStepHandler(ad, other))
-            .setRemoveOperation(new AbstractRemoveStepHandler() {})
-            .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
-            .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
+            .setAddOperation(new ModelOnlyAddStepHandler())
+            .setRemoveOperation(new ModelOnlyRemoveStepHandler())
+            .addReadWriteAttribute(ad, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
+            .addReadWriteAttribute(other, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
             .addOperation(SimpleOperationDefinitionBuilder.of("add-cap",
                             NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                     (context, operation) -> {
@@ -153,7 +153,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
 
     private static final ResourceDefinition SUB_RESOURCE = ResourceBuilder.Factory.create(TEST_ADDRESS3.getElement(0),
             NonResolvingResourceDescriptionResolver.INSTANCE)
-                .setAddOperation(new AbstractAddStepHandler())
+                .setAddOperation(new ModelOnlyAddStepHandler())
                 .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addReadWriteAttribute(ad, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
                 .addCapability(TEST_CAPABILITY3)
@@ -162,10 +162,10 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
 
     private static final ResourceDefinition TEST_RESOURCE2 = ResourceBuilder.Factory.create(TEST_ADDRESS2.getElement(0),
             NonResolvingResourceDescriptionResolver.INSTANCE)
-            .setAddOperation(new AbstractAddStepHandler(ad, other))
+            .setAddOperation(new ModelOnlyAddStepHandler())
             .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
-            .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
-            .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
+            .addReadWriteAttribute(ad, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
+            .addReadWriteAttribute(other, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
             .addCapability(TEST_CAPABILITY2)
             .addOperation(SimpleOperationDefinitionBuilder.of("add-sub-resource",
                             NonResolvingResourceDescriptionResolver.INSTANCE).build(),

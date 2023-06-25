@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Set;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ManagementModel;
@@ -258,8 +257,8 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
         public SubsystemResourceDefinition() {
             super(SUBSYSTEM_ELEMENT,
                     NonResolvingResourceDescriptionResolver.INSTANCE,
-                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES),
-                    new ModelOnlyRemoveStepHandler());
+                    ModelOnlyAddStepHandler.INSTANCE,
+                    ModelOnlyRemoveStepHandler.INSTANCE);
         }
 
 
@@ -305,8 +304,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
     class OrderedChildResourceDefinition extends AbstractChildResourceDefinition {
 
         OrderedChildResourceDefinition() {
-            super(ORDERED_CHILD,
-                    new AbstractAddStepHandler((REQUEST_ATTRIBUTES)));
+            super(ORDERED_CHILD, ModelOnlyAddStepHandler.INSTANCE);
         }
 
         @Override
@@ -319,8 +317,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
 
     class ExtraChildResourceDefinition extends AbstractChildResourceDefinition {
         public ExtraChildResourceDefinition() {
-            super(EXTRA_CHILD,
-                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES));
+            super(EXTRA_CHILD, ModelOnlyAddStepHandler.INSTANCE);
         }
     }
 

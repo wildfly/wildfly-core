@@ -6,7 +6,7 @@
 package org.jboss.as.test.integration.domain.extension;
 
 
-import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -35,7 +35,7 @@ public class ConstrainedResource extends SimpleResourceDefinition {
             .build();
 
 
-    static SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder("security-domain", ModelType.STRING)
+    static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder("security-domain", ModelType.STRING)
             .setAllowExpression(true)
             .setRequired(false)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN_REF)
@@ -53,7 +53,7 @@ public class ConstrainedResource extends SimpleResourceDefinition {
 
     public ConstrainedResource(PathElement pathElement) {
         super(new Parameters(pathElement, NonResolvingResourceDescriptionResolver.INSTANCE)
-                .setAddHandler(new AbstractAddStepHandler(PASSWORD, SECURITY_DOMAIN, AUTHENTICATION_INFLOW))
+                .setAddHandler(ModelOnlyAddStepHandler.INSTANCE)
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig("datasources", "datasource"))));
     }

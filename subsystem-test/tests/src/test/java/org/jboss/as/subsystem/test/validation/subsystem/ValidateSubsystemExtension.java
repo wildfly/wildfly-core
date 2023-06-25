@@ -15,10 +15,10 @@ import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
@@ -77,7 +77,7 @@ public class ValidateSubsystemExtension implements Extension {
                 SimpleOperationDefinitionBuilder.of(ADD, NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setParameters(addAttributes)
                     .build(),
-                new AbstractAddStepHandler(addAttributes));
+                ModelOnlyAddStepHandler.INSTANCE);
 
         //We always need to add a 'describe' operation
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);

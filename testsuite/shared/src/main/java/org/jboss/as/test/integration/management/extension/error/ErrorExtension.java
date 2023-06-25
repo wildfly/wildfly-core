@@ -14,10 +14,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -92,7 +92,7 @@ public class ErrorExtension implements Extension {
         private final boolean forHost;
         private BlockerSubsystemResourceDefinition(boolean forHost) {
             super(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), NonResolvingResourceDescriptionResolver.INSTANCE,
-                    new AbstractAddStepHandler(), ErrorRemovingBlockingSubsystemStepHandler.REMOVE_SUBSYSTEM_INSTANCE);
+                    ModelOnlyAddStepHandler.INSTANCE, ErrorRemovingBlockingSubsystemStepHandler.REMOVE_SUBSYSTEM_INSTANCE);
             this.forHost = forHost;
         }
 

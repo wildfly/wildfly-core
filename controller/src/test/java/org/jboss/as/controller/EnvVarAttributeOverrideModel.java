@@ -18,8 +18,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-import java.util.Arrays;
-
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
@@ -61,10 +59,10 @@ public abstract class EnvVarAttributeOverrideModel extends AbstractControllerTes
     private static ResourceDefinition createDummyProfileResourceDefinition() {
         return ResourceBuilder.Factory.create(CUSTOM_RESOURCE_ADDR.getElement(0),
                 NonResolvingResourceDescriptionResolver.INSTANCE)
-                .setAddOperation(new AbstractAddStepHandler(Arrays.asList(MY_ATTR, MY_LIST_ATTR)))
+                .setAddOperation(new ModelOnlyAddStepHandler())
                 .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
-                .addReadWriteAttribute(MY_ATTR, null, new ReloadRequiredWriteAttributeHandler(MY_ATTR))
-                .addReadWriteAttribute(MY_LIST_ATTR, null, new ReloadRequiredWriteAttributeHandler(MY_LIST_ATTR))
+                .addReadWriteAttribute(MY_ATTR, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
+                .addReadWriteAttribute(MY_LIST_ATTR, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
                 .build();
     }
 

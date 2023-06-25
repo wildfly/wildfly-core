@@ -11,10 +11,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
+import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -371,8 +372,8 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
     private static class RootResourceDefinition extends SimpleResourceDefinition {
         RootResourceDefinition() {
             super(new Parameters(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE)
-                    .setAddHandler(new AbstractAddStepHandler())
-                    .setRemoveHandler(new AbstractRemoveStepHandler() {}));
+                    .setAddHandler(ModelOnlyAddStepHandler.INSTANCE)
+                    .setRemoveHandler(ModelOnlyRemoveStepHandler.INSTANCE));
         }
 
         @Override
@@ -420,7 +421,7 @@ public class AddResourceTestCase extends AbstractControllerTestBase {
         @Override
         public void registerOperations(ManagementResourceRegistration registration) {
             super.registerOperations(registration);
-            super.registerAddOperation(registration, new AbstractAddStepHandler(attributes), OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
+            super.registerAddOperation(registration, ModelOnlyAddStepHandler.INSTANCE, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
         }
     }
 

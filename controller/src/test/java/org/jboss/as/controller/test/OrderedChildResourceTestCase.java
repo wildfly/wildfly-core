@@ -17,9 +17,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
 import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.PathAddress;
@@ -141,8 +141,8 @@ public class OrderedChildResourceTestCase extends AbstractControllerTestBase {
         public ParentResourceDefinition() {
             super(PARENT_MAIN,
                     NonResolvingResourceDescriptionResolver.INSTANCE,
-                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES),
-                    new ModelOnlyRemoveStepHandler());
+                    ModelOnlyAddStepHandler.INSTANCE,
+                    ModelOnlyRemoveStepHandler.INSTANCE);
         }
 
         @Override
@@ -160,8 +160,8 @@ public class OrderedChildResourceTestCase extends AbstractControllerTestBase {
 
         public OrderedChildResourceDefinition() {
             super(new Parameters(CHILD, NonResolvingResourceDescriptionResolver.INSTANCE)
-                    .setAddHandler(new AbstractAddStepHandler(REQUEST_ATTRIBUTES))
-                    .setRemoveHandler(new ModelOnlyRemoveStepHandler())
+                    .setAddHandler(ModelOnlyAddStepHandler.INSTANCE)
+                    .setRemoveHandler(ModelOnlyRemoveStepHandler.INSTANCE)
                     .setOrderedChild());
         }
 
