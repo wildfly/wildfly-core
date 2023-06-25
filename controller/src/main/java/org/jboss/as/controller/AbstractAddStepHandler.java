@@ -12,10 +12,8 @@ import org.jboss.dmr.ModelNode;
 
 import java.util.AbstractSet;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -324,24 +322,6 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
         public OrderedResourceCreator(boolean indexedAdd, Set<String> orderedChildTypes) {
             this.indexedAdd = indexedAdd;
             this.orderedChildTypes = orderedChildTypes == null ? Collections.emptySet() : orderedChildTypes;
-        }
-
-        /**
-         * Constructor
-         *
-         * @param indexedAdd if ({@code true} this is the child of a parent with ordered children,
-         * and this child will be added at the {@code add-index} of the {@code add} operation in the
-         * parent's list of children of this type. If {@code false} this is a normal child, i.e. the
-         * insert will always happen at the end of the list as normal.
-         * @param orderedChildTypes if not {@code null} or empty, this indicates that this is a parent
-         * resource with ordered children, and the entries here are the type names of children which
-         * are ordered.
-         */
-        public OrderedResourceCreator(boolean indexedAdd, String... orderedChildTypes) {
-            this.indexedAdd = indexedAdd;
-            Set<String> set = new HashSet<>(orderedChildTypes.length);
-            set.addAll(Arrays.asList(orderedChildTypes));
-            this.orderedChildTypes = set;
         }
 
         @Override
