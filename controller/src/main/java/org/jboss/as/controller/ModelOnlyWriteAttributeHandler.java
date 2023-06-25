@@ -32,12 +32,12 @@ public class ModelOnlyWriteAttributeHandler extends AbstractWriteAttributeHandle
     @Override
     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Void> handbackHolder) throws OperationFailedException {
         // should not be called as requiresRuntime returns false
-        throw new UnsupportedOperationException();
+        throw new IllegalStateException();
     }
 
     @Override
     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Void handback) throws OperationFailedException {
         // should not be called as requiresRuntime returns false
-        throw new UnsupportedOperationException();
+        throw new IllegalStateException();
     }
 }

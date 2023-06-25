@@ -41,23 +41,13 @@ public class ModelOnlyAddStepHandler extends AbstractAddStepHandler {
         return false;
     }
 
-    /**
-     * Throws {@link UnsupportedOperationException}.
-     *
-     * {@inheritDoc}
-     */
     @Override
     protected final void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        throw new UnsupportedOperationException();
+        throw new IllegalStateException();
     }
 
-    /**
-     * Throws {@link UnsupportedOperationException}.
-     *
-     * {@inheritDoc}
-     */
     @Override
     protected final void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
-        throw new UnsupportedOperationException();
+        throw new IllegalStateException();
     }
 }
