@@ -35,7 +35,7 @@ import org.jboss.dmr.ModelNode;
  */
 public abstract class AbstractWriteAttributeHandler<T> implements OperationStepHandler {
 
-    private final ParametersValidator nameValidator = new ParametersValidator();
+    private static final ParametersValidator NAME_VALIDATOR = new ParametersValidator();
 
     private final Map<String, AttributeDefinition> attributeDefinitions;
 
@@ -60,7 +60,7 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
-        nameValidator.validate(operation);
+        NAME_VALIDATOR.validate(operation);
         final String attributeName = operation.require(NAME).asString();
         // Don't require VALUE. Let the validator decide if it's bothered by an undefined value
         ModelNode newValue = operation.hasDefined(VALUE) ? operation.get(VALUE) : new ModelNode();
