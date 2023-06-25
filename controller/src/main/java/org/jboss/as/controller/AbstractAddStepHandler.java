@@ -29,7 +29,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
  * @author John Bailey
  * @author Paul Ferraro
  */
-public class AbstractAddStepHandler implements OperationStepHandler, OperationDescriptor {
+public abstract class AbstractAddStepHandler implements OperationStepHandler, OperationDescriptor {
 
     private static final String AUTO_POPULATE_MODEL = "auto-populate-model";
 
