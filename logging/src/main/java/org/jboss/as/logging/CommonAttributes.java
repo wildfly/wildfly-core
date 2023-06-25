@@ -118,6 +118,7 @@ public interface CommonAttributes {
     SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING, true)
             .setAllowExpression(false)
             .setDeprecated(ModelVersion.create(1, 2, 0))
+            .setResourceOnly()
             .build();
 
     SimpleMapAttributeDefinition PROPERTIES = new SimpleMapAttributeDefinition.Builder("properties", true)
