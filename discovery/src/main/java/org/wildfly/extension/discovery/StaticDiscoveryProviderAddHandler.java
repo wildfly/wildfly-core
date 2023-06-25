@@ -29,10 +29,6 @@ import org.wildfly.discovery.spi.DiscoveryProvider;
  */
 class StaticDiscoveryProviderAddHandler extends AbstractAddStepHandler {
 
-    StaticDiscoveryProviderAddHandler() {
-        super(new Parameters().addAttribute(StaticDiscoveryProviderDefinition.SERVICES));
-    }
-
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         List<ModelNode> services = StaticDiscoveryProviderDefinition.SERVICES.resolveModelAttribute(context, resource.getModel()).asListOrEmpty();

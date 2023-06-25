@@ -26,10 +26,6 @@ import org.wildfly.discovery.spi.DiscoveryProvider;
  */
 class AggregateDiscoveryProviderAddHandler extends AbstractAddStepHandler {
 
-    AggregateDiscoveryProviderAddHandler() {
-        super(new Parameters().addAttribute(AggregateDiscoveryProviderDefinition.PROVIDER_NAMES));
-    }
-
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         CapabilityServiceBuilder<?> builder = context.getCapabilityServiceTarget().addService();

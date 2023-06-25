@@ -33,7 +33,7 @@ final class DiscoverySubsystemDefinition extends SimpleResourceDefinition {
 
     DiscoverySubsystemDefinition() {
         super(new Parameters(PATH, DiscoveryExtension.SUBSYSTEM_RESOLVER)
-            .setAddHandler(new ModelOnlyAddStepHandler())
+            .setAddHandler(ModelOnlyAddStepHandler.INSTANCE)
             .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
         );
     }

@@ -73,6 +73,6 @@ final class StaticDiscoveryProviderDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(final ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadWriteAttribute(SERVICES, null, new ReloadRequiredWriteAttributeHandler(SERVICES));
+        resourceRegistration.registerReadWriteAttribute(SERVICES, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
     }
 }
