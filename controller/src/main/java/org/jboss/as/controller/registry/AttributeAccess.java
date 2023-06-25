@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
@@ -20,7 +21,7 @@ import org.wildfly.common.Assert;
  *
  * @author Brian Stansberry
  */
-public final class AttributeAccess {
+public class AttributeAccess {
 
     /**
      * Indicates how an attributed is accessed.
@@ -73,7 +74,7 @@ public final class AttributeAccess {
     /**
      * Indicates whether an attribute is derived from the persistent configuration or is a purely runtime attribute.
      */
-    public enum Storage {
+    public enum Storage implements Predicate<AttributeAccess> {
         /**
          * An attribute whose value is stored in the persistent configuration.
          * The value may also be stored in runtime services.
@@ -96,10 +97,14 @@ public final class AttributeAccess {
             return label;
         }
 
+        @Override
+        public boolean test(AttributeAccess attribute) {
+            return attribute.getStorageType() == this;
+        }
     }
 
     /** Flags to indicate special characteristics of an attribute */
-    public enum Flag {
+    public enum Flag implements Predicate<AttributeAccess> {
         /** A modification to the attribute can be applied to the runtime without requiring a restart */
         RESTART_NONE,
         /** A modification to the attribute can only be applied to the runtime via a full jvm restart */
@@ -171,6 +176,11 @@ public final class AttributeAccess {
             }
 
             return result;
+        }
+
+        @Override
+        public boolean test(AttributeAccess attribute) {
+            return attribute.getFlags().contains(this);
         }
     }
 

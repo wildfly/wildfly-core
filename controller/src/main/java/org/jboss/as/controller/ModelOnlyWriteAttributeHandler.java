@@ -16,10 +16,23 @@ import org.jboss.dmr.ModelNode;
  */
 public class ModelOnlyWriteAttributeHandler extends AbstractWriteAttributeHandler<Void> {
 
+    public static final OperationStepHandler INSTANCE = new ModelOnlyWriteAttributeHandler();
+
+    protected ModelOnlyWriteAttributeHandler() {
+    }
+
+    /**
+     * @deprecated Use {@link #INSTANCE} instead.
+     */
+    @Deprecated(forRemoval = true)
     public ModelOnlyWriteAttributeHandler(AttributeDefinition... attributeDefinitions) {
         super(attributeDefinitions);
     }
 
+    /**
+     * @deprecated Use {@link #INSTANCE} instead.
+     */
+    @Deprecated(forRemoval = true)
     public ModelOnlyWriteAttributeHandler(Collection<AttributeDefinition> attributeDefinitions) {
         super(attributeDefinitions);
     }

@@ -10,7 +10,9 @@ import java.util.Collection;
 /**
  * Describes the parameters of operation..
  * @author Paul Ferraro
+ * @deprecated To be removed without replacement.
  */
+@Deprecated(forRemoval = true)
 public interface OperationDescriptor {
     Collection<? extends AttributeDefinition> getAttributes();
 }

@@ -155,7 +155,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddOperation(new AbstractAddStepHandler())
                 .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
-                .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
+                .addReadWriteAttribute(ad, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
                 .addCapability(TEST_CAPABILITY3)
                 .build();
 
@@ -184,22 +184,22 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
 
     private static final ResourceDefinition TEST_RESOURCE4 = ResourceBuilder.Factory.create(TEST_ADDRESS4.getElement(0),
             NonResolvingResourceDescriptionResolver.INSTANCE)
-            .setAddOperation(new AbstractAddStepHandler(ad, other) {
-        @Override
-        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-            if(operation.hasDefined("fail")) {
-                throw new OperationFailedException("Let's rollback");
-            }
-        }
+            .setAddOperation(new AbstractAddStepHandler() {
+                @Override
+                protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+                    if (operation.hasDefined("fail")) {
+                        throw new OperationFailedException("Let's rollback");
+                    }
+                }
 
-        @Override
-        protected boolean requiresRuntime(OperationContext context) {
-            return true;
-        }
+                @Override
+                protected boolean requiresRuntime(OperationContext context) {
+                    return true;
+                }
             })
             .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
-            .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
-            .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
+            .addReadWriteAttribute(ad, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
+            .addReadWriteAttribute(other, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
             .addCapability(IO_POOL_RUNTIME_CAPABILITY)
             .addCapability(IO_WORKER_RUNTIME_CAPABILITY)
             .build();

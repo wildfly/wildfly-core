@@ -6,6 +6,8 @@
 package org.jboss.as.controller;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -16,6 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD_INDEX;
@@ -24,23 +27,32 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
  * Base class for {@link OperationStepHandler} implementations that add managed resource.
  *
  * @author John Bailey
+ * @author Paul Ferraro
  */
 public class AbstractAddStepHandler implements OperationStepHandler, OperationDescriptor {
 
+    private static final String AUTO_POPULATE_MODEL = "auto-populate-model";
+
+    /**
+     * This is only retained to support {@link #getAttributes()} and for those subclasses that reference this protected attribute directly.
+     */
+    @Deprecated(forRemoval = true) // This is referenceable by subclasses
     protected final Collection<? extends AttributeDefinition> attributes;
 
     /**
      * Constructs an add handler.
      */
-    public AbstractAddStepHandler() { //default constructor to preserve backward compatibility
+    public AbstractAddStepHandler() {
         this.attributes = List.of();
     }
 
     /**
      * Constructs an add handler
      * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * @deprecated Use default constructor instead. Resource model auto-population logic relies on the {@link OperationDefinition#getParameters()} method of the operation definition with which this handler was registered.
      */
     @SuppressWarnings("unchecked")
+    @Deprecated(forRemoval = true)
     public AbstractAddStepHandler(Collection<? extends AttributeDefinition> attributes) {
         // Create defensive copy, if collection was not already immutable
         this.attributes = (attributes instanceof Set) ? Set.copyOf((Set<AttributeDefinition>) attributes) : List.copyOf(attributes);
@@ -50,16 +62,30 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      * Constructs an add handler
      *
      * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * @deprecated Use default constructor instead. Resource model auto-population logic relies on the {@link OperationDefinition#getParameters()} method of the operation definition with which this handler was registered.
      */
+    @Deprecated(forRemoval = true)
     public AbstractAddStepHandler(AttributeDefinition... attributes) {
         this(List.of(attributes));
     }
 
+    /**
+     * Constructs an add handler
+     *
+     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * @deprecated Use default constructor instead. Resource model auto-population logic relies on the {@link OperationDefinition#getParameters()} method of the operation definition with which this handler was registered.
+     */
+    @Deprecated(forRemoval = true)
     public AbstractAddStepHandler(Parameters parameters) {
         this.attributes = parameters.attributes;
     }
 
+    /**
+     * Returns the attributes with which this handler was constructed.
+     * @deprecated Use the {@link OperationDefinition#getParameters()} method of the operation definition with which this handler was registered instead.
+     */
     @Override
+    @Deprecated(forRemoval = true)
     public Collection<? extends AttributeDefinition> getAttributes() {
         return this.attributes;
     }
@@ -138,6 +164,26 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      */
     protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws  OperationFailedException {
         populateModel(operation, resource);
+
+        // Detect operation header written by populateModel(ModelNode, ModelNode)
+        // If header exists, then subclass expects us to populate the model
+        if (operation.hasDefined(ModelDescriptionConstants.OPERATION_HEADERS, AUTO_POPULATE_MODEL)) {
+            ModelNode model = resource.getModel();
+            ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
+            Map<String, AttributeAccess> attributes = registration.getAttributes(PathAddress.EMPTY_ADDRESS);
+            for (AttributeDefinition parameter : registration.getOperationEntry(PathAddress.EMPTY_ADDRESS, ModelDescriptionConstants.ADD).getOperationDefinition().getParameters()) {
+                AttributeAccess attribute = attributes.get(parameter.getName());
+                if ((attribute != null) && !AttributeAccess.Flag.ALIAS.test(attribute)) {
+                    // Auto-populate add resource operation parameters that correspond to resource attributes, omitting aliases
+                    parameter.validateAndSet(operation, model);
+                } else {
+                    // Otherwise, just validate parameter
+                    parameter.validateOperation(operation);
+                }
+            }
+            // Remove header added via populateModel(ModelNode, ModelNode)
+            operation.get(ModelDescriptionConstants.OPERATION_HEADERS).remove(AUTO_POPULATE_MODEL);
+        }
     }
 
     /**
@@ -150,7 +196,9 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      * @param resource the resource that corresponds to the address of {@code operation}
      *
      * @throws OperationFailedException if {@code operation} is invalid or populating the model otherwise fails
+     * @deprecated Override {@link #populateModel(OperationContext, ModelNode, Resource)} if necessary
      */
+    @Deprecated(forRemoval = true)
     protected void populateModel(final ModelNode operation, final Resource resource) throws  OperationFailedException {
         populateModel(operation, resource.getModel());
     }
@@ -166,11 +214,14 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      * @param model persistent configuration model node that corresponds to the address of {@code operation}
      *
      * @throws OperationFailedException if {@code operation} is invalid or populating the model otherwise fails
+     * @deprecated Override {@link #populateModel(OperationContext, ModelNode, Resource)} if necessary
      */
+    @Deprecated(forRemoval = true)
     protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-        for (AttributeDefinition attr : attributes) {
-            attr.validateAndSet(operation, model);
-        }
+        // Previously model auto-population happened here based on attributes provided via constructor
+        // If this method was invoked, we know that the subclass expects us to populate the model
+        // If so, indicate this via an operation header to be detected by our parent method
+        operation.get(ModelDescriptionConstants.OPERATION_HEADERS, AUTO_POPULATE_MODEL).set(true);
     }
 
     /**
@@ -194,7 +245,8 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      */
     protected void recordCapabilitiesAndRequirements(final OperationContext context, final ModelNode operation, Resource resource) throws OperationFailedException {
 
-        for (RuntimeCapability<?> capability : context.getResourceRegistration().getCapabilities()) {
+        ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
+        for (RuntimeCapability<?> capability : registration.getCapabilities()) {
             if (capability.isDynamicallyNamed()) {
                 context.registerCapability(capability.fromBaseCapability(context.getCurrentAddress()));
             } else {
@@ -203,14 +255,18 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
         }
 
         ModelNode model = resource.getModel();
-        for (AttributeDefinition ad : attributes) {
-            if (model.hasDefined(ad.getName()) || ad.hasCapabilityRequirements()) {
-                ad.addCapabilityRequirements(context, resource, model.get(ad.getName()));
+        for (AttributeAccess attribute : registration.getAttributes(PathAddress.EMPTY_ADDRESS).values()) {
+            // Skip runtime attributes and aliases
+            if (AttributeAccess.Storage.RUNTIME.test(attribute) || AttributeAccess.Flag.ALIAS.test(attribute)) continue;
+
+            AttributeDefinition definition = attribute.getAttributeDefinition();
+            String attributeName = definition.getName();
+            if (model.hasDefined(attributeName) || definition.hasCapabilityRequirements()) {
+                definition.addCapabilityRequirements(context, resource, model.get(attributeName));
             }
         }
-        ImmutableManagementResourceRegistration mrr = context.getResourceRegistration();
-        assert mrr.getRequirements() != null;
-        for (CapabilityReferenceRecorder recorder : mrr.getRequirements()) {
+        assert registration.getRequirements() != null;
+        for (CapabilityReferenceRecorder recorder : registration.getRequirements()) {
             recorder.addCapabilityRequirements(context, resource, null);
         }
     }
@@ -343,6 +399,10 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
         }
     }
 
+    /**
+     * @deprecated Use default constructor instead.  Operation parameters are determined via the {@link OperationDefinition#getParameters()} of the {@code ModelDescriptionConstants#ADD} operation associated resource.
+     */
+    @Deprecated(forRemoval = true)
     public static class Parameters {
         // Set is not the ideal data structure, but since this is a protected field, we are stuck with it
         protected Set<AttributeDefinition> attributes = Set.of();

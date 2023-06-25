@@ -39,10 +39,16 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
 
     private final Map<String, AttributeDefinition> attributeDefinitions;
 
+    protected AbstractWriteAttributeHandler() {
+        this.attributeDefinitions = Map.of();
+    }
+
+    @Deprecated(forRemoval = true)
     protected AbstractWriteAttributeHandler(final AttributeDefinition... definitions) {
         this(Arrays.asList(definitions));
     }
 
+    @Deprecated(forRemoval = true)
     protected AbstractWriteAttributeHandler(final Collection<AttributeDefinition> definitions) {
         if (definitions.isEmpty()) {
             this.attributeDefinitions = Collections.emptyMap();
@@ -50,10 +56,11 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
             AttributeDefinition definition = definitions.iterator().next();
             this.attributeDefinitions = Collections.singletonMap(definition.getName(), definition);
         } else {
-            this.attributeDefinitions = new HashMap<>(definitions.size());
+            Map<String, AttributeDefinition> attributes = new HashMap<>(definitions.size());
             for (AttributeDefinition definition : definitions) {
-                this.attributeDefinitions.put(definition.getName(), definition);
+                attributes.put(definition.getName(), definition);
             }
+            this.attributeDefinitions = Collections.unmodifiableMap(attributes);
         }
     }
 
@@ -63,32 +70,39 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
         NAME_VALIDATOR.validate(operation);
         final String attributeName = operation.require(NAME).asString();
         // Don't require VALUE. Let the validator decide if it's bothered by an undefined value
-        ModelNode newValue = operation.hasDefined(VALUE) ? operation.get(VALUE) : new ModelNode();
+        ModelNode attributeValue = operation.hasDefined(VALUE) ? operation.get(VALUE) : new ModelNode();
 
         final Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
         final ModelNode submodel = resource.getModel();
         final ModelNode currentValue = submodel.get(attributeName).clone();
-        final AttributeDefinition attributeDefinition = getAttributeDefinition(attributeName);
+
+        AttributeAccess attributeAccess = context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
+        if (attributeAccess == null) {
+            throw new OperationFailedException(ControllerLogger.MGMT_OP_LOGGER.unknownAttribute(attributeName));
+        }
+        if (!attributeAccess.getAccessType().isWritable()) {
+            throw new OperationFailedException(ControllerLogger.MGMT_OP_LOGGER.attributeNotWritable(attributeName));
+        }
+        AttributeDefinition attributeDefinition = attributeAccess.getAttributeDefinition();
         final ModelNode defaultValue = attributeDefinition.getDefaultValue();
         final ModelNode syntheticOp = new ModelNode();
 
-        syntheticOp.get(attributeName).set(newValue);
+        syntheticOp.get(attributeName).set(attributeValue);
         attributeDefinition.validateAndSet(syntheticOp, submodel);
-        newValue = submodel.get(attributeName);
+        ModelNode newValue = submodel.get(attributeName);
         recordCapabilitiesAndRequirements(context, attributeDefinition, newValue, currentValue);
 
         finishModelStage(context, operation, attributeName, newValue, currentValue, resource);
 
         if (requiresRuntime(context)) {
-            final ModelNode updatedValue = newValue;
             context.addStep(operation, new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    final ModelNode resolvedValue = attributeDefinition != null ? attributeDefinition.resolveModelAttribute(context, submodel) : context.resolveExpressions(updatedValue);
-                    final HandbackHolder<T> handback = new HandbackHolder<T>();
+                    final ModelNode resolvedValue = attributeDefinition.resolveModelAttribute(context, submodel);
+                    final HandbackHolder<T> handback = new HandbackHolder<>();
                     final boolean reloadRequired = applyUpdateToRuntime(context, operation, attributeName, resolvedValue, currentValue, handback);
                     if (reloadRequired) {
-                        if (attributeDefinition != null && attributeDefinition.getFlags().contains(AttributeAccess.Flag.RESTART_JVM)){
+                        if (attributeDefinition.getFlags().contains(AttributeAccess.Flag.RESTART_JVM)){
                             context.restartRequired();
                         }else{
                             context.reloadRequired();
@@ -110,7 +124,7 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
                                         context.getCurrentAddress());
                             }
                             if (reloadRequired) {
-                                if (attributeDefinition != null && attributeDefinition.getFlags().contains(AttributeAccess.Flag.RESTART_JVM)) {
+                                if (attributeDefinition.getFlags().contains(AttributeAccess.Flag.RESTART_JVM)) {
                                     context.revertRestartRequired();
                                 } else {
                                     context.revertReloadRequired();
@@ -234,9 +248,10 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
      *
      * @param attributeName the attribute name
      * @return the attribute definition of {@code attributeName}
-     * @throws IllegalArgumentException if no attribute definition with name {@code attributeName} exists.
+     * @deprecated No longer used.
      */
-    protected AttributeDefinition getAttributeDefinition(final String attributeName) throws IllegalArgumentException {
+    @Deprecated(forRemoval = true)
+    protected AttributeDefinition getAttributeDefinition(final String attributeName) {
         AttributeDefinition response = attributeDefinitions.get(attributeName);
         if (response == null) {
             throw ControllerLogger.MGMT_OP_LOGGER.invalidAttributeDefinition(attributeName);

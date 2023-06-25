@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYS
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -40,9 +41,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityServiceTarget;
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.NoopOperationStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -53,6 +58,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.Action.ActionEffect;
 import org.jboss.as.controller.access.AuthorizationResult;
@@ -61,10 +67,14 @@ import org.jboss.as.controller.access.ResourceAuthorization;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
@@ -122,8 +132,20 @@ public abstract class AbstractOperationTestCase {
             this.registration = createManagementResourceRegistration(operationAddress);
         }
 
-        protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress) {
+        protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress, AttributeDefinition... attributes) {
             this(root, booting, operationAddress, true);
+            OperationEntry entry = mock(OperationEntry.class);
+            doReturn(SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.ADD, mock(ResourceDescriptionResolver.class)).setParameters(attributes).build()).when(entry).getOperationDefinition();
+            doReturn(entry).when(this.registration).getOperationEntry(PathAddress.EMPTY_ADDRESS, ModelDescriptionConstants.ADD);
+            for (AttributeDefinition attribute : attributes) {
+                AttributeAccess access = mock(AttributeAccess.class);
+                doReturn(AttributeAccess.AccessType.READ_WRITE).when(access).getAccessType();
+                doReturn(AttributeAccess.Storage.CONFIGURATION).when(access).getStorageType();
+                doReturn(ModelOnlyWriteAttributeHandler.INSTANCE).when(access).getWriteHandler();
+                doReturn(attribute).when(access).getAttributeDefinition();
+                doReturn(access).when(this.registration).getAttributeAccess(PathAddress.EMPTY_ADDRESS, attribute.getName());
+            }
+            doReturn(Stream.of(attributes).map(AttributeDefinition::getName).collect(Collectors.toSet())).when(this.registration).getAttributeNames(PathAddress.EMPTY_ADDRESS);
         }
 
         public void expectStep(final PathAddress address) {
