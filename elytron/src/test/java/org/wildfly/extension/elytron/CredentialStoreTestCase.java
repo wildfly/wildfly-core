@@ -25,6 +25,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.wildfly.extension.elytron.KeyPairUtil.DSA_ALGORITHM;
+import static org.wildfly.extension.elytron.KeyPairUtil.EC_ALGORITHM;
+import static org.wildfly.extension.elytron.KeyPairUtil.RSA_ALGORITHM;
+import static org.wildfly.extension.elytron.KeyPairUtil.readKeyFromFile;
 import static org.wildfly.security.encryption.SecretKeyUtil.importSecretKey;
 
 import java.security.AccessController;
@@ -49,6 +53,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.security.WildFlyElytronProvider;
+import org.wildfly.security.credential.KeyPairCredential;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.encryption.CipherUtil;
 
@@ -154,6 +159,406 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
             // Key Sizes are in bits.
             assertEquals("Expected Key Size", expectedKeySize, secretKey.getEncoded().length * 8);
         }
+    }
+
+    @Test
+    public void testGenerateKeyPairDefault() {
+        String aliasName = "testKeyPairAlias";
+        String storeType = "credential-store";
+        String storeName = "test";
+
+        generateKeyPair(storeType, storeName, aliasName);
+        exportKeyPairPublicKey(storeType, storeName, aliasName);
+        removeKeyPair(storeType, storeName, aliasName);
+    }
+
+    @Test
+    public void testGenerateKeyPairRSA() {
+        String aliasName = "testRSAKeyPairAlias";
+        String storeType = "credential-store";
+        String storeName = "test";
+        String algorithm = RSA_ALGORITHM;
+        String size = "3072";
+
+        generateKeyPair(storeType, storeName, aliasName, algorithm, size);
+        exportKeyPairPublicKey(storeType, storeName, aliasName);
+        removeKeyPair(storeType, storeName, aliasName);
+    }
+
+    @Test
+    public void testGenerateKeyPairDSA() {
+        String aliasName = "testDSAKeyPairAlias";
+        String storeType = "credential-store";
+        String storeName = "test";
+        String algorithm = DSA_ALGORITHM;
+        String size = "2048";
+
+        generateKeyPair(storeType, storeName, aliasName, algorithm, size);
+        exportKeyPairPublicKey(storeType, storeName, aliasName);
+        removeKeyPair(storeType, storeName, aliasName);
+    }
+
+    @Test
+    public void testGenerateKeyPairECDSA() {
+        String aliasName = "testECDSAKeyPairAlias";
+        String storeType = "credential-store";
+        String storeName = "test";
+        String algorithm = EC_ALGORITHM;
+        String size = "521";
+
+        generateKeyPair(storeType, storeName, aliasName, algorithm, size);
+        exportKeyPairPublicKey(storeType, storeName, aliasName);
+        removeKeyPair(storeType, storeName, aliasName);
+    }
+
+    @Test
+    public void testExportPublicKey() {
+        String aliasName = "testExportKeyPairAlias";
+        String storeType = "credential-store";
+        String storeName = "test";
+
+        generateKeyPair(storeType, storeName, aliasName);
+        String publicKey = exportKeyPairPublicKey(storeType, storeName, aliasName);
+        removeKeyPair(storeType, storeName, aliasName);
+
+        Assert.assertTrue(publicKey.contains("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ"));
+    }
+
+    @Test
+    public void testExportPublicKeyFailNonExistingAlias() {
+        String aliasName = "testExportKeyPairAlias";
+        String storeType = "credential-store";
+        String storeName = "test";
+
+        ModelNode export = new ModelNode();
+        export.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        export.get(ClientConstants.OP).set("export-key-pair-public-key");
+        export.get(ElytronDescriptionConstants.ALIAS).set(aliasName);
+
+        ModelNode exportResult = assertFailed(services.executeOperation(export));
+        assertThat(exportResult.get(ClientConstants.FAILURE_DESCRIPTION).asString(), containsString("WFLYELY00920:"));
+    }
+
+    @Test
+    public void testImportKeyPairFailDuplicatePrivateKeyResource() {
+        String aliasName = "testImportKeyPairFailDuplicatePrivateKeyResource";
+        String storeType = "credential-store";
+        String storeName = "test";
+        String passphrase = "secret";
+        String privateKeyLocation = "./target/test-classes/ssh-keys/id_ecdsa";
+        String privateKey = "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+                "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABCdRswttV\n" +
+                "UNQ6nKb6ojozTGAAAAEAAAAAEAAABoAAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlz\n" +
+                "dHAyNTYAAABBBAKxnsRT7n6qJLKoD3mFfAvcH5ZFUyTzJVW8t60pNgNaXO4q5S4qL9yCCZ\n" +
+                "cKyg6QtVgRuVxkUSseuR3fiubyTnkAAADQq3vrkvuSfm4n345STr/i/29FZEFUd0qD++B2\n" +
+                "ZoWGPKU/xzvxH7S2GxREb5oXcIYO889jY6mdZT8LZm6ZZig3rqoEAqdPyllHmEadb7hY+y\n" +
+                "jwcQ4Wr1ekGgVwNHCNu2in3cYXxbrYGMHc33WmdNrbGRDUzK+EEUM2cwUiM7Pkrw5s88Ff\n" +
+                "IWI0V+567Ob9LxxIUO/QvSbKMJGbMM4jZ1V9V2Ti/GziGJ107CBudZr/7wNwxIK86BBAEg\n" +
+                "hfnrhYBIaOLrtP8R+96i8iu4iZAvcIbQ==\n" +
+                "-----END OPENSSH PRIVATE KEY-----";
+
+        ModelNode importKeyPair = new ModelNode();
+        importKeyPair.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        importKeyPair.get(ClientConstants.OP).set("import-key-pair");
+        importKeyPair.get(ElytronDescriptionConstants.ALIAS).set(aliasName);
+        importKeyPair.get(ElytronDescriptionConstants.OPENSSH_PRIVATE_KEY_LOCATION).set(privateKeyLocation);
+        importKeyPair.get(ElytronDescriptionConstants.OPENSSH_PRIVATE_KEY).set(privateKey);
+        importKeyPair.get(ElytronDescriptionConstants.PASSPHRASE).set(passphrase);
+
+        assertFailed(services.executeOperation(importKeyPair));
+    }
+
+    @Test
+    public void testImportKeyPairFailDuplicatePublicKeyResource() {
+        String aliasName = "testImportKeyPairFailDuplicatePublicKeyResource";
+        String storeType = "credential-store";
+        String storeName = "test";
+        String privateKeyLocation = "./target/test-classes/ssh-keys/id_ecdsa_pkcs";
+        String publicKeyLocation = "./target/test-classes/ssh-keys/id_ecdsa_pkcs.pub";
+        String publicKey = "-----BEGIN PUBLIC KEY-----\n" +
+                "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETwqaS+N07bvXhz1J09s9HlAJhImZ\n" +
+                "VWCF/apVdSU3nZjPAQMK+hGATb/UICDGatGvMprD49ezxcNzHUufCn7IvA==\n" +
+                "-----END PUBLIC KEY-----";
+
+        ModelNode importKeyPair = new ModelNode();
+        importKeyPair.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        importKeyPair.get(ClientConstants.OP).set("import-key-pair");
+        importKeyPair.get(ElytronDescriptionConstants.ALIAS).set(aliasName);
+        importKeyPair.get(ElytronDescriptionConstants.PRIVATE_KEY_LOCATION).set(privateKeyLocation);
+        importKeyPair.get(ElytronDescriptionConstants.PUBLIC_KEY).set(publicKey);
+        importKeyPair.get(ElytronDescriptionConstants.PUBLIC_KEY_LOCATION).set(publicKeyLocation);
+
+        assertFailed(services.executeOperation(importKeyPair));
+    }
+
+    @Test
+    public void testImportKeyPairNoPrivateKey() {
+        String aliasName = "testImportKeyPairNoPrivateKey";
+        String storeType = "credential-store";
+        String storeName = "test";
+
+        ModelNode importKeyPair = new ModelNode();
+        importKeyPair.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        importKeyPair.get(ClientConstants.OP).set("import-key-pair");
+        importKeyPair.get(ElytronDescriptionConstants.ALIAS).set(aliasName);
+
+        ModelNode importResult = assertFailed(services.executeOperation(importKeyPair));
+        assertThat(importResult.get(ClientConstants.FAILURE_DESCRIPTION).asString(), containsString("WFLYELY00933:"));
+    }
+
+    @Test
+    public void testImportOpenSSHKeyPairFromFile() {
+        String aliasName = "testOpenSSHKeyPairFromFileAlias";
+        String storeType = "credential-store";
+        String storeName = "test";
+        String passphrase = "secret";
+        String privateKeyLocation = "./target/test-classes/ssh-keys/id_ecdsa";
+
+        importOpensshKeyPairKeyFromFile(storeType, storeName, aliasName, privateKeyLocation, passphrase);
+        exportKeyPairPublicKey(storeType, storeName, aliasName);
+        removeKeyPair(storeType, storeName, aliasName);
+    }
+
+    @Test
+    public void testImportOpenSSHKeyPairFromFileGeneratedWithoutPassphrase() {
+        String aliasName = "testImportOpenSSHKeyPairFromFileGeneratedWithoutPassphrase";
+        String storeType = "credential-store";
+        String storeName = "test";
+        String passphrase = "";
+        String privateKeyLocation = "./target/test-classes/ssh-keys/id_rsa";
+        String publicKeyLocation = "./target/test-classes/ssh-keys/id_rsa.pub";
+
+        importOpensshKeyPairKeyFromFile(storeType, storeName, aliasName, privateKeyLocation, passphrase);
+        String exportedPublicString = exportKeyPairPublicKey(storeType, storeName, aliasName);
+        String publicKey = readKeyFromFile(publicKeyLocation);
+        assertEquals(publicKey, exportedPublicString);
+        removeKeyPair(storeType, storeName, aliasName);
+    }
+
+    @Test
+    public void testImportOpenSSHKeyPairFromFileWithoutPassphrase() {
+        String aliasName = "testImportOpenSSHKeyPairFromFileGeneratedWithoutPassphrase";
+        String storeType = "credential-store";
+        String storeName = "test";
+        String privateKeyLocation = "./target/test-classes/ssh-keys/id_ecdsa";
+
+        ModelNode importKeyPair = new ModelNode();
+        importKeyPair.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        importKeyPair.get(ClientConstants.OP).set("import-key-pair");
+        importKeyPair.get(ElytronDescriptionConstants.ALIAS).set(aliasName);
+        importKeyPair.get(ElytronDescriptionConstants.OPENSSH_PRIVATE_KEY_LOCATION).set(privateKeyLocation);
+
+        assertFailed(services.executeOperation(importKeyPair));
+    }
+
+    @Test
+    public void testImportPKCSKeyPairFromFileWithoutPublicKey() {
+        String aliasName = "testImportPKCSKeyPairFromFileWithoutPublicKey";
+        String storeType = "credential-store";
+        String storeName = "test";
+        String passphrase = "secret";
+        String privateKeyLocation = "./target/test-classes/ssh-keys/id_ecdsa_pkcs";
+
+        ModelNode importKeyPair = new ModelNode();
+        importKeyPair.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        importKeyPair.get(ClientConstants.OP).set("import-key-pair");
+        importKeyPair.get(ElytronDescriptionConstants.ALIAS).set(aliasName);
+        importKeyPair.get(ElytronDescriptionConstants.PRIVATE_KEY_LOCATION).set(privateKeyLocation);
+        importKeyPair.get(ElytronDescriptionConstants.PASSPHRASE).set(passphrase);
+
+        ModelNode importResult = assertFailed(services.executeOperation(importKeyPair));
+        assertThat(importResult.get(ClientConstants.FAILURE_DESCRIPTION).asString(), containsString("WFLYELY00931:"));
+    }
+
+    @Test
+    public void testImportPKCSKeyPairFromFile() {
+        String aliasName = "testPKCSKeyPairFromFileAlias";
+        String storeType = "credential-store";
+        String storeName = "test";
+        String passphrase = "secret";
+        String privateKeyLocation = "./target/test-classes/ssh-keys/id_ecdsa_pkcs";
+        String publicKeyLocation = "./target/test-classes/ssh-keys/id_ecdsa_pkcs.pub";
+
+        importKeyPairKeyFromFile(storeType, storeName, aliasName, privateKeyLocation, publicKeyLocation, passphrase);
+        exportKeyPairPublicKey(storeType, storeName, aliasName);
+        removeKeyPair(storeType, storeName, aliasName);
+    }
+
+    @Test
+    public void testImportOpenSSHKeyPairFromString() {
+        String aliasName = "testOpenSSHKeyPairFromStringAlias";
+        String storeType = "credential-store";
+        String storeName = "test";
+        String passphrase = "secret";
+        String key = "-----BEGIN OPENSSH PRIVATE KEY-----\n" +
+                "b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABCdRswttV\n" +
+                "UNQ6nKb6ojozTGAAAAEAAAAAEAAABoAAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlz\n" +
+                "dHAyNTYAAABBBAKxnsRT7n6qJLKoD3mFfAvcH5ZFUyTzJVW8t60pNgNaXO4q5S4qL9yCCZ\n" +
+                "cKyg6QtVgRuVxkUSseuR3fiubyTnkAAADQq3vrkvuSfm4n345STr/i/29FZEFUd0qD++B2\n" +
+                "ZoWGPKU/xzvxH7S2GxREb5oXcIYO889jY6mdZT8LZm6ZZig3rqoEAqdPyllHmEadb7hY+y\n" +
+                "jwcQ4Wr1ekGgVwNHCNu2in3cYXxbrYGMHc33WmdNrbGRDUzK+EEUM2cwUiM7Pkrw5s88Ff\n" +
+                "IWI0V+567Ob9LxxIUO/QvSbKMJGbMM4jZ1V9V2Ti/GziGJ107CBudZr/7wNwxIK86BBAEg\n" +
+                "hfnrhYBIaOLrtP8R+96i8iu4iZAvcIbQ==\n" +
+                "-----END OPENSSH PRIVATE KEY-----";
+
+        importOpensshKeyPairKey(storeType, storeName, aliasName, key, passphrase);
+        exportKeyPairPublicKey(storeType, storeName, aliasName);
+        removeKeyPair(storeType, storeName, aliasName);
+    }
+
+    @Test
+    public void testImportPKCSKeyPairFromStringWithoutPublicKey() {
+        String aliasName = "testImportPKCSKeyPairFromStringWithoutPublicKey";
+        String storeType = "credential-store";
+        String storeName = "test";
+        String passphrase = "secret";
+        String privateKey = "-----BEGIN PRIVATE KEY-----\n" +
+                "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgj+ToYNaHz/pISg/Z\n" +
+                "I9BjdhcTre/SJpIxASY19XtOV1ehRANCAASngcxUTBf2atGC5lQWCupsQGRNwwnK\n" +
+                "6Ww9Xt37SmaHv0bX5n1KnsAal0ykJVKZsD0Z09jVF95jL6udwaKpWQwb\n" +
+                "-----END PRIVATE KEY-----";
+
+        ModelNode importKeyPair = new ModelNode();
+        importKeyPair.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        importKeyPair.get(ClientConstants.OP).set("import-key-pair");
+        importKeyPair.get(ElytronDescriptionConstants.ALIAS).set(aliasName);
+        importKeyPair.get(ElytronDescriptionConstants.PRIVATE_KEY).set(privateKey);
+        importKeyPair.get(ElytronDescriptionConstants.PASSPHRASE).set(passphrase);
+
+        ModelNode importResult = assertFailed(services.executeOperation(importKeyPair));
+        assertThat(importResult.get(ClientConstants.FAILURE_DESCRIPTION).asString(), containsString("WFLYELY00931:"));
+    }
+
+    @Test
+    public void testImportPKCSKeyPairFromString() {
+        String aliasName = "testPKCSKeyPairFromStringAlias";
+        String storeType = "credential-store";
+        String storeName = "test";
+        String passphrase = "secret";
+        String privateKey = "-----BEGIN PRIVATE KEY-----\n" +
+                "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgj+ToYNaHz/pISg/Z\n" +
+                "I9BjdhcTre/SJpIxASY19XtOV1ehRANCAASngcxUTBf2atGC5lQWCupsQGRNwwnK\n" +
+                "6Ww9Xt37SmaHv0bX5n1KnsAal0ykJVKZsD0Z09jVF95jL6udwaKpWQwb\n" +
+                "-----END PRIVATE KEY-----";
+        String publicKey = "-----BEGIN PUBLIC KEY-----\n" +
+                "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEp4HMVEwX9mrRguZUFgrqbEBkTcMJ\n" +
+                "yulsPV7d+0pmh79G1+Z9Sp7AGpdMpCVSmbA9GdPY1RfeYy+rncGiqVkMGw==\n" +
+                "-----END PUBLIC KEY-----\n";
+
+        importKeyPairKey(storeType, storeName, aliasName, privateKey, publicKey, passphrase);
+        exportKeyPairPublicKey(storeType, storeName, aliasName);
+        removeKeyPair(storeType, storeName, aliasName);
+    }
+
+    private void generateKeyPair(final String storeType, final String storeName, String alias) {
+        generateKeyPair(storeType, storeName, alias, "", true, "", true);
+    }
+
+    private void generateKeyPair(final String storeType, final String storeName, String alias, String algorithm, String size) {
+        generateKeyPair(storeType, storeName, alias, algorithm, false, size, false);
+    }
+
+    private void generateKeyPair(final String storeType, final String storeName, String alias, String algorithm, boolean omitAlgorithm, String size, boolean omitSize) {
+        ModelNode generate = new ModelNode();
+        generate.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        generate.get(ClientConstants.OP).set("generate-key-pair");
+        generate.get(ElytronDescriptionConstants.ALIAS).set(alias);
+        if (omitAlgorithm == false) {
+            generate.get(ElytronDescriptionConstants.ALGORITHM).set(algorithm);
+        }
+        if (omitSize == false) {
+            generate.get(ElytronDescriptionConstants.SIZE).set(size);
+        }
+
+        assertSuccess(services.executeOperation(generate));
+    }
+
+    private String exportKeyPairPublicKey(final String storeType, final String storeName, String alias) {
+        ModelNode export = new ModelNode();
+        export.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        export.get(ClientConstants.OP).set("export-key-pair-public-key");
+        export.get(ElytronDescriptionConstants.ALIAS).set(alias);
+
+        ModelNode exportResult = assertSuccess(services.executeOperation(export));
+        String key = exportResult.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.PUBLIC_KEY).asString();
+
+        return key;
+    }
+
+    private void importKeyPairKey(final String storeType, final String storeName, String alias, String privateKey, String publicKey, String passphrase) {
+        ModelNode importKeyPair = new ModelNode();
+        importKeyPair.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        importKeyPair.get(ClientConstants.OP).set("import-key-pair");
+        importKeyPair.get(ElytronDescriptionConstants.ALIAS).set(alias);
+        if (!privateKey.isEmpty()) {
+            importKeyPair.get(ElytronDescriptionConstants.PRIVATE_KEY).set(privateKey);
+        }
+        if (!publicKey.isEmpty()) {
+            importKeyPair.get(ElytronDescriptionConstants.PUBLIC_KEY).set(publicKey);
+        }
+        if (!passphrase.isEmpty()) {
+            importKeyPair.get(ElytronDescriptionConstants.PASSPHRASE).set(passphrase);
+        }
+
+        assertSuccess(services.executeOperation(importKeyPair));
+    }
+
+    private void importOpensshKeyPairKey(final String storeType, final String storeName, String alias, String privateKey, String passphrase) {
+        ModelNode importKeyPair = new ModelNode();
+        importKeyPair.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        importKeyPair.get(ClientConstants.OP).set("import-key-pair");
+        importKeyPair.get(ElytronDescriptionConstants.ALIAS).set(alias);
+        if (!privateKey.isEmpty()) {
+            importKeyPair.get(ElytronDescriptionConstants.OPENSSH_PRIVATE_KEY).set(privateKey);
+        }
+        if (!passphrase.isEmpty()) {
+            importKeyPair.get(ElytronDescriptionConstants.PASSPHRASE).set(passphrase);
+        }
+
+        assertSuccess(services.executeOperation(importKeyPair));
+    }
+
+    private void importKeyPairKeyFromFile(final String storeType, final String storeName, String alias, String privateKeyLocation, String publicKeyLocation, String passphrase) {
+        ModelNode importKeyPair = new ModelNode();
+        importKeyPair.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        importKeyPair.get(ClientConstants.OP).set("import-key-pair");
+        importKeyPair.get(ElytronDescriptionConstants.ALIAS).set(alias);
+        if (!privateKeyLocation.isEmpty()) {
+            importKeyPair.get(ElytronDescriptionConstants.PRIVATE_KEY_LOCATION).set(privateKeyLocation);
+        }
+        if (!publicKeyLocation.isEmpty()) {
+            importKeyPair.get(ElytronDescriptionConstants.PUBLIC_KEY_LOCATION).set(publicKeyLocation);
+        }
+        if (!passphrase.isEmpty()) {
+            importKeyPair.get(ElytronDescriptionConstants.PASSPHRASE).set(passphrase);
+        }
+
+        assertSuccess(services.executeOperation(importKeyPair));
+    }
+
+    private void importOpensshKeyPairKeyFromFile(final String storeType, final String storeName, String alias, String privateKeyLocation, String passphrase) {
+        ModelNode importKeyPair = new ModelNode();
+        importKeyPair.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        importKeyPair.get(ClientConstants.OP).set("import-key-pair");
+        importKeyPair.get(ElytronDescriptionConstants.ALIAS).set(alias);
+        if (!privateKeyLocation.isEmpty()) {
+            importKeyPair.get(ElytronDescriptionConstants.OPENSSH_PRIVATE_KEY_LOCATION).set(privateKeyLocation);
+        }
+        if (!passphrase.isEmpty()) {
+            importKeyPair.get(ElytronDescriptionConstants.PASSPHRASE).set(passphrase);
+        }
+
+        assertSuccess(services.executeOperation(importKeyPair));
+    }
+
+    private void removeKeyPair(final String storeType, final String storeName, String alias) {
+        ModelNode remove = new ModelNode();
+        remove.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
+        remove.get(ClientConstants.OP).set("remove-alias");
+        remove.get(ElytronDescriptionConstants.ENTRY_TYPE).set(KeyPairCredential.class.getSimpleName());
+        remove.get(ElytronDescriptionConstants.ALIAS).set(alias);
+
+        assertSuccess(services.executeOperation(remove));
     }
 
     // Add SecretKey Flow for secret-key-credential-store but take into account the resource also has a default key size.

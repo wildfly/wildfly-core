@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Policy;
 import java.security.Provider;
@@ -411,6 +412,27 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = 927, value = "The secret key operation '%s' failed to complete due to '%s'.")
     OperationFailedException secretKeyOperationFailed(String operationName, String error, @Cause Throwable cause);
+
+    @Message(id = 928, value = "Key Pair Algorithm: '%s' is not supported.")
+    NoSuchAlgorithmException unknownKeyPairAlgorithm(String algorithm);
+
+    @Message(id = 929, value = "Invalid key size provided: %s")
+    NoSuchAlgorithmException invalidKeyPairKeySize(String message);
+
+    @Message(id = 930, value = "No PEM content found")
+    IllegalArgumentException xmlNoPemContent();
+
+    @Message(id = 931, value = "No public key specified for importing.")
+    IllegalArgumentException noPublicKeySpecified();
+
+    @Message(id = 932, value = "Key file '%s' does not exist.")
+    IllegalArgumentException keyFileDoesNotExist(String location);
+
+    @Message(id = 933, value = "No private key specified for importing.")
+    IllegalArgumentException noPrivateKeySpecified();
+
+    @Message(id = 934, value = "The key pair operation '%s' failed to complete due to '%s'.")
+    OperationFailedException keyPairOperationFailed(String operationName, String error, @Cause Throwable cause);
 
     /*
      * Identity Resource Messages - 1000

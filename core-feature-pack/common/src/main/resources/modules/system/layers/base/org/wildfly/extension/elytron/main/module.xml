@@ -48,6 +48,7 @@
         <module name="java.xml"/>
         <module name="jakarta.security.jacc.api"/>
         <module name="jakarta.security.auth.message.api"/>
+        <module name="org.apache.sshd"/>
         <module name="org.jboss.staxmapper"/>
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.as.server"/>

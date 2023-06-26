@@ -18,6 +18,7 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.apache.sshd.common.config.keys.KeyUtils.RSA_ALGORITHM;
 import static org.jboss.as.controller.security.CredentialReference.getCredentialSource;
 import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
 import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
@@ -29,14 +30,23 @@ import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
+import static org.wildfly.extension.elytron.KeyPairUtil.exportPublicKey;
+import static org.wildfly.extension.elytron.KeyPairUtil.generateKeyPair;
+import static org.wildfly.extension.elytron.KeyPairUtil.parseKeyPair;
+import static org.wildfly.extension.elytron.KeyPairUtil.parseOpensshKeyPair;
+import static org.wildfly.extension.elytron.KeyPairUtil.readKeyFromFile;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -79,7 +89,9 @@ import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.security.EmptyProvider;
 import org.wildfly.security.auth.server.IdentityCredentials;
+import org.wildfly.security.auth.util.ElytronFilePasswordProvider;
 import org.wildfly.security.credential.Credential;
+import org.wildfly.security.credential.KeyPairCredential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.source.CredentialSource;
@@ -175,6 +187,58 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             .setAlternatives(ElytronDescriptionConstants.LOCATION)
             .build();
 
+    static final SimpleAttributeDefinition SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SIZE, ModelType.INT, true)
+            .setStorageRuntime()
+            .setDefaultValue(new ModelNode(0))
+            .build();
+
+    static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING, true)
+            .setMinSize(1)
+            .setStorageRuntime()
+            .setDefaultValue(new ModelNode(RSA_ALGORITHM))
+            .build();
+
+    static final SimpleAttributeDefinition PUBLIC_KEY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PUBLIC_KEY, ModelType.STRING, true)
+            .setMinSize(1)
+            .setStorageRuntime()
+            .setAlternatives(ElytronDescriptionConstants.PUBLIC_KEY_LOCATION)
+            .build();
+
+    static final SimpleAttributeDefinition PUBLIC_KEY_LOCATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PUBLIC_KEY_LOCATION, ModelType.STRING, true)
+            .setMinSize(1)
+            .setStorageRuntime()
+            .setAlternatives(ElytronDescriptionConstants.PUBLIC_KEY)
+            .build();
+
+    static final SimpleAttributeDefinition PASSPHRASE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSPHRASE, ModelType.STRING, true)
+            .setMinSize(1)
+            .setStorageRuntime()
+            .build();
+
+    static final SimpleAttributeDefinition PRIVATE_KEY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRIVATE_KEY, ModelType.STRING, true)
+            .setMinSize(1)
+            .setStorageRuntime()
+            .setAlternatives(ElytronDescriptionConstants.PRIVATE_KEY_LOCATION, ElytronDescriptionConstants.OPENSSH_PRIVATE_KEY, ElytronDescriptionConstants.OPENSSH_PRIVATE_KEY_LOCATION)
+            .build();
+
+    static final SimpleAttributeDefinition OPENSSH_PRIVATE_KEY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.OPENSSH_PRIVATE_KEY, ModelType.STRING, true)
+            .setMinSize(1)
+            .setStorageRuntime()
+            .setAlternatives(ElytronDescriptionConstants.PRIVATE_KEY, ElytronDescriptionConstants.PRIVATE_KEY_LOCATION, ElytronDescriptionConstants.OPENSSH_PRIVATE_KEY_LOCATION)
+            .build();
+
+    static final SimpleAttributeDefinition PRIVATE_KEY_LOCATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRIVATE_KEY_LOCATION, ModelType.STRING, true)
+            .setMinSize(1)
+            .setStorageRuntime()
+            .setAlternatives(ElytronDescriptionConstants.PRIVATE_KEY, ElytronDescriptionConstants.OPENSSH_PRIVATE_KEY, ElytronDescriptionConstants.OPENSSH_PRIVATE_KEY_LOCATION)
+            .build();
+
+    static final SimpleAttributeDefinition OPENSSH_PRIVATE_KEY_LOCATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.OPENSSH_PRIVATE_KEY_LOCATION, ModelType.STRING, true)
+            .setMinSize(1)
+            .setStorageRuntime()
+            .setAlternatives(ElytronDescriptionConstants.PRIVATE_KEY, ElytronDescriptionConstants.PRIVATE_KEY_LOCATION, ElytronDescriptionConstants.OPENSSH_PRIVATE_KEY)
+            .build();
+
     // Resource Resolver
     private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.CREDENTIAL_STORE);
 
@@ -229,6 +293,21 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             .setRuntimeOnly()
             .build();
 
+    static final SimpleOperationDefinition GENERATE_KEY_PAIR = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.GENERATE_KEY_PAIR, OPERATION_RESOLVER)
+            .setParameters(ALIAS, ALGORITHM, SIZE)
+            .setRuntimeOnly()
+            .build();
+
+    static final SimpleOperationDefinition EXPORT_KEY_PAIR_PUBLIC_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.EXPORT_KEY_PAIR_PUBLIC_KEY, OPERATION_RESOLVER)
+            .setParameters(ALIAS)
+            .setRuntimeOnly()
+            .build();
+
+    static final SimpleOperationDefinition IMPORT_KEY_PAIR = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.IMPORT_KEY_PAIR, OPERATION_RESOLVER)
+            .setParameters(ALIAS, PRIVATE_KEY, OPENSSH_PRIVATE_KEY, PUBLIC_KEY, PRIVATE_KEY_LOCATION, OPENSSH_PRIVATE_KEY_LOCATION, PUBLIC_KEY_LOCATION, PASSPHRASE)
+            .setRuntimeOnly()
+            .build();
+
     private static final AttributeDefinition[] CONFIG_ATTRIBUTES = new AttributeDefinition[] {LOCATION, PATH, CREATE, MODIFIABLE, IMPLEMENTATION_PROPERTIES, CREDENTIAL_REFERENCE, TYPE, PROVIDER_NAME, PROVIDERS, OTHER_PROVIDERS, RELATIVE_TO};
 
     private static final CredentialStoreAddHandler ADD = new CredentialStoreAddHandler();
@@ -262,6 +341,9 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             operationMethods.put(ElytronDescriptionConstants.ADD_ALIAS, this::addAliasOperation);
             operationMethods.put(ElytronDescriptionConstants.REMOVE_ALIAS, this::removeAliasOperation);
             operationMethods.put(ElytronDescriptionConstants.SET_SECRET, this::setSecretOperation);
+            operationMethods.put(ElytronDescriptionConstants.GENERATE_KEY_PAIR, this::generateKeyPairOperation);
+            operationMethods.put(ElytronDescriptionConstants.EXPORT_KEY_PAIR_PUBLIC_KEY, this::exportKeyPairPublicKeyOperation);
+            operationMethods.put(ElytronDescriptionConstants.IMPORT_KEY_PAIR, this::importKeyPairOperation);
             operationMethods.put(ElytronDescriptionConstants.EXPORT_SECRET_KEY, this::exportSecretKeyOperation);
             operationMethods.put(ElytronDescriptionConstants.GENERATE_SECRET_KEY, this::generateSecretKeyOperation);
             operationMethods.put(ElytronDescriptionConstants.IMPORT_SECRET_KEY, this::importSecretKeyOperation);
@@ -273,6 +355,9 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             resourceRegistration.registerOperationHandler(ADD_ALIAS, operationHandler); // Mapped
             resourceRegistration.registerOperationHandler(REMOVE_ALIAS, operationHandler); // Mapped
             resourceRegistration.registerOperationHandler(SET_SECRET, operationHandler); // Mapped
+            resourceRegistration.registerOperationHandler(GENERATE_KEY_PAIR, operationHandler);
+            resourceRegistration.registerOperationHandler(EXPORT_KEY_PAIR_PUBLIC_KEY, operationHandler);
+            resourceRegistration.registerOperationHandler(IMPORT_KEY_PAIR, operationHandler);
             resourceRegistration.registerOperationHandler(GENERATE_SECRET_KEY, operationHandler);
             resourceRegistration.registerOperationHandler(EXPORT_SECRET_KEY, operationHandler);
             resourceRegistration.registerOperationHandler(IMPORT_SECRET_KEY, operationHandler);
@@ -345,6 +430,114 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
         generateSecretKeyOperation(context, operation, credentialStore, keySize);
     }
 
+    protected void importKeyPairOperation(OperationContext context, ModelNode operation, CredentialStore credentialStore) throws OperationFailedException {
+        try {
+            validateParametersAlternatives(IMPORT_KEY_PAIR, context, operation);
+
+            String privateKeyContent = new String();
+            String opensshPrivateKeyContent = new String();
+            String publicKeyContent = new String();
+
+            String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+
+            if (credentialStore.exists(alias, KeyPairCredential.class)) {
+                throw ROOT_LOGGER.credentialAlreadyExists(alias, KeyPairCredential.class.getName());
+            }
+
+            String privateKeyString = PRIVATE_KEY.resolveModelAttribute(context, operation).asStringOrNull();
+            String opensshPrivateKeyString = OPENSSH_PRIVATE_KEY.resolveModelAttribute(context, operation).asStringOrNull();
+            String publicKeyString = PUBLIC_KEY.resolveModelAttribute(context, operation).asStringOrNull();
+            String privateKeyLocation = PRIVATE_KEY_LOCATION.resolveModelAttribute(context, operation).asStringOrNull();
+            String opensshPrivateKeyLocation = OPENSSH_PRIVATE_KEY_LOCATION.resolveModelAttribute(context, operation).asStringOrNull();
+            String publicKeyLocation = PUBLIC_KEY_LOCATION.resolveModelAttribute(context, operation).asStringOrNull();
+
+            String passphraseString= PASSPHRASE.resolveModelAttribute(context, operation).asStringOrNull();
+            char[] passphrase = passphraseString != null ? passphraseString.toCharArray() : new char[0];
+
+            ElytronFilePasswordProvider passwordProvider = new ElytronFilePasswordProvider(createCredentialFromPassword(passphrase));
+
+            if (privateKeyLocation != null && !privateKeyLocation.isEmpty()) {
+                if (!Files.exists(Paths.get(privateKeyLocation))) {
+                    throw ROOT_LOGGER.keyFileDoesNotExist(privateKeyLocation);
+                }
+                privateKeyContent = readKeyFromFile(privateKeyLocation);
+            } else if (privateKeyString != null && !privateKeyString.isEmpty()) {
+                privateKeyContent = privateKeyString;
+            } else if (opensshPrivateKeyLocation != null && !opensshPrivateKeyLocation.isEmpty()) {
+                if (!Files.exists(Paths.get(opensshPrivateKeyLocation))) {
+                    throw ROOT_LOGGER.keyFileDoesNotExist(opensshPrivateKeyLocation);
+                }
+                opensshPrivateKeyContent = readKeyFromFile(opensshPrivateKeyLocation);
+            } else if (opensshPrivateKeyString != null && !opensshPrivateKeyString.isEmpty()) {
+                opensshPrivateKeyContent = opensshPrivateKeyString;
+            } else {
+                throw ROOT_LOGGER.noPrivateKeySpecified();
+            }
+
+            if (privateKeyContent.isEmpty() && opensshPrivateKeyContent.isEmpty()) {
+                throw ROOT_LOGGER.noPrivateKeySpecified();
+            }
+
+            if (!privateKeyContent.isEmpty()) {
+                if (publicKeyLocation != null && !publicKeyLocation.isEmpty()) {
+                    if (!Files.exists(Paths.get(publicKeyLocation))) {
+                        throw ROOT_LOGGER.keyFileDoesNotExist(publicKeyLocation);
+                    }
+                    publicKeyContent = readKeyFromFile(publicKeyLocation);
+                } else if (publicKeyString != null && !publicKeyString.isEmpty()) {
+                    publicKeyContent = publicKeyString;
+                }
+
+                if (publicKeyContent.isEmpty()) {
+                    throw ROOT_LOGGER.noPublicKeySpecified();
+                }
+            }
+
+            KeyPair keyPair = privateKeyContent.isEmpty() ? parseOpensshKeyPair(opensshPrivateKeyContent, passwordProvider) : parseKeyPair(privateKeyContent, publicKeyContent);
+            KeyPairCredential keyPairCredential = new KeyPairCredential(keyPair);
+            storeKeyPair(credentialStore, alias, keyPairCredential);
+        } catch (GeneralSecurityException e) {
+            throw ROOT_LOGGER.keyPairOperationFailed(ElytronDescriptionConstants.IMPORT_KEY_PAIR, dumpCause(e), e);
+        }
+    }
+
+    protected void generateKeyPairOperation(OperationContext context, ModelNode operation, CredentialStore credentialStore) throws OperationFailedException {
+        try {
+            String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+
+            if (credentialStore.exists(alias, KeyPairCredential.class)) {
+                throw ROOT_LOGGER.credentialAlreadyExists(alias, KeyPairCredential.class.getName());
+            }
+
+            String algorithm = ALGORITHM.resolveModelAttribute(context, operation).asString();
+            int size = SIZE.resolveModelAttribute(context, operation).asInt();
+
+            KeyPairCredential keyPairCredential = new KeyPairCredential(generateKeyPair(algorithm, size));
+            storeKeyPair(credentialStore, alias, keyPairCredential);
+        } catch (GeneralSecurityException e) {
+            throw ROOT_LOGGER.keyPairOperationFailed(ElytronDescriptionConstants.GENERATE_KEY_PAIR, dumpCause(e), e);
+        }
+    }
+
+    protected void exportKeyPairPublicKeyOperation(OperationContext context, ModelNode operation, CredentialStore credentialStore) throws OperationFailedException {
+        try {
+            String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+
+            KeyPairCredential credential = credentialStore.retrieve(alias, KeyPairCredential.class);
+            if (credential == null) {
+                throw ROOT_LOGGER.credentialDoesNotExist(alias, KeyPairCredential.class.getSimpleName());
+            }
+
+            PublicKey publicKey = credential.getKeyPair().getPublic();
+            String exportedPublicKey = exportPublicKey(publicKey);
+
+            ModelNode result = context.getResult();
+            result.get(ElytronDescriptionConstants.PUBLIC_KEY).set(exportedPublicKey);
+        } catch (GeneralSecurityException e) {
+            throw ROOT_LOGGER.keyPairOperationFailed(ElytronDescriptionConstants.EXPORT_KEY_PAIR_PUBLIC_KEY, dumpCause(e), e);
+        }
+    }
+
     static String credentialStoreName(ModelNode operation) {
         String credentialStoreName = null;
         PathAddress pa = PathAddress.pathAddress(operation.require(ModelDescriptionConstants.OP_ADDR));
@@ -368,6 +561,8 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             return PasswordCredential.class;
         } else if (SecretKeyCredential.class.getCanonicalName().equals(entryTyoe) || SecretKeyCredential.class.getSimpleName().equals(entryTyoe)) {
             return SecretKeyCredential.class;
+        } else if (KeyPairCredential.class.getCanonicalName().equals(entryTyoe) || KeyPairCredential.class.getSimpleName().equals(entryTyoe)) {
+            return KeyPairCredential.class;
         }
 
         return null;

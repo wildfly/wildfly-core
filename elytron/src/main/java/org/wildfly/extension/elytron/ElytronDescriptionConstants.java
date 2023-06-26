@@ -199,6 +199,7 @@ interface ElytronDescriptionConstants {
     String EVIDENCE_DECODERS = "evidence-decoders";
     String EXPIRATION = "expiration";
     String EXPORT_CERTIFICATE = "export-certificate";
+    String EXPORT_KEY_PAIR_PUBLIC_KEY = "export-key-pair-public-key";
     String EXPORT_SECRET_KEY = "export-secret-key";
     String EXPRESSION = "expression";
     String EXPRESSION_RESOLVER = "expression-resolver";
@@ -260,6 +261,7 @@ interface ElytronDescriptionConstants {
     String IMPLEMENTATION = "implementation";
     String IMPLEMENTATION_PROPERTIES = "implementation-properties";
     String IMPORT_CERTIFICATE = "import-certificate";
+    String IMPORT_KEY_PAIR = "import-key-pair";
     String IMPORT_SECRET_KEY = "import-secret-key";
     String INDEX = "index";
     String INFO = "info";
@@ -379,6 +381,8 @@ interface ElytronDescriptionConstants {
     String OCSP = "ocsp";
     String OID = "oid";
     String ONLY_LEAF_CERT = "only-leaf-cert";
+    String OPENSSH_PRIVATE_KEY = "openssh-private-key";
+    String OPENSSH_PRIVATE_KEY_LOCATION = "openssh-private-key-location";
     String OPERATIONS = "operations";
     String OTHER_PROVIDERS = "other-providers";
     String OTP = "otp";
@@ -392,6 +396,7 @@ interface ElytronDescriptionConstants {
 
     String PACKET_BUFFER_SIZE = "packet-buffer-size";
     String PATH = "path";
+    String PASSPHRASE = "passphrase";
     String PASSWORD = "password";
     String PASSWORD_INDEX = "password-index";
     String PATTERN = "pattern";
@@ -441,6 +446,9 @@ interface ElytronDescriptionConstants {
     String PROVIDER_VERSION = "provider-version";
     String PROVIDERS = "providers";
     String PUBLIC_KEY = "public-key";
+    String PUBLIC_KEY_LOCATION = "public-key-location";
+    String PRIVATE_KEY = "private-key";
+    String PRIVATE_KEY_LOCATION = "private-key-location";
 
     String RDN_IDENTIFIER = "rdn-identifier";
     String READ_ALIAS = "read-alias";

@@ -50,6 +50,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -57,6 +58,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.function.ExceptionFunction;
 import org.wildfly.security.credential.Credential;
+import org.wildfly.security.credential.KeyPairCredential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.store.CredentialStore;
@@ -244,6 +246,20 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
         }
     }
 
+    protected void validateParametersAlternatives(SimpleOperationDefinition operationDefinition, OperationContext context, ModelNode operation) throws OperationFailedException {
+        AttributeDefinition[] parameters = operationDefinition.getParameters();
+
+        for (AttributeDefinition parameter : parameters) {
+            ModelNode parameterModel = parameter.resolveModelAttribute(context, operation);
+            String[] alternatives = parameter.getAlternatives();
+            if (parameterModel.isDefined() && alternatives != null && parameter.getAlternatives().length > 0) {
+                for (String alternative : parameter.getAlternatives()) {
+                    if (operation.get(alternative).isDefined()) throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidAttributeCombo(parameter.getName(), new StringBuilder(alternative)));
+                }
+            }
+        }
+    }
+
     /**
      * Convert {@code char[]} password to {@code PasswordCredential}
      * @param password to convert
@@ -262,6 +278,10 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
     protected static void storeSecret(CredentialStore credentialStore, String alias, String secretValue) throws CredentialStoreException {
         char[] secret = secretValue != null ? secretValue.toCharArray() : new char[0];
         storeCredential(credentialStore, alias, createCredentialFromPassword(secret));
+    }
+
+    protected static void storeKeyPair(CredentialStore credentialStore, String alias, KeyPairCredential keyPairCredential) throws CredentialStoreException {
+        storeCredential(credentialStore, alias, keyPairCredential);
     }
 
     protected static void storeSecretKey(CredentialStore credentialStore, String alias, SecretKey secretKey) throws CredentialStoreException {
