@@ -14,7 +14,7 @@ import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
 import org.jboss.as.logging.resolvers.ModelNodeResolver;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.logmanager.config.PropertyConfigurable;
+import org.wildfly.core.logmanager.config.PropertyConfigurable;
 
 /**
  * Date: 15.11.2011

@@ -20,7 +20,7 @@ import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
-import org.jboss.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
 import org.wildfly.core.logmanager.WildFlyLogContextSelector;
 
 /**

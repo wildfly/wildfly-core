@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2014 Red Hat, Inc., and individual contributors
+ * Copyright 2023 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,14 +17,10 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.config;
-
-import java.util.logging.ErrorManager;
+package org.wildfly.core.logmanager.config;
 
 /**
- * Configuration for an error manager.
- *
- * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public interface ErrorManagerConfiguration extends ObjectConfigurable<ErrorManager>, PropertyConfigurable, NamedConfigurable {
+public interface PojoConfiguration extends NamedConfigurable, PropertyConfigurable, ObjectConfigurable<Object> {
 }

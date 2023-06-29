@@ -31,8 +31,8 @@ import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.validators.RegexValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.logmanager.config.FormatterConfiguration;
-import org.jboss.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.FormatterConfiguration;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.formatters.PatternFormatter;
 
 /**

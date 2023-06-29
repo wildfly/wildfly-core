@@ -35,8 +35,8 @@ import org.jboss.as.logging.capabilities.Capabilities;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.jboss.logmanager.config.FilterConfiguration;
-import org.jboss.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.FilterConfiguration;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
 
 /**
  * The resource definition for {@code /subsystem=logging/filter=*}.

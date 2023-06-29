@@ -9,7 +9,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.logging.resolvers.ModelNodeResolver;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logmanager.config.PropertyConfigurable;
+import org.wildfly.core.logmanager.config.PropertyConfigurable;
 
 /**
  * Used for configuring logging properties.

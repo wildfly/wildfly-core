@@ -5,7 +5,7 @@
 
 package org.jboss.as.logging.deployments;
 
-import org.jboss.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;

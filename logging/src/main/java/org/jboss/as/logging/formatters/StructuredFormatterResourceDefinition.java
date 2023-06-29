@@ -39,9 +39,9 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.logmanager.PropertyValues;
-import org.jboss.logmanager.config.FormatterConfiguration;
-import org.jboss.logmanager.config.HandlerConfiguration;
-import org.jboss.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.FormatterConfiguration;
+import org.wildfly.core.logmanager.config.HandlerConfiguration;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.formatters.StructuredFormatter;
 
 /**

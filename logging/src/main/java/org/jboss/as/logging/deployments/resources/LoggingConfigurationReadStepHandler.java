@@ -13,8 +13,8 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.server.deployment.Services;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logmanager.config.LogContextConfiguration;
-import org.jboss.logmanager.config.PropertyConfigurable;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.PropertyConfigurable;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 

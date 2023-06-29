@@ -16,13 +16,13 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.resolvers.FileResolver;
 import org.jboss.logmanager.LogContext;
-import org.jboss.logmanager.config.ErrorManagerConfiguration;
-import org.jboss.logmanager.config.FilterConfiguration;
-import org.jboss.logmanager.config.FormatterConfiguration;
-import org.jboss.logmanager.config.HandlerConfiguration;
-import org.jboss.logmanager.config.LogContextConfiguration;
-import org.jboss.logmanager.config.LoggerConfiguration;
-import org.jboss.logmanager.config.PojoConfiguration;
+import org.wildfly.core.logmanager.config.ErrorManagerConfiguration;
+import org.wildfly.core.logmanager.config.FilterConfiguration;
+import org.wildfly.core.logmanager.config.FormatterConfiguration;
+import org.wildfly.core.logmanager.config.HandlerConfiguration;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.LoggerConfiguration;
+import org.wildfly.core.logmanager.config.PojoConfiguration;
 
 /**
  * Persists the {@literal logging.properties} file.

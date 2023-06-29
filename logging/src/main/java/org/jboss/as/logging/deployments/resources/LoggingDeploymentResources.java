@@ -21,9 +21,9 @@ import org.jboss.as.logging.deployments.LoggingConfigurationService;
 import org.jboss.as.server.deployment.DeploymentResourceSupport;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.logmanager.config.LogContextConfiguration;
-import org.jboss.logmanager.config.ObjectConfigurable;
-import org.jboss.logmanager.config.PropertyConfigurable;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.ObjectConfigurable;
+import org.wildfly.core.logmanager.config.PropertyConfigurable;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>

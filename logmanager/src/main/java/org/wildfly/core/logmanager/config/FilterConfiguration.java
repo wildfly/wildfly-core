@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2014 Red Hat, Inc., and individual contributors
+ * Copyright 2023 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,23 +17,13 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.config;
+package org.wildfly.core.logmanager.config;
 
-import org.jboss.logmanager.configuration.ConfigurationResource;
+import java.util.logging.Filter;
 
 /**
+ * A configuration for a filter.
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
- * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-interface ConfigAction<T> {
-    T validate() throws IllegalArgumentException;
-    default T validate(ConfigurationResource<T> resource) {
-        return resource.get();
-    }
-
-    void applyPreCreate(T param);
-
-    void applyPostCreate(T param);
-
-    void rollback();
+public interface FilterConfiguration extends ObjectConfigurable<Filter>, NamedConfigurable, PropertyConfigurable {
 }

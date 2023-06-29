@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.config;
+package org.wildfly.core.logmanager.config;
 
 import static java.util.Arrays.asList;
 

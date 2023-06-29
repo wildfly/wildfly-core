@@ -24,7 +24,7 @@ import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
-import org.jboss.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.security.manager.WildFlySecurityManager;

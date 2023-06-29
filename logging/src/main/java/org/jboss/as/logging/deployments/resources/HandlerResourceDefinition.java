@@ -15,8 +15,8 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.logging.LoggingExtension;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.logmanager.config.HandlerConfiguration;
-import org.jboss.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.HandlerConfiguration;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
 
 /**
  * Describes a handler used on a deployment.

@@ -33,14 +33,14 @@ import java.util.List;
 import java.util.Set;
 
 import org.jboss.logmanager.StandardOutputStreams;
-import org.jboss.logmanager.config.ErrorManagerConfiguration;
-import org.jboss.logmanager.config.FilterConfiguration;
-import org.jboss.logmanager.config.FormatterConfiguration;
-import org.jboss.logmanager.config.HandlerConfiguration;
-import org.jboss.logmanager.config.LogContextConfiguration;
-import org.jboss.logmanager.config.LoggerConfiguration;
-import org.jboss.logmanager.config.PojoConfiguration;
-import org.jboss.logmanager.config.PropertyConfigurable;
+import org.wildfly.core.logmanager.config.ErrorManagerConfiguration;
+import org.wildfly.core.logmanager.config.FilterConfiguration;
+import org.wildfly.core.logmanager.config.FormatterConfiguration;
+import org.wildfly.core.logmanager.config.HandlerConfiguration;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.LoggerConfiguration;
+import org.wildfly.core.logmanager.config.PojoConfiguration;
+import org.wildfly.core.logmanager.config.PropertyConfigurable;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -380,7 +380,7 @@ public class PropertyConfigurator {
     }
 
     /**
-     * Writes a collection of properties to the print stream. Uses the {@link org.jboss.logmanager.config.PropertyConfigurable#getPropertyValueString(String)}
+     * Writes a collection of properties to the print stream. Uses the {@link PropertyConfigurable#getPropertyValueString(String)}
      * to extract the value.
      *
      * @param out                  the print stream to write to.

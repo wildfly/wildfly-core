@@ -30,8 +30,8 @@ import org.jboss.as.logging.LoggingOperations;
 import org.jboss.as.logging.filters.Filters;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logmanager.config.LogContextConfiguration;
-import org.jboss.logmanager.config.LoggerConfiguration;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.LoggerConfiguration;
 
 /**
  * Date: 14.12.2011

@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2014 Red Hat, Inc., and individual contributors
+ * Copyright 2023 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,19 +17,14 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.config;
+package org.wildfly.core.logmanager.config;
+
+import java.util.logging.ErrorManager;
 
 /**
- * A configurable object with a name.
+ * Configuration for an error manager.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface NamedConfigurable {
-
-    /**
-     * Get the name of this configurable object.
-     *
-     * @return the name
-     */
-    String getName();
+public interface ErrorManagerConfiguration extends ObjectConfigurable<ErrorManager>, PropertyConfigurable, NamedConfigurable {
 }

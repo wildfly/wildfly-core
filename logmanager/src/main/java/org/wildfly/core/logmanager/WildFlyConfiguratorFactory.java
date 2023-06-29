@@ -25,8 +25,8 @@ import org.jboss.logmanager.ConfiguratorFactory;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.LogContextConfigurator;
 import org.jboss.logmanager.Logger;
-import org.jboss.logmanager.config.LogContextConfiguration;
-import org.jboss.logmanager.config.PropertyLogContextConfiguration;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.PropertyLogContextConfiguration;
 import org.jboss.logmanager.configuration.ContextConfiguration;
 
 /**

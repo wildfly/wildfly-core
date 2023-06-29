@@ -18,7 +18,7 @@ import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.resolvers.HandlerResolver;
 import org.jboss.as.logging.resolvers.ModelNodeResolver;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logmanager.config.PropertyConfigurable;
+import org.wildfly.core.logmanager.config.PropertyConfigurable;
 
 /**
  * Date: 13.10.2011

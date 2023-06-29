@@ -15,8 +15,8 @@ import org.jboss.as.logging.LoggingExtension;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.logmanager.config.LogContextConfiguration;
-import org.jboss.logmanager.config.LoggerConfiguration;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.LoggerConfiguration;
 
 /**
  * Describes a logger used on a deployment.

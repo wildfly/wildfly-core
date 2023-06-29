@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2014 Red Hat, Inc., and individual contributors
+ * Copyright 2023 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,13 +17,14 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.config;
+package org.wildfly.core.logmanager.config;
 
-import java.util.logging.Filter;
+import java.util.logging.Formatter;
 
 /**
- * A configuration for a filter.
+ * A configuration for a logger formatter.
+ *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface FilterConfiguration extends ObjectConfigurable<Filter>, NamedConfigurable, PropertyConfigurable {
+public interface FormatterConfiguration extends NamedConfigurable, ObjectConfigurable<Formatter>, PropertyConfigurable {
 }

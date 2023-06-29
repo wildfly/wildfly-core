@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
-import org.jboss.logmanager.config.LogContextConfiguration;
+import org.wildfly.core.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.ConsoleHandler;
 import org.jboss.logmanager.handlers.DelayedHandler;
