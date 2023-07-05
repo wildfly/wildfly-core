@@ -40,7 +40,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
     private ValueExpression<Boolean> useParentFilters;
     private ValueExpression<Boolean> useParentHandlers;
     private ValueExpression<String> level;
-    private final List<String> handlerNames = new ArrayList<String>(0);
+    private final List<String> handlerNames = new ArrayList<>(0);
 
     LoggerConfigurationImpl(final String name, final LogContextConfiguration configuration) {
         super(name, configuration, configuration.getLoggerConfigurations());
@@ -61,7 +61,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
 
     @Override
     public void setFilter(final String expression, final String value) {
-        setFilter(new ValueExpressionImpl<String>(expression, value));
+        setFilter(new ValueExpressionImpl<>(expression, value));
     }
 
     private void setFilter(final ValueExpression<String> valueExpression) {
@@ -147,7 +147,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
     }
 
     public void setUseParentHandlers(final Boolean useParentHandlers) {
-        setUseParentHandlers(new ValueExpressionImpl<Boolean>(null, useParentHandlers));
+        setUseParentHandlers(new ValueExpressionImpl<>(null, useParentHandlers));
     }
 
     @Override
@@ -157,7 +157,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
 
     @Override
     public void setUseParentHandlers(final String expression, final Boolean value) {
-        setUseParentHandlers(new ValueExpressionImpl<Boolean>(expression, value));
+        setUseParentHandlers(new ValueExpressionImpl<>(expression, value));
     }
 
     private void setUseParentHandlers(final ValueExpression<Boolean> valueExpression) {
@@ -199,7 +199,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
 
     @Override
     public void setLevel(final String expression, final String level) {
-        setLevelValueExpression(new ValueExpressionImpl<String>(expression, level));
+        setLevelValueExpression(new ValueExpressionImpl<>(expression, level));
     }
 
     private void setLevelValueExpression(final ValueExpression<String> expression) {
@@ -209,7 +209,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         final LogContextConfiguration configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Level>() {
             public Level validate() throws IllegalArgumentException {
-                return resolvedLevel == null ? null : configuration.getLogContext().getLevelForName(resolvedLevel);
+                return resolvedLevel == null ? null : configuration.getContext().getLevelForName(resolvedLevel);
             }
 
             public void applyPreCreate(final Level param) {
@@ -226,7 +226,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
     }
 
     public List<String> getHandlerNames() {
-        return new ArrayList<String>(handlerNames);
+        return new ArrayList<>(handlerNames);
     }
 
     public void setHandlerNames(final String... names) {
@@ -335,7 +335,12 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
     @Override
     ConfigAction<Void> getRemoveAction() {
         final String name = getName();
-        final Logger refLogger = getConfiguration().getLogger(name);
+        final Logger refLogger;
+        if (getConfiguration().hasLogger(name)) {
+            refLogger = getConfiguration().getLogger(name);
+        } else {
+            refLogger = null;
+        }
         final Filter filter;
         final Handler[] handlers;
         final Level level;
@@ -375,6 +380,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
                     refLogger.setLevel(level);
                     refLogger.setUseParentHandlers(useParentHandlers);
                     configs.put(name, LoggerConfigurationImpl.this);
+                    //getConfiguration().addLogger(refLogger);
                 }
                 clearRemoved();
             }

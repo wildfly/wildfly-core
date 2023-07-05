@@ -90,9 +90,9 @@ public class ConfigurationPersistence extends LogContextConfiguration {
     }
 
     @Override
-    public LogContext getLogContext() {
+    public LogContext getContext() {
         synchronized (LOCK) {
-            return config.getLogContext();
+            return config.getContext();
         }
     }
 

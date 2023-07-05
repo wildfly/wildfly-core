@@ -717,7 +717,7 @@ final class HandlerOperations {
             if (configuration.hasProperty(ENABLED.getPropertyName())) {
                 currentValue = Boolean.parseBoolean(configuration.getPropertyValueString(ENABLED.getPropertyName()));
             } else {
-                currentValue = isEnabled(logContextConfiguration.getLogContext(), configuration.getName());
+                currentValue = isEnabled(logContextConfiguration.getContext(), configuration.getName());
             }
             result = resolvedValue == currentValue;
         } else if (attribute.getName().equals(ENCODING.getName())) {
@@ -834,7 +834,7 @@ final class HandlerOperations {
         } catch (IllegalArgumentException e) {
             // do nothing
         }
-        final Map<String, String> disableHandlers = configuration.getLogContext().getAttachment(CommonAttributes.ROOT_LOGGER_NAME, DISABLED_HANDLERS_KEY);
+        final Map<String, String> disableHandlers = configuration.getContext().getAttachment(CommonAttributes.ROOT_LOGGER_NAME, DISABLED_HANDLERS_KEY);
         if (disableHandlers != null && disableHandlers.containsKey(handlerName)) {
             synchronized (HANDLER_LOCK) {
                 final String filter = disableHandlers.get(handlerName);
@@ -860,7 +860,7 @@ final class HandlerOperations {
         } catch (IllegalArgumentException e) {
             // do nothing
         }
-        final Logger root = configuration.getLogContext().getLogger(CommonAttributes.ROOT_LOGGER_NAME);
+        final Logger root = configuration.getContext().getLogger(CommonAttributes.ROOT_LOGGER_NAME);
         Map<String, String> disableHandlers = root.getAttachment(DISABLED_HANDLERS_KEY);
         synchronized (HANDLER_LOCK) {
             if (disableHandlers == null) {

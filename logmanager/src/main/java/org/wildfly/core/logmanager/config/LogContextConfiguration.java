@@ -159,11 +159,6 @@ public class LogContextConfiguration extends DelegatingContextConfiguration {
         return (LogContextConfiguration) configuration;
     }
 
-    // TODO (jrp) rename this to getContext() for refactoring
-    public LogContext getLogContext() {
-        return getContext();
-    }
-
     public LoggerConfiguration addLoggerConfiguration(final String loggerName) {
         if (loggers.containsKey(loggerName)) {
             throw new IllegalArgumentException(String.format("Logger \"%s\" already exists", loggerName));

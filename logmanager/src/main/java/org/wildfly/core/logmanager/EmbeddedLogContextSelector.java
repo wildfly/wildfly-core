@@ -26,7 +26,7 @@ import org.jboss.logmanager.configuration.ContextConfiguration;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 class EmbeddedLogContextSelector extends WildFlyLogContextSelectorImpl {
-    private static final LogContext CONTEXT = LogContext.create(true, new WildFlyLogContextInitializer());
+    private static final LogContext CONTEXT = LogContext.create(false, new WildFlyLogContextInitializer());
 
     EmbeddedLogContextSelector() {
         super(CONTEXT);
