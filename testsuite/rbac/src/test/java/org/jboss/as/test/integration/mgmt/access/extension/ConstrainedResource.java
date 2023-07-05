@@ -75,8 +75,6 @@ public class ConstrainedResource extends SimpleResourceDefinition {
                                 throw new OperationFailedException("Jndi name shouldn't include '//' or end with '/'");
                             }
                         }
-                    } else {
-                        throw new OperationFailedException("Jndi name is required");
                     }
                 }
             })
