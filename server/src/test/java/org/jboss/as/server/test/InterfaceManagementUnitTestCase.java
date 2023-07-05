@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ExpressionResolver;
@@ -58,7 +59,6 @@ import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.AuditLogger;
-import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
@@ -324,20 +324,6 @@ public class InterfaceManagementUnitTestCase {
         }
 
         @Override
-        protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure) throws ConfigurationPersistenceException {
-            try {
-                return super.boot(persister.bootOperations, rollbackOnRuntimeFailure);
-            } catch (Exception e) {
-                error = e;
-            } catch (Throwable t) {
-                error = new Exception(t);
-            } finally {
-                latch.countDown();
-            }
-            return false;
-        }
-
-        @Override
         public void start(StartContext context) throws StartException {
             rootResourceDefinition.setDelegate(new ServerRootResourceDefinition(MockRepository.INSTANCE,
                     persister, environment, processState, null, extensionRegistry, false, MOCK_PATH_MANAGER, null,
@@ -348,6 +334,12 @@ public class InterfaceManagementUnitTestCase {
         @Override
         protected ModelControllerClientFactory getModelControllerClientFactory() {
             return super.getModelControllerClientFactory();
+        }
+
+        @Override
+        protected void bootThreadDone() {
+            super.bootThreadDone();
+            latch.countDown();
         }
     }
 
