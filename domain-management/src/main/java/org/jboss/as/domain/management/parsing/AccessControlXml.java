@@ -59,6 +59,7 @@ import org.jboss.as.domain.management.access.ApplicationClassificationTypeResour
 import org.jboss.as.domain.management.access.HostScopedRolesResourceDefinition;
 import org.jboss.as.domain.management.access.PrincipalResourceDefinition;
 import org.jboss.as.domain.management.access.RoleMappingResourceDefinition;
+import org.jboss.as.domain.management.access.ScopedRoleResourceDefinition;
 import org.jboss.as.domain.management.access.SensitivityClassificationTypeResourceDefinition;
 import org.jboss.as.domain.management.access.SensitivityResourceDefinition;
 import org.jboss.as.domain.management.access.ServerGroupScopedRoleResourceDefinition;
@@ -140,7 +141,7 @@ public class AccessControlXml {
             switch (element) {
                 case ROLE: {
                     parseScopedRole(reader, address, list, scopedRoleType, Element.SERVER_GROUP,
-                            ServerGroupScopedRoleResourceDefinition.BASE_ROLE, ServerGroupScopedRoleResourceDefinition.SERVER_GROUPS, true);
+                            ScopedRoleResourceDefinition.BASE_ROLE, ServerGroupScopedRoleResourceDefinition.SERVER_GROUPS, true);
                     break;
                 }
                 default: {
@@ -162,7 +163,7 @@ public class AccessControlXml {
             switch (element) {
                 case ROLE: {
                     parseScopedRole(reader, address, list, scopedRoleType, Element.HOST,
-                            HostScopedRolesResourceDefinition.BASE_ROLE, HostScopedRolesResourceDefinition.HOSTS, false);
+                            ScopedRoleResourceDefinition.BASE_ROLE, HostScopedRolesResourceDefinition.HOSTS, false);
                     break;
                 }
                 default: {
