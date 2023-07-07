@@ -23,6 +23,8 @@ import static java.util.Arrays.asList;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -38,13 +40,23 @@ import org.jboss.logmanager.configuration.ConfigurationResource;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handler, HandlerConfigurationImpl> implements HandlerConfiguration {
+    static final ValueExpression<String> DEFAULT_ENCODING;
+
+    static {
+        if (System.getSecurityManager() == null) {
+            DEFAULT_ENCODING = ValueExpression.constant(System.getProperty("file.encoding", "UTF-8"));
+        } else {
+            DEFAULT_ENCODING = AccessController.doPrivileged((PrivilegedAction<ValueExpression<String>>) () ->
+                    ValueExpression.constant(System.getProperty("file.encoding", "UTF-8")));
+        }
+    }
 
     private final List<String> handlerNames = new ArrayList<String>(0);
 
     private ValueExpression<String> formatterName;
     private ValueExpression<String> level;
     private ValueExpression<String> filter;
-    private ValueExpression<String> encoding;
+    private ValueExpression<String> encoding = DEFAULT_ENCODING;
     private ValueExpression<String> errorManagerName;
 
     HandlerConfigurationImpl(final LogContextConfiguration configuration, final String name, final String moduleName, final String className, final String[] constructorProperties) {
@@ -186,7 +198,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
 
     @Override
     public ValueExpression<String> getEncodingValueExpression() {
-        return encoding == null ? ValueExpression.NULL_STRING_EXPRESSION : encoding;
+        return encoding == null ? DEFAULT_ENCODING : encoding;
     }
 
     public void setEncoding(final String encoding) {
@@ -195,12 +207,12 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
 
     @Override
     public void setEncoding(final String expression, final String value) {
-        setEncoding(new ValueExpressionImpl<String>(expression, value));
+        setEncoding(new ValueExpressionImpl<>(expression, value));
     }
 
     private void setEncoding(final ValueExpression<String> expression) {
         final ValueExpression<String> oldEncoding = this.encoding;
-        this.encoding = expression;
+        this.encoding = expression == ValueExpression.NULL_STRING_EXPRESSION ? DEFAULT_ENCODING : expression;
         final String encoding = expression.getResolvedValue();
         final LogContextConfiguration configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Void>() {

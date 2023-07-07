@@ -94,6 +94,44 @@ public interface ValueExpression<T> {
     @Override
     String toString();
 
+    static <T> ValueExpression<T> constant(final T value) {
+        return new ValueExpression<T>() {
+            @Override
+            public T getResolvedValue() {
+                return value;
+            }
+
+            @Override
+            public boolean isExpression() {
+                return false;
+            }
+
+            @Override
+            public String getValue() {
+                return value == null ? null : String.valueOf(value);
+            }
+        };
+    }
+
+    static ValueExpression<String> constant(final String value) {
+        return new ValueExpression<>() {
+            @Override
+            public String getResolvedValue() {
+                return value;
+            }
+
+            @Override
+            public boolean isExpression() {
+                return false;
+            }
+
+            @Override
+            public String getValue() {
+                return value;
+            }
+        };
+    }
+
     /**
      * Resolves the value expression from an expression.
      *

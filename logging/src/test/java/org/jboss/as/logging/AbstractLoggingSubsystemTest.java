@@ -343,6 +343,9 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
                     }
                 } else if (modelPropertyName.equals(CommonAttributes.ENCODING.getName())) {
                     configValue = handlerConfig.getEncoding();
+                    if (!modelValue.isDefined()) {
+                        modelStringValue = System.getProperty("file.encoding");
+                    }
                 } else if (modelPropertyName.equals(AbstractHandlerDefinition.FORMATTER.getName()) || modelPropertyName.equals(AbstractHandlerDefinition.NAMED_FORMATTER.getName())) {
                     // Formatters are handled differently than most attributes. A named-formatter must be separately defined.
                     // The formatter attribute is really a PatternFormatter with the same name as the handler.

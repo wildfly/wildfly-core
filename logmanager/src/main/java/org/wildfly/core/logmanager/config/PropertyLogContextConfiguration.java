@@ -191,6 +191,9 @@ public class PropertyLogContextConfiguration {
         final String encoding = getStringProperty(getKey("handler", handlerName, "encoding"));
         if (encoding != null) {
             handlerConfig.setEncoding(encoding);
+        } else {
+            // The ExtHandler defaults to UTF-8, however for compatibility we should use the system default.
+            handlerConfig.setEncoding(HandlerConfigurationImpl.DEFAULT_ENCODING.getValue());
         }
 
         final String filter = getStringProperty(getKey("handler", handlerName, "filter"));
