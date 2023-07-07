@@ -198,6 +198,43 @@ public class ArgumentValueConverterTestCase {
     }
 
     @Test
+    public void testList_Object() throws Exception {
+        final ModelNode value = parseList("[{a1=vala1,a2=[{a3=vala3}]},{b1=valb1,b2=[{b3=valb3}]}]");
+        assertNotNull(value);
+        assertEquals(ModelType.LIST, value.getType());
+        final List<ModelNode> list = value.asList();
+        assertEquals(2, list.size());
+
+        ModelNode obj1 = list.get(0);
+        assertEquals(ModelType.OBJECT, obj1.getType());
+        assertNotNull(obj1);
+        assertEquals("vala1", obj1.get("a1").asString());
+        ModelNode obj2 = obj1.get("a2");
+        assertNotNull(obj2);
+        assertEquals(ModelType.LIST, obj2.getType());
+        final List<ModelNode> list2 = obj2.asList();
+        assertEquals(1, list2.size());
+        ModelNode obj3 = list2.get(0);
+        assertNotNull(obj3);
+        assertEquals(ModelType.OBJECT, obj3.getType());
+        assertEquals("vala3", obj3.get("a3").asString());
+
+        ModelNode obj4 = list.get(1);
+        assertEquals(ModelType.OBJECT, obj4.getType());
+        assertNotNull(obj4);
+        assertEquals("valb1", obj4.get("b1").asString());
+        ModelNode obj5 = obj4.get("b2");
+        assertNotNull(obj5);
+        assertEquals(ModelType.LIST, obj5.getType());
+        final List<ModelNode> list4 = obj5.asList();
+        assertEquals(1, list4.size());
+        ModelNode obj6 = list4.get(0);
+        assertNotNull(obj6);
+        assertEquals(ModelType.OBJECT, obj6.getType());
+        assertEquals("valb3", obj6.get("b3").asString());
+    }
+
+    @Test
     public void testObject_DMR() throws Exception {
         final ModelNode value = parseObject("{\"a\"=>\"b\",\"c\"=>\"d\"}");
         assertNotNull(value);
