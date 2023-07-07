@@ -23,10 +23,17 @@
 package org.jboss.as.controller.remote;
 
 import static java.security.AccessController.doPrivileged;
+import static org.jboss.as.controller.client.helpers.ClientConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.controller.remote.IdentityAddressProtocolUtil.read;
@@ -38,11 +45,15 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.access.InVmAccess;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -75,6 +86,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class TransactionalProtocolOperationHandler implements ManagementRequestHandlerFactory {
+    private static final Set<String> PREPARED_RESPONSE_OPERATIONS = Set.of(RELOAD);
 
     private final ModelController controller;
     private final ManagementChannelAssociation channelAssociation;
@@ -193,7 +205,43 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             executeRequestContext.initialize(context);
             final Integer batchId = executeRequestContext.getOperationId();
             final OperationMessageHandler messageHandlerProxy = OperationMessageHandler.DISCARD;
-            final ProxyOperationTransactionControl control = new ProxyOperationTransactionControl(executeRequestContext);
+
+            final boolean sendPreparedOperation = sendPreparedResponse(operation);
+            final ProxyOperationTransactionControl proxyControl = new ProxyOperationTransactionControl(executeRequestContext);
+            final AtomicBoolean earlyResponseSent = new AtomicBoolean(false);
+
+            final ModelController.OperationTransactionControl control = sendPreparedOperation ? new ModelController.OperationTransactionControl() {
+
+                @Override
+                public void operationPrepared(ModelController.OperationTransaction transaction, ModelNode result) {
+                    proxyControl.operationPrepared(transaction, result);
+                }
+
+                @Override
+                public void operationPrepared(ModelController.OperationTransaction transaction, ModelNode result, OperationContext context) {
+                    proxyControl.operationPrepared(transaction, result);
+                    if (context != null) {
+                        context.attach(EarlyResponseSendListener.ATTACHMENT_KEY, new EarlyResponseSendListener() {
+                            @Override
+                            public void sendEarlyResponse(OperationContext.ResultAction resultAction) {
+                                sendResponse(result, executeRequestContext);
+                            }
+                        });
+                    }
+                }
+
+                private void sendResponse(ModelNode preparedResult, ExecuteRequestContext executeRequestContext) {
+                    if (earlyResponseSent.compareAndSet(false, true)) {
+                        ControllerLogger.MGMT_OP_LOGGER.trace("Sending an early response.");
+                        // Fix prepared result
+                        preparedResult.get(OUTCOME).set(SUCCESS);
+                        preparedResult.get(RESULT);
+                        executeRequestContext.completed(OperationResponse.Factory.createSimple(preparedResult));
+                    }
+                }
+            } : proxyControl;
+
+
             final OperationAttachmentsProxy attachmentsProxy = OperationAttachmentsProxy.create(operation, channelAssociation, batchId, attachmentsLength);
             final OperationResponse result;
             try {
@@ -216,8 +264,42 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                 // If internalExecute did not result in a prepare, it failed
                 executeRequestContext.failed(result.getResponseNode());
             } else {
-                executeRequestContext.completed(result);
+                if (earlyResponseSent.compareAndSet(false, true)) {
+                    executeRequestContext.completed(result);
+                }
             }
+        }
+    }
+
+    /**
+     * Determine whether the prepared response should be sent, before the operation completed. This is needed in order
+     * that operations like :reload() can be executed without causing communication failures.
+     *
+     * @param operation the operation to be executed
+     * @return {@code true} if the prepared result should be sent, {@code false} otherwise
+     */
+    private boolean sendPreparedResponse(final ModelNode operation) {
+        try {
+            final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+            final String op = operation.get(OP).asString();
+            final int size = address.size();
+            if (size == 0) {
+                if (PREPARED_RESPONSE_OPERATIONS.contains(op)) {
+                    return true;
+                } else if (COMPOSITE.equals(op)) {
+                    // TODO
+                    return false;
+                } else {
+                    return false;
+                }
+            } else if (size == 1) {
+                if (HOST.equals(address.getLastElement().getKey())) {
+                    return PREPARED_RESPONSE_OPERATIONS.contains(op);
+                }
+            }
+            return false;
+        } catch(Exception ex) {
+            return false;
         }
     }
 
@@ -339,7 +421,6 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
 
         @Override
         public void operationPrepared(final ModelController.OperationTransaction transaction, final ModelNode result) {
-
             requestContext.prepare(transaction, result);
             try {
                 // Wait for the commit or rollback message
@@ -497,13 +578,13 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
         /** Invoked when we receive a ModelControllerProtocol.COMPLETE_TX_REQUEST request, either a tx commit/rollback or a cancel */
         synchronized void completeTx(final ManagementRequestContext<ExecuteRequestContext> context, final boolean commit) {
             if (!prepared) {
-                assert !commit; // can only be cancel before it's prepared
+                assert !commit; // can only be cancelled before it's prepared
 
                 ControllerLogger.MGMT_OP_LOGGER.tracef("completeTx (cancel unprepared) for %d", getOperationId());
                 rollbackOnPrepare = true;
                 cancel(context);
 
-                // response is sent when the cancalled op results in the thead returning in ExecuteRequestHandler.doExecute
+                // response is sent when the cancelled op results in the thead returning in ExecuteRequestHandler.doExecute
 
             } else if (txCompleted) {
                 // A 2nd call means a cancellation from the remote side after the tx was committed/rolled back

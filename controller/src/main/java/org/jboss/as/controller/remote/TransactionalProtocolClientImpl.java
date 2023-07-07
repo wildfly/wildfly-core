@@ -74,6 +74,19 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Base implementation for the transactional protocol.
+ * <p />
+ * This implementation uses Management requests to keep operation's transaniolabitility as follows:
+ * <ul>
+ * <li>Initiates the transaction with an {@link ExecuteRequest}, which is handled on the remote side via an
+ * {@link TransactionalProtocolOperationHandler.ExecuteRequestHandler}. This handler executes the operation on the remote
+ * controller and returns the prepared response. The operation is suspended on the remote side waiting for the client until a
+ * commit or rollaback is received.</li>
+ * <li>Once the prepared response is received on the client side, the operation is committed or rollback on the client side
+ * which sends the decided TX status to the remote side by using a {@link CompleteTxRequest}. This request is handled on the
+ * remote side via an {@link TransactionalProtocolOperationHandler.CompleteTxOperationHandler}</li>
+ * <li>Once the remote side receives the TX status from the client, the prepared operation continues the complete step
+ * executions and the final result is send back to the client.</li>
+ * </ul>
  *
  * @author Emanuel Muckenhuber
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>

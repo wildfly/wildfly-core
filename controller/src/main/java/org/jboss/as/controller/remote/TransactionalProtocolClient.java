@@ -33,7 +33,14 @@ import org.jboss.remoting3.Attachments;
 import org.jboss.threads.AsyncFuture;
 
 /**
- * A transactional protocol client.
+ * A transactional protocol client to execute management operations between {@link ModelController}s running on different
+ * processes.
+ * <p />
+ * This client is used by the Domain Controller to send management operations to a Host Controller and by a Host Controller to
+ * send management operations to a Managed Server.
+ * <p />
+ * An implementation of this client uses the communication protocol to keep and coordinate the operation's transaniolabitility
+ * between both sides of the model controllers.
  *
  * @author Emanuel Muckenhuber
  */
