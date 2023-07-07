@@ -22,6 +22,13 @@ if ($SECMGR) {
     $MODULE_OPTS +="-secmgr";
 }
 
+$DISABLE_JDK_SERIAL_FILTER = Get-Env-Boolean DISABLE_JDK_SERIAL_FILTER $DISABLE_JDK_SERIAL_FILTER
+$JDK_SERIAL_FILTER = Get-Env JDK_SERIAL_FILTER $JDK_SERIAL_FILTER
+if (-Not($JAVA_OPTS -like "*-Djdk.serialFilter*") -and (-Not($DISABLE_JDK_SERIAL_FILTER))) {
+    $HOST_CONTROLLER_JAVA_OPTS += "-Djdk.serialFilter=$JDK_SERIAL_FILTER"
+    $PROCESS_CONTROLLER_JAVA_OPTS += "-Djdk.serialFilter=$JDK_SERIAL_FILTER"
+}
+
 Set-Global-Variables-Domain
 
 # consolidate the host-controller and command line opts
