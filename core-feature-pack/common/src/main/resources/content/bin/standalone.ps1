@@ -35,6 +35,13 @@ if ($global:DEBUG_MODE){
     }
 }
 
+$DISABLE_JDK_SERIAL_FILTER = Get-Env-Boolean DISABLE_JDK_SERIAL_FILTER $DISABLE_JDK_SERIAL_FILTER
+$JDK_SERIAL_FILTER = Get-Env JDK_SERIAL_FILTER $JDK_SERIAL_FILTER
+if ($PRESERVE_JAVA_OPTS -ne 'true') {
+    if (-Not($JAVA_OPTS -like "*-Djdk.serialFilter*") -and (-Not($DISABLE_JDK_SERIAL_FILTER))) {
+        $JAVA_OPTS += "-Djdk.serialFilter=$JDK_SERIAL_FILTER"
+    }
+}
 $backgroundProcess = Get-Env LAUNCH_JBOSS_IN_BACKGROUND 'false'
 $runInBackGround = $global:RUN_IN_BACKGROUND -or ($backgroundProcess -eq 'true')
 

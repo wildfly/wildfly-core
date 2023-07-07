@@ -112,6 +112,17 @@ if not errorlevel == 1 (
   set "HOST_CONTROLLER_JAVA_OPTS=%HOST_CONTROLLER_JAVA_OPTS% -server"
 )
 
+rem Add -Djdk.serialFilter if not specified
+echo "%JAVA_OPTS%" | findstr /I "\-Djdk.serialFilter" > nul
+if errorlevel == 1 (
+  if "x%DISABLE_JDK_SERIAL_FILTER%" == "x" (
+    setlocal EnableDelayedExpansion
+    set "PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! -Djdk.serialFilter="!JDK_SERIAL_FILTER!""
+    set "HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! -Djdk.serialFilter="!JDK_SERIAL_FILTER!""
+    setlocal DisableDelayedExpansion
+  )
+)
+
 rem Find run.jar, or we can't continue
 if exist "%JBOSS_HOME%\jboss-modules.jar" (
     set "RUNJAR=%JBOSS_HOME%\jboss-modules.jar"

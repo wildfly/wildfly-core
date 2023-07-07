@@ -55,6 +55,14 @@ set "JAVA_OPTS=%JAVA_OPTS% -Djboss.modules.system.pkgs=org.jboss.byteman"
 rem # Use JBoss Modules lockless mode
 rem set "JAVA_OPTS=%JAVA_OPTS% -Djboss.modules.lockless=true"
 
+rem # Default JDK_SERIAL_FILTER settings
+if "x%JDK_SERIAL_FILTER%" == "x" (
+  set "JDK_SERIAL_FILTER=maxbytes=10485760;maxdepth=128;maxarray=100000;maxrefs=300000"
+)
+
+rem # Uncomment the following line to disable jdk.serialFilter settings
+rem set "DISABLE_JDK_SERIAL_FILTER=true"
+
 :JAVA_OPTS_SET
 
 rem The ProcessController process uses its own set of java options

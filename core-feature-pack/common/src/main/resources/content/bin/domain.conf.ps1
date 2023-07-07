@@ -53,6 +53,16 @@ if (-Not $JAVA_OPTS) {
 
     # Use JBoss Modules lockless mode
     # $JAVA_OPTS += '-Djboss.modules.lockless=true'
+    # Default JDK_SERIAL_FILTER settings
+    #
+    if (-Not(test-path env:JDK_SERIAL_FILTER)) {
+        $JDK_SERIAL_FILTER = 'maxbytes=10485760;maxdepth=128;maxarray=100000;maxrefs=300000'
+    }
+
+    # Uncomment the following line to disable jdk.serialFilter settings
+    #
+    # $DISABLE_JDK_SERIAL_FILTER=$true
+
 }
 
 # Uncomment this to run with a security manager enabled
