@@ -109,7 +109,7 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
         super(new SimpleResourceDefinition.Parameters(IOExtension.BUFFER_POOL_PATH,
                 IOExtension.getResolver(Constants.BUFFER_POOL))
                 .setAddHandler(new BufferPoolAdd())
-                .setRemoveHandler(new ReloadRequiredRemoveStepHandler())
+                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addCapabilities(IO_POOL_RUNTIME_CAPABILITY,
                         IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY)
                 .setDeprecatedSince(ModelVersion.create(4))
