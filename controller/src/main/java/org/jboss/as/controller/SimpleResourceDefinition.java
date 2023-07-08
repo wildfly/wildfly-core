@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -224,11 +225,15 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      * @return an array of attribute definitions
      */
     protected AttributeDefinition[] getAddOperationParameters(ManagementResourceRegistration registration) {
-        return registration.getAttributes(PathAddress.EMPTY_ADDRESS).values().stream()
+        Stream<AttributeDefinition> attributes = registration.getAttributes(PathAddress.EMPTY_ADDRESS).values().stream()
                 .filter(AttributeAccess.Storage.CONFIGURATION) // Ignore runtime attributes
                 .map(AttributeAccess::getAttributeDefinition)
                 .filter(Predicate.not(AttributeDefinition::isResourceOnly)) // Ignore resource-only attributes
-                .toArray(AttributeDefinition[]::new);
+                ;
+        if (registration.isOrderedChildResource()) {
+            attributes = Stream.concat(Stream.of(DefaultResourceAddDescriptionProvider.INDEX), attributes);
+        }
+        return attributes.toArray(AttributeDefinition[]::new);
     }
 
     /**
