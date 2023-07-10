@@ -1,3 +1,0 @@
-<subsystem xmlns="urn:wildfly:test:experimental:1.0" experimental="bar">
-    <preview name="foo"/>
-</subsystem>

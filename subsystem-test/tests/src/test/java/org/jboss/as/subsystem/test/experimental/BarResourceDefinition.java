@@ -9,15 +9,17 @@ import org.jboss.as.controller.ReloadRequiredAddStepHandler;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.version.FeatureStream;
 
 /**
  * @author Paul Ferraro
  */
-public class PreviewResourceDefinition extends SimpleResourceDefinition {
-    static final PathElement PATH = PathElement.pathElement("preview");
+public class BarResourceDefinition extends SimpleResourceDefinition {
+    static final PathElement PATH = PathElement.pathElement("bar", FeatureStream.PREVIEW);
 
-    PreviewResourceDefinition() {
+    BarResourceDefinition() {
         super(new Parameters(PATH, NonResolvingResourceDescriptionResolver.INSTANCE)
-                .setAddHandler(new ReloadRequiredAddStepHandler()).setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE));
+                .setAddHandler(ReloadRequiredAddStepHandler.INSTANCE)
+                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE));
     }
 }

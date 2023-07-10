@@ -10,13 +10,14 @@ import org.jboss.as.controller.SubsystemModel;
 /**
  * @author Paul Ferraro
  */
-public enum ExperimentalSubsystemModel implements SubsystemModel {
+public enum FooSubsystemModel implements SubsystemModel {
     VERSION_1_0(1),
     ;
+    static final FooSubsystemModel CURRENT = VERSION_1_0;
 
     private final ModelVersion version;
 
-    ExperimentalSubsystemModel(int major) {
+    FooSubsystemModel(int major) {
         this.version = ModelVersion.create(major);
     }
 

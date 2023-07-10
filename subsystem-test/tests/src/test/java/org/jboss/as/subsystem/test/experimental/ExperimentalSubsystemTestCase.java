@@ -8,9 +8,8 @@ import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Locale;
 
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
-import org.jboss.as.subsystem.test.AdditionalInitialization;
-import org.jboss.as.subsystem.test.AdditionalInitialization.ManagementAdditionalInitialization;
+import org.jboss.as.subsystem.test.AbstractSubsystemSchemaTest;
+import org.jboss.as.version.FeatureStream;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -20,26 +19,29 @@ import org.junit.runners.Parameterized.Parameters;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 @RunWith(Parameterized.class)
-public class ExperimentalSubsystemTestCase extends AbstractSubsystemBaseTest {
+public class ExperimentalSubsystemTestCase extends AbstractSubsystemSchemaTest<FooSubsystemSchema> {
     @Parameters
-    public static Iterable<ExperimentalSubsystemSchema> getParameters() {
-        return EnumSet.allOf(ExperimentalSubsystemSchema.class);
+    public static Iterable<FooSubsystemSchema> getParameters() {
+        return EnumSet.allOf(FooSubsystemSchema.class);
     }
 
-    private final ExperimentalSubsystemSchema schema;
-
-    public ExperimentalSubsystemTestCase(ExperimentalSubsystemSchema schema) {
-        super(ExperimentalSubsystemExtension.SUBSYSTEM_NAME, new ExperimentalSubsystemExtension());
-        this.schema = schema;
+    public ExperimentalSubsystemTestCase(FooSubsystemSchema schema) {
+        super(FooSubsystemResourceDefinition.SUBSYSTEM_NAME, new FooSubsystemExtension(), schema, FooSubsystemSchema.CURRENT.get(schema.getFeatureStream()));
     }
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource(String.format(Locale.ROOT, "test-%d.%d-%s.xml", this.schema.getVersion().major(), this.schema.getVersion().minor(), this.schema.getFeatureStream()));
+        if (FeatureStream.DEFAULT.enables(this.getSubsystemSchema().getFeatureStream())) {
+            return super.getSubsystemXml();
+        }
+        return readResource(String.format(Locale.ROOT, "foo-%s-%d.%d.xml", this.getSubsystemSchema().getFeatureStream(), this.getSubsystemSchema().getVersion().major(), this.getSubsystemSchema().getVersion().minor()));
     }
 
     @Override
-    protected AdditionalInitialization createAdditionalInitialization() {
-        return new ManagementAdditionalInitialization(this.schema);
+    protected String getSubsystemXsdPath() throws Exception {
+        if (FeatureStream.DEFAULT.enables(this.getSubsystemSchema().getFeatureStream())) {
+            return super.getSubsystemXsdPath();
+        }
+        return String.format(Locale.ROOT, "schema/wildfly-foo_%s_%d_%d.xsd", this.getSubsystemSchema().getFeatureStream(), this.getSubsystemSchema().getVersion().major(), this.getSubsystemSchema().getVersion().minor());
     }
 }
