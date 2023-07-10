@@ -136,7 +136,7 @@
         <test.level>INFO</test.level>
 
         <!-- Non-default maven plugin versions and configuration -->
-        <version.jacoco.plugin>0.8.0</version.jacoco.plugin>
+        <version.jacoco.plugin>0.8.10</version.jacoco.plugin>
         <version.org.jboss.galleon>5.0.9.Final</version.org.jboss.galleon>
         <version.org.wildfly.build-tools>1.2.13.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
