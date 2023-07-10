@@ -182,9 +182,8 @@ public class SimpleOperationDefinitionBuilder {
         return this;
     }
 
-    SimpleOperationDefinitionBuilder setDescriptionProvider(DescriptionProvider provider){
+    public SimpleOperationDefinitionBuilder setDescriptionProvider(DescriptionProvider provider){
         this.descriptionProvider = provider;
         return this;
     }
-
 }
