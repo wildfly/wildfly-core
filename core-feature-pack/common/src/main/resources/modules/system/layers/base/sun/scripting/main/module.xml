@@ -33,8 +33,14 @@
     <dependencies>
         <system export="true">
             <paths>
+
+                <!-- No equivalent module -->
+
                 <path name="apple/applescript"/>
                 <path name="com/sun/script/javascript"/>
+
+                <!-- Module jdk.scripting.nashorn -->
+
                 <path name="jdk/nashorn/api/scripting"/>
                 <path name="jdk/nashorn/api/scripting/resources"/>
                 <path name="jdk/nashorn/internal/codegen"/>
@@ -59,6 +65,9 @@
                 <path name="jdk/nashorn/internal/tools"/>
                 <path name="jdk/nashorn/internal/tools/resources"/>
                 <path name="jdk/nashorn/tools"/>
+
+                <!-- Module jdk.dynalink -->
+
                 <path name="jdk/internal/dynalink"/>
                 <path name="jdk/internal/dynalink/beans"/>
                 <path name="jdk/internal/dynalink/linker"/>
