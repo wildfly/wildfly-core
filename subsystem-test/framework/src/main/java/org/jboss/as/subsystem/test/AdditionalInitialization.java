@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.as.controller.FeatureStreamAware;
+import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
@@ -35,7 +35,7 @@ import org.jboss.msc.service.ServiceTarget;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class AdditionalInitialization extends AdditionalParsers implements FeatureStreamAware {
+public class AdditionalInitialization extends AdditionalParsers implements FeatureRegistry {
     public static final AdditionalInitialization MANAGEMENT = new ManagementAdditionalInitialization();
 
     public static final AdditionalInitialization ADMIN_ONLY_HC = new ManagementAdditionalInitialization() {

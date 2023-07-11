@@ -144,7 +144,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     }
 
     @Override
-    public abstract void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler,boolean inherited);
+    public abstract void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler, boolean inherited);
 
     /** {@inheritDoc} */
     @Override
@@ -492,18 +492,20 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
 
     @Override
     public void registerAlias(PathElement address, AliasEntry alias) {
-        RootInvocation rootInvocation = parent == null ? null : getRootInvocation();
-        AbstractResourceRegistration root = rootInvocation == null ? this : rootInvocation.root;
-        PathAddress myaddr = rootInvocation == null ? PathAddress.EMPTY_ADDRESS : rootInvocation.pathAddress;
+        if (this.enables(address)) {
+            RootInvocation rootInvocation = parent == null ? null : getRootInvocation();
+            AbstractResourceRegistration root = rootInvocation == null ? this : rootInvocation.root;
+            PathAddress myaddr = rootInvocation == null ? PathAddress.EMPTY_ADDRESS : rootInvocation.pathAddress;
 
-        PathAddress targetAddress = alias.getTarget().getPathAddress();
-        alias.setAddresses(targetAddress, myaddr.append(address));
-        AbstractResourceRegistration target = (AbstractResourceRegistration)root.getSubModel(alias.getTargetAddress());
-        if (target == null) {
-            throw ControllerLogger.ROOT_LOGGER.aliasTargetResourceRegistrationNotFound(alias.getTargetAddress());
+            PathAddress targetAddress = alias.getTarget().getPathAddress();
+            alias.setAddresses(targetAddress, myaddr.append(address));
+            AbstractResourceRegistration target = (AbstractResourceRegistration)root.getSubModel(alias.getTargetAddress());
+            if (target == null) {
+                throw ControllerLogger.ROOT_LOGGER.aliasTargetResourceRegistrationNotFound(alias.getTargetAddress());
+            }
+
+            registerAlias(address, alias, target);
         }
-
-        registerAlias(address, alias, target);
     }
 
     protected abstract void registerAlias(PathElement address, AliasEntry alias, AbstractResourceRegistration target);

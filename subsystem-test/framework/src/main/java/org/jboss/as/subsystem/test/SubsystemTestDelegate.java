@@ -127,6 +127,7 @@ final class SubsystemTestDelegate {
     private ModelTestParser testParser;
     private boolean addedExtraParsers;
     private XMLMapper xmlMapper;
+    private final FeatureStream stream;
 
     /**
      * Creates a new delegate.
@@ -137,10 +138,11 @@ final class SubsystemTestDelegate {
      * @param removeOrderComparator a comparator to sort addresses when removing the subsystem, {@code null} if order
      *                              doesn't matter
      */
-    SubsystemTestDelegate(final Class<?> testClass, final String mainSubsystemName, final Extension mainExtension, final Comparator<PathAddress> removeOrderComparator) {
+    SubsystemTestDelegate(final Class<?> testClass, final String mainSubsystemName, final Extension mainExtension, FeatureStream stream, final Comparator<PathAddress> removeOrderComparator) {
         this.testClass = testClass;
         this.mainSubsystemName = mainSubsystemName;
         this.mainExtension = mainExtension;
+        this.stream = stream;
         this.removeOrderComparator = removeOrderComparator;
     }
 
@@ -151,7 +153,7 @@ final class SubsystemTestDelegate {
     void initializeParser() throws Exception {
         //Initialize the parser
         xmlMapper = XMLMapper.Factory.create();
-        extensionParsingRegistry = ExtensionRegistry.builder(this.getProcessType()).withFeatureStream(this.getFeatureStream()).build();
+        extensionParsingRegistry = ExtensionRegistry.builder(this.getProcessType()).withFeatureStream(this.stream).build();
         testParser = new TestParser(mainSubsystemName, extensionParsingRegistry);
         xmlMapper.registerRootElement(new QName(TEST_NAMESPACE, "test"), testParser);
         mainExtension.initializeParsers(extensionParsingRegistry.getExtensionParsingContext("Test", xmlMapper));
@@ -219,7 +221,7 @@ final class SubsystemTestDelegate {
 
         // Use ProcessType.HOST_CONTROLLER for this ExtensionRegistry so we don't need to provide
         // a PathManager via the ExtensionContext. All we need the Extension to do here is register the xml writers
-        ExtensionRegistry outputExtensionRegistry = ExtensionRegistry.builder(ProcessType.HOST_CONTROLLER).withFeatureStream(this.getFeatureStream()).build();
+        ExtensionRegistry outputExtensionRegistry = ExtensionRegistry.builder(ProcessType.HOST_CONTROLLER).withFeatureStream(this.stream).build();
         outputExtensionRegistry.setWriterRegistry(persister);
 
         Extension extension = mainExtension.getClass().newInstance();
@@ -248,10 +250,6 @@ final class SubsystemTestDelegate {
      */
     ProcessType getProcessType() {
         return ProcessType.EMBEDDED_SERVER;
-    }
-
-    FeatureStream getFeatureStream() {
-        return FeatureStream.DEFAULT;
     }
 
     /**
@@ -418,7 +416,7 @@ final class SubsystemTestDelegate {
         //2) Check that the transformed model is valid according to the resource definition in the legacy subsystem controller
         ResourceDefinition rd = TransformationUtils.getResourceDefinition(kernelServices, modelVersion, mainSubsystemName);
         Assert.assertNotNull("Could not load legacy dmr for subsystem '" + mainSubsystemName + "' version: '" + modelVersion + "' please add it", rd);
-        ManagementResourceRegistration rr = ManagementResourceRegistration.Factory.forProcessType(getProcessType(), this.getFeatureStream()).createRegistration(rd);
+        ManagementResourceRegistration rr = ManagementResourceRegistration.Factory.forProcessType(getProcessType(), this.stream).createRegistration(rd);
         ModelTestUtils.checkModelAgainstDefinition(transformed, rr);
         return legacyModel;
     }
@@ -431,7 +429,7 @@ final class SubsystemTestDelegate {
     }
 
     private ExtensionRegistry cloneExtensionRegistry(AdditionalInitialization additionalInit) {
-        final ExtensionRegistry clone = ExtensionRegistry.builder(additionalInit.getProcessType()).withRunningMode(additionalInit.getExtensionRegistryRunningMode()).withFeatureStream(this.getFeatureStream()).build();
+        final ExtensionRegistry clone = ExtensionRegistry.builder(additionalInit.getProcessType()).withRunningMode(additionalInit.getExtensionRegistryRunningMode()).withFeatureStream(additionalInit.getFeatureStream()).build();
         for (String extension : extensionParsingRegistry.getExtensionModuleNames()) {
             ExtensionParsingContext epc = clone.getExtensionParsingContext(extension, null);
             for (Map.Entry<String, SubsystemInformation> entry : extensionParsingRegistry.getAvailableSubsystems(extension).entrySet()) {
@@ -839,6 +837,11 @@ final class SubsystemTestDelegate {
         @Override
         public ProcessType getProcessType() {
             return ProcessType.STANDALONE_SERVER;
+        }
+
+        @Override
+        public FeatureStream getFeatureStream() {
+            return SubsystemTestDelegate.this.stream;
         }
 
         @Override

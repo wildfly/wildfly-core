@@ -17,13 +17,19 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.version.FeatureStream;
 
 /**
  * Provides essential information defining a management resource.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public interface ResourceDefinition {
+public interface ResourceDefinition extends Feature {
+
+    @Override
+    default FeatureStream getFeatureStream() {
+        return this.getPathElement().getFeatureStream();
+    }
 
     /**
      * Gets the path element that describes how to navigate to this resource from its parent resource, or {@code null}

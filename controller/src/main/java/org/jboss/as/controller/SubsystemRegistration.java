@@ -18,7 +18,7 @@ import org.jboss.staxmapper.XMLElementWriter;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface SubsystemRegistration extends FeatureStreamAware {
+public interface SubsystemRegistration extends FeatureRegistry {
 
     /**
      * Mark a subsystem as host capable. This will only take effect if running on a HC, and be ignored on a standalone or managed server.

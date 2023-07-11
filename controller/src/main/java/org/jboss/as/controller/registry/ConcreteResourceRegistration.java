@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
@@ -205,6 +206,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (address == null) {
             throw ControllerLogger.ROOT_LOGGER.cannotRegisterSubmodelWithNullPath();
         }
+        if (!this.enables(address)) return null;
         final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
         if (existing != null && existing.getPathAddress().getLastElement().getValue().equals(address.getValue())) {
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getPathAddress().toCLIStyleString());
@@ -216,60 +218,64 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     @Override
     public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
         checkPermission();
-        String opName = definition.getName();
-        OperationEntry entry = new OperationEntry(definition, handler, inherited);
-        writeLock.lock();
-        try {
-            if (operations == null) {
-                operations = new HashMap<>();
-            } else if (operations.containsKey(opName)) {
-                throw alreadyRegistered("operation handler", opName);
-            }
-            operations.put(opName, entry);
-            if (constraintUtilizationRegistry != null) {
-                for (AccessConstraintDefinition acd : definition.getAccessConstraints()) {
-                    constraintUtilizationRegistry.registerAccessConstraintOperationUtilization(acd.getKey(), getPathAddress(), opName);
+        if (this.enables(definition)) {
+            String opName = definition.getName();
+            OperationEntry entry = new OperationEntry(definition, handler, inherited);
+            writeLock.lock();
+            try {
+                if (operations == null) {
+                    operations = new HashMap<>();
+                } else if (operations.containsKey(opName)) {
+                    throw alreadyRegistered("operation handler", opName);
                 }
+                operations.put(opName, entry);
+                if (constraintUtilizationRegistry != null) {
+                    for (AccessConstraintDefinition acd : definition.getAccessConstraints()) {
+                        constraintUtilizationRegistry.registerAccessConstraintOperationUtilization(acd.getKey(), getPathAddress(), opName);
+                    }
+                }
+            } finally {
+                writeLock.unlock();
             }
-        } finally {
-            writeLock.unlock();
         }
     }
 
     public void unregisterSubModel(final PathElement address) throws IllegalArgumentException {
-        writeLock.lock();
-        try {
-            final NodeSubregistry subregistry = getSubregistry(address.getKey());
+        if (this.enables(address)) {
+            writeLock.lock();
+            try {
+                final NodeSubregistry subregistry = getSubregistry(address.getKey());
 
-            if (subregistry != null) {
-                //we remove also children, effectively doing recursive delete
-                // WFCORE-3410 -- do not call the getChildAddresses(PathAddress) variant
-                // that results in querying (and thus read locking) nodes above
-                // this one as that can lead to deadlocks.
-                // Reading from the root would allow the call to find addresses
-                // associated with a wildcard registration for which this MRR
-                // is an override (if it is such an MRR.) But, we only end up
-                // reading our own subregistry to find the MRR
-                // to invoke the recursive delete on anyway, and an override MRR
-                // trying to somehow remove children from the related wildcard MRR
-                // would be wrong, so there's no point reading from the root to
-                // find those kinds of addresses.
-                Set<PathElement> childAddresses = getChildAddresses(PathAddress.pathAddress(address).iterator());
-                if (childAddresses != null) {
-                    ManagementResourceRegistration registration = subregistry.getResourceRegistration(PathAddress.EMPTY_ADDRESS.iterator(), address.getValue());
-                    if(!registration.isAlias()) {
-                        for (PathElement a : childAddresses) {
-                            registration.unregisterSubModel(a);
+                if (subregistry != null) {
+                    //we remove also children, effectively doing recursive delete
+                    // WFCORE-3410 -- do not call the getChildAddresses(PathAddress) variant
+                    // that results in querying (and thus read locking) nodes above
+                    // this one as that can lead to deadlocks.
+                    // Reading from the root would allow the call to find addresses
+                    // associated with a wildcard registration for which this MRR
+                    // is an override (if it is such an MRR.) But, we only end up
+                    // reading our own subregistry to find the MRR
+                    // to invoke the recursive delete on anyway, and an override MRR
+                    // trying to somehow remove children from the related wildcard MRR
+                    // would be wrong, so there's no point reading from the root to
+                    // find those kinds of addresses.
+                    Set<PathElement> childAddresses = getChildAddresses(PathAddress.pathAddress(address).iterator());
+                    if (childAddresses != null) {
+                        ManagementResourceRegistration registration = subregistry.getResourceRegistration(PathAddress.EMPTY_ADDRESS.iterator(), address.getValue());
+                        if(!registration.isAlias()) {
+                            for (PathElement a : childAddresses) {
+                                registration.unregisterSubModel(a);
+                            }
                         }
                     }
+                    subregistry.unregisterSubModel(address.getValue());
                 }
-                subregistry.unregisterSubModel(address.getValue());
+                if (constraintUtilizationRegistry != null) {
+                    constraintUtilizationRegistry.unregisterAccessConstraintUtilizations(getPathAddress().append(address));
+                }
+            } finally {
+                writeLock.unlock();
             }
-            if (constraintUtilizationRegistry != null) {
-                constraintUtilizationRegistry.unregisterAccessConstraintUtilizations(getPathAddress().append(address));
-            }
-        } finally {
-            writeLock.unlock();
         }
     }
 
@@ -388,24 +394,22 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     public void registerReadWriteAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler, final OperationStepHandler writeHandler) {
         assert definition.getUndefinedMetricValue() == null : "Attributes cannot have undefined metric value set";
         checkPermission();
-        if (!isAttributeRegistrationAllowed(definition)) {
-            return;
+        if (isAttributeRegistrationAllowed(definition) && this.enables(definition)) {
+            AttributeAccess.Storage storage = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
+            AttributeAccess aa = new AttributeAccess(AccessType.READ_WRITE, storage, readHandler, writeHandler, definition);
+            storeAttribute(definition, aa);
         }
-        AttributeAccess.Storage storage = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
-        AttributeAccess aa = new AttributeAccess(AccessType.READ_WRITE, storage, readHandler, writeHandler, definition);
-        storeAttribute(definition, aa);
     }
 
     @Override
     public void registerReadOnlyAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler) {
         assert definition.getUndefinedMetricValue() == null : "Attributes cannot have undefined metric value set";
         checkPermission();
-        if (!isAttributeRegistrationAllowed(definition)) {
-            return;
+        if (isAttributeRegistrationAllowed(definition) && this.enables(definition)) {
+            AttributeAccess.Storage storage = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
+            AttributeAccess aa = new AttributeAccess(AccessType.READ_ONLY, storage, readHandler, null, definition);
+            storeAttribute(definition, aa);
         }
-        AttributeAccess.Storage storage = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
-        AttributeAccess aa = new AttributeAccess(AccessType.READ_ONLY, storage, readHandler, null, definition);
-        storeAttribute(definition, aa);
     }
 
     @Override
@@ -422,23 +426,25 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     @Override
     public void registerNotification(NotificationDefinition notification, boolean inherited) {
         checkPermission();
-        String type = notification.getType();
-        NotificationEntry entry = new NotificationEntry(notification.getDescriptionProvider(), inherited);
-        writeLock.lock();
-        try {
-            if (notifications == null) {
-                notifications = Collections.singletonMap(type, entry);
-            } else {
-                if (notifications.containsKey(type)) {
-                    throw alreadyRegistered(NOTIFICATION, type);
+        if (this.enables(notification)) {
+            String type = notification.getType();
+            NotificationEntry entry = new NotificationEntry(notification.getDescriptionProvider(), inherited);
+            writeLock.lock();
+            try {
+                if (notifications == null) {
+                    notifications = Collections.singletonMap(type, entry);
+                } else {
+                    if (notifications.containsKey(type)) {
+                        throw alreadyRegistered(NOTIFICATION, type);
+                    }
+                    if (notifications.size() == 1) {
+                        notifications = new HashMap<>(notifications);
+                    }
+                    notifications.put(type, entry);
                 }
-                if (notifications.size() == 1) {
-                    notifications = new HashMap<>(notifications);
-                }
-                notifications.put(type, entry);
+            } finally {
+                writeLock.unlock();
             }
-        } finally {
-            writeLock.unlock();
         }
     }
 
@@ -465,7 +471,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     public void registerMetric(AttributeDefinition definition, OperationStepHandler metricHandler) {
         assert assertMetricValues(definition); //The real message will be in an assertion thrown by assertMetricValues
         checkPermission();
-        if (isAttributeRegistrationAllowed(definition) && !isProfileResource()) {
+        if (isAttributeRegistrationAllowed(definition) && !isProfileResource() && this.enables(definition)) {
             AttributeAccess aa = new AttributeAccess(AccessType.METRIC, AttributeAccess.Storage.RUNTIME, metricHandler, null, definition);
             storeAttribute(definition, aa);
         }
@@ -637,47 +643,57 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public void registerProxyController(final PathElement address, final ProxyController controller) throws IllegalArgumentException {
-        final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
-        if (existing != null && existing.getPathAddress().getLastElement().getValue().equals(address.getValue())) {
-            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getPathAddress().toCLIStyleString());
+        if (this.enables(address)) {
+            final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
+            if (existing != null && existing.getPathAddress().getLastElement().getValue().equals(address.getValue())) {
+                throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getPathAddress().toCLIStyleString());
+            }
+            getOrCreateSubregistry(address.getKey()).registerProxyController(address.getValue(), controller);
         }
-        getOrCreateSubregistry(address.getKey()).registerProxyController(address.getValue(), controller);
     }
 
     @Override
     public void unregisterProxyController(final PathElement address) throws IllegalArgumentException {
-        final NodeSubregistry subregistry = getSubregistry(address.getKey());
-        if (subregistry != null) {
-            subregistry.unregisterProxyController(address.getValue());
+        if (this.enables(address)) {
+            final NodeSubregistry subregistry = getSubregistry(address.getKey());
+            if (subregistry != null) {
+                subregistry.unregisterProxyController(address.getValue());
+            }
         }
     }
 
     @Override
     public void registerAlias(PathElement address, AliasEntry alias, AbstractResourceRegistration target) {
-        getOrCreateSubregistry(address.getKey()).registerAlias(address.getValue(), alias, target);
+        if (this.enables(address)) {
+            getOrCreateSubregistry(address.getKey()).registerAlias(address.getValue(), alias, target);
+        }
     }
 
     @Override
     public void unregisterAlias(PathElement address) {
-        final NodeSubregistry subregistry = getSubregistry(address.getKey());
-        if (subregistry != null) {
-            subregistry.unregisterAlias(address.getValue());
+        if (this.enables(address)) {
+            final NodeSubregistry subregistry = getSubregistry(address.getKey());
+            if (subregistry != null) {
+                subregistry.unregisterAlias(address.getValue());
+            }
         }
     }
 
     @Override
     public void registerCapability(RuntimeCapability capability) {
-        writeLock.lock();
-        try {
-            if (capabilities == null) {
-                capabilities = new HashSet<>();
+        if (this.enables(capability)) {
+            writeLock.lock();
+            try {
+                if (capabilities == null) {
+                    capabilities = new HashSet<>();
+                }
+                capabilities.add(capability);
+                if (capabilityRegistry != null) {
+                    capabilityRegistry.registerPossibleCapability(capability, getPathAddress());
+                }
+            } finally {
+                writeLock.unlock();
             }
-            capabilities.add(capability);
-            if (capabilityRegistry != null) {
-                capabilityRegistry.registerPossibleCapability(capability, getPathAddress());
-            }
-        } finally {
-            writeLock.unlock();
         }
     }
 
@@ -690,7 +706,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             } else if (capabilities.isEmpty()) {
                 incorporatingCapabilities = Collections.emptySet();
             } else {
-                incorporatingCapabilities = Collections.unmodifiableSet(new HashSet<>(capabilities));
+                incorporatingCapabilities = capabilities.stream().filter(this::enables).collect(Collectors.toUnmodifiableSet());
             }
         } finally {
             writeLock.unlock();
@@ -704,7 +720,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             if (requirements == null || requirements.isEmpty()) {
                 this.requirements = Collections.emptySet();
             } else {
-                this.requirements = Collections.unmodifiableSet(new HashSet<>(requirements));
+                this.requirements = requirements.stream().filter(this::enables).collect(Collectors.toUnmodifiableSet());
             }
         } finally {
             writeLock.unlock();

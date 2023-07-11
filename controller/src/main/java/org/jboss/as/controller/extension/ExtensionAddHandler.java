@@ -6,6 +6,8 @@ package org.jboss.as.controller.extension;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 
+import java.util.Iterator;
+
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -102,26 +104,28 @@ public class ExtensionAddHandler implements OperationStepHandler {
                                     ExtensionRegistryType extensionRegistryType) {
         try {
             boolean unknownModule = false;
-            boolean initialized = false;
-            for (Extension extension : Module.loadServiceFromCallerModuleLoader(module, Extension.class)) {
-                ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(extension.getClass());
-                try {
-                    if (unknownModule || !extensionRegistry.getExtensionModuleNames().contains(module)) {
-                        // This extension wasn't handled by the standalone.xml or domain.xml parsing logic, so we
-                        // need to initialize its parsers so we can display what XML namespaces it supports
-                        extensionRegistry.initializeParsers(extension, module, null);
-                        // AS7-6190 - ensure we initialize parsers for other extensions from this module
-                        // now that we know the registry was unaware of the module
-                        unknownModule = true;
-                    }
-                    extension.initialize(extensionRegistry.getExtensionContext(module, rootRegistration, extensionRegistryType));
-                } finally {
-                    WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
-                }
-                initialized = true;
-            }
-            if (!initialized) {
+            Iterator<Extension> extensions = Module.loadServiceFromCallerModuleLoader(module, Extension.class).iterator();
+            if (!extensions.hasNext()) {
                 throw ControllerLogger.ROOT_LOGGER.notFound("META-INF/services/", Extension.class.getName(), module);
+            }
+            while (extensions.hasNext()) {
+                Extension extension = extensions.next();
+                if (rootRegistration.enables(extension)) {
+                    ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(extension.getClass());
+                    try {
+                        if (unknownModule || !extensionRegistry.getExtensionModuleNames().contains(module)) {
+                            // This extension wasn't handled by the standalone.xml or domain.xml parsing logic, so we
+                            // need to initialize its parsers so we can display what XML namespaces it supports
+                            extensionRegistry.initializeParsers(extension, module, null);
+                            // AS7-6190 - ensure we initialize parsers for other extensions from this module
+                            // now that we know the registry was unaware of the module
+                            unknownModule = true;
+                        }
+                        extension.initialize(extensionRegistry.getExtensionContext(module, rootRegistration, extensionRegistryType));
+                    } finally {
+                        WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
+                    }
+                }
             }
         } catch (ModuleNotFoundException e) {
             // Treat this as a user mistake, e.g. incorrect module name.

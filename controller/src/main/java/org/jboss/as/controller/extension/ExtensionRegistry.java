@@ -27,6 +27,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -92,7 +93,7 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  * </ul>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public final class ExtensionRegistry {
+public final class ExtensionRegistry implements FeatureRegistry {
 
     /**
      * Returns a builder for creating an {@link ExtensionRegistry}.
@@ -517,6 +518,11 @@ public final class ExtensionRegistry {
         return transformerRegistry;
     }
 
+    @Override
+    public FeatureStream getFeatureStream() {
+        return this.stream;
+    }
+
     private class ExtensionParsingContextImpl implements ExtensionParsingContext {
 
         private final ExtensionInfo extension;
@@ -541,6 +547,11 @@ public final class ExtensionRegistry {
         @Override
         public RunningMode getRunningMode() {
             return runningModeControl.getRunningMode();
+        }
+
+        @Override
+        public FeatureStream getFeatureStream() {
+            return ExtensionRegistry.this.getFeatureStream();
         }
 
         @Override

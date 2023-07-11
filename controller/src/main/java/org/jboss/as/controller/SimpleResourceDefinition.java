@@ -29,6 +29,7 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.RuntimePackageDependency;
+import org.jboss.as.version.FeatureStream;
 import org.wildfly.common.Assert;
 
 /**
@@ -36,7 +37,7 @@ import org.wildfly.common.Assert;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class SimpleResourceDefinition extends ResourceDefinition.MinimalResourceDefinition {
+public class SimpleResourceDefinition extends ResourceDefinition.MinimalResourceDefinition implements FeatureRegistry {
 
     private static final EnumSet<OperationEntry.Flag> RESTART_FLAGS = EnumSet.of(OperationEntry.Flag.RESTART_NONE,
             OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_ALL_SERVICES, OperationEntry.Flag.RESTART_JVM);
@@ -53,6 +54,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
     private final Set<RuntimeCapability> incorporatingCapabilities;
     private final Set<CapabilityReferenceRecorder> requirements;
     private final RuntimePackageDependency[] additionalPackages;
+    private final FeatureStream stream;
 
     /**
      * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
@@ -107,6 +109,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
         this.incorporatingCapabilities = parameters.incorporatingCapabilities;
         this.requirements = new HashSet<>(parameters.requirements);
         this.additionalPackages = parameters.additionalPackages;
+        this.stream = parameters.stream;
     }
 
     private static OperationEntry.Flag restartLevelForAdd(OperationStepHandler addHandler) {
@@ -174,6 +177,11 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
         if (additionalPackages!=null) {
             resourceRegistration.registerAdditionalRuntimePackages(additionalPackages);
         }
+    }
+
+    @Override
+    public FeatureStream getFeatureStream() {
+        return this.stream;
     }
 
     /**
@@ -298,6 +306,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
         private Set<RuntimeCapability> incorporatingCapabilities;
         private Set<CapabilityReferenceRecorder> requirements = new HashSet<>();
         private RuntimePackageDependency[] additionalPackages;
+        private FeatureStream stream = FeatureStream.DEFAULT;
 
         /**
          * Creates a Parameters object
@@ -532,6 +541,11 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
          */
         public Parameters setFeature(final boolean feature) {
             return !feature ? this.asNonFeature() : this;
+        }
+
+        public Parameters setFeatureStream(FeatureStream stream) {
+            this.stream = stream;
+            return this;
         }
 
         /**

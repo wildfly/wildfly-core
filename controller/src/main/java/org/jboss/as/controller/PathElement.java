@@ -6,6 +6,7 @@
 package org.jboss.as.controller;
 
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
@@ -14,7 +15,7 @@ import org.jboss.dmr.Property;
  * @author Brian Stansberry
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public class PathElement {
+public class PathElement implements Feature {
 
     public static final String WILDCARD_VALUE = "*";
 
@@ -22,6 +23,7 @@ public class PathElement {
     private final String value;
     private final boolean multiTarget;
     private final int hashCode;
+    private final FeatureStream stream;
 
     /**
      * Construct a new instance with a wildcard value.
@@ -45,9 +47,36 @@ public class PathElement {
     /**
      * Construct a new instance with a wildcard value.
      * @param key the path key to match
+     * @return the new path element
+     */
+    public static PathElement pathElement(final String key, FeatureStream stream) {
+        return new PathElement(key, stream);
+    }
+
+    /**
+     * Construct a new instance.
+     * @param key the path key to match
+     * @param value the path value or wildcard to match
+     * @return the new path element
+     */
+    public static PathElement pathElement(final String key, final String value, FeatureStream stream) {
+        return new PathElement(key, value, stream);
+    }
+
+    /**
+     * Construct a new instance with a wildcard value.
+     * @param key the path key to match
      */
     PathElement(final String key) {
         this(key, WILDCARD_VALUE);
+    }
+
+    /**
+     * Construct a new instance with a wildcard value.
+     * @param key the path key to match
+     */
+    PathElement(final String key, FeatureStream stream) {
+        this(key, WILDCARD_VALUE, stream);
     }
 
     /**
@@ -56,6 +85,15 @@ public class PathElement {
      * @param value the path value or wildcard to match
      */
     PathElement(final String key, final String value) {
+        this(key, value, FeatureStream.DEFAULT);
+    }
+
+    /**
+     * Construct a new instance.
+     * @param key the path key to match
+     * @param value the path value or wildcard to match
+     */
+    PathElement(final String key, final String value, FeatureStream stream) {
         if (!isValidKey(key)) {
             final String element = key + "=" + value;
             throw new OperationClientIllegalArgumentException(ControllerLogger.ROOT_LOGGER.invalidPathElementKey(element, key));
@@ -82,6 +120,7 @@ public class PathElement {
         }
         this.multiTarget = multiTarget;
         hashCode = key.hashCode() * 19 + value.hashCode();
+        this.stream = stream;
     }
 
     /**
@@ -101,38 +140,43 @@ public class PathElement {
             return false;
         }
         if (!isValidKeyStartCharacter(s.charAt(0))) {
-          return false;
+            return false;
         }
         for (int i = 1; i < lastIndex; i++) {
-          if (!isValidKeyCharacter(s.charAt(i))) {
-            return false;
-          }
+            if (!isValidKeyCharacter(s.charAt(i))) {
+                return false;
+            }
         }
         if (lastIndex > 0 && !isValidKeyEndCharacter(s.charAt(lastIndex))) {
-          return false;
+            return false;
         }
         return true;
-      }
+    }
 
-      private static boolean isValidKeyStartCharacter(final char c) {
+    private static boolean isValidKeyStartCharacter(final char c) {
         return c == '_'
             || c >= 'a' && c <= 'z'
             || c >= 'A' && c <= 'Z';
-      }
+    }
 
-      private static boolean isValidKeyEndCharacter(final char c) {
+    private static boolean isValidKeyEndCharacter(final char c) {
         return c == '_'
             || c >= '0' && c <= '9'
             || c >= 'a' && c <= 'z'
             || c >= 'A' && c <= 'Z';
-      }
+    }
 
-      private static boolean isValidKeyCharacter(char c) {
+    private static boolean isValidKeyCharacter(char c) {
         return c == '_' || c == '-'
             || c >= '0' && c <= '9'
             || c >= 'a' && c <= 'z'
             || c >= 'A' && c <= 'Z';
-      }
+    }
+
+    @Override
+    public FeatureStream getFeatureStream() {
+        return this.stream;
+    }
 
     /**
      * Get the path key.

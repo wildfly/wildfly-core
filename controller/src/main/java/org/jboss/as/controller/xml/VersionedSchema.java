@@ -4,7 +4,8 @@
  */
 package org.jboss.as.controller.xml;
 
-import org.jboss.as.controller.FeatureStreamAware;
+import org.jboss.as.controller.Feature;
+import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.version.FeatureStream;
 import org.jboss.staxmapper.Versioned;
 
@@ -12,7 +13,7 @@ import org.jboss.staxmapper.Versioned;
  * A versioned schema, whose namespace is a versioned namespace.
  * @author Paul Ferraro
  */
-public interface VersionedSchema<V extends Comparable<V>, S extends VersionedSchema<V, S>> extends Versioned<V, S>, Schema, FeatureStreamAware {
+public interface VersionedSchema<V extends Comparable<V>, S extends VersionedSchema<V, S>> extends Versioned<V, S>, Schema, Feature, FeatureRegistry {
 
     /**
      * Returns the versioned namespace of this attribute/element.

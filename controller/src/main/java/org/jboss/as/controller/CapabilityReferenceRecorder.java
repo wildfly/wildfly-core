@@ -20,7 +20,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Brian Stansberry (c) 2015 Red Hat Inc.
  */
-public interface CapabilityReferenceRecorder {
+public interface CapabilityReferenceRecorder extends Feature {
 
     /**
      * Registers capability requirement information to the given context.

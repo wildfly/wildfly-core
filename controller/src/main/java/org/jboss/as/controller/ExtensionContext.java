@@ -19,7 +19,7 @@ import org.jboss.as.controller.services.path.PathManager;
  * @author David Bosschaert
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public interface ExtensionContext extends FeatureStreamAware {
+public interface ExtensionContext extends FeatureRegistry {
 
     /**
      * The various types of contexts in which an {@link Extension} can be asked to initialize.

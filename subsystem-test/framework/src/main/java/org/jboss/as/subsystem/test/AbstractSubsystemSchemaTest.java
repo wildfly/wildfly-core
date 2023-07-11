@@ -9,6 +9,7 @@ import java.util.Locale;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.SubsystemSchema;
+import org.jboss.as.subsystem.test.AdditionalInitialization.ManagementAdditionalInitialization;
 
 /**
  * A base class for subsystem parsing tests that utilize {@link SubsystemSchema}.
@@ -28,7 +29,7 @@ public abstract class AbstractSubsystemSchemaTest<S extends SubsystemSchema<S>> 
      * @param currentSchema the current schema
      */
     protected AbstractSubsystemSchemaTest(String subsystemName, Extension extension, S testSchema, S currentSchema) {
-        super(subsystemName, extension);
+        super(subsystemName, extension, testSchema.getFeatureStream());
         this.schema = testSchema;
         this.latest = testSchema.since(currentSchema);
     }
@@ -71,5 +72,10 @@ public abstract class AbstractSubsystemSchemaTest<S extends SubsystemSchema<S>> 
     public void testSubsystem() throws Exception {
         // Only compare XML for the latest version
         this.standardSubsystemTest(null, this.latest);
+    }
+
+    @Override
+    protected AdditionalInitialization createAdditionalInitialization() {
+        return new ManagementAdditionalInitialization(this.schema);
     }
 }

@@ -23,6 +23,7 @@ import org.jboss.as.model.test.ModelFixer;
 import org.jboss.as.model.test.ModelTestKernelServices;
 import org.jboss.as.model.test.ModelTestModelControllerService;
 import org.jboss.as.model.test.ModelTestUtils;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Before;
@@ -38,12 +39,19 @@ public abstract class AbstractSubsystemTest {
     private final SubsystemTestDelegate delegate;
 
     protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension) {
-        this(mainSubsystemName, mainExtension, null);
+        this(mainSubsystemName, mainExtension, FeatureStream.DEFAULT);
     }
 
-    @SuppressWarnings("deprecation")
+    protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension, FeatureStream stream) {
+        this(mainSubsystemName, mainExtension, stream, null);
+    }
+
     protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension, final Comparator<PathAddress> removeOrderComparator) {
-        this.delegate = new SubsystemTestDelegate(this.getClass(), mainSubsystemName, mainExtension, removeOrderComparator);
+        this.delegate = new SubsystemTestDelegate(this.getClass(), mainSubsystemName, mainExtension, FeatureStream.DEFAULT, removeOrderComparator);
+    }
+
+    protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension, FeatureStream stream, final Comparator<PathAddress> removeOrderComparator) {
+        this.delegate = new SubsystemTestDelegate(this.getClass(), mainSubsystemName, mainExtension, stream, removeOrderComparator);
     }
 
     public String getMainSubsystemName() {

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SubsystemSchema;
@@ -22,7 +23,7 @@ import org.jboss.staxmapper.XMLElementReader;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface ExtensionParsingContext {
+public interface ExtensionParsingContext extends FeatureRegistry {
 
     /**
      * Gets the type of the current process.
@@ -80,7 +81,9 @@ public interface ExtensionParsingContext {
      */
     default <S extends SubsystemSchema<S>> void setSubsystemXmlMappings(String subsystemName, Set<S> schemas) {
         for (S schema : schemas) {
-            this.setSubsystemXmlMapping(subsystemName, schema.getNamespace().getUri(), schema);
+            if (this.enables(schema)) {
+                this.setSubsystemXmlMapping(subsystemName, schema.getNamespace().getUri(), schema);
+            }
         }
     }
 

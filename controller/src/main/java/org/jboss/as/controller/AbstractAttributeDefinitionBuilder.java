@@ -17,6 +17,7 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -58,6 +59,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     private CapabilityReferenceRecorder referenceRecorder;
     private Map<String, ModelNode> arbitraryDescriptors = null;
     private ModelNode undefinedMetricValue;
+    private FeatureStream stream = FeatureStream.DEFAULT;
 
     private static final AccessConstraintDefinition[] ZERO_CONSTRAINTS = new AccessConstraintDefinition[0];
 
@@ -131,6 +133,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
             this.arbitraryDescriptors = new HashMap<>(basis.getArbitraryDescriptors());
         }
         this.referenceRecorder = basis.getReferenceRecorder();
+        this.stream = basis.getFeatureStream();
     }
 
     /**
@@ -805,6 +808,15 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return (BUILDER) this;
     }
 
+    /**
+     * Defines the feature stream for which this attribute should be registered.
+     * @param stream a feature stream
+     * @return a reference to this builder
+     */
+    public BUILDER setFeatureStream(FeatureStream stream) {
+        this.stream = stream;
+        return (BUILDER) this;
+    }
 
     public String getName() {
         return name;
@@ -907,6 +919,10 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     @SuppressWarnings({"WeakerAccess", "unused"})
     protected final CapabilityReferenceRecorder getCapabilityReferenceRecorder() {
         return referenceRecorder;
+    }
+
+    public FeatureStream getFeatureStream() {
+        return this.stream;
     }
 
     private String[] copyStrings(String[] toCopy) {

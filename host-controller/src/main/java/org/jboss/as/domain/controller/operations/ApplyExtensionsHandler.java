@@ -195,12 +195,14 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
     protected void initializeExtension(String module, ManagementResourceRegistration rootRegistration) throws OperationFailedException {
         try {
             for (final Extension extension : Module.loadServiceFromCallerModuleLoader(ModuleIdentifier.fromString(module), Extension.class)) {
-                ClassLoader oldTccl = SecurityActions.setThreadContextClassLoader(extension.getClass());
-                try {
-                    extension.initializeParsers(extensionRegistry.getExtensionParsingContext(module, null));
-                    extension.initialize(extensionRegistry.getExtensionContext(module, rootRegistration, ExtensionRegistryType.SLAVE));
-                } finally {
-                    SecurityActions.setThreadContextClassLoader(oldTccl);
+                if (rootRegistration.enables(extension)) {
+                    ClassLoader oldTccl = SecurityActions.setThreadContextClassLoader(extension.getClass());
+                    try {
+                        extension.initializeParsers(extensionRegistry.getExtensionParsingContext(module, null));
+                        extension.initialize(extensionRegistry.getExtensionContext(module, rootRegistration, ExtensionRegistryType.SLAVE));
+                    } finally {
+                        SecurityActions.setThreadContextClassLoader(oldTccl);
+                    }
                 }
             }
         } catch (ModuleLoadException e) {

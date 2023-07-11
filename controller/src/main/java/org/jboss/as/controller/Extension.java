@@ -16,7 +16,7 @@ import org.jboss.as.controller.parsing.ExtensionParsingContext;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface Extension {
+public interface Extension extends Feature {
 
     /**
      * Initialize this extension by registering its operation handlers and configuration

@@ -12,6 +12,7 @@ import java.util.ResourceBundle;
 import org.jboss.as.controller.descriptions.DefaultNotificationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -19,16 +20,23 @@ import org.jboss.dmr.ModelNode;
  *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2013 Red Hat inc.
  */
-public class NotificationDefinition {
+public class NotificationDefinition implements Feature {
 
     private final String type;
     private final ResourceDescriptionResolver resolver;
     private final DataValueDescriptor dataValueDescriptor;
+    private final FeatureStream stream;
 
-    private NotificationDefinition(final String type, final ResourceDescriptionResolver resolver, final DataValueDescriptor dataValueDescriptor) {
-        this.type = type;
-        this.resolver = resolver;
-        this.dataValueDescriptor = dataValueDescriptor;
+    private NotificationDefinition(Builder builder) {
+        this.type = builder.type;
+        this.resolver = builder.resolver;
+        this.dataValueDescriptor = builder.dataValueDescriptor;
+        this.stream = builder.stream;
+    }
+
+    @Override
+    public FeatureStream getFeatureStream() {
+        return this.stream;
     }
 
     public String getType() {
@@ -43,6 +51,7 @@ public class NotificationDefinition {
         private final String type;
         private final ResourceDescriptionResolver resolver;
         private DataValueDescriptor dataValueDescriptor = NO_DATA;
+        private FeatureStream stream = FeatureStream.DEFAULT;
 
         private Builder(String type, ResourceDescriptionResolver resolver) {
             this.type = type;
@@ -58,8 +67,13 @@ public class NotificationDefinition {
             return this;
         }
 
+        public Builder setFeatureStream(FeatureStream stream) {
+            this.stream = stream;
+            return this;
+        }
+
         public NotificationDefinition build() {
-            return new NotificationDefinition(type, resolver, dataValueDescriptor);
+            return new NotificationDefinition(this);
         }
     }
 

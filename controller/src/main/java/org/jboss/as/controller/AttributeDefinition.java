@@ -10,7 +10,6 @@ import static org.jboss.as.controller.registry.AttributeAccess.Flag.immutableSet
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -39,6 +38,7 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -50,7 +50,7 @@ import org.jboss.dmr.Property;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public abstract class AttributeDefinition {
+public abstract class AttributeDefinition implements Feature {
 
     /** The {@link ModelType} types that reflect complex DMR structures -- {@code LIST}, {@code OBJECT}, {@code PROPERTY}} */
     protected static final Set<ModelType> COMPLEX_TYPES = Collections.unmodifiableSet(EnumSet.of(ModelType.LIST, ModelType.OBJECT, ModelType.PROPERTY));
@@ -78,6 +78,7 @@ public abstract class AttributeDefinition {
     private final ModelNode undefinedMetricValue;
     private final CapabilityReferenceRecorder referenceRecorder;
     private final Map<String, ModelNode> arbitraryDescriptors;
+    private final FeatureStream stream;
 
     // NOTE: Standards for creating a constructor variant are:
     // 1) Don't.
@@ -90,8 +91,8 @@ public abstract class AttributeDefinition {
         this.type = builder.getType();
         this.required = !builder.isNillable();
         this.allowExpression = builder.isAllowExpression();
-        this.parser = Optional.of(builder.getParser()).orElse(AttributeParser.SIMPLE);
-        this.defaultValue = Optional.of(builder.getDefaultValue()).filter(ModelNode::isDefined).map(AttributeDefinition::protect).orElse(null);
+        this.parser = Optional.ofNullable(builder.getParser()).orElse(AttributeParser.SIMPLE);
+        this.defaultValue = Optional.ofNullable(builder.getDefaultValue()).filter(ModelNode::isDefined).map(AttributeDefinition::protect).orElse(null);
         this.measurementUnit = builder.getMeasurementUnit();
         this.alternatives = builder.getAlternatives();
         this.requires = builder.getRequires();
@@ -108,6 +109,7 @@ public abstract class AttributeDefinition {
         this.undefinedMetricValue = Optional.ofNullable(builder.getUndefinedMetricValue()).filter(ModelNode::isDefined).map(AttributeDefinition::protect).orElse(null);
         this.referenceRecorder = builder.getCapabilityReferenceRecorder();
         this.arbitraryDescriptors = Optional.ofNullable(builder.getArbitraryDescriptors()).map(Map::copyOf).orElse(Map.of());
+        this.stream = builder.getFeatureStream();
     }
 
     private static ModelNode protect(ModelNode value) {
@@ -158,6 +160,11 @@ public abstract class AttributeDefinition {
         } else {
             return Collections.unmodifiableList(Arrays.asList(accessConstraints));
         }
+    }
+
+    @Override
+    public FeatureStream getFeatureStream() {
+        return this.stream;
     }
 
     /**
