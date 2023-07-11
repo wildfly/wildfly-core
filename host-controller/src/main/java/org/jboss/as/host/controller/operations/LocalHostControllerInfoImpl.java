@@ -12,6 +12,7 @@ import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.msc.service.ServiceName;
 
 /**
@@ -82,6 +83,11 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     @Override
     public boolean isMasterDomainController() {
         return master;
+    }
+
+    @Override
+    public FeatureStream getFeatureStream() {
+        return (this.hostEnvironment != null) ? this.hostEnvironment.getFeatureStream() : FeatureStream.DEFAULT;
     }
 
     public ServiceName getAuthenticationContext() {

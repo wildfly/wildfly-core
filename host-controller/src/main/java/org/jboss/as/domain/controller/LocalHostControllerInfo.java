@@ -8,6 +8,7 @@ package org.jboss.as.domain.controller;
 import java.util.List;
 
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 
 /**
@@ -15,7 +16,7 @@ import org.jboss.as.host.controller.discovery.DiscoveryOption;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public interface LocalHostControllerInfo {
+public interface LocalHostControllerInfo extends FeatureRegistry {
 
     /**
      * Gets the host controller's name.

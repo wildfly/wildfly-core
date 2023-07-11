@@ -7,6 +7,7 @@ package org.jboss.as.host.controller.mgmt;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLONE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEATURE_STREAM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCE_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORE_UNUSED_CONFIG;
@@ -28,8 +29,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -43,6 +46,7 @@ import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo;
 import org.jboss.as.host.controller.RemoteDomainConnectionService;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
@@ -54,7 +58,7 @@ import org.jboss.dmr.Property;
  *
  * @author Brian Stansberry (c) 2012 Red Hat Inc.
  */
-public class HostInfo implements Transformers.ResourceIgnoredTransformationRegistry, Transformers.OperationExcludedTransformationRegistry {
+public class HostInfo implements Transformers.ResourceIgnoredTransformationRegistry, Transformers.OperationExcludedTransformationRegistry, Feature {
 
     /**
      * Create the metadata which gets send to the DC when registering.
@@ -74,6 +78,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         info.get(MANAGEMENT_MAJOR_VERSION).set(Version.MANAGEMENT_MAJOR_VERSION);
         info.get(MANAGEMENT_MINOR_VERSION).set(Version.MANAGEMENT_MINOR_VERSION);
         info.get(MANAGEMENT_MICRO_VERSION).set(Version.MANAGEMENT_MICRO_VERSION);
+        info.get(FEATURE_STREAM).set(hostInfo.getFeatureStream().name());
         final String productName = productConfig.getProductName();
         final String productVersion = productConfig.getProductVersion();
         if(productName != null) {
@@ -113,6 +118,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
     private final Set<ServerConfigInfo> serverConfigInfos;
     private final Set<String> domainIgnoredExtensions;
     private final boolean hostDeclaredIgnoreUnaffected;
+    private final FeatureStream stream;
     // GuardedBy this
     private ReadMasterDomainModelUtil.RequiredConfigurationHolder requiredConfigurationHolder;
 
@@ -127,6 +133,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         productVersion = hostInfo.hasDefined(PRODUCT_VERSION) ? hostInfo.require(PRODUCT_VERSION).asString() : null;
         remoteConnectionId = hostInfo.hasDefined(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID)
                 ? hostInfo.get(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID).asLong() : null;
+        this.stream = Optional.ofNullable(hostInfo.get(ModelDescriptionConstants.FEATURE_STREAM).asString(null)).map(FeatureStream::valueOf).orElse(FeatureStream.DEFAULT);
 
         Set<String> domainIgnoredExtensions = null;
         Set<String> domainActiveServerGroups = null;
@@ -162,6 +169,11 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
             serverConfigInfos = Collections.emptySet();
         }
         this.serverConfigInfos = serverConfigInfos;
+    }
+
+    @Override
+    public FeatureStream getFeatureStream() {
+        return this.stream;
     }
 
     public String getHostName() {

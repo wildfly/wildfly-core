@@ -46,6 +46,7 @@ import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.HostConnectionInfo;
 import org.jboss.as.domain.controller.HostRegistrations;
+import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.ReadMasterDomainModelHandler;
@@ -326,6 +327,13 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 boolean rejected = major < 16;
                 if (rejected) {
                     final OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.unsupportedManagementVersionForHost(major, minor, 16, 0);
+                    registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
+                    throw failure;
+                }
+                // Ensure feature stream of host is compatible
+                LocalHostControllerInfo domainInfo = domainController.getLocalHostInfo();
+                if (domainInfo.getFeatureStream() != hostInfo.getFeatureStream()) {
+                    OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.incompatibleFeatureStream(domainInfo.getFeatureStream(), hostInfo.getFeatureStream());
                     registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
                     throw failure;
                 }
