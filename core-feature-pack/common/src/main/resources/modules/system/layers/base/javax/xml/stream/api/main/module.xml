@@ -21,12 +21,14 @@
   ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
-
 <module xmlns="urn:jboss:module:1.9" name="javax.xml.stream.api">
+        <!--
+		This module is deprecated and any use of it should be replaced
+		with java.xml JPMS module provided by Java SE.
+	-->
     <properties>
         <property name="jboss.api" value="deprecated"/>
     </properties>
-
     <dependencies>
         <module name="java.xml">
             <exports>
