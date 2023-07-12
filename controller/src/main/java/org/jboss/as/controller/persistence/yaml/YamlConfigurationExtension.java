@@ -101,6 +101,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
     @SuppressWarnings("unchecked")
     private void load() {
         long start = System.currentTimeMillis();
+        List<String> parsedFiles = new ArrayList<>();
         for (Path file : files) {
             if (file != null && Files.exists(file) && Files.isRegularFile(file)) {
                 Map<String, Object> yamlConfig = Collections.emptyMap();
@@ -115,13 +116,14 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                     for (String excluded : EXCLUDED_ELEMENTS) {
                         config.remove(excluded);
                     }
+                    parsedFiles.add(file.toAbsolutePath().toString());
                     this.configs.add(config);
                 }
             } else {
                 throw MGMT_OP_LOGGER.missingYamlFile(file != null ? file.toAbsolutePath().toString() : "");
             }
         }
-        MGMT_OP_LOGGER.loadingYamlFiles(System.currentTimeMillis() - start);
+        MGMT_OP_LOGGER.loadingYamlFiles(System.currentTimeMillis() - start, String.join(",", parsedFiles));
         this.needReload = false;
     }
 
