@@ -6,11 +6,11 @@
 package org.jboss.as.controller;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -36,30 +36,22 @@ import org.wildfly.common.Assert;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class SimpleResourceDefinition implements ResourceDefinition {
+public class SimpleResourceDefinition extends ResourceDefinition.MinimalResourceDefinition {
 
     private static final EnumSet<OperationEntry.Flag> RESTART_FLAGS = EnumSet.of(OperationEntry.Flag.RESTART_NONE,
             OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_ALL_SERVICES, OperationEntry.Flag.RESTART_JVM);
 
     private static final RuntimeCapability[] NO_CAPABILITIES = new RuntimeCapability[0];
 
-    private final PathElement pathElement;
     private final ResourceDescriptionResolver descriptionResolver;
-    private final DescriptionProvider descriptionProvider;
     private final OperationStepHandler addHandler;
     private final OperationStepHandler removeHandler;
     private final OperationEntry.Flag addRestartLevel;
     private final OperationEntry.Flag removeRestartLevel;
-    private final boolean runtime;
-    private volatile DeprecationData deprecationData;
-    private final boolean orderedChild;
+    private final AtomicReference<DeprecationData> deprecationData;
     private final RuntimeCapability[] capabilities;
     private final Set<RuntimeCapability> incorporatingCapabilities;
     private final Set<CapabilityReferenceRecorder> requirements;
-    private final List<AccessConstraintDefinition> accessConstraints;
-    private final int minOccurs;
-    private final int maxOccurs;
-    private boolean feature;
     private final RuntimePackageDependency[] additionalPackages;
 
     /**
@@ -104,27 +96,16 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      * @throws IllegalStateException if the parameters object is not valid.
      */
     public SimpleResourceDefinition(Parameters parameters) {
-        this.pathElement = parameters.pathElement;
-        this.descriptionResolver = parameters.descriptionResolver;
+        super(parameters);
+        this.descriptionResolver = parameters.descriptionResolver.get();
         this.addHandler = parameters.addHandler;
         this.removeHandler = parameters.removeHandler;
         this.addRestartLevel = parameters.addRestartLevel;
         this.removeRestartLevel = parameters.removeRestartLevel;
         this.deprecationData = parameters.deprecationData;
-        this.runtime = parameters.runtime;
-        this.orderedChild = parameters.orderedChildResource;
-        this.descriptionProvider = parameters.descriptionProvider;
         this.capabilities = parameters.capabilities != null ? parameters.capabilities : NO_CAPABILITIES ;
         this.incorporatingCapabilities = parameters.incorporatingCapabilities;
-        if (parameters.accessConstraints != null) {
-            this.accessConstraints = Arrays.asList(parameters.accessConstraints);
-        } else {
-            this.accessConstraints = Collections.emptyList();
-        }
         this.requirements = new HashSet<>(parameters.requirements);
-        this.minOccurs = parameters.minOccurs;
-        this.maxOccurs = parameters.maxOccurs;
-        this.feature = parameters.feature;
         this.additionalPackages = parameters.additionalPackages;
     }
 
@@ -136,19 +117,6 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     private static OperationEntry.Flag restartLevelForRemove(OperationStepHandler removeHandler) {
         return removeHandler instanceof ReloadRequiredRemoveStepHandler
                 ? OperationEntry.Flag.RESTART_ALL_SERVICES : OperationEntry.Flag.RESTART_RESOURCE_SERVICES;
-    }
-
-
-    @Override
-    public PathElement getPathElement() {
-        return pathElement;
-    }
-
-    @Override
-    public DescriptionProvider getDescriptionProvider(ImmutableManagementResourceRegistration resourceRegistration) {
-        return descriptionProvider == null
-                ? new DefaultResourceDescriptionProvider(resourceRegistration, descriptionResolver, getDeprecationData())
-                : descriptionProvider;
     }
 
     /**
@@ -244,7 +212,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      * @param flags        with flags
      */
     protected void registerAddOperation(final ManagementResourceRegistration registration, final OperationStepHandler handler, OperationEntry.Flag... flags) {
-        DescriptionProvider descriptionProvider = (handler instanceof DescriptionProvider) ? (DescriptionProvider) handler : new DefaultResourceAddDescriptionProvider(registration, this.descriptionResolver, this.orderedChild);
+        DescriptionProvider descriptionProvider = (handler instanceof DescriptionProvider) ? (DescriptionProvider) handler : new DefaultResourceAddDescriptionProvider(registration, this.descriptionResolver, this.isOrderedChild());
         OperationDefinition definition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD, this.descriptionResolver)
                 .setParameters(this.getAddOperationParameters(registration))
                 .setDescriptionProvider(descriptionProvider)
@@ -308,99 +276,47 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         return SimpleOperationDefinitionBuilder.getFlagsSet(vararg);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return this default implementation simply returns an empty list.
-     */
-    @Override
-    public List<AccessConstraintDefinition> getAccessConstraints() {
-        return this.accessConstraints;
-    }
-
     protected void setDeprecated(ModelVersion since) {
-        this.deprecationData = new DeprecationData(since);
+        this.deprecationData.set(new DeprecationData(since));
     }
 
     protected DeprecationData getDeprecationData(){
-        return this.deprecationData;
-    }
-
-    @Override
-    public boolean isRuntime() {
-        return runtime;
-    }
-
-   /**
-   * {@inheritDoc}
-   */
-    @Override
-    public int getMinOccurs() {
-        if (minOccurs == 0) {
-            return ResourceDefinition.super.getMinOccurs();
-        }
-        return minOccurs;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getMaxOccurs() {
-        if (maxOccurs == Integer.MAX_VALUE) {
-            return ResourceDefinition.super.getMaxOccurs();
-        }
-        return maxOccurs;
-    }
-
-    /**
-     * Whether this resource registration is ordered in the parent. The automatically generated 'add' operation will
-     * get the {@code add-index} parameter added. Also, it will get registered as an ordered child in the parent's
-     * management resource registration.
-     *
-     * @return whether this is an ordered child resource
-     */
-    @SuppressWarnings("deprecation")
-    public boolean isOrderedChild() {
-        return orderedChild;
-    }
-
-    @Override
-    public boolean isFeature() {
-        return feature;
+        return this.deprecationData.get();
     }
 
     /**
      * Parameters object for the SimpleResourceDefinition constructor
      */
-    public static class Parameters{
-        private final PathElement pathElement;
-        private ResourceDescriptionResolver descriptionResolver;
-        private DescriptionProvider descriptionProvider;
+    public static class Parameters extends ResourceDefinition.AbstractConfigurator<Parameters> {
+        private final AtomicReference<ResourceDescriptionResolver> descriptionResolver;
+        private final AtomicReference<DeprecationData> deprecationData;
         private OperationStepHandler addHandler;
         private OperationStepHandler removeHandler;
         private OperationEntry.Flag addRestartLevel = OperationEntry.Flag.RESTART_NONE;
         private OperationEntry.Flag removeRestartLevel = OperationEntry.Flag.RESTART_ALL_SERVICES;
-        private boolean runtime;
-        private DeprecationData deprecationData;
-        private boolean orderedChildResource;
         private RuntimeCapability[] capabilities;
         private Set<RuntimeCapability> incorporatingCapabilities;
         private Set<CapabilityReferenceRecorder> requirements = new HashSet<>();
-        private AccessConstraintDefinition[] accessConstraints;
-        private boolean feature = true;
-        private int minOccurs = 0;
-        private int maxOccurs = Integer.MAX_VALUE;
         private RuntimePackageDependency[] additionalPackages;
+
         /**
          * Creates a Parameters object
          * @param pathElement the path element of the created ResourceDefinition. Cannot be {@code null}
          * @param descriptionResolver the description resolver. Cannot be {@code null}
          */
         public Parameters(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {
-            Assert.checkNotNullParam("descriptionResolver", descriptionResolver);
-            this.pathElement = pathElement;
+            this(pathElement, new AtomicReference<>(descriptionResolver), new AtomicReference<>());
+        }
+
+        private Parameters(PathElement pathElement, AtomicReference<ResourceDescriptionResolver> descriptionResolver, AtomicReference<DeprecationData> deprecationData) {
+            super(pathElement, new Function<>() {
+                @Override
+                public DescriptionProvider apply(ImmutableManagementResourceRegistration registration) {
+                    return new DefaultResourceDescriptionProvider(registration, descriptionResolver.get(), deprecationData.get());
+                }
+            });
             this.descriptionResolver = descriptionResolver;
+            this.deprecationData = deprecationData;
         }
 
         /**
@@ -410,9 +326,19 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * @param descriptionProvider the description provider. Cannot be {@code null}
          */
         public Parameters(PathElement pathElement, DescriptionProvider descriptionProvider) {
-            Assert.checkNotNullParam("descriptionProvider", descriptionProvider);
-            this.pathElement = pathElement;
-            this.descriptionProvider = descriptionProvider;
+            super(pathElement, new Function<>() {
+                @Override
+                public DescriptionProvider apply(ImmutableManagementResourceRegistration t) {
+                    return descriptionProvider;
+                }
+            });
+            this.descriptionResolver = new AtomicReference<>();
+            this.deprecationData = new AtomicReference<>();
+        }
+
+        @Override
+        protected Parameters self() {
+            return this;
         }
 
         /**
@@ -423,7 +349,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          */
         public Parameters setDescriptionResolver(ResourceDescriptionResolver descriptionResolver) {
             Assert.checkNotNullParam("descriptionResolver", descriptionResolver);
-            this.descriptionResolver = descriptionResolver;
+            this.descriptionResolver.set(descriptionResolver);
             return this;
         }
 
@@ -488,8 +414,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * @return this Parameters object
          */
         public Parameters setRuntime() {
-            this.runtime = true;
-            return this;
+            return this.asRuntime();
         }
 
 
@@ -499,8 +424,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * @return this Parameters object
          */
         public Parameters setRuntime(boolean isRuntime) {
-            this.runtime = isRuntime;
-            return this;
+            return isRuntime ? this.asRuntime() : this;
         }
 
         /**
@@ -511,7 +435,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * @throws IllegalStateException if the {@code deprecationData} is null
          */
         public Parameters setDeprecationData(DeprecationData deprecationData) {
-            this.deprecationData = deprecationData;
+            this.deprecationData.set(deprecationData);
             return this;
         }
 
@@ -524,9 +448,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          */
         public Parameters setDeprecatedSince(ModelVersion deprecatedSince) {
             Assert.checkNotNullParam("deprecatedSince", deprecatedSince);
-
-            this.deprecationData = new DeprecationData(deprecatedSince);
-            return this;
+            return this.setDeprecationData(new DeprecationData(deprecatedSince));
         }
 
         /**
@@ -537,8 +459,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          */
 
         public Parameters setOrderedChild() {
-            this.orderedChildResource = true;
-            return this;
+            return this.asOrderedChild();
         }
 
         /**
@@ -583,24 +504,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * @return Parameters object
          */
         public Parameters setAccessConstraints(AccessConstraintDefinition ... accessConstraints){
-            this.accessConstraints = accessConstraints;
-            return this;
-        }
-
-        /**
-         * Add access constraint definitions for this resource to any that are already set.
-         * @param accessConstraints access constraint definitions for this resource
-         * @return Parameters object
-         */
-        public Parameters addAccessConstraints(AccessConstraintDefinition ... accessConstraints) {
-            if (this.accessConstraints == null) {
-                setAccessConstraints(accessConstraints);
-            } else if (accessConstraints != null && accessConstraints.length > 0) {
-                AccessConstraintDefinition[] combo = Arrays.copyOf(this.accessConstraints, this.accessConstraints.length + accessConstraints.length);
-                System.arraycopy(accessConstraints, 0, combo, this.accessConstraints.length, accessConstraints.length);
-                setAccessConstraints(combo);
-            }
-            return this;
+            return this.withAccessConstraints(List.of(accessConstraints));
         }
 
         /**
@@ -608,9 +512,8 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * @param maxOccurs the maximum number of times this resource can occur
          * @return Parameters object
          */
-        public Parameters setMaxOccurs(final int maxOccurs){
-            this.maxOccurs = maxOccurs;
-            return this;
+        public Parameters setMaxOccurs(final int maxOccurs) {
+            return this.withMaxOccurance(maxOccurs);
         }
 
         /**
@@ -618,19 +521,19 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          * @param minOccurs the minimum number of times this resource must occur
          * @return Parameters object
          */
-        public Parameters setMinOccurs(final int minOccurs){
-            this.minOccurs = minOccurs;
-            return this;
+        public Parameters setMinOccurs(final int minOccurs) {
+            return this.withMinOccurance(minOccurs);
         }
-/**
+
+        /**
          * set the feature nature of this resource
          * @param feature true if this resource is a feature
          * @return Parameters object
          */
-        public Parameters setFeature(final boolean feature){
-            this.feature = feature;
-            return this;
+        public Parameters setFeature(final boolean feature) {
+            return !feature ? this.asNonFeature() : this;
         }
+
         /**
          * Registers a set of capabilities that this resource does not directly provide but to which it contributes. This
          * will only include capabilities for which this resource <strong>does not</strong> control the
