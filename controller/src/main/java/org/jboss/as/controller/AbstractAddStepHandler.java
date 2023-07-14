@@ -46,6 +46,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
  */
 public class AbstractAddStepHandler implements OperationStepHandler, OperationDescriptor {
 
+    /**
+     * @deprecated Use {@link #getAttributes()} instead.
+     */
+    @Deprecated
     protected final Collection<? extends AttributeDefinition> attributes;
 
     /**
@@ -78,6 +82,10 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
         this.attributes = parameters.attributes;
     }
 
+    /**
+     * Returns an immutable collection of attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * @return the attributes
+     */
     @Override
     public Collection<? extends AttributeDefinition> getAttributes() {
         return this.attributes;
