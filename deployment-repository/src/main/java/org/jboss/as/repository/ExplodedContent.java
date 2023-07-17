@@ -15,8 +15,6 @@
  */
 package org.jboss.as.repository;
 
-import static org.jboss.as.repository.HashUtil.emptyStream;
-
 import java.io.InputStream;
 
 /**
@@ -34,7 +32,7 @@ public class ExplodedContent {
 
     public ExplodedContent(String relativePath) {
         this.relativePath = relativePath;
-        this.content = emptyStream();
+        this.content = InputStream.nullInputStream();
     }
 
     public String getRelativePath() {
