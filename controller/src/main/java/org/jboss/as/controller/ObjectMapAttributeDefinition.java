@@ -154,6 +154,7 @@ public class ObjectMapAttributeDefinition extends MapAttributeDefinition {
             return new ObjectMapAttributeDefinition.Builder(name, valueType);
         }
 
+        @Override
         public ObjectMapAttributeDefinition build() {
             List<AccessConstraintDefinition> valueConstraints = valueType.getAccessConstraints();
             if (!valueConstraints.isEmpty()) {

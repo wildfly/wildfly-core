@@ -191,6 +191,7 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
             return new Builder(name, valueType);
         }
 
+        @Override
         public ObjectListAttributeDefinition build() {
             List<AccessConstraintDefinition> valueConstraints = valueType.getAccessConstraints();
             if (!valueConstraints.isEmpty()) {

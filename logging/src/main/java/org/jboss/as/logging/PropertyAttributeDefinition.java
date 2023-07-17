@@ -124,6 +124,7 @@ public class PropertyAttributeDefinition extends SimpleAttributeDefinition imple
             return new Builder(name, type).setRequired(!allowNull);
         }
 
+        @Override
         public PropertyAttributeDefinition build() {
             if (propertyName == null) propertyName = getName();
             return new PropertyAttributeDefinition(this);

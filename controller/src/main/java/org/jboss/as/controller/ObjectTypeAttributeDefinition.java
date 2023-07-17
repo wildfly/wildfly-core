@@ -308,6 +308,7 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
             return new Builder(name, allValueTypes);
         }
 
+        @Override
         public ObjectTypeAttributeDefinition build() {
             ParameterValidator validator = getValidator();
             if (validator == null) {

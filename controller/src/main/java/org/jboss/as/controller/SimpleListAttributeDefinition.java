@@ -161,6 +161,7 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
             return this;
         }
 
+        @Override
         public SimpleListAttributeDefinition build() {
             if (getAttributeMarshaller() == null) {
                 setAttributeMarshaller(AttributeMarshallers.getSimpleListMarshaller(wrapXmlList));
