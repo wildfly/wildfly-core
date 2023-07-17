@@ -31,6 +31,7 @@ public class LayersTestCase {
     // This is the expected set of un-referenced modules found when scanning
     // the test-standalone-reference configuration.
     private static final String[] NOT_REFERENCED = {
+        "javax.xml.stream.api",
         //  injected by server in UndertowHttpManagementService
         "org.jboss.as.domain-http-error-context",
         // injected by elytron
@@ -56,6 +57,7 @@ public class LayersTestCase {
         // wildfly-elytron-tool
         "org.apache.commons.cli",
         "org.apache.commons.lang3",
+        "org.wildfly.extension.elytron.jaas-realm",
         "org.wildfly.security.elytron-tool",
     };
 
@@ -64,7 +66,6 @@ public class LayersTestCase {
             "ibm.jdk",
             "javax.api",
             "javax.sql.api",
-            "javax.xml.stream.api",
             "sun.jdk",
             "sun.scripting",
             // Not currently used WildFly Core; only full WF

@@ -15,6 +15,7 @@
     <feature-group name="standalone-elytron"/>
     <packages>
         <!-- required by default configuration-->
+        <package name="org.wildfly.extension.elytron.jaas-realm"/>
         <package name="org.wildfly.openssl"/>
     </packages>
 </layer-spec>
