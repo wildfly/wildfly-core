@@ -580,7 +580,7 @@ public class ModelControllerImplUnitTestCase {
             if (sc == null) {
                 System.out.println("Null depended service!");
             } else {
-                System.out.println(sc.getName());
+                System.out.println(sc.provides());
                 System.out.println("Mode = " + sc.getMode());
                 System.out.println("State = " + sc.getState());
             }
@@ -589,7 +589,7 @@ public class ModelControllerImplUnitTestCase {
             if (sc == null) {
                 System.out.println("Null dependent service!");
             } else {
-                System.out.println(sc.getName());
+                System.out.println(sc.provides());
                 System.out.println("Mode = " + sc.getMode());
                 System.out.println("State = " + sc.getState());
             }

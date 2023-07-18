@@ -49,6 +49,7 @@ import javax.net.ssl.SSLContext;
 final class InjectedSocketBindingStreamServerService extends AbstractStreamServerService {
 
     private final Supplier<SocketBinding> socketBindingSupplier;
+    private final String remotingConnectorName;
 
     InjectedSocketBindingStreamServerService(
             final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer,
@@ -57,16 +58,18 @@ final class InjectedSocketBindingStreamServerService extends AbstractStreamServe
             final Supplier<SSLContext> sslContextSupplier,
             final Supplier<SocketBindingManager> socketBindingManagerSupplier,
             final Supplier<SocketBinding> socketBindingSupplier,
-            final OptionMap connectorPropertiesOptionMap) {
+            final OptionMap connectorPropertiesOptionMap,
+            final String remotingConnectorName) {
         super(streamServerConsumer, endpointSupplier, saslAuthenticationFactorySupplier,
                 sslContextSupplier, socketBindingManagerSupplier, connectorPropertiesOptionMap);
         this.socketBindingSupplier = socketBindingSupplier;
+        this.remotingConnectorName = remotingConnectorName;
     }
 
     @Override
     public void start(final StartContext context) throws StartException {
         super.start(context);
-        RemotingConnectorBindingInfoService.install(context.getChildTarget(), context.getController().getName().getSimpleName(), getSocketBinding(), Protocol.REMOTE);
+        RemotingConnectorBindingInfoService.install(context.getChildTarget(), remotingConnectorName, getSocketBinding(), Protocol.REMOTE);
     }
 
     @Override

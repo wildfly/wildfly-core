@@ -57,6 +57,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
@@ -146,7 +147,7 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
 
     private final ModelControllerImpl modelController;
     private final OperationMessageHandler messageHandler;
-    private final Map<ServiceName, ServiceController<?>> realRemovingControllers = new HashMap<>();
+    private final Set<ServiceController<?>> realRemovingControllers = Collections.newSetFromMap(new IdentityHashMap<>());
     // protected by "realRemovingControllers"
     private final Map<ServiceName, Step> removalSteps = new HashMap<>();
     private final OperationAttachments attachments;
@@ -729,10 +730,10 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
                 latch.awaitUninterruptibly();
                 if (event == LifecycleEvent.REMOVED) {
                     synchronized (realRemovingControllers) {
-                        ServiceName name = controller.getName();
-                        if (realRemovingControllers.get(name) == controller) {
-                            realRemovingControllers.remove(name);
-                            removalSteps.put(name, removalStep);
+                        if (realRemovingControllers.remove(controller)) {
+                            for (ServiceName sn : controller.provides()) {
+                                removalSteps.put(sn, removalStep);
+                            }
                             realRemovingControllers.notifyAll();
                         }
                     }
@@ -742,7 +743,7 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
         try {
             final ServiceController<?> realController = unwrap(controller);
             synchronized (realRemovingControllers) {
-                realRemovingControllers.put(controller.getName(), realController);
+                realRemovingControllers.add(realController);
                 realController.setMode(ServiceController.Mode.REMOVE);
             }
         } finally {
@@ -788,13 +789,13 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
 
         final ContextServiceBuilderSupplier supplier = new ContextServiceBuilderSupplier() {
             @Override
-            public <T> ContextServiceBuilder<T> getContextServiceBuilder(ServiceBuilder<T> delegate, final ServiceName name) {
+            public <T> ContextServiceBuilder<T> getContextServiceBuilder(ServiceBuilder<T> delegate) {
 
                 final ContextServiceInstaller csi = new ContextServiceInstaller() {
 
                     @Override
                     public <X> ServiceController<X> installService(ServiceBuilder<X> realBuilder) {
-                        return OperationContextImpl.this.installService(realBuilder, name, targetActiveStep);
+                        return OperationContextImpl.this.installService(realBuilder, targetActiveStep);
                     }
 
                     @Override
@@ -2047,17 +2048,17 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
         return CapabilityScope.Factory.create(getProcessType(), address);
     }
 
-    private <T> ServiceController<T> installService(ServiceBuilder<T> builder, ServiceName name, Step step)
-            throws ServiceRegistryException, IllegalStateException {
+    private <T> ServiceController<T> installService(ServiceBuilder<T> builder, Step step) throws ServiceRegistryException, IllegalStateException {
 
         synchronized (realRemovingControllers) {
             boolean intr = false;
             try {
-                boolean containsKey = realRemovingControllers.containsKey(name);
+                Set<ServiceName> providedValues = providedValues(builder);
+                ServiceController<?> controller = contains(providedValues);
                 long timeout = getBlockingTimeout().getLocalBlockingTimeout();
                 long waitTime = timeout;
                 long end = System.currentTimeMillis() + waitTime;
-                while (containsKey && waitTime > 0) {
+                while (controller != null && waitTime > 0) {
                     try {
                         realRemovingControllers.wait(waitTime);
                     } catch (InterruptedException e) {
@@ -2067,22 +2068,24 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
                             throw ControllerLogger.ROOT_LOGGER.serviceInstallCancelled();
                         } // else keep waiting and mark the thread interrupted at the end
                     }
-                    containsKey = realRemovingControllers.containsKey(name);
+                    controller = contains(providedValues);
                     waitTime = end - System.currentTimeMillis();
                 }
 
-                if (containsKey) {
+                if (controller != null) {
                     // We timed out
-                    throw ControllerLogger.ROOT_LOGGER.serviceInstallTimedOut(timeout / 1000, name);
+                    throw ControllerLogger.ROOT_LOGGER.serviceInstallTimedOut(timeout / 1000, providedValues.iterator().next());
                 }
 
                 // If a step removed this ServiceName before, it's no longer responsible
                 // for any ill effect
-                removalSteps.remove(name);
+                for (ServiceName sn : providedValues) {
+                    removalSteps.remove(sn);
+                }
 
-                ServiceController<T> controller = builder.install();
-                step.serviceAdded(controller);
-                return controller;
+                ServiceController<T> retVal = builder.install();
+                step.serviceAdded(retVal);
+                return retVal;
             } finally {
                 if (intr) {
                     Thread.currentThread().interrupt();
@@ -2091,9 +2094,25 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
         }
     }
 
+    private Set<ServiceName> providedValues(final ServiceBuilder<?> sb) {
+        assert Thread.holdsLock(realRemovingControllers);
+        final ContextServiceTarget.ProvidedValuesTrackingServiceBuilder trackingSB = (ContextServiceTarget.ProvidedValuesTrackingServiceBuilder)sb;
+        return trackingSB.getProvidedValues();
+    }
+
+    private ServiceController<?> contains(final Set<ServiceName> providedValues) {
+        assert Thread.holdsLock(realRemovingControllers);
+        for (ServiceName sn : providedValues) {
+            for (ServiceController sc : realRemovingControllers) {
+                if (sc.provides().contains(sn)) return sc;
+            }
+        }
+        return null;
+    }
+
     /** Integration between ContextServiceTarget and the OperationContext that created it*/
     private interface ContextServiceBuilderSupplier {
-        <T> ContextServiceBuilder<T> getContextServiceBuilder(final ServiceBuilder<T> delegate, ServiceName name);
+        <T> ContextServiceBuilder<T> getContextServiceBuilder(final ServiceBuilder<T> delegate);
     }
 
     /**
@@ -2126,20 +2145,29 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
 
         @Override
         public ServiceBuilder<?> addService() {
-            // TODO: We need to rewrite MGMT OPs handling internals in order to support this method
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ServiceBuilder<?> addService(final ServiceName name) {
-            final ServiceBuilder<?> realBuilder = super.getDelegate().addService(name);
+            final ServiceBuilder<?> realBuilder = new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService());
             // If done() has been called we are no longer associated with a management op and should just
             // return the builder from delegate
             synchronized (this) {
                 if (builderSupplier == null) {
                     return realBuilder;
                 }
-                ContextServiceBuilder<?> csb = builderSupplier.getContextServiceBuilder(realBuilder, name);
+                ContextServiceBuilder<?> csb = builderSupplier.getContextServiceBuilder(realBuilder);
+                builders.add(csb);
+                return csb;
+            }
+        }
+
+        @Override
+        public ServiceBuilder<?> addService(final ServiceName name) {
+            final ServiceBuilder<?> realBuilder = new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService(name), name);
+            // If done() has been called we are no longer associated with a management op and should just
+            // return the builder from delegate
+            synchronized (this) {
+                if (builderSupplier == null) {
+                    return realBuilder;
+                }
+                ContextServiceBuilder<?> csb = builderSupplier.getContextServiceBuilder(realBuilder);
                 builders.add(csb);
                 return csb;
             }
@@ -2147,16 +2175,41 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
 
         @Override
         public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final Service<T> service) throws IllegalArgumentException {
-            final ServiceBuilder<T> realBuilder = super.getDelegate().addService(name, service);
+            final ServiceBuilder<T> realBuilder = new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService(name, service), name);
             // If done() has been called we are no longer associated with a management op and should just
             // return the builder from delegate
             synchronized (this) {
                 if (builderSupplier == null) {
                     return new CapabilityServiceBuilderImpl<>(realBuilder, targetAddress);
                 }
-                ContextServiceBuilder<T> csb = builderSupplier.getContextServiceBuilder(realBuilder, name);
+                ContextServiceBuilder<T> csb = builderSupplier.getContextServiceBuilder(realBuilder);
                 builders.add(csb);
                 return new CapabilityServiceBuilderImpl<>(csb, targetAddress);
+            }
+        }
+
+        private static final class ProvidedValuesTrackingServiceBuilder extends DelegatingServiceBuilder {
+            private final Set<ServiceName> providedValues = new HashSet<>();
+
+            private ProvidedValuesTrackingServiceBuilder(final ServiceBuilder<?> delegate) {
+                super(delegate);
+            }
+
+            private ProvidedValuesTrackingServiceBuilder(final ServiceBuilder<?> delegate, final ServiceName sn) {
+                super(delegate);
+                providedValues.add(sn);
+            }
+
+            @Override
+            public Consumer provides(final ServiceName... names) {
+                for (ServiceName sn : names) {
+                    providedValues.add(sn);
+                }
+                return super.provides(names);
+            }
+
+            private Set<ServiceName> getProvidedValues() {
+                return providedValues;
             }
         }
 
