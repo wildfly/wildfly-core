@@ -56,7 +56,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
-import org.jboss.msc.service.ServiceTarget;
 import org.junit.Test;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
@@ -314,11 +313,6 @@ public class AuthorizedAddressTest {
 
         @Override
         public void removeService(ServiceController<?> controller) throws UnsupportedOperationException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 

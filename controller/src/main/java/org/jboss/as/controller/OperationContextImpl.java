@@ -116,7 +116,6 @@ import org.jboss.msc.service.DelegatingServiceBuilder;
 import org.jboss.msc.service.DelegatingServiceController;
 import org.jboss.msc.service.DelegatingServiceRegistry;
 import org.jboss.msc.service.DelegatingServiceTarget;
-import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -132,7 +131,7 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-final class OperationContextImpl extends AbstractOperationContext implements AutoCloseable {
+final class OperationContextImpl extends AbstractOperationContext {
 
     private static final Object NULL = new Object();
 
@@ -758,12 +757,7 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
     }
 
     @Override
-    public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
-        return getCapabilityServiceTarget();
-    }
-
-    @Override
-    public CapabilityServiceTarget getCapabilityServiceTarget() throws UnsupportedOperationException {
+    public CapabilityServiceTarget getCapabilityServiceTarget() {
         return getServiceTarget(activeStep);
     }
 
@@ -776,7 +770,7 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
      *                           the {@link org.jboss.as.controller.OperationStepHandler} that is making the call.
      * @return the service target
      */
-    CapabilityServiceTarget getServiceTarget(final Step targetActiveStep) throws UnsupportedOperationException {
+    CapabilityServiceTarget getServiceTarget(final Step targetActiveStep) {
 
         readOnly = false;
 
@@ -2144,17 +2138,17 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
         }
 
         @Override
-        public ServiceBuilder<?> addService() {
+        public CapabilityServiceBuilder<?> addService() {
             final ServiceBuilder<?> realBuilder = new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService());
             // If done() has been called we are no longer associated with a management op and should just
             // return the builder from delegate
             synchronized (this) {
                 if (builderSupplier == null) {
-                    return realBuilder;
+                    return new CapabilityServiceBuilderImpl<>(realBuilder, targetAddress);
                 }
                 ContextServiceBuilder<?> csb = builderSupplier.getContextServiceBuilder(realBuilder);
                 builders.add(csb);
-                return csb;
+                return new CapabilityServiceBuilderImpl<>(csb, targetAddress);
             }
         }
 
@@ -2174,7 +2168,7 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
         }
 
         @Override
-        public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final Service<T> service) throws IllegalArgumentException {
+        public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final org.jboss.msc.service.Service<T> service) throws IllegalArgumentException {
             final ServiceBuilder<T> realBuilder = new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService(name, service), name);
             // If done() has been called we are no longer associated with a management op and should just
             // return the builder from delegate
@@ -2186,6 +2180,18 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
                 builders.add(csb);
                 return new CapabilityServiceBuilderImpl<>(csb, targetAddress);
             }
+        }
+
+        @Override
+        public ContextServiceTarget addListener(LifecycleListener listener) {
+            super.addListener(listener);
+            return this;
+        }
+
+        @Override
+        public ContextServiceTarget removeListener(LifecycleListener listener) {
+            super.removeListener(listener);
+            return this;
         }
 
         private static final class ProvidedValuesTrackingServiceBuilder extends DelegatingServiceBuilder {
@@ -2710,6 +2716,18 @@ final class OperationContextImpl extends AbstractOperationContext implements Aut
         public CapabilityServiceBuilder<T> setInstance(org.jboss.msc.Service service) {
             super.setInstance(service);
             return this;
+        }
+
+        @Override
+        public CapabilityServiceBuilder<T> addListener(LifecycleListener listener) {
+            super.addListener(listener);
+            return this;
+        }
+
+        @Override
+        public <V> Consumer<V> provides(final RuntimeCapability<?> capability) {
+            checkNotNullParam("capability", capability);
+            return super.provides(capability.isDynamicallyNamed() ? capability.getCapabilityServiceName(this.targetAddress) : capability.getCapabilityServiceName());
         }
 
         @Override

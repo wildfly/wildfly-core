@@ -28,14 +28,13 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.Service;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
 import org.wildfly.discovery.AttributeValue;
 import org.wildfly.discovery.ServiceURL;
 import org.wildfly.discovery.impl.StaticDiscoveryProvider;
@@ -85,9 +84,8 @@ class StaticDiscoveryProviderAddHandler extends AbstractAddStepHandler {
             serviceURLs.add(serviceURL);
         }
 
-        ServiceName name = DiscoveryExtension.DISCOVERY_PROVIDER_CAPABILITY.getCapabilityServiceName(context.getCurrentAddress());
-        ServiceBuilder<?> builder = context.getCapabilityServiceTarget().addService(name);
-        Consumer<DiscoveryProvider> provider = builder.provides(name);
+        CapabilityServiceBuilder<?> builder = context.getCapabilityServiceTarget().addService();
+        Consumer<DiscoveryProvider> provider = builder.provides(DiscoveryExtension.DISCOVERY_PROVIDER_CAPABILITY);
         builder.setInstance(Service.newInstance(provider, new StaticDiscoveryProvider(serviceURLs)))
             .setInitialMode(ServiceController.Mode.ON_DEMAND)
             .install();
