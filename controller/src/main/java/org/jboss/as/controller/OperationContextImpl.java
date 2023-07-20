@@ -2194,6 +2194,11 @@ final class OperationContextImpl extends AbstractOperationContext {
             return this;
         }
 
+        @Override
+        public CapabilityServiceTarget subTarget() {
+            return new ContextServiceTarget(super.subTarget(), this.builderSupplier, this.targetAddress);
+        }
+
         private static final class ProvidedValuesTrackingServiceBuilder extends DelegatingServiceBuilder {
             private final Set<ServiceName> providedValues = new HashSet<>();
 
