@@ -23,6 +23,7 @@ import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -40,7 +41,7 @@ import org.wildfly.service.descriptor.UnaryServiceDescriptor;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface OperationContext extends ExpressionResolver, CapabilityServiceDescriptorResolver {
+public interface OperationContext extends ExpressionResolver, CapabilityServiceDescriptorResolver, FeatureRegistry {
 
     /**
      * Add an execution step to this operation process.  Runtime operation steps are automatically added after
@@ -1062,6 +1063,11 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
      *  <li>The process is a HC, and the address of the operation is a subsystem in the host model or a child thereof</li>
      */
     boolean isDefaultRequiresRuntime();
+
+    @Override
+    default FeatureStream getFeatureStream() {
+        return this.getResourceRegistration().getFeatureStream();
+    }
 
     @Override
     default <T> ServiceName getCapabilityServiceName(NullaryServiceDescriptor<T> descriptor) {
