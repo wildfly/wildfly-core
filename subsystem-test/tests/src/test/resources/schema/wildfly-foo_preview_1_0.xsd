@@ -17,6 +17,13 @@
 
     <xs:complexType name="bar">
         <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="type" type="type" use="required"/>
     </xs:complexType>
 
+    <xs:simpleType name="type">
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="FOO"/>
+            <xs:enumeration value="BAR"/>
+        </xs:restriction>
+    </xs:simpleType>
 </xs:schema>

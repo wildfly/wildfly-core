@@ -48,7 +48,7 @@ public enum FooSubsystemSchema implements PersistentSubsystemSchema<FooSubsystem
         PersistentResourceXMLBuilder builder = builder(FooSubsystemResourceDefinition.PATH, this.namespace);
         builder.addAttributes(FooSubsystemResourceDefinition.ATTRIBUTES.stream().filter(this::enables));
         if (this.enables(BarResourceDefinition.PATH)) {
-            builder.addChild(builder(BarResourceDefinition.PATH));
+            builder.addChild(builder(BarResourceDefinition.PATH).addAttribute(BarResourceDefinition.TYPE));
         }
         return builder.build();
     }
