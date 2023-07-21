@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
@@ -29,7 +30,7 @@ import org.jboss.dmr.ModelType;
  */
 public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator implements AllowedValuesValidator {
 
-    private final EnumSet<E> allowedValues;
+    private final Set<E> allowedValues;
     private final Class<E> enumType;
     private final Map<String, E> toStringMap = new HashMap<>();
 
@@ -48,7 +49,7 @@ public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator impleme
      * @param enumType the type of the enum
      * @param allowed  the allowed values. Cannot be {@code null}
      */
-    public EnumValidator(final Class<E> enumType, final EnumSet<E> allowed) {
+    public EnumValidator(final Class<E> enumType, final Set<E> allowed) {
         this(enumType, allowed, false);
     }
 
@@ -58,7 +59,7 @@ public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator impleme
      * @param allowed  the allowed values. Cannot be {@code null} or empty
      * @param safe {@code true} if the inputs have been validated and the set is an internally created one
      */
-    private EnumValidator(final Class<E> enumType, final EnumSet<E> allowed, boolean safe) {
+    private EnumValidator(final Class<E> enumType, final Set<E> allowed, boolean safe) {
         super(ModelType.STRING);
         if (safe) {
             this.enumType = enumType;
