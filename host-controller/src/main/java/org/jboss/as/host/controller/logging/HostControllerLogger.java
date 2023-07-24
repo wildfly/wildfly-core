@@ -1471,6 +1471,9 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 219, value = "Authorization failed for '%s' attempting to connect as a domain server.")
     GeneralSecurityException identityNotAuthorizedAsServer(final String identityName);
 
+    @Message(id = 220, value = "Failed to synchronize server status upon a Host Controller registration. There is no handler registered to manage the operation %s for the server %s.")
+    IllegalStateException failedToSyncServerStatus(String opName, String serverAddress);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 
