@@ -79,8 +79,14 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
     }
 
     @Override
-    default ServiceController<?> install(OperationContext context) {
-        return this.install(context.getCapabilityServiceTarget());
+    default Consumer<OperationContext> install(OperationContext context) {
+        ServiceController<?> controller = this.install(context.getCapabilityServiceTarget());
+        return new Consumer<>() {
+            @Override
+            public void accept(OperationContext context) {
+                context.removeService(controller);
+            }
+        };
     }
 
     @Override

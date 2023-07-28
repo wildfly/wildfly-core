@@ -6,6 +6,7 @@ package org.wildfly.subsystem.resource.operation;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
@@ -16,7 +17,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 import org.wildfly.subsystem.service.ResourceServiceConfigurator;
 import org.wildfly.subsystem.service.ResourceServiceInstaller;
 
@@ -116,7 +116,7 @@ public interface ResourceOperationRuntimeHandler {
     class ResourceServiceConfiguratorRuntimeHandler implements ResourceOperationRuntimeHandler {
         private final ResourceServiceConfigurator configurator;
         private final Function<Resource, ModelNode> modelReader;
-        private final Map<PathAddress, ServiceController<?>> controllers = new ConcurrentHashMap<>();
+        private final Map<PathAddress, Consumer<OperationContext>> removers = new ConcurrentHashMap<>();
 
         ResourceServiceConfiguratorRuntimeHandler(ResourceServiceConfigurator configurator, Function<Resource, ModelNode> modelReader) {
             this.configurator = configurator;
@@ -126,14 +126,14 @@ public interface ResourceOperationRuntimeHandler {
         @Override
         public void addRuntime(OperationContext context, ModelNode model) throws OperationFailedException {
             ResourceServiceInstaller installer = this.configurator.configure(context, model);
-            this.controllers.put(context.getCurrentAddress(), installer.install(context));
+            this.removers.put(context.getCurrentAddress(), installer.install(context));
         }
 
         @Override
         public void removeRuntime(OperationContext context, ModelNode model) throws OperationFailedException {
-            ServiceController<?> controller = this.controllers.remove(context.getCurrentAddress());
-            if (controller != null) {
-                context.removeService(controller);
+            Consumer<OperationContext> remover = this.removers.remove(context.getCurrentAddress());
+            if (remover != null) {
+                remover.accept(context);
             }
         }
 
