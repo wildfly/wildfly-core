@@ -94,6 +94,9 @@ public class ControlledProcessState {
 
     private boolean restartRequiredFlag = false;
 
+    private boolean reloadRequiredOnStarting = false;
+    private boolean restartRequiredOnStarting = false;
+
     public ControlledProcessState(final boolean reloadSupported) {
         this.reloadSupported = reloadSupported;
         service = new ControlledProcessStateService(State.STOPPED);
@@ -117,6 +120,7 @@ public class ControlledProcessState {
 
     public void setRunning() {
         AtomicStampedReference<State> stateRef = state;
+        int currentStamp = stamp.get();
         int newStamp = stamp.incrementAndGet();
         int[] receiver = new int[1];
         // Keep trying until stateRef is set with our stamp
@@ -126,8 +130,13 @@ public class ControlledProcessState {
                 break;
             }
             synchronized (service) {
-                State newState = restartRequiredFlag ? State.RESTART_REQUIRED : State.RUNNING;
-                if (state.compareAndSet(was, newState, receiver[0], newStamp)) {
+                State newState =  restartRequiredOnStarting ? State.RESTART_REQUIRED
+                        : reloadRequiredOnStarting ? State.RELOAD_REQUIRED
+                        : restartRequiredFlag ? State.RESTART_REQUIRED : State.RUNNING;
+                int stamp = restartRequiredOnStarting || reloadRequiredOnStarting ? currentStamp : newStamp;
+                if (state.compareAndSet(was, newState, receiver[0], stamp)) {
+                    restartRequiredOnStarting = false;
+                    reloadRequiredOnStarting = false;
                     service.stateChanged(newState);
                     break;
                 }
@@ -137,6 +146,8 @@ public class ControlledProcessState {
 
     public void setStopping() {
         synchronized (service) {
+            restartRequiredOnStarting = false;
+            reloadRequiredOnStarting = false;
             state.set(State.STOPPING, stamp.incrementAndGet());
             service.stateChanged(State.STOPPING);
         }
@@ -144,6 +155,8 @@ public class ControlledProcessState {
 
     public void setStopped() {
         synchronized (service) {
+            restartRequiredOnStarting = false;
+            reloadRequiredOnStarting = false;
             state.set(State.STOPPED, stamp.incrementAndGet());
             service.stateChanged(State.STOPPED);
         }
@@ -159,6 +172,9 @@ public class ControlledProcessState {
         // Keep trying until stateRef is RELOAD_REQUIRED with our stamp
         for (;;) {
             State was = stateRef.get(receiver);
+            synchronized (service) {
+                reloadRequiredOnStarting = was == State.STARTING;
+            }
             if (was == State.STARTING || was == State.STOPPING || was == State.RESTART_REQUIRED) {
                 break;
             }
@@ -179,9 +195,16 @@ public class ControlledProcessState {
         // Keep trying until stateRef is RESTART_REQUIRED with our stamp
         for (;;) {
             State was = stateRef.get(receiver);
+            if(was == State.STARTING) {
+                synchronized (service) {
+                    restartRequiredOnStarting = true;
+                    restartRequiredFlag = true;
+                }
+            }
             if (was == State.STARTING || was == State.STOPPING) {
                 break;
             }
+
             synchronized (service) {
                 if (stateRef.compareAndSet(was, State.RESTART_REQUIRED, receiver[0], newStamp)) {
                     restartRequiredFlag = true;
@@ -201,8 +224,12 @@ public class ControlledProcessState {
         // If 'state' still has the state we last set in restartRequired(), change to RUNNING
         Integer theirStamp = Integer.class.cast(stamp);
         synchronized (service) {
-            if (state.compareAndSet(State.RELOAD_REQUIRED, State.RUNNING, theirStamp, this.stamp.incrementAndGet())) {
-                service.stateChanged(State.RUNNING);
+            if (reloadRequiredOnStarting) {
+                reloadRequiredOnStarting = false;
+            } else {
+                if (state.compareAndSet(State.RELOAD_REQUIRED, State.RUNNING, theirStamp, this.stamp.incrementAndGet())) {
+                    service.stateChanged(State.RUNNING);
+                }
             }
         }
     }
@@ -211,9 +238,14 @@ public class ControlledProcessState {
         // If 'state' still has the state we last set in restartRequired(), change to RUNNING
         Integer theirStamp = Integer.class.cast(stamp);
         synchronized (service) {
-            if (state.compareAndSet(State.RESTART_REQUIRED, State.RUNNING, theirStamp, this.stamp.incrementAndGet())) {
+            if (restartRequiredOnStarting) {
+                restartRequiredOnStarting = false;
                 restartRequiredFlag = false;
-                service.stateChanged(State.RUNNING);
+            } else {
+                if (state.compareAndSet(State.RESTART_REQUIRED, State.RUNNING, theirStamp, this.stamp.incrementAndGet())) {
+                    restartRequiredFlag = false;
+                    service.stateChanged(State.RUNNING);
+                }
             }
         }
     }
