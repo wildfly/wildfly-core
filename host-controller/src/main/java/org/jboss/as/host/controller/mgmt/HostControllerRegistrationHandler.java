@@ -61,6 +61,7 @@ import org.jboss.as.protocol.mgmt.ManagementRequestHandler;
 import org.jboss.as.protocol.mgmt.ManagementRequestHandlerFactory;
 import org.jboss.as.protocol.mgmt.ManagementRequestHeader;
 import org.jboss.as.protocol.mgmt.ManagementResponseHeader;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.remoting3.Channel;
@@ -321,6 +322,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 final int major = hostInfo.getManagementMajorVersion();
                 final int minor = hostInfo.getManagementMinorVersion();
                 final int micro = hostInfo.getManagementMicroVersion();
+                ModelVersion hostVersion = ModelVersion.create(major, minor, micro);
 
                 // We reject any remote host running behind WildFly 23 => KernelAPIVersion.VERSION_16_0(16, 0, 0)
                 // We no longer support domains for legacy remote hosts below WildFly 23, so we reject the registration here.
@@ -337,9 +339,15 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                     registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
                     throw failure;
                 }
+                // Legacy hosts must use DEFAULT stream
+                if ((hostVersion.compareTo(ModelVersion.CURRENT) < 0) && (hostInfo.getFeatureStream() != FeatureStream.DEFAULT)) {
+                    OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.incompatibleFeatureStreamForLegacyHost(hostInfo.getFeatureStream());
+                    registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
+                    throw failure;
+                }
                 // Initialize the transformers
                 final TransformationTarget target = TransformationTargetImpl.createForHost(hostInfo.getHostName(), transformerRegistry,
-                        ModelVersion.create(major, minor, micro), Collections.<PathAddress, ModelVersion>emptyMap(), hostInfo);
+                        hostVersion, Collections.<PathAddress, ModelVersion>emptyMap(), hostInfo);
                 final Transformers transformers = Transformers.Factory.create(target);
                 try {
                     SlaveChannelAttachments.attachSlaveInfo(handler.getChannel(), registrationContext.hostName, transformers, hostInfo.getDomainIgnoredExtensions());

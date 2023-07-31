@@ -1461,6 +1461,9 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 221, value = "%s feature stream of domain controller does not match %s feature stream of connecting host")
     OperationFailedException incompatibleFeatureStream(FeatureStream domainFeatureStream, FeatureStream hostFeatureStream);
 
+    @Message(id = 222, value = "%s feature stream is not supported for legacy connecting host")
+    OperationFailedException incompatibleFeatureStreamForLegacyHost(FeatureStream hostFeatureStream);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 
