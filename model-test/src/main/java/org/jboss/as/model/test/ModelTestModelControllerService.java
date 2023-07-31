@@ -138,6 +138,64 @@ public abstract class ModelTestModelControllerService extends AbstractController
         this.runningModeControl = runningModeControl;
     }
 
+    /**
+     * This is the constructor to use for 29.0.x core model tests.
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                              final ResourceDefinition rootResourceDefinition, ControlledProcessState processState,
+                                              final ExpressionResolver expressionResolver, final CapabilityRegistry capabilityRegistry, final Controller29x version) {
+        super(null,
+                null,
+                processType,
+                runningModeControl,
+                persister,
+                processState == null ? new ControlledProcessState(true) : processState,
+                rootResourceDefinition,
+                null,
+                expressionResolver,
+                AuditLogger.NO_OP_LOGGER,
+                new DelegatingConfigurableAuthorizer(),
+                new ManagementSecurityIdentitySupplier(),
+                capabilityRegistry,
+                null
+        );
+
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
+    /**
+     * This is the constructor to use for 29.0.x subsystem tests.
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                              final ResourceDefinition resourceDefinition, final ControlledProcessState processState,
+                                              final CapabilityRegistry capabilityRegistry, final Controller29x version) {
+        super(null,
+                null,
+                processType,
+                runningModeControl,
+                persister,
+                processState == null ? new ControlledProcessState(true) : processState,
+                resourceDefinition,
+                null,
+                ExpressionResolver.TEST_RESOLVER,
+                AuditLogger.NO_OP_LOGGER,
+                new DelegatingConfigurableAuthorizer(),
+                new ManagementSecurityIdentitySupplier(),
+                capabilityRegistry,
+                null
+        );
+
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
 
     /**
      * This is the constructor to use for current core model tests
@@ -146,10 +204,19 @@ public abstract class ModelTestModelControllerService extends AbstractController
                                               final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
                                               final DelegatingResourceDefinition rootResourceDefinition, final ControlledProcessState processState,
                                               final ExpressionResolver expressionResolver, final CapabilityRegistry capabilityRegistry) {
-        super(null, null, processType, runningModeControl, persister,
-                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition, null,
-                expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(),
-                new ManagementSecurityIdentitySupplier(), capabilityRegistry, null);
+        super(null,
+                null,
+                processType,
+                runningModeControl,
+                persister,
+                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition,
+                null,
+                expressionResolver,
+                AuditLogger.NO_OP_LOGGER,
+                new DelegatingConfigurableAuthorizer(),
+                new ManagementSecurityIdentitySupplier(),
+                capabilityRegistry,
+                null);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;
@@ -163,10 +230,18 @@ public abstract class ModelTestModelControllerService extends AbstractController
                                               final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
                                               final ResourceDefinition resourceDefinition, final ExpressionResolver expressionResolver, final ControlledProcessState processState,
                                               final CapabilityRegistry capabilityRegistry) {
-        super(null, null, processType, runningModeControl, persister,
-         processState == null ? new ControlledProcessState(true) : processState, resourceDefinition, null, expressionResolver != null ? expressionResolver : ExpressionResolver.TEST_RESOLVER,
-                 AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(),
-                 new ManagementSecurityIdentitySupplier(), capabilityRegistry, null);
+        super(null,
+                null,
+                processType,
+                runningModeControl,
+                persister,
+                processState == null ? new ControlledProcessState(true) : processState,
+                resourceDefinition, null,
+                expressionResolver != null ? expressionResolver : ExpressionResolver.TEST_RESOLVER,
+                AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(),
+                new ManagementSecurityIdentitySupplier(),
+                capabilityRegistry,
+                null);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;
@@ -400,6 +475,12 @@ public abstract class ModelTestModelControllerService extends AbstractController
     public static class Controller23x {
         public static Controller23x INSTANCE = new Controller23x();
         private Controller23x() {
+        }
+    }
+
+    public static class Controller29x {
+        public static Controller29x INSTANCE = new Controller29x();
+        private Controller29x() {
         }
     }
 }
