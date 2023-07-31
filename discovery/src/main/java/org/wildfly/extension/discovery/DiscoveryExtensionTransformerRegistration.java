@@ -27,7 +27,7 @@ public class DiscoveryExtensionTransformerRegistration implements ExtensionTrans
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         for (DiscoverySubsystemModel model : EnumSet.complementOf(EnumSet.of(DiscoverySubsystemModel.CURRENT))) {
             ModelVersion version = model.getVersion();
-            TransformationDescription.Tools.register(DiscoverySubsystemRegistrar.buildTransformers(version), registration, version);
+            TransformationDescription.Tools.register(new DiscoverySubsystemTransformation().apply(version), registration, version);
         }
     }
 }
