@@ -19,6 +19,7 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationExtensionFactory;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.process.CommandLineConstants;
@@ -371,7 +372,7 @@ public final class Main {
                     if (stream == null) {
                         return new ServerEnvironmentWrapper(ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
-                    systemProperties.setProperty(ServerEnvironment.FEATURE_STREAM, stream);
+                    systemProperties.setProperty(ProcessEnvironment.FEATURE_STREAM, stream);
                 } else if(ConfigurationExtensionFactory.isConfigurationExtensionSupported()
                         && ConfigurationExtensionFactory.commandLineContainsArgument(arg)) {
                     int idx = arg.indexOf("=");

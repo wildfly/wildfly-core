@@ -24,6 +24,7 @@ import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.AbstractConfigurationPersister;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
@@ -103,7 +104,7 @@ public final class ServerStartTask implements ServerTask, Serializable, ObjectIn
         setPropertyIfFound(launchProperties, ServerEnvironment.SERVER_CONTENT_DIR, properties);
         setPropertyIfFound(launchProperties, ServerEnvironment.SERVER_LOG_DIR, properties);
         setPropertyIfFound(launchProperties, ServerEnvironment.SERVER_TEMP_DIR, properties);
-        setPropertyIfFound(launchProperties, ServerEnvironment.FEATURE_STREAM, properties);
+        setPropertyIfFound(launchProperties, ProcessEnvironment.FEATURE_STREAM, properties);
     }
 
     @Override

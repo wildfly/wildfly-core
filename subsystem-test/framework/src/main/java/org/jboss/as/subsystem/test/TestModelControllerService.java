@@ -28,6 +28,7 @@ import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResol
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.extension.ResolverExtensionRegistry;
+import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -161,7 +162,7 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
             throw new RuntimeException(e);
         }
         props.put(ServerEnvironment.JBOSS_SERVER_DEFAULT_CONFIG, "standalone.xml");
-        props.put(ServerEnvironment.FEATURE_STREAM, this.additionalInit.getFeatureStream().toString());
+        props.put(ProcessEnvironment.FEATURE_STREAM, this.additionalInit.getFeatureStream().toString());
 
         return new ServerEnvironment(null, props, new HashMap<>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), null, false);
     }

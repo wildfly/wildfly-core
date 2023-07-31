@@ -24,6 +24,7 @@ import java.util.Properties;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.interfaces.InetAddressUtil;
+import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.process.CommandLineArgumentUsageImpl;
@@ -32,7 +33,6 @@ import org.jboss.as.process.ExitCodes;
 import org.jboss.as.process.ProcessController;
 import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.process.stdin.Base64InputStream;
-import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.SystemExiter;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.logging.MDC;
@@ -451,7 +451,7 @@ public final class Main {
                     if (streamName == null) {
                         return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
-                    hostSystemProperties.put(ServerEnvironment.FEATURE_STREAM, streamName);
+                    hostSystemProperties.put(ProcessEnvironment.FEATURE_STREAM, streamName);
                 } else {
                     STDERR.println(HostControllerLogger.ROOT_LOGGER.invalidOption(arg, usageNote()));
                     return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);

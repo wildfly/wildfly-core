@@ -245,8 +245,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     public static final String DOMAIN_BASE_DIR = "jboss.domain.base.dir";
     public static final String DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
 
-    public static final String FEATURE_STREAM = "jboss.server.stream";
-
     /**
      * Properties that cannot be set via {@link #systemPropertyUpdated(String, String)}
      */
@@ -524,7 +522,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                 this.domainConfigurationDir = null;
             }
 
-            this.stream = getEnumProperty(props, ServerEnvironment.FEATURE_STREAM, FeatureStream.DEFAULT);
+            this.stream = getEnumProperty(props, ProcessEnvironment.FEATURE_STREAM, FeatureStream.DEFAULT);
         }
         boolean allowExecutor = true;
         String maxThreads = WildFlySecurityManager.getPropertyPrivileged(BOOTSTRAP_MAX_THREADS, null);

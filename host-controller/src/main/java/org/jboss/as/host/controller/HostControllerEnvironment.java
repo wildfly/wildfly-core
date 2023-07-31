@@ -29,7 +29,6 @@ import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.jvm.JvmType;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.network.NetworkUtils;
-import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.FeatureStream;
 import org.jboss.as.version.ProductConfig;
@@ -485,9 +484,9 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         this.securityManagerEnabled = securityManagerEnabled || isJavaSecurityManagerConfigured(hostSystemProperties);
         this.processType = processType;
 
-        this.stream = getEnumProperty(hostSystemProperties, ServerEnvironment.FEATURE_STREAM, FeatureStream.DEFAULT);
+        this.stream = getEnumProperty(hostSystemProperties, FEATURE_STREAM, FeatureStream.DEFAULT);
         if (this.stream == FeatureStream.DEFAULT) {
-            WildFlySecurityManager.setPropertyPrivileged(ServerEnvironment.FEATURE_STREAM, this.stream.toString());
+            WildFlySecurityManager.setPropertyPrivileged(ProcessEnvironment.FEATURE_STREAM, this.stream.toString());
         }
     }
 
