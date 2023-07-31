@@ -157,6 +157,8 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         final Supplier<XnioWorker> xwSupplier = builder.requires(ManagementWorkerService.SERVICE_NAME);
         final Supplier<Executor> eSupplier = builder.requires(ExternalManagementRequestExecutor.SERVICE_NAME);
         final Supplier<HttpAuthenticationFactory> hafSupplier = httpAuthenticationFactory != null ? builder.requiresCapability(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, HttpAuthenticationFactory.class, httpAuthenticationFactory) : null;
+        // TODO WFCORE-6321 Expose ServerEnvironment via a capability
+        // Supplier<ServerEnvironment> environment = builder.requiresCapability("org.wildfly.server.environment", ServerEnvironment.class);
         Supplier<ServerEnvironment> environment = builder.requires(ServerEnvironmentService.SERVICE_NAME);
         Supplier<String> consoleSlot = new Supplier<>() {
             @Override
