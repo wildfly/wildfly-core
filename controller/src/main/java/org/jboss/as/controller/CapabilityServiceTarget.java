@@ -20,6 +20,7 @@ package org.jboss.as.controller;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.service.LifecycleListener;
+import org.jboss.msc.service.ServiceName;
 
 /**
  * The target of ServiceBuilder for capability installations.
@@ -46,6 +47,10 @@ public interface CapabilityServiceTarget extends RequirementServiceTarget {
 
     @Override
     CapabilityServiceBuilder<?> addService();
+
+    @Deprecated
+    @Override
+    CapabilityServiceBuilder<?> addService(ServiceName name);
 
     @Override
     CapabilityServiceTarget addListener(LifecycleListener listener);
