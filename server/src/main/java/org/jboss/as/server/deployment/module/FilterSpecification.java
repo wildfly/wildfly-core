@@ -23,6 +23,8 @@
 package org.jboss.as.server.deployment.module;
 
 import java.io.Serializable;
+import java.util.Objects;
+
 import org.jboss.modules.filter.PathFilter;
 
 /**
@@ -46,5 +48,18 @@ public final class FilterSpecification implements Serializable {
 
     public boolean isInclude() {
         return include;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FilterSpecification that = (FilterSpecification) o;
+        return include == that.include && pathFilter.equals(that.pathFilter);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pathFilter, include);
     }
 }

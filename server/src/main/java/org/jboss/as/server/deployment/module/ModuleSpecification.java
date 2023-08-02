@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,13 +51,14 @@ public class ModuleSpecification extends SimpleAttachable {
      */
     private final List<ModuleDependency> systemDependencies = new ArrayList<>();
 
+    /** Unique names of system dependencies, used to ensure only one system ModuleDependency per name is added. */
     private final Set<ModuleIdentifier> systemDependenciesSet = new HashSet<>();
+
     /**
      * Local dependencies are dependencies on other parts of the deployment, such as class-path entry
      */
-    private final List<ModuleDependency> localDependencies = new ArrayList<>();
+    private final Set<ModuleDependency> localDependencies = new LinkedHashSet<>();
 
-    private final Set<ModuleIdentifier> localDependenciesSet = new HashSet<>();
     /**
      * If set to true this indicates that a dependency on this module requires a dependency on all it's local
      * dependencies.
@@ -70,13 +72,11 @@ public class ModuleSpecification extends SimpleAttachable {
      * User dependencies are not affected by exclusions.
      */
     private final List<ModuleDependency> userDependencies = new ArrayList<>();
-
-    private final Set<ModuleIdentifier> userDependenciesSet = new HashSet<>();
-
     /**
-     * A Map structure that contains an userDependency target module as a key and its aliases as values.
+     * Set view of user dependencies, used to prevent duplicates in the userDependencies list.
+     * TODO update getMutableUserDependencies and replace the list with this.
      */
-    private final HashMap<ModuleIdentifier, List<ModuleIdentifier>> userDependenciesMap = new HashMap<>();
+    private final Set<ModuleDependency> userDependenciesSet = new HashSet<>();
 
     private final List<ResourceLoaderSpec> resourceLoaders = new ArrayList<>();
 
@@ -165,7 +165,7 @@ public class ModuleSpecification extends SimpleAttachable {
 
     public void addUserDependency(final ModuleDependency dependency) {
         allDependencies = null;
-        if (this.userDependenciesSet.add(dependency.getIdentifier())) {
+        if (this.userDependenciesSet.add(dependency)) {
             this.userDependencies.add(dependency);
         }
     }
@@ -180,9 +180,7 @@ public class ModuleSpecification extends SimpleAttachable {
     public void addLocalDependency(final ModuleDependency dependency) {
         allDependencies = null;
         if (!exclusions.contains(dependency.getIdentifier())) {
-            if (this.localDependenciesSet.add(dependency.getIdentifier())) {
-                this.localDependencies.add(dependency);
-            }
+            this.localDependencies.add(dependency);
         } else {
             excludedDependencies.add(dependency.getIdentifier());
         }
@@ -244,7 +242,7 @@ public class ModuleSpecification extends SimpleAttachable {
 
 
     public List<ModuleDependency> getLocalDependencies() {
-        return Collections.unmodifiableList(localDependencies);
+        return Collections.unmodifiableList(new ArrayList<>(localDependencies));
     }
 
     public List<ModuleDependency> getUserDependencies() {
@@ -254,7 +252,7 @@ public class ModuleSpecification extends SimpleAttachable {
     /**
      * Gets a modifiable view of the user dependencies list.
      *
-     * @return The user dependencies
+     * @return The user dependencies TODO change the return type to Collection and return a Set
      */
     public List<ModuleDependency> getMutableUserDependencies() {
         allDependencies = null;
