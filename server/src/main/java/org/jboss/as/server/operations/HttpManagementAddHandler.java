@@ -145,7 +145,6 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
             ServerLogger.ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
         }
 
-        ServerEnvironment environment = (ServerEnvironment) context.getServiceRegistry(false).getRequiredService(ServerEnvironmentService.SERVICE_NAME).getValue();
         final CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY);
         final Consumer<HttpManagement> hmConsumer = builder.provides(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY);
         final Supplier<ListenerRegistry> lrSupplier = builder.requires(RemotingServices.HTTP_LISTENER_REGISTRY);
@@ -158,6 +157,15 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         final Supplier<XnioWorker> xwSupplier = builder.requires(ManagementWorkerService.SERVICE_NAME);
         final Supplier<Executor> eSupplier = builder.requires(ExternalManagementRequestExecutor.SERVICE_NAME);
         final Supplier<HttpAuthenticationFactory> hafSupplier = httpAuthenticationFactory != null ? builder.requiresCapability(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, HttpAuthenticationFactory.class, httpAuthenticationFactory) : null;
+        // TODO WFCORE-6321 Expose ServerEnvironment via a capability
+        // Supplier<ServerEnvironment> environment = builder.requiresCapability("org.wildfly.server.environment", ServerEnvironment.class);
+        Supplier<ServerEnvironment> environment = builder.requires(ServerEnvironmentService.SERVICE_NAME);
+        Supplier<String> consoleSlot = new Supplier<>() {
+            @Override
+            public String get() {
+                return environment.get().getProductConfig().getConsoleSlot();
+            }
+        };
         Supplier<SecurityDomain> virtualSecurityDomainSupplier = null;
         Supplier<HttpServerAuthenticationMechanismFactory> virtualMechanismFactorySupplier = null;
         if (VirtualDomainMarkerUtility.isVirtualDomainRequired(context)) {
@@ -170,7 +178,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         final Supplier<SSLContext> scSupplier = sslContext != null ? builder.requiresCapability(SSL_CONTEXT_CAPABILITY, SSLContext.class, sslContext) : null;
         final UndertowHttpManagementService undertowService = new UndertowHttpManagementService(hmConsumer, lrSupplier, mcSupplier, sbSupplier, ssbSupplier, sbmSupplier,
                 null, null, rpSupplier, xwSupplier, eSupplier, hafSupplier, scSupplier, null, null, commonPolicy.getAllowedOrigins(), consoleMode,
-                environment.getProductConfig().getConsoleSlot(), commonPolicy.getConstantHeaders(), caSupplier, virtualSecurityDomainSupplier, virtualMechanismFactorySupplier);
+                consoleSlot, commonPolicy.getConstantHeaders(), caSupplier, virtualSecurityDomainSupplier, virtualMechanismFactorySupplier);
         builder.setInstance(undertowService);
         builder.install();
 

@@ -106,7 +106,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final Supplier<HttpAuthenticationFactory> httpAuthFactorySupplier;
     private final Supplier<SSLContext> sslContextSupplier;
     private final ConsoleMode consoleMode;
-    private final String consoleSlot;
+    private final Supplier<String> consoleSlot;
     private final Map<String, List<Header>> constantHeaders;
     private final Supplier<ConsoleAvailability> consoleAvailabilitySupplier;
     private final Supplier<SecurityDomain> virtualSecurityDomainSupplier;
@@ -220,7 +220,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                                          final Integer securePort,
                                          final Collection<String> allowedOrigins,
                                          final ConsoleMode consoleMode,
-                                         final String consoleSlot,
+                                         final Supplier<String> consoleSlot,
                                          final Map<String, List<Header>> constantHeaders,
                                          final Supplier<ConsoleAvailability> consoleAvailabilitySupplier) {
         this(httpManagementConsumer, listenerRegistrySupplier, modelControllerSupplier, socketBindingSupplier,
@@ -246,7 +246,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                                          final Integer securePort,
                                          final Collection<String> allowedOrigins,
                                          final ConsoleMode consoleMode,
-                                         final String consoleSlot,
+                                         final Supplier<String> consoleSlot,
                                          final Map<String, List<Header>> constantHeaders,
                                          final Supplier<ConsoleAvailability> consoleAvailabilitySupplier,
                                          final Supplier<SecurityDomain> virtualSecurityDomainSupplier,
@@ -363,7 +363,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     .setModelController(modelController)
                     .setSSLContext(sslContext)
                     .setConsoleMode(consoleMode)
-                    .setConsoleSlot(consoleSlot)
+                    .setConsoleSlot(consoleSlot.get())
                     .setChannelUpgradeHandler(upgradeHandler)
                     .setManagementHttpRequestProcessor(requestProcessorSupplier.get())
                     .setAllowedOrigins(allowedOrigins)
