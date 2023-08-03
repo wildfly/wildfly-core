@@ -2139,44 +2139,27 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         @Override
         public CapabilityServiceBuilder<?> addService() {
-            final ServiceBuilder<?> realBuilder = new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService());
-            // If done() has been called we are no longer associated with a management op and should just
-            // return the builder from delegate
-            synchronized (this) {
-                if (builderSupplier == null) {
-                    return new CapabilityServiceBuilderImpl<>(realBuilder, targetAddress);
-                }
-                ContextServiceBuilder<?> csb = builderSupplier.getContextServiceBuilder(realBuilder);
-                builders.add(csb);
-                return new CapabilityServiceBuilderImpl<>(csb, targetAddress);
-            }
+            return this.wrap(new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService()));
         }
 
         @Override
-        public ServiceBuilder<?> addService(final ServiceName name) {
-            final ServiceBuilder<?> realBuilder = new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService(name), name);
-            // If done() has been called we are no longer associated with a management op and should just
-            // return the builder from delegate
-            synchronized (this) {
-                if (builderSupplier == null) {
-                    return realBuilder;
-                }
-                ContextServiceBuilder<?> csb = builderSupplier.getContextServiceBuilder(realBuilder);
-                builders.add(csb);
-                return csb;
-            }
+        public CapabilityServiceBuilder<?> addService(final ServiceName name) {
+            return this.wrap(new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService(name), name));
         }
 
         @Override
         public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final org.jboss.msc.service.Service<T> service) throws IllegalArgumentException {
-            final ServiceBuilder<T> realBuilder = new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService(name, service), name);
+            return this.wrap(new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService(name, service), name));
+        }
+
+        private <T> CapabilityServiceBuilder<T> wrap(ServiceBuilder<T> builder) {
             // If done() has been called we are no longer associated with a management op and should just
             // return the builder from delegate
             synchronized (this) {
                 if (builderSupplier == null) {
-                    return new CapabilityServiceBuilderImpl<>(realBuilder, targetAddress);
+                    return new CapabilityServiceBuilderImpl<>(builder, targetAddress);
                 }
-                ContextServiceBuilder<T> csb = builderSupplier.getContextServiceBuilder(realBuilder);
+                ContextServiceBuilder<T> csb = builderSupplier.getContextServiceBuilder(builder);
                 builders.add(csb);
                 return new CapabilityServiceBuilderImpl<>(csb, targetAddress);
             }
@@ -2192,6 +2175,11 @@ final class OperationContextImpl extends AbstractOperationContext {
         public ContextServiceTarget removeListener(LifecycleListener listener) {
             super.removeListener(listener);
             return this;
+        }
+
+        @Override
+        public CapabilityServiceTarget subTarget() {
+            return new ContextServiceTarget(super.subTarget(), this.builderSupplier, this.targetAddress);
         }
 
         private static final class ProvidedValuesTrackingServiceBuilder extends DelegatingServiceBuilder {
@@ -2223,9 +2211,9 @@ final class OperationContextImpl extends AbstractOperationContext {
         @SuppressWarnings("unchecked")
         public CapabilityServiceBuilder<?> addCapability(final RuntimeCapability<?> capability) throws IllegalArgumentException {
             if (capability.isDynamicallyNamed()) {
-                return new CapabilityServiceBuilderImpl(addService(capability.getCapabilityServiceName(targetAddress)), targetAddress);
+                return this.addService(capability.getCapabilityServiceName(targetAddress));
             } else {
-                return new CapabilityServiceBuilderImpl(addService(capability.getCapabilityServiceName()), targetAddress);
+                return this.addService(capability.getCapabilityServiceName());
             }
         }
 
