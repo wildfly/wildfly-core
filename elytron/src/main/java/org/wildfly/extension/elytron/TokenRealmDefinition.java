@@ -72,6 +72,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.EnumValidator;
+import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -159,6 +160,18 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .setMinSize(1)
                 .build();
 
+        static final SimpleAttributeDefinition CONNECTION_TIMEOUT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CONNECTION_TIMEOUT, ModelType.INT, true)
+                .setAllowExpression(true)
+                .setValidator(new IntRangeValidator(0))
+                .setRestartAllServices()
+                .build();
+
+        static final SimpleAttributeDefinition READ_TIMEOUT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.READ_TIMEOUT, ModelType.INT, true)
+                .setAllowExpression(true)
+                .setValidator(new IntRangeValidator(0))
+                .setRestartAllServices()
+                .build();
+
         static final PropertiesAttributeDefinition KEY_MAP = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.KEY_MAP, true)
                 .setAllowExpression(true)
                 .setMinSize(1)
@@ -182,7 +195,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .setRestartAllServices()
                 .build();
 
-        static final ObjectTypeAttributeDefinition JWT_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(JWT, ISSUER, AUDIENCE, PUBLIC_KEY, KEY_STORE, CERTIFICATE, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY, KEY_MAP)
+        static final ObjectTypeAttributeDefinition JWT_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(JWT, ISSUER, AUDIENCE, PUBLIC_KEY, KEY_STORE, CERTIFICATE, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY, KEY_MAP, CONNECTION_TIMEOUT, READ_TIMEOUT)
                 .setRequired(false)
                 .setRestartAllServices()
                 .build();
@@ -209,9 +222,21 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{CLIENT_ID, CLIENT_SECRET, INTROSPECTION_URL, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY};
+        static final SimpleAttributeDefinition CONNECTION_TIMEOUT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CONNECTION_TIMEOUT, ModelType.INT, true)
+                .setAllowExpression(true)
+                .setValidator(new IntRangeValidator(0))
+                .setRestartAllServices()
+                .build();
 
-        static final ObjectTypeAttributeDefinition OAUTH2_INTROSPECTION_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(OAUTH2_INTROSPECTION, CLIENT_ID, CLIENT_SECRET, INTROSPECTION_URL, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY)
+        static final SimpleAttributeDefinition READ_TIMEOUT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.READ_TIMEOUT, ModelType.INT, true)
+                .setAllowExpression(true)
+                .setValidator(new IntRangeValidator(0))
+                .setRestartAllServices()
+                .build();
+
+        static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{CLIENT_ID, CLIENT_SECRET, INTROSPECTION_URL, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY, CONNECTION_TIMEOUT, READ_TIMEOUT};
+
+        static final ObjectTypeAttributeDefinition OAUTH2_INTROSPECTION_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(OAUTH2_INTROSPECTION, CLIENT_ID, CLIENT_SECRET, INTROSPECTION_URL, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY, CONNECTION_TIMEOUT, READ_TIMEOUT)
                 .setRequired(false)
                 .setRestartAllServices()
                 .build();
@@ -282,6 +307,8 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 String sslContextRef = SSL_CONTEXT.resolveModelAttribute(context, jwtValidatorNode).asStringOrNull();
                 String hostNameVerificationPolicy = HOSTNAME_VERIFICATION_POLICY.resolveModelAttribute(context, jwtValidatorNode).asStringOrNull();
                 InjectedValue<SSLContext> sslContextInjector = new InjectedValue<>();
+                Integer connectionTimeout = JwtValidatorAttributes.CONNECTION_TIMEOUT.resolveModelAttribute(context, jwtValidatorNode).asIntOrNull();
+                Integer readTimeout = JwtValidatorAttributes.READ_TIMEOUT.resolveModelAttribute(context, jwtValidatorNode).asIntOrNull();
                 ModelNode keyMap = KEY_MAP.resolveModelAttribute(context, jwtValidatorNode);
                 Map<String, PublicKey> namedKeys = new LinkedHashMap<>();
                 if (keyMap.isDefined()) {
@@ -331,6 +358,12 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                         if (namedKeys.size() > 0) {
                             jwtValidatorBuilder.publicKeys(namedKeys);
                         }
+                        if (connectionTimeout != null) {
+                            jwtValidatorBuilder.connectionTimeout(connectionTimeout);
+                        }
+                        if (readTimeout != null) {
+                            jwtValidatorBuilder.readTimeout(readTimeout);
+                        }
                         KeyStore keyStore = keyStoreInjector.getOptionalValue();
 
                         if (keyStore != null) {
@@ -379,6 +412,8 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 String introspectionUrl = OAuth2IntrospectionValidatorAttributes.INTROSPECTION_URL.resolveModelAttribute(context, oAuth2IntrospectionNode).asString();
                 String sslContextRef = SSL_CONTEXT.resolveModelAttribute(context, oAuth2IntrospectionNode).asStringOrNull();
                 String hostNameVerificationPolicy = HOSTNAME_VERIFICATION_POLICY.resolveModelAttribute(context, oAuth2IntrospectionNode).asStringOrNull();
+                Integer connectionTimeout = OAuth2IntrospectionValidatorAttributes.CONNECTION_TIMEOUT.resolveModelAttribute(context, oAuth2IntrospectionNode).asIntOrNull();
+                Integer readTimeout = OAuth2IntrospectionValidatorAttributes.READ_TIMEOUT.resolveModelAttribute(context, oAuth2IntrospectionNode).asIntOrNull();
                 InjectedValue<SSLContext> sslContextInjector = new InjectedValue<>();
 
                 service = new TrivialService<>(new TrivialService.ValueSupplier<SecurityRealm>() {
@@ -393,6 +428,12 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                                     .tokenIntrospectionUrl(new URL(introspectionUrl))
                                     .useSslContext(sslContextInjector.getOptionalValue())
                                     .useSslHostnameVerifier(verifier);
+                            if (connectionTimeout != null) {
+                                builder.connectionTimeout(connectionTimeout);
+                            }
+                            if (readTimeout != null) {
+                                builder.readTimeout(readTimeout);
+                            }
                             return TokenSecurityRealm.builder().principalClaimName(principalClaimNode.asString())
                                     .validator(builder.build())
                                     .build();
