@@ -38,7 +38,7 @@ public class SensitivityClassification extends AbstractSensitivity {
     public static final SensitivityClassification SOCKET_CONFIG = new SensitivityClassification("socket-config", false, false, true);
     public static final SensitivityClassification SNAPSHOTS = new SensitivityClassification("snapshots", false, false, false);
     public static final SensitivityClassification SSL_REF = new SensitivityClassification("ssl-ref", true, true, true);
-    public static final SensitivityClassification SYSTEM_PROPERTY = new SensitivityClassification("system-property", false, false, true);
+    public static final SensitivityClassification SYSTEM_PROPERTY = new SensitivityClassification("system-property", false, true, true);
 
     private final boolean core;
     private final String subsystem;
