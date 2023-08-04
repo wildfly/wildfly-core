@@ -45,8 +45,8 @@ final class SubDeploymentUnitService extends AbstractDeploymentUnitService {
     private final DeploymentUnit parent;
     private final PathManager pathManager;
 
-    public SubDeploymentUnitService(final Consumer<DeploymentUnit> deploymentUnitConsumer, ResourceRoot deploymentRoot, DeploymentUnit parent, ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, CapabilityServiceSupport capabilityServiceSupport, PathManager pathManager) {
-        super(deploymentUnitConsumer, registration, mutableRegistration, resource, capabilityServiceSupport);
+    public SubDeploymentUnitService(final Consumer<DeploymentUnit> deploymentUnitConsumer, ResourceRoot deploymentRoot, DeploymentUnit parent, ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, CapabilityServiceSupport capabilityServiceSupport, PathManager pathManager, final String name) {
+        super(deploymentUnitConsumer, registration, mutableRegistration, resource, capabilityServiceSupport, name);
         this.pathManager = pathManager;
         if (deploymentRoot == null) throw ServerLogger.ROOT_LOGGER.deploymentRootRequired();
         this.deploymentRoot = deploymentRoot;

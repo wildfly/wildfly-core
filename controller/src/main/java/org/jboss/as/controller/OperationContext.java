@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.util.Set;
 import java.util.logging.Level;
 
+import org.jboss.as.controller._private.OperationFailedRuntimeException;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.Environment;
@@ -285,26 +286,6 @@ public interface OperationContext extends ExpressionResolver {
     void completeStep(ResultHandler resultHandler);
 
     /**
-     * Called by an {@link OperationStepHandler} to indicate it has completed its handling of a step and is
-     * uninterested in the result of subsequent steps. This is a convenience method that is equivalent to a call to
-     * {@link #completeStep(ResultHandler) completeStep(OperationContext.ResultHandler.NO_OP_RESULT_HANDLER)}.
-     * <p>
-     * A common user of this method would be a {@link Stage#MODEL} handler. Typically such a handler would not need
-     * to take any further action in the case of a {@link ResultAction#KEEP successful result} for the overall operation.
-     * If the operation result is a {@link ResultAction#ROLLBACK rollback}, the {@code OperationContext} itself
-     * will ensure any changes made to the model are discarded, again requiring no action on the part of the handler.
-     * So a {@link Stage#MODEL} handler typically can be uninterested in the result of the overall operation and can
-     * use this method.
-     * </p>
-     *
-     * @deprecated invoking this method is unnecessary since if an {@code OperationStepHandler} does not call one of
-     *             the {@link #completeStep(org.jboss.as.controller.OperationContext.ResultHandler) variants} from its
-     *             {@code execute} method, a no-op {@code ResultHandler} will automatically be registered
-     */
-    @Deprecated
-    void stepCompleted();
-
-    /**
      * Get the type of process in which this operation is executing.
      *
      * @return the process type. Will not be {@code null}
@@ -470,7 +451,7 @@ public interface OperationContext extends ExpressionResolver {
      * <p>
      * <strong>Note:</strong> It is very important that the {@code modify} parameter accurately reflect whether the
      * caller intends to make any modifications to any object reachable, directly or indirectly, from the returned
-     * {@link ServiceRegistry}. This includes modifying any {@link ServiceController},
+     * {@link ServiceRegistry}. This includes modifying any {@link ServiceController}, {@link org.jboss.msc.Service},
      * {@link org.jboss.msc.service.Service}, {@link org.jboss.msc.value.Value} or any object reachable from a value.
      *
      * @param modify {@code true} if the operation may be modifying any object reachable directly or indirectly from
@@ -507,8 +488,12 @@ public interface OperationContext extends ExpressionResolver {
      *
      * @return the service target
      * @throws UnsupportedOperationException if the calling step is not a runtime operation step
+     * @deprecated Use {@link #getCapabilityServiceTarget()} instead.
      */
-    ServiceTarget getServiceTarget() throws UnsupportedOperationException;
+    @Deprecated(forRemoval = true)
+    default ServiceTarget getServiceTarget() throws UnsupportedOperationException {
+        return this.getCapabilityServiceTarget();
+    }
 
     /**
      * Get the service target.  If the step is not a runtime operation handler step, an exception will be thrown.  The
@@ -542,7 +527,7 @@ public interface OperationContext extends ExpressionResolver {
      * @param address the (possibly empty) address where the resource should be created. Address is relative to the
      *                address of the operation being executed
      * @return the created resource
-     * @throws IllegalStateException if a resource already exists at the given address
+     * @throws OperationFailedRuntimeException if a resource already exists at the given address
      * @throws UnsupportedOperationException if the calling operation is not a model operation
      */
     Resource createResource(PathAddress address) throws UnsupportedOperationException;
@@ -554,7 +539,7 @@ public interface OperationContext extends ExpressionResolver {
      * @param address the (possibly empty) address where the resource should be added. Address is relative to the
      *                address of the operation being executed
      * @param toAdd the new resource
-     * @throws IllegalStateException if a resource already exists at the given address, or if the resource does not support ordered childred
+     * @throws OperationFailedRuntimeException if a resource already exists at the given address, or if the resource does not support ordered childred
      * @throws UnsupportedOperationException if the calling operation is not a model operation
      */
     void addResource(PathAddress address, Resource toAdd);
@@ -567,7 +552,7 @@ public interface OperationContext extends ExpressionResolver {
      *                address of the operation being executed
      * @param index the index of the resource to be created in the parent resources children of this type
      * @param toAdd the new resource
-     * @throws IllegalStateException if a resource already exists at the given address
+     * @throws OperationFailedRuntimeException if a resource already exists at the given address
      * @throws UnsupportedOperationException if the calling operation is not a model operation
      */
     void addResource(PathAddress address, int index, Resource toAdd);

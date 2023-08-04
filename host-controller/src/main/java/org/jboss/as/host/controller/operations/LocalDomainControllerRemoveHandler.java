@@ -47,7 +47,7 @@ public class LocalDomainControllerRemoveHandler implements OperationStepHandler 
     public static final LocalDomainControllerRemoveHandler INSTANCE = new LocalDomainControllerRemoveHandler();
 
     /**
-     * Create the InterfaceRemoveHandler
+     * Create the LocalDomainControllerRemoveHandler
      */
     protected LocalDomainControllerRemoveHandler() {
     }

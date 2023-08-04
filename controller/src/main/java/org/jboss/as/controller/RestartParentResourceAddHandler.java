@@ -21,11 +21,9 @@
  */
 package org.jboss.as.controller;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -38,24 +36,25 @@ import org.jboss.dmr.ModelNode;
  */
 public abstract class RestartParentResourceAddHandler extends RestartParentResourceHandlerBase implements OperationDescriptor {
 
-    static final Set<? extends AttributeDefinition> NULL_ATTRIBUTES = Collections.emptySet();
-    static final Set<RuntimeCapability> NULL_CAPABILITIES = Collections.emptySet();
-
-    protected final Set<RuntimeCapability> capabilities;
     protected final Collection<? extends AttributeDefinition> attributes;
 
     protected RestartParentResourceAddHandler(String parentKeyName) {
-        this(parentKeyName, null, null);
+        this(parentKeyName, List.of());
     }
 
-    protected RestartParentResourceAddHandler(String parentKeyName, RuntimeCapability ... capabilities) {
-        this(parentKeyName, capabilities == null || capabilities.length == 0 ? NULL_CAPABILITIES : Arrays.stream(capabilities).collect(Collectors.toSet()), null);
-    }
-
-    public RestartParentResourceAddHandler(String parentKeyName, Set<RuntimeCapability> capabilities, Collection<? extends AttributeDefinition> attributes) {
+    protected RestartParentResourceAddHandler(String parentKeyName, Collection<? extends AttributeDefinition> attributes) {
         super(parentKeyName);
-        this.attributes = attributes == null ? NULL_ATTRIBUTES : attributes;
-        this.capabilities = capabilities == null ? NULL_CAPABILITIES : capabilities;
+        this.attributes = attributes.isEmpty() ? List.of() : List.copyOf(attributes);
+    }
+
+    @Deprecated(forRemoval = true)
+    protected RestartParentResourceAddHandler(String parentKeyName, RuntimeCapability ... capabilities) {
+        this(parentKeyName);
+    }
+
+    @Deprecated(forRemoval = true)
+    public RestartParentResourceAddHandler(String parentKeyName, Set<RuntimeCapability> capabilities, Collection<? extends AttributeDefinition> attributes) {
+        this(parentKeyName, attributes);
     }
 
     @Override
@@ -71,8 +70,7 @@ public abstract class RestartParentResourceAddHandler extends RestartParentResou
     }
 
     protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        Set<RuntimeCapability> capabilitySet = capabilities.isEmpty() ? context.getResourceRegistration().getCapabilities() : capabilities;
-        for (RuntimeCapability capability : capabilitySet) {
+        for (RuntimeCapability<?> capability : context.getResourceRegistration().getCapabilities()) {
             if (capability.isDynamicallyNamed()) {
                 context.registerCapability(capability.fromBaseCapability(context.getCurrentAddress()));
             } else {

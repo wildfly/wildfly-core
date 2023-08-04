@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>21.0.0.Beta1-SNAPSHOT</version>
+        <version>22.0.0.Beta1-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-embedded</artifactId>
@@ -194,20 +194,6 @@
                   projects that depend on this project.-->
             <scope>provided</scope>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <!-- As far as embedded is concerned, this is compile time only as it's just used
-                 to import a single constant. At runtime the module is used transitively, but not
-                 directly by the code in this maven module. -->
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-process-controller</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-            <scope>provided</scope>
         </dependency>
 
         <!-- Test dependencies -->

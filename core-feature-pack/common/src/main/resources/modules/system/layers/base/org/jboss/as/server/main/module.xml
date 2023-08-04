@@ -87,5 +87,6 @@
         <!-- Allow javax->jakarta deployment transformation if this module is provided -->
         <module name="org.wildfly.deployment.transformation" optional="true" services="import"/>
         <module name="org.eclipse.jgit" optional="true"/>
+        <module name="org.wildfly.installation-manager" services="import" />
     </dependencies>
 </module>

@@ -21,7 +21,6 @@
  */
 package org.jboss.as.remoting;
 
-import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.remoting.Protocol.REMOTE_HTTP;
 import static org.jboss.as.remoting.Protocol.REMOTE_HTTPS;
 import static org.jboss.as.remoting.logging.RemotingLogger.ROOT_LOGGER;
@@ -90,6 +89,7 @@ public class RemotingHttpUpgradeService implements Service {
     public static final ServiceName HTTP_UPGRADE_REGISTRY = ServiceName.JBOSS.append("http-upgrade-registry");
     public static final ServiceName UPGRADE_SERVICE_NAME = ServiceName.JBOSS.append("remoting", "remoting-http-upgrade-service");
 
+    private final String remotingConnectorName;
     private final String httpConnectorName;
     private final String endpointName;
 
@@ -108,12 +108,13 @@ public class RemotingHttpUpgradeService implements Service {
                                       final Supplier<ListenerRegistry> listenerRegistrySupplier,
                                       final Supplier<Endpoint> endpointSupplier,
                                       final Supplier<SaslAuthenticationFactory> saslAuthenticationFactorySupplier,
-                                      final String httpConnectorName, final String endpointName, final OptionMap connectorPropertiesOptionMap) {
+                                      final String remotingConnectorName, final String httpConnectorName, final String endpointName, final OptionMap connectorPropertiesOptionMap) {
         this.serviceConsumer = serviceConsumer;
         this.upgradeRegistrySupplier = upgradeRegistrySupplier;
         this.listenerRegistrySupplier = listenerRegistrySupplier;
         this.endpointSupplier = endpointSupplier;
         this.saslAuthenticationFactorySupplier = saslAuthenticationFactorySupplier;
+        this.remotingConnectorName = remotingConnectorName;
         this.httpConnectorName = httpConnectorName;
         this.endpointName = endpointName;
         this.connectorPropertiesOptionMap = connectorPropertiesOptionMap;
@@ -122,7 +123,7 @@ public class RemotingHttpUpgradeService implements Service {
     public static void installServices(final OperationContext context, final String remotingConnectorName,
                                        final String httpConnectorName, final ServiceName endpointName,
                                        final OptionMap connectorPropertiesOptionMap,
-                                       final String saslAuthenticationFactory) {
+                                       final ServiceName saslAuthenticationFactory) {
         final ServiceTarget serviceTarget = context.getServiceTarget();
         final ServiceName serviceName = UPGRADE_SERVICE_NAME.append(remotingConnectorName);
         final ServiceBuilder<?> sb = serviceTarget.addService(serviceName);
@@ -130,8 +131,8 @@ public class RemotingHttpUpgradeService implements Service {
         final Supplier<ChannelUpgradeHandler> urSupplier = sb.requires(HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
         final Supplier<ListenerRegistry> lrSupplier = sb.requires(RemotingServices.HTTP_LISTENER_REGISTRY);
         final Supplier<Endpoint> eSupplier = sb.requires(endpointName);
-        final Supplier<SaslAuthenticationFactory> safSupplier = saslAuthenticationFactory != null ? sb.requires(context.getCapabilityServiceName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthenticationFactory, SaslAuthenticationFactory.class)) : null;
-        sb.setInstance(new RemotingHttpUpgradeService(serviceConsumer, urSupplier, lrSupplier, eSupplier, safSupplier, httpConnectorName, endpointName.getSimpleName(), connectorPropertiesOptionMap));
+        final Supplier<SaslAuthenticationFactory> safSupplier = saslAuthenticationFactory != null ? sb.requires(saslAuthenticationFactory) : null;
+        sb.setInstance(new RemotingHttpUpgradeService(serviceConsumer, urSupplier, lrSupplier, eSupplier, safSupplier, remotingConnectorName, httpConnectorName, endpointName.getSimpleName(), connectorPropertiesOptionMap));
         sb.setInitialMode(ServiceController.Mode.ACTIVE);
         sb.install();
     }
@@ -145,7 +146,7 @@ public class RemotingHttpUpgradeService implements Service {
         ListenerRegistry.Listener listenerInfo = listenerRegistrySupplier.get().getListener(httpConnectorName);
         assert listenerInfo != null;
         listenerInfo.addHttpUpgradeMetadata(httpUpgradeMetadata = new ListenerRegistry.HttpUpgradeMetadata("jboss-remoting", endpointName));
-        RemotingConnectorBindingInfoService.install(context.getChildTarget(), context.getController().getName().getSimpleName(), (SocketBinding)listenerInfo.getContextInformation("socket-binding"), listenerInfo.getProtocol().equals("https") ? REMOTE_HTTPS : REMOTE_HTTP);
+        RemotingConnectorBindingInfoService.install(context.getChildTarget(), remotingConnectorName, (SocketBinding)listenerInfo.getContextInformation("socket-binding"), listenerInfo.getProtocol().equals("https") ? REMOTE_HTTPS : REMOTE_HTTP);
 
         if (connectorPropertiesOptionMap != null) {
             builder.addAll(connectorPropertiesOptionMap);

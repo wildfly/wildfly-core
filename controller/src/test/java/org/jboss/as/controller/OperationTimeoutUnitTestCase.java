@@ -88,7 +88,7 @@ public class OperationTimeoutUnitTestCase {
         controllerService.awaitStartup(30, TimeUnit.SECONDS);
         ModelController controller = controllerService.getValue();
 
-        client = controller.createClient(executor);
+        client = controllerService.getModelControllerClientFactory().createClient(executor);
 
         System.setProperty(BlockingTimeout.SYSTEM_PROPERTY, "1");
     }

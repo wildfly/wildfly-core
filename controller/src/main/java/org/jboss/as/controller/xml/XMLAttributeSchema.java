@@ -17,8 +17,6 @@ package org.jboss.as.controller.xml;
 
 import java.util.Set;
 
-import org.jboss.staxmapper.IntVersion;
-import org.jboss.staxmapper.Versioned;
 import org.jboss.staxmapper.XMLAttributeReader;
 import org.jboss.staxmapper.XMLMapper;
 
@@ -28,7 +26,7 @@ import org.jboss.staxmapper.XMLMapper;
  * @param S the schema type
  * @param T the type upon which this XML reader operates
  */
-public interface XMLAttributeSchema<S extends Versioned<IntVersion, S>, T> extends VersionedSchema<IntVersion, S>, XMLAttributeReader<T> {
+public interface XMLAttributeSchema<S extends XMLAttributeSchema<S, T>, T> extends IntVersionSchema<S>, XMLAttributeReader<T> {
 
     /**
      * Creates a StAX mapper from a set of schemas.

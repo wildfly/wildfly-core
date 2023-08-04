@@ -22,7 +22,6 @@ package org.jboss.as.repository;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.jboss.as.repository.HashUtil.emptyStream;
 import static org.jboss.as.repository.PathUtil.deleteRecursively;
 import static org.junit.Assert.assertFalse;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -255,7 +254,7 @@ public class ContentRepositoryTest {
                 entry = new ZipEntry("test/empty-file.txt");
                 entry.setLastModifiedTime(time);
                 out.putNextEntry(entry);
-                try (InputStream in = HashUtil.emptyStream()) {
+                try (InputStream in = InputStream.nullInputStream()) {
                     StreamUtils.copyStream(in, out);
                 }
                 out.closeEntry();
@@ -344,7 +343,7 @@ public class ContentRepositoryTest {
             }
             assertThat(contents.size(), is(2));
             assertThat(contents, CoreMatchers.hasItems("test.jsp", "testfile.xhtml"));
-            hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("test/empty-file.txt", emptyStream())), true);
+            hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("test/empty-file.txt", InputStream.nullInputStream())), true);
             hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("empty-dir", null)), true);
             List<String> result = new ArrayList<>();
             for (ContentRepositoryElement repositoryElement : repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(- 1, false))) {
@@ -382,7 +381,7 @@ public class ContentRepositoryTest {
             }
             assertThat(contents.size(), is(5));
             assertThat(contents, CoreMatchers.hasItems("test.jsp", "testfile.xhtml", "test/empty-file.txt", "test/", "empty-dir/"));
-            hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("test/empty-file.txt", emptyStream())), true);
+            hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("test/empty-file.txt", InputStream.nullInputStream())), true);
             hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("empty-dir", null)), true);
             List<String> result = new ArrayList<>();
             for (ContentRepositoryElement repositoryElement : repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(1, false))) {

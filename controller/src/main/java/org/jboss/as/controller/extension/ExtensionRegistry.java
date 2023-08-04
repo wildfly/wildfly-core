@@ -95,6 +95,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLMapper;
+import org.wildfly.common.function.Functions;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
@@ -108,6 +109,98 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public final class ExtensionRegistry {
+
+    /**
+     * Returns a builder for creating an {@link ExtensionRegistry}.
+     * @param processType the process type
+     * @return an extension registry builder
+     */
+    public static Builder builder(ProcessType processType) {
+        return new Builder(processType);
+    }
+
+    /**
+     * Builder for an {@link ExtensionRegistry}.
+     */
+    public static class Builder {
+        private final ProcessType processType;
+        private RunningModeControl runningModeControl = new RunningModeControl(RunningMode.NORMAL);
+        private ManagedAuditLogger auditLogger = AuditLogger.NO_OP_LOGGER;
+        private JmxAuthorizer authorizer = NO_OP_AUTHORIZER;
+        private Supplier<SecurityIdentity> securityIdentitySupplier = Functions.constantSupplier(null);
+        private RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = RuntimeHostControllerInfoAccessor.SERVER;
+
+        private Builder(ProcessType processType) {
+            this.processType = processType;
+        }
+
+        /**
+         * Convenience method for setting the {@link RunningModeControl} of the extension registry.
+         * @param mode the running mode
+         * @return a reference to this builder
+         */
+        public Builder withRunningMode(RunningMode mode) {
+            return this.withRunningModeControl(new RunningModeControl(mode));
+        }
+
+        /**
+         * Overrides the default {@link RunningModeControl} of the extension registry.
+         * @param runningModeControl the running mode control
+         * @return a reference to this builder
+         */
+        public Builder withRunningModeControl(RunningModeControl runningModeControl) {
+            this.runningModeControl = runningModeControl;
+            return this;
+        }
+
+        /**
+         * Overrides the default {@link ManagedAuditLogger} of the extension registry.
+         * @param auditLogger the logger for auditing changes
+         * @return a reference to this builder
+         */
+        public Builder withAuditLogger(ManagedAuditLogger auditLogger) {
+            this.auditLogger = auditLogger;
+            return this;
+        }
+
+        /**
+         * Overrides the default {@link JmxAuthorizer} of the extension registry.
+         * @param authorizer hook for exposing access control information to the JMX subsystem
+         * @return a reference to this builder
+         */
+        public Builder withAuthorizer(JmxAuthorizer authorizer) {
+            this.authorizer = authorizer;
+            return this;
+        }
+
+        /**
+         * Overrides the default {@link SecurityIdentity} supplier of the extension registry.
+         * @param securityIdentitySupplier supplier of a security identity
+         * @return a reference to this builder
+         */
+        public Builder withSecurityIdentitySupplier(Supplier<SecurityIdentity> securityIdentitySupplier) {
+            this.securityIdentitySupplier = securityIdentitySupplier;
+            return this;
+        }
+
+        /**
+         * Overrides the default {@link RuntimeHostControllerInfoAccessor} of the extension registry.
+         * @param hostControllerInfoAccessor the host controller
+         * @return a reference to this builder
+         */
+        public Builder withHostControllerInfoAccessor(RuntimeHostControllerInfoAccessor hostControllerInfoAccessor) {
+            this.hostControllerInfoAccessor = hostControllerInfoAccessor;
+            return this;
+        }
+
+        /**
+         * Constructs an extension registry.
+         * @return a new extension registry
+         */
+        public ExtensionRegistry build() {
+            return new ExtensionRegistry(this);
+        }
+    }
 
     // Hack to restrict the extensions to which we expose ExtensionContextSupplement
     private static final Set<String> legallySupplemented;
@@ -133,6 +226,15 @@ public final class ExtensionRegistry {
     private volatile TransformerRegistry transformerRegistry = TransformerRegistry.Factory.create();
     private final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor;
 
+    private ExtensionRegistry(Builder builder) {
+        this.processType = builder.processType;
+        this.runningModeControl = builder.runningModeControl;
+        this.auditLogger = builder.auditLogger;
+        this.authorizer = builder.authorizer;
+        this.securityIdentitySupplier = builder.securityIdentitySupplier;
+        this.hostControllerInfoAccessor = builder.hostControllerInfoAccessor;
+    }
+
     /**
      * Constructor
      *
@@ -141,15 +243,16 @@ public final class ExtensionRegistry {
      * @param auditLogger logger for auditing changes
      * @param authorizer hook for exposing access control information to the JMX subsystem
      * @param hostControllerInfoAccessor the host controller
+     * @deprecated Use {@link #builder(ProcessType)} instead.
      */
+    @Deprecated(forRemoval = true)
     public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl, ManagedAuditLogger auditLogger, JmxAuthorizer authorizer,
             Supplier<SecurityIdentity> securityIdentitySupplier, RuntimeHostControllerInfoAccessor hostControllerInfoAccessor) {
-        this.processType = processType;
-        this.runningModeControl = runningModeControl;
-        this.auditLogger = auditLogger != null ? auditLogger : AuditLogger.NO_OP_LOGGER;
-        this.authorizer = authorizer != null ? authorizer : NO_OP_AUTHORIZER;
-        this.securityIdentitySupplier = securityIdentitySupplier;
-        this.hostControllerInfoAccessor = hostControllerInfoAccessor;
+        this(builder(processType).withRunningModeControl(runningModeControl)
+                .withAuditLogger((auditLogger != null) ? auditLogger : AuditLogger.NO_OP_LOGGER)
+                .withAuthorizer((authorizer != null) ? authorizer : NO_OP_AUTHORIZER)
+                .withSecurityIdentitySupplier((securityIdentitySupplier != null) ? securityIdentitySupplier : Functions.constantSupplier(null))
+                .withHostControllerInfoAccessor(hostControllerInfoAccessor));
     }
 
     /**
@@ -161,7 +264,7 @@ public final class ExtensionRegistry {
      */
     @Deprecated
     public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl) {
-        this(processType, runningModeControl, null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
+        this(builder(processType).withRunningModeControl(runningModeControl));
     }
 
     /**
@@ -749,8 +852,7 @@ public final class ExtensionRegistry {
 
         @Override
         public void registerXMLElementWriter(XMLElementWriter<SubsystemMarshallingContext> writer) {
-            //noinspection deprecation
-            writerRegistry.registerSubsystemWriter(name, writer);
+            writerRegistry.registerSubsystemWriter(name, Functions.constantSupplier(writer));
         }
 
         @Override
@@ -851,14 +953,6 @@ public final class ExtensionRegistry {
         public boolean isRuntimeOnly() {
             return deployments.isRuntimeOnly();
         }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public void setRuntimeOnly(final boolean runtimeOnly) {
-            deployments.setRuntimeOnly(runtimeOnly);
-            subdeployments.setRuntimeOnly(runtimeOnly);
-        }
-
 
         @Override
         public boolean isRemote() {

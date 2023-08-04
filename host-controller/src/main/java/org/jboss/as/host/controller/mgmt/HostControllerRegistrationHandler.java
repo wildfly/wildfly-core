@@ -337,9 +337,12 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 final int major = hostInfo.getManagementMajorVersion();
                 final int minor = hostInfo.getManagementMinorVersion();
                 final int micro = hostInfo.getManagementMicroVersion();
-                boolean as711 = (major == 1 && minor == 1);
-                if (as711) {
-                    final OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.unsupportedManagementVersionForHost(major, minor, 1, 2);
+
+                // We reject any remote host running behind WildFly 23 => KernelAPIVersion.VERSION_16_0(16, 0, 0)
+                // We no longer support domains for legacy remote hosts below WildFly 23, so we reject the registration here.
+                boolean rejected = major < 16;
+                if (rejected) {
+                    final OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.unsupportedManagementVersionForHost(major, minor, 16, 0);
                     registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
                     throw failure;
                 }

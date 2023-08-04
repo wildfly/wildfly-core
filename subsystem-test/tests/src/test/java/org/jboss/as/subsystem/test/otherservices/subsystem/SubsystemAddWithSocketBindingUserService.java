@@ -7,6 +7,8 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.dmr.ModelNode;
 
+import static org.jboss.as.server.services.net.SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY;
+
 /**
  * Handler responsible for adding the subsystem resource to the model
  *
@@ -32,7 +34,7 @@ public class SubsystemAddWithSocketBindingUserService extends AbstractBoottimeAd
 
         SocketBindingUserService mine = new SocketBindingUserService();
         context.getServiceTarget().addService(SocketBindingUserService.NAME, mine)
-            .addDependency(SocketBinding.JBOSS_BINDING_NAME.append("test2"), SocketBinding.class, mine.socketBindingValue)
+            .addDependency(SOCKET_BINDING_CAPABILITY.getCapabilityServiceName("test2"), SocketBinding.class, mine.socketBindingValue)
             .install();
 
     }

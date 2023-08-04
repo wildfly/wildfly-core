@@ -56,31 +56,32 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
     final Resource resource;
     final CapabilityServiceSupport capabilityServiceSupport;
     private final Consumer<DeploymentUnit> deploymentUnitConsumer;
+    protected final String name;
     private volatile DeploymentUnitPhaseBuilder phaseBuilder = null;
     private volatile DeploymentUnit deploymentUnit;
     private volatile StabilityMonitor monitor;
 
-    AbstractDeploymentUnitService(final Consumer<DeploymentUnit> deploymentUnitConsumer, final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, final Resource resource, final CapabilityServiceSupport capabilityServiceSupport) {
+    AbstractDeploymentUnitService(final Consumer<DeploymentUnit> deploymentUnitConsumer, final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, final Resource resource, final CapabilityServiceSupport capabilityServiceSupport, final String name) {
         this.deploymentUnitConsumer = deploymentUnitConsumer;
         this.mutableRegistration = mutableRegistration;
         this.capabilityServiceSupport = capabilityServiceSupport;
         this.registration = registration;
         this.resource = resource;
+        this.name = name;
     }
 
     @Override
     public synchronized void start(final StartContext context) throws StartException {
         ServiceTarget target = context.getChildTarget();
-        final String deploymentName = context.getController().getName().getSimpleName();
         monitor = new StabilityMonitor();
         monitor.addController(context.getController());
         deploymentUnit = createAndInitializeDeploymentUnit(context.getController().getServiceContainer());
 
         final String managementName = deploymentUnit.getAttachment(Attachments.MANAGEMENT_NAME);
         if (deploymentUnit.getParent()==null) {
-            ServerLogger.DEPLOYMENT_LOGGER.startingDeployment(managementName, deploymentName);
+            ServerLogger.DEPLOYMENT_LOGGER.startingDeployment(managementName, name);
         } else {
-            ServerLogger.DEPLOYMENT_LOGGER.startingSubDeployment(deploymentName);
+            ServerLogger.DEPLOYMENT_LOGGER.startingSubDeployment(name);
         }
 
         ExceptionConsumer<StartContext, StartException> installer = startContext -> {
@@ -123,12 +124,11 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
     @Override
     public synchronized void stop(final StopContext context) {
         deploymentUnitConsumer.accept(null);
-        final String deploymentName = context.getController().getName().getSimpleName();
         final String managementName = deploymentUnit.getAttachment(Attachments.MANAGEMENT_NAME);
         if (deploymentUnit.getParent()==null) {
-            ServerLogger.DEPLOYMENT_LOGGER.stoppedDeployment(managementName, deploymentName, (int) (context.getElapsedTime() / 1000000L));
+            ServerLogger.DEPLOYMENT_LOGGER.stoppedDeployment(managementName, name, (int) (context.getElapsedTime() / 1000000L));
         } else {
-            ServerLogger.DEPLOYMENT_LOGGER.stoppedSubDeployment(deploymentName, (int) (context.getElapsedTime() / 1000000L));
+            ServerLogger.DEPLOYMENT_LOGGER.stoppedSubDeployment(name, (int) (context.getElapsedTime() / 1000000L));
         }
         // Retain any attached builder across restarts
         this.phaseBuilder = this.deploymentUnit.getAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER);

@@ -97,7 +97,7 @@ public class PlatformMBeanResourceUnitTestCase {
         ModelNode setup = Util.getEmptyOperation("setup", new ModelNode());
         controller.execute(setup, null, null, null);
 
-        client = controller.createClient(Executors.newSingleThreadExecutor());
+        client = svc.getModelControllerClientFactory().createClient(Executors.newSingleThreadExecutor());
     }
 
     @AfterClass

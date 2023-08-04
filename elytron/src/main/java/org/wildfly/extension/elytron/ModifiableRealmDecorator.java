@@ -622,7 +622,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
             try {
                 serviceController.awaitValue(500, TimeUnit.MILLISECONDS);
             } catch (IllegalStateException | InterruptedException | TimeoutException e) {
-                throw ROOT_LOGGER.requiredServiceNotUp(serviceController.getName(), serviceController.getState());
+                throw ROOT_LOGGER.requiredServiceNotUp(realmName, serviceController.getState());
             }
         }
         return serviceController.getValue();

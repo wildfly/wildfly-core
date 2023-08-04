@@ -106,7 +106,7 @@
                 </root-logger>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:remoting:4.0">
-                <http-connector name="http-remoting-connector" connector-ref="default" sasl-authentication-factory="application-sasl-authentication"/>
+                <connector name="remoting-connector" socket-binding="remoting" sasl-authentication-factory="application-sasl-authentication"/>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:jmx:1.3">
                 <expose-resolved-model/>
@@ -249,7 +249,7 @@
                 </root-logger>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:remoting:4.0">
-                <http-connector name="http-remoting-connector" connector-ref="default" sasl-authentication-factory="application-sasl-authentication"/>
+                <connector name="remoting-connector" socket-binding="remoting" sasl-authentication-factory="application-sasl-authentication"/>
             </subsystem>
             <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
                 <providers>

@@ -21,7 +21,12 @@
 */
 package org.jboss.as.cli;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Locale;
@@ -29,10 +34,10 @@ import java.util.Properties;
 import java.util.logging.LogManager;
 
 import org.jboss.as.cli.impl.CliLauncher;
+import org.jboss.logging.Logger;
 import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.PropertyConfigurator;
-
 
 /**
 *
@@ -42,6 +47,7 @@ public class CommandLineMain {
 
     public static void main(String[] args) throws Exception {
         configureLogManager(args);
+        createClientMarker();
         CliLauncher.main(args);
     }
 
@@ -150,5 +156,32 @@ public class CommandLineMain {
         properties.setProperty("formatter.PATTERN.pattern", "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n");
         properties.setProperty("formatter.PATTERN.properties", "pattern");
         return properties;
+    }
+
+    /**
+     * Creates a file marker under $JBOSS_HOME/bin directory. This is used by the shutdown operation to understand from where we have
+     * launched CLI instance when we are performing an update of a remote installation.
+     */
+    private static void createClientMarker() {
+        try {
+            final String jbossHome = System.getenv("JBOSS_HOME");
+            if (jbossHome != null) {
+                final Path cliMarkerPath = Paths.get(jbossHome).resolve("bin").resolve(Util.CLI_MARKER);
+                Files.deleteIfExists(cliMarkerPath);
+                Files.createFile(cliMarkerPath);
+
+                final File cliMarkerFile = cliMarkerPath.toFile();
+                cliMarkerFile.deleteOnExit();
+                final String data = String.valueOf(System.currentTimeMillis());
+                try (FileWriter writer = new FileWriter(cliMarkerFile, true)) {
+                    writer.write(data);
+                }
+                System.setProperty(Util.CLI_MARKER_VALUE, data);
+            }
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            Logger.getLogger(CommandLineMain.class).debug("Creation of cli marker failed and will be ignored.", e);
+        }
     }
 }

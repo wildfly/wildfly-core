@@ -57,7 +57,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>21.0.0.Beta1-SNAPSHOT</version>
+        <version>22.0.0.Beta1-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-testsuite</artifactId>
@@ -149,10 +149,10 @@
 
         <!-- used to enable trace logging for test suite runs -->
         <trace>none</trace>
-		
+
         <!-- Version for a plugin dependency, which testbom dependencyManagement can't control.
              See https://issues.apache.org/jira/browse/MNG-2496 -->
-        <version.org.apache.xalan>2.7.1.jbossorg-6</version.org.apache.xalan>
+        <version.org.apache.xalan>2.7.3</version.org.apache.xalan>
 
     </properties>
 
@@ -201,6 +201,16 @@
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-auth-server</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.installation-manager</groupId>
+            <artifactId>installation-manager-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-installation-manager</artifactId>
         </dependency>
     </dependencies>
 
@@ -293,6 +303,11 @@
                         <dependency>
                             <groupId>xalan</groupId>
                             <artifactId>xalan</artifactId>
+                            <version>${version.org.apache.xalan}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>xalan</groupId>
+                            <artifactId>serializer</artifactId>
                             <version>${version.org.apache.xalan}</version>
                         </dependency>
                     </dependencies>
@@ -443,7 +458,6 @@
                 <module>rbac</module>
                 <module>domain</module>
                 <module>manualmode</module>
-                <module>patching</module>
             </modules>
         </profile>
 
@@ -494,18 +508,6 @@
                 <!-- Domain security manager argument -->
                 <jboss.domain.server.args>-secmgr</jboss.domain.server.args>
             </properties>
-        </profile>
-        <!-- -Dts.patching -->
-        <profile>
-            <id>ts.integ.group.patching</id>
-            <activation>
-                <property>
-                    <name>ts.patching</name>
-                </property>
-            </activation>
-            <modules>
-                <module>patching</module>
-            </modules>
         </profile>
 
         <!-- -Dts.manualmode -->

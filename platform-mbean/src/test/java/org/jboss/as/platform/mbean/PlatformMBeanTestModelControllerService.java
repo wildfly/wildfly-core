@@ -28,6 +28,7 @@ import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceBuilder;
@@ -89,5 +90,10 @@ public class PlatformMBeanTestModelControllerService extends AbstractControllerS
     protected void bootThreadDone() {
         super.bootThreadDone();
         latch.countDown();
+    }
+
+    @Override
+    protected ModelControllerClientFactory getModelControllerClientFactory() {
+        return super.getModelControllerClientFactory();
     }
 }

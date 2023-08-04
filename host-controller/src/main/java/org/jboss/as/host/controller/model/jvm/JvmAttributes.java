@@ -29,6 +29,8 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.AttributeMarshallers;
+import org.jboss.as.controller.AttributeParsers;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
@@ -92,11 +94,11 @@ public class JvmAttributes {
             .build();
 
     public static final PropertiesAttributeDefinition ENVIRONMENT_VARIABLES = new PropertiesAttributeDefinition.Builder(JvmAttributes.JVM_ENV_VARIABLES, true)
-            .setXmlName(Element.VARIABLE.getLocalName())
             .setRequired(false)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, true, true))
-            .setWrapperElement(JvmAttributes.JVM_ENV_VARIABLES)
+            .setAttributeParser(new AttributeParsers.PropertiesParser(JvmAttributes.JVM_ENV_VARIABLES, Element.VARIABLE.getLocalName(), true))
+            .setAttributeMarshaller(new AttributeMarshallers.PropertiesAttributeMarshaller(JvmAttributes.JVM_ENV_VARIABLES, Element.VARIABLE.getLocalName(), true))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.JVM)
             .build();
 

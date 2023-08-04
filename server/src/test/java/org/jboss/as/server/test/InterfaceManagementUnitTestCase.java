@@ -44,11 +44,13 @@ import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
@@ -57,11 +59,9 @@ import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.AuditLogger;
-import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.persistence.AbstractConfigurationPersister;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
@@ -107,14 +107,14 @@ public class InterfaceManagementUnitTestCase {
 
     private final ServiceContainer container = ServiceContainer.Factory.create();
     private ModelController controller;
+    private ModelControllerClientFactory clientFactory;
     private volatile boolean dependentStarted;
 
     @Before
     public void before() throws Exception {
         dependentStarted = false;
         final ServiceTarget target = container.subTarget();
-        final ExtensionRegistry extensionRegistry =
-                new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
+        final ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(ProcessType.STANDALONE_SERVER).build();
         final StringConfigurationPersister persister = new StringConfigurationPersister(Collections.<ModelNode>emptyList(), new StandaloneXml(null, null, extensionRegistry));
         extensionRegistry.setWriterRegistry(persister);
         final ControlledProcessState processState = new ControlledProcessState(true);
@@ -145,10 +145,11 @@ public class InterfaceManagementUnitTestCase {
 
         svc.latch.await(20, TimeUnit.SECONDS);
         this.controller = svc.getValue();
+        this.clientFactory = svc.getModelControllerClientFactory();
 
         container.awaitStability(20, TimeUnit.SECONDS);
         Assert.assertTrue(dependentController.getState() == ServiceController.State.DOWN
-                && dependentController.getUnavailableDependencies().size() > 0);
+                && dependentController.missing().size() > 0);
     }
 
     @After
@@ -158,7 +159,7 @@ public class InterfaceManagementUnitTestCase {
 
     @Test
     public void testInterfacesAlternatives() throws IOException {
-        final ModelControllerClient client = controller.createClient(Executors.newCachedThreadPool());
+        final ModelControllerClient client = clientFactory.createClient(Executors.newCachedThreadPool());
         final ModelNode base = new ModelNode();
         base.get(ModelDescriptionConstants.OP).set("add");
         base.get(ModelDescriptionConstants.OP_ADDR).add("interface", "test");
@@ -186,7 +187,7 @@ public class InterfaceManagementUnitTestCase {
 
     @Test
     public void testUpdateInterface() throws IOException {
-        final ModelControllerClient client = controller.createClient(Executors.newCachedThreadPool());
+        final ModelControllerClient client = clientFactory.createClient(Executors.newCachedThreadPool());
         final ModelNode address = new ModelNode();
         address.add("interface", "test");
         {
@@ -242,7 +243,7 @@ public class InterfaceManagementUnitTestCase {
                 InterfaceDefinition.POINT_TO_POINT);
         populateCritieria(operation.get("any"), Nesting.ANY);
 
-        final ModelControllerClient client = controller.createClient(Executors.newCachedThreadPool());
+        final ModelControllerClient client = clientFactory.createClient(Executors.newCachedThreadPool());
 
         executeForServiceFailure(client, operation);
     }
@@ -312,8 +313,7 @@ public class InterfaceManagementUnitTestCase {
             final String hostControllerName = "hostControllerName"; // Host Controller name may not be null when in a managed domain
             environment = new ServerEnvironment(hostControllerName, properties, new HashMap<String, String>(), null, null,
                     ServerEnvironment.LaunchType.DOMAIN, null, ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), ".", properties), false);
-            extensionRegistry =
-                    new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
+            extensionRegistry = ExtensionRegistry.builder(ProcessType.STANDALONE_SERVER).build();
 
             capabilityRegistry = new CapabilityRegistry(processType.isServer());
         }
@@ -324,25 +324,22 @@ public class InterfaceManagementUnitTestCase {
         }
 
         @Override
-        protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure) throws ConfigurationPersistenceException {
-            try {
-                return super.boot(persister.bootOperations, rollbackOnRuntimeFailure);
-            } catch (Exception e) {
-                error = e;
-            } catch (Throwable t) {
-                error = new Exception(t);
-            } finally {
-                latch.countDown();
-            }
-            return false;
-        }
-
-        @Override
         public void start(StartContext context) throws StartException {
             rootResourceDefinition.setDelegate(new ServerRootResourceDefinition(MockRepository.INSTANCE,
                     persister, environment, processState, null, extensionRegistry, false, MOCK_PATH_MANAGER, null,
                     authorizer, securityIdentitySupplier, AuditLogger.NO_OP_LOGGER, getMutableRootResourceRegistrationProvider(), getBootErrorCollector(), capabilityRegistry));
             super.start(context);
+        }
+
+        @Override
+        protected ModelControllerClientFactory getModelControllerClientFactory() {
+            return super.getModelControllerClientFactory();
+        }
+
+        @Override
+        protected void bootThreadDone() {
+            super.bootThreadDone();
+            latch.countDown();
         }
     }
 

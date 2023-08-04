@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-testsuite</artifactId>
-        <version>21.0.0.Beta1-SNAPSHOT</version>
+        <version>22.0.0.Beta1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -660,6 +660,8 @@
                                         
                                         <!-- start/stop/start the server -->
                                         <exclude>org.wildfly.core.test.standalone.mgmt.events.*TestCase</exclude>
+                                        <!-- Requires modification of the process-uuid file inside the Jar -->
+                                        <exclude>org.jboss.as.test.manualmode.logging.ProcessUuidTestCase</exclude>
                                     </excludes>
                                 </configuration>
                             </execution>

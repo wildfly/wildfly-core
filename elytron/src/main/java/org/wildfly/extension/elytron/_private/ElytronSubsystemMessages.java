@@ -661,6 +661,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1088, value = "Missing certificate authority challenge")
     AcmeException missingCertificateAuthorityChallenge();
 
+    @Message(id = 1089, value = "Invalid file encoding '%s'.")
+    OperationFailedException invalidEncodingName(String encoding);
+
     /*
      * Expression Resolver Section
      */
@@ -721,6 +724,14 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = 1218, value = "Keystore used by filesystem realm does not contain the alias: %s")
     KeyStoreException keyStoreMissingAlias(String alias);
+
+    @Message(id = 1219, value = "Integrity keypair cannot be added to non-empty filesystem realm after initialization. To upgrade a filesystem realm, " +
+            "use Elytron Tool command `filesystem-realm-integrity`")
+    OperationFailedException addKeypairToInitializedFilesystemRealm();
+
+    @Message(id = 1220, value = "Encryption secret key cannot be added to non-empty filesystem realm after initialization. To upgrade a filesystem realm, " +
+            "use Elytron Tool command `filesystem-realm-encrypt`")
+    OperationFailedException addSecretKeyToInitializedFilesystemRealm();
 
     /*
      * Don't just add new errors to the end of the file, there may be an appropriate section above for the resource.

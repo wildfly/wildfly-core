@@ -21,7 +21,7 @@
  */
 package org.jboss.as.controller;
 
-import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -57,19 +57,26 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
                     final ServiceController<?> service = serviceName != null ?
                             context.getServiceRegistry(false).getService(serviceName) : null;
 
-                    ModelNode parentModel = null;
                     boolean servicesRestarted = false;
                     final boolean reloadRequired = service != null && !isResourceServiceRestartAllowed(context, service);
+                    ModelNode parentModel = reloadRequired || (service != null) ? getModel(context, address) : null;
                     if (reloadRequired) {
-                        parentModel = getModel(context, address);
                         if (parentModel != null) {
                             context.reloadRequired();
                         } // else the parent remove must have run as part of this op and we're not responsible for runtime
                     } else if (service != null ) {
-                        parentModel = getModel(context, address);
                         if (parentModel != null && context.markResourceRestarted(address, RestartParentResourceHandlerBase.this)) {
-                            removeServices(context, serviceName, parentModel);
-                            recreateParentService(context, address, parentModel);
+                            // Remove/recreate parent services in separate step using an OperationContext relative to the parent resource
+                            // This is necessary to support service installation via CapabilityServiceTarget
+                            // (We use Util.getReadResourceOperation(address) just to get an op with the desired address;
+                            //  we're not doing a read-resource.)
+                            context.addStep(Util.getReadResourceOperation(address), new OperationStepHandler() {
+                                @Override
+                                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                                    removeServices(context, serviceName, parentModel);
+                                    recreateParentService(context, parentModel);
+                                }
+                            }, OperationContext.Stage.RUNTIME, true);
                             servicesRestarted = true;
                         }
                     } // else  No parent service, nothing to do
@@ -155,6 +162,17 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
         // no-op
     }
 
+    /**
+     * Recreate the parent service(s) using the given model.
+     *
+     * @param context the operation context relative to the parent resource
+     * @param parentModel the current configuration model for the parent resource and its children
+     *
+     * @throws OperationFailedException if there is a problem installing the services
+     */
+    protected void recreateParentService(OperationContext context, ModelNode parentModel) throws OperationFailedException {
+        this.recreateParentService(context, context.getCurrentAddress(), parentModel);
+    }
 
     /**
      * Recreate the parent service(s) using the given model.
@@ -164,8 +182,10 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
      * @param parentModel the current configuration model for the parent resource and its children
      *
      * @throws OperationFailedException if there is a problem installing the services
+     * @deprecated Use {@link #recreateParentService(OperationContext, ModelNode) instead.
      */
-    protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException{
+    @Deprecated(forRemoval = true)
+    protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
     }
 
     /**
@@ -187,12 +207,17 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
 
         ModelNode parentModel = getOriginalModel(context, address);
         if (parentModel != null && context.revertResourceRestarted(address, this)) {
-            try {
-                removeServices(context, serviceName, invalidatedParentModel);
-                recreateParentService(context, address, parentModel);
-            } catch (OperationFailedException e) {
-                throw ControllerLogger.ROOT_LOGGER.failedToRecoverServices(e);
-            }
+            // Remove/recreate parent services in separate step using an OperationContext relative to the parent resource
+            // This is necessary to support service installation via CapabilityServiceTarget
+            // (We use Util.getReadResourceOperation(address) just to get an op with the desired address;
+            //  we're not doing a read-resource.)
+            context.addStep(Util.getReadResourceOperation(address), new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    removeServices(context, serviceName, invalidatedParentModel);
+                    recreateParentService(context, parentModel);
+                }
+            }, Stage.RUNTIME, true);
         }
     }
 

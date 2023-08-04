@@ -57,10 +57,10 @@ public class IgnoredDomainTypeResourceDefinition extends SimpleResourceDefinitio
             .build();
 
     IgnoredDomainTypeResourceDefinition() {
-        super(PathElement.pathElement(IGNORED_RESOURCE_TYPE), HostResolver.getResolver(IGNORED_RESOURCE_TYPE),
-                new IgnoredDomainTypeAddHandler(),
-                new IgnoredDomainTypeRemoveHandler(),
-                OperationEntry.Flag.RESTART_ALL_SERVICES, OperationEntry.Flag.RESTART_ALL_SERVICES);
+        super(new Parameters(PathElement.pathElement(IGNORED_RESOURCE_TYPE), HostResolver.getResolver(IGNORED_RESOURCE_TYPE))
+                .setAddHandler(new IgnoredDomainTypeAddHandler())
+                .setRemoveHandler(new IgnoredDomainTypeRemoveHandler())
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES));
     }
 
     @Override

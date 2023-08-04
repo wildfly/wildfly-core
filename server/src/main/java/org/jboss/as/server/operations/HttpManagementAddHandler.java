@@ -67,10 +67,16 @@ import org.jboss.as.server.mgmt.HttpShutdownService;
 import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.as.server.mgmt.domain.HttpManagement;
+import org.jboss.as.server.security.AdvancedSecurityMetaData;
+import org.jboss.as.server.security.SecurityMetaData;
+import org.jboss.as.server.security.VirtualDomainMarkerUtility;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.XnioWorker;
 
@@ -85,8 +91,6 @@ import io.undertow.server.ListenerRegistry;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
-
-    private static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.http-authentication-factory";
 
     public static final HttpManagementAddHandler INSTANCE = new HttpManagementAddHandler();
 
@@ -141,7 +145,6 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
             ServerLogger.ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
         }
 
-        ServerEnvironment environment = (ServerEnvironment) context.getServiceRegistry(false).getRequiredService(ServerEnvironmentService.SERVICE_NAME).getValue();
         final CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY);
         final Consumer<HttpManagement> hmConsumer = builder.provides(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY);
         final Supplier<ListenerRegistry> lrSupplier = builder.requires(RemotingServices.HTTP_LISTENER_REGISTRY);
@@ -154,10 +157,28 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         final Supplier<XnioWorker> xwSupplier = builder.requires(ManagementWorkerService.SERVICE_NAME);
         final Supplier<Executor> eSupplier = builder.requires(ExternalManagementRequestExecutor.SERVICE_NAME);
         final Supplier<HttpAuthenticationFactory> hafSupplier = httpAuthenticationFactory != null ? builder.requiresCapability(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, HttpAuthenticationFactory.class, httpAuthenticationFactory) : null;
+        // TODO WFCORE-6321 Expose ServerEnvironment via a capability
+        // Supplier<ServerEnvironment> environment = builder.requiresCapability("org.wildfly.server.environment", ServerEnvironment.class);
+        Supplier<ServerEnvironment> environment = builder.requires(ServerEnvironmentService.SERVICE_NAME);
+        Supplier<String> consoleSlot = new Supplier<>() {
+            @Override
+            public String get() {
+                return environment.get().getProductConfig().getConsoleSlot();
+            }
+        };
+        Supplier<SecurityDomain> virtualSecurityDomainSupplier = null;
+        Supplier<HttpServerAuthenticationMechanismFactory> virtualMechanismFactorySupplier = null;
+        if (VirtualDomainMarkerUtility.isVirtualDomainRequired(context)) {
+            SecurityMetaData securityMetaData = context.getAttachment(SecurityMetaData.OPERATION_CONTEXT_ATTACHMENT_KEY);
+            if (securityMetaData instanceof AdvancedSecurityMetaData) {
+                virtualSecurityDomainSupplier = builder.requires(securityMetaData.getSecurityDomain());
+                virtualMechanismFactorySupplier = builder.requires(((AdvancedSecurityMetaData) securityMetaData).getHttpServerAuthenticationMechanismFactory());
+            }
+        }
         final Supplier<SSLContext> scSupplier = sslContext != null ? builder.requiresCapability(SSL_CONTEXT_CAPABILITY, SSLContext.class, sslContext) : null;
         final UndertowHttpManagementService undertowService = new UndertowHttpManagementService(hmConsumer, lrSupplier, mcSupplier, sbSupplier, ssbSupplier, sbmSupplier,
                 null, null, rpSupplier, xwSupplier, eSupplier, hafSupplier, scSupplier, null, null, commonPolicy.getAllowedOrigins(), consoleMode,
-                environment.getProductConfig().getConsoleSlot(), commonPolicy.getConstantHeaders(), caSupplier);
+                consoleSlot, commonPolicy.getConstantHeaders(), caSupplier, virtualSecurityDomainSupplier, virtualMechanismFactorySupplier);
         builder.setInstance(undertowService);
         builder.install();
 
@@ -182,8 +203,12 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 httpConnectorName = ManagementRemotingServices.HTTPS_CONNECTOR;
             }
 
+            String saslAuthFactoryName = commonPolicy.getSaslAuthenticationFactory();
+            ServiceName saslAuthenticationFactory = saslAuthFactoryName != null ? context.getCapabilityServiceName(
+                    SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthFactoryName, SaslAuthenticationFactory.class) : null;
+
             RemotingHttpUpgradeService.installServices(context, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
-                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), commonPolicy.getSaslAuthenticationFactory());
+                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), saslAuthenticationFactory);
 
             return Arrays.asList(UndertowHttpManagementService.SERVICE_NAME, HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
         }

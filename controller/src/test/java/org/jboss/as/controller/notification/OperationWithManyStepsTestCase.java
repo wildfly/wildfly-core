@@ -120,7 +120,7 @@ public class OperationWithManyStepsTestCase extends AbstractControllerTestBase {
         ListBackedNotificationHandler handler = new ListBackedNotificationHandler();
 
         // register the handler...
-        getController().getNotificationRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
         executeForResult(createOperation(MY_OPERATION));
 
         assertEquals("the notification handler did not receive the notifications", 2, handler.getNotifications().size());
@@ -128,14 +128,14 @@ public class OperationWithManyStepsTestCase extends AbstractControllerTestBase {
         assertEquals(MESSAGE1, handler.getNotifications().get(0).getMessage());
         assertEquals(MESSAGE2, handler.getNotifications().get(1).getMessage());
 
-        getController().getNotificationRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
     }
 
 
     @Test
     public void testSendNotificationForFailingOperationInFirstStep() throws Exception {
         ListBackedNotificationHandler handler = new ListBackedNotificationHandler();
-        getController().getNotificationRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
 
         ModelNode operation = createOperation(MY_OPERATION);
         operation.get(FAIL_FIRST_STEP.getName()).set(true);
@@ -149,14 +149,14 @@ public class OperationWithManyStepsTestCase extends AbstractControllerTestBase {
 
         assertTrue("the notification handler did not receive any notifications", handler.getNotifications().isEmpty());
 
-        getController().getNotificationRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
     }
 
 
     @Test
     public void testSendNotificationForFailingOperationInSecondStep() throws Exception {
         ListBackedNotificationHandler handler = new ListBackedNotificationHandler();
-        getController().getNotificationRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
 
         ModelNode operation = createOperation(MY_OPERATION);
         operation.get(FAIL_SECOND_STEP.getName()).set(true);
@@ -169,13 +169,13 @@ public class OperationWithManyStepsTestCase extends AbstractControllerTestBase {
 
         assertTrue("the notification handler did not receive any notifications", handler.getNotifications().isEmpty());
 
-        getController().getNotificationRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
     }
 
     @Test
     public void testSendNotificationForRollingBackOperation() throws Exception {
         ListBackedNotificationHandler handler = new ListBackedNotificationHandler();
-        getController().getNotificationRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().registerNotificationHandler(ANY_ADDRESS, handler, ALL);
 
         ModelNode operation = createOperation(MY_OPERATION);
         operation.get(ROLLBACK.getName()).set(true);
@@ -188,6 +188,6 @@ public class OperationWithManyStepsTestCase extends AbstractControllerTestBase {
 
         assertTrue("the notification handler did not receive any notifications", handler.getNotifications().isEmpty());
 
-        getController().getNotificationRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
+        getNotificationHandlerRegistry().unregisterNotificationHandler(ANY_ADDRESS, handler, ALL);
     }
 }

@@ -74,6 +74,7 @@ import org.wildfly.security.auth.realm.JaasSecurityRealm;
 import org.wildfly.security.auth.server.ModifiableRealmIdentity;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
 import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.auth.server.ServerAuthenticationContext;
@@ -725,6 +726,65 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
             Assert.fail(response.toJSONString(false));
         }
         Assert.assertTrue(response.asString().contains("JAAS configuration file does not exist."));
+    }
+
+    @Test
+    public void testDistributedRealm() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmNoUnavailable");
+        SecurityRealm distributedRealm = (SecurityRealm) services.getContainer().getService(serviceName).getValue();
+        testDistributedRealmSuccessful(distributedRealm);
+
+        ServiceName serviceName2 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmFirstUnavailable");
+        SecurityRealm distributedRealm2 = (SecurityRealm) services.getContainer().getService(serviceName2).getValue();
+        testDistributedRealmFailure(distributedRealm2);
+
+        ServiceName serviceName3 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmFirstUnavailableIgnored");
+        SecurityRealm distributedRealm3 = (SecurityRealm) services.getContainer().getService(serviceName3).getValue();
+        testDistributedRealmSuccessful(distributedRealm3);
+
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "DistributedRealmDomain");
+        ServiceName serviceName4 = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmDomain");
+        SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName4).getValue();
+        Assert.assertNotNull(domain);
+        if (SecurityDomain.getCurrent() == null) {
+            domain.registerWithClassLoader(Thread.currentThread().getContextClassLoader());
+        }
+        ServerAuthenticationContext context = domain.createNewAuthenticationContext();
+        context.setAuthenticationName("firstUser");
+        Assert.assertTrue(context.exists());
+
+        Assert.assertTrue(isSecurityRealmUnavailableEventLogged("LdapRealm"));
+    }
+
+    private boolean isSecurityRealmUnavailableEventLogged(String realmName) throws Exception {
+        List<String> lines = Files.readAllLines(Paths.get("target/audit.log"), StandardCharsets.UTF_8);
+        for (String line : lines) {
+            if (line.contains("SecurityRealmUnavailableEvent") && line.contains(realmName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void testDistributedRealmSuccessful(SecurityRealm distributedRealm) throws RealmUnavailableException {
+        Assert.assertNotNull(distributedRealm);
+
+        RealmIdentity identity = distributedRealm.getRealmIdentity(fromName("firstUser"));
+        Assert.assertTrue(identity.exists());
+        identity.dispose();
+    }
+
+    private void testDistributedRealmFailure(SecurityRealm distributedRealm) throws RealmUnavailableException {
+        Assert.assertNotNull(distributedRealm);
+
+        Assert.assertThrows(RealmUnavailableException.class, () -> {
+            distributedRealm.getRealmIdentity(fromName("firstUser"));
+        });
     }
 
     static void testModifiability(ModifiableSecurityRealm securityRealm) throws Exception {

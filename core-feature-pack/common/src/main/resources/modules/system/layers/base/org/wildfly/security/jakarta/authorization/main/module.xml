@@ -34,7 +34,7 @@
         <module name="jdk.security.auth"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.logmanager"/>
-        <module name="javax.security.jacc.api" optional="true"/>
+        <module name="jakarta.security.jacc.api" optional="true"/>
         <module name="org.wildfly.common"/>
         <module name="org.wildfly.security.elytron-base"/>
         <module name="org.wildfly.security.elytron-web.undertow-server-servlet" optional="true" services="import"/>

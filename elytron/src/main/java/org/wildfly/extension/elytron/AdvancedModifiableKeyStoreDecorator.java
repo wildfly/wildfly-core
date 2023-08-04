@@ -22,7 +22,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIR
 import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
 import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.CertificateChainAttributeDefinitions.writeCertificate;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
@@ -747,7 +747,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
         static final SimpleAttributeDefinition CERTIFICATE_AUTHORITY_ACCOUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT, ModelType.STRING, false)
                 .setMinSize(1)
                 .setRestartAllServices()
-                .setCapabilityReference(CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY, KEY_STORE_CAPABILITY, true)
+                .setCapabilityReference(CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY, KEY_STORE_RUNTIME_CAPABILITY)
                 .build();
 
         static final SimpleAttributeDefinition AGREE_TO_TERMS_OF_SERVICE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AGREE_TO_TERMS_OF_SERVICE, ModelType.BOOLEAN, true)
@@ -850,7 +850,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
         static final SimpleAttributeDefinition CERTIFICATE_AUTHORITY_ACCOUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT, ModelType.STRING, false)
                 .setMinSize(1)
                 .setRestartAllServices()
-                .setCapabilityReference(CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY, KEY_STORE_CAPABILITY, true)
+                .setCapabilityReference(CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY, KEY_STORE_RUNTIME_CAPABILITY)
                 .build();
 
         static final SimpleAttributeDefinition STAGING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.STAGING, ModelType.BOOLEAN, true)

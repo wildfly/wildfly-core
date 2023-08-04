@@ -20,7 +20,8 @@
   ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
-<module xmlns="urn:jboss:module:1.6" name="io.undertow.core">
+<module xmlns="urn:jboss:module:1.9" name="io.undertow.core">
+
     <resources>
         <artifact name="${io.undertow:undertow-core}"/>
     </resources>
@@ -36,12 +37,6 @@
         <module name="org.wildfly.openssl" optional="true"/>
         <module name="org.wildfly.security.elytron-web.undertow-server" services="import" />
         <module name="org.wildfly.common"/>
-        <module name="sun.jdk"/>
-            <system export="true">
-                <paths>
-                    <!-- Needed for HTTP2 and SPDY support-->
-                    <path name="org/eclipse/jetty/alpn"/>
-                </paths>
-            </system>
     </dependencies>
+
 </module>

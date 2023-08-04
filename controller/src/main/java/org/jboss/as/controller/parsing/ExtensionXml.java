@@ -99,7 +99,7 @@ public class ExtensionXml {
 
         requireNoAttributes(reader);
 
-        final Set<String> found = new HashSet<String>();
+        final Set<String> found = new HashSet<>();
 
         final XMLMapper xmlMapper = reader.getXMLMapper();
 
@@ -135,13 +135,6 @@ public class ExtensionXml {
         add.get(OP_ADDR).set(address).add(EXTENSION, moduleName);
         add.get(OP).set(ADD);
         list.add(add);
-    }
-
-    /** @deprecated Has no effect; may be removed in any subsequent WildFly release */
-    @Deprecated
-    public static boolean isOrderExtensions() {
-        // TODO perhaps make this configurable
-        return true;
     }
 
 }

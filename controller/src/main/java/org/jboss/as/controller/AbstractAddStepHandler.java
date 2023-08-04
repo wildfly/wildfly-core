@@ -27,12 +27,14 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
+import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-
-import java.util.LinkedHashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD_INDEX;
@@ -44,28 +46,23 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
  */
 public class AbstractAddStepHandler implements OperationStepHandler, OperationDescriptor {
 
-    private static final Set<? extends AttributeDefinition> NULL_ATTRIBUTES = Collections.emptySet();
-    private static final AttributeDefinition[] NULL_ATTRIBUTE_ARRAY = new AttributeDefinition[0];
-
-    private static AttributeDefinition[] getAttributeDefinitionArray(Collection<? extends AttributeDefinition> attributes) {
-        return (attributes == null || attributes.isEmpty()) ? NULL_ATTRIBUTE_ARRAY : attributes.toArray(NULL_ATTRIBUTE_ARRAY);
-    }
-
     protected final Collection<? extends AttributeDefinition> attributes;
 
     /**
      * Constructs an add handler.
      */
     public AbstractAddStepHandler() { //default constructor to preserve backward compatibility
-        this.attributes = NULL_ATTRIBUTES;
+        this.attributes = List.of();
     }
 
     /**
      * Constructs an add handler
-     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}.attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      */
+    @SuppressWarnings("unchecked")
     public AbstractAddStepHandler(Collection<? extends AttributeDefinition> attributes) {
-        this(new Parameters().addAttribute(getAttributeDefinitionArray(attributes)));
+        // Create defensive copy, if collection was not already immutable
+        this.attributes = (attributes instanceof Set) ? Set.copyOf((Set<AttributeDefinition>) attributes) : List.copyOf(attributes);
     }
 
     /**
@@ -74,18 +71,11 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      */
     public AbstractAddStepHandler(AttributeDefinition... attributes) {
-        this(new Parameters().addAttribute(attributes));
+        this(List.of(attributes));
     }
 
     public AbstractAddStepHandler(Parameters parameters) {
-
-        if (parameters.attributes == null) {
-            attributes = NULL_ATTRIBUTES;
-        } else if (parameters.attributes.size() == 1) {
-            attributes = Collections.singleton(parameters.attributes.iterator().next());
-        } else {
-            attributes = Collections.unmodifiableSet(parameters.attributes);
-        }
+        this.attributes = parameters.attributes;
     }
 
     @Override
@@ -93,7 +83,7 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
         return this.attributes;
     }
 
-    /** {@inheritDoc */
+    @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         final Resource resource = createResource(context, operation);
         populateModel(context, operation, resource);
@@ -101,6 +91,7 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
         //verify model for alternatives & requires
         if (requiresRuntime(context)) {
             context.addStep(new OperationStepHandler() {
+                @Override
                 public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                     performRuntime(context, operation, resource);
 
@@ -221,9 +212,8 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      *                 not be {@code null}
      */
     protected void recordCapabilitiesAndRequirements(final OperationContext context, final ModelNode operation, Resource resource) throws OperationFailedException {
-        Set<RuntimeCapability> capabilitySet = context.getResourceRegistration().getCapabilities();
 
-        for (RuntimeCapability capability : capabilitySet) {
+        for (RuntimeCapability<?> capability : context.getResourceRegistration().getCapabilities()) {
             if (capability.isDynamicallyNamed()) {
                 context.registerCapability(capability.fromBaseCapability(context.getCurrentAddress()));
             } else {
@@ -391,27 +381,58 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
     }
 
     public static class Parameters {
-        protected Set<AttributeDefinition> attributes = null;
+        // Set is not the ideal data structure, but since this is a protected field, we are stuck with it
+        protected Set<AttributeDefinition> attributes = Set.of();
 
         public Parameters() {
         }
 
-        public Parameters addAttribute(AttributeDefinition... attributeDefinitions) {
-            Set<AttributeDefinition> attributeSet = getOrCreateAttributes();
-            attributeSet.addAll(Arrays.asList(attributeDefinitions));
-            return this;
+        public Parameters addAttribute(AttributeDefinition... attributes) {
+            return this.addAttribute(List.of(attributes));
         }
 
-        public Parameters addAttribute(Collection<AttributeDefinition> attributeDefinitions) {
-            getOrCreateAttributes().addAll(attributeDefinitions);
-            return this;
-        }
-
-        private Set<AttributeDefinition> getOrCreateAttributes() {
-            if (attributes == null) {
-                attributes = new LinkedHashSet<>();
+        public Parameters addAttribute(Collection<? extends AttributeDefinition> attributes) {
+            if (this.attributes.isEmpty()) {
+                // Create defensive copy, if collection was not already immutable
+                this.attributes = (attributes instanceof List) ? new ImmutableListSet<>(List.copyOf(attributes)) : Set.copyOf(attributes);
+            } else {
+                // Use copy-on-write semantics
+                // We expect most users to bulk-add attributes
+                List<AttributeDefinition> newAttributes = new ArrayList<>(this.attributes.size() + attributes.size());
+                newAttributes.addAll(this.attributes);
+                newAttributes.addAll(attributes);
+                this.attributes = new ImmutableListSet<>(newAttributes);
             }
-            return attributes;
+            return this;
+        }
+    }
+
+    // Wraps a list as an immutable set
+    private static class ImmutableListSet<T> extends AbstractSet<T> {
+        private final List<T> list;
+
+        ImmutableListSet(List<T> list) {
+            this.list = list;
+        }
+
+        @Override
+        public int size() {
+            return this.list.size();
+        }
+
+        @Override
+        public Iterator<T> iterator() {
+            return this.list.iterator();
+        }
+
+        @Override
+        public boolean add(T e) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends T> c) {
+            throw new UnsupportedOperationException();
         }
     }
 }

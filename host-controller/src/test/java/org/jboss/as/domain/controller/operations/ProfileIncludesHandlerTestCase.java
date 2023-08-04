@@ -298,14 +298,6 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
 
         public void completeStep(ResultHandler resultHandler) {
             if (nextStep != null) {
-                stepCompleted();
-            } else if (rollback) {
-                resultHandler.handleResult(ResultAction.ROLLBACK, this, null);
-            }
-        }
-
-        public void stepCompleted() {
-            if (nextStep != null) {
                 try {
                     OperationStepHandler step = nextStep;
                     nextStep = null;
@@ -313,6 +305,8 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
                 } catch (OperationFailedException e) {
                     throw new OperationFailedRuntimeException(e);
                 }
+            } else if (rollback) {
+                resultHandler.handleResult(ResultAction.ROLLBACK, this, null);
             }
         }
 

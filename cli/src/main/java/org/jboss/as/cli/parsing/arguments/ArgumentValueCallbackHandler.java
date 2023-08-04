@@ -80,7 +80,11 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
                 currentState.enteredValue();
                 pushCurrentState();
             }
-            currentState = new ListValueState();
+            if (ctx.getCharacter() == '{') {
+                currentState = new ObjectValueState();
+            } else {
+                currentState = new ListValueState();
+            }
         } else if(ListItemSeparatorState.ID.equals(stateId)) {
             currentState.itemSeparator();
         } else if(NameValueSeparatorState.ID.equals(stateId)) {

@@ -22,13 +22,14 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 <module xmlns="urn:jboss:module:1.6" name="ibm.jdk">
+        <!--
+                This module is deprecated and should not be referenced at all by other modules.
+                There is no replacement or alternative module that could be referenced instead
+                because this module in reality exports nothing (packages don't exist) on JDK 11 and above.
+	-->
     <properties>
         <property name="jboss.api" value="deprecated"/>
     </properties>
-
-    <resources>
-
-    </resources>
     <dependencies>
         <system export="true">
             <paths>

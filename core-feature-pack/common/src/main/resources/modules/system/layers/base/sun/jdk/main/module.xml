@@ -22,6 +22,28 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 <module xmlns="urn:jboss:module:1.6" name="sun.jdk">
+	<!--
+		This module is deprecated and any use of it should be replaced
+		with the use of a JPMS module provided by Java SE.
+		
+		The original purpose of this module was to make it possible for
+		JBoss Modules modules to get access to various Java SE packages.
+		However, since Java SE 9, Java SE has exposed these packages via
+		SE's own JPMS modules, and JBoss Modules allows modules to declare
+		dependencies on SE's JPMS modules in the same way dependencies
+		on native JBoss Modules modules are declared. Simply use the name
+		of the JPMS module in a 'module' element's 'name' attribute. 
+		
+		For example, to add a dependency on the Java SE jdk.security.jgss module:
+		
+		<module name="jdk.security.jgss"/>
+		
+		In the 'paths' section below, the various resource paths (i.e. packages)
+		exposed by this module are grouped by the JPMS module that provides
+		them, with a comment identifying the relevant JPMS module. Users
+		moving away from use of this module can use this information to 
+		identify the appropriate JPMS module(s) to use instead of this one.
+	-->	
     <properties>
         <property name="jboss.api" value="deprecated"/>
     </properties>

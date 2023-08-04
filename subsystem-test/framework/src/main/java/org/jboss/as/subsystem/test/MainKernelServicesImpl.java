@@ -68,7 +68,7 @@ import org.jboss.msc.service.ServiceContainer;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 class MainKernelServicesImpl extends AbstractKernelServicesImpl {
-    private Class<?> testClass;
+    private final Class<?> testClass;
     private static final ModelVersion CURRENT_CORE_VERSION = ModelVersion.create(Version.MANAGEMENT_MAJOR_VERSION,
             Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
 
@@ -93,11 +93,25 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
      * @return the transformed operation
      * @throws IllegalStateException if this is not the test's main model controller
      */
+    @Override
     public TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation) throws OperationFailedException {
         return transformOperation(modelVersion, operation, null);
     }
 
-    public TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation,
+    /**
+     * Transforms an operation in the main controller to the format expected by the model controller containing
+     * the legacy subsystem
+     *
+     * @param modelVersion the subsystem model version of the legacy subsystem model controller
+     * @param operation the operation to transform
+     * @param attachment attachments propagated from the operation context to the created transformer context.
+     *                   This may be {@code null}. In a non-test scenario, this will be added by operation handlers
+     *                   triggering the transformation, but for tests this needs to be hard-coded. Tests will need to
+     *                   ensure themselves that the relevant attachments get set.
+     * @return the transformed operation
+     * @throws IllegalStateException if this is not the test's main model controller
+     */
+    private TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation,
                                                    TransformerOperationAttachment attachment) throws OperationFailedException {
         checkIsMainController();
         PathElement pathElement = PathElement.pathElement(SUBSYSTEM, mainSubsystemName);
@@ -144,6 +158,7 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
      * @throws IllegalStateException if this is not the test's main model controller
      * @throws IllegalStateException if there is no legacy controller containing the version of the subsystem
      */
+    @Override
     public ModelNode executeOperation(final ModelVersion modelVersion, final TransformedOperation op) {
         KernelServices legacy = getLegacyServices(modelVersion);
         ModelNode result = new ModelNode();
@@ -176,19 +191,6 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
     @Override
     public Class<?> getTestClass() {
         return testClass;
-    }
-
-    @Override
-    public TransformerOperationAttachment executeAndGrabTransformerAttachment(ModelNode op) {
-        try {
-            ModelNode wrapper = Util.createEmptyOperation(TransformerAttachmentGrabber.DESC.getName(), PathAddress.EMPTY_ADDRESS);
-            wrapper.get(VALUE).set(op);
-            ModelTestUtils.checkOutcome(executeOperation(wrapper));
-
-            return TransformerAttachmentGrabber.getAttachment();
-        } finally {
-            TransformerAttachmentGrabber.clear();
-        }
     }
 
     @Override

@@ -3,6 +3,7 @@ call %*
 goto :eof
 
 :commonConf
+setlocal
 if "x%COMMON_CONF%" == "x" (
    set "COMMON_CONF=%DIRNAME%common.conf.bat"
 ) else (
@@ -13,6 +14,7 @@ if "x%COMMON_CONF%" == "x" (
 if exist "%COMMON_CONF%" (
    call "%COMMON_CONF%" %*
 )
+endlocal
 goto :eof
 
 :setEnhancedSecurityManager
@@ -50,10 +52,12 @@ goto :eof
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.lang=ALL-UNNAMED"
       rem Needed by the MicroProfile REST Client subsystem
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
-      rem Needed by JBoss Marshalling
-      set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.io=ALL-UNNAMED"
       rem Needed for marshalling of proxies
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
+      rem Needed by JBoss Marshalling
+      set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.io=ALL-UNNAMED"
+      rem Needed by WildFly Http Client
+      set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.net=ALL-UNNAMED"
       rem Needed by WildFly Security Manager
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.security=ALL-UNNAMED"
       rem Needed for marshalling of collections

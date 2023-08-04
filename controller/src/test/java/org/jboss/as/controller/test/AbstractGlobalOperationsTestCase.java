@@ -276,6 +276,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
     @Override
     public ModelNode executeForResult(ModelNode operation) throws OperationFailedException {
         ModelNode rsp = getController().execute(operation, null, null, null);
+        assertNoUndefinedRolledBackNode(rsp);
         if (FAILED.equals(rsp.get(OUTCOME).asString())) {
             ModelNode fd = rsp.get(FAILURE_DESCRIPTION);
             throw new OperationFailedException(fd.toString(), fd);

@@ -27,9 +27,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Vector;
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Stream;
 import org.jboss.as.repository.logging.DeploymentRepositoryLogger;
 
@@ -85,8 +86,9 @@ class HashUtil {
         // WFLY-6018, check each char is in table, otherwise, there will be StringIndexOutOfBoundsException due to illegal char
         char[] array = s.toCharArray();
         for (char c : array) {
-            if (Arrays.binarySearch(table, c) < 0)
+            if (Arrays.binarySearch(table, c) < 0) {
                 return false;
+            }
         }
         return true;
     }
@@ -123,29 +125,16 @@ class HashUtil {
             }
         } else if (Files.isDirectory(path)) {
             try {
-                Vector<InputStream> v = new Vector<>();
+                final List<InputStream> v = new ArrayList<>();
                 v.add(new ByteArrayInputStream(path.getFileName().toString().getBytes(StandardCharsets.UTF_8)));
                 try(Stream<Path> paths = Files.list(path)) {
-                    v.addAll(paths.sorted((Path path1, Path path2) -> path1.compareTo(path2)).map(p -> getRecursiveContentStream(p)).collect(Collectors.toList()));
+                   paths.sorted((Path path1, Path path2) -> path1.compareTo(path2)).map(p -> getRecursiveContentStream(p)).forEach(p -> v.add(p));
                 }
-                return new SequenceInputStream(v.elements());
+                return new SequenceInputStream(Collections.enumeration(v));
             } catch (IOException ex) {
                 throw DeploymentRepositoryLogger.ROOT_LOGGER.hashingError(ex, path);
             }
         }
-        return emptyStream();
-    }
-
-    /**
-     * Create an empty non-null) stream.
-     * @return an empty non-null stream.
-     */
-    public static InputStream emptyStream() {
-        return new InputStream() {
-            @Override
-            public int read() throws IOException {
-                return -1;
-            }
-        };
+        return InputStream.nullInputStream();
     }
 }

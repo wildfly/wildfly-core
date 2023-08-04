@@ -60,8 +60,11 @@ public class ManagedDMRContentTypeResourceDefinition extends SimpleResourceDefin
                                                    final ParameterValidator contentValidator,
                                                    final ResourceDescriptionResolver descriptionResolver,
                                                    final ResourceDescriptionResolver childResolver) {
-        super(pathElement, descriptionResolver, new ManagedDMRContentTypeAddHandler(contentRepository, hostFileRepository, childType),
-                null, OperationEntry.Flag.RESTART_NONE, null);
+        super(new Parameters(pathElement, descriptionResolver)
+                .setAddHandler(new ManagedDMRContentTypeAddHandler(contentRepository, hostFileRepository, childType))
+                .setRemoveHandler(null)
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES));
         this.childResolver = childResolver;
         this.contentValidator = contentValidator;
     }

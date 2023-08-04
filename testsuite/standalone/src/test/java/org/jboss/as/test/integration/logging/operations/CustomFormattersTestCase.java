@@ -88,7 +88,7 @@ public class CustomFormattersTestCase extends AbstractLoggingOperationsTestCase 
         testUndefine(CUSTOM_FORMATTER_ADDRESS, "class", true);
 
         // Change the module which should require a restart
-        result = testWrite(CUSTOM_FORMATTER_ADDRESS, "module", "sun.jdk");
+        result = testWrite(CUSTOM_FORMATTER_ADDRESS, "module", "org.slf4j.impl");
         // Check the state
         step1 = Operations.readResult(result).get("step-1");
         Assert.assertTrue("Should be in reload-required state: " + result, step1.get("response-headers").get("operation-requires-reload").asBoolean());

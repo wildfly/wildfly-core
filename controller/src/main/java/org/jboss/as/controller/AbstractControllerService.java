@@ -53,7 +53,6 @@ import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.access.management.WritableAuthorizerConfiguration;
-import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityScope;
@@ -61,7 +60,6 @@ import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
-import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker;
@@ -185,11 +183,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
     /**
      * Name of a capability that extensions that provide {@link ExpressionResolverExtension} implementations
      * can use to register their extensions with the core {@link ExpressionResolver}.
-     *
-     * @deprecated Will be removed in an upcoming major version.
      */
-    @Deprecated
-    protected static final String EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME =
+    private static final String EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME =
             "org.wildfly.management.expression-resolver-extension-registry";
 
     private static final OperationDefinition INIT_CONTROLLER_OP = new SimpleOperationDefinitionBuilder("boottime-controller-initializer-step", null)
@@ -213,6 +208,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private final CapabilityRegistry capabilityRegistry;
     private final ConfigurationExtension configExtension;
     private final RuntimeCapability<ResolverExtensionRegistry> extensionRegistryCapability;
+    private volatile ModelControllerClientFactory clientFactory;
 
     /**
      * Construct a new instance.
@@ -236,105 +232,6 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
                                         final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
         this(null, null, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
-                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, null);
-    }
-
-    /**
-     * Construct a new instance.
-     * Simplified constructor for test case subclasses.
-     *
-     * @param processType             the type of process being controlled
-     * @param runningModeControl      the controller of the process' running mode
-     * @param configurationPersister  the configuration persister
-     * @param processState            the controlled process state
-     * @param rootDescriptionProvider the root description provider
-     * @param prepareStep             the prepare step to prepend to operation execution
-     * @param expressionResolver      the expression resolver
-     *
-     * @deprecated Here for backwards compatibility for ModelTestModelControllerService
-     */
-    @Deprecated
-    protected AbstractControllerService(final ProcessType processType, final RunningModeControl runningModeControl,
-                                        final ConfigurationPersister configurationPersister,
-                                        final ControlledProcessState processState, final DescriptionProvider rootDescriptionProvider,
-                                        final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver) {
-        this(null, null, processType, runningModeControl, configurationPersister, processState, null, rootDescriptionProvider,
-                prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(),
-                new CapabilityRegistry(processType.isServer()), null);
-
-    }
-
-    /**
-     * Construct a new instance.
-     *
-     * @param processType             the type of process being controlled
-     * @param runningModeControl      the controller of the process' running mode
-     * @param configurationPersister  the configuration persister
-     * @param processState            the controlled process state
-     * @param rootResourceDefinition  the root resource definition
-     * @param prepareStep             the prepare step to prepend to operation execution
-     * @param expressionResolver      the expression resolver
-     *
-     * @deprecated Here for backwards compatibility for ModelTestModelControllerService
-     */
-    @Deprecated
-    protected AbstractControllerService(final ProcessType processType, final RunningModeControl runningModeControl,
-                                        final ConfigurationPersister configurationPersister,
-                                        final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
-                                        final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver) {
-        this(null, null, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
-                prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(),
-                new CapabilityRegistry(processType.isServer()), null);
-    }
-
-    /**
-     * Construct a new instance.
-     *
-     * @param processType            the type of process being controlled
-     * @param runningModeControl     the controller of the process' running mode
-     * @param configurationPersister the configuration persister
-     * @param processState           the controlled process state
-     * @param rootResourceDefinition the root resource definition
-     * @param prepareStep            the prepare step to prepend to operation execution
-     * @param expressionResolver     the expression resolver
-     * @deprecated Here for backwards compatibility for ModelTestModelControllerService
-     */
-    @Deprecated
-    protected AbstractControllerService(final ProcessType processType, final RunningModeControl runningModeControl,
-                                        final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
-                                        final ResourceDefinition rootResourceDefinition, final OperationStepHandler prepareStep,
-                                        final ExpressionResolver expressionResolver, final ManagedAuditLogger auditLogger,
-                                        final DelegatingConfigurableAuthorizer authorizer) {
-        this(null, null, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
-                prepareStep, expressionResolver, auditLogger, authorizer, new ManagementSecurityIdentitySupplier(),
-                new CapabilityRegistry(processType.isServer()), null);
-
-    }
-    /**
-     * Construct a new instance.
-     *
-     * @param processType             the type of process being controlled
-     * @param runningModeControl      the controller of the process' running mode
-     * @param configurationPersister  the configuration persister
-     * @param processState            the controlled process state
-     * @param rootResourceDefinition  the root resource definition
-     * @param prepareStep             the prepare step to prepend to operation execution
-     * @param expressionResolver      the expression resolver
-     * @param auditLogger             the audit logger
-     * @param authorizer              handles authorization
-     * @param capabilityRegistry      the capability registry
-     */
-    @Deprecated
-    protected AbstractControllerService(final Supplier<ExecutorService> executorService,
-                                        final Supplier<ControllerInstabilityListener> instabilityListener,
-                                        final ProcessType processType, final RunningModeControl runningModeControl,
-                                        final ConfigurationPersister configurationPersister,
-                                        final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
-                                        final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
-                                        final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
-                                        final ManagementSecurityIdentitySupplier securityIdentitySupplier,
-                                        final CapabilityRegistry capabilityRegistry) {
-        this(executorService, instabilityListener, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
                 prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, null);
     }
 
@@ -431,6 +328,9 @@ public abstract class AbstractControllerService implements Service<ModelControll
         // Initialize the model
         initModel(controller.getManagementModel(), controller.getModelControllerResource());
 
+        // We create the client factory even if we don't it expose via MSC, so test classes can access it
+        this.clientFactory = new ModelControllerClientFactoryImpl(controller, securityIdentitySupplier);
+
         // Expose the client factory
         if (isExposingClientServicesAllowed()) {
             capabilityRegistry.registerCapability(
@@ -441,7 +341,6 @@ public abstract class AbstractControllerService implements Service<ModelControll
             // This also gets them recorded as 'possible capabilities' in the capability registry
             rootResourceRegistration.registerCapability(CLIENT_FACTORY_CAPABILITY);
             rootResourceRegistration.registerCapability(NOTIFICATION_REGISTRY_CAPABILITY);
-            ModelControllerClientFactory clientFactory = new ModelControllerClientFactoryImpl(controller, securityIdentitySupplier);
             final ServiceName clientFactorySN = CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName();
             final ServiceBuilder<?> clientFactorySB = target.addService(clientFactorySN);
             clientFactorySB.setInstance(new SimpleService(clientFactorySB.provides(clientFactorySN), clientFactory));
@@ -546,15 +445,6 @@ public abstract class AbstractControllerService implements Service<ModelControll
     }
 
     /**
-     * @deprecated internal use only  only for use by legacy test controllers
-     */
-    @Deprecated
-    protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure,
-            MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) throws ConfigurationPersistenceException {
-        return boot(bootOperations, rollbackOnRuntimeFailure, false, parallelBootRootResourceRegistrationProvider);
-    }
-
-    /**
      * Boot, optionally disabling model and capability registry validation, using the given provider for the root
      * {@link ManagementResourceRegistration}.
      *
@@ -570,22 +460,6 @@ public abstract class AbstractControllerService implements Service<ModelControll
         return controller.boot(bootOperations, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT,
                 rollbackOnRuntimeFailure, parallelBootRootResourceRegistrationProvider, skipModelValidation,
                 getPartialModelIndicator().isModelPartial(), configExtension);
-    }
-
-    /** @deprecated internal use only  only for use by legacy test controllers */
-    @Deprecated
-    protected ModelNode internalExecute(final ModelNode operation, final OperationMessageHandler handler,
-                                        final ModelController.OperationTransactionControl control,
-                                        final OperationAttachments attachments, final OperationStepHandler prepareStep) {
-        OperationResponse or = controller.internalExecute(operation, handler, control, attachments, prepareStep, false, false);
-        ModelNode result = or.getResponseNode();
-        try {
-            or.close();
-        } catch (IOException e) {
-            ROOT_LOGGER.debugf(e, "Caught exception closing response to %s whose associated streams, " +
-                    "if any, were not wanted", operation);
-        }
-        return result;
     }
 
     protected OperationResponse internalExecute(final Operation operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control, final OperationStepHandler prepareStep) {
@@ -604,29 +478,15 @@ public abstract class AbstractControllerService implements Service<ModelControll
         return controller.internalExecute(operation.getOperation(), handler, control, operation, prepareStep, attemptLock, partialModel);
     }
 
-    /**
-     * @deprecated internal use only and only by legacy test controllers
-     */
-    @Deprecated
-    protected ModelNode executeReadOnlyOperation(final ModelNode operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control, final OperationAttachments attachments, final OperationStepHandler prepareStep, int lockPermit) {
+    protected final ModelNode executeReadOnlyOperation(final ModelNode operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control, final OperationStepHandler prepareStep, int lockPermit) {
         return controller.executeReadOnlyOperation(operation, handler, control, prepareStep, lockPermit);
     }
 
-    /**
-     * @deprecated internal use only
-     */
-    @Deprecated
-    protected ModelNode executeReadOnlyOperation(final ModelNode operation, final OperationMessageHandler handler, final ModelController.OperationTransactionControl control, final OperationStepHandler prepareStep, int lockPermit) {
-        return controller.executeReadOnlyOperation(operation, handler, control, prepareStep, lockPermit);
-    }
-
-    @Deprecated
-    protected ModelNode executeReadOnlyOperation(final ModelNode operation, final ModelController.OperationTransactionControl control, final OperationStepHandler prepareStep) {
+    protected final ModelNode executeReadOnlyOperation(final ModelNode operation, final ModelController.OperationTransactionControl control, final OperationStepHandler prepareStep) {
         return controller.executeReadOnlyOperation(operation, control, prepareStep);
     }
 
-    @Deprecated
-    protected ModelNode executeReadOnlyOperation(final ModelNode operation, Resource model, final ModelController.OperationTransactionControl control, final OperationStepHandler prepareStep) {
+    protected final ModelNode executeReadOnlyOperation(final ModelNode operation, Resource model, final ModelController.OperationTransactionControl control, final OperationStepHandler prepareStep) {
         return controller.executeReadOnlyOperation(operation, model, control, prepareStep);
     }
 
@@ -799,6 +659,11 @@ public abstract class AbstractControllerService implements Service<ModelControll
         return null;
     }
 
+    // Expose our ModelControllerClientFactory to test code
+    protected ModelControllerClientFactory getModelControllerClientFactory() {
+        return clientFactory;
+    }
+
     protected void executeAdditionalCliBootScript() {
         // Do this check here so we don't need to load the additional class for the normal use-cases
         final String additionalBootCliScriptPath =
@@ -841,10 +706,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
                     assert !processType.isHostController() || hostName != null;
                     for (ModelControllerServiceInitialization init : sl) {
                         if (processType.isHostController()) {
-                            init.initializeHost(context.getServiceTarget(), managementModel, hostName);
+                            init.initializeHost(context.getServiceTarget(), managementModel, hostName, processType);
                             init.initializeDomain(context.getServiceTarget(), managementModel);
                         } else {
-                            init.initializeStandalone(context.getServiceTarget(), managementModel);
+                            init.initializeStandalone(context.getServiceTarget(), managementModel, processType);
 
                         }
                     }

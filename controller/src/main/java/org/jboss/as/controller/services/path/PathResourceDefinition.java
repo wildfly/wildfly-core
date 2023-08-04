@@ -157,40 +157,12 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
     /**
      * Creates a resource definition for a path resource that does not require that the path details
      * be specified. Interaction with the path manager will not be part of the execution of management
-     * operations.  Only for use by the kernel.
-     * @param pathManager the path manager
-     * @return the resource definition
-     *
-     * @deprecated only for use by the kernel. May be removed at any time.
-     */
-    @Deprecated
-    public static PathResourceDefinition createNamed(PathManagerService pathManager) {
-        return new NamedPathResourceDefinition(false);
-    }
-
-    /**
-     * Creates a resource definition for a path resource that does not require that the path details
-     * be specified. Interaction with the path manager will not be part of the execution of management
      * operations. Only for use by the kernel.
      *
      * @return the resource definition
      */
     public static PathResourceDefinition createNamed() {
         return new NamedPathResourceDefinition(false);
-    }
-
-    /**
-     * Creates a resource definition for a path resource that must have the path specified, but
-     * for which interaction with the path manager should not be part of the execution of management
-     * operations.  Only for use by the kernel.
-     * @param pathManager the path manager
-     * @return the resource definition
-     *
-     * @deprecated only for use by the kernel. May be removed at any time
-     */
-    @Deprecated
-    public static PathResourceDefinition createSpecifiedNoServices(PathManagerService pathManager) {
-        return new SpecifiedNoServicesPathResourceDefinition(false);
     }
 
     /**

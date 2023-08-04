@@ -16,13 +16,14 @@
 
 package org.jboss.as.server.security;
 
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.server.deployment.AttachmentKey;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.msc.service.ServiceName;
 
 /**
- * Meta Data to be attached to a {@link DeploymentUnit} to contain information about the active
- * security policy.
+ * Meta Data to be attached to a {@link DeploymentUnit} or {@link OperationContext} to contain information
+ * about the active security policy.
  *
  * Note: This applies to security backed by WildFly Elytron only not legacy security.
  *
@@ -31,6 +32,7 @@ import org.jboss.msc.service.ServiceName;
 public class SecurityMetaData {
 
     public static final AttachmentKey<SecurityMetaData> ATTACHMENT_KEY = AttachmentKey.create(SecurityMetaData.class);
+    public static final OperationContext.AttachmentKey<SecurityMetaData> OPERATION_CONTEXT_ATTACHMENT_KEY = OperationContext.AttachmentKey.create(SecurityMetaData.class);
 
     private volatile ServiceName securityDomain;
 

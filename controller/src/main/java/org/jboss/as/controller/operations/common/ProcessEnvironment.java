@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -181,11 +182,17 @@ public abstract class ProcessEnvironment {
      * @throws IOException if there is a problem reading from or writing to {@code filePath}
      */
     protected final UUID obtainProcessUUID(final Path filePath, String assignedValue) throws IOException {
+        String uuidString = "";
         UUID uuid = null;
         // If we were not provided a uuid via the param, look for one previously persisted
         if (assignedValue == null && Files.exists(filePath)) {
             try (Stream<String> lines = Files.lines(filePath)) {
-                uuid = UUID.fromString(lines.findFirst().get());
+                uuidString = lines.findFirst().get();
+                uuid = UUID.fromString(uuidString);
+            } catch (NoSuchElementException e) {
+                ControllerLogger.ROOT_LOGGER.uuidIsEmpty(filePath.toString());
+            } catch (IllegalArgumentException e) {
+                ControllerLogger.ROOT_LOGGER.uuidNotValid(uuidString, filePath.toString());
             }
         }
         if (uuid == null) {
@@ -264,7 +271,7 @@ public abstract class ProcessEnvironment {
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
-            final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
+            final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS, false).getModel();
             if (model.hasDefined(NAME.getName())) {
                 context.getResult().set(model.get(NAME.getName()));
             } else {

@@ -19,68 +19,40 @@
 package org.jboss.as.controller;
 
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.Service;
-import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 
 /**
  * A builder for an individual service in a {@code CapabilityServiceTarget}.
- * Create an instance via the {@link CapabilityServiceTarget#addCapability(RuntimeCapability)},
- * {@link #addCapabilityRequirement(String, Class, Injector)} or other methods.
- * Builder also add supports to add capability requirement for service injection via {@link #addCapabilityRequirement(String, Class, Injector)}
+ * Create an instance via the {@link CapabilityServiceTarget#addService()} method.
  *
  * @param <T> the service type
  * @author Tomaz Cerar (c) 2017 Red Hat Inc.
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
-    /**
-     * Adds capability requirement with injection to service which we are building
-     *
-     * @param capabilityName name of capability requirement
-     * @param type           the class of the value of the dependency
-     * @param target         the injector into which the dependency should be stored
-     * @param <I>            the type of the value of the dependency
-     * @param referenceNames dynamic part(s) of capability name, only useful when using dynamic named capabilities
-     * @return this builder
-     * @deprecated Use {@link CapabilityServiceBuilder#requiresCapability(String, Class, String...)} instead.
-     * This method will be removed in a future release.
-     */
-    @Deprecated
-    <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type, Injector<I> target, String... referenceNames);
+public interface CapabilityServiceBuilder<T> extends RequirementServiceBuilder<T> {
 
-    /**
-     * Adds capability requirement with injection to capability which we are building
-     *
-     * @param capabilityName name of capability requirement
-     * @param type           the class of the value of the dependency
-     * @param target         the injector into which the dependency should be stored
-     * @param <I>            the type of the value of the dependency
-     * @return this builder
-     * @deprecated Use {@link CapabilityServiceBuilder#requiresCapability(String, Class, String...)} instead.
-     * This method will be removed in a future release.
-     */
-    @Deprecated
-    <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type, Injector<I> target);
-
-    /**
-     * {@inheritDoc}
-     * @return this builder
-     */
     @Override
     CapabilityServiceBuilder<T> setInitialMode(ServiceController.Mode mode);
 
-    /**
-     * {@inheritDoc}
-     * @return this builder
-     */
     @Override
     CapabilityServiceBuilder<T> setInstance(Service service);
+
+    @Override
+    CapabilityServiceBuilder<T> addListener(LifecycleListener listener);
+
+    /**
+     * Provide value under given capability.
+     *
+     * @param capability capability provided value represents
+     * @param <V> consumed value type
+     * @return consumer providing value
+     */
+    <V> Consumer<V> provides(final RuntimeCapability<?> capability);
 
     /**
      * Provide value under given capabilities.
@@ -111,15 +83,4 @@ public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
      * @return consumer providing value
      */
     <V> Consumer<V> provides(final RuntimeCapability<?>[] capabilities, final ServiceName[] aliases);
-
-    /**
-     * Capability requirement.
-     *
-     * @param capabilityName name of capability requirement
-     * @param dependencyType the class of the value of the dependency
-     * @param <V>            the type of the value of the dependency
-     * @param referenceNames dynamic part(s) of capability name, only useful when using dynamic named capabilities
-     * @return readonly dependency reference
-     */
-    <V> Supplier<V> requiresCapability(String capabilityName, Class<V> dependencyType, String... referenceNames);
 }

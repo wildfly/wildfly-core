@@ -50,7 +50,7 @@ import org.jboss.dmr.ModelType;
 public class CapabilityRegistryResourceDefinition extends SimpleResourceDefinition {
 
     private static final SimpleListAttributeDefinition DEPENDENT_ADDRESS = new SimpleListAttributeDefinition.
-            Builder("dependent-address", new SimpleAttributeDefinition("parameter", ModelType.PROPERTY, false)).build();
+            Builder("dependent-address", new SimpleAttributeDefinitionBuilder("parameter", ModelType.PROPERTY, false).build()).build();
 
     private static final SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING)
             .setRequired(true)

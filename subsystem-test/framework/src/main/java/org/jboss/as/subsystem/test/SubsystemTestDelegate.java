@@ -64,7 +64,6 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -73,7 +72,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
-import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.extension.SubsystemInformation;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
@@ -169,7 +167,7 @@ final class SubsystemTestDelegate {
     void initializeParser() throws Exception {
         //Initialize the parser
         xmlMapper = XMLMapper.Factory.create();
-        extensionParsingRegistry = new ExtensionRegistry(getProcessType(), new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
+        extensionParsingRegistry = ExtensionRegistry.builder(this.getProcessType()).build();
         testParser = new TestParser(mainSubsystemName, extensionParsingRegistry);
         xmlMapper.registerRootElement(new QName(TEST_NAMESPACE, "test"), testParser);
         mainExtension.initializeParsers(extensionParsingRegistry.getExtensionParsingContext("Test", xmlMapper));
@@ -237,7 +235,7 @@ final class SubsystemTestDelegate {
 
         // Use ProcessType.HOST_CONTROLLER for this ExtensionRegistry so we don't need to provide
         // a PathManager via the ExtensionContext. All we need the Extension to do here is register the xml writers
-        ExtensionRegistry outputExtensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
+        ExtensionRegistry outputExtensionRegistry = ExtensionRegistry.builder(ProcessType.HOST_CONTROLLER).build();
         outputExtensionRegistry.setWriterRegistry(persister);
 
 
@@ -446,7 +444,7 @@ final class SubsystemTestDelegate {
     }
 
     private ExtensionRegistry cloneExtensionRegistry(AdditionalInitialization additionalInit) {
-        final ExtensionRegistry clone = new ExtensionRegistry(additionalInit.getProcessType(), new RunningModeControl(additionalInit.getExtensionRegistryRunningMode()), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
+        final ExtensionRegistry clone = ExtensionRegistry.builder(additionalInit.getProcessType()).withRunningMode(additionalInit.getExtensionRegistryRunningMode()).build();
         for (String extension : extensionParsingRegistry.getExtensionModuleNames()) {
             ExtensionParsingContext epc = clone.getExtensionParsingContext(extension, null);
             for (Map.Entry<String, SubsystemInformation> entry : extensionParsingRegistry.getAvailableSubsystems(extension).entrySet()) {
@@ -626,11 +624,6 @@ final class SubsystemTestDelegate {
             ModelTestBootOperationsBuilder builder = new ModelTestBootOperationsBuilder(testClass, this);
             builder.setXmlResource(xmlResource);
             return builder.build();
-        }
-
-        @Override
-        public KernelServicesBuilder enableTransformerAttachmentGrabber() {
-            return this;
         }
 
     }
@@ -983,10 +976,6 @@ final class SubsystemTestDelegate {
         @Override
         public boolean isAllowsOverride() {
             return true;
-        }
-
-        @Override
-        public void setRuntimeOnly(boolean runtimeOnly) {
         }
 
         @Override

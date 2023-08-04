@@ -75,21 +75,6 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
     private final boolean registerTransformers;
 
     protected TestModelControllerService(final Extension mainExtension, final ControllerInitializer controllerInitializer,
-                                         final AdditionalInitialization additionalInit, final RunningModeControl runningModeControl,
-                                         final ExtensionRegistry extensionRegistry, final StringConfigurationPersister persister,
-                                         final ModelTestOperationValidatorFilter validateOpsFilter, final boolean registerTransformers) {
-        super(additionalInit.getProcessType(), runningModeControl, extensionRegistry.getTransformerRegistry(), persister, validateOpsFilter,
-                new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE) , new ControlledProcessState(true), Controller90x.INSTANCE);
-        this.mainExtension = mainExtension;
-        this.additionalInit = additionalInit;
-        this.controllerInitializer = controllerInitializer;
-        this.extensionRegistry = extensionRegistry;
-        this.runningModeControl = runningModeControl;
-        this.registerTransformers = registerTransformers;
-
-    }
-
-    protected TestModelControllerService(final Extension mainExtension, final ControllerInitializer controllerInitializer,
                                             final AdditionalInitialization additionalInit, final RunningModeControl runningModeControl,
                                             final ExtensionRegistry extensionRegistry, final StringConfigurationPersister persister,
                                             final ModelTestOperationValidatorFilter validateOpsFilter, final boolean registerTransformers,
@@ -143,13 +128,6 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         GlobalNotifications.registerGlobalNotifications(managementModel.getRootResourceRegistration(), processType);
     }
 
-    /** @deprecated only for legacy version support */
-    @Override
-    protected void initExtraModel(Resource rootResource, ManagementResourceRegistration rootRegistration) {
-        initExtraModelInternal(rootResource, rootRegistration);
-        additionalInit.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration);
-    }
-
     private void initExtraModelInternal(Resource rootResource, ManagementResourceRegistration rootRegistration) {
         rootResource.getModel().get(SUBSYSTEM);
 
@@ -201,7 +179,7 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         }
         props.put(ServerEnvironment.JBOSS_SERVER_DEFAULT_CONFIG, "standalone.xml");
 
-        return new ServerEnvironment(null, props, new HashMap<String, String>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), null, false);
+        return new ServerEnvironment(null, props, new HashMap<>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), null, false);
     }
 
     private static class MockContentRepository implements ContentRepository {

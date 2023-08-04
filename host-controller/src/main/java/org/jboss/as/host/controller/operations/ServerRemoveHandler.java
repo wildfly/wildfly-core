@@ -35,7 +35,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -51,10 +50,9 @@ public class ServerRemoveHandler extends AbstractRemoveStepHandler {
     public static final ServerRemoveHandler INSTANCE = new ServerRemoveHandler();
 
     /**
-     * Create the InterfaceRemoveHandler
+     * Create the ServerRemoveHandler
      */
     private ServerRemoveHandler() {
-        super(ServerConfigResourceDefinition.SERVER_CONFIG_CAPABILITY);
     }
 
     @Override

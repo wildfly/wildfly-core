@@ -52,7 +52,6 @@ public class TransformerAttachmentGrabber implements OperationStepHandler {
                     .setParameters(VALUE)
                     .build();
 
-    @Deprecated
     private static TransformerOperationAttachment attachment;
 
     TransformerAttachmentGrabber() {

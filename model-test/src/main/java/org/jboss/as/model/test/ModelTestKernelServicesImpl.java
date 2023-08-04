@@ -89,7 +89,7 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
         this.persister = persister;
         this.operationValidator = operationValidator;
         this.rootRegistration = rootRegistration;
-        this.legacyServices = legacyModelVersion != null ? null : new HashMap<ModelVersion, T>();
+        this.legacyServices = legacyModelVersion != null ? null : new HashMap<>();
         this.successfulBoot = successfulBoot;
         this.bootError = bootError;
     }
@@ -207,7 +207,7 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
         } else {
             ExecutorService executor = Executors.newCachedThreadPool();
             try {
-                ModelControllerClient client = controller.createClient(executor);
+                ModelControllerClient client = controllerService.getModelControllerClientFactory().createClient(executor);
                 OperationBuilder builder = OperationBuilder.create(operation);
                 for (InputStream in : inputStreams) {
                     builder.addInputStream(in);
@@ -245,7 +245,6 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
      * Execute an operation in the model controller, expecting failure.
      *
      * @param operation the operation to execute
-     * @return the result of the operation
      */
     @Override
     public void executeForFailure(ModelNode operation, InputStream...inputStreams) {
@@ -253,6 +252,7 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
             executeForResult(operation, inputStreams);
             Assert.fail("Should have given error");
         } catch (OperationFailedException expected) {
+            // ignore
         }
     }
 
@@ -332,10 +332,6 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
 
     protected TransformerRegistry getTransformersRegistry() {
         return controllerService.getTransformersRegistry();
-    }
-
-    protected String getControllerClassSimpleName() {
-        return controllerService.getClass().getSimpleName();
     }
 
 }

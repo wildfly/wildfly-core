@@ -530,18 +530,18 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
         void executeStep(OperationStepHandler handler, ModelNode operation) throws OperationFailedException {
             handler.execute(this, operation);
-            stepCompleted();
+            completed();
         }
 
         public void completeStep(ResultHandler resultHandler) {
             if (nextStep != null) {
-                stepCompleted();
+                completed();
             } else {
                 resultHandler.handleResult(ResultAction.KEEP, this, null);
             }
         }
 
-        public void stepCompleted() {
+        private void completed() {
             if (nextStep != null) {
                 try {
                     OperationStepHandler step = nextStep;

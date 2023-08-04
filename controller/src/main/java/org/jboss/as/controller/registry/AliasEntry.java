@@ -70,27 +70,13 @@ public abstract class AliasEntry {
     }
 
     /**
-     * Convert the alias address to the target address
-     *
-     * @param aliasAddress the alias address
-     * @return the target address
-     * @deprecated This will be removed in WildFly Core 3; override convertToTargetAddress(PathAddress, AliasContext) instead
-     */
-    @Deprecated
-    public PathAddress convertToTargetAddress(PathAddress aliasAddress) {
-        throw new UnsupportedOperationException("convertToTargetAddress");
-    }
-
-    /**
      * Convert the alias address to the target address.
      *
      * @param aliasAddress the alias address
-     * @param aliasAddress the alias address
+     * @param aliasContext the context
      * @return the target address
      */
-    public PathAddress convertToTargetAddress(PathAddress aliasAddress, AliasContext aliasContext) {
-        return convertToTargetAddress(aliasAddress);
-    }
+    public abstract PathAddress convertToTargetAddress(PathAddress aliasAddress, AliasContext aliasContext);
 
     /**
      * A wrapper around {@link OperationContext} for the requested alias address, allowing extra

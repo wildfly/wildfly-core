@@ -81,15 +81,15 @@ public class RemoteGitPersistenceResourceTestCase extends AbstractGitPersistence
         Path standard = createFile(root, "standard.xml", "std");
         ConfigurationFile configurationFile = new ConfigurationFile(root.toFile(), "standard.xml", null, ConfigurationFile.InteractionPolicy.STANDARD, true, null);
         Assert.assertEquals(standard.toAbsolutePath().toString(), configurationFile.getBootFile().getAbsolutePath());
-        GitRepositoryConfiguration.Builder.getInstance()
-                .setBasePath(root)
-                .setRepository(remoteRoot.resolve(Constants.DOT_GIT).toAbsolutePath().toString())
-                .build();
         try (GitRepository gitRepository = new GitRepository(GitRepositoryConfiguration.Builder.getInstance()
                 .setBasePath(root)
                 .setRepository(remoteRoot.resolve(Constants.DOT_GIT).toAbsolutePath().toString())
                 .build())) {
             List<String> commits = listCommits(repository);
+            Assert.assertEquals(1, repository.getRemoteNames().size());
+            Assert.assertTrue(repository.getRemoteNames().contains("origin"));
+            StoredConfig config = repository.getConfig();
+            Assert.assertEquals(remoteRoot.resolve(Constants.DOT_GIT).toAbsolutePath().toString(), config.getString(ConfigConstants.CONFIG_REMOTE_SECTION, "origin", ConfigConstants.CONFIG_KEY_URL));
             Assert.assertEquals(2, commits.size());
             Assert.assertEquals("Adding .gitignore", commits.get(0));
             Assert.assertEquals("Repository initialized", commits.get(1));
@@ -136,7 +136,15 @@ public class RemoteGitPersistenceResourceTestCase extends AbstractGitPersistence
             commits = listCommits(remoteRepository);
             Assert.assertEquals(1, commits.size());
             Assert.assertEquals("Repository initialized", commits.get(0));
+            //Publish to default remote
             persister.publish(null);
+            // Publish to an invalid remote location
+            try {
+                persister.publish("invalid_remote");
+                Assert.fail("Should have thrown an exception");
+            } catch (ConfigurationPersistenceException expected){
+                Assert.assertTrue(expected.getMessage().contains("WFLYCTL0503"));
+            }
             commits = listCommits(remoteRepository);
             Assert.assertEquals(5, commits.size());
             Assert.assertEquals("1st snapshot", commits.get(0));

@@ -125,7 +125,7 @@ public class StartServersHandler implements OperationStepHandler {
             if (ServerConfigResourceDefinition.AUTO_START.resolveModelAttribute(context, serverProp.getValue()).asBoolean(true)) {
                 ProcessInfo info = processInfos.get(serverInventory.getServerProcessName(serverName));
                 if ( info != null ){
-                    serverInventory.reconnectServer(serverName, domainModel, info.getAuthKey(), info.isRunning(), info.isStopping());
+                    serverInventory.reconnectServer(serverName, domainModel, info.isRunning(), info.isStopping());
                 } else {
                     try {
                         serverInventory.startServer(serverName, domainModel, START_BLOCKING, false);
@@ -149,8 +149,7 @@ public class StartServersHandler implements OperationStepHandler {
                     ROOT_LOGGER.failedToStartServer(e, serverName);
                 }
             } else if (info != null){
-                // Reconnect the server using the current authKey
-                serverInventory.reconnectServer(serverName, domainModel, info.getAuthKey(), info.isRunning(), info.isStopping());
+                serverInventory.reconnectServer(serverName, domainModel, info.isRunning(), info.isStopping());
             }
         }
     }

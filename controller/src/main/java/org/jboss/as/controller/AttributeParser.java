@@ -118,15 +118,6 @@ public abstract class AttributeParser {
     public static final AttributeParser SIMPLE = new AttributeParser() {
     };
 
-    @Deprecated
-    public static final AttributeParser LIST = new AttributeParser() {
-        @Override
-        public void parseAndSetParameter(AttributeDefinition attribute, String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {
-            ModelNode paramVal = parse(attribute, value, reader);
-            operation.get(attribute.getName()).add(paramVal);
-        }
-    };
-
     public static final AttributeParser STRING_LIST = new AttributeParser() {
         @Override
         public void parseAndSetParameter(AttributeDefinition attribute, String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {

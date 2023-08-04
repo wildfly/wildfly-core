@@ -307,12 +307,6 @@ public class GitRepositoryTestCase extends AbstractGitRepositoryTestCase {
             Assert.assertTrue(uoe.getMessage().contains("WFLYCTL0455"));
         }
 
-        // :publish-configuration => push to origin
-        publish(null);
-        commits = listCommits(repository);
-        Assert.assertEquals(expectedNumberOfCommits, commits.size());
-        Assert.assertEquals("bar", commits.get(0));
-
         // :publish-configuration(location=empty) => push to empty)
         publish("empty");
         tags = listTags(emptyRemoteRepository);

@@ -57,6 +57,10 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.wildfly.common.Assert;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.MechanismConfiguration;
+import org.wildfly.security.auth.server.MechanismConfigurationSelector;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.xnio.SslClientAuthMode;
 import org.xnio.XnioWorker;
 
@@ -102,9 +106,11 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final Supplier<HttpAuthenticationFactory> httpAuthFactorySupplier;
     private final Supplier<SSLContext> sslContextSupplier;
     private final ConsoleMode consoleMode;
-    private final String consoleSlot;
+    private final Supplier<String> consoleSlot;
     private final Map<String, List<Header>> constantHeaders;
     private final Supplier<ConsoleAvailability> consoleAvailabilitySupplier;
+    private final Supplier<SecurityDomain> virtualSecurityDomainSupplier;
+    private final Supplier<HttpServerAuthenticationMechanismFactory> virtualMechanismFactorySupplier;
 
     private ManagementHttpServer serverManagement;
     private SocketBindingManager socketBindingManager;
@@ -214,9 +220,37 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                                          final Integer securePort,
                                          final Collection<String> allowedOrigins,
                                          final ConsoleMode consoleMode,
-                                         final String consoleSlot,
+                                         final Supplier<String> consoleSlot,
                                          final Map<String, List<Header>> constantHeaders,
                                          final Supplier<ConsoleAvailability> consoleAvailabilitySupplier) {
+        this(httpManagementConsumer, listenerRegistrySupplier, modelControllerSupplier, socketBindingSupplier,
+                secureSocketBindingSupplier, socketBindingManagerSupplier, interfaceBindingSupplier, secureInterfaceBindingSupplier,
+                requestProcessorSupplier, workerSupplier, executorSupplier, httpAuthFactorySupplier, sslContextSupplier, port, securePort,
+                allowedOrigins, consoleMode, consoleSlot, constantHeaders, consoleAvailabilitySupplier, null, null);
+    }
+
+    public UndertowHttpManagementService(final Consumer<HttpManagement> httpManagementConsumer,
+                                         final Supplier<ListenerRegistry> listenerRegistrySupplier,
+                                         final Supplier<ModelController> modelControllerSupplier,
+                                         final Supplier<SocketBinding> socketBindingSupplier,
+                                         final Supplier<SocketBinding> secureSocketBindingSupplier,
+                                         final Supplier<SocketBindingManager> socketBindingManagerSupplier,
+                                         final Supplier<NetworkInterfaceBinding> interfaceBindingSupplier,
+                                         final Supplier<NetworkInterfaceBinding> secureInterfaceBindingSupplier,
+                                         final Supplier<ManagementHttpRequestProcessor> requestProcessorSupplier,
+                                         final Supplier<XnioWorker> workerSupplier,
+                                         final Supplier<Executor> executorSupplier,
+                                         final Supplier<HttpAuthenticationFactory> httpAuthFactorySupplier,
+                                         final Supplier<SSLContext> sslContextSupplier,
+                                         final Integer port,
+                                         final Integer securePort,
+                                         final Collection<String> allowedOrigins,
+                                         final ConsoleMode consoleMode,
+                                         final Supplier<String> consoleSlot,
+                                         final Map<String, List<Header>> constantHeaders,
+                                         final Supplier<ConsoleAvailability> consoleAvailabilitySupplier,
+                                         final Supplier<SecurityDomain> virtualSecurityDomainSupplier,
+                                         final Supplier<HttpServerAuthenticationMechanismFactory> virtualMechanismFactorySupplier) {
         this.httpManagementConsumer = httpManagementConsumer;
         this.listenerRegistrySupplier = listenerRegistrySupplier;
         this.modelControllerSupplier = modelControllerSupplier;
@@ -237,6 +271,8 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         this.consoleSlot = consoleSlot;
         this.constantHeaders = constantHeaders;
         this.consoleAvailabilitySupplier = consoleAvailabilitySupplier;
+        this.virtualSecurityDomainSupplier = virtualSecurityDomainSupplier;
+        this.virtualMechanismFactorySupplier = virtualMechanismFactorySupplier;
     }
 
     /**
@@ -321,22 +357,36 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         }
 
         try {
-            serverManagement = ManagementHttpServer.builder()
+            ManagementHttpServer.Builder serverManagementBuilder = ManagementHttpServer.builder()
                     .setBindAddress(bindAddress)
                     .setSecureBindAddress(secureBindAddress)
                     .setModelController(modelController)
                     .setSSLContext(sslContext)
-                    .setHttpAuthenticationFactory(httpAuthenticationFactory)
                     .setConsoleMode(consoleMode)
-                    .setConsoleSlot(consoleSlot)
+                    .setConsoleSlot(consoleSlot.get())
                     .setChannelUpgradeHandler(upgradeHandler)
                     .setManagementHttpRequestProcessor(requestProcessorSupplier.get())
                     .setAllowedOrigins(allowedOrigins)
                     .setWorker(workerSupplier.get())
                     .setExecutor(executorSupplier.get())
                     .setConstantHeaders(constantHeaders)
-                    .setConsoleAvailability(consoleAvailability)
-                    .build();
+                    .setConsoleAvailability(consoleAvailability);
+
+            if (virtualSecurityDomainSupplier != null && virtualMechanismFactorySupplier != null) {
+                // use a virtual http authentication factory instead
+                SecurityDomain virtualSecurityDomain = virtualSecurityDomainSupplier.get();
+                HttpServerAuthenticationMechanismFactory virtualMechanismFactory = virtualMechanismFactorySupplier.get();
+                HttpAuthenticationFactory virtualHttpAuthenticationFactory = HttpAuthenticationFactory.builder()
+                        .setFactory(virtualMechanismFactory)
+                        .setSecurityDomain(virtualSecurityDomain)
+                        .setMechanismConfigurationSelector(MechanismConfigurationSelector.constantSelector(MechanismConfiguration.EMPTY))
+                        .build();
+                serverManagementBuilder.setHttpAuthenticationFactory(virtualHttpAuthenticationFactory);
+            } else {
+                serverManagementBuilder.setHttpAuthenticationFactory(httpAuthenticationFactory);
+            }
+
+            serverManagement = serverManagementBuilder.build();
 
             serverManagement.start();
 
@@ -425,5 +475,4 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     public HttpManagement getValue() throws IllegalStateException, IllegalArgumentException {
         return httpManagement;
     }
-
 }

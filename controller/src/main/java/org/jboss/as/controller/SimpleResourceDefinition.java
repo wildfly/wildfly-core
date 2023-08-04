@@ -77,38 +77,6 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     private final RuntimePackageDependency[] additionalPackages;
 
     /**
-     * {@link ResourceDefinition} that uses the given {code descriptionProvider} to describe the resource.
-     *
-     * @param pathElement         the path. Can be {@code null}.
-     * @param descriptionProvider the description provider. Cannot be {@code null}
-     * @throws IllegalArgumentException if {@code descriptionProvider} is {@code null}.
-     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
-     */
-    @Deprecated
-    public SimpleResourceDefinition(final PathElement pathElement, final DescriptionProvider descriptionProvider) {
-        //Can be removed when we get to 3.0.0
-        Assert.checkNotNullParam("descriptionProvider", descriptionProvider);
-        this.pathElement = pathElement;
-        this.descriptionResolver = null;
-        this.descriptionProvider = descriptionProvider;
-        this.addHandler = null;
-        this.removeHandler = null;
-        this.addRestartLevel = null;
-        this.removeRestartLevel = null;
-        this.deprecationData = null;
-        this.runtime = false;
-        this.orderedChild = false;
-        this.capabilities = NO_CAPABILITIES;
-        this.incorporatingCapabilities = null;
-        this.accessConstraints = Collections.emptyList();
-        this.requirements = Collections.emptySet();
-        this.minOccurs = 0;
-        this.maxOccurs = Integer.MAX_VALUE;
-        this.feature = true;
-        this.additionalPackages = null;
-    }
-
-    /**
      * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
      * {@link DefaultResourceDescriptionProvider} to describe the resource.
      *
@@ -117,24 +85,9 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      * @throws IllegalArgumentException if any parameter is {@code null}.
      */
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver) {
-        this(pathElement, descriptionResolver, null, null, null, null, null);
-    }
-
-    /**
-     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
-     * {@link DefaultResourceDescriptionProvider} to describe the resource.
-     *
-     * @param pathElement         the path. Cannot be {@code null}.
-     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}
-     * @param isRuntime tells if resource is runtime
-     * @throws IllegalArgumentException if any parameter is {@code null}.
-     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver, boolean isRuntime) {
-        //Can be removed when we get to 3.0.0
-        this(pathElement, descriptionResolver, null, null, null, null, null, isRuntime);
+        this(new Parameters(pathElement, descriptionResolver)
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES));
     }
 
     /**
@@ -151,136 +104,11 @@ public class SimpleResourceDefinition implements ResourceDefinition {
      */
     public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
                                     final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
-        this(pathElement, descriptionResolver, addHandler, removeHandler, null, null, null);
-    }
-
-    /**
-     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
-     * {@link DefaultResourceDescriptionProvider} to describe the resource.
-     *
-     * @param pathElement         the path. Cannot be {@code null}.
-     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}      *
-     * @param addHandler          a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "add" operation.
-     *                            Can be {null}
-     * @param removeHandler       a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "remove" operation.
-     *                            Can be {null}
-     * @param isRuntime tells is resources is runtime or not
-     * @throws IllegalArgumentException if any parameter is {@code null}
-     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
-                                    final OperationStepHandler addHandler, final OperationStepHandler removeHandler, boolean isRuntime) {
-        //Can be removed when we get to 3.0.0
-        this(pathElement, descriptionResolver, addHandler, removeHandler, null, null, null, isRuntime);
-    }
-
-    /**
-     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
-     * {@link DefaultResourceDescriptionProvider} to describe the resource.
-     *
-     * @param pathElement         the path. Cannot be {@code null}.
-     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}      *
-     * @param addHandler          a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "add" operation.
-     *                            Can be {null}
-     * @param removeHandler       a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "remove" operation.
-     *                            Can be {null}
-     * @param deprecationData     Information describing deprecation of this resource. Can be {@code null} if the resource isn't deprecated.
-     * @throws IllegalArgumentException if any parameter is {@code null}
-     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
-                                    final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
-                                    final DeprecationData deprecationData) {
-        //Can be removed when we get to 3.0.0
-        this(pathElement, descriptionResolver, addHandler, removeHandler, null, null, deprecationData);
-    }
-
-
-    /**
-     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
-     * {@link DefaultResourceDescriptionProvider} to describe the resource.
-     *
-     * @param pathElement         the path. Can be {@code null}.
-     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}      *
-     * @param addHandler          a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "add" operation.
-     *                            Can be {null}
-     * @param removeHandler       a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "remove" operation.
-     *                            Can be {null}
-     * @throws IllegalArgumentException if {@code descriptionResolver} is {@code null}.
-     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
-                                    final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
-                                    final OperationEntry.Flag addRestartLevel, final OperationEntry.Flag removeRestartLevel) {
-        //Can be removed when we get to 3.0.0
-        this(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel, null);
-    }
-
-
-    /**
-     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
-     * {@link DefaultResourceDescriptionProvider} to describe the resource.
-     *
-     * @param pathElement         the path. Can be {@code null}.
-     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}      *
-     * @param addHandler          a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "add" operation.
-     *                            Can be {null}
-     * @param removeHandler       a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "remove" operation.
-     *                            Can be {null}
-     * @param deprecationData     Information describing deprecation of this resource. Can be {@code null} if the resource isn't deprecated.
-     * @throws IllegalArgumentException if {@code descriptionResolver} is {@code null}.
-     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
-                                    final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
-                                    final OperationEntry.Flag addRestartLevel, final OperationEntry.Flag removeRestartLevel,
-                                    final DeprecationData deprecationData) {
-        //Can be removed when we get to 3.0.0
-        this(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel, deprecationData, false);
-    }
-
-
-
-    /**
-     * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
-     * {@link DefaultResourceDescriptionProvider} to describe the resource.
-     *
-     * @param pathElement         the path. Can be {@code null}.
-     * @param descriptionResolver the description resolver to use in the description provider. Cannot be {@code null}      *
-     * @param addHandler          a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "add" operation.
-     *                            Can be {null}
-     * @param removeHandler       a handler to {@link #registerOperations(ManagementResourceRegistration) register} for the resource "remove" operation.
-     *                            Can be {null}
-     * @param deprecationData     Information describing deprecation of this resource. Can be {@code null} if the resource isn't deprecated.
-     * @param runtime             Whether this is a runtime resource
-     * @throws IllegalArgumentException if {@code descriptionResolver} is {@code null}.
-     * @deprecated Use {@link #SimpleResourceDefinition(Parameters)}
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public SimpleResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
-                                    final OperationStepHandler addHandler, final OperationStepHandler removeHandler,
-                                    final OperationEntry.Flag addRestartLevel, final OperationEntry.Flag removeRestartLevel,
-                                    final DeprecationData deprecationData, final boolean runtime) {
-        //Don't add new constructor variants!
-        //Use the Parameters variety
-
-        //Can be removed when we get to 3.0.0
         this(new Parameters(pathElement, descriptionResolver)
                 .setAddHandler(addHandler)
-                .setAddRestartLevel(addRestartLevel == null ? restartLevelForAdd(addHandler) : addRestartLevel)
                 .setRemoveHandler(removeHandler)
-                .setRemoveRestartLevel(removeRestartLevel == null ? restartLevelForRemove(removeHandler) : removeRestartLevel)
-                .setDeprecationData(deprecationData)
-                .setRuntime(runtime));
+                .setAddRestartLevel(restartLevelForAdd(addHandler))
+                .setRemoveRestartLevel(restartLevelForRemove(removeHandler)));
     }
 
     /**
@@ -299,7 +127,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.deprecationData = parameters.deprecationData;
         this.runtime = parameters.runtime;
         this.orderedChild = parameters.orderedChildResource;
-        this.descriptionProvider = null;
+        this.descriptionProvider = parameters.descriptionProvider;
         this.capabilities = parameters.capabilities != null ? parameters.capabilities : NO_CAPABILITIES ;
         this.incorporatingCapabilities = parameters.incorporatingCapabilities;
         if (parameters.accessConstraints != null) {
@@ -559,6 +387,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     public static class Parameters{
         private final PathElement pathElement;
         private ResourceDescriptionResolver descriptionResolver;
+        private DescriptionProvider descriptionProvider;
         private OperationStepHandler addHandler;
         private OperationStepHandler removeHandler;
         private OperationEntry.Flag addRestartLevel = OperationEntry.Flag.RESTART_NONE;
@@ -583,6 +412,18 @@ public class SimpleResourceDefinition implements ResourceDefinition {
             Assert.checkNotNullParam("descriptionResolver", descriptionResolver);
             this.pathElement = pathElement;
             this.descriptionResolver = descriptionResolver;
+        }
+
+        /**
+         * Creates a Parameters object
+         *
+         * @param pathElement         the path element of the created ResourceDefinition. Cannot be {@code null}
+         * @param descriptionProvider the description provider. Cannot be {@code null}
+         */
+        public Parameters(PathElement pathElement, DescriptionProvider descriptionProvider) {
+            Assert.checkNotNullParam("descriptionProvider", descriptionProvider);
+            this.pathElement = pathElement;
+            this.descriptionProvider = descriptionProvider;
         }
 
         /**

@@ -24,23 +24,23 @@ package org.jboss.as.server.deployment;
 
 import java.util.List;
 
+import org.jboss.as.controller.RequirementServiceTarget;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
-import org.jboss.msc.service.ServiceTarget;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 final class DeploymentPhaseContextImpl extends SimpleAttachable implements DeploymentPhaseContext {
-    private final ServiceTarget serviceTarget;
+    private final RequirementServiceTarget serviceTarget;
     private final ServiceRegistry serviceRegistry;
     private final List<DeploymentUnitPhaseDependency> dependencies;
     private final DeploymentUnit deploymentUnitContext;
     private final Phase phase;
 
-    DeploymentPhaseContextImpl(final ServiceTarget serviceTarget, final ServiceRegistry serviceRegistry, final List<DeploymentUnitPhaseDependency> dependencies, final DeploymentUnit deploymentUnitContext, final Phase phase) {
+    DeploymentPhaseContextImpl(final RequirementServiceTarget serviceTarget, final ServiceRegistry serviceRegistry, final List<DeploymentUnitPhaseDependency> dependencies, final DeploymentUnit deploymentUnitContext, final Phase phase) {
         this.serviceTarget = serviceTarget;
         this.serviceRegistry = serviceRegistry;
         this.dependencies = dependencies;
@@ -48,22 +48,27 @@ final class DeploymentPhaseContextImpl extends SimpleAttachable implements Deplo
         this.phase = phase;
     }
 
+    @Override
     public ServiceName getPhaseServiceName() {
         return deploymentUnitContext.getServiceName().append(phase.name());
     }
 
-    public ServiceTarget getServiceTarget() {
+    @Override
+    public RequirementServiceTarget getRequirementServiceTarget() {
         return serviceTarget;
     }
 
+    @Override
     public ServiceRegistry getServiceRegistry() {
         return serviceRegistry;
     }
 
+    @Override
     public DeploymentUnit getDeploymentUnit() {
         return deploymentUnitContext;
     }
 
+    @Override
     public Phase getPhase() {
         return phase;
     }

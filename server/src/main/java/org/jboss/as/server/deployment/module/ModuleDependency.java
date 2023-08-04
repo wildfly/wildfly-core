@@ -25,6 +25,7 @@ package org.jboss.as.server.deployment.module;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
@@ -45,7 +46,11 @@ public final class ModuleDependency implements Serializable {
         if (moduleLoader != null)
             builder.append("moduleLoader=").append(moduleLoader).append(", ");
         builder.append("export=").append(export).append(", optional=").append(optional).append(", importServices=").append(
-                importServices).append("]");
+                importServices);
+        if (reason != null) {
+            builder.append(", ").append("reason=").append(reason);
+        }
+        builder.append("]");
         return builder.toString();
     }
 
@@ -59,6 +64,7 @@ public final class ModuleDependency implements Serializable {
     private final List<FilterSpecification> exportFilters = new ArrayList<FilterSpecification>();
     private final boolean importServices;
     private final boolean userSpecified;
+    private final String reason;
 
     /**
      * Construct a new instance.
@@ -71,7 +77,22 @@ public final class ModuleDependency implements Serializable {
      * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
      */
     public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
-        this(moduleLoader, ModuleIdentifier.create(identifier), optional, export, importServices, userSpecified);
+        this(moduleLoader, ModuleIdentifier.create(identifier), optional, export, importServices, userSpecified, null);
+    }
+
+    /**
+     * Construct a new instance.
+     *
+     * @param moduleLoader the module loader of the dependency (if {@code null}, then use the default server module loader)
+     * @param identifier the module identifier
+     * @param optional {@code true} if this is an optional dependency
+     * @param export {@code true} if resources should be exported by default
+     * @param importServices
+     * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
+     * @param reason reason for adding implicit module dependency
+     */
+    public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified, String reason) {
+        this(moduleLoader, ModuleIdentifier.create(identifier), optional, export, importServices, userSpecified, reason);
     }
 
     /**
@@ -85,12 +106,28 @@ public final class ModuleDependency implements Serializable {
      * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
      */
     public ModuleDependency(final ModuleLoader moduleLoader, final ModuleIdentifier identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
+        this(moduleLoader, identifier, optional, export, importServices, userSpecified, null);
+    }
+
+    /**
+     * Construct a new instance.
+     *
+     * @param moduleLoader the module loader of the dependency (if {@code null}, then use the default server module loader)
+     * @param identifier the module identifier
+     * @param optional {@code true} if this is an optional dependency
+     * @param export {@code true} if resources should be exported by default
+     * @param importServices
+     * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
+     * @param reason reason for adding implicit module dependency
+     */
+    public ModuleDependency(final ModuleLoader moduleLoader, final ModuleIdentifier identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified, String reason) {
         this.identifier = identifier;
         this.optional = optional;
         this.export = export;
         this.moduleLoader = moduleLoader;
         this.importServices = importServices;
         this.userSpecified = userSpecified;
+        this.reason = reason;
     }
 
     public ModuleLoader getModuleLoader() {
@@ -99,6 +136,14 @@ public final class ModuleDependency implements Serializable {
 
     public ModuleIdentifier getIdentifier() {
         return identifier;
+    }
+
+    public Optional<String> getReason() {
+        if (reason != null) {
+            return Optional.of(reason);
+        } else {
+            return Optional.empty();
+        }
     }
 
     public boolean isOptional() {

@@ -42,7 +42,6 @@ import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResol
 import org.jboss.as.controller.extension.ExtensionAddHandler;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
-import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
@@ -127,8 +126,8 @@ public class InterleavedSubsystemTestCase {
         assertTrue(result.get(RESULT, SUBSYSTEM, "c", "attribute").asBoolean());
 
     }
-    static final AttributeDefinition ATTRIBUTE_DEFINITION = new SimpleAttributeDefinition("attribute", ModelType.BOOLEAN, true);
-    static final AttributeDefinition MODULE = new SimpleAttributeDefinition("module", ModelType.STRING, true);
+    static final AttributeDefinition ATTRIBUTE_DEFINITION = new SimpleAttributeDefinitionBuilder("attribute", ModelType.BOOLEAN, true).build();
+    static final AttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder("module", ModelType.STRING, true).build();
 
     public static class InterleavedSubsystemModelControllerService extends TestModelControllerService {
 
@@ -168,7 +167,7 @@ public class InterleavedSubsystemTestCase {
         private final ManagementResourceRegistration rootRegistration;
 
         private FakeExtensionAddHandler(ManagementResourceRegistration rootRegistration, MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
-            super(new ExtensionRegistry(ProcessType.EMBEDDED_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER), false, ExtensionRegistryType.SERVER, rootResourceRegistrationProvider);
+            super(ExtensionRegistry.builder(ProcessType.EMBEDDED_SERVER).build(), false, ExtensionRegistryType.SERVER, rootResourceRegistrationProvider);
             this.rootRegistration = rootRegistration;
         }
 

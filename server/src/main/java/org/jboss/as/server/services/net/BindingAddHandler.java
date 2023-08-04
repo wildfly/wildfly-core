@@ -107,7 +107,7 @@ public class BindingAddHandler extends SocketBindingAddHandler {
         final Supplier<SocketBindingManager> sbSupplier = builder.requiresCapability("org.wildfly.management.socket-binding-manager", SocketBindingManager.class);
         final SocketBindingService service = new SocketBindingService(sbConsumer, ibSupplier, sbSupplier, name, port, fixedPort, mcastInet, mcastPort, clientMappings);
         builder.setInstance(service);
-        builder.addAliases(SocketBinding.JBOSS_BINDING_NAME.append(name));
+        builder.addAliases(SOCKET_BINDING_CAPABILITY.getCapabilityServiceName((name)));
         builder.setInitialMode(Mode.ON_DEMAND);
         builder.install();
     }

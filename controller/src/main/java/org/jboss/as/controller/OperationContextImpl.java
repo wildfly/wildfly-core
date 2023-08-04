@@ -52,10 +52,12 @@ import static org.wildfly.common.Assert.checkNotEmptyParam;
 import static org.wildfly.common.Assert.checkNotNullArrayParam;
 
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
@@ -108,14 +110,12 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.ContextAttachments;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.LifecycleEvent;
 import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.DelegatingServiceBuilder;
 import org.jboss.msc.service.DelegatingServiceController;
 import org.jboss.msc.service.DelegatingServiceRegistry;
 import org.jboss.msc.service.DelegatingServiceTarget;
-import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -146,7 +146,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private final ModelControllerImpl modelController;
     private final OperationMessageHandler messageHandler;
-    private final Map<ServiceName, ServiceController<?>> realRemovingControllers = new HashMap<>();
+    private final Set<ServiceController<?>> realRemovingControllers = Collections.newSetFromMap(new IdentityHashMap<>());
     // protected by "realRemovingControllers"
     private final Map<ServiceName, Step> removalSteps = new HashMap<>();
     private final OperationAttachments attachments;
@@ -172,15 +172,13 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private volatile ModelControllerImpl.ManagementModelImpl managementModel;
 
-    private final ModelControllerImpl.ManagementModelImpl originalModel;
+    private volatile ModelControllerImpl.ManagementModelImpl originalModel;
 
     /** Tracks the relationship between domain resources and hosts and server groups */
     private volatile HostServerGroupTracker hostServerGroupTracker;
 
     /** Tracks whether any steps have gotten write access to the runtime */
     private volatile boolean affectsRuntime;
-    /** The step that acquired the write lock */
-    private Step lockStep;
     /** The step that acquired the container monitor  */
     private Step containerMonitorStep;
     private boolean notifiedModificationBegun;
@@ -246,6 +244,28 @@ final class OperationContextImpl extends AbstractOperationContext {
             this.capabilitiesAlreadyBroken = !validation.isValid();
         } else {
             this.capabilitiesAlreadyBroken = false;
+        }
+    }
+
+    @Override
+    public void close() {
+        if (getProcessType().isServer()) {
+            this.originalModel = this.managementModel = null;
+            this.lockStep = this.containerMonitorStep = null;
+            this.contextAttachments.close();
+            synchronized (this.realRemovingControllers) {
+                this.realRemovingControllers.clear();
+                this.removalSteps.clear();
+            }
+            this.addedRequirements.clear();
+            this.removedCapabilities.clear();
+            this.affectsModel.clear();
+            this.authorizations.clear();
+            this.serviceTargets.clear();
+            this.serviceRegistries.clear();
+
+            // DON'T close 'attachments' -- that object is owned by ModelControllerImpl
+            super.close();
         }
     }
 
@@ -702,17 +722,17 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private void doRemove(final ServiceController<?> controller) {
         final Step removalStep = activeStep;
-        removalStep.hasRemovals = true;
+        removalStep.hasRemovals();
         final UninterruptibleCountDownLatch latch = new UninterruptibleCountDownLatch(1);
         controller.addListener(new LifecycleListener() {
             public void handleEvent(final ServiceController<?> controller, final LifecycleEvent event) {
                 latch.awaitUninterruptibly();
                 if (event == LifecycleEvent.REMOVED) {
                     synchronized (realRemovingControllers) {
-                        ServiceName name = controller.getName();
-                        if (realRemovingControllers.get(name) == controller) {
-                            realRemovingControllers.remove(name);
-                            removalSteps.put(name, removalStep);
+                        if (realRemovingControllers.remove(controller)) {
+                            for (ServiceName sn : controller.provides()) {
+                                removalSteps.put(sn, removalStep);
+                            }
                             realRemovingControllers.notifyAll();
                         }
                     }
@@ -722,7 +742,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         try {
             final ServiceController<?> realController = unwrap(controller);
             synchronized (realRemovingControllers) {
-                realRemovingControllers.put(controller.getName(), realController);
+                realRemovingControllers.add(realController);
                 realController.setMode(ServiceController.Mode.REMOVE);
             }
         } finally {
@@ -737,12 +757,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     @Override
-    public ServiceTarget getServiceTarget() throws UnsupportedOperationException {
-        return getCapabilityServiceTarget();
-    }
-
-    @Override
-    public CapabilityServiceTarget getCapabilityServiceTarget() throws UnsupportedOperationException {
+    public CapabilityServiceTarget getCapabilityServiceTarget() {
         return getServiceTarget(activeStep);
     }
 
@@ -755,7 +770,7 @@ final class OperationContextImpl extends AbstractOperationContext {
      *                           the {@link org.jboss.as.controller.OperationStepHandler} that is making the call.
      * @return the service target
      */
-    CapabilityServiceTarget getServiceTarget(final Step targetActiveStep) throws UnsupportedOperationException {
+    CapabilityServiceTarget getServiceTarget(final Step targetActiveStep) {
 
         readOnly = false;
 
@@ -768,13 +783,13 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         final ContextServiceBuilderSupplier supplier = new ContextServiceBuilderSupplier() {
             @Override
-            public <T> ContextServiceBuilder<T> getContextServiceBuilder(ServiceBuilder<T> delegate, final ServiceName name) {
+            public <T> ContextServiceBuilder<T> getContextServiceBuilder(ServiceBuilder<T> delegate) {
 
                 final ContextServiceInstaller csi = new ContextServiceInstaller() {
 
                     @Override
                     public <X> ServiceController<X> installService(ServiceBuilder<X> realBuilder) {
-                        return OperationContextImpl.this.installService(realBuilder, name, targetActiveStep);
+                        return OperationContextImpl.this.installService(realBuilder, targetActiveStep);
                     }
 
                     @Override
@@ -820,7 +835,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 //                    }
 //                }
                 exclusiveStartTime = System.nanoTime();
-                lockStep = activeStep;
+                recordWriteLock();
             } catch (InterruptedException e) {
                 cancelled = true;
                 Thread.currentThread().interrupt();
@@ -839,7 +854,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 if (currentStage == Stage.DONE) {
                     throw ControllerLogger.ROOT_LOGGER.invalidModificationAfterCompletedStep();
                 }
-                containerMonitorStep = activeStep;
+                containerMonitorStep = activeStep.modifyServiceContainer();
                 int timeout = getBlockingTimeout().getLocalBlockingTimeout();
                 ExecutionStatus origStatus = executionStatus;
                 try {
@@ -1202,12 +1217,12 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     @Override
-    void releaseStepLocks(AbstractOperationContext.Step step) {
+    void releaseStepLocks(AbstractOperationContext.AbstractStep step) {
         boolean interrupted = false;
         try {
             // Get container stability before releasing controller lock to ensure another
             // op doesn't get in and destabilize the container.
-            if (this.containerMonitorStep == step) {
+            if (step.matches(this.containerMonitorStep)) {
                 // Note: If we allow this thread to be interrupted, an op that has been cancelled
                 // because of minor user impatience can release the controller lock while the
                 // container is unsettled. OTOH, if we don't allow interruption, if the
@@ -1229,7 +1244,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                     // We can no longer have any sense of MSC state or how the model relates to the runtime and
                     // we need to start from a fresh service container. Notify the controller of this.
                     modelController.containerCannotStabilize();
-                    MGMT_OP_LOGGER.interruptedWaitingStability(activeStep.operationId.name, activeStep.operationId.address);
+                    MGMT_OP_LOGGER.interruptedWaitingStability(containerMonitorStep.operationId.name, containerMonitorStep.operationId.address);
                 } catch (TimeoutException te) {
                     // If we can't attain stability on the way out after rollback ops have run,
                     // we can no longer have any sense of MSC state or how the model relates to the runtime and
@@ -1238,18 +1253,18 @@ final class OperationContextImpl extends AbstractOperationContext {
                     // Just log; this doesn't change the result of the op. And if we're not stable here
                     // it's almost certain we never stabilized during execution or we are rolling back and destabilized there.
                     // Either one means there is already a failure message associated with this op.
-                    MGMT_OP_LOGGER.timeoutCompletingOperation(timeout / 1000, activeStep.operationId.name, activeStep.operationId.address);
+                    MGMT_OP_LOGGER.timeoutCompletingOperation(timeout / 1000, containerMonitorStep.operationId.name, containerMonitorStep.operationId.address);
                     // Produce and log thread dump for diagnostics
                     ThreadDumpUtil.threadDump();
                 }
             }
 
-            if (this.lockStep == step) {
+            if (step.matches(this.lockStep)) {
                 releaseModelControllerLock();
             }
         } finally {
             try {
-                if (this.containerMonitorStep == step) {
+                if (step.matches(this.containerMonitorStep)) {
                     notifyModificationsComplete();
                     resetContainerStateChanges();
                 }
@@ -2027,17 +2042,17 @@ final class OperationContextImpl extends AbstractOperationContext {
         return CapabilityScope.Factory.create(getProcessType(), address);
     }
 
-    private <T> ServiceController<T> installService(ServiceBuilder<T> builder, ServiceName name, Step step)
-            throws ServiceRegistryException, IllegalStateException {
+    private <T> ServiceController<T> installService(ServiceBuilder<T> builder, Step step) throws ServiceRegistryException, IllegalStateException {
 
         synchronized (realRemovingControllers) {
             boolean intr = false;
             try {
-                boolean containsKey = realRemovingControllers.containsKey(name);
+                Set<ServiceName> providedValues = providedValues(builder);
+                ServiceController<?> controller = contains(providedValues);
                 long timeout = getBlockingTimeout().getLocalBlockingTimeout();
                 long waitTime = timeout;
                 long end = System.currentTimeMillis() + waitTime;
-                while (containsKey && waitTime > 0) {
+                while (controller != null && waitTime > 0) {
                     try {
                         realRemovingControllers.wait(waitTime);
                     } catch (InterruptedException e) {
@@ -2047,22 +2062,24 @@ final class OperationContextImpl extends AbstractOperationContext {
                             throw ControllerLogger.ROOT_LOGGER.serviceInstallCancelled();
                         } // else keep waiting and mark the thread interrupted at the end
                     }
-                    containsKey = realRemovingControllers.containsKey(name);
+                    controller = contains(providedValues);
                     waitTime = end - System.currentTimeMillis();
                 }
 
-                if (containsKey) {
+                if (controller != null) {
                     // We timed out
-                    throw ControllerLogger.ROOT_LOGGER.serviceInstallTimedOut(timeout / 1000, name);
+                    throw ControllerLogger.ROOT_LOGGER.serviceInstallTimedOut(timeout / 1000, providedValues.iterator().next());
                 }
 
                 // If a step removed this ServiceName before, it's no longer responsible
                 // for any ill effect
-                removalSteps.remove(name);
+                for (ServiceName sn : providedValues) {
+                    removalSteps.remove(sn);
+                }
 
-                ServiceController<T> controller = builder.install();
-                step.serviceAdded(controller);
-                return controller;
+                ServiceController<T> retVal = builder.install();
+                step.serviceAdded(retVal);
+                return retVal;
             } finally {
                 if (intr) {
                     Thread.currentThread().interrupt();
@@ -2071,9 +2088,25 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
+    private Set<ServiceName> providedValues(final ServiceBuilder<?> sb) {
+        assert Thread.holdsLock(realRemovingControllers);
+        final ContextServiceTarget.ProvidedValuesTrackingServiceBuilder trackingSB = (ContextServiceTarget.ProvidedValuesTrackingServiceBuilder)sb;
+        return trackingSB.getProvidedValues();
+    }
+
+    private ServiceController<?> contains(final Set<ServiceName> providedValues) {
+        assert Thread.holdsLock(realRemovingControllers);
+        for (ServiceName sn : providedValues) {
+            for (ServiceController sc : realRemovingControllers) {
+                if (sc.provides().contains(sn)) return sc;
+            }
+        }
+        return null;
+    }
+
     /** Integration between ContextServiceTarget and the OperationContext that created it*/
     private interface ContextServiceBuilderSupplier {
-        <T> ContextServiceBuilder<T> getContextServiceBuilder(final ServiceBuilder<T> delegate, ServiceName name);
+        <T> ContextServiceBuilder<T> getContextServiceBuilder(final ServiceBuilder<T> delegate);
     }
 
     /**
@@ -2105,32 +2138,72 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         @Override
-        public ServiceBuilder<?> addService(final ServiceName name) {
-            final ServiceBuilder<?> realBuilder = super.getDelegate().addService(name);
+        public CapabilityServiceBuilder<?> addService() {
+            return this.wrap(new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService()));
+        }
+
+        @Override
+        public CapabilityServiceBuilder<?> addService(final ServiceName name) {
+            return this.wrap(new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService(name), name));
+        }
+
+        @Override
+        public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final org.jboss.msc.service.Service<T> service) throws IllegalArgumentException {
+            return this.wrap(new ProvidedValuesTrackingServiceBuilder(super.getDelegate().addService(name, service), name));
+        }
+
+        private <T> CapabilityServiceBuilder<T> wrap(ServiceBuilder<T> builder) {
             // If done() has been called we are no longer associated with a management op and should just
             // return the builder from delegate
             synchronized (this) {
                 if (builderSupplier == null) {
-                    return realBuilder;
+                    return new CapabilityServiceBuilderImpl<>(builder, targetAddress);
                 }
-                ContextServiceBuilder<?> csb = builderSupplier.getContextServiceBuilder(realBuilder, name);
+                ContextServiceBuilder<T> csb = builderSupplier.getContextServiceBuilder(builder);
                 builders.add(csb);
-                return csb;
+                return new CapabilityServiceBuilderImpl<>(csb, targetAddress);
             }
         }
 
         @Override
-        public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final Service<T> service) throws IllegalArgumentException {
-            final ServiceBuilder<T> realBuilder = super.getDelegate().addService(name, service);
-            // If done() has been called we are no longer associated with a management op and should just
-            // return the builder from delegate
-            synchronized (this) {
-                if (builderSupplier == null) {
-                    return new CapabilityServiceBuilderImpl<>(realBuilder, targetAddress);
+        public ContextServiceTarget addListener(LifecycleListener listener) {
+            super.addListener(listener);
+            return this;
+        }
+
+        @Override
+        public ContextServiceTarget removeListener(LifecycleListener listener) {
+            super.removeListener(listener);
+            return this;
+        }
+
+        @Override
+        public CapabilityServiceTarget subTarget() {
+            return new ContextServiceTarget(super.subTarget(), this.builderSupplier, this.targetAddress);
+        }
+
+        private static final class ProvidedValuesTrackingServiceBuilder extends DelegatingServiceBuilder {
+            private final Set<ServiceName> providedValues = new HashSet<>();
+
+            private ProvidedValuesTrackingServiceBuilder(final ServiceBuilder<?> delegate) {
+                super(delegate);
+            }
+
+            private ProvidedValuesTrackingServiceBuilder(final ServiceBuilder<?> delegate, final ServiceName sn) {
+                super(delegate);
+                providedValues.add(sn);
+            }
+
+            @Override
+            public Consumer provides(final ServiceName... names) {
+                for (ServiceName sn : names) {
+                    providedValues.add(sn);
                 }
-                ContextServiceBuilder<T> csb = builderSupplier.getContextServiceBuilder(realBuilder, name);
-                builders.add(csb);
-                return new CapabilityServiceBuilderImpl<>(csb, targetAddress);
+                return super.provides(names);
+            }
+
+            private Set<ServiceName> getProvidedValues() {
+                return providedValues;
             }
         }
 
@@ -2138,9 +2211,9 @@ final class OperationContextImpl extends AbstractOperationContext {
         @SuppressWarnings("unchecked")
         public CapabilityServiceBuilder<?> addCapability(final RuntimeCapability<?> capability) throws IllegalArgumentException {
             if (capability.isDynamicallyNamed()) {
-                return new CapabilityServiceBuilderImpl(addService(capability.getCapabilityServiceName(targetAddress)), targetAddress);
+                return this.addService(capability.getCapabilityServiceName(targetAddress));
             } else {
-                return new CapabilityServiceBuilderImpl(addService(capability.getCapabilityServiceName()), targetAddress);
+                return this.addService(capability.getCapabilityServiceName());
             }
         }
 
@@ -2266,11 +2339,13 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private static class OperationContextServiceRegistry extends DelegatingServiceRegistry {
         private final Set<OperationContextServiceController> controllers = Collections.synchronizedSet(new HashSet<>());
-        private Step registryActiveStep;
+        // Use a weak ref to the step to allow it to be gc'd before done() is called if the context is done with it.
+        // This allows steps that only access the registry to do reads to be gc'd once the read is done
+        private WeakReference<Step> registryActiveStep;
 
         private OperationContextServiceRegistry(final ServiceRegistry registry, final Step registryActiveStep) {
             super(registry);
-            this.registryActiveStep = registryActiveStep;
+            this.registryActiveStep = new WeakReference<>(registryActiveStep);
         }
 
         /**
@@ -2317,9 +2392,11 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     private static class OperationContextServiceController<S> extends DelegatingServiceController<S> {
-        private volatile Step registryActiveStep;
+        // Use a weak ref to the step to allow it to be gc'd before done() is called if the context is done with it.
+        // This allows steps that only access the registry to do reads to be gc'd once the read is done
+        private volatile WeakReference<Step> registryActiveStep;
 
-        private OperationContextServiceController(final ServiceController<S> controller, final Step registryActiveStep) {
+        private OperationContextServiceController(final ServiceController<S> controller, final WeakReference<Step> registryActiveStep) {
             super(controller);
             this.registryActiveStep = registryActiveStep;
         }
@@ -2331,8 +2408,9 @@ final class OperationContextImpl extends AbstractOperationContext {
         public boolean compareAndSetMode(final Mode expected, final Mode newMode) {
             checkModeTransition(newMode);
             boolean changed = getDelegate().compareAndSetMode(expected, newMode);
-            Step step = registryActiveStep;
-            if (changed && step != null) {
+            WeakReference<Step> stepRef = registryActiveStep;
+            Step step = changed && stepRef != null ? stepRef.get() : null;
+            if (step != null) {
                 step.serviceModeChanged(getDelegate());
             }
             return changed;
@@ -2341,7 +2419,8 @@ final class OperationContextImpl extends AbstractOperationContext {
         public void setMode(final Mode mode) {
             checkModeTransition(mode);
             getDelegate().setMode(mode);
-            Step step = registryActiveStep;
+            WeakReference<Step> stepRef = registryActiveStep;
+            Step step = stepRef != null ? stepRef.get() : null;
             if (step != null) {
                 step.serviceModeChanged(getDelegate());
             }
@@ -2615,20 +2694,6 @@ final class OperationContextImpl extends AbstractOperationContext {
             this.targetAddress = targetAddress;
         }
 
-        public <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityBaseName, Class<I> serviceType, Injector<I> target, String... referenceNames) {
-            String capabilityName = RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, referenceNames);
-            final ServiceName serviceName = getCapabilityServiceName(capabilityName, serviceType);
-            addDependency(serviceName, serviceType, target);
-            return this;
-        }
-
-        @Override
-        public <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type, Injector<I> target) {
-            final ServiceName serviceName = getCapabilityServiceName(capabilityName, type);
-            addDependency(serviceName, type, target);
-            return this;
-        }
-
         @Override
         public CapabilityServiceBuilder<T> setInitialMode(ServiceController.Mode mode) {
             super.setInitialMode(mode);
@@ -2639,6 +2704,18 @@ final class OperationContextImpl extends AbstractOperationContext {
         public CapabilityServiceBuilder<T> setInstance(org.jboss.msc.Service service) {
             super.setInstance(service);
             return this;
+        }
+
+        @Override
+        public CapabilityServiceBuilder<T> addListener(LifecycleListener listener) {
+            super.addListener(listener);
+            return this;
+        }
+
+        @Override
+        public <V> Consumer<V> provides(final RuntimeCapability<?> capability) {
+            checkNotNullParam("capability", capability);
+            return super.provides(capability.isDynamicallyNamed() ? capability.getCapabilityServiceName(this.targetAddress) : capability.getCapabilityServiceName());
         }
 
         @Override

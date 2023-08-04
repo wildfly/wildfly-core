@@ -45,8 +45,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import javax.security.auth.callback.CallbackHandler;
-
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessState.State;
@@ -586,7 +584,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
-        public void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping) {
+        public void reconnectServer(String serverName, ModelNode domainModel, boolean running, boolean stopping) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -602,11 +600,6 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
 
         @Override
         public void killServer(String serverName) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public CallbackHandler getServerCallbackHandler() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -689,6 +682,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
     }
 
     private class MockOperationContext extends AbstractOperationTestCase.MockOperationContext {
@@ -710,15 +704,10 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         @Override
         public void completeStep(ResultHandler resultHandler) {
             if (!nextHandlers.isEmpty()) {
-                stepCompleted();
+                completed();
             } else if (rollback) {
                 resultHandler.handleResult(ResultAction.ROLLBACK, this, null);
             }
-        }
-
-        @Override
-        public void stepCompleted() {
-            completed();
         }
 
         private void completed() {

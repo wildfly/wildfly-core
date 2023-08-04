@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.deployment;
 
+import org.jboss.as.controller.RequirementServiceTarget;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
@@ -51,8 +52,22 @@ public interface DeploymentPhaseContext extends Attachable {
      * the {@link #getPhaseServiceName()} method.
      *
      * @return the service target
+     * @deprecated Use {@link #getRequirementServiceTarget()} instead.
      */
-    ServiceTarget getServiceTarget();
+    @Deprecated(forRemoval = true)
+    default ServiceTarget getServiceTarget() {
+        return this.getRequirementServiceTarget();
+    }
+
+    /**
+     * Returns the target into which this phase should install services.
+     * <b>Please note</b> that services added via this context do <b>not</b> have any implicit dependencies by default;
+     * any root-level deployment services that you add should depend on the service name of the current phase,
+     * acquired via the {@link #getPhaseServiceName()} method.
+     *
+     * @return the service target
+     */
+    RequirementServiceTarget getRequirementServiceTarget();
 
     /**
      * Get the service registry for the container, which may be used to look up services.

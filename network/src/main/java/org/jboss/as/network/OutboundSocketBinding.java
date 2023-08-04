@@ -22,7 +22,6 @@
 
 package org.jboss.as.network;
 
-import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.Assert;
 
 import java.io.IOException;
@@ -41,10 +40,6 @@ import java.net.UnknownHostException;
  * @author Jaikiran Pai
  */
 public class OutboundSocketBinding {
-
-    /** @deprecated use capability based injection */
-    @Deprecated
-    public static final ServiceName OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME = ServiceName.JBOSS.append("outbound-socket-binding");
 
     private final String name;
     private final SocketBindingManager socketBindingManager;
@@ -157,15 +152,6 @@ public class OutboundSocketBinding {
             return this.resolvedDestinationAddress;
         }
         return InetAddress.getByName(this.unresolvedDestinationAddress);
-    }
-
-    /**
-     * @deprecated Use {@link #getResolvedDestinationAddress()} instead to get the resolved destination address
-     * or {@link #getUnresolvedDestinationAddress()} to get the unresolved destination address.
-     */
-    @Deprecated
-    public synchronized InetAddress getDestinationAddress() throws UnknownHostException {
-        return getResolvedDestinationAddress();
     }
 
     /**

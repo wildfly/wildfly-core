@@ -49,8 +49,8 @@ abstract class ConnectorChildResource extends SimpleResourceDefinition {
     public ConnectorChildResource(Parameters parameters) {
         super(parameters);
     }
-    static void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-        ConnectorAdd.INSTANCE.launchServices(context, parentAddress.getLastElement().getValue(), parentModel);
+    static void recreateParentService(OperationContext context, ModelNode parentModel) throws OperationFailedException {
+        ConnectorAdd.INSTANCE.launchServices(context, parentModel);
     }
 
     static ServiceName getParentServiceName(PathAddress parentAddress) {
@@ -91,8 +91,8 @@ abstract class ConnectorChildResource extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-            ConnectorChildResource.recreateParentService(context, parentAddress, parentModel);
+        protected void recreateParentService(OperationContext context, ModelNode parentModel) throws OperationFailedException {
+            ConnectorChildResource.recreateParentService(context, parentModel);
         }
 
         @Override
@@ -107,8 +107,8 @@ abstract class ConnectorChildResource extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-            ConnectorChildResource.recreateParentService(context, parentAddress, parentModel);
+        protected void recreateParentService(OperationContext context, ModelNode parentModel) throws OperationFailedException {
+            ConnectorChildResource.recreateParentService(context, parentModel);
         }
 
         @Override
@@ -124,8 +124,8 @@ abstract class ConnectorChildResource extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-            ConnectorChildResource.recreateParentService(context, parentAddress, parentModel);
+        protected void recreateParentService(OperationContext context, ModelNode parentModel) throws OperationFailedException {
+            ConnectorChildResource.recreateParentService(context, parentModel);
         }
 
         @Override

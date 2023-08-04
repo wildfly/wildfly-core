@@ -159,13 +159,16 @@ final class ContainerStateMonitor {
             missingDeps =new HashMap<ServiceName, Set<ServiceName>>(problems.size());
             for (ServiceController<?> controller : problems) {
                 if (controller.getState() != ServiceController.State.REMOVED) {
-                    for (ServiceName missing : controller.getUnavailableDependencies()) {
+                    for (ServiceName missing : controller.missing()) {
                         Set<ServiceName> dependents = missingDeps.get(missing);
                         if (dependents == null) {
                             dependents = new HashSet<ServiceName>();
                             missingDeps.put(missing, dependents);
                         }
-                        dependents.add(controller.getName());
+                        for (ServiceName providedValue : controller.provides()) {
+                            dependents.add(providedValue);
+                            break; // it is sufficient to report just first provided value
+                        }
                     }
                 } // else it's no longer a problem
             }
@@ -264,7 +267,10 @@ final class ContainerStateMonitor {
         if (!failedSet.isEmpty()) {
             msg.append(ControllerLogger.ROOT_LOGGER.serviceStatusReportFailed());
             for (ServiceController<?> controller : failedSet) {
-                msg.append("      ").append(controller.getName());
+                for (ServiceName providedValue : controller.provides()) {
+                    msg.append("      ").append(providedValue);
+                    break; // it is sufficient to report just first provided value
+                }
                 //noinspection ThrowableResultOfMethodCallIgnored
                 final StartException startException = controller.getStartException();
                 if (startException != null) {

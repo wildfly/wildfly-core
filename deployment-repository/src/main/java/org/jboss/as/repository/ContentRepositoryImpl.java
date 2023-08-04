@@ -115,9 +115,9 @@ public class ContentRepositoryImpl implements ContentRepository {
         byte[] sha1Bytes;
         Path tmp = File.createTempFile(CONTENT, ".tmp", repoRoot).toPath();
         if (stream != null) {
-            try (OutputStream fos = Files.newOutputStream(tmp); MessageDigestHandle digestHandle = new MessageDigestHandle()) {
-                MessageDigest messageDigest = digestHandle.getMessageDigest();
-                DigestOutputStream dos = new DigestOutputStream(fos, messageDigest);
+            try (OutputStream fos = Files.newOutputStream(tmp);
+                 MessageDigestHandle digestHandle = new MessageDigestHandle()) {
+                DigestOutputStream dos = new DigestOutputStream(fos, digestHandle.getMessageDigest());
                 BufferedInputStream bis = new BufferedInputStream(stream);
                 byte[] bytes = new byte[8192];
                 int read;
@@ -125,7 +125,7 @@ public class ContentRepositoryImpl implements ContentRepository {
                     dos.write(bytes, 0, read);
                 }
                 fos.flush();
-                sha1Bytes = messageDigest.digest();
+                sha1Bytes = dos.getMessageDigest().digest();
             }
         } else {//create a directory instead
             Files.delete(tmp);

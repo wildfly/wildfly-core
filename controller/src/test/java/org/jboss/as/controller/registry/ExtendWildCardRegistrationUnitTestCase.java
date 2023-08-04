@@ -34,6 +34,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.dmr.ModelNode;
@@ -83,10 +84,10 @@ public class ExtendWildCardRegistrationUnitTestCase {
     private static ManagementResourceRegistration childWildExtReg;
     private static ManagementResourceRegistration childExtReg;
 
-    private static final SimpleAttributeDefinition wildAttr = new SimpleAttributeDefinition("wildAttr", ModelType.STRING, true);
-    private static final SimpleAttributeDefinition overrideAttr = new SimpleAttributeDefinition("overrideAttr", ModelType.STRING, true);
-    private static final SimpleAttributeDefinition extAttr = new SimpleAttributeDefinition("extAttr", ModelType.STRING, true);
-    private static final SimpleAttributeDefinition wildExtAttr = new SimpleAttributeDefinition("wildExtAttr", ModelType.STRING, true);
+    private static final SimpleAttributeDefinition wildAttr = new SimpleAttributeDefinitionBuilder("wildAttr", ModelType.STRING, true).build();
+    private static final SimpleAttributeDefinition overrideAttr = new SimpleAttributeDefinitionBuilder("overrideAttr", ModelType.STRING, true).build();
+    private static final SimpleAttributeDefinition extAttr = new SimpleAttributeDefinitionBuilder("extAttr", ModelType.STRING, true).build();
+    private static final SimpleAttributeDefinition wildExtAttr = new SimpleAttributeDefinitionBuilder("wildExtAttr", ModelType.STRING, true).build();
 
     @BeforeClass
     public static void setup() {

@@ -18,7 +18,8 @@ public class TestSuspendServiceActivator implements ServiceActivator {
 
         TestUndertowService testUndertowService = new TestUndertowService();
         serviceActivatorContext.getServiceTarget().addService(TestUndertowService.SERVICE_NAME, testUndertowService)
-                .addDependency(RequestController.SERVICE_NAME, RequestController.class, testUndertowService.getRequestControllerInjectedValue())
+                .addDependency(RuntimeCapability.Builder.of("org.wildfly.request-controller", RequestController.class).build().getCapabilityServiceName(),
+                        RequestController.class, testUndertowService.getRequestControllerInjectedValue())
                 .addDependency(RuntimeCapability.Builder.of("org.wildfly.management.socket-binding-manager", SocketBindingManager.class).build().getCapabilityServiceName(),
                         SocketBindingManager.class, testUndertowService.getSocketBindingManagerInjectedValue())
                 .install();

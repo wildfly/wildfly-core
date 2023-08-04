@@ -154,6 +154,8 @@ public class GitConfigurationPersister extends XmlConfigurationPersister {
             } catch (GitAPIException ex) {
                 throw MGMT_OP_LOGGER.failedToPublishConfiguration(ex, name, ex.getMessage());
             }
+        } else {
+            throw MGMT_OP_LOGGER.failedToPublishConfigurationInvalidRemote(name);
         }
         return message.toString();
     }

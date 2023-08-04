@@ -76,10 +76,10 @@ public class DiscoveryOptionResourceDefinition extends SimpleResourceDefinition 
     public static final AttributeDefinition[] DISCOVERY_ATTRIBUTES = new AttributeDefinition[] {CODE, MODULE, PROPERTIES};
 
     public DiscoveryOptionResourceDefinition(final LocalHostControllerInfoImpl hostControllerInfo) {
-        super(PathElement.pathElement(DISCOVERY_OPTION), HostResolver.getResolver(DISCOVERY_OPTION),
-                new DiscoveryOptionAddHandler(hostControllerInfo),
-                new DiscoveryOptionRemoveHandler(),
-                OperationEntry.Flag.RESTART_ALL_SERVICES, OperationEntry.Flag.RESTART_ALL_SERVICES);
+        super(new Parameters(PathElement.pathElement(DISCOVERY_OPTION), HostResolver.getResolver(DISCOVERY_OPTION))
+                .setAddHandler(new DiscoveryOptionAddHandler(hostControllerInfo))
+                .setRemoveHandler(new DiscoveryOptionRemoveHandler())
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES));
     }
 
     @Override

@@ -24,7 +24,6 @@ package org.jboss.as.domain.controller.operations;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 
 /**
  * @author Emanuel Muckenhuber
@@ -34,7 +33,6 @@ public class ProfileRemoveHandler extends AbstractRemoveStepHandler {
     public static final ProfileRemoveHandler INSTANCE = new ProfileRemoveHandler();
 
     private ProfileRemoveHandler() {
-        super(ProfileResourceDefinition.PROFILE_CAPABILITY);
     }
 
     @Override
