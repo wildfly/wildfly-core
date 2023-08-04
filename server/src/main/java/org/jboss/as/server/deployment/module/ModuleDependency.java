@@ -25,6 +25,7 @@ package org.jboss.as.server.deployment.module;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.jboss.modules.ModuleIdentifier;
@@ -176,5 +177,27 @@ public final class ModuleDependency implements Serializable {
 
     public boolean isImportServices() {
         return importServices;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ModuleDependency that = (ModuleDependency) o;
+
+        // Note we don't include 'reason' in equals or hashcode as it does not drive distinct behavior
+        return export == that.export
+                && optional == that.optional
+                && importServices == that.importServices
+                && userSpecified == that.userSpecified
+                && Objects.equals(moduleLoader, that.moduleLoader)
+                && identifier.equals(that.identifier) && importFilters.equals(that.importFilters)
+                && exportFilters.equals(that.exportFilters);
+    }
+
+    @Override
+    public int hashCode() {
+        // Note we don't include 'reason' in equals or hashcode as it does not drive distinct behavior
+        return Objects.hash(moduleLoader, identifier, export, optional, importFilters, exportFilters, importServices, userSpecified);
     }
 }
