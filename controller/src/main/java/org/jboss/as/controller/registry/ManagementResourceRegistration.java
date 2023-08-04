@@ -334,7 +334,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
          * dynamically determine whether resource metrics are actually registered
          */
         public static Factory forProcessType(ProcessType processType) {
-            return forProcessType(processType, FeatureStream.DEFAULT);
+            return forProcessType(processType, FeatureStream.PROCESS_DEFAULT);
         }
 
         /**

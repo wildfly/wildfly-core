@@ -114,7 +114,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
         private JmxAuthorizer authorizer = NO_OP_AUTHORIZER;
         private Supplier<SecurityIdentity> securityIdentitySupplier = Functions.constantSupplier(null);
         private RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = RuntimeHostControllerInfoAccessor.SERVER;
-        private FeatureStream stream = FeatureStream.DEFAULT;
+        private FeatureStream stream = FeatureStream.PROCESS_DEFAULT;
 
         private Builder(ProcessType processType) {
             this.processType = processType;

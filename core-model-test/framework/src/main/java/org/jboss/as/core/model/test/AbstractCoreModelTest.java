@@ -42,7 +42,7 @@ public abstract class AbstractCoreModelTest {
     }
 
     protected KernelServicesBuilder createKernelServicesBuilder(TestModelType type) {
-        return this.createKernelServicesBuilder(type, FeatureStream.DEFAULT);
+        return this.createKernelServicesBuilder(type, FeatureStream.PROCESS_DEFAULT);
     }
 
     protected KernelServicesBuilder createKernelServicesBuilder(TestModelType type, FeatureStream stream) {

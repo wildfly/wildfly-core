@@ -18,7 +18,7 @@ public interface Feature {
      * @return a feature stream
      */
     default FeatureStream getFeatureStream() {
-        return FeatureStream.DEFAULT;
+        return FeatureStream.FEATURE_DEFAULT;
     }
 
     /**

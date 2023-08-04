@@ -19,7 +19,7 @@ public class SimpleVersionedNamespace<V extends Comparable<V>, N extends Version
     private final FeatureStream stream;
 
     public SimpleVersionedNamespace(String uri, V version) {
-        this(uri, version, FeatureStream.DEFAULT);
+        this(uri, version, FeatureStream.FEATURE_DEFAULT);
     }
 
     public SimpleVersionedNamespace(String uri, V version, FeatureStream stream) {

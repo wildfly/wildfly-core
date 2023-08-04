@@ -39,7 +39,7 @@ public abstract class AbstractSubsystemTest {
     private final SubsystemTestDelegate delegate;
 
     protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension) {
-        this(mainSubsystemName, mainExtension, FeatureStream.DEFAULT);
+        this(mainSubsystemName, mainExtension, FeatureStream.PROCESS_DEFAULT);
     }
 
     protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension, FeatureStream stream) {
@@ -47,7 +47,7 @@ public abstract class AbstractSubsystemTest {
     }
 
     protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension, final Comparator<PathAddress> removeOrderComparator) {
-        this.delegate = new SubsystemTestDelegate(this.getClass(), mainSubsystemName, mainExtension, FeatureStream.DEFAULT, removeOrderComparator);
+        this.delegate = new SubsystemTestDelegate(this.getClass(), mainSubsystemName, mainExtension, FeatureStream.PROCESS_DEFAULT, removeOrderComparator);
     }
 
     protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension, FeatureStream stream, final Comparator<PathAddress> removeOrderComparator) {

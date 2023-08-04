@@ -138,7 +138,7 @@ public class ConsoleAvailabilityUnitTestCase {
     class ConsoleAvailabilityControllerTmp extends TestModelControllerService {
 
         ConsoleAvailabilityControllerTmp(ControlledProcessState controlledProcessState) {
-            super(ProcessType.EMBEDDED_SERVER, FeatureStream.DEFAULT, new NullConfigurationPersister(), controlledProcessState);
+            super(ProcessType.EMBEDDED_SERVER, FeatureStream.PROCESS_DEFAULT, new NullConfigurationPersister(), controlledProcessState);
         }
 
         @Override

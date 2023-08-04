@@ -366,7 +366,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             domainBaseDir = null;
             domainConfigurationDir = null;
             repository = null;
-            this.stream = FeatureStream.DEFAULT;
+            this.stream = FeatureStream.PROCESS_DEFAULT;
             WildFlySecurityManager.setPropertyPrivileged(ServerEnvironment.JBOSS_PERSIST_SERVER_CONFIG, "false");
         } else {
 
@@ -522,7 +522,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                 this.domainConfigurationDir = null;
             }
 
-            this.stream = getEnumProperty(props, ProcessEnvironment.FEATURE_STREAM, FeatureStream.DEFAULT);
+            this.stream = getEnumProperty(props, ProcessEnvironment.FEATURE_STREAM, FeatureStream.PROCESS_DEFAULT);
         }
         boolean allowExecutor = true;
         String maxThreads = WildFlySecurityManager.getPropertyPrivileged(BOOTSTRAP_MAX_THREADS, null);

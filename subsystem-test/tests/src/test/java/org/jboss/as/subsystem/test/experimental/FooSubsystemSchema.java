@@ -31,7 +31,7 @@ public enum FooSubsystemSchema implements PersistentSubsystemSchema<FooSubsystem
     private final VersionedNamespace<IntVersion, FooSubsystemSchema> namespace;
 
     FooSubsystemSchema(int major) {
-        this(major, FeatureStream.DEFAULT);
+        this(major, FeatureStream.FEATURE_DEFAULT);
     }
 
     FooSubsystemSchema(int major, FeatureStream stream) {

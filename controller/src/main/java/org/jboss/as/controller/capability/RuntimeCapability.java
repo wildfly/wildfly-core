@@ -424,7 +424,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
         private Set<String> requirements;
         private boolean allowMultipleRegistrations = ALLOW_MULTIPLE;
         private Function<PathAddress, String[]> dynamicNameMapper = UnaryCapabilityNameResolver.DEFAULT;
-        private FeatureStream stream = FeatureStream.DEFAULT;
+        private FeatureStream stream = FeatureStream.FEATURE_DEFAULT;
 
         /**
          * Create a builder for a non-dynamic capability with no custom runtime API.

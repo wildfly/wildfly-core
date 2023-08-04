@@ -16,7 +16,7 @@ public interface FeatureRegistry {
      * @return a feature stream
      */
     default FeatureStream getFeatureStream() {
-        return FeatureStream.DEFAULT;
+        return FeatureStream.PROCESS_DEFAULT;
     }
 
     /**

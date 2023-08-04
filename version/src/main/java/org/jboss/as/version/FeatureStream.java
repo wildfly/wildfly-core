@@ -15,11 +15,14 @@ import java.util.function.Function;
  */
 public enum FeatureStream {
 
+    BLESSED("blessed"),
     STABLE("stable"),
     PREVIEW("preview"),
     EXPERIMENTAL("experimental"),
     ;
-    public static final FeatureStream DEFAULT = STABLE;
+    public static final FeatureStream FEATURE_DEFAULT = BLESSED;
+    // TODO externalize somewhere, e.g. /META-INF/MANIFEST.MF
+    public static final FeatureStream PROCESS_DEFAULT = STABLE;
 
     private final String value;
 

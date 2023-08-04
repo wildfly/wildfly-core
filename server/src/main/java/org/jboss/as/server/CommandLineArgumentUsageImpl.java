@@ -82,7 +82,7 @@ public class CommandLineArgumentUsageImpl extends CommandLineArgumentUsage {
         }
 
         addArguments(CommandLineConstants.FEATURE_STREAM + "=<value>");
-        instructions.add(ServerLogger.ROOT_LOGGER.argFeatureStream(EnumSet.allOf(FeatureStream.class), FeatureStream.DEFAULT));
+        instructions.add(ServerLogger.ROOT_LOGGER.argFeatureStream(EnumSet.allOf(FeatureStream.class), FeatureStream.PROCESS_DEFAULT));
     }
 
     public static void printUsage(final PrintStream out) {

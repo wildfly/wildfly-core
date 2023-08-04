@@ -133,7 +133,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         productVersion = hostInfo.hasDefined(PRODUCT_VERSION) ? hostInfo.require(PRODUCT_VERSION).asString() : null;
         remoteConnectionId = hostInfo.hasDefined(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID)
                 ? hostInfo.get(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID).asLong() : null;
-        this.stream = Optional.ofNullable(hostInfo.get(ModelDescriptionConstants.FEATURE_STREAM).asString(null)).map(FeatureStream::valueOf).orElse(FeatureStream.DEFAULT);
+        this.stream = Optional.ofNullable(hostInfo.get(ModelDescriptionConstants.FEATURE_STREAM).asString(null)).map(FeatureStream::valueOf).orElse(FeatureStream.PROCESS_DEFAULT);
 
         Set<String> domainIgnoredExtensions = null;
         Set<String> domainActiveServerGroups = null;

@@ -36,7 +36,7 @@ public interface SubsystemSchema<S extends SubsystemSchema<S>> extends XMLElemen
      * @return a versioned namespace
      */
     static <S extends SubsystemSchema<S>> VersionedNamespace<IntVersion, S> createSubsystemURN(String subsystemName, IntVersion version) {
-        return createSubsystemURN(subsystemName, FeatureStream.DEFAULT, version);
+        return createSubsystemURN(subsystemName, FeatureStream.FEATURE_DEFAULT, version);
     }
 
     /**
@@ -63,7 +63,7 @@ public interface SubsystemSchema<S extends SubsystemSchema<S>> extends XMLElemen
      * @return a versioned namespace
      */
     static <S extends SubsystemSchema<S>> VersionedNamespace<IntVersion, S> createLegacySubsystemURN(String subsystemName, IntVersion version) {
-        return createLegacySubsystemURN(subsystemName, FeatureStream.DEFAULT, version);
+        return createLegacySubsystemURN(subsystemName, FeatureStream.FEATURE_DEFAULT, version);
     }
 
     /**

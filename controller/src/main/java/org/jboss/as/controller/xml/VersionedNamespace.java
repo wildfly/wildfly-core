@@ -28,7 +28,7 @@ public interface VersionedNamespace<V extends Comparable<V>, N extends Versioned
      * @return a versioned URN
      */
     static <V extends Comparable<V>, N extends Versioned<V, N>> VersionedNamespace<V, N> createURN(List<String> identifiers, V version) {
-        return createURN(identifiers, FeatureStream.DEFAULT, version);
+        return createURN(identifiers, FeatureStream.FEATURE_DEFAULT, version);
     }
 
     /**
@@ -54,7 +54,7 @@ public interface VersionedNamespace<V extends Comparable<V>, N extends Versioned
      * @return a versioned URN
      */
     static <V extends Comparable<V>, N extends Versioned<V, N>> VersionedNamespace<V, N> createURN(List<String> identifiers, V version, Function<V, String> versionFormatter) {
-        return createURN(identifiers, FeatureStream.DEFAULT, version, versionFormatter);
+        return createURN(identifiers, FeatureStream.FEATURE_DEFAULT, version, versionFormatter);
     }
 
     /**
@@ -68,6 +68,6 @@ public interface VersionedNamespace<V extends Comparable<V>, N extends Versioned
      * @return a versioned URN
      */
     static <V extends Comparable<V>, N extends Versioned<V, N>> VersionedNamespace<V, N> createURN(List<String> identifiers, FeatureStream stream, V version, Function<V, String> versionFormatter) {
-        return new SimpleVersionedNamespace<>(String.join(":", new CompositeIterable<>(List.of("urn"), identifiers, (stream != FeatureStream.DEFAULT) ? List.of(stream.toString(), versionFormatter.apply(version)) : List.of(versionFormatter.apply(version)))), version, stream);
+        return new SimpleVersionedNamespace<>(String.join(":", new CompositeIterable<>(List.of("urn"), identifiers, (stream != FeatureStream.FEATURE_DEFAULT) ? List.of(stream.toString(), versionFormatter.apply(version)) : List.of(versionFormatter.apply(version)))), version, stream);
     }
 }

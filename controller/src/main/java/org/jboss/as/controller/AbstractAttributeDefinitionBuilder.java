@@ -59,7 +59,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     private CapabilityReferenceRecorder referenceRecorder;
     private Map<String, ModelNode> arbitraryDescriptors = null;
     private ModelNode undefinedMetricValue;
-    private FeatureStream stream = FeatureStream.DEFAULT;
+    private FeatureStream stream = FeatureStream.FEATURE_DEFAULT;
 
     private static final AccessConstraintDefinition[] ZERO_CONSTRAINTS = new AccessConstraintDefinition[0];
 

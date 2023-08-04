@@ -306,7 +306,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
         private Set<RuntimeCapability> incorporatingCapabilities;
         private Set<CapabilityReferenceRecorder> requirements = new HashSet<>();
         private RuntimePackageDependency[] additionalPackages;
-        private FeatureStream stream = FeatureStream.DEFAULT;
+        private FeatureStream stream = FeatureStream.FEATURE_DEFAULT;
 
         /**
          * Creates a Parameters object

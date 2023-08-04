@@ -31,7 +31,7 @@ public class ExperimentalSubsystemTestCase extends AbstractSubsystemSchemaTest<F
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        if (FeatureStream.DEFAULT.enables(this.getSubsystemSchema().getFeatureStream())) {
+        if (FeatureStream.PROCESS_DEFAULT.enables(this.getSubsystemSchema().getFeatureStream())) {
             return super.getSubsystemXml();
         }
         return readResource(String.format(Locale.ROOT, "foo-%s-%d.%d.xml", this.getSubsystemSchema().getFeatureStream(), this.getSubsystemSchema().getVersion().major(), this.getSubsystemSchema().getVersion().minor()));
@@ -39,7 +39,7 @@ public class ExperimentalSubsystemTestCase extends AbstractSubsystemSchemaTest<F
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        if (FeatureStream.DEFAULT.enables(this.getSubsystemSchema().getFeatureStream())) {
+        if (FeatureStream.PROCESS_DEFAULT.enables(this.getSubsystemSchema().getFeatureStream())) {
             return super.getSubsystemXsdPath();
         }
         return String.format(Locale.ROOT, "schema/wildfly-foo_%s_%d_%d.xsd", this.getSubsystemSchema().getFeatureStream(), this.getSubsystemSchema().getVersion().major(), this.getSubsystemSchema().getVersion().minor());

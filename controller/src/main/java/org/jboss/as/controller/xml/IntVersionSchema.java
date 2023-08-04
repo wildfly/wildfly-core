@@ -32,7 +32,7 @@ public interface IntVersionSchema<S extends IntVersionSchema<S>> extends Version
      * @return a URN
      */
     static <S extends IntVersionSchema<S>> VersionedNamespace<IntVersion, S> createURN(List<String> identifiers, IntVersion version) {
-        return createURN(identifiers, FeatureStream.DEFAULT, version);
+        return createURN(identifiers, FeatureStream.FEATURE_DEFAULT, version);
     }
 
     /**

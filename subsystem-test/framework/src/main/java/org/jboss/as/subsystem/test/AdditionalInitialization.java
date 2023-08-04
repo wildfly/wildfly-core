@@ -74,7 +74,7 @@ public class AdditionalInitialization extends AdditionalParsers implements Featu
         private final FeatureStream stream;
 
         public ManagementAdditionalInitialization() {
-            this(FeatureStream.DEFAULT);
+            this(FeatureStream.PROCESS_DEFAULT);
         }
 
         public <S extends SubsystemSchema<S>> ManagementAdditionalInitialization(S schema) {

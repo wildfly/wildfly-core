@@ -87,7 +87,7 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
 
     @Override
     public FeatureStream getFeatureStream() {
-        return (this.hostEnvironment != null) ? this.hostEnvironment.getFeatureStream() : FeatureStream.DEFAULT;
+        return (this.hostEnvironment != null) ? this.hostEnvironment.getFeatureStream() : FeatureStream.PROCESS_DEFAULT;
     }
 
     public ServiceName getAuthenticationContext() {

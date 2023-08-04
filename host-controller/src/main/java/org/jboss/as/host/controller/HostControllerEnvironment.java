@@ -484,9 +484,9 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         this.securityManagerEnabled = securityManagerEnabled || isJavaSecurityManagerConfigured(hostSystemProperties);
         this.processType = processType;
 
-        this.stream = getEnumProperty(hostSystemProperties, FEATURE_STREAM, FeatureStream.DEFAULT);
-        if (this.stream == FeatureStream.DEFAULT) {
-            WildFlySecurityManager.setPropertyPrivileged(ProcessEnvironment.FEATURE_STREAM, this.stream.toString());
+        this.stream = getEnumProperty(hostSystemProperties, FEATURE_STREAM, FeatureStream.PROCESS_DEFAULT);
+        if (!hostSystemProperties.containsKey(FEATURE_STREAM)) {
+            WildFlySecurityManager.setPropertyPrivileged(FEATURE_STREAM, this.stream.toString());
         }
     }
 

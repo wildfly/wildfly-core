@@ -85,7 +85,7 @@ public class PathElement implements Feature {
      * @param value the path value or wildcard to match
      */
     PathElement(final String key, final String value) {
-        this(key, value, FeatureStream.DEFAULT);
+        this(key, value, FeatureStream.FEATURE_DEFAULT);
     }
 
     /**
