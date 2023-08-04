@@ -16,6 +16,7 @@ limitations under the License.
 
 package org.jboss.as.server.deployment;
 
+import static org.jboss.as.server.ServerService.SERVER_ENVIRONMENT_CAPABILITY_NAME;
 import static org.jboss.as.server.Services.requireServerExecutor;
 
 import java.io.IOException;
@@ -29,15 +30,14 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.ExplodedContentException;
 import org.jboss.as.server.ServerEnvironment;
-import org.jboss.as.server.ServerEnvironmentService;
 import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -61,11 +61,11 @@ class ManagedExplodedContentServitor implements Service {
     private final byte[] hash;
     private volatile Path deploymentRoot;
 
-    static ServiceController<?> addService(final ServiceTarget serviceTarget, final ServiceName serviceName, final String managementName, final byte[] hash) {
-        final ServiceBuilder<?> sb = serviceTarget.addService(serviceName);
+    static ServiceController<?> addService(OperationContext context, final ServiceName serviceName, final String managementName, final byte[] hash) {
+        final ServiceBuilder<?> sb = context.getCapabilityServiceTarget().addService(serviceName);
         final Consumer<VirtualFile> vfConsumer = sb.provides(serviceName);
         final Supplier<ContentRepository> crSupplier = sb.requires(ContentRepository.SERVICE_NAME);
-        final Supplier<ServerEnvironment> seSupplier = sb.requires(ServerEnvironmentService.SERVICE_NAME);
+        final Supplier<ServerEnvironment> seSupplier = sb.requires(context.getCapabilityServiceName(SERVER_ENVIRONMENT_CAPABILITY_NAME, ServerEnvironment.class));
         final Supplier<ExecutorService> esSupplier = requireServerExecutor(sb);
         sb.setInstance(new ManagedExplodedContentServitor(managementName, hash, vfConsumer, crSupplier, seSupplier, esSupplier));
         return sb.install();
