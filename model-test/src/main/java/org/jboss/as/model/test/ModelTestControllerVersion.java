@@ -37,6 +37,11 @@ public enum ModelTestControllerVersion {
     //EAP releases
     EAP_7_4_0("7.4.0.GA-redhat-00005", true, "23.0.0", "15.0.2.Final-redhat-00001", "7.4.0"),
 
+    // We use 8.0.0 version which is based on WF29. Once we get 8.0.0.GA out, we will replace this by:
+    // EAP_8_0_0("8.0.0.GA-redhat-?????", true, "29.0.0", "21.1.0.Final-redhat-?????", "8.0.0"),
+    // See https://issues.redhat.com/browse/WFCORE-6453
+    EAP_8_0_0("29.0.0.Final", false, "29.0.0", "21.1.0.Final", "8.0.0"),
+
     // https://issues.redhat.com/browse/WFCORE-5753
     // Once EAP XP 4 is out, we need to replace the following live with
     // EAP_XP_4("4.0.0.GA-redhat-0000x", true, "24.0.0", "18.0.0.Final-redhat-0000x", "xp4")
