@@ -31,7 +31,9 @@ import static org.productivity.java.syslog4j.SyslogConstants.UDP;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -116,7 +118,7 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
         for (Level level : LoggingServiceActivator.LOG_LEVELS) {
             testLog(queue, level);
         }
-        Assert.assertTrue("No other message was expected in syslog.", queue.isEmpty());
+        validateEmpty(queue);
     }
 
     /**
@@ -130,7 +132,7 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
         makeLogs();
         testLog(queue, Level.FATAL);
         testLog(queue, Level.ERROR);
-        Assert.assertTrue("No other message was expected in syslog.", queue.isEmpty());
+        validateEmpty(queue);
     }
 
     @Test
@@ -142,7 +144,7 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
         for (Level level : LoggingServiceActivator.LOG_LEVELS) {
             testJsonLog(queue, level);
         }
-        Assert.assertTrue("No other message was expected in syslog.", queue.isEmpty());
+        validateEmpty(queue);
 
         // Reset the named-formatter which should reset the format
         executeOperation(Operations.createUndefineAttributeOperation(SYSLOG_HANDLER_ADDR, "named-formatter"));
@@ -150,7 +152,7 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
         for (Level level : LoggingServiceActivator.LOG_LEVELS) {
             testLog(queue, level);
         }
-        Assert.assertTrue("No other message was expected in syslog.", queue.isEmpty());
+        validateEmpty(queue);
     }
 
     /**
@@ -187,6 +189,12 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
             final String expectedMsg = LoggingServiceActivator.formatMessage(MSG, expectedLevel);
             assertEquals("Message with unexpected Syslog event text received.", expectedMsg, json.getString("message"));
         }
+    }
+
+    private void validateEmpty(final BlockingQueue<SyslogServerEventIF> queue) {
+        // Copy our queue
+        final Collection<SyslogServerEventIF> copied = List.copyOf(queue);
+        Assert.assertTrue("No other message was expected in syslog. Found: " + copied, copied.isEmpty());
     }
 
     /**
