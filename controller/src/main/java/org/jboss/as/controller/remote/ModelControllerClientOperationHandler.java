@@ -48,9 +48,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -87,7 +85,7 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  */
 public class ModelControllerClientOperationHandler implements ManagementRequestHandlerFactory {
 
-    private static final Set<String> PREPARED_RESPONSE_OPERATIONS = new HashSet<>(Arrays.asList(RELOAD, SHUTDOWN));
+    private static final Set<String> PREPARED_RESPONSE_OPERATIONS = Set.of(RELOAD, SHUTDOWN);
     private final ModelController controller;
 
     private final ManagementChannelAssociation channelAssociation;

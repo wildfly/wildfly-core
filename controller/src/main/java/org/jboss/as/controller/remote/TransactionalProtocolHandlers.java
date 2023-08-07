@@ -30,6 +30,8 @@ import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.dmr.ModelNode;
 
 /**
+ * Factory to create a {@link TransactionalProtocolClient}.
+ *
  * @author Emanuel Muckenhuber
  */
 public final class TransactionalProtocolHandlers {
