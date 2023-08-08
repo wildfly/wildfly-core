@@ -193,6 +193,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         this.expressionResolver.addResolvableValue(ServerEnvironment.SERVER_LOG_DIR, logDir);
         this.expressionResolver.addResolvableValue(ServerEnvironment.SERVER_TEMP_DIR, tmpDir);
         this.expressionResolver.addResolvableValue(ServerEnvironment.SERVER_DATA_DIR, dataDir);
+        this.expressionResolver.addResolvableValue(ServerEnvironment.SERVER_NAME, this.serverName);
 
         final String jvmName = serverVMName != null ? serverVMName : groupVMName;
         final ModelNode hostVM = jvmName != null ? hostModel.get(JVM, jvmName) : null;
@@ -636,11 +637,12 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
             super(true);
             this.delegate = delegate;
             this.serverName = serverName;
-            this.resolvableData = new HashMap<String, String>() {{
+            this.resolvableData = new HashMap<>() {{
                 put(ServerEnvironment.SERVER_BASE_DIR, null);
                 put(ServerEnvironment.SERVER_DATA_DIR, null);
                 put(ServerEnvironment.SERVER_LOG_DIR, null);
                 put(ServerEnvironment.SERVER_TEMP_DIR, null);
+                put(ServerEnvironment.SERVER_NAME, null);
             }};
         }
 
@@ -651,9 +653,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                 String expressionValue = expression.substring(2, expression.length() - 1);
                 if (resolvableData.containsKey(expressionValue)) {
                     String resolved = resolvableData.get(expressionValue);
-                    if (resolved == null) {
-                        return;
-                    } else {
+                    if (resolved != null) {
                         node.set(resolved);
                     }
                 } else {
