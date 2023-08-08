@@ -148,11 +148,11 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
         resourceRegistration.registerOperationHandler(DeploymentAttributes.SERVER_GROUP_REPLACE_DEPLOYMENT_DEFINITION,  new ServerGroupDeploymentReplaceHandler(fileRepository, contentRepository));
+        DomainServerLifecycleHandlers.registerServerGroupHandlers(resourceRegistration);
     }
 
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-        DomainServerLifecycleHandlers.registerServerGroupHandlers(resourceRegistration);
         resourceRegistration.registerSubModel(JvmResourceDefinition.GLOBAL);
         resourceRegistration.registerSubModel(DomainDeploymentResourceDefinition.createForServerGroup(fileRepository, contentRepository));
         resourceRegistration.registerSubModel(SystemPropertyResourceDefinition.createForDomainOrHost(Location.SERVER_GROUP));
