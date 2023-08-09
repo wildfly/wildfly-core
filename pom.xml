@@ -135,6 +135,10 @@
         </surefire.system.args>
         <test.level>INFO</test.level>
 
+        <!-- This overrides default surefire plugin version specified in parent pom - reason is to enable TCP/IP communication,
+             see https://maven.apache.org/surefire/maven-surefire-plugin/examples/process-communication.html -->
+	<version.surefire.plugin>3.1.2</version.surefire.plugin>
+
         <!-- Non-default maven plugin versions and configuration -->
         <version.jacoco.plugin>0.8.10</version.jacoco.plugin>
         <version.org.jboss.galleon>5.0.9.Final</version.org.jboss.galleon>
@@ -356,6 +360,7 @@
                         </dependency>
                     </dependencies>
                     <configuration>
+                        <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <enableAssertions>true</enableAssertions>
                         <systemPropertyVariables>
