@@ -28,7 +28,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNING;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNINGS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_ALIASES;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_DEFAULTS;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_RUNTIME;
@@ -46,6 +50,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.logging.Level;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -500,6 +505,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                 ModelNode value = ar.response;
                 if (!value.has(FAILURE_DESCRIPTION)) {
                     sortedAttributes.put(entry.getKey(), value.get(RESULT));
+                    addWarning(value, context);
                 } else if (value.hasDefined(FAILURE_DESCRIPTION)) {
                     context.getFailureDescription().set(value.get(FAILURE_DESCRIPTION));
                     failed = true;
@@ -517,6 +523,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                     ModelNode value = entry.getValue();
                     iter.remove();
                     if (!value.has(FAILURE_DESCRIPTION)) {
+                        addWarning(value, context);
                         if (value.hasDefined(RESULT)) {
                             ModelNode childTypeNode = sortedChildren.get(path.getKey());
                             if (childTypeNode == null) {
@@ -609,6 +616,15 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
                 if (reportFilteredData && filteredData.hasFilteredData()) {
                     context.getResponseHeaders().get(ACCESS_CONTROL).set(filteredData.toModelNode());
+                }
+            }
+        }
+
+        private void addWarning(ModelNode value, OperationContext context) {
+            if (value.hasDefined(RESPONSE_HEADERS, WARNINGS)) {
+                for (ModelNode response : value.get(RESPONSE_HEADERS).get(WARNINGS).asList()) {
+                    String level = response.get("level").asString();
+                    context.addResponseWarning(Level.parse(level), response.get(WARNING));
                 }
             }
         }
