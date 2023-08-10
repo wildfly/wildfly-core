@@ -120,6 +120,29 @@ public class ConsoleAvailabilityUnitTestCase {
         assertEquals(true, consoleAvailability.isAvailable());
         this.controlledProcessState.setRestartRequired();
         assertEquals(true, consoleAvailability.isAvailable());
+
+
+        this.controlledProcessState.setStopping();
+        this.controlledProcessState.setStopped();
+        this.controlledProcessState.setStarting();
+        Object stamp = this.controlledProcessState.setRestartRequired();
+        assertEquals(ControlledProcessState.State.STARTING, controlledProcessState.getState());
+        assertEquals(false, consoleAvailability.isAvailable());
+        this.controlledProcessState.setRunning();
+        assertEquals(ControlledProcessState.State.RESTART_REQUIRED, controlledProcessState.getState());
+        assertEquals(true, consoleAvailability.isAvailable());
+
+        this.controlledProcessState.revertRestartRequired(stamp);
+
+        this.controlledProcessState.setStopping();
+        this.controlledProcessState.setStopped();
+        this.controlledProcessState.setStarting();
+        this.controlledProcessState.setReloadRequired();
+        assertEquals(ControlledProcessState.State.STARTING, controlledProcessState.getState());
+        assertEquals(false, consoleAvailability.isAvailable());
+        this.controlledProcessState.setRunning();
+        assertEquals(ControlledProcessState.State.RELOAD_REQUIRED, controlledProcessState.getState());
+        assertEquals(true, consoleAvailability.isAvailable());
     }
 
     class ConsoleAvailabilityControllerTmp extends TestModelControllerService {

@@ -88,11 +88,14 @@ public class ControlledProcessState {
     }
 
     private final AtomicInteger stamp = new AtomicInteger(0);
-    private final AtomicStampedReference<State> state = new AtomicStampedReference<State>(State.STARTING, 0);
+    private final AtomicStampedReference<State> state = new AtomicStampedReference<>(State.STARTING, 0);
     private final boolean reloadSupported;
     private final ControlledProcessStateService service;
 
     private boolean restartRequiredFlag = false;
+
+    private boolean reloadRequiredOnStarting = false;
+    private boolean restartRequiredOnStarting = false;
 
     public ControlledProcessState(final boolean reloadSupported) {
         this.reloadSupported = reloadSupported;
@@ -116,18 +119,26 @@ public class ControlledProcessState {
     }
 
     public void setRunning() {
-        AtomicStampedReference<State> stateRef = state;
         int newStamp = stamp.incrementAndGet();
         int[] receiver = new int[1];
-        // Keep trying until stateRef is set with our stamp
+        // Keep trying until state is set with our stamp
         for (;;) {
-            State was = stateRef.get(receiver);
+            State was = state.get(receiver);
             if (was != State.STARTING) { // AS7-1103 only transition to running from STARTING
                 break;
             }
             synchronized (service) {
-                State newState = restartRequiredFlag ? State.RESTART_REQUIRED : State.RUNNING;
-                if (state.compareAndSet(was, newState, receiver[0], newStamp)) {
+                State newState =  restartRequiredOnStarting ? State.RESTART_REQUIRED
+                        : reloadRequiredOnStarting ? State.RELOAD_REQUIRED
+                        : restartRequiredFlag ? State.RESTART_REQUIRED : State.RUNNING;
+                // If we require reload or restart coming out of STARTING, leave the stamp that was
+                // associated with 'starting'. That's the stamp that would have been returned from
+                // setRe[load|start]Required so leaving 'state' with that stamp allows whoever
+                // called that to successfully call revertRe[load|start]Required.
+                int stamp = restartRequiredOnStarting || reloadRequiredOnStarting ? receiver[0] : newStamp;
+                if (state.compareAndSet(was, newState, receiver[0], stamp)) {
+                    restartRequiredOnStarting = false;
+                    reloadRequiredOnStarting = false;
                     service.stateChanged(newState);
                     break;
                 }
@@ -137,6 +148,8 @@ public class ControlledProcessState {
 
     public void setStopping() {
         synchronized (service) {
+            restartRequiredOnStarting = false;
+            reloadRequiredOnStarting = false;
             state.set(State.STOPPING, stamp.incrementAndGet());
             service.stateChanged(State.STOPPING);
         }
@@ -144,6 +157,8 @@ public class ControlledProcessState {
 
     public void setStopped() {
         synchronized (service) {
+            restartRequiredOnStarting = false;
+            reloadRequiredOnStarting = false;
             state.set(State.STOPPED, stamp.incrementAndGet());
             service.stateChanged(State.STOPPED);
         }
@@ -153,44 +168,69 @@ public class ControlledProcessState {
         if (!reloadSupported) {
             return setRestartRequired();
         }
-        AtomicStampedReference<State> stateRef = state;
         int newStamp = stamp.incrementAndGet();
         int[] receiver = new int[1];
-        // Keep trying until stateRef is RELOAD_REQUIRED with our stamp
-        for (;;) {
-            State was = stateRef.get(receiver);
-            if (was == State.STARTING || was == State.STOPPING || was == State.RESTART_REQUIRED) {
-                break;
-            }
-            synchronized (service) {
-                if (stateRef.compareAndSet(was, State.RELOAD_REQUIRED, receiver[0], newStamp)) {
-                    service.stateChanged(State.RELOAD_REQUIRED);
-                    break;
-                }
+
+        // The following block assumes state.compareAndSet is not used to change
+        // the State outside a synchronized block that uses the same "service" monitor.
+        // Otherwise, this block should be run in a loop until state is set with our stamp
+        int result;
+        synchronized (service) {
+            State was = state.get(receiver);
+
+            if (was == State.STARTING) {
+                reloadRequiredOnStarting = true;
+                // return the current 'starting' stamp. That is what we'll set state to
+                // in setRunning if reloadRequiredOnStarting remains true, so if a
+                // revertReloadRequired() call comes in with this stamp
+                // after setRunning is called, it can match the then current stamp and revert.
+                result = receiver[0];
+            } else if (was != State.STOPPING && was != State.RESTART_REQUIRED // ignore reload required when stopping or requiring restart
+                    && state.compareAndSet(was, State.RELOAD_REQUIRED, receiver[0], newStamp)) {
+                service.stateChanged(State.RELOAD_REQUIRED);
+                result = newStamp;
+            } else {
+                // We're in a situation where moving to RELOAD_REQUIRED didn't happen.
+                // So, return the newStamp value, which is a throwaway value not recorded
+                // in 'state'. So a revertReloadRequired call with this stamp correctly can't do anything.
+                result = newStamp;
             }
         }
-        return Integer.valueOf(newStamp);
+        return result;
     }
 
     public Object setRestartRequired() {
-        AtomicStampedReference<State> stateRef = state;
         int newStamp = stamp.incrementAndGet();
         int[] receiver = new int[1];
-        // Keep trying until stateRef is RESTART_REQUIRED with our stamp
-        for (;;) {
-            State was = stateRef.get(receiver);
-            if (was == State.STARTING || was == State.STOPPING) {
-                break;
-            }
-            synchronized (service) {
-                if (stateRef.compareAndSet(was, State.RESTART_REQUIRED, receiver[0], newStamp)) {
-                    restartRequiredFlag = true;
-                    service.stateChanged(State.RESTART_REQUIRED);
-                    break;
-                }
+
+        // The following block assumes state.compareAndSet is not used to change
+        // the State outside a synchronized block that uses the same "service" monitor.
+        // Otherwise, this block should be run in a loop until state is set with our stamp
+        int result;
+        synchronized (service) {
+            State was = state.get(receiver);
+            if (was == State.STARTING) {
+                restartRequiredOnStarting = true;
+                restartRequiredFlag = true;
+                // return the current 'starting' stamp. That is what we'll set state to
+                // in setRunning if restartRequiredOnStarting remains true, so if a
+                // revertRestartRequired() call comes in with this stamp
+                // after setRunning is called, it can match the then current stamp and revert.
+                result = receiver[0];
+            } else if (was != State.STOPPING // ignore reload required when stopping
+                    && state.compareAndSet(was, State.RESTART_REQUIRED, receiver[0], newStamp)) {
+                restartRequiredFlag = true;
+                service.stateChanged(State.RESTART_REQUIRED);
+                result = newStamp;
+            } else {
+                // We're in a situation where moving to RELOAD_REQUIRED didn't happen.
+                // So, return the newStamp value, which is a throwaway value not recorded
+                // in 'state'. So a revertReloadRequired call with this stamp correctly can't do anything.
+                result = newStamp;
             }
         }
-        return Integer.valueOf(newStamp);
+
+        return result;
     }
 
     public void revertReloadRequired(Object stamp) {
@@ -201,8 +241,14 @@ public class ControlledProcessState {
         // If 'state' still has the state we last set in restartRequired(), change to RUNNING
         Integer theirStamp = Integer.class.cast(stamp);
         synchronized (service) {
-            if (state.compareAndSet(State.RELOAD_REQUIRED, State.RUNNING, theirStamp, this.stamp.incrementAndGet())) {
-                service.stateChanged(State.RUNNING);
+            if (reloadRequiredOnStarting) {
+                // setRunning hasn't been called yet, so just unset the flag so we go to RUNNING when it is called.
+                // TODO consider checking that stamp equals the current stamp stored in 'state'
+                reloadRequiredOnStarting = false;
+            } else {
+                if (state.compareAndSet(State.RELOAD_REQUIRED, State.RUNNING, theirStamp, this.stamp.incrementAndGet())) {
+                    service.stateChanged(State.RUNNING);
+                }
             }
         }
     }
@@ -211,9 +257,16 @@ public class ControlledProcessState {
         // If 'state' still has the state we last set in restartRequired(), change to RUNNING
         Integer theirStamp = Integer.class.cast(stamp);
         synchronized (service) {
-            if (state.compareAndSet(State.RESTART_REQUIRED, State.RUNNING, theirStamp, this.stamp.incrementAndGet())) {
+            if (restartRequiredOnStarting) {
+                // setRunning hasn't been called yet, so just unset the flag so we go to RUNNING when it is called.
+                // TODO consider checking that stamp equals the current stamp stored in 'state'
+                restartRequiredOnStarting = false;
                 restartRequiredFlag = false;
-                service.stateChanged(State.RUNNING);
+            } else {
+                if (state.compareAndSet(State.RESTART_REQUIRED, State.RUNNING, theirStamp, this.stamp.incrementAndGet())) {
+                    restartRequiredFlag = false;
+                    service.stateChanged(State.RUNNING);
+                }
             }
         }
     }

@@ -102,7 +102,9 @@ public final class ConsoleAvailabilityService implements Service, ConsoleAvailab
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if (ControlledProcessState.State.RUNNING == evt.getNewValue()) {
+        if (ControlledProcessState.State.RUNNING == evt.getNewValue()
+                || ControlledProcessState.State.RELOAD_REQUIRED == evt.getNewValue()
+                || ControlledProcessState.State.RESTART_REQUIRED == evt.getNewValue()) {
             if (this.available.compareAndSet(Boolean.FALSE, Boolean.TRUE, 0, 1)) {
                 logAdminConsole.logAdminConsole();
             }

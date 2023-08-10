@@ -32,6 +32,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
@@ -42,6 +43,7 @@ import org.jboss.as.domain.controller.operations.coordination.ServerOperationRes
 import org.jboss.as.domain.controller.operations.deployment.SyncModelParameters;
 import org.jboss.as.host.controller.ManagedServerBootCmdFactory;
 import org.jboss.as.host.controller.ManagedServerBootConfiguration;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.management.client.content.ManagedDMRContentTypeResource;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.server.deployment.ModelContentReference;
@@ -67,6 +69,7 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         assert !context.isBooting() : "Should not be used when the context is booting";
         assert parameters.isFullModelTransfer() : "Should only be used during a full model transfer";
+        HostControllerLogger.ROOT_LOGGER.debug("Running Server Sync for the following servers: " + parameters.getServerProxies().keySet());
 
         final Resource startResource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true);
         final ModelNode startRoot = Resource.Tools.readModel(startResource);
@@ -76,12 +79,12 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
         if (!startHostModel.hasDefined(SERVER_CONFIG)) {
             return;
         }
-
-        final ServerOperationResolver resolver = new ServerOperationResolver(localHostName, parameters.getServerProxies());
+        final Map<String, ProxyController> serverProxies = parameters.getServerProxies();
+        final ServerOperationResolver resolver = new ServerOperationResolver(localHostName, serverProxies);
 
         context.addStep(operation, new OperationStepHandler() {
             @Override
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            public void execute(OperationContext context, ModelNode operation) {
                 final Resource domainRootResource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
                 final ModelNode endRoot = Resource.Tools.readModel(domainRootResource);
                 final ModelNode endHostModel = endRoot.require(HOST).asPropertyList().iterator().next().getValue();
@@ -92,21 +95,24 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
                         determineServerStateChanges(context, domainRootResource, resolver, contentDownloader);
 
                 for (String serverName : endHostModel.get(SERVER_CONFIG).keys()) {
-                    // Compare boot cmd (requires restart)
-                    SyncServerResultAction restart = servers.get(serverName);
-                    if (restart == null || restart == SyncServerResultAction.RELOAD_REQUIRED) {
-                        //In some unit tests the start config may be null
-                        ManagedServerBootConfiguration startConfig =
-                                new ManagedServerBootCmdFactory(serverName, startRoot, startHostModel,
-                                        parameters.getHostControllerEnvironment(),
-                                        parameters.getDomainController().getExpressionResolver(), false).createConfiguration();
+                    // skip servers that has not been registered yet
+                    if (serverProxies.containsKey(serverName)) {
+                        // Compare boot cmd (requires restart)
+                        SyncServerResultAction restart = servers.get(serverName);
+                        if (restart == null || restart == SyncServerResultAction.RELOAD_REQUIRED) {
+                            //In some unit tests the start config may be null
+                            ManagedServerBootConfiguration startConfig =
+                                    new ManagedServerBootCmdFactory(serverName, startRoot, startHostModel,
+                                            parameters.getHostControllerEnvironment(),
+                                            parameters.getDomainController().getExpressionResolver(), false).createConfiguration();
 
-                        ManagedServerBootConfiguration endConfig =
-                                new ManagedServerBootCmdFactory(serverName, endRoot, endHostModel,
-                                        parameters.getHostControllerEnvironment(),
-                                        parameters.getDomainController().getExpressionResolver(), false).createConfiguration();
-                        if (startConfig == null || !startConfig.compareServerLaunchCommand(endConfig)) {
-                            servers.put(serverName, SyncServerResultAction.RESTART_REQUIRED);
+                            ManagedServerBootConfiguration endConfig =
+                                    new ManagedServerBootCmdFactory(serverName, endRoot, endHostModel,
+                                            parameters.getHostControllerEnvironment(),
+                                            parameters.getDomainController().getExpressionResolver(), false).createConfiguration();
+                            if (startConfig == null || !startConfig.compareServerLaunchCommand(endConfig)) {
+                                servers.put(serverName, SyncServerResultAction.RESTART_REQUIRED);
+                            }
                         }
                     }
                 }
@@ -117,8 +123,12 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
                     final String opName = entry.getValue() == SyncServerResultAction.RESTART_REQUIRED ?
                             ServerProcessStateHandler.REQUIRE_RESTART_OPERATION : ServerProcessStateHandler.REQUIRE_RELOAD_OPERATION;
                     final OperationStepHandler handler = context.getResourceRegistration().getOperationHandler(serverAddress, opName);
-                    final ModelNode op = Util.createEmptyOperation(opName, serverAddress);
-                    context.addStep(op, handler, OperationContext.Stage.MODEL);
+                    if (handler != null) {
+                        final ModelNode op = Util.createEmptyOperation(opName, serverAddress);
+                        context.addStep(op, handler, OperationContext.Stage.MODEL);
+                    } else {
+                        throw HostControllerLogger.ROOT_LOGGER.failedToSyncServerStatus(opName, serverAddress.toString());
+                    }
                 }
 
                 context.completeStep(new OperationContext.ResultHandler() {
@@ -214,18 +224,18 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
         private final Map<String, Set<String>> serversByGroup;
         private final Set<String> affectedGroups = new HashSet<>();
         private final Map<String, Set<ContentReference>> deploymentHashes = new HashMap<>();
-        private final Set<String> relevantDeployments = new HashSet<String>();
+        private final Set<String> relevantDeployments = new HashSet<>();
         private final Set<ContentReference> requiredContent = new HashSet<>();
 
         private boolean updateRolloutPlans;
         private byte[] rolloutPlansHash;
 
-        private List<ContentReference> removedContent = new ArrayList<>();
+        private final List<ContentReference> removedContent = new ArrayList<>();
 
         ContentDownloader(ModelNode startRoot, ModelNode endRoot, ModelNode hostModel) {
             this.startRoot = startRoot;
             this.endRoot = endRoot;
-            serversByGroup =  getOurServerGroups(hostModel);
+            this.serversByGroup =  getOurRunningServersByGroup(hostModel);
         }
 
         void checkContent(ModelNode operation, PathAddress operationAddress) {
@@ -358,18 +368,20 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
             return servers;
         }
 
-        private Map<String, Set<String>> getOurServerGroups(final ModelNode hostModel) {
+        private Map<String, Set<String>> getOurRunningServersByGroup(final ModelNode hostModel) {
             final Map<String, Set<String>> result = new HashMap<>();
             if (hostModel.hasDefined(SERVER_CONFIG)) {
                 for (final Property config : hostModel.get(SERVER_CONFIG).asPropertyList()) {
-                    final String group = config.getValue().get(GROUP).asString();
-                    Set<String> servers = result.get(group);
-                    if (servers == null) {
-                        servers = new HashSet<>();
-                        result.put(group, servers);
-                    }
-                    servers.add(config.getName());
+                    if (parameters.getServerProxies().containsKey(config.getName())) {
+                        final String group = config.getValue().get(GROUP).asString();
 
+                        Set<String> servers = result.get(group);
+                        if (servers == null) {
+                            servers = new HashSet<>();
+                            result.put(group, servers);
+                        }
+                        servers.add(config.getName());
+                    }
                 }
             }
             return result;
