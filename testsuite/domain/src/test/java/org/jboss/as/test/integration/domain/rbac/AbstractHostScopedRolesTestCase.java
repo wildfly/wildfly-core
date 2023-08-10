@@ -54,19 +54,19 @@ import org.junit.Test;
  */
 public abstract class AbstractHostScopedRolesTestCase extends AbstractRbacTestCase implements RbacDomainRolesTests {
 
-    public static final String MONITOR_USER = "HostMasterMonitor";
-    public static final String OPERATOR_USER = "HostMasterOperator";
-    public static final String MAINTAINER_USER = "HostMasterMaintainer";
-    public static final String DEPLOYER_USER = "HostMasterDeployer";
-    public static final String ADMINISTRATOR_USER = "HostMasterAdministrator";
-    public static final String AUDITOR_USER = "HostMasterAuditor";
-    public static final String SUPERUSER_USER = "HostMasterSuperUser";
-    public static final String SECONDARY_MONITOR_USER = "HostSlaveMonitor";
-    public static final String SECONDARY_OPERATOR_USER = "HostSlaveOperator";
-    public static final String SECONDARY_MAINTAINER_USER = "HostSlaveMaintainer";
-    public static final String SECONDARY_DEPLOYER_USER = "HostSlaveDeployer";
-    public static final String SECONDARY_ADMINISTRATOR_USER = "HostSlaveAdministrator";
-    public static final String SECONDARY_AUDITOR_USER = "HostSlaveAuditor";
+    public static final String MONITOR_USER = "HostPrimaryMonitor";
+    public static final String OPERATOR_USER = "HostPrimaryOperator";
+    public static final String MAINTAINER_USER = "HostPrimaryMaintainer";
+    public static final String DEPLOYER_USER = "HostPrimaryDeployer";
+    public static final String ADMINISTRATOR_USER = "HostPrimaryAdministrator";
+    public static final String AUDITOR_USER = "HostPrimaryAuditor";
+    public static final String SUPERUSER_USER = "HostPrimarySuperUser";
+    public static final String SECONDARY_MONITOR_USER = "HostSecondaryMonitor";
+    public static final String SECONDARY_OPERATOR_USER = "HostSecondaryOperator";
+    public static final String SECONDARY_MAINTAINER_USER = "HostSecondaryeMaintainer";
+    public static final String SECONDARY_DEPLOYER_USER = "HostSecondaryDeployer";
+    public static final String SECONDARY_ADMINISTRATOR_USER = "HostSecondaryAdministrator";
+    public static final String SECONDARY_AUDITOR_USER = "HostSecondaryAuditor";
     public static final String SECONDARY_SUPERUSER_USER = "HostSecondarySuperUser";
 
     public static final String[] USERS = { MONITOR_USER, OPERATOR_USER, MAINTAINER_USER, DEPLOYER_USER,
