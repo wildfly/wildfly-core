@@ -37,6 +37,11 @@
     </exports>
 
     <resources>
+        <!--
+            When the dependencies on `wildfly-elytron-auth-server` are removed from `wildfly-elytron-ssl-base`,
+            resources that aren't associated with security domains should be moved to a new module. For more information,
+            see WFCORE-5279: https://github.com/wildfly/wildfly-proposals/pull/500
+        -->
         <artifact name="${org.wildfly.security:wildfly-elytron-asn1}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-audit}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-auth}"/>
@@ -94,6 +99,8 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-security-manager}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-security-manager-action}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-ssl}"/>
+        <!-- To be moved after dependencies on security domains are fully removed-->
+        <artifact name="${org.wildfly.security:wildfly-elytron-ssl-base}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-ssh-util}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-util}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-x500}"/>

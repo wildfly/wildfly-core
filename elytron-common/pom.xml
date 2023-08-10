@@ -79,7 +79,7 @@
 
         <dependency>
             <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron-ssl</artifactId>
+            <artifactId>wildfly-elytron-ssl-base</artifactId>
         </dependency>
 
         <dependency>
