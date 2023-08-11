@@ -4,6 +4,9 @@
  */
 package org.jboss.as.test.layers;
 
+import static org.junit.Assert.fail;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -24,6 +27,9 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -39,6 +45,8 @@ import org.xml.sax.SAXException;
  * @author jdenise@redhat.com
  */
 public class LayersTest {
+
+    private static final boolean VALIDATE_INPUTS = Boolean.parseBoolean(System.getProperty("org.wildfly.layers.test.validate-inputs", "true"));
 
     private static final String MAVEN_REPO_LOCAL = "maven.repo.local";
     private static final String REFERENCE = "test-standalone-reference";
@@ -68,6 +76,9 @@ public class LayersTest {
     }
 
     /**
+     * Checks that expected modules were provisioned with the @{code test-standalone-reference} and @{test-all-layers}
+     * installations in the root.
+     *
      * Checks only allowed modules were loaded with the installation
      * @param root Path to installation
      * @param unreferenced The set of modules that are present in a default installation (with all modules
@@ -84,6 +95,7 @@ public class LayersTest {
      */
     public static void testDeployedModules(String root, Set<String> unreferenced, Set<String> unused) throws Exception {
         File[] installations = new File(root).listFiles(File::isDirectory);
+        assertNotNull("No installations found in " + root, installations);
         Result reference = null;
         Result allLayers = null;
         Map<String, Result> layers = new TreeMap<>();
@@ -99,19 +111,22 @@ public class LayersTest {
             }
         }
 
+        assertNotNull("No " + REFERENCE + " installation found in " + root, reference);
+        assertNotNull("No " + ALL_LAYERS + " installation found in " + root, allLayers);
+
+        StringBuilder exceptionBuilder = new StringBuilder();
+        AtomicBoolean empty = new AtomicBoolean(true);
+
         // Check that the reference has no more un-referenced modules than the expected ones.
-        Set<String> invalidUnref = new HashSet<>();
         Set<String> allUnReferenced = new HashSet<>();
         allUnReferenced.addAll(unused);
         allUnReferenced.addAll(unreferenced);
-        for (String unref : reference.getNotReferenced()) {
-            if (!allUnReferenced.contains(unref)) {
-                invalidUnref.add(unref);
-            }
-        }
+        final Set<String> refUnreferenced = reference.getNotReferenced();
+        String invalidUnref = listModules(refUnreferenced, m -> !allUnReferenced.contains(m));
         if (!invalidUnref.isEmpty()) {
-            throw new Exception("Some unreferenced modules are un-expected " + invalidUnref);
+            appendExceptionMsg(exceptionBuilder, "Some unreferenced modules are unexpected " + invalidUnref, empty);
         }
+
         StringBuilder builder = new StringBuilder();
         appendResult("REFERENCE", reference, builder, null);
         // Format "all layers" result and compute the set of modules that have not been provisioned
@@ -121,34 +136,71 @@ public class LayersTest {
         for (String k : layers.keySet()) {
             appendResult(k, layers.get(k), builder, reference);
         }
-        Exception exception = null;
+
         // The only modules that are expected to be not provisioned are the un-used ones.
         // If more are not provisioned, then we are missing some modules.
-        if (!unused.containsAll(deltaModules)) {
-            builder.append("#!!!!!ERROR, some required modules have not been provisioned\n");
-            StringBuilder b = new StringBuilder();
-            for (String m : deltaModules) {
-                if (!unused.contains(m)) {
-                    b.append(m).append(",");
-                }
-            }
-            builder.append("error_missing_modules=" + b).append("\n");
-            exception = new Exception("ERROR, some modules have not been provisioned: " + b);
+        String missingRequired = listModules(deltaModules, m -> !unused.contains(m));
+        if (!missingRequired.isEmpty()) {
+            String error = "Some expected modules have not been provisioned in " + ALL_LAYERS;
+            builder.append("#!!!!!ERROR ").append(error).append("\n");
+            builder.append("error_missing_modules=").append(missingRequired).append("\n");
+            appendExceptionMsg(exceptionBuilder, error + ": " + missingRequired, empty);
         }
+
+        if (VALIDATE_INPUTS) {
+
+            // Confirm that 'unused' and 'unreferenced' modules actually exist in the reference installation
+            final Set<String> allRefModules = reference.getModules();
+            String missingDeclared = listModules(allUnReferenced, m -> !allRefModules.contains(m));
+            if (!missingDeclared.isEmpty()) {
+                String error = "Some expected modules have not been provisioned in " + REFERENCE;
+                builder.append("#!!!!!ERROR ").append(error).append("\n");
+                builder.append("error_missing_modules=").append(missingDeclared).append("\n");
+                appendExceptionMsg(exceptionBuilder, error + ": " + missingDeclared, empty);
+            }
+
+            // Confirm that 'unused' modules do not exist in the all-layers installation
+            final Set<String> allLayersModules = allLayers.getModules();
+            String wrongUnused = listModules(unused, allLayersModules::contains);
+            if (!wrongUnused.isEmpty()) {
+                String error = "Some expected to be unused modules have been provisioned in " + ALL_LAYERS;
+                builder.append("#!!!!!ERROR ").append(error).append("\n");
+                builder.append("error_missing_modules=").append(wrongUnused).append("\n");
+                appendExceptionMsg(exceptionBuilder, error + ": " + wrongUnused, empty);
+            }
+
+            // Confirm that 'unreferenced' modules are not referenced in the reference installation
+            String wrongUnreferenced = listModules(unreferenced, m -> !refUnreferenced.contains(m));
+            if (!wrongUnreferenced.isEmpty()) {
+                String error = "Some expected to be unreferenced modules are referenced in " + REFERENCE;
+                builder.append("#!!!!!ERROR ").append(error).append("\n");
+                builder.append("error_missing_modules=").append(wrongUnreferenced).append("\n");
+                appendExceptionMsg(exceptionBuilder, error + ": " + wrongUnreferenced, empty);
+            }
+        }
+
         File resFile = new File(root, "results.properties");
         Files.write(resFile.toPath(), builder.toString().getBytes());
-        if (exception != null) {
-            throw exception;
+
+        String exception = exceptionBuilder.toString();
+        if (!exception.isEmpty()) {
+            fail(exception);
         }
     }
 
     /**
-     * Checks the expected modules were provisioned with the @{code test-standalone-reference} and @{test-all-layers} installations in the root.
+     * Checks the installations found in the given {@code root} directory can all be started without errors, i.e.
+     * with the {@code WFLYSRV0025} log message in the server's stdout stream.
+     *
+     * The @{code test-standalone-reference} installation is not tested as that kind of installation is heavily
+     * tested elsewhere.
+     *
      * @param root Installations root directory
-     * @throws Exception
+     * @throws Exception on failure
      */
     public static void testExecution(String root) throws Exception {
         File[] installations = new File(root).listFiles(File::isDirectory);
+        assertNotNull("No installations found in " + root, installations);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             for (File f : installations) {
@@ -322,6 +374,19 @@ public class LayersTest {
 
         builder.append("\n");
         return deltaModules;
+    }
+
+    private static void appendExceptionMsg(StringBuilder existing, String toAppend, AtomicBoolean empty) {
+        if (!empty.getAndSet(false)) {
+            existing.append('\n');
+        }
+        existing.append(toAppend);
+    }
+
+    private static String listModules(Set<String> set, Predicate<String> predicate) {
+        return set.stream()
+                .filter(predicate)
+                .collect(Collectors.joining(","));
     }
 
     /**
