@@ -20,8 +20,8 @@ import org.junit.Test;
  * @author jdenise@redhat.com
  */
 public class LayersTestCase {
-
-    // Packages that are provisioned but not used (not injected nor referenced).
+    // Packages that are provisioned by the test-standalone-reference installation
+    // but not used in the test-all-layers installation.
     // This is the expected set of not provisioned modules when all layers are provisioned.
     private static final String[] NOT_USED = {
         // deprecated and unused
@@ -43,12 +43,10 @@ public class LayersTestCase {
         "org.apache.commons.cli",
         "org.apache.commons.lang3",
         "org.wildfly.security.elytron-tool",
-        //internal json 1 API
-        "internal.javax.json.api.ee8"
     };
     // Packages that are not referenced from the module graph but needed.
     // This is the expected set of un-referenced modules found when scanning
-    // the default configuration.
+    // the test-standalone-reference configuration.
     private static final String[] NOT_REFERENCED = {
         //  injected by server in UndertowHttpManagementService
         "org.jboss.as.domain-http-error-context",
