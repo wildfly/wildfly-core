@@ -35,7 +35,7 @@ Starting and Stopping WildFly
 ------------------------------------------
 Change to the bin directory after a successful build:
 
-> $ cd core-build/target/wildfly-core-\[version\]/bin
+> $ cd build/target/wildfly-core-\[version\]/bin
 
 Start the server in domain mode:
 
