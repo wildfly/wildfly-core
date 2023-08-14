@@ -3675,8 +3675,8 @@ public interface ControllerLogger extends BasicLogger {
     IllegalArgumentException missingYamlFile(String path);
 
     @LogMessage(level = DEBUG)
-    @Message(id = 487, value = "It took %s ms to load and parse the yaml files")
-    void loadingYamlFiles(long duration);
+    @Message(id = 487, value = "It took %s ms to load and parse the following yaml files [%s]")
+    void loadingYamlFiles(long duration, String files);
 
     @LogMessage(level = WARN)
     @Message(id = 488, value = "No registration found for address %s - Ignoring the subtree")
