@@ -188,7 +188,7 @@
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.commons-io>2.10.0</version.commons-io>
-        <version.io.netty>4.1.86.Final</version.io.netty>
+        <version.io.netty>4.1.96.Final</version.io.netty>
         <version.io.smallrye.jandex>3.1.2</version.io.smallrye.jandex>
         <version.io.undertow>2.3.7.Final</version.io.undertow>
         <version.jakarta.json.jakarta-json-api>2.1.2</version.jakarta.json.jakarta-json-api>
