@@ -29,10 +29,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNINGS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_ALIASES;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_DEFAULTS;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_RUNTIME;
@@ -43,8 +42,8 @@ import static org.jboss.as.controller.operations.global.GlobalOperationAttribute
 
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -54,6 +53,7 @@ import java.util.logging.Level;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.AttachmentKey;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -63,7 +63,6 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.UnauthorizedException;
-import org.jboss.as.controller.OperationContext.AttachmentKey;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.ResourceNotAddressableException;
