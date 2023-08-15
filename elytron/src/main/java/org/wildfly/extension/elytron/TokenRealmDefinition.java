@@ -88,7 +88,6 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.wildfly.common.iteration.CodePointIterator;
 import org.wildfly.extension.elytron.TokenRealmDefinition.OAuth2IntrospectionValidatorAttributes.HostnameVerificationPolicy;
 import org.wildfly.extension.elytron.common.ElytronReloadRequiredWriteAttributeHandler;
-import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
 import org.wildfly.extension.elytron.common.TrivialService;
 import org.wildfly.security.auth.realm.token.TokenSecurityRealm;
 import org.wildfly.security.auth.realm.token.validator.JwtValidator;

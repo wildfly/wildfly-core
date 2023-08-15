@@ -144,7 +144,7 @@ public final class KeyStoreDefinition extends SimpleResourceDefinition {
                 ElytronCommonConstants.KEY_STORE);
 
         KeyStoreAddHandler ksAddHandler = new KeyStoreAddHandler(extensionClass);
-        TrivialCapabilityServiceRemoveHandler ksRemoveHandler = new TrivialCapabilityServiceRemoveHandler(ksAddHandler,
+        TrivialCapabilityServiceRemoveHandler ksRemoveHandler = new TrivialCapabilityServiceRemoveHandler(extensionClass, ksAddHandler,
                 KEY_STORE_RUNTIME_CAPABILITY);
 
         SimpleOperationDefinition ksLoadOperation = new SimpleOperationDefinitionBuilder(ElytronCommonConstants.LOAD, ksResourceResolver)
@@ -159,7 +159,7 @@ public final class KeyStoreDefinition extends SimpleResourceDefinition {
     }
 
     private KeyStoreDefinition(StandardResourceDescriptionResolver ksResourceResolver, KeyStoreAddHandler ksAddHandler,
-                               TrivialCapabilityServiceRemoveHandler ksRemoveHandler, SimpleOperationDefinition ksLoadOperation,
+                               ElytronCommonTrivialCapabilityServiceRemoveHandler ksRemoveHandler, SimpleOperationDefinition ksLoadOperation,
                                SimpleOperationDefinition ksStoreOperation) {
 
         super(new Parameters(PathElement.pathElement(ElytronCommonConstants.KEY_STORE), ksResourceResolver)
@@ -247,6 +247,11 @@ public final class KeyStoreDefinition extends SimpleResourceDefinition {
         private KeyStoreAddHandler(final Class<?> extensionClass) {
             super(KEY_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES);
             this.extensionClass = extensionClass;
+        }
+
+        @Override
+        protected String getSubsystemCapability() {
+            return ElytronCommonDefinitions.getSubsystemCapability(extensionClass);
         }
 
         @Override

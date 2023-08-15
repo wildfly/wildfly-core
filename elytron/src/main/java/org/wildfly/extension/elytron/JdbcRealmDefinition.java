@@ -70,7 +70,6 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.extension.elytron.common.ElytronReloadRequiredWriteAttributeHandler;
-import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
 import org.wildfly.extension.elytron.common.TrivialService;
 import org.wildfly.security.auth.realm.jdbc.JdbcSecurityRealm;
 import org.wildfly.security.auth.realm.jdbc.JdbcSecurityRealmBuilder;

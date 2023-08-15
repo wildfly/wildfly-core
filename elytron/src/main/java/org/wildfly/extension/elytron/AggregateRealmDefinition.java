@@ -51,7 +51,6 @@ import org.jboss.msc.value.InjectedValue;
 
 import org.wildfly.extension.elytron.common.ElytronReloadRequiredWriteAttributeHandler;
 import org.wildfly.extension.elytron.common.ServiceUtil;
-import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
 import org.wildfly.extension.elytron.common.TrivialService;
 import org.wildfly.extension.elytron.common.capabilities.PrincipalTransformer;
 import org.wildfly.security.auth.realm.AggregateSecurityRealm;

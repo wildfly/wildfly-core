@@ -220,13 +220,13 @@ public final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
                 ElytronCommonConstants.LDAP_KEY_STORE);
 
         KeyStoreAddHandler ldapKSAddHandler = new KeyStoreAddHandler(extensionClass);
-        TrivialCapabilityServiceRemoveHandler ldapKSRemoveHandler = new TrivialCapabilityServiceRemoveHandler(ldapKSAddHandler, KEY_STORE_RUNTIME_CAPABILITY);
+        TrivialCapabilityServiceRemoveHandler ldapKSRemoveHandler = new TrivialCapabilityServiceRemoveHandler(extensionClass, ldapKSAddHandler, KEY_STORE_RUNTIME_CAPABILITY);
 
         return new LdapKeyStoreDefinition(ldapKSResourceResolver, ldapKSAddHandler, ldapKSRemoveHandler);
     }
 
     private LdapKeyStoreDefinition(StandardResourceDescriptionResolver ldapKSResourceResolver, KeyStoreAddHandler ldapKSAddHandler,
-                                   TrivialCapabilityServiceRemoveHandler ldapKSRemoveHandler) {
+                                   ElytronCommonTrivialCapabilityServiceRemoveHandler ldapKSRemoveHandler) {
         super(new Parameters(PathElement.pathElement(ElytronCommonConstants.LDAP_KEY_STORE), ldapKSResourceResolver)
                 .setAddHandler(ldapKSAddHandler)
                 .setRemoveHandler(ldapKSRemoveHandler)
@@ -271,6 +271,11 @@ public final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
         private KeyStoreAddHandler(final Class<?> extensionClass) {
             super(KEY_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES);
             this.extensionClass = extensionClass;
+        }
+
+        @Override
+        protected String getSubsystemCapability() {
+            return ElytronCommonDefinitions.getSubsystemCapability(extensionClass);
         }
 
         @Override

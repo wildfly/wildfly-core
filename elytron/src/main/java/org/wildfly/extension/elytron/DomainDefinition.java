@@ -86,7 +86,6 @@ import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.DomainService.RealmDependency;
 import org.wildfly.extension.elytron.common.ElytronRuntimeOnlyHandler;
 import org.wildfly.extension.elytron.common.ServiceUtil;
-import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
 import org.wildfly.extension.elytron.common.TrivialService;
 import org.wildfly.extension.elytron.common.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron.common.capabilities.PrincipalTransformer;

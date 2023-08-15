@@ -42,4 +42,9 @@ abstract class BaseAddHandler extends ElytronCommonBaseAddHandler {
     BaseAddHandler(Set<RuntimeCapability> capabilities, AttributeDefinition... attributes) {
         super(capabilities, attributes);
     }
+
+    @Override
+    protected String getSubsystemCapability() {
+        return Capabilities.ELYTRON_CAPABILITY;
+    }
 }

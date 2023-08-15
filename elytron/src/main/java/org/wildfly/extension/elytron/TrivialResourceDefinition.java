@@ -45,10 +45,6 @@ final class TrivialResourceDefinition extends ElytronCommonTrivialResourceDefini
         super(pathKey, resourceDescriptionResolver, add, remove, attributes, readOnlyAttributes, operations, children, runtimeCapabilities);
     }
 
-    TrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
-        super(pathKey, resourceDescriptionResolver, add, attributes, runtimeCapabilities);
-    }
-
     TrivialResourceDefinition(String pathKey, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?>... runtimeCapabilities) {
         super(ElytronExtension.class, pathKey, add, attributes, runtimeCapabilities);
     }

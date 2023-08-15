@@ -88,6 +88,8 @@ class Capabilities extends ElytronCommonCapabilities {
         }
     };
 
+    static final String ELYTRON_CAPABILITY = CAPABILITY_BASE + "elytron";
+
     static final RuntimeCapability<Consumer<ServiceBuilder>> ELYTRON_RUNTIME_CAPABILITY = RuntimeCapability
             .Builder.of(ELYTRON_CAPABILITY, COMMON_DEPENDENCIES)
             .build();

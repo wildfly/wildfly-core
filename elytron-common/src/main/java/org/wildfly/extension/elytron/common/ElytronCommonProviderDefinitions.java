@@ -103,7 +103,7 @@ public abstract class ElytronCommonProviderDefinitions {
             .setRestartAllServices()
             .build();
 
-    public static ElytronCommonAggregateComponentDefinition<Provider[]> getAggregateProvidersDefinition(Class<?> extensionClass) {
+    public static ElytronCommonAggregateComponentDefinition<Provider[]> getAggregateProvidersDefinition(final Class<?> extensionClass) {
         return ElytronCommonAggregateComponentDefinition.createCommonDefinition(extensionClass, Provider[].class, ElytronCommonConstants.AGGREGATE_PROVIDERS,
                 ElytronCommonConstants.PROVIDERS, PROVIDERS_RUNTIME_CAPABILITY, PROVIDERS_API_CAPABILITY, ElytronCommonProviderDefinitions::aggregate, false);
     }

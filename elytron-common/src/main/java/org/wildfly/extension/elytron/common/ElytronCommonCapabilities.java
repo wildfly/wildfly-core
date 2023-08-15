@@ -58,8 +58,6 @@ public abstract class ElytronCommonCapabilities {
             .Builder.of(CERTIFICATE_AUTHORITY_CAPABILITY, true, CertificateAuthority.class)
             .build();
 
-    public static final String ELYTRON_CAPABILITY = CAPABILITY_BASE + "elytron";
-
     public static final String KEY_MANAGER_CAPABILITY = CAPABILITY_BASE + "key-manager";
 
     public static final RuntimeCapability<Void> KEY_MANAGER_RUNTIME_CAPABILITY =  RuntimeCapability

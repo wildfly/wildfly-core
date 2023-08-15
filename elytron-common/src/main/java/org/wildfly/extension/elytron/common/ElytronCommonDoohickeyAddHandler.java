@@ -44,11 +44,16 @@ public abstract class ElytronCommonDoohickeyAddHandler<T> extends ElytronCommonB
     private final RuntimeCapability<?> runtimeCapability;
     private final String apiCapabilityName;
 
-    public ElytronCommonDoohickeyAddHandler(Class<?> extensionClass, RuntimeCapability<?> runtimeCapability, AttributeDefinition[] configAttributes, String apiCapabilityName) {
+    public ElytronCommonDoohickeyAddHandler(final Class<?> extensionClass, RuntimeCapability<?> runtimeCapability, AttributeDefinition[] configAttributes, String apiCapabilityName) {
         super(runtimeCapability, configAttributes);
         this.extensionClass = extensionClass;
         this.runtimeCapability =  runtimeCapability;
         this.apiCapabilityName = apiCapabilityName;
+    }
+
+    @Override
+    protected String getSubsystemCapability() {
+        return ElytronCommonDefinitions.getSubsystemCapability(extensionClass);
     }
 
     @Override

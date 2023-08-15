@@ -54,7 +54,6 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartException;
 import org.wildfly.extension.elytron.common.ClassLoadingAttributeDefinitions;
 import org.wildfly.extension.elytron.common.ElytronReloadRequiredWriteAttributeHandler;
-import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
 import org.wildfly.extension.elytron.common.TrivialService;
 
 

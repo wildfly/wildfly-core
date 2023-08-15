@@ -44,7 +44,6 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.common.ElytronReloadRequiredWriteAttributeHandler;
 import org.wildfly.extension.elytron.common.FileAttributeDefinitions;
-import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
 import org.wildfly.extension.elytron.common.TrivialService;
 import org.wildfly.security.auth.realm.JaasSecurityRealm;
 import org.wildfly.security.auth.server.SecurityRealm;

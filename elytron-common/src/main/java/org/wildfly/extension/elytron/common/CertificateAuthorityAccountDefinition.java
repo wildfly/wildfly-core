@@ -165,6 +165,11 @@ public class CertificateAuthorityAccountDefinition extends SimpleResourceDefinit
         }
 
         @Override
+        protected String getSubsystemCapability() {
+            return ElytronCommonDefinitions.getSubsystemCapability(extensionClass);
+        }
+
+        @Override
         protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws  OperationFailedException {
             super.populateModel(context, operation, resource);
             handleCredentialReferenceUpdate(context, resource.getModel());
@@ -215,13 +220,13 @@ public class CertificateAuthorityAccountDefinition extends SimpleResourceDefinit
         StandardResourceDescriptionResolver caAcctResourceResolver = ElytronCommonDefinitions.getResourceDescriptionResolver(extensionClass, ElytronCommonConstants.CERTIFICATE_AUTHORITY_ACCOUNT);
 
         CertificateAuthorityAccountAddHandler caAcctAddHandler = new CertificateAuthorityAccountAddHandler(extensionClass);
-        TrivialCapabilityServiceRemoveHandler caAcctRemoveHandler = new TrivialCapabilityServiceRemoveHandler(caAcctAddHandler, ElytronCommonCapabilities.CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY);
+        TrivialCapabilityServiceRemoveHandler caAcctRemoveHandler = new TrivialCapabilityServiceRemoveHandler(extensionClass, caAcctAddHandler, ElytronCommonCapabilities.CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY);
 
         return new CertificateAuthorityAccountDefinition(caAcctResourceResolver, caAcctAddHandler, caAcctRemoveHandler);
     }
 
     protected CertificateAuthorityAccountDefinition(StandardResourceDescriptionResolver caAcctResourceResolver, CertificateAuthorityAccountAddHandler caAcctAddHandler,
-                                                  TrivialCapabilityServiceRemoveHandler caAcctRemoveHandler) {
+                                                  ElytronCommonTrivialCapabilityServiceRemoveHandler caAcctRemoveHandler) {
         super(new Parameters(PathElement.pathElement(ElytronCommonConstants.CERTIFICATE_AUTHORITY_ACCOUNT), caAcctResourceResolver)
                 .setAddHandler(caAcctAddHandler)
                 .setRemoveHandler(caAcctRemoveHandler)

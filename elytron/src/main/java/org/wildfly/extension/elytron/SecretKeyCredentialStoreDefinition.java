@@ -59,7 +59,6 @@ import org.wildfly.extension.elytron.common.ElytronDoohickey;
 import org.wildfly.extension.elytron.common.FileAttributeDefinitions;
 import org.wildfly.extension.elytron.common.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.common.ServiceUtil;
-import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.store.CredentialStore;
 

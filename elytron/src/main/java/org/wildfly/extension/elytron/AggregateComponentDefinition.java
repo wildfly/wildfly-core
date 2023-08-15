@@ -25,7 +25,6 @@ import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.wildfly.extension.elytron.common.ElytronCommonAggregateComponentDefinition;
 import org.wildfly.extension.elytron.common.ElytronReloadRequiredWriteAttributeHandler;
-import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
 
 /**
  * A {@link ResourceDefinition} for components that are aggregations of the same type. This is a compatibility wrapper,

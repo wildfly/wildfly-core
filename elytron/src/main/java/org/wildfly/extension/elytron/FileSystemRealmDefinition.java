@@ -88,7 +88,6 @@ import org.wildfly.extension.elytron.common.FileAttributeDefinitions;
 import org.wildfly.extension.elytron.common.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.common.KeyStoreService;
 import org.wildfly.extension.elytron.common.ModifiableKeyStoreService;
-import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
 import org.wildfly.extension.elytron.common.TrivialService;
 import org.wildfly.security.auth.realm.FileSystemSecurityRealm;
 import org.wildfly.security.auth.realm.FileSystemSecurityRealmBuilder;

@@ -69,7 +69,6 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.common.ElytronReloadRequiredWriteAttributeHandler;
-import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
 import org.wildfly.extension.elytron.common.TrivialService;
 import org.wildfly.extension.elytron.common.capabilities._private.DirContextSupplier;
 import org.wildfly.security.auth.realm.ldap.AttributeMapping;

@@ -78,7 +78,6 @@ import org.wildfly.common.function.ExceptionRunnable;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.common.ElytronDoohickey;
 import org.wildfly.extension.elytron.common.FileAttributeDefinitions.PathResolver;
-import org.wildfly.extension.elytron.common.TrivialCapabilityServiceRemoveHandler;
 import org.wildfly.security.EmptyProvider;
 import org.wildfly.security.auth.server.IdentityCredentials;
 import org.wildfly.security.credential.Credential;

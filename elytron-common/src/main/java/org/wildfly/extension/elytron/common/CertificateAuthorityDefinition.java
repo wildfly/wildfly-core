@@ -93,13 +93,13 @@ public class CertificateAuthorityDefinition extends SimpleResourceDefinition {
         StandardResourceDescriptionResolver caResourceResolver = ElytronCommonDefinitions.getResourceDescriptionResolver(extensionClass, ElytronCommonConstants.CERTIFICATE_AUTHORITY);
 
         CertificateAuthorityAddHandler caAddHandler = new CertificateAuthorityAddHandler(extensionClass);
-        TrivialCapabilityServiceRemoveHandler caRemoveHandler = new TrivialCapabilityServiceRemoveHandler(caAddHandler, ElytronCommonCapabilities.CERTIFICATE_AUTHORITY_RUNTIME_CAPABILITY);
+        TrivialCapabilityServiceRemoveHandler caRemoveHandler = new TrivialCapabilityServiceRemoveHandler(extensionClass, caAddHandler, ElytronCommonCapabilities.CERTIFICATE_AUTHORITY_RUNTIME_CAPABILITY);
 
         return new CertificateAuthorityDefinition(caResourceResolver, caAddHandler, caRemoveHandler);
     }
 
     protected CertificateAuthorityDefinition(StandardResourceDescriptionResolver caResourceResolver, CertificateAuthorityAddHandler caAddHandler,
-                                           TrivialCapabilityServiceRemoveHandler caRemoveHandler) {
+                                           ElytronCommonTrivialCapabilityServiceRemoveHandler caRemoveHandler) {
 
         super(new Parameters(PathElement.pathElement(ElytronCommonConstants.CERTIFICATE_AUTHORITY), caResourceResolver)
                 .setAddHandler(caAddHandler)
@@ -122,6 +122,11 @@ public class CertificateAuthorityDefinition extends SimpleResourceDefinition {
         private CertificateAuthorityAddHandler(final Class<?> extensionClass) {
             super(ElytronCommonCapabilities.CERTIFICATE_AUTHORITY_RUNTIME_CAPABILITY, ATTRIBUTES);
             this.extensionClass = extensionClass;
+        }
+
+        @Override
+        protected String getSubsystemCapability() {
+            return ElytronCommonDefinitions.getSubsystemCapability(extensionClass);
         }
 
         @Override

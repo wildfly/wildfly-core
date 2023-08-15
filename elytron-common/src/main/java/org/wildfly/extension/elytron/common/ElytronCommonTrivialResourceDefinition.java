@@ -67,12 +67,8 @@ public class ElytronCommonTrivialResourceDefinition extends SimpleResourceDefini
         this.children = children;
     }
 
-    protected ElytronCommonTrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
-        this(pathKey, resourceDescriptionResolver, add, new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities);
-    }
-
     protected ElytronCommonTrivialResourceDefinition(final Class<?> extensionClass, String pathKey, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
-        this(pathKey, ElytronCommonDefinitions.getResourceDescriptionResolver(extensionClass, pathKey), add, new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities);
+        this(pathKey, ElytronCommonDefinitions.getResourceDescriptionResolver(extensionClass, pathKey), add, new TrivialCapabilityServiceRemoveHandler(extensionClass, add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities);
     }
 
     @Override
@@ -204,7 +200,7 @@ public class ElytronCommonTrivialResourceDefinition extends SimpleResourceDefini
         protected ResourceDefinition build() {
             ResourceDescriptionResolver resourceDescriptionResolver = this.resourceDescriptionResolver != null ? this.resourceDescriptionResolver : ElytronCommonDefinitions.getResourceDescriptionResolver(extensionClass, pathKey);
             return new ElytronCommonTrivialResourceDefinition(pathKey, resourceDescriptionResolver, addHandler,
-                    removeHandler != null ? removeHandler : new TrivialCapabilityServiceRemoveHandler(addHandler, runtimeCapabilities),
+                    removeHandler != null ? removeHandler : new TrivialCapabilityServiceRemoveHandler(extensionClass, addHandler, runtimeCapabilities),
                     attributes, readOnlyAttributes, operations, children, runtimeCapabilities);
         }
 

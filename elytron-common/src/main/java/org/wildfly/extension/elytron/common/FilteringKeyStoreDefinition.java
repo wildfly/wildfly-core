@@ -75,13 +75,13 @@ public class FilteringKeyStoreDefinition extends SimpleResourceDefinition {
         StandardResourceDescriptionResolver filterKSResourceResolver = ElytronCommonDefinitions.getResourceDescriptionResolver(extensionClass, ElytronCommonConstants.FILTERING_KEY_STORE);
 
         KeyStoreAddHandler filterKSAddHandler = new KeyStoreAddHandler(extensionClass);
-        TrivialCapabilityServiceRemoveHandler filterKSRemoveHandler = new TrivialCapabilityServiceRemoveHandler(filterKSAddHandler, KEY_STORE_RUNTIME_CAPABILITY);
+        TrivialCapabilityServiceRemoveHandler filterKSRemoveHandler = new TrivialCapabilityServiceRemoveHandler(extensionClass, filterKSAddHandler, KEY_STORE_RUNTIME_CAPABILITY);
 
         return new FilteringKeyStoreDefinition(filterKSResourceResolver, filterKSAddHandler, filterKSRemoveHandler);
     }
 
     protected FilteringKeyStoreDefinition(StandardResourceDescriptionResolver filterKSResourceResolver, KeyStoreAddHandler filterKSAddHandler,
-                                        TrivialCapabilityServiceRemoveHandler filterKSRemoveHandler) {
+                                        ElytronCommonTrivialCapabilityServiceRemoveHandler filterKSRemoveHandler) {
         super(new Parameters(PathElement.pathElement(ElytronCommonConstants.FILTERING_KEY_STORE), filterKSResourceResolver)
                 .setAddHandler(filterKSAddHandler)
                 .setRemoveHandler(filterKSRemoveHandler)
@@ -117,6 +117,11 @@ public class FilteringKeyStoreDefinition extends SimpleResourceDefinition {
         private KeyStoreAddHandler(final Class<?> extensionClass) {
             super(KEY_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES);
             this.extensionClass = extensionClass;
+        }
+
+        @Override
+        protected String getSubsystemCapability() {
+            return ElytronCommonDefinitions.getSubsystemCapability(extensionClass);
         }
 
         @Override

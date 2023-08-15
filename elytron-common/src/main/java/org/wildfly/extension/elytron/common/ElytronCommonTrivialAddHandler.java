@@ -50,21 +50,26 @@ public abstract class ElytronCommonTrivialAddHandler<T> extends ElytronCommonBas
     private final Mode initialMode;
     private final Mode adminOnlyInitialMode;
 
-    public ElytronCommonTrivialAddHandler(Class<?> extensionClass, Class<T> serviceType, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
+    public ElytronCommonTrivialAddHandler(final Class<?> extensionClass, Class<T> serviceType, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
         this(extensionClass, serviceType, Mode.ACTIVE, attributes, runtimeCapability);
     }
 
-    public ElytronCommonTrivialAddHandler(Class<?> extensionClass, Class<T> serviceType, Mode initialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
+    public ElytronCommonTrivialAddHandler(final Class<?> extensionClass, Class<T> serviceType, Mode initialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
         this(extensionClass, serviceType, initialMode, initialMode, attributes, runtimeCapability);
     }
 
-    public ElytronCommonTrivialAddHandler(Class<?> extensionClass, Class<T> serviceType, Mode initialMode, Mode adminOnlyInitialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
+    public ElytronCommonTrivialAddHandler(final Class<?> extensionClass, Class<T> serviceType, Mode initialMode, Mode adminOnlyInitialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
         super(new HashSet<>(Collections.singletonList(checkNotNullParam("runtimeCapabilities", runtimeCapability))), attributes);
         this.extensionClass = extensionClass;
         this.runtimeCapability = runtimeCapability;
         checkNotNullParam("serviceType", serviceType);
         this.initialMode = checkNotNullParam("initialMode", initialMode);
         this.adminOnlyInitialMode = checkNotNullParam("adminOnlyInitialMode", adminOnlyInitialMode);
+    }
+
+    @Override
+    protected String getSubsystemCapability() {
+        return ElytronCommonDefinitions.getSubsystemCapability(extensionClass);
     }
 
     @SuppressWarnings("unchecked")

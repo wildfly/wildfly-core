@@ -41,11 +41,16 @@ public class ElytronCommonDefinitions extends SimpleResourceDefinition {
     /**
      * Dynamically generates {@link ResourceDefinition} for a given subsystem.
      *
-     * @param extensionClass Class object for the subsystem {@link org.jboss.as.controller.Extension Extension}
+     * @param extensionClass Class object for the subsystem {@link org.jboss.as.controller.Extension Extension} (ex.
+     *                       {@code org.wildfly.extension.elytron-oauth2.ElytronOAuth2Extension})
      * @param serverOrHostController whether the given resource registration is for a server, or if not, is not for a
      *                               resource in the {@code profile} resource tree. See
      *                               {@link #isServerOrHostController(ImmutableManagementResourceRegistration)}
      * @return An array of definitions for TLS components in Elytron
+     *
+     * @implSpec The last element of the subsystem package MUST match the capability name of the subsystem. For example,
+     * a subsystem using the capability name {@code org.wildfly.security.elytron-oauth2} would need to use a package like
+     * {@code org.wildfly.extension.elytron-oauth2}
      */
     public static ResourceDefinition[] getElytronCommonTLSDefinitions(final Class<?> extensionClass,
                                                                       boolean serverOrHostController) {
@@ -69,7 +74,7 @@ public class ElytronCommonDefinitions extends SimpleResourceDefinition {
         };
     }
 
-    public static <T> ServiceBuilder<T> commonRequirements(Class<?> extensionClass, ServiceBuilder<T> serviceBuilder) {
+    public static <T> ServiceBuilder<T> commonRequirements(final Class<?> extensionClass, ServiceBuilder<T> serviceBuilder) {
         return commonRequirements(ServiceName.of(getSubsystemName(extensionClass)), serviceBuilder);
     }
 
@@ -77,7 +82,7 @@ public class ElytronCommonDefinitions extends SimpleResourceDefinition {
         return commonRequirements(subsystemName, serviceBuilder, true, true);
     }
 
-    public static <T> ServiceBuilder<T> commonRequirements(Class<?> extensionClass, ServiceBuilder<T> serviceBuilder, boolean dependOnProperties, boolean dependOnProviderRegistration) {
+    public static <T> ServiceBuilder<T> commonRequirements(final Class<?> extensionClass, ServiceBuilder<T> serviceBuilder, boolean dependOnProperties, boolean dependOnProviderRegistration) {
         return commonRequirements(ServiceName.of(getSubsystemName(extensionClass)), serviceBuilder, dependOnProperties, dependOnProviderRegistration);
     }
 
@@ -95,14 +100,22 @@ public class ElytronCommonDefinitions extends SimpleResourceDefinition {
      * @param extensionClass Class object for the subsystem {@link org.jboss.as.controller.Extension Extension}
      * @return the last element of the package name. Ex. {@code org.wildfly.extension.elytron} returns {@code elytron}.
      */
-    static String getSubsystemName(Class<?> extensionClass) {
+    static String getSubsystemName(final Class<?> extensionClass) {
         String[] packageSegments = extensionClass.getPackage().getName().split("\\.");
         return packageSegments[packageSegments.length - 1];
     }
 
+    /**
+     * Generates a subsystem capability, with prefix {@code org.wildfly.security}
+     *
+     * @param extensionClass Class object for the subsystem {@link org.jboss.as.controller.Extension Extension}
+     * @return a subsystem capability name
+     */
+    static String getSubsystemCapability(final Class<?> extensionClass) {
+        return ElytronCommonCapabilities.CAPABILITY_BASE + getSubsystemName(extensionClass);
+    }
 
-
-    public static StandardResourceDescriptionResolver getResourceDescriptionResolver(Class<?> extensionClass,
+    public static StandardResourceDescriptionResolver getResourceDescriptionResolver(final Class<?> extensionClass,
                                                                               final String... keyPrefixes) {
 
         String resourceName = extensionClass.getPackage().getName() + ".LocalDescriptions";

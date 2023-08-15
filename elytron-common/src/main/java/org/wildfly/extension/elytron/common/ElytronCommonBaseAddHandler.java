@@ -60,8 +60,6 @@ public abstract class ElytronCommonBaseAddHandler extends AbstractAddStepHandler
         this.runtimeCapabilities = Collections.singleton(runtimeCapability);
     }
 
-
-
     /**
      * Constructor of the add handler that takes a {@link Set} of {@link RuntimeCapability} and array of {@link AttributeDefinition}.
      *
@@ -73,14 +71,15 @@ public abstract class ElytronCommonBaseAddHandler extends AbstractAddStepHandler
         this.runtimeCapabilities = capabilities;
     }
 
-
+    /** @apiNote This class is typically implemented by calling {@link ElytronCommonDefinitions#getSubsystemCapability(Class)}  */
+    protected abstract String getSubsystemCapability();
 
     @Override
     protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         super.recordCapabilitiesAndRequirements(context, operation, resource);
         final String pathValue = context.getCurrentAddressValue();
         for (RuntimeCapability r : runtimeCapabilities) {
-            context.registerAdditionalCapabilityRequirement(ElytronCommonCapabilities.ELYTRON_CAPABILITY, r.isDynamicallyNamed() ? r.getDynamicName(pathValue) : r.getName(), null);
+            context.registerAdditionalCapabilityRequirement(getSubsystemCapability(), r.isDynamicallyNamed() ? r.getDynamicName(pathValue) : r.getName(), null);
         }
     }
 

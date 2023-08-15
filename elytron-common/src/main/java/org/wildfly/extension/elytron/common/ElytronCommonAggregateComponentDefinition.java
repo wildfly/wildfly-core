@@ -58,7 +58,7 @@ public class ElytronCommonAggregateComponentDefinition<T> extends SimpleResource
     private final ListAttributeDefinition aggregateReferences;
     private final OperationStepHandler attributeWriteHandler;
 
-    protected ElytronCommonAggregateComponentDefinition(Class<?> extensionClass, Class<T> classType, String pathKey, OperationStepHandler addHandler, OperationStepHandler removeHandler,
+    protected ElytronCommonAggregateComponentDefinition(final Class<?> extensionClass, Class<T> classType, String pathKey, OperationStepHandler addHandler, OperationStepHandler removeHandler,
             ListAttributeDefinition aggregateReferences, OperationStepHandler attributeWriteHandler, RuntimeCapability<?> runtimeCapability) {
         super(new Parameters(PathElement.pathElement(pathKey),
                 ElytronCommonDefinitions.getResourceDescriptionResolver(extensionClass, pathKey))
@@ -84,12 +84,12 @@ public class ElytronCommonAggregateComponentDefinition<T> extends SimpleResource
         resourceRegistration.registerReadWriteAttribute(aggregateReferences, null, attributeWriteHandler);
     }
 
-    public static <T> ElytronCommonAggregateComponentDefinition<T> createCommonDefinition(Class<?> extensionClass, Class<T> aggregationType,
+    public static <T> ElytronCommonAggregateComponentDefinition<T> createCommonDefinition(final Class<?> extensionClass, Class<T> aggregationType,
             String componentName, String referencesName, RuntimeCapability<?> runtimeCapability, Function<T[], T> aggregator) {
         return createCommonDefinition(extensionClass, aggregationType, componentName, referencesName, runtimeCapability, aggregator, true);
     }
 
-    public static <T> ElytronCommonAggregateComponentDefinition<T> createCommonDefinition(Class<?> extensionClass, Class<T> aggregationType,
+    public static <T> ElytronCommonAggregateComponentDefinition<T> createCommonDefinition(final Class<?> extensionClass, Class<T> aggregationType,
             String componentName, String referencesName, RuntimeCapability<?> runtimeCapability, Function<T[], T> aggregator, boolean dependOnProviderRegistration) {
         String capabilityName = runtimeCapability.getName();
         StringListAttributeDefinition aggregateReferences = new StringListAttributeDefinition.Builder(referencesName)
@@ -100,13 +100,13 @@ public class ElytronCommonAggregateComponentDefinition<T> extends SimpleResource
             .build();
 
         AbstractAddStepHandler add = new AggregateComponentAddHandler<T>(extensionClass, aggregationType, aggregator, aggregateReferences, runtimeCapability, dependOnProviderRegistration);
-        OperationStepHandler remove = new TrivialCapabilityServiceRemoveHandler(add, runtimeCapability);
+        OperationStepHandler remove = new TrivialCapabilityServiceRemoveHandler(extensionClass, add, runtimeCapability);
         OperationStepHandler write = new ElytronReloadRequiredWriteAttributeHandler(aggregateReferences);
 
         return new ElytronCommonAggregateComponentDefinition<T>(extensionClass, aggregationType, componentName, add, remove, aggregateReferences, write, runtimeCapability);
     }
 
-   public static <T> ElytronCommonAggregateComponentDefinition<T> createCommonDefinition(Class<?> extensionClass, Class<T> aggregationType, String componentName,
+   public static <T> ElytronCommonAggregateComponentDefinition<T> createCommonDefinition(final Class<?> extensionClass, Class<T> aggregationType, String componentName,
             String referencesName, RuntimeCapability<?> runtimeCapability, String apiCapabilityName, Function<T[], T> aggregator, boolean dependOnProviderRegistration) {
         String capabilityName = runtimeCapability.getName();
         StringListAttributeDefinition aggregateReferences = new StringListAttributeDefinition.Builder(referencesName)
@@ -117,7 +117,7 @@ public class ElytronCommonAggregateComponentDefinition<T> extends SimpleResource
             .build();
 
         AbstractAddStepHandler add = new AggregateApiComponentAddHandler<T>(extensionClass, aggregationType, aggregator, aggregateReferences, runtimeCapability, apiCapabilityName, dependOnProviderRegistration);
-        OperationStepHandler remove = new TrivialCapabilityServiceRemoveHandler(add, runtimeCapability);
+        OperationStepHandler remove = new TrivialCapabilityServiceRemoveHandler(extensionClass, add, runtimeCapability);
         OperationStepHandler write = new ElytronReloadRequiredWriteAttributeHandler(aggregateReferences);
 
         return new ElytronCommonAggregateComponentDefinition<T>(extensionClass, aggregationType, componentName, add, remove, aggregateReferences, write, runtimeCapability);
@@ -132,7 +132,7 @@ public class ElytronCommonAggregateComponentDefinition<T> extends SimpleResource
         private final RuntimeCapability<?> runtimeCapability;
         private final boolean dependOnProviderRegistration;
 
-        protected AggregateComponentAddHandler(Class<?> extensionClass, Class<T> aggregationType, Function<T[], T> aggregator,
+        protected AggregateComponentAddHandler(final Class<?> extensionClass, Class<T> aggregationType, Function<T[], T> aggregator,
                 StringListAttributeDefinition aggregateReferences, RuntimeCapability<?> runtimeCapability,
                 boolean dependOnProviderRegistration) {
             super(runtimeCapability, aggregateReferences);
@@ -142,6 +142,11 @@ public class ElytronCommonAggregateComponentDefinition<T> extends SimpleResource
             this.aggregateReferences = aggregateReferences;
             this.runtimeCapability = runtimeCapability;
             this.dependOnProviderRegistration = dependOnProviderRegistration;
+        }
+
+        @Override
+        protected String getSubsystemCapability() {
+            return ElytronCommonDefinitions.getSubsystemCapability(extensionClass);
         }
 
         @Override
@@ -180,7 +185,7 @@ public class ElytronCommonAggregateComponentDefinition<T> extends SimpleResource
         private final boolean dependOnProviderRegistration;
         private final String apiCapabilityName;
 
-        protected AggregateApiComponentAddHandler(Class<?> extensionClass, Class<T> aggregationType, Function<T[], T> aggregator,
+        protected AggregateApiComponentAddHandler(final Class<?> extensionClass, Class<T> aggregationType, Function<T[], T> aggregator,
                 StringListAttributeDefinition aggregateReferences, RuntimeCapability<?> runtimeCapability, String apiCapabilityName,
                 boolean dependOnProviderRegistration) {
             super(extensionClass, runtimeCapability, new AttributeDefinition[] { aggregateReferences }, apiCapabilityName);
