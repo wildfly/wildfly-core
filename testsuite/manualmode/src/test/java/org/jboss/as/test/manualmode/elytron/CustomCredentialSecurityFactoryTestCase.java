@@ -81,7 +81,7 @@ public class CustomCredentialSecurityFactoryTestCase {
             Path moduleJar = createJar("testJar", CustomCredentialSecurityFactoryImpl.class);
             try {
                 cli.sendLine("module add --name=" + CUSTOM_CREDENTIAL_SECURITY_FACTORY_MODULE_NAME
-                    + " --slot=main --dependencies=org.wildfly.security.elytron,org.wildfly.extension.elytron --resources="
+                    + " --slot=main --dependencies=org.wildfly.security.elytron --resources="
                     + moduleJar.toAbsolutePath());
             } finally {
                 Files.deleteIfExists(moduleJar);

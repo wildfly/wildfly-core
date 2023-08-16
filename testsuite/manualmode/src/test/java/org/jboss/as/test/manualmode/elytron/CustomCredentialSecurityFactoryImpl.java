@@ -22,15 +22,14 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
 
-import org.wildfly.extension.elytron.Configurable;
-import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
+import org.wildfly.security.SecurityFactory;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
 import org.wildfly.security.password.spec.PasswordSpec;
 
-public class CustomCredentialSecurityFactoryImpl implements CredentialSecurityFactory, Configurable {
+public class CustomCredentialSecurityFactoryImpl implements SecurityFactory<Credential> {
 
     boolean throwException = false;
 
@@ -53,7 +52,6 @@ public class CustomCredentialSecurityFactoryImpl implements CredentialSecurityFa
         }
     }
 
-    @Override
     public void initialize(Map<String, String> configuration) {
         throwException = Boolean.parseBoolean(configuration.get("throwException"));
     }
