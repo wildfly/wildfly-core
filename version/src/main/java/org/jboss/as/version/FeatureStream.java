@@ -23,6 +23,8 @@ public enum FeatureStream {
     public static final FeatureStream FEATURE_DEFAULT = BLESSED;
     // TODO externalize somewhere, e.g. /META-INF/MANIFEST.MF
     public static final FeatureStream PROCESS_DEFAULT = STABLE;
+    // TODO externalize somewhere, e.g. /META-INF/MANIFEST.MF
+    public static final FeatureStream PROCESS_MAX = EXPERIMENTAL;
 
     private final String value;
 

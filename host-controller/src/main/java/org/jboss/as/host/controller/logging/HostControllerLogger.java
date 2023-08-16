@@ -1464,6 +1464,9 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 222, value = "%s feature stream is not supported for legacy connecting host")
     OperationFailedException incompatibleFeatureStreamForLegacyHost(FeatureStream hostFeatureStream);
 
+    @Message(id = 223, value = "%s feature stream is not supported in %s")
+    IllegalArgumentException unsupportedFeatureStream(FeatureStream featureStream, String name);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

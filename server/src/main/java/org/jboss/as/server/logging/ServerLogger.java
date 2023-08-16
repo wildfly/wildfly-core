@@ -1453,6 +1453,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 308, value = "Failed to parse property (%s), value (%s) should match one of: %s")
     IllegalArgumentException failedToParseEnumProperty(String name, String value, Set<?> values);
 
+    @Message(id = 309, value = "%s feature stream is not supported in %s")
+    IllegalArgumentException unsupportedFeatureStream(FeatureStream featureStream, String name);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

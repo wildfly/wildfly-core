@@ -523,6 +523,9 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             }
 
             this.stream = getEnumProperty(props, ProcessEnvironment.FEATURE_STREAM, FeatureStream.PROCESS_DEFAULT);
+            if (!FeatureStream.PROCESS_MAX.enables(this.stream)) {
+                throw ServerLogger.ROOT_LOGGER.unsupportedFeatureStream(this.stream, productConfig.getProductName());
+            }
         }
         boolean allowExecutor = true;
         String maxThreads = WildFlySecurityManager.getPropertyPrivileged(BOOTSTRAP_MAX_THREADS, null);
