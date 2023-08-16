@@ -719,7 +719,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     }
 
     private void configureServerName(String serverName, Properties providedProperties) {
-        if (serverName == null) {
+        if (serverName == null || serverName.isBlank()) {
             serverName = hostName;
         } else {
             providedProperties.setProperty(SERVER_NAME, serverName);
@@ -748,15 +748,15 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         if (qualifiedHostName == null) {
             // if host name is specified, don't pick a qualified host name that isn't related to it
             qualifiedHostName = providedHostName;
-            if (qualifiedHostName == null) {
+            if (qualifiedHostName == null || qualifiedHostName.isBlank()) {
                 // POSIX-like OSes including Mac should have this set
                 qualifiedHostName = env.get("HOSTNAME");
             }
-            if (qualifiedHostName == null) {
+            if (qualifiedHostName == null || qualifiedHostName.isBlank()) {
                 // Certain versions of Windows
                 qualifiedHostName = env.get("COMPUTERNAME");
             }
-            if (qualifiedHostName == null) {
+            if (qualifiedHostName == null || qualifiedHostName.isBlank()) {
                 try {
                     qualifiedHostName = NetworkUtils.canonize(InetAddressUtil.getLocalHost().getHostName());
                 } catch (UnknownHostException e) {
@@ -767,7 +767,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                 // IP address is not acceptable
                 qualifiedHostName = null;
             }
-            if (qualifiedHostName == null) {
+            if (qualifiedHostName == null || qualifiedHostName.isBlank()) {
                 // Give up
                 qualifiedHostName = "unknown-host.unknown-domain";
             } else {
@@ -794,7 +794,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     }
 
     private void configureHostName(String hostName, Properties providedProperties) {
-        if (hostName == null) {
+        if (hostName == null || hostName.isBlank()) {
             providedProperties.remove(HOST_NAME);
             // Use the host part of the qualified host name
             final int idx = qualifiedHostName.indexOf('.');
