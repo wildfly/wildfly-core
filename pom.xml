@@ -231,7 +231,7 @@
         <version.org.jboss.logging.jul-to-slf4j-stub>1.0.1.Final</version.org.jboss.logging.jul-to-slf4j-stub>
         <version.org.jboss.logmanager.jboss-logmanager>2.1.19.Final</version.org.jboss.logmanager.jboss-logmanager>
         <version.org.jboss.logmanager.log4j2-jboss-logmanager>1.1.1.Final</version.org.jboss.logmanager.log4j2-jboss-logmanager>
-        <version.org.jboss.marshalling.jboss-marshalling>2.1.1.Final</version.org.jboss.marshalling.jboss-marshalling>
+        <version.org.jboss.marshalling.jboss-marshalling>2.1.2.SP1</version.org.jboss.marshalling.jboss-marshalling>
         <version.org.jboss.modules.jboss-modules>2.1.2.Final</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.5.1.Final</version.org.jboss.msc.jboss-msc>
         <version.org.jboss.remoting>5.0.27.Final</version.org.jboss.remoting>
