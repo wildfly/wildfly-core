@@ -188,10 +188,6 @@
             <artifactId>byteman</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>xom</groupId>
-            <artifactId>xom</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.wildfly.installation-manager</groupId>
