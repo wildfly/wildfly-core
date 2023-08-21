@@ -152,7 +152,7 @@
         <version.org.wildfly.component-matrix-plugin>1.0.3.Final</version.org.wildfly.component-matrix-plugin>
         <version.org.wildfly.plugins>2.2.0.Final</version.org.wildfly.plugins>
         <version.versions.plugin>2.5</version.versions.plugin>
-        <version.xml.plugin>1.0.1</version.xml.plugin>
+        <version.xml.plugin>1.0.2</version.xml.plugin>
         <wildfly.build.output.dir>dist/target/${server.output.dir.prefix}-${wildfly.core.release.version}</wildfly.build.output.dir>
         <!-- Release Info -->
         <wildfly.core.release.version>${project.version}</wildfly.core.release.version>
