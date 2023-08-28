@@ -792,7 +792,7 @@ public class CoreModelTestDelegate {
         }
 
         private KernelServices bootCurrentVersionWithLegacyBootOperations(List<ModelNode> bootOperations, ModelInitializer modelInitializer, ModelWriteSanitizer modelWriteSanitizer, List<String> contentRepositoryHashes, KernelServices mainServices) throws Exception {
-            KernelServicesBuilder reverseServicesBuilder = createKernelServicesBuilder(TestModelType.DOMAIN, FeatureStream.FEATURE_DEFAULT)
+            KernelServicesBuilder reverseServicesBuilder = createKernelServicesBuilder(TestModelType.DOMAIN, FeatureStream.DEFAULT)
                 .setBootOperations(bootOperations)
                 .setModelInitializer(modelInitializer, modelWriteSanitizer);
             for (String hash : contentRepositoryHashes) {

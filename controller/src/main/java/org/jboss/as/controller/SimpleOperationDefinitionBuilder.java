@@ -42,7 +42,7 @@ public class SimpleOperationDefinitionBuilder {
     protected AttributeDefinition[] replyParameters = NO_ATTRIBUTES;
     protected AccessConstraintDefinition[] accessConstraints;
     DescriptionProvider descriptionProvider;
-    FeatureStream stream = FeatureStream.FEATURE_DEFAULT;
+    FeatureStream stream = FeatureStream.DEFAULT;
 
     public SimpleOperationDefinitionBuilder(String name, ResourceDescriptionResolver resolver) {
         this.name = name;

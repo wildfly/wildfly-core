@@ -51,7 +51,7 @@ public class NotificationDefinition implements Feature {
         private final String type;
         private final ResourceDescriptionResolver resolver;
         private DataValueDescriptor dataValueDescriptor = NO_DATA;
-        private FeatureStream stream = FeatureStream.FEATURE_DEFAULT;
+        private FeatureStream stream = FeatureStream.DEFAULT;
 
         private Builder(String type, ResourceDescriptionResolver resolver) {
             this.type = type;
