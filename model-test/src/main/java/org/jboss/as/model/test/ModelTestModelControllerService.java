@@ -191,7 +191,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
         super(null,
                 null,
                 processType,
-                FeatureStream.PROCESS_DEFAULT,
+                FeatureStream.DEFAULT,
                 runningModeControl,
                 persister,
                 processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition,

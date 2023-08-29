@@ -214,7 +214,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
                                         final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
                                         final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
-        this(null, null, processType, FeatureStream.PROCESS_DEFAULT, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
+        this(null, null, processType, FeatureStream.DEFAULT, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
                 prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, null);
     }
 
@@ -243,7 +243,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
                                         final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                         final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension) {
-        this(executorService, instabilityListener, processType, FeatureStream.PROCESS_DEFAULT, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
+        this(executorService, instabilityListener, processType, FeatureStream.DEFAULT, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
                 prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, configExtension);
     }
 

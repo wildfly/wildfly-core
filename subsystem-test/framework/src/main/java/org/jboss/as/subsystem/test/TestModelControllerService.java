@@ -42,6 +42,7 @@ import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.ServerEnvironment.LaunchType;
 import org.jboss.as.server.controller.resources.ServerDeploymentResourceDefinition;
 import org.jboss.as.subsystem.test.ControllerInitializer.TestControllerAccessor;
+import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.vfs.VirtualFile;
 
@@ -140,7 +141,9 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         file.delete();
     }
 
+    @Override
     public ServerEnvironment getServerEnvironment() {
+        ProductConfig productConfig = new ProductConfig(null, null, null);
         Properties props = new Properties();
         File home = new File("target/jbossas");
         delete(home);
@@ -164,7 +167,7 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         props.put(ServerEnvironment.JBOSS_SERVER_DEFAULT_CONFIG, "standalone.xml");
         props.put(ProcessEnvironment.FEATURE_STREAM, this.additionalInit.getFeatureStream().toString());
 
-        return new ServerEnvironment(null, props, new HashMap<>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), null, false);
+        return new ServerEnvironment(null, props, new HashMap<>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), productConfig, false);
     }
 
     private static class MockContentRepository implements ContentRepository {

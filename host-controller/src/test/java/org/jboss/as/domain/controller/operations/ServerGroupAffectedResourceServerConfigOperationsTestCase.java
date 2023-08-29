@@ -47,6 +47,7 @@ import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.as.process.ProcessInfo;
 import org.jboss.as.process.ProcessMessageHandler;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceRegistry;
 import org.junit.Assert;
@@ -487,6 +488,10 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
             return false;
         }
 
+        @Override
+        public FeatureStream getFeatureStream() {
+            return FeatureStream.DEFAULT;
+        }
     }
 
     private static class ServerInventoryMock implements ServerInventory {

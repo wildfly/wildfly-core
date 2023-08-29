@@ -40,6 +40,7 @@ import org.jboss.as.management.client.content.ManagedDMRContentTypeResource;
 import org.jboss.as.model.test.ModelTestModelControllerService;
 import org.jboss.as.model.test.StringConfigurationPersister;
 import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.version.FeatureStream;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceContainer;
 
@@ -249,7 +250,10 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl {
                 return false;
             }
 
-
+            @Override
+            public FeatureStream getFeatureStream() {
+                return FeatureStream.DEFAULT;
+            }
         });
 
         for (IgnoreDomainResourceTypeResource resource : ignoredResources) {

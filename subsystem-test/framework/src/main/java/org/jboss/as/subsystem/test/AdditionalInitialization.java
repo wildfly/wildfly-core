@@ -74,7 +74,7 @@ public class AdditionalInitialization extends AdditionalParsers implements Featu
         private final FeatureStream stream;
 
         public ManagementAdditionalInitialization() {
-            this(FeatureStream.PROCESS_DEFAULT);
+            this(FeatureStream.DEFAULT);
         }
 
         public <S extends SubsystemSchema<S>> ManagementAdditionalInitialization(S schema) {
@@ -289,6 +289,16 @@ public class AdditionalInitialization extends AdditionalParsers implements Featu
     }
 
     /**
+     * The feature stream to be used for the installed controller
+     *
+     * @return the feature stream
+     */
+    @Override
+    public FeatureStream getFeatureStream() {
+        return FeatureStream.DEFAULT;
+    }
+
+    /**
      * The running mode to be used for the installed controller when deciding whether to
      * execute the runtime parts of the operation handlers. e.g. if {@link RunningMode#ADMIN_ONLY} the
      * runtime parts of the operation handlers should not get called since that will make {@link org.jboss.as.controller.OperationContext#isNormalServer()}
@@ -370,5 +380,4 @@ public class AdditionalInitialization extends AdditionalParsers implements Featu
     protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration,
                                                     RuntimeCapabilityRegistry capabilityRegistry) {
     }
-
 }

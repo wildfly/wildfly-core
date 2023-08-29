@@ -16,7 +16,9 @@ public interface FeatureRegistry {
      * @return a feature stream
      */
     default FeatureStream getFeatureStream() {
-        return FeatureStream.PROCESS_DEFAULT;
+        // TODO Only here to prevent wildfly-full integration test failures
+        // Remove before branch is merged
+        return FeatureStream.DEFAULT;
     }
 
     /**

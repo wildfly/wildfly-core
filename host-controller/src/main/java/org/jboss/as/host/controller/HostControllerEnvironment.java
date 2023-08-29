@@ -484,8 +484,8 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         this.securityManagerEnabled = securityManagerEnabled || isJavaSecurityManagerConfigured(hostSystemProperties);
         this.processType = processType;
 
-        this.stream = getEnumProperty(hostSystemProperties, FEATURE_STREAM, FeatureStream.PROCESS_DEFAULT);
-        if (!FeatureStream.PROCESS_MAX.enables(this.stream)) {
+        this.stream = getEnumProperty(hostSystemProperties, FEATURE_STREAM, this.productConfig.getDefaultFeatureStream());
+        if (!this.productConfig.getMaxFeatureStream().enables(this.stream)) {
             throw HostControllerLogger.ROOT_LOGGER.unsupportedFeatureStream(this.stream, this.productConfig.getProductName());
         }
         if (!hostSystemProperties.containsKey(FEATURE_STREAM)) {

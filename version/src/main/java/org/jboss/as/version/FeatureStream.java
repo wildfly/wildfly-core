@@ -20,11 +20,6 @@ public enum FeatureStream {
     PREVIEW("preview"),
     EXPERIMENTAL("experimental"),
     ;
-    // TODO externalize somewhere, e.g. /META-INF/MANIFEST.MF
-    public static final FeatureStream PROCESS_DEFAULT = COMMUNITY;
-    // TODO externalize somewhere, e.g. /META-INF/MANIFEST.MF
-    public static final FeatureStream PROCESS_MAX = EXPERIMENTAL;
-
     private final String value;
 
     FeatureStream(String value) {

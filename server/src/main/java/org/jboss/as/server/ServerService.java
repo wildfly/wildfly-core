@@ -202,7 +202,7 @@ public final class ServerService extends AbstractControllerService {
     }
 
     static FeatureStream getFeatureStream(ServerEnvironment serverEnvironment) {
-        return serverEnvironment != null ? serverEnvironment.getFeatureStream() : FeatureStream.PROCESS_DEFAULT;
+        return serverEnvironment != null ? serverEnvironment.getFeatureStream() : FeatureStream.DEFAULT;
     }
 
     /**

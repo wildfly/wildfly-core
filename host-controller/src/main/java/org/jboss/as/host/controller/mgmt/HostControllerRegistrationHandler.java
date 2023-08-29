@@ -340,7 +340,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                     throw failure;
                 }
                 // Legacy hosts must use default stream
-                if ((hostVersion.compareTo(ModelVersion.CURRENT) < 0) && (hostInfo.getFeatureStream() != FeatureStream.PROCESS_DEFAULT)) {
+                if ((hostVersion.compareTo(ModelVersion.CURRENT) < 0) && (hostInfo.getFeatureStream() != FeatureStream.DEFAULT)) {
                     OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.incompatibleFeatureStreamForLegacyHost(hostInfo.getFeatureStream());
                     registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
                     throw failure;

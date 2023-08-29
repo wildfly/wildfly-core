@@ -10,6 +10,7 @@ import java.util.Locale;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.subsystem.test.AdditionalInitialization.ManagementAdditionalInitialization;
+import org.jboss.as.version.FeatureStream;
 
 /**
  * A base class for subsystem parsing tests that utilize {@link SubsystemSchema}.
@@ -47,7 +48,7 @@ public abstract class AbstractSubsystemSchemaTest<S extends SubsystemSchema<S>> 
      * @return a formatter pattern
      */
     protected String getSubsystemXmlPathPattern() {
-        return "%s-%d.%d.xml";
+        return (this.schema.getFeatureStream() == FeatureStream.DEFAULT) ? "%1$s-%2$d.%3$d.xml" : "%1$s-%4$s-%2$d.%3$d.xml";
     }
 
     /**
@@ -55,17 +56,17 @@ public abstract class AbstractSubsystemSchemaTest<S extends SubsystemSchema<S>> 
      * @return a formatter pattern
      */
     protected String getSubsystemXsdPathPattern() {
-        return "schema/wildfly-%s_%d_%d.xsd";
+        return (this.schema.getFeatureStream() == FeatureStream.DEFAULT) ? "schema/wildfly-%1$s_%2$d_%3$d.xsd" : "schema/wildfly-%1$s_%4$s_%2$d_%3$d.xsd";
     }
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return this.readResource(String.format(Locale.ROOT, this.getSubsystemXmlPathPattern(), this.getMainSubsystemName(), this.schema.getVersion().major(), this.schema.getVersion().minor()));
+        return this.readResource(String.format(Locale.ROOT, this.getSubsystemXmlPathPattern(), this.getMainSubsystemName(), this.schema.getVersion().major(), this.schema.getVersion().minor(), this.schema.getFeatureStream()));
     }
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return String.format(Locale.ROOT, this.getSubsystemXsdPathPattern(), this.getMainSubsystemName(), this.schema.getVersion().major(), this.schema.getVersion().minor());
+        return String.format(Locale.ROOT, this.getSubsystemXsdPathPattern(), this.getMainSubsystemName(), this.schema.getVersion().major(), this.schema.getVersion().minor(), this.schema.getFeatureStream());
     }
 
     @Override

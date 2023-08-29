@@ -366,7 +366,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             domainBaseDir = null;
             domainConfigurationDir = null;
             repository = null;
-            this.stream = FeatureStream.PROCESS_DEFAULT;
+            this.stream = productConfig.getDefaultFeatureStream();
             WildFlySecurityManager.setPropertyPrivileged(ServerEnvironment.JBOSS_PERSIST_SERVER_CONFIG, "false");
         } else {
 
@@ -522,8 +522,8 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                 this.domainConfigurationDir = null;
             }
 
-            this.stream = getEnumProperty(props, ProcessEnvironment.FEATURE_STREAM, FeatureStream.PROCESS_DEFAULT);
-            if (!FeatureStream.PROCESS_MAX.enables(this.stream)) {
+            this.stream = getEnumProperty(props, ProcessEnvironment.FEATURE_STREAM, productConfig.getDefaultFeatureStream());
+            if (!productConfig.getMaxFeatureStream().enables(this.stream)) {
                 throw ServerLogger.ROOT_LOGGER.unsupportedFeatureStream(this.stream, productConfig.getProductName());
             }
         }

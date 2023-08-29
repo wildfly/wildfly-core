@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.jar.Manifest;
@@ -33,6 +34,8 @@ public class ProductConfig implements Serializable {
     private final String name;
     private final String version;
     private final String consoleSlot;
+    private final FeatureStream defaultStream;
+    private final FeatureStream maxStream;
     private boolean isProduct;
 
     public static ProductConfig fromFilesystemSlot(ModuleLoader loader, String home, Map<?, ?> providedProperties) {
@@ -47,6 +50,8 @@ public class ProductConfig implements Serializable {
         String projectName = null;
         String productVersion = null;
         String consoleSlot = null;
+        FeatureStream defaultStream = FeatureStream.COMMUNITY;
+        FeatureStream maxStream = FeatureStream.EXPERIMENTAL;
 
         InputStream manifestStream = null;
         try {
@@ -65,6 +70,14 @@ public class ProductConfig implements Serializable {
                     productVersion = manifest.getMainAttributes().getValue("JBoss-Product-Release-Version");
                     consoleSlot = manifest.getMainAttributes().getValue("JBoss-Product-Console-Slot");
                     projectName = manifest.getMainAttributes().getValue("JBoss-Project-Release-Name");
+                    String defaultStreamValue = manifest.getMainAttributes().getValue("JBoss-Product-Feature-Stream");
+                    if (defaultStreamValue != null) {
+                        defaultStream = FeatureStream.valueOf(defaultStreamValue.toUpperCase(Locale.ENGLISH));
+                    }
+                    String maxStreamValue = manifest.getMainAttributes().getValue("JBoss-Product-Feature-Stream-Max");
+                    if (maxStreamValue != null) {
+                        maxStream = FeatureStream.valueOf(maxStreamValue.toUpperCase(Locale.ENGLISH));
+                    }
                 }
             }
 
@@ -78,6 +91,8 @@ public class ProductConfig implements Serializable {
         name = isProduct ? productName : projectName;
         version = productVersion;
         this.consoleSlot = consoleSlot;
+        this.defaultStream = defaultStream;
+        this.maxStream = maxStream;
     }
 
     private static String getProductConf(String home) {
@@ -114,6 +129,8 @@ public class ProductConfig implements Serializable {
         this.name = productName;
         this.version = productVersion;
         this.consoleSlot = consoleSlot;
+        this.defaultStream = FeatureStream.DEFAULT;
+        this.maxStream = FeatureStream.DEFAULT;
     }
 
     public String getProductName() {
@@ -130,6 +147,14 @@ public class ProductConfig implements Serializable {
 
     public String getConsoleSlot() {
         return consoleSlot;
+    }
+
+    public FeatureStream getDefaultFeatureStream() {
+        return this.defaultStream;
+    }
+
+    public FeatureStream getMaxFeatureStream() {
+        return this.maxStream;
     }
 
     public String getPrettyVersionString() {
