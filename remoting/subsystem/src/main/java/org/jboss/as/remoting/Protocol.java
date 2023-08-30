@@ -19,6 +19,7 @@ import org.jboss.dmr.ModelNode;
 public enum Protocol {
 
     REMOTE("remote"),
+    REMOTE_TLS("remote+tls"),
     REMOTE_HTTP("remote+http"),
     HTTP_REMOTING("http-remoting"),
     HTTPS_REMOTING("https-remoting"),

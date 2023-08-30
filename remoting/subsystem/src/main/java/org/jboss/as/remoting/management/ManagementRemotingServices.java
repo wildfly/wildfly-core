@@ -27,6 +27,7 @@ import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFacto
 import org.jboss.as.controller.remote.ModelControllerOperationHandlerFactory;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
+import org.jboss.as.remoting.Protocol;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.dmr.ModelNode;
@@ -84,7 +85,7 @@ public final class ManagementRemotingServices extends RemotingServices {
         ServiceName sbmName = context.hasOptionalCapability(SocketBindingManager.SERVICE_DESCRIPTOR, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY, null)
                 ? context.getCapabilityServiceName(SocketBindingManager.SERVICE_DESCRIPTOR) : null;
         installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName, MANAGEMENT_CONNECTOR,
-                networkInterfaceBinding, port, options, saslAuthenticationFactory, sslContext, sbmName);
+                networkInterfaceBinding, port, Protocol.REMOTE.toString(), options, saslAuthenticationFactory, sslContext, sbmName);
     }
 
     /**
