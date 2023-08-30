@@ -32,7 +32,6 @@ import java.util.Map;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
@@ -76,20 +75,13 @@ public class RemotingExtension implements Extension {
 
     static final SensitiveTargetAccessConstraintDefinition REMOTING_SECURITY_DEF = new SensitiveTargetAccessConstraintDefinition(REMOTING_SECURITY);
 
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 6;
-    private static final int MANAGEMENT_API_MINOR_VERSION = 0;
-    private static final int MANAGEMENT_API_MICRO_VERSION = 0;
-
-    private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
-
-
     private static final String IO_EXTENSION_MODULE = "org.wildfly.extension.io";
 
     @Override
     public void initialize(ExtensionContext context) {
 
         // Register the remoting subsystem
-        final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, CURRENT_VERSION);
+        final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, RemotingSubsystemModel.CURRENT.getVersion());
         registration.registerXMLElementWriter(RemotingSubsystemXMLPersister::new);
 
         final boolean forDomain = context.getType() == ExtensionContext.ContextType.DOMAIN;
