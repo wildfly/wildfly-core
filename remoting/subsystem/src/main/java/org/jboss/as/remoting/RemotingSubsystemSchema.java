@@ -5,11 +5,21 @@
 package org.jboss.as.remoting;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
+import static org.jboss.as.remoting.ConnectorCommon.SASL_PROTOCOL;
+import static org.jboss.as.remoting.ConnectorCommon.SERVER_NAME;
+import static org.jboss.as.remoting.ConnectorResource.AUTHENTICATION_PROVIDER;
+import static org.jboss.as.remoting.ConnectorResource.PROTOCOL;
+import static org.jboss.as.remoting.ConnectorResource.SASL_AUTHENTICATION_FACTORY;
+import static org.jboss.as.remoting.ConnectorResource.SECURITY_REALM;
+import static org.jboss.as.remoting.ConnectorResource.SOCKET_BINDING;
+import static org.jboss.as.remoting.ConnectorResource.SSL_CONTEXT;
 
+import java.util.Collection;
 import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.as.controller.PersistentSubsystemSchema;
@@ -66,9 +76,10 @@ public enum RemotingSubsystemSchema implements PersistentSubsystemSchema<Remotin
         }
     },
     VERSION_6_0(6, 0), // WildFly 30 - 31
-    VERSION_7_0(7, 0), // WildFly 32 - present
+    VERSION_7_0(7, 0), // WildFly 32 - 35
+    VERSION_8_0(8,0) // WildFly 36 - present
     ;
-    static final RemotingSubsystemSchema CURRENT = VERSION_7_0;
+    static final RemotingSubsystemSchema CURRENT = VERSION_8_0;
 
     private VersionedNamespace<IntVersion, RemotingSubsystemSchema> namespace;
 
@@ -97,12 +108,23 @@ public enum RemotingSubsystemSchema implements PersistentSubsystemSchema<Remotin
                 }
             });
         }
+
+        final Collection<AttributeDefinition> connectorAttributes  = List.of(AUTHENTICATION_PROVIDER, SOCKET_BINDING, SECURITY_REALM,
+                SERVER_NAME, SASL_PROTOCOL, SASL_AUTHENTICATION_FACTORY, SSL_CONTEXT);
+
+        PersistentResourceXMLDescription.PersistentResourceXMLBuilder connectorBuilder = builder(ConnectorResource.PATH);
+        connectorBuilder.addAttributes(connectorAttributes.stream());
+        if (this.since(VERSION_8_0)) {
+            connectorBuilder.addAttribute(PROTOCOL);
+        }
+        connectorBuilder
+                .addChild(propertiesBuilder)
+                .addChild(builder(SaslResource.SASL_CONFIG_PATH).addAttributes(SaslResource.ATTRIBUTES.stream())
+                        .addChild(builder(SaslPolicyResource.SASL_POLICY_CONFIG_PATH).addAttributes(SaslPolicyResource.ATTRIBUTES.stream()))
+                        .addChild(propertiesBuilder));
+
         return builder
-            .addChild(builder(ConnectorResource.PATH).addAttributes(ConnectorResource.ATTRIBUTES.stream())
-                    .addChild(propertiesBuilder)
-                    .addChild(builder(SaslResource.SASL_CONFIG_PATH).addAttributes(SaslResource.ATTRIBUTES.stream())
-                            .addChild(builder(SaslPolicyResource.SASL_POLICY_CONFIG_PATH).addAttributes(SaslPolicyResource.ATTRIBUTES.stream()))
-                            .addChild(propertiesBuilder)))
+            .addChild(connectorBuilder)
             .addChild(builder(HttpConnectorResource.PATH).addAttributes(HttpConnectorResource.ATTRIBUTES.stream())
                     .addChild(propertiesBuilder)
                     .addChild(builder(SaslResource.SASL_CONFIG_PATH).addAttributes(SaslResource.ATTRIBUTES.stream())
@@ -116,5 +138,7 @@ public enum RemotingSubsystemSchema implements PersistentSubsystemSchema<Remotin
                     .addChild(builder(GenericOutboundConnectionResourceDefinition.PATH).addAttributes(GenericOutboundConnectionResourceDefinition.ATTRIBUTES.stream())
                             .addChild(propertiesBuilder)))
             .build();
+
+
     }
 }
