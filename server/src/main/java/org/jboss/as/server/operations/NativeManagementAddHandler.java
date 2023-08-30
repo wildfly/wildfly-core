@@ -45,6 +45,7 @@ import org.jboss.as.controller.management.BaseNativeInterfaceAddStepHandler;
 import org.jboss.as.controller.management.NativeInterfaceCommonPolicy;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
+import org.jboss.as.remoting.Protocol;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.logging.ServerLogger;
@@ -104,7 +105,7 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,
                     socketBindingServiceName, commonPolicy.getConnectorOptions(),
-                    saslAuthenticationFactoryName, sslContextName, sbmName);
+                    saslAuthenticationFactoryName, sslContextName, sbmName, Protocol.REMOTE.toString());
         return Arrays.asList(REMOTING_BASE.append("server", MANAGEMENT_CONNECTOR), socketBindingServiceName);
     }
 

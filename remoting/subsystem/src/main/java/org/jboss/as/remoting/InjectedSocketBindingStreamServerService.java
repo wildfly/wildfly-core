@@ -50,6 +50,7 @@ final class InjectedSocketBindingStreamServerService extends AbstractStreamServe
 
     private final Supplier<SocketBinding> socketBindingSupplier;
     private final String remotingConnectorName;
+    private final Protocol protocol;
 
     InjectedSocketBindingStreamServerService(
             final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer,
@@ -59,17 +60,19 @@ final class InjectedSocketBindingStreamServerService extends AbstractStreamServe
             final Supplier<SocketBindingManager> socketBindingManagerSupplier,
             final Supplier<SocketBinding> socketBindingSupplier,
             final OptionMap connectorPropertiesOptionMap,
-            final String remotingConnectorName) {
+            final String remotingConnectorName,
+            final String protocol) {
         super(streamServerConsumer, endpointSupplier, saslAuthenticationFactorySupplier,
-                sslContextSupplier, socketBindingManagerSupplier, connectorPropertiesOptionMap);
+                sslContextSupplier, socketBindingManagerSupplier, connectorPropertiesOptionMap, protocol);
         this.socketBindingSupplier = socketBindingSupplier;
         this.remotingConnectorName = remotingConnectorName;
+        this.protocol = Protocol.forName(protocol);
     }
 
     @Override
     public void start(final StartContext context) throws StartException {
         super.start(context);
-        RemotingConnectorBindingInfoService.install(context.getChildTarget(), remotingConnectorName, getSocketBinding(), Protocol.REMOTE);
+        RemotingConnectorBindingInfoService.install(context.getChildTarget(), remotingConnectorName, getSocketBinding(), protocol);
     }
 
     @Override
