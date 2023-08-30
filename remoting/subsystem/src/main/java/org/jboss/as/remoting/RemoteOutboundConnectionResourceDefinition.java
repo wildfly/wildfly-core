@@ -25,7 +25,6 @@ package org.jboss.as.remoting;
 import static org.jboss.as.remoting.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ServiceRemoveStepHandler;
@@ -57,7 +56,7 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
     public static final SimpleAttributeDefinition USERNAME = new SimpleAttributeDefinitionBuilder(CommonAttributes.USERNAME, ModelType.STRING, true)
             .setAllowExpression(true)
             .setAlternatives(CommonAttributes.AUTHENTICATION_CONTEXT)
-            .setDeprecated(ModelVersion.create(4))
+            .setDeprecated(RemotingSubsystemModel.VERSION_4_0_0.getVersion())
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.CREDENTIAL)
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
@@ -68,7 +67,7 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
             .setAlternatives(CommonAttributes.AUTHENTICATION_CONTEXT)
-            .setDeprecated(ModelVersion.create(4))
+            .setDeprecated(RemotingSubsystemModel.VERSION_4_0_0.getVersion())
             .build();
 
     public static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(
@@ -76,7 +75,7 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
             .setDefaultValue(new ModelNode(Protocol.HTTP_REMOTING.toString()))
             .setAllowExpression(true)
             .setAlternatives(CommonAttributes.AUTHENTICATION_CONTEXT)
-            .setDeprecated(ModelVersion.create(4))
+            .setDeprecated(RemotingSubsystemModel.VERSION_4_0_0.getVersion())
             .build();
 
     public static final SimpleAttributeDefinition AUTHENTICATION_CONTEXT = new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTHENTICATION_CONTEXT, ModelType.STRING, true)

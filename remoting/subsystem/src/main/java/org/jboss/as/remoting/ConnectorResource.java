@@ -28,7 +28,6 @@ import static org.jboss.as.remoting.ConnectorCommon.SASL_PROTOCOL;
 import static org.jboss.as.remoting.ConnectorCommon.SERVER_NAME;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
@@ -79,7 +78,7 @@ public class ConnectorResource extends SimpleResourceDefinition {
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
             .setNullSignificant(true)
             .setRestartAllServices()
-            .setDeprecated(ModelVersion.create(6))
+            .setDeprecated(RemotingSubsystemModel.VERSION_6_0_0.getVersion())
             .build();
 
     static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ConnectorCommon.SASL_AUTHENTICATION_FACTORY)

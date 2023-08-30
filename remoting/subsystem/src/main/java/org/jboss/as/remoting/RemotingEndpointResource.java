@@ -29,7 +29,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -68,7 +67,7 @@ class RemotingEndpointResource extends SimpleResourceDefinition {
                 .setRemoveHandler(new RemotingEndpointRemove())
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES) // if this is added post-boot we assume it will trigger a restart required, although in rare cases it might not
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES) // we assume it will trigger a restart required, although in rare cases it might not
-                .setDeprecatedSince(ModelVersion.create(5))
+                .setDeprecatedSince(RemotingSubsystemModel.VERSION_5_0_0.getVersion())
         );
     }
 

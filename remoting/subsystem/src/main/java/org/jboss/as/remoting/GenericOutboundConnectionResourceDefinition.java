@@ -23,7 +23,6 @@
 package org.jboss.as.remoting;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ServiceRemoveStepHandler;
@@ -50,7 +49,7 @@ class GenericOutboundConnectionResourceDefinition extends AbstractOutboundConnec
         super(new Parameters(ADDRESS, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.OUTBOUND_CONNECTION))
                 .setAddHandler(GenericOutboundConnectionAdd.INSTANCE)
                 .setRemoveHandler(new ServiceRemoveStepHandler(OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(), GenericOutboundConnectionAdd.INSTANCE))
-                .setDeprecatedSince(ModelVersion.create(4))
+                .setDeprecatedSince(RemotingSubsystemModel.VERSION_4_0_0.getVersion())
         );
     }
 
