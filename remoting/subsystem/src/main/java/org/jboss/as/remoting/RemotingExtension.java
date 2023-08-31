@@ -116,9 +116,7 @@ public class RemotingExtension implements Extension {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_2_0.getUriString(), RemotingSubsystem20Parser::new);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_3_0.getUriString(), RemotingSubsystem30Parser::new);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_4_0.getUriString(), RemotingSubsystem40Parser::new);
-        // For the current version we don't use a Supplier as we want its description initialized
-        // TODO if any new xsd versions are added, use a Supplier for the old version
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_5_0.getUriString(), new RemotingSubsystem50Parser());
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_5_0.getUriString(), RemotingSubsystem40Parser::new);
 
         // For servers only as a migration aid we'll install io if it is missing.
         // It is invalid to do this on an HC as the HC needs to support profiles running legacy
