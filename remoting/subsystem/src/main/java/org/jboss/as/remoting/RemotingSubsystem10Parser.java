@@ -50,28 +50,21 @@ class RemotingSubsystem10Parser implements XMLStreamConstants, XMLElementReader<
 
         // Handle elements
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            switch (Namespace.forUri(reader.getNamespaceURI())) {
-                case REMOTING_1_0: {
-                    final Element element = Element.forName(reader.getLocalName());
-                    switch (element) {
-                        case WORKER_THREAD_POOL:
-                            parseWorkerThreadPool(reader, subsystem);
-                            break;
-                        case CONNECTOR: {
-                            // Add connector updates
-                            parseConnector(reader, address.toModelNode(), list);
-                            break;
-                        }
-                        default: {
-                            throw unexpectedElement(reader);
-                        }
-                    }
+            final Element element = Element.forName(reader.getLocalName());
+            switch (element) {
+                case WORKER_THREAD_POOL:
+                    parseWorkerThreadPool(reader, subsystem);
+                    break;
+                case CONNECTOR: {
+                    // Add connector updates
+                    parseConnector(reader, address.toModelNode(), list);
                     break;
                 }
                 default: {
                     throw unexpectedElement(reader);
                 }
             }
+            break;
         }
     }
 
@@ -123,36 +116,29 @@ class RemotingSubsystem10Parser implements XMLStreamConstants, XMLElementReader<
         // Handle nested elements.
         final EnumSet<Element> visited = EnumSet.noneOf(Element.class);
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            switch (Namespace.forUri(reader.getNamespaceURI())) {
-                case REMOTING_1_0: {
-                    final Element element = Element.forName(reader.getLocalName());
-                    if (visited.contains(element)) {
-                        throw unexpectedElement(reader);
-                    }
-                    visited.add(element);
-                    switch (element) {
-                        case SASL: {
-                            parseSaslElement(reader, connector.get(OP_ADDR), list);
-                            break;
-                        }
-                        case PROPERTIES: {
-                            parseProperties(reader, connector.get(OP_ADDR), list);
-                            break;
-                        }
-                        case AUTHENTICATION_PROVIDER: {
-                            connector.get(AUTHENTICATION_PROVIDER).set(readStringAttributeElement(reader, "name"));
-                            break;
-                        }
-                        default: {
-                            throw unexpectedElement(reader);
-                        }
-                    }
+            final Element element = Element.forName(reader.getLocalName());
+            if (visited.contains(element)) {
+                throw unexpectedElement(reader);
+            }
+            visited.add(element);
+            switch (element) {
+                case SASL: {
+                    parseSaslElement(reader, connector.get(OP_ADDR), list);
+                    break;
+                }
+                case PROPERTIES: {
+                    parseProperties(reader, connector.get(OP_ADDR), list);
+                    break;
+                }
+                case AUTHENTICATION_PROVIDER: {
+                    connector.get(AUTHENTICATION_PROVIDER).set(readStringAttributeElement(reader, "name"));
                     break;
                 }
                 default: {
                     throw unexpectedElement(reader);
                 }
             }
+            break;
         }
     }
 

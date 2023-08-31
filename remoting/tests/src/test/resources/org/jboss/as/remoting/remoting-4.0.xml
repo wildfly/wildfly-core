@@ -1,0 +1,54 @@
+<subsystem xmlns="urn:jboss:domain:remoting:4.0">
+    <connector name="remoting-connector" socket-binding="remoting" sasl-protocol="myProto" server-name="myServer">
+        <authentication-provider name="blah"/>
+        <properties>
+           <property name="TCP_NODELAY" value="true"/>
+           <property name="KEEP_ALIVE" value="true"/>
+        </properties>
+        <sasl>
+            <include-mechanisms value="one two three"/>
+            <qop value="auth auth-int"/>
+            <strength value="low high"/>
+            <server-auth value="true"/>
+            <reuse-session value="true"/>
+            <policy>
+               <forward-secrecy value="true"/>
+               <no-active value="true"/>
+               <no-anonymous value="true"/>
+               <no-dictionary value="true"/>
+               <no-plain-text value="true"/>
+               <pass-credentials value="true"/>
+            </policy>
+            <properties>
+               <property name="SASL_SERVER_AUTH" value="true"/>
+               <property name="SASL_POLICY_NOACTIVE" value="false"/>
+            </properties>
+        </sasl>
+    </connector>
+    <http-connector name="http-connector" connector-ref="http" sasl-protocol="myProto" server-name="myServer">
+        <authentication-provider name="blah"/>
+        <properties>
+            <property name="TCP_NODELAY" value="true"/>
+            <property name="REUSE_ADDRESSES" value="true"/>
+        </properties>
+        <sasl>
+            <include-mechanisms value="one two three"/>
+            <qop value="auth auth-int"/>
+            <strength value="low high"/>
+            <server-auth value="true"/>
+            <reuse-session value="true"/>
+            <policy>
+               <forward-secrecy value="true"/>
+               <no-active value="true"/>
+               <no-anonymous value="true"/>
+               <no-dictionary value="true"/>
+               <no-plain-text value="true"/>
+               <pass-credentials value="true"/>
+            </policy>
+            <properties>
+               <property name="SASL_SERVER_AUTH" value="true"/>
+               <property name="SASL_POLICY_NOACTIVE" value="false"/>
+            </properties>
+        </sasl>
+    </http-connector>
+</subsystem>

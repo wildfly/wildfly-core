@@ -112,7 +112,7 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
         }
     }
 
-    private static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
+    static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
 
     RemotingSubsystemRootResource() {
         super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(RemotingExtension.SUBSYSTEM_NAME))

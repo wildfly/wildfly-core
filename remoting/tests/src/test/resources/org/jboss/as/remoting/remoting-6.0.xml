@@ -1,0 +1,28 @@
+<subsystem xmlns="urn:jboss:domain:remoting:6.0">
+    <connector name="remoting-connector" socket-binding="remoting" sasl-protocol="myProto" server-name="myServer" authentication-provider="blah">
+        <properties>
+           <property name="TCP_NODELAY" value="true"/>
+           <property name="KEEP_ALIVE" value="true"/>
+        </properties>
+        <sasl include-mechanisms="one two three" qop="auth auth-int" strength="low high" server-auth="true" reuse-session="true">
+            <policy forward-secrecy="true" no-active="true" no-anonymous="true" no-dictionary="true" no-plain-text="true" pass-credentials="true"/>
+            <properties>
+               <property name="SASL_SERVER_AUTH" value="true"/>
+               <property name="SASL_POLICY_NOACTIVE" value="false"/>
+            </properties>
+        </sasl>
+    </connector>
+    <http-connector name="http-connector" connector-ref="http" sasl-protocol="myProto" server-name="myServer" authentication-provider="blah">
+        <properties>
+            <property name="TCP_NODELAY" value="true"/>
+            <property name="REUSE_ADDRESSES" value="true"/>
+        </properties>
+        <sasl include-mechanisms="one two three" qop="auth auth-int" strength="low high" server-auth="true" reuse-session="true">
+            <policy forward-secrecy="true" no-active="true" no-anonymous="true" no-dictionary="true" no-plain-text="true" pass-credentials="true"/>
+            <properties>
+               <property name="SASL_SERVER_AUTH" value="true"/>
+               <property name="SASL_POLICY_NOACTIVE" value="false"/>
+            </properties>
+        </sasl>
+    </http-connector>
+</subsystem>

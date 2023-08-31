@@ -27,6 +27,9 @@ import static org.jboss.as.remoting.CommonAttributes.CONNECTOR;
 import static org.jboss.as.remoting.ConnectorCommon.SASL_PROTOCOL;
 import static org.jboss.as.remoting.ConnectorCommon.SERVER_NAME;
 
+import java.util.Collection;
+import java.util.List;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
@@ -61,7 +64,6 @@ public class ConnectorResource extends SimpleResourceDefinition {
     static final SimpleAttributeDefinition AUTHENTICATION_PROVIDER = new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTHENTICATION_PROVIDER, ModelType.STRING)
             .setDefaultValue(null)
             .setRequired(false)
-            .setAttributeMarshaller(new WrappedAttributeMarshaller(Attribute.NAME))
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
             .setRestartAllServices()
             .build();
@@ -95,12 +97,10 @@ public class ConnectorResource extends SimpleResourceDefinition {
             .setRestartAllServices()
             .build();
 
-    static final AttributeDefinition[] ATTRIBUTES  = {AUTHENTICATION_PROVIDER, SOCKET_BINDING, SECURITY_REALM,
-            SERVER_NAME, SASL_PROTOCOL, SASL_AUTHENTICATION_FACTORY, SSL_CONTEXT};
+    static final Collection<AttributeDefinition> ATTRIBUTES  = List.of(AUTHENTICATION_PROVIDER, SOCKET_BINDING, SECURITY_REALM,
+            SERVER_NAME, SASL_PROTOCOL, SASL_AUTHENTICATION_FACTORY, SSL_CONTEXT);
 
-    static final ConnectorResource INSTANCE = new ConnectorResource();
-
-    private ConnectorResource() {
+    ConnectorResource() {
         super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(CONNECTOR))
                 .setAddHandler(ConnectorAdd.INSTANCE)
                 .setRemoveHandler(ConnectorRemove.INSTANCE)

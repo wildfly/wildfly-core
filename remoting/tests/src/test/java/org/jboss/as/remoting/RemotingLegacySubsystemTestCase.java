@@ -46,7 +46,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -78,6 +77,10 @@ import org.xnio.XnioWorker;
  * @author <a href="opalka.richard@gmail.com">Richard Opalka</a>
  */
 public class RemotingLegacySubsystemTestCase extends AbstractRemotingSubsystemBaseTest {
+
+    public RemotingLegacySubsystemTestCase() {
+        super(RemotingSubsystemSchema.CURRENT);
+    }
 
     @Override
     protected void compare(ModelNode node1, ModelNode node2) {
@@ -231,21 +234,6 @@ public class RemotingLegacySubsystemTestCase extends AbstractRemotingSubsystemBa
 
         Object remoteOutboundConnectionService = dependencies.getService(remoteOutboundConnectionSN);
         assertNotNull(remoteOutboundConnectionService);
-    }
-
-    @Override
-    protected String getSubsystemXml() throws IOException {
-        return readResource("remoting.xml");
-    }
-
-    @Override
-    protected String getSubsystemXml(String resource) throws IOException {
-        return readResource(resource);
-    }
-
-    @Override
-    protected void compareXml(String configId, String original, String marshalled) throws Exception {
-        super.compareXml(configId, original, marshalled, true);
     }
 
     private AdditionalInitialization createRuntimeAdditionalInitialization(final boolean legacyParser) {
