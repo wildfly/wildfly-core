@@ -51,19 +51,8 @@ import org.xnio.XnioWorker;
  */
 class RemotingSubsystemAdd extends AbstractAddStepHandler {
 
-    private final boolean forDomain;
-
-    RemotingSubsystemAdd(RemotingSubsystemRootResource.Attributes attributes) {
-        super(attributes.all);
-        this.forDomain = attributes.forDomain;
-    }
-
-    @Override
-    protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        super.populateModel(context, operation, resource);
-
-        // Add a step to set up a placeholder endpoint resource if needed
-        context.addStep(new WorkerThreadPoolVsEndpointHandler(forDomain), OperationContext.Stage.MODEL);
+    RemotingSubsystemAdd() {
+        super(RemotingSubsystemRootResource.ATTRIBUTES);
     }
 
     @Override

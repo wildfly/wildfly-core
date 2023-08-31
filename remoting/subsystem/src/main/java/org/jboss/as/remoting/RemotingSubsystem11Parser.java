@@ -38,8 +38,8 @@ import static org.jboss.as.remoting.CommonAttributes.SECURITY_REALM;
 import static org.jboss.as.remoting.CommonAttributes.SOCKET_BINDING;
 
 import java.util.EnumSet;
+import java.util.LinkedList;
 import java.util.List;
-import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -49,7 +49,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.dmr.ModelNode;
-import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.wildfly.common.Assert;
 
@@ -58,7 +57,7 @@ import org.wildfly.common.Assert;
  *
  * @author Jaikiran Pai
  */
-class RemotingSubsystem11Parser extends RemotingSubsystem10Parser implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
+class RemotingSubsystem11Parser extends RemotingSubsystem10Parser {
 
     @Override
     public void readElement(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
@@ -195,8 +194,6 @@ class RemotingSubsystem11Parser extends RemotingSubsystem10Parser implements XML
         final int count = reader.getAttributeCount();
         String name = null;
         String outboundSocketBindingRef = null;
-        ModelNode username = null;
-        String securityRealm = null;
         for (int i = 0; i < count; i++) {
             requireNoNamespaceAttribute(reader, i);
             final String value = reader.getAttributeValue(i);
@@ -212,11 +209,11 @@ class RemotingSubsystem11Parser extends RemotingSubsystem10Parser implements XML
                     break;
                 }
                 case USERNAME: {
-                    username = parse(RemoteOutboundConnectionResourceDefinition.USERNAME, value, reader);
+                    // Ignore
                     break;
                 }
                 case SECURITY_REALM: {
-                    securityRealm = value;
+                    // Ignore
                     break;
                 }
                 default:
@@ -229,7 +226,7 @@ class RemotingSubsystem11Parser extends RemotingSubsystem10Parser implements XML
         final PathAddress address = PathAddress.pathAddress(PathAddress.pathAddress(parentAddress), PathElement.pathElement(CommonAttributes.REMOTE_OUTBOUND_CONNECTION, name));
 
         // create add operation add it to the list of operations
-        ModelNode connectionAddOperation = getConnectionAddOperation(name, outboundSocketBindingRef, username, securityRealm, address);
+        ModelNode connectionAddOperation = getConnectionAddOperation(name, outboundSocketBindingRef, address);
         operations.add(connectionAddOperation);
         // parse the nested elements
         final EnumSet<Element> visited = EnumSet.noneOf(Element.class);
@@ -253,86 +250,7 @@ class RemotingSubsystem11Parser extends RemotingSubsystem10Parser implements XML
     }
 
     void parseLocalOutboundConnection(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final List<ModelNode> operations) throws XMLStreamException {
-        final EnumSet<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.OUTBOUND_SOCKET_BINDING_REF);
-        final int count = reader.getAttributeCount();
-        String name = null;
-        String outboundSocketBindingRef = null;
-        for (int i = 0; i < count; i++) {
-            requireNoNamespaceAttribute(reader, i);
-            final String value = reader.getAttributeValue(i);
-            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            required.remove(attribute);
-            switch (attribute) {
-                case NAME: {
-                    name = value;
-                    break;
-                }
-                case OUTBOUND_SOCKET_BINDING_REF: {
-                    outboundSocketBindingRef = value;
-                    break;
-                }
-                default:
-                    throw unexpectedAttribute(reader, i);
-            }
-        }
-        if (!required.isEmpty()) {
-            throw missingRequired(reader, required);
-        }
-
-        final PathAddress address = PathAddress.pathAddress(PathAddress.pathAddress(parentAddress), PathElement.pathElement(CommonAttributes.LOCAL_OUTBOUND_CONNECTION, name));
-        // add it to the list of operations
-        operations.add(getConnectionAddOperation(name, outboundSocketBindingRef, address));
-        // create add operation parse the nested elements
-
-        final EnumSet<Element> visited = EnumSet.noneOf(Element.class);
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            final Element element = Element.forName(reader.getLocalName());
-            if (visited.contains(element)) {
-                throw ParseUtils.unexpectedElement(reader);
-            }
-            visited.add(element);
-            switch (element) {
-                case PROPERTIES: {
-                    parseProperties(reader, address.toModelNode(), operations);
-                    break;
-                }
-                default: {
-                    throw unexpectedElement(reader);
-                }
-            }
-        }
-    }
-
-    void parseOutboundConnection(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final List<ModelNode> operations) throws XMLStreamException {
-        final EnumSet<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.URI);
-        final int count = reader.getAttributeCount();
-        String name = null;
-        String uri = null;
-        for (int i = 0; i < count; i++) {
-            requireNoNamespaceAttribute(reader, i);
-            final String value = reader.getAttributeValue(i);
-            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            required.remove(attribute);
-            switch (attribute) {
-                case NAME: {
-                    name = value;
-                    break;
-                }
-                case URI: {
-                    uri = value;
-                    break;
-                }
-                default:
-                    throw unexpectedAttribute(reader, i);
-            }
-        }
-        if (!required.isEmpty()) {
-            throw missingRequired(reader, required);
-        }
-
-        final PathAddress address = PathAddress.pathAddress(PathAddress.pathAddress(parentAddress), PathElement.pathElement(CommonAttributes.OUTBOUND_CONNECTION, name));
-        // create add operation add it to the list of operations
-        operations.add(GenericOutboundConnectionAdd.getAddOperation(name, uri, address));
+        // Ignore attributes
         // parse the nested elements
         final EnumSet<Element> visited = EnumSet.noneOf(Element.class);
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
@@ -343,7 +261,7 @@ class RemotingSubsystem11Parser extends RemotingSubsystem10Parser implements XML
             visited.add(element);
             switch (element) {
                 case PROPERTIES: {
-                    parseProperties(reader, address.toModelNode(), operations);
+                    parseProperties(reader, new ModelNode(), new LinkedList<>());
                     break;
                 }
                 default: {
@@ -351,15 +269,31 @@ class RemotingSubsystem11Parser extends RemotingSubsystem10Parser implements XML
                 }
             }
         }
+    }
 
-
+    void parseOutboundConnection(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final List<ModelNode> operations) throws XMLStreamException {
+        // Ignore attributes
+        // parse the nested elements
+        final EnumSet<Element> visited = EnumSet.noneOf(Element.class);
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            final Element element = Element.forName(reader.getLocalName());
+            if (visited.contains(element)) {
+                throw ParseUtils.unexpectedElement(reader);
+            }
+            visited.add(element);
+            switch (element) {
+                case PROPERTIES: {
+                    parseProperties(reader, new ModelNode(), new LinkedList<>());
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
     }
 
     static ModelNode getConnectionAddOperation(final String connectionName, final String outboundSocketBindingRef, PathAddress address) {
-        return getConnectionAddOperation(connectionName, outboundSocketBindingRef, null, null, address);
-    }
-
-    static ModelNode getConnectionAddOperation(final String connectionName, final String outboundSocketBindingRef, final ModelNode userName, final String securityRealm, PathAddress address) {
         Assert.checkNotNullParam("connectionName", connectionName);
         Assert.checkNotEmptyParam("connectionName", connectionName);
         Assert.checkNotNullParam("outboundSocketBindingRef", outboundSocketBindingRef);
@@ -371,14 +305,6 @@ class RemotingSubsystem11Parser extends RemotingSubsystem10Parser implements XML
 
         // set the other params
         addOperation.get(CommonAttributes.OUTBOUND_SOCKET_BINDING_REF).set(outboundSocketBindingRef);
-        // optional connection creation options
-        if (userName != null) {
-            addOperation.get(CommonAttributes.USERNAME).set(userName);
-        }
-
-        if (securityRealm != null) {
-            addOperation.get(CommonAttributes.SECURITY_REALM).set(securityRealm);
-        }
 
         return addOperation;
     }

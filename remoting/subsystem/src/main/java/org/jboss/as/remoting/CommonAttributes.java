@@ -47,7 +47,7 @@ interface CommonAttributes {
     String POLICY = "policy";
     String PROPERTIES = "properties";
     String PROPERTY = "property";
-    String PROTOCOL = "protocol";
+    @Deprecated String PROTOCOL = "protocol";
     String QOP = "qop";
     String REMOTE_OUTBOUND_CONNECTION = "remote-outbound-connection";
     String REUSE_SESSION= "reuse-session";
@@ -65,13 +65,7 @@ interface CommonAttributes {
     String SUBSYSTEM = "subsystem";
     String THREAD_POOL = "thread-pool";
     String URI = "uri";
-    String USERNAME = "username";
+    @Deprecated String USERNAME = "username";
     String VALUE = "value";
-    String WORKER_READ_THREADS = "worker-read-threads";
-    String WORKER_TASK_CORE_THREADS = "worker-task-core-threads";
-    String WORKER_TASK_KEEPALIVE = "worker-task-keepalive";
-    String WORKER_TASK_LIMIT = "worker-task-limit";
-    String WORKER_TASK_MAX_THREADS = "worker-task-max-threads";
-    String WORKER_WRITE_THREADS = "worker-write-threads";
     String WORKER = "worker";
 }

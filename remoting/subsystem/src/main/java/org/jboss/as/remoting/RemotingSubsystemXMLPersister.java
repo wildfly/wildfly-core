@@ -30,7 +30,6 @@ import static org.jboss.as.remoting.CommonAttributes.OUTBOUND_CONNECTION;
 import static org.jboss.as.remoting.CommonAttributes.OUTBOUND_SOCKET_BINDING_REF;
 import static org.jboss.as.remoting.CommonAttributes.POLICY;
 import static org.jboss.as.remoting.CommonAttributes.PROPERTY;
-import static org.jboss.as.remoting.CommonAttributes.PROTOCOL;
 import static org.jboss.as.remoting.CommonAttributes.REMOTE_OUTBOUND_CONNECTION;
 import static org.jboss.as.remoting.CommonAttributes.SASL;
 import static org.jboss.as.remoting.CommonAttributes.SASL_POLICY;
@@ -43,7 +42,6 @@ import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -66,10 +64,6 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
         context.startSubsystemElement(Namespace.CURRENT.getUriString(), false);
 
         final ModelNode model = context.getModelNode();
-
-        writeWorkerThreadPoolIfAttributesSet(writer, model);
-
-        writeEndpointIfAttributesSet(writer, model);
 
         if (model.hasDefined(CONNECTOR)) {
             final ModelNode connector = model.get(CONNECTOR);
@@ -127,40 +121,6 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
 
         writer.writeEndElement();
 
-    }
-
-    private void writeWorkerThreadPoolIfAttributesSet(final XMLExtendedStreamWriter writer, final ModelNode node) throws XMLStreamException {
-        if (node.hasDefined(CommonAttributes.WORKER_READ_THREADS) || node.hasDefined(CommonAttributes.WORKER_TASK_CORE_THREADS) || node.hasDefined(CommonAttributes.WORKER_TASK_KEEPALIVE) ||
-                node.hasDefined(CommonAttributes.WORKER_TASK_LIMIT) || node.hasDefined(CommonAttributes.WORKER_TASK_MAX_THREADS) || node.hasDefined(CommonAttributes.WORKER_WRITE_THREADS)) {
-
-            writer.writeStartElement(Element.WORKER_THREAD_POOL.getLocalName());
-
-            RemotingSubsystemRootResource.WORKER_READ_THREADS.marshallAsAttribute(node, false, writer);
-            RemotingSubsystemRootResource.WORKER_TASK_CORE_THREADS.marshallAsAttribute(node, false, writer);
-            RemotingSubsystemRootResource.WORKER_TASK_KEEPALIVE.marshallAsAttribute(node, false, writer);
-            RemotingSubsystemRootResource.WORKER_TASK_LIMIT.marshallAsAttribute(node, false, writer);
-            RemotingSubsystemRootResource.WORKER_TASK_MAX_THREADS.marshallAsAttribute(node, false, writer);
-            RemotingSubsystemRootResource.WORKER_WRITE_THREADS.marshallAsAttribute(node, false, writer);
-
-            writer.writeEndElement();
-        }
-
-    }
-
-    private void writeEndpointIfAttributesSet(final XMLExtendedStreamWriter writer, final ModelNode model) throws XMLStreamException {
-        boolean defined = false;
-        for (String adName : RemotingEndpointResource.ATTRIBUTES.keySet()) {
-            if (model.hasDefined(adName)) {
-                defined = true;
-                break;
-            }
-        }
-        if (defined) {
-            writer.writeEmptyElement(RemotingEndpointResource.ENDPOINT_PATH.getValue());
-            for (AttributeDefinition ad : RemotingEndpointResource.ATTRIBUTES.values()) {
-                ad.getMarshaller().marshallAsAttribute(ad, model, true, writer);
-            }
-        }
     }
 
     private void writeConnector(final XMLExtendedStreamWriter writer, final ModelNode node, final String name) throws XMLStreamException {
@@ -277,17 +237,6 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
         final String outboundSocketRef = model.get(OUTBOUND_SOCKET_BINDING_REF).asString();
         writer.writeAttribute(Attribute.OUTBOUND_SOCKET_BINDING_REF.getLocalName(), outboundSocketRef);
 
-        if (model.hasDefined(CommonAttributes.USERNAME)) {
-            writer.writeAttribute(Attribute.USERNAME.getLocalName(), model.require(CommonAttributes.USERNAME).asString());
-        }
-
-        if (model.hasDefined(CommonAttributes.SECURITY_REALM)) {
-            writer.writeAttribute(Attribute.SECURITY_REALM.getLocalName(), model.require(SECURITY_REALM).asString());
-        }
-
-        if (model.hasDefined(CommonAttributes.PROTOCOL)) {
-            writer.writeAttribute(Attribute.PROTOCOL.getLocalName(), model.require(PROTOCOL).asString());
-        }
         if (model.hasDefined(CommonAttributes.AUTHENTICATION_CONTEXT)) {
             writer.writeAttribute(Attribute.AUTHENTICATION_CONTEXT.getLocalName(), model.require(AUTHENTICATION_CONTEXT).asString());
         }

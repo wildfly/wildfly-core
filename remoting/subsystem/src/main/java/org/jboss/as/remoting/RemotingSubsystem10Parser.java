@@ -4,7 +4,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.parsing.ParseUtils.duplicateAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.readArrayAttributeElement;
 import static org.jboss.as.controller.parsing.ParseUtils.readProperty;
@@ -80,52 +79,7 @@ class RemotingSubsystem10Parser implements XMLStreamConstants, XMLElementReader<
      * Adds the worker thread pool attributes to the subysystem add method
      */
     void parseWorkerThreadPool(final XMLExtendedStreamReader reader, final ModelNode subsystemAdd) throws XMLStreamException {
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            requireNoNamespaceAttribute(reader, i);
-            final String value = reader.getAttributeValue(i);
-            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            switch (attribute) {
-                case WORKER_READ_THREADS:
-                    if (subsystemAdd.hasDefined(CommonAttributes.WORKER_READ_THREADS)) {
-                        throw duplicateAttribute(reader, CommonAttributes.WORKER_READ_THREADS);
-                    }
-                    RemotingSubsystemRootResource.WORKER_READ_THREADS.parseAndSetParameter(value, subsystemAdd, reader);
-                    break;
-                case WORKER_TASK_CORE_THREADS:
-                    if (subsystemAdd.hasDefined(CommonAttributes.WORKER_TASK_CORE_THREADS)) {
-                        throw duplicateAttribute(reader, CommonAttributes.WORKER_TASK_CORE_THREADS);
-                    }
-                    RemotingSubsystemRootResource.WORKER_TASK_CORE_THREADS.parseAndSetParameter(value, subsystemAdd, reader);
-                    break;
-                case WORKER_TASK_KEEPALIVE:
-                    if (subsystemAdd.hasDefined(CommonAttributes.WORKER_TASK_KEEPALIVE)) {
-                        throw duplicateAttribute(reader, CommonAttributes.WORKER_TASK_KEEPALIVE);
-                    }
-                    RemotingSubsystemRootResource.WORKER_TASK_KEEPALIVE.parseAndSetParameter(value, subsystemAdd, reader);
-                    break;
-                case WORKER_TASK_LIMIT:
-                    if (subsystemAdd.hasDefined(CommonAttributes.WORKER_TASK_LIMIT)) {
-                        throw duplicateAttribute(reader, CommonAttributes.WORKER_TASK_LIMIT);
-                    }
-                    RemotingSubsystemRootResource.WORKER_TASK_LIMIT.parseAndSetParameter(value, subsystemAdd, reader);
-                    break;
-                case WORKER_TASK_MAX_THREADS:
-                    if (subsystemAdd.hasDefined(CommonAttributes.WORKER_TASK_MAX_THREADS)) {
-                        throw duplicateAttribute(reader, CommonAttributes.WORKER_TASK_MAX_THREADS);
-                    }
-                    RemotingSubsystemRootResource.WORKER_TASK_MAX_THREADS.parseAndSetParameter(value, subsystemAdd, reader);
-                    break;
-                case WORKER_WRITE_THREADS:
-                    if (subsystemAdd.hasDefined(CommonAttributes.WORKER_WRITE_THREADS)) {
-                        throw duplicateAttribute(reader, CommonAttributes.WORKER_WRITE_THREADS);
-                    }
-                    RemotingSubsystemRootResource.WORKER_WRITE_THREADS.parseAndSetParameter(value, subsystemAdd, reader);
-                    break;
-                default:
-                    throw unexpectedAttribute(reader, i);
-            }
-        }
+        // Ignore attributes
         requireNoContent(reader);
     }
 

@@ -186,15 +186,15 @@ class RemotingSubsystem40Parser extends RemotingSubsystem30Parser {
                     break;
                 }
                 case USERNAME: {
-                    RemoteOutboundConnectionResourceDefinition.USERNAME.parseAndSetParameter(value, addOperation, reader);
+                    // Ignore
                     break;
                 }
                 case SECURITY_REALM: {
-                    RemoteOutboundConnectionResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOperation, reader);
+                    // Ignore
                     break;
                 }
                 case PROTOCOL: {
-                    RemoteOutboundConnectionResourceDefinition.PROTOCOL.parseAndSetParameter(value, addOperation, reader);
+                    // Ignore
                     break;
                 }
                 case AUTHENTICATION_CONTEXT: {
