@@ -2,9 +2,9 @@
 
 <layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="jmx-remoting">
      <dependencies>
-        <!-- requires jboss.remoting.endpoint.management service -->
         <layer name="management"/>
         <layer name="jmx"/> 
+        <layer name="remoting"/>
     </dependencies>
     <feature-group name="jmx-connector"/>
 </layer-spec>

@@ -21,7 +21,6 @@
  */
 package org.jboss.as.test.integration.warning;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LEVEL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
@@ -60,7 +59,7 @@ import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.WildFlyRunner;
 
-@ServerSetup({OperationWarningTestCase.SetupExtensions.class,OperationWarningTestCase.SetupWorkers.class})
+@ServerSetup(OperationWarningTestCase.SetupWorkers.class)
 @RunWith(WildFlyRunner.class)
 public class OperationWarningTestCase extends AbstractMgmtTestBase {
     @Inject
@@ -137,39 +136,6 @@ public class OperationWarningTestCase extends AbstractMgmtTestBase {
         final ModelControllerClient client = serverController.getClient().getControllerClient();
         ModelNode result = client.execute(op);
         return result;
-    }
-
-    static class SetupExtensions extends ServerReload.SetupTask {
-
-        @Override
-        public void setup(ManagementClient managementClient) throws Exception {
-            super.setup(managementClient);
-            add(PathAddress.pathAddress(EXTENSION, "org.wildfly.extension.io"));
-
-            add(PathAddress.pathAddress(EXTENSION, "org.jboss.as.remoting"));
-
-            add(ADDRESS_IO_SUBSYSTEM);
-
-            add(ADDRESS_WORKER_DEFAULT);
-
-            add(ADDRESS_REMOTING_SUBSYSTEM, Map.of(WORKER, new ModelNode(WORKER_DEFAULT)));
-        }
-
-        @Override
-        public void tearDown(ManagementClient managementClient) throws Exception {
-            try {
-                remove(ADDRESS_REMOTING_SUBSYSTEM);
-
-                remove(ADDRESS_IO_SUBSYSTEM);
-
-                remove(PathAddress.pathAddress(EXTENSION, "org.wildfly.extension.io"));
-
-                remove(PathAddress.pathAddress(EXTENSION, "org.jboss.as.remoting"));
-
-            } finally {
-                super.tearDown(managementClient);
-            }
-        }
     }
 
     static class SetupWorkers extends ServerReload.SetupTask {
