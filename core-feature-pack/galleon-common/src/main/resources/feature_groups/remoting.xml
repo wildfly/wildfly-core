@@ -2,10 +2,11 @@
 <feature-group-spec name="remoting" xmlns="urn:jboss:galleon:feature-group:1.0">
     <feature spec="subsystem.remoting">
         <param name="worker" value="default"/>
-        <feature spec="subsystem.remoting.http-connector">
+        <!-- This cannot be defined here, as it requires an http-upgrade-registry, which is not provided by wildfly-core -->
+        <!--feature spec="subsystem.remoting.http-connector">
             <param name="http-connector" value="http-remoting-connector"/>
             <param name="connector-ref" value="default"/>
             <param name="sasl-authentication-factory" value="application-sasl-authentication"/>
-        </feature>
+        </feature-->
     </feature>
 </feature-group-spec>
