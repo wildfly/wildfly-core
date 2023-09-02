@@ -48,22 +48,4 @@ public final class EndpointConfigFactory {
 
         return builder.getMap();
     }
-
-    /**
-     * creates option map for remoting connections
-     * @param resolver
-     * @param model
-     * @param defaults
-     * @return
-     * @throws OperationFailedException
-     * @deprecated configuring xnio worker options is no longer supported and should be replaced for referencing IO subsystem
-     */
-    @Deprecated
-    public static OptionMap create(final ExpressionResolver resolver, final ModelNode model, final OptionMap defaults) throws OperationFailedException {
-        final OptionMap map = OptionMap.builder()
-                .addAll(defaults)
-                .getMap();
-        return map;
-    }
-
 }

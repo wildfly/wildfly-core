@@ -103,15 +103,7 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
     };
     static final Collection<AttributeDefinition> ATTRIBUTES = Stream.concat(Stream.of(WORKER), Stream.of(OPTIONS)).collect(Collectors.toList());
 
-    private static final String[] SERVER_ATTR_NAMES = new String[OPTIONS.length + 1];
-    static {
-        SERVER_ATTR_NAMES[0] = WORKER.getName();
-        for (int i = 0; i < OPTIONS.length; i++) {
-            SERVER_ATTR_NAMES[i + 1] = OPTIONS[i].getName();
-        }
-    }
-
-    private static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
+    static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
 
     RemotingSubsystemRootResource() {
         super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(RemotingExtension.SUBSYSTEM_NAME))

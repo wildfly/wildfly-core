@@ -42,7 +42,7 @@ import org.jboss.dmr.ModelType;
  */
 class GenericOutboundConnectionResourceDefinition extends AbstractOutboundConnectionResourceDefinition {
 
-    static final PathElement ADDRESS = PathElement.pathElement(CommonAttributes.OUTBOUND_CONNECTION);
+    static final PathElement PATH = PathElement.pathElement(CommonAttributes.OUTBOUND_CONNECTION);
 
     static final SimpleAttributeDefinition URI = new SimpleAttributeDefinitionBuilder(CommonAttributes.URI, ModelType.STRING, false)
             .setAllowExpression(true).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
@@ -55,7 +55,7 @@ class GenericOutboundConnectionResourceDefinition extends AbstractOutboundConnec
     }
 
     private GenericOutboundConnectionResourceDefinition(GenericOutboundConnectionAdd addHandler) {
-        super(new Parameters(ADDRESS, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.OUTBOUND_CONNECTION))
+        super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.OUTBOUND_CONNECTION))
                 .setAddHandler(addHandler)
                 .setRemoveHandler(new ServiceRemoveStepHandler(OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(), addHandler))
                 .setDeprecatedSince(RemotingSubsystemModel.VERSION_4_0_0.getVersion())

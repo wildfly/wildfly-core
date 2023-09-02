@@ -39,9 +39,13 @@ import static org.jboss.as.remoting.CommonAttributes.SECURITY_REALM;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
@@ -120,7 +124,17 @@ class RemotingSubsystem20Parser extends RemotingSubsystem11Parser {
     }
 
     private void parseEndpoint(final XMLExtendedStreamReader reader, final ModelNode subsystemAdd) throws XMLStreamException {
-        // Ignore attributes
+        Map<String, AttributeDefinition> attributes = RemotingSubsystemRootResource.ATTRIBUTES.stream().collect(Collectors.toMap(AttributeDefinition::getName, Function.identity()));
+        for (int i = 0; i < reader.getAttributeCount(); i++) {
+            String attributeName = reader.getAttributeLocalName(i);
+            String value = reader.getAttributeValue(i);
+            AttributeDefinition attribute = attributes.get(attributeName);
+            if (attribute != null) {
+                attribute.getParser().parseAndSetParameter(attribute, value, subsystemAdd, reader);
+            } else {
+                throw ParseUtils.unexpectedAttribute(reader, i, attributes.keySet());
+            }
+        }
         ParseUtils.requireNoContent(reader);
     }
 

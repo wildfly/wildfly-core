@@ -28,7 +28,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.io.IOException;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -54,6 +54,9 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.Endpoint;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.wildfly.extension.io.IOServices;
 import org.wildfly.extension.io.WorkerService;
 import org.xnio.Xnio;
@@ -62,11 +65,28 @@ import org.xnio.XnioWorker;
 /**
  * @author Tomaz Cerar
  * @author <a href="opalka.richard@gmail.com">Richard Opalka</a>
+ * @author Paul Ferraro
  */
+@RunWith(Parameterized.class)
 public class RemotingSubsystemTestCase extends AbstractRemotingSubsystemBaseTest {
+
+    @Parameters
+    public static Iterable<RemotingSubsystemSchema> parameters() {
+        return EnumSet.complementOf(EnumSet.of(RemotingSubsystemSchema.VERSION_1_0, RemotingSubsystemSchema.VERSION_1_1, RemotingSubsystemSchema.VERSION_1_2, RemotingSubsystemSchema.VERSION_2_0, RemotingSubsystemSchema.VERSION_3_0));
+    }
 
     private static final PathAddress ROOT_ADDRESS = PathAddress.pathAddress(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
     private static final PathAddress CONNECTOR_ADDRESS = ROOT_ADDRESS.append("connector", "remoting-connector");
+
+    /**
+     * @param subsystemName
+     * @param extension
+     * @param testSchema
+     * @param currentSchema
+     */
+    public RemotingSubsystemTestCase(RemotingSubsystemSchema schema) {
+        super(schema);
+    }
 
     /**
      * Tests that the outbound connections configured in the remoting subsytem are processed and services
@@ -91,16 +111,6 @@ public class RemotingSubsystemTestCase extends AbstractRemotingSubsystemBaseTest
         assertNotNull("Remoting connector was null", remotingConnector);
     }
 
-    @Override
-    protected String getSubsystemXml() throws IOException {
-        return readResource("remoting.xml");
-    }
-
-    @Override
-    protected String getSubsystemXml(String resource) throws IOException {
-        return readResource(resource);
-    }
-
     @Test
     public void testHttpConnectorValidationStepFail() throws Exception {
         KernelServices services = createKernelServicesBuilder(createAdditionalInitialization())
@@ -117,12 +127,6 @@ public class RemotingSubsystemTestCase extends AbstractRemotingSubsystemBaseTest
                 .build();
 
         Assert.assertTrue(services.isSuccessfulBoot());
-    }
-
-
-    @Override
-    protected void compareXml(String configId, String original, String marshalled) throws Exception {
-        super.compareXml(configId, original, marshalled, true);
     }
 
     private AdditionalInitialization createRuntimeAdditionalInitialization() {
@@ -154,8 +158,7 @@ public class RemotingSubsystemTestCase extends AbstractRemotingSubsystemBaseTest
             protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
                 super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
                 Map<String, Class> capabilities = new HashMap<>();
-                capabilities.put(buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME,
-                        RemotingSubsystemRootResource.WORKER.getDefaultValue().asString()), XnioWorker.class);
+                capabilities.put(buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME, "default"), XnioWorker.class);
                 capabilities.put(buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME,
                         "default-remoting"), XnioWorker.class);
                 AdditionalInitialization.registerServiceCapabilities(capabilityRegistry, capabilities);

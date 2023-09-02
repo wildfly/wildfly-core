@@ -42,7 +42,7 @@ import org.jboss.dmr.ModelType;
  */
 class LocalOutboundConnectionResourceDefinition extends AbstractOutboundConnectionResourceDefinition {
 
-    static final PathElement ADDRESS = PathElement.pathElement(CommonAttributes.LOCAL_OUTBOUND_CONNECTION);
+    static final PathElement PATH = PathElement.pathElement(CommonAttributes.LOCAL_OUTBOUND_CONNECTION);
 
     // TODO This is never used - why is it required?
     static final SimpleAttributeDefinition OUTBOUND_SOCKET_BINDING_REF = new SimpleAttributeDefinitionBuilder(CommonAttributes.OUTBOUND_SOCKET_BINDING_REF, ModelType.STRING, false)
@@ -59,7 +59,7 @@ class LocalOutboundConnectionResourceDefinition extends AbstractOutboundConnecti
     }
 
     private LocalOutboundConnectionResourceDefinition(LocalOutboundConnectionAdd addHandler) {
-        super(new Parameters(ADDRESS, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.LOCAL_OUTBOUND_CONNECTION))
+        super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.LOCAL_OUTBOUND_CONNECTION))
                 .setAddHandler(addHandler)
                 .setRemoveHandler(new ServiceRemoveStepHandler(OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(), addHandler))
                 .setDeprecatedSince(RemotingSubsystemModel.VERSION_4_0_0.getVersion())

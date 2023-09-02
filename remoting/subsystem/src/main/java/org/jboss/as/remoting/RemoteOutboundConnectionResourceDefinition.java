@@ -47,9 +47,9 @@ import org.jboss.dmr.ModelType;
  */
 class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnectionResourceDefinition {
 
-    static final PathElement ADDRESS = PathElement.pathElement(CommonAttributes.REMOTE_OUTBOUND_CONNECTION);
+    static final PathElement PATH = PathElement.pathElement(CommonAttributes.REMOTE_OUTBOUND_CONNECTION);
 
-    public static final SimpleAttributeDefinition OUTBOUND_SOCKET_BINDING_REF = new SimpleAttributeDefinitionBuilder(CommonAttributes.OUTBOUND_SOCKET_BINDING_REF, ModelType.STRING, false)
+    static final SimpleAttributeDefinition OUTBOUND_SOCKET_BINDING_REF = new SimpleAttributeDefinitionBuilder(CommonAttributes.OUTBOUND_SOCKET_BINDING_REF, ModelType.STRING, false)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -82,7 +82,7 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
             .setDeprecated(RemotingSubsystemModel.VERSION_4_0_0.getVersion())
             .build();
 
-    public static final SimpleAttributeDefinition AUTHENTICATION_CONTEXT = new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTHENTICATION_CONTEXT, ModelType.STRING, true)
+    static final SimpleAttributeDefinition AUTHENTICATION_CONTEXT = new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTHENTICATION_CONTEXT, ModelType.STRING, true)
             .setCapabilityReference(AUTHENTICATION_CONTEXT_CAPABILITY, OUTBOUND_CONNECTION_CAPABILITY_NAME)
             .setAlternatives(CommonAttributes.USERNAME, CommonAttributes.SECURITY_REALM, CommonAttributes.PROTOCOL)
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.AUTHENTICATION_CLIENT_REF)
@@ -95,7 +95,7 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
     }
 
     private RemoteOutboundConnectionResourceDefinition(RemoteOutboundConnectionAdd addHandler) {
-        super(new Parameters(ADDRESS, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.REMOTE_OUTBOUND_CONNECTION))
+        super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.REMOTE_OUTBOUND_CONNECTION))
                 .setAddHandler(addHandler)
                 .setRemoveHandler(new ServiceRemoveStepHandler(OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(), addHandler))
         );

@@ -18,6 +18,7 @@
 
 package org.jboss.as.remoting;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -59,11 +60,9 @@ abstract class ConnectorChildResource extends SimpleResourceDefinition {
 
 
     static class AddResourceConnectorRestartHandler extends RestartParentResourceAddHandler {
-        private final AttributeDefinition[] attributes;
 
-        AddResourceConnectorRestartHandler(String parent, AttributeDefinition... attributes) {
-            super(parent);
-            this.attributes = attributes;
+        AddResourceConnectorRestartHandler(String parent, Collection<AttributeDefinition> attributes) {
+            super(parent, attributes);
         }
 
         protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
@@ -119,7 +118,7 @@ abstract class ConnectorChildResource extends SimpleResourceDefinition {
 
     static class RestartConnectorWriteAttributeHandler extends RestartParentWriteAttributeHandler {
 
-        RestartConnectorWriteAttributeHandler(String parent, AttributeDefinition... attributes) {
+        RestartConnectorWriteAttributeHandler(String parent, Collection<AttributeDefinition> attributes) {
             super(parent, attributes);
         }
 
