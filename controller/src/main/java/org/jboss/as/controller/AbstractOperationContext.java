@@ -97,6 +97,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.NotificationEntry;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -1063,9 +1064,8 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
                 try {
                     step.handler.execute(this, step.operation);
                     // AS7-6046
-                    if (isErrorLoggingNecessary() && step.hasFailed()) {
-                        MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR),
-                                step.response.get(FAILURE_DESCRIPTION));
+                    if (step.hasFailed()) {
+                        logStepFailure(step, false);
                     }
                     if (step.serviceVerificationHelper != null) {
                         addStep(step.serviceVerificationHelper, Stage.VERIFY);
@@ -1077,21 +1077,15 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
                 }
 
             } catch (Throwable t) {
-                // If t doesn't implement OperationClientException marker interface, throw it on to outer catch block
+                // If it doesn't implement OperationClientException marker interface, throw it on to outer catch block
                 if (!(t instanceof OperationClientException)) {
                     throw t;
                 }
                 // Handler threw OCE; that's equivalent to a request that we set the failure description
                 final ModelNode failDesc = OperationClientException.class.cast(t).getFailureDescription();
                 step.response.get(FAILURE_DESCRIPTION).set(failDesc);
-                if (isErrorLoggingNecessary()) {
-                    MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR),
-                            step.response.get(FAILURE_DESCRIPTION));
-                } else {
-                    // A client-side mistake post-boot that only affects model, not runtime, is logged at DEBUG
-                    MGMT_OP_LOGGER.operationFailedOnClientError(step.operation.get(OP), step.operation.get(OP_ADDR),
-                            step.response.get(FAILURE_DESCRIPTION));
-                }
+
+                logStepFailure(step, true);
             }
         } catch (Throwable t) {
             // Handling for throwables that don't implement OperationClientException marker interface
@@ -1134,15 +1128,34 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
         }
     }
 
-    /** Whether ERROR level logging is appropriate for any operation failures*/
-    private boolean isErrorLoggingNecessary() {
-        // Log for any boot failure or for any failure that may affect this processes' runtime services.
+    private void logStepFailure(Step step, boolean fromOCE) {
+
+        // Use ERROR for any boot failure or for any failure that may affect this processes' runtime services.
+        // Stage.RUNTIME failures in read-only steps haven't affected runtime services so don't require ERROR
+        // logging if they came from an internal caller that presumably will handle a failure response without
+        // the aid of the log.
         // Post-boot MODEL failures aren't ERROR logged as they have no impact outside the scope of
         // the soon-to-be-abandoned OperationContext.
-        // TODO consider logging Stage.DOMAIN problems if it's clear the message will be comprehensible.
-        // Currently Stage.DOMAIN failure handling involves message manipulation before sending the
-        // failure data to the client; logging stuff before that is done is liable to just produce a log mess.
-        return isBooting() || currentStage == Stage.RUNTIME || currentStage == Stage.VERIFY;
+        if (isBooting() || currentStage == Stage.VERIFY
+                || (currentStage == Stage.RUNTIME && (step.requiresDoneStage || isExternalClient()))) {
+            MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR),
+                    step.response.get(FAILURE_DESCRIPTION));
+        } else if (fromOCE) {
+            MGMT_OP_LOGGER.operationFailedOnClientError(step.operation.get(OP), step.operation.get(OP_ADDR),
+                    step.response.get(FAILURE_DESCRIPTION));
+        } else if (currentStage != Stage.DOMAIN) {
+            // Post-boot Stage.RUNTIME issues with internal read-only calls
+            // TODO consider ERROR or DEBUG logging Stage.DOMAIN problems if it's clear the message will be comprehensible.
+            // Currently Stage.DOMAIN failure handling involves message manipulation before sending the
+            // failure data to the client; logging stuff before that is done is liable to just produce a log mess.
+            MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR),
+                        step.response.get(FAILURE_DESCRIPTION), "");
+        }
+    }
+
+    private boolean isExternalClient() {
+        AccessMechanism am = operationHeaders.getAccessMechanism();
+        return am != null && am != AccessMechanism.IN_VM_USER;
     }
 
     private void handleContainerStabilityFailure(ModelNode response, Exception cause) {

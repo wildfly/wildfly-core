@@ -286,6 +286,19 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = Message.INHERIT, value = "Operation (%s) failed - address: (%s) - failure description: %s")
     void operationFailed(ModelNode op, ModelNode opAddress, ModelNode failureDescription);
 
+    /**
+     * Logs a debug message indicating operation failed.
+     *
+     * @param op                 the operation that failed.
+     * @param opAddress          the address the operation failed on.
+     * @param failureDescription the failure description.
+     * @param emptyString        meaningless param just so we can have a different method signature
+     *                           from the variant used by legacy controllers
+     */
+    @LogMessage(level = DEBUG)
+    @Message(id = Message.INHERIT, value = "Operation (%s) failed - address: (%s) - failure description: %s%s")
+    void operationFailed(ModelNode op, ModelNode opAddress, ModelNode failureDescription, String emptyString);
+
     // WFCORE-792 -- no longer used
 //    /**
 //     * Logs an error message indicating operation failed.
