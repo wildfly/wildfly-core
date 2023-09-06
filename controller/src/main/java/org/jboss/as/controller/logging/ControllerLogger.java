@@ -3753,4 +3753,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 503, value = "Failed to publish configuration, because the remote name %s is not valid.")
     ConfigurationPersistenceException failedToPublishConfigurationInvalidRemote(String name);
+
+    @Message(id = 504, value = "The operation %s is not defined for resource %s.")
+    UnsupportedOperationException missingOperationForResource(String op, String address);
 }

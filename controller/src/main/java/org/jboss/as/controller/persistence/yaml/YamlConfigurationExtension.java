@@ -185,7 +185,11 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                 } else {
                     if (value == null && !isExistingResource(xmlOperations, address)) { //empty resource
                         OperationEntry operationEntry = rootRegistration.getOperationEntry(address, ADD);
-                        processAttributes(address, rootRegistration, operationEntry, Collections.emptyMap(), postExtensionOps);
+                        if(operationEntry != null) {
+                            processAttributes(address, rootRegistration, operationEntry, Collections.emptyMap(), postExtensionOps);
+                        } else {
+                            throw MGMT_OP_LOGGER.missingOperationForResource("ADD", address.toCLIStyleString());
+                        }
                     } else if (value != null && value instanceof Operation) {
                         Operation yamlOperation = Operation.class.cast(value);
                         if (isExistingResource(xmlOperations, address)) {
