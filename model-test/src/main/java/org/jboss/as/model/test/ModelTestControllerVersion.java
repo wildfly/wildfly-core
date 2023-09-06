@@ -47,8 +47,7 @@ public enum ModelTestControllerVersion {
     // EAP_XP_4("4.0.0.GA-redhat-0000x", true, "24.0.0", "18.0.0.Final-redhat-0000x", "xp4")
     // We will also need to remove the *-wf26 files in wildfly-legacy-test and replace them with *-xp4 ones
     // generated from EAP 7.4.0 with XP 4 installed
-    EAP_XP_4("26.0.0.Beta1", false, "25.0.0", "18.0.0.Final", "wf26")
-    ;
+    EAP_XP_4("4.0.0.GA-redhat-00018", true, "23.0.0", "15.0.26.Final-redhat-00001", "xp4")    ;
 
     private final String mavenGavVersion;
     private final String testControllerVersion;
