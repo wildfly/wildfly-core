@@ -1,0 +1,63 @@
+# Manually start a build and/or testing with maven
+# For more information, see https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
+name: Manual Build and Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        description: 'OS'
+        required: false
+        default: 'ubuntu-latest'
+        type: choice
+        options:
+          - ubuntu-latest
+          - windows-latest
+      jdk-distribution:
+        description: 'JDK Distribution'
+        required: false
+        default: 'temurin'
+        type: choice
+        options:
+          - temurin
+          - semeru
+          - microsoft
+          - oracle
+          - zulu
+          - corretto
+          - liberica
+      jdk-version:
+        description: 'JDK Version'
+        required: true
+        type: string
+      args:
+        description: 'Arguments like -DskipTests -pl testbom,threads -am'
+        required: false
+        type: string
+      timeout:
+        description: 'Job Timeout Minutes'
+        required: false
+        default: 120
+        type: number
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ${{ inputs.os }}
+    timeout-minutes: ${{ fromJSON(inputs.timeout) }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK ${{ inputs.jdk-distribution }} ${{ inputs.jdk-version }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ inputs.jdk-distribution }}
+          java-version: ${{ inputs.jdk-version }}
+          cache: 'maven'
+      - name: Build and test with Maven
+        run: mvn -B -ntp clean install ${{ inputs.args }}
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: ${{ inputs.jdk-distribution }}-${{ inputs.jdk-version }}-${{ inputs.os }}
+          path: '**/surefire-reports/*.txt'
