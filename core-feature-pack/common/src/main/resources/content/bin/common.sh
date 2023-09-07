@@ -12,6 +12,15 @@ if [ -r "$COMMON_CONF" ]; then
   . "$COMMON_CONF"
 fi
 
+setPackageAvailable() {
+  PACKAGE_STRING=`"$JAVA" --add-opens=$1=ALL-UNNAMED -version 2>&1 | $GREP "WARNING"`
+  if [ "x$PACKAGE_STRING" = "x" ]; then
+     PACKAGE_AVAILABLE=true
+  else
+     PACKAGE_AVAILABLE=false
+  fi
+}
+
 setEnhancedSecurityManager() {
   "$JAVA" -Djava.security.manager=allow -version > /dev/null 2>&1 && ENHANCED_SM=true || ENHANCED_SM=false
 }
@@ -45,7 +54,11 @@ setDefaultModularJvmOptions() {
       # Needed by Netty
       DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED"
       # Needed by WildFly Elytron Extension
-      DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.base/com.sun.net.ssl.internal.ssl=ALL-UNNAMED"
+      PACKAGE_NAME="java.base/com.sun.net.ssl.internal.ssl"
+      setPackageAvailable $PACKAGE_NAME
+      if [ "$PACKAGE_AVAILABLE" = "true" ]; then
+        DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=$PACKAGE_NAME=ALL-UNNAMED"
+      fi
       # Needed if Hibernate applications use Javassist
       DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.base/java.lang=ALL-UNNAMED"
       # Needed by the MicroProfile REST Client subsystem

@@ -674,6 +674,11 @@ public class CliCommandBuilder implements CommandBuilder {
         if (modularLauncher) {
             if (environment.getJvm().isModular()) {
                 cmd.addAll(AbstractCommandBuilder.DEFAULT_MODULAR_VM_ARGUMENTS);
+                for (final String optionalModularArgument : AbstractCommandBuilder.OPTIONAL_DEFAULT_MODULAR_VM_ARGUMENTS) {
+                    if (environment.getJvm().isPackageAvailable(environment.getJvm().getPath(), optionalModularArgument)) {
+                        cmd.add(optionalModularArgument);
+                    }
+                }
             }
         }
         if (environment.getJvm().enhancedSecurityManagerAvailable()) {

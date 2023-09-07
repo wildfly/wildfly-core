@@ -17,6 +17,10 @@ if exist "%COMMON_CONF%" (
 endlocal
 goto :eof
 
+:setPackageAvailable
+    "%JAVA%" --add-opens=$1=ALL-UNNAMED -version >nul 2>&1 && (set PACKAGE_AVAILABLE=true) || (set PACKAGE_AVAILABLE=false)
+goto :eof
+
 :setEnhancedSecurityManager
     "%JAVA%" -Djava.security.manager=allow -version >nul 2>&1 && (set ENHANCED_SM=true) || (set ENHANCED_SM=false)
 goto :eof
@@ -49,7 +53,11 @@ goto :eof
       rem Needed by Netty
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED"
       rem Needed by WildFly Elytron Extension
-      set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/com.sun.net.ssl.internal.ssl=ALL-UNNAMED"
+      set PACKAGE_NAME="java.base/com.sun.net.ssl.internal.ssl"
+      call :setPackageAvailable %PACKAGE_NAME%
+      if "!$PACKAGE_AVAILABLE!" == "true" (
+        set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=%PACKAGE_NAME%=ALL-UNNAMED"
+      )
       rem Needed if Hibernate applications use Javassist
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.lang=ALL-UNNAMED"
       rem Needed by the MicroProfile REST Client subsystem

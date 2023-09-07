@@ -20,7 +20,9 @@
 package org.wildfly.core.launcher;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,11 +59,13 @@ class Jvm {
         final String javaSpecVersion = System.getProperty("java.specification.version");
         boolean modularJvm = true;
         boolean enhancedSecurityManager = false;
+        int jvmVersion = 8;
         if (javaSpecVersion != null) {
             final Matcher matcher = Pattern.compile("^(?:1\\.)?(\\d+)$").matcher(javaSpecVersion);
             if (matcher.find()) {
-                modularJvm = Integer.parseInt(matcher.group(1)) >= 9;
-                enhancedSecurityManager = Integer.parseInt(matcher.group(1)) >= 12;
+                jvmVersion = Integer.parseInt(matcher.group(1));
+                modularJvm = jvmVersion >= 9;
+                enhancedSecurityManager = jvmVersion >= 12;
             }
         }
         MODULAR_JVM = modularJvm;
@@ -215,6 +219,14 @@ class Jvm {
         return checkProcessStatus(cmd);
     }
 
+    static boolean isPackageAvailable(final Path javaHome, final String optionalModularArgument) {
+        final List<String> cmd = new ArrayList<>();
+        cmd.add(resolveJavaCommand(javaHome));
+        cmd.add(optionalModularArgument);
+        cmd.add("-version");
+        return checkProcessStatus(cmd);
+    }
+
     /**
      * Checks to see if the {@code javaHome} is a modular JVM.
      *
@@ -260,6 +272,9 @@ class Jvm {
             }
             if (stdout != null) {
                 try {
+                    if (containsWarning(stdout)) {
+                        result = false;
+                    }
                     Files.deleteIfExists(stdout);
                 } catch (IOException ignore) {
                 }
@@ -268,6 +283,17 @@ class Jvm {
         return result;
     }
 
+    private static boolean containsWarning(final Path logFile)  throws IOException {
+        String line;
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(logFile.toFile())))) {
+            while ((line = br.readLine()) != null) {
+                if (line.startsWith("WARNING:")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     /**
      * Returns the Java executable command.

@@ -46,7 +46,10 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
     static final String SECURITY_MANAGER_PROP = "java.security.manager";
     static final String SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE = "-D" + SECURITY_MANAGER_PROP + "=" + ALLOW_VALUE;
     static final String[] DEFAULT_VM_ARGUMENTS;
+    /** Packages being exported or opened are available on all JVMs */
     static final Collection<String> DEFAULT_MODULAR_VM_ARGUMENTS;
+    /** Packages being exported or opened may not be available on all JVMs */
+    static final Collection<String> OPTIONAL_DEFAULT_MODULAR_VM_ARGUMENTS;
 
     static {
         // Default JVM parameters for all versions
@@ -68,7 +71,6 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
             modularJavaOpts.add("--add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED");
             modularJavaOpts.add("--add-exports=java.naming/com.sun.jndi.url.ldaps=ALL-UNNAMED");
             modularJavaOpts.add("--add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED");
-            modularJavaOpts.add("--add-opens=java.base/com.sun.net.ssl.internal.ssl=ALL-UNNAMED");
             modularJavaOpts.add("--add-opens=java.base/java.lang=ALL-UNNAMED");
             modularJavaOpts.add("--add-opens=java.base/java.lang.invoke=ALL-UNNAMED");
             modularJavaOpts.add("--add-opens=java.base/java.lang.reflect=ALL-UNNAMED");
@@ -84,6 +86,12 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
             modularJavaOpts.add("--add-modules=java.se");
         }
         DEFAULT_MODULAR_VM_ARGUMENTS = Collections.unmodifiableList(modularJavaOpts);
+
+        final ArrayList<String> optionalModularJavaOpts = new ArrayList<>();
+        if (!Boolean.parseBoolean(System.getProperty("launcher.skip.jpms.properties", "false"))) {
+            optionalModularJavaOpts.add("--add-opens=java.base/com.sun.net.ssl.internal.ssl=ALL-UNNAMED");
+        }
+        OPTIONAL_DEFAULT_MODULAR_VM_ARGUMENTS = Collections.unmodifiableList(optionalModularJavaOpts);
     }
 
     protected final Environment environment;

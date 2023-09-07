@@ -371,6 +371,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         }
 
         command.addAll(localJvmType.getDefaultArguments());
+        command.addAll(localJvmType.getOptionalDefaultArguments());
 
         command.add(String.format("-D%s=%s", ServerEnvironment.SERVER_LOG_DIR, this.logDir));
         command.add(String.format("-D%s=%s", ServerEnvironment.SERVER_TEMP_DIR, this.tmpDir));
