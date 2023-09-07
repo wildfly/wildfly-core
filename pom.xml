@@ -205,7 +205,7 @@
         <version.org.aesh>2.4</version.org.aesh>
         <version.org.aesh-extensions>1.8</version.org.aesh-extensions>
         <version.org.aesh-readline>2.2</version.org.aesh-readline>
-        <version.org.apache.ds>2.0.0-M15</version.org.apache.ds>
+        <version.org.apache.ds>2.0.0.AM26</version.org.apache.ds>
         <!-- TODO Elytron - Bump to AM26+ after AM26 is released.
              Cannot bump to M24 due to https://issues.apache.org/jira/browse/DIRSERVER-2231
              (the current workaround causes test failures in domain-management tests).
