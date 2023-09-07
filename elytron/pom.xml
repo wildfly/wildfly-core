@@ -384,9 +384,6 @@
                             <systemId>src/main/resources/schema/wildfly-elytron_18_0.xsd</systemId>
                         </validationSet>
                         <validationSet>
-                            <dir>src/main/resources/subsystem-templates</dir>
-                        </validationSet>
-                        <validationSet>
                             <dir>src/main/resources/schema</dir>
                         </validationSet>
                     </validationSets>
