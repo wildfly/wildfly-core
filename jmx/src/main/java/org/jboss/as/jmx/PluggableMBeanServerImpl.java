@@ -1520,7 +1520,16 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
 
         public ObjectInstance registerMBean(Object object, ObjectName name) throws InstanceAlreadyExistsException, MBeanRegistrationException,
                 NotCompliantMBeanException {
-            return delegate.registerMBean(object, name);
+            if (object == null) {
+                // The MBeanServer.registerMBean() javadoc indicates this is the error to throw if null
+                throw new RuntimeOperationsException(new IllegalArgumentException());
+            }
+            ClassLoader old = pushClassLoaderFromObject(object);
+            try {
+                return delegate.registerMBean(object, name);
+            } finally {
+                resetClassLoader(old);
+            }
         }
 
         public void removeNotificationListener(ObjectName name, NotificationListener listener, NotificationFilter filter, Object handback)
@@ -1592,7 +1601,12 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         }
 
         public void unregisterMBean(ObjectName name) throws InstanceNotFoundException, MBeanRegistrationException {
-            delegate.unregisterMBean(name);
+            ClassLoader old = pushClassLoader(name);
+            try {
+                delegate.unregisterMBean(name);
+            } finally {
+                resetClassLoader(old);
+            }
         }
 
         private ClassLoader pushClassLoader(final ObjectName name) throws InstanceNotFoundException {
@@ -1626,6 +1640,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
                     public ClassLoader run() throws Exception {
                         return delegate.getClassLoader(loaderName);
                     }
+
                 });
             } catch (PrivilegedActionException e) {
                 try {
@@ -1641,6 +1656,16 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
                 }
             }
             return WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(mbeanCl);
+        }
+
+        private ClassLoader pushClassLoaderFromObject(final Object o) {
+            ClassLoader cl = doPrivileged(new PrivilegedAction<ClassLoader>() {
+                @Override
+                public ClassLoader run() {
+                    return o.getClass().getClassLoader();
+                }
+            });
+            return WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(cl);
         }
 
         private void resetClassLoader(ClassLoader cl) {
