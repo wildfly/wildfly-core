@@ -185,8 +185,8 @@ Param(
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED"
         # Needed by WildFly Elytron Extension
         $packageName = "java.base/com.sun.net.ssl.internal.ssl"
-        setPackageAvailable($packageName)
-        if($PACKAGE_AVAILABLE -eq 'true') {
+        $PACKAGE_AVAILABLE = setPackageAvailable($packageName)
+        if($PACKAGE_AVAILABLE) {
             $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=$packageName=ALL-UNNAMED"
         }
         # Needed if Hibernate applications use Javassist

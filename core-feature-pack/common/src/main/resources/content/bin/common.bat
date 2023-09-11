@@ -18,7 +18,7 @@ endlocal
 goto :eof
 
 :setPackageAvailable
-    "%JAVA%" --add-opens=$1=ALL-UNNAMED -version >nul 2>&1 && (set PACKAGE_AVAILABLE=true) || (set PACKAGE_AVAILABLE=false)
+    "%JAVA%" --add-opens=%~1=ALL-UNNAMED -version >nul 2>&1 && (set PACKAGE_AVAILABLE=true) || (set PACKAGE_AVAILABLE=false)
 goto :eof
 
 :setEnhancedSecurityManager
@@ -54,9 +54,9 @@ goto :eof
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED"
       rem Needed by WildFly Elytron Extension
       set PACKAGE_NAME="java.base/com.sun.net.ssl.internal.ssl"
-      call :setPackageAvailable %PACKAGE_NAME%
-      if "!$PACKAGE_AVAILABLE!" == "true" (
-        set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=%PACKAGE_NAME%=ALL-UNNAMED"
+      call :setPackageAvailable !PACKAGE_NAME!
+      if "!PACKAGE_AVAILABLE!" == "true" (
+        set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=!PACKAGE_NAME!=ALL-UNNAMED"
       )
       rem Needed if Hibernate applications use Javassist
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.lang=ALL-UNNAMED"
