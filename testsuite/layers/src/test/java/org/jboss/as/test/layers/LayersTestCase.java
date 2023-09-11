@@ -5,9 +5,7 @@
 package org.jboss.as.test.layers;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 import org.junit.AfterClass;
@@ -22,23 +20,12 @@ import org.junit.Test;
 public class LayersTestCase {
     // Packages that are provisioned by the test-standalone-reference installation
     // but not used in the test-all-layers installation.
-    // This is the expected set of not provisioned modules when all layers are provisioned.
+    // This plus the {@link #NOT_USED_OR_REFERENCED} array are the expected set of
+    // not provisioned modules when all layers are provisioned.
     private static final String[] NOT_USED = {
-        // deprecated and unused
-        "ibm.jdk",
-        "javax.api",
-        "javax.sql.api",
-        "javax.xml.stream.api",
-        "org.jboss.as.threads",
-        "sun.jdk",
-        "sun.scripting",
         // No patching modules in layers
         "org.jboss.as.patching",
         "org.jboss.as.patching.cli",
-        // Not currently used internally
-        "org.wildfly.event.logger",
-        // wildfly-elytron-http-stateful-basic
-        "org.wildfly.security.http.sfbasic"
     };
     // Packages that are not referenced from the module graph but needed.
     // This is the expected set of un-referenced modules found when scanning
@@ -72,43 +59,71 @@ public class LayersTestCase {
         "org.wildfly.security.elytron-tool",
     };
 
+    private static final String[] NOT_USED_OR_REFERENCED = {
+            // deprecated and unused
+            "ibm.jdk",
+            "javax.api",
+            "javax.sql.api",
+            "javax.xml.stream.api",
+            "sun.jdk",
+            "sun.scripting",
+            // Not currently used WildFly Core; only full WF
+            "org.jboss.as.threads",
+            "org.wildfly.event.logger",
+            // Special support status -- wildfly-elytron-http-stateful-basic
+            "org.wildfly.security.http.sfbasic"
+    };
+
     /**
      * A HashMap to configure a banned module.
-     * They key is the banned module name, the value is an optional List with the installation names that are allowed to
-     * provision the banned module. This installations will be ignored.
+     * The key is the banned module name, the value is an optional List with the installation names that are allowed to
+     * provision the banned module.
      */
-    private static final HashMap<String, List<String>> BANNED_MODULES_CONF = new HashMap<String, List<String>>(){{
+    private static final HashMap<String, List<String>> BANNED_MODULES_CONF = new HashMap<>(){{
         put("org.jboss.as.security", null);
     }};
 
-    public static String root;
+    private static String root;
+    private static LayersTest.ScanContext scanContext;
 
     @BeforeClass
     public static void setUp() {
         root = System.getProperty("layers.install.root");
+        scanContext = new LayersTest.ScanContext(root);
     }
 
     @AfterClass
     public static void cleanUp() {
-        Boolean delete = Boolean.getBoolean("layers.delete.installations");
+        boolean delete = Boolean.getBoolean("layers.delete.installations");
         if(delete) {
             File[] installations = new File(root).listFiles(File::isDirectory);
-            for(File f : installations) {
-                LayersTest.recursiveDelete(f.toPath());
+            if (installations != null) {
+                for (File f : installations) {
+                    LayersTest.recursiveDelete(f.toPath());
+                }
             }
         }
     }
 
     @Test
-    public void test() throws Exception {
-        LayersTest.test(root, new HashSet<>(Arrays.asList(NOT_REFERENCED)),
-                new HashSet<>(Arrays.asList(NOT_USED)));
+    public void testLayersModuleUse() throws Exception {
+        LayersTest.testLayersModuleUse(LayersTest.concatArrays(NOT_USED_OR_REFERENCED, NOT_USED), scanContext);
+    }
+
+    @Test
+    public void testUnreferencedModules() throws Exception {
+        LayersTest.testUnreferencedModules(LayersTest.concatArrays(NOT_USED_OR_REFERENCED, NOT_REFERENCED), scanContext);
+    }
+
+    @Test
+    public void testLayersBoot() throws Exception {
+        LayersTest.testLayersBoot(root);
     }
 
     @Test
     public void checkBannedModules() throws Exception {
         HashMap<String, String> results = LayersTest.checkBannedModules(root, BANNED_MODULES_CONF);
 
-        Assert.assertTrue("The following banned modules were provisioned " + results.toString(), results.isEmpty());
+        Assert.assertTrue("The following banned modules were provisioned " + results, results.isEmpty());
     }
 }
