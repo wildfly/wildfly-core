@@ -13,6 +13,7 @@ import org.jboss.msc.service.ServiceTarget;
  * Strategy for building a deployment unit phase.
  * @author Paul Ferraro
  */
+@Deprecated
 public interface DeploymentUnitPhaseBuilder {
 
     /**
