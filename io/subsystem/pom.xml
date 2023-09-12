@@ -29,7 +29,7 @@
     <parent>
         <artifactId>wildfly-io-bom</artifactId>
         <groupId>org.wildfly.core</groupId>
-        <version>18.1.2-9-PSI-SNAPSHOT</version>
+        <version>18.1.2-9-PSI</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
