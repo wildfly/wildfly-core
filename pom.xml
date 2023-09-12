@@ -189,6 +189,7 @@
         <version.com.fasterxml.jackson.databind>${version.com.fasterxml.jackson}</version.com.fasterxml.jackson.databind>
         <version.com.jcraft.jsch>0.1.55</version.com.jcraft.jsch>
         <version.commons-cli>1.5.0</version.commons-cli>
+        <version.commons-codec>1.16.0</version.commons-codec>
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.commons-io>2.10.0</version.commons-io>
@@ -220,7 +221,7 @@
         <version.org.apache.velocity>2.3</version.org.apache.velocity>
         <version.org.bouncycastle>1.76</version.org.bouncycastle>
         <version.org.codehaus.plexus.plexus-utils>3.5.1</version.org.codehaus.plexus.plexus-utils>
-        <version.org.eclipse.jgit>6.6.0.202305301015-r</version.org.eclipse.jgit>
+        <version.org.eclipse.jgit>6.7.0.202309050840-r</version.org.eclipse.jgit>
         <version.org.eclipse.parsson>1.1.4</version.org.eclipse.parsson>
         <version.org.fusesource.jansi>1.18</version.org.fusesource.jansi>
         <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
@@ -723,6 +724,11 @@
                 <version>${version.commons-cli}</version>
             </dependency>
             <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${version.commons-codec}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.smallrye</groupId>
                 <artifactId>jandex</artifactId>
                 <version>${version.io.smallrye.jandex}</version>
@@ -1188,6 +1194,10 @@
                     <exclusion>
                         <groupId>org.apache.sshd</groupId>
                         <artifactId>sshd-osgi</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-codec</groupId>
+                        <artifactId>commons-codec</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
