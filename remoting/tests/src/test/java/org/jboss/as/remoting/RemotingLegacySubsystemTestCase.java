@@ -267,8 +267,8 @@ public class RemotingLegacySubsystemTestCase extends AbstractRemotingSubsystemBa
                 .build();
 
         ServiceName remotingEndpointSN = RemotingServices.SUBSYSTEM_ENDPOINT;
-        ServiceName remoteOutboundConnectionSN = RemoteOutboundConnectionService.REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append("remote-conn1");
-        ServiceName localOutboundConnectionSN = LocalOutboundConnectionService.LOCAL_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append("local-conn1");
+        ServiceName remoteOutboundConnectionSN = AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName("remote-conn1");
+        ServiceName localOutboundConnectionSN = AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName("local-conn1");
         DependenciesRetrievalService dependencies = DependenciesRetrievalService.create(services, remotingEndpointSN, remoteOutboundConnectionSN, localOutboundConnectionSN);
 
         Object remoingEndpointService = dependencies.getService(remotingEndpointSN);

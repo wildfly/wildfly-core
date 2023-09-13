@@ -24,9 +24,13 @@ package org.jboss.as.remoting;
 
 import static org.jboss.as.remoting.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 
+import java.util.Collection;
+import java.util.List;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.ServiceRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -84,16 +88,16 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.AUTHENTICATION_CLIENT_REF)
             .build();
 
-    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = {
-        OUTBOUND_SOCKET_BINDING_REF, USERNAME, SECURITY_REALM, PROTOCOL, AUTHENTICATION_CONTEXT
-    };
+    static final Collection<AttributeDefinition> ATTRIBUTES = List.of(OUTBOUND_SOCKET_BINDING_REF, USERNAME, SECURITY_REALM, PROTOCOL, AUTHENTICATION_CONTEXT);
 
-    static final RemoteOutboundConnectionResourceDefinition INSTANCE = new RemoteOutboundConnectionResourceDefinition();
+    RemoteOutboundConnectionResourceDefinition() {
+        this(new RemoteOutboundConnectionAdd());
+    }
 
-    private RemoteOutboundConnectionResourceDefinition() {
+    private RemoteOutboundConnectionResourceDefinition(RemoteOutboundConnectionAdd addHandler) {
         super(new Parameters(ADDRESS, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.REMOTE_OUTBOUND_CONNECTION))
-                .setAddHandler(RemoteOutboundConnectionAdd.INSTANCE)
-                .setRemoveHandler(new ServiceRemoveStepHandler(OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(), RemoteOutboundConnectionAdd.INSTANCE))
+                .setAddHandler(addHandler)
+                .setRemoveHandler(new ServiceRemoveStepHandler(OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(), addHandler))
         );
     }
 
@@ -104,18 +108,9 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        super.registerAttributes(resourceRegistration);
-        resourceRegistration.registerReadWriteAttribute(OUTBOUND_SOCKET_BINDING_REF, null, RemoteOutboundConnectionWriteHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(USERNAME, null, RemoteOutboundConnectionWriteHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(SECURITY_REALM, null, RemoteOutboundConnectionWriteHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(PROTOCOL, null, RemoteOutboundConnectionWriteHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(AUTHENTICATION_CONTEXT, null, RemoteOutboundConnectionWriteHandler.INSTANCE);
-    }
-
-    @Override
-    protected OperationStepHandler getWriteAttributeHandler(AttributeDefinition attribute) {
-        // we ignore the passed attribute, since all attribute writes lead to the
-        // same action - i.e. restart the service
-        return RemoteOutboundConnectionWriteHandler.INSTANCE;
+        OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(ATTRIBUTES);
+        for (AttributeDefinition attribute : ATTRIBUTES) {
+            resourceRegistration.registerReadWriteAttribute(attribute, null, writeHandler);
+        }
     }
 }

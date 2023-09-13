@@ -39,6 +39,8 @@ import static org.jboss.as.remoting.CommonAttributes.SOCKET_BINDING;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
@@ -332,7 +334,7 @@ class RemotingSubsystem11Parser extends RemotingSubsystem10Parser implements XML
 
         final PathAddress address = PathAddress.pathAddress(PathAddress.pathAddress(parentAddress), PathElement.pathElement(CommonAttributes.OUTBOUND_CONNECTION, name));
         // create add operation add it to the list of operations
-        operations.add(GenericOutboundConnectionAdd.getAddOperation(name, uri, address));
+        operations.add(Util.createAddOperation(address, Map.of(GenericOutboundConnectionResourceDefinition.URI.getName(), new ModelNode(uri))));
         // parse the nested elements
         final EnumSet<Element> visited = EnumSet.noneOf(Element.class);
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {

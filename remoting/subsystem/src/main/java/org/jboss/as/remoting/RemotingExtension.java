@@ -104,9 +104,9 @@ public class RemotingExtension implements Extension {
         httpSasl.registerSubModel(PropertyResource.INSTANCE_HTTP_CONNECTOR);
 
         // remote outbound connection
-        subsystem.registerSubModel(RemoteOutboundConnectionResourceDefinition.INSTANCE);
+        subsystem.registerSubModel(new RemoteOutboundConnectionResourceDefinition());
         // local outbound connection
-        subsystem.registerSubModel(LocalOutboundConnectionResourceDefinition.INSTANCE);
+        subsystem.registerSubModel(new LocalOutboundConnectionResourceDefinition());
         // (generic) outbound connection
         subsystem.registerSubModel(new GenericOutboundConnectionResourceDefinition());
     }
