@@ -4,6 +4,8 @@
  */
 package org.jboss.as.remoting;
 
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
@@ -32,6 +34,8 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
+import org.hamcrest.MatcherAssert;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -44,7 +48,6 @@ import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.ServiceTarget;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -175,22 +178,14 @@ public class RemotingLegacySubsystemTestCase extends AbstractRemotingSubsystemBa
 
     @Test
     public void testSubsystemWithBadConnectorProperty() throws Exception {
-        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization(true))
-                .setSubsystemXmlResource("remoting-with-bad-connector-property.xml")
-                .build();
-
         try {
-            services.getContainer().getRequiredService(RemotingServices.SUBSYSTEM_ENDPOINT);
-            fail("Expected no " + RemotingServices.SUBSYSTEM_ENDPOINT);
-        } catch (ServiceNotFoundException expected) {
-            // ok
-        }
-
-        try {
-            services.getContainer().getRequiredService(RemotingServices.serverServiceName("test-connector"));
-            fail("Expected no " + RemotingServices.serverServiceName("test-connector"));
-        } catch (ServiceNotFoundException expected) {
-            // ok
+            KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization(true))
+                    .setSubsystemXmlResource("remoting-with-bad-connector-property.xml")
+                    .build();
+            fail("Expected boot failed");
+        } catch (OperationFailedException ex) {
+            final String failureDescription = ex.getFailureDescription().asString();
+            MatcherAssert.assertThat(failureDescription, allOf(containsString("WFLYRMT0028:"), containsString("WORKER_ACCEPT_THREAD_BAD")));
         }
     }
 

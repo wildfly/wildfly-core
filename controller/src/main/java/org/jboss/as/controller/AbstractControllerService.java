@@ -591,6 +591,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
         return bootErrorCollector;
     }
 
+    protected final ModelNode getBootErrors() {
+        return bootErrorCollector.getErrors();
+    }
+
     protected OperationStepHandler createExtraValidationStepHandler() {
         return null;
     }
