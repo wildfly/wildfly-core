@@ -62,13 +62,6 @@ public final class EndpointConfigFactory {
     public static OptionMap create(final ExpressionResolver resolver, final ModelNode model, final OptionMap defaults) throws OperationFailedException {
         final OptionMap map = OptionMap.builder()
                 .addAll(defaults)
-                .set(Options.WORKER_READ_THREADS, RemotingSubsystemRootResource.WORKER_READ_THREADS.resolveModelAttribute(resolver, model).asInt())
-                .set(Options.WORKER_TASK_CORE_THREADS, RemotingSubsystemRootResource.WORKER_TASK_CORE_THREADS.resolveModelAttribute(resolver, model).asInt())
-                .set(Options.WORKER_TASK_KEEPALIVE, RemotingSubsystemRootResource.WORKER_TASK_KEEPALIVE.resolveModelAttribute(resolver, model).asInt())
-                .set(Options.WORKER_TASK_LIMIT, RemotingSubsystemRootResource.WORKER_TASK_LIMIT.resolveModelAttribute(resolver, model).asInt())
-                .set(Options.WORKER_TASK_MAX_THREADS, RemotingSubsystemRootResource.WORKER_TASK_MAX_THREADS.resolveModelAttribute(resolver, model).asInt())
-                .set(Options.WORKER_WRITE_THREADS, RemotingSubsystemRootResource.WORKER_WRITE_THREADS.resolveModelAttribute(resolver, model).asInt())
-                .set(Options.WORKER_READ_THREADS, RemotingSubsystemRootResource.WORKER_READ_THREADS.resolveModelAttribute(resolver, model).asInt())
                 .getMap();
         return map;
     }

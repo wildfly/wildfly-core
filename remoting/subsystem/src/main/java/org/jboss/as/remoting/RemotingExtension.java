@@ -33,7 +33,6 @@ import java.util.Map;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
@@ -41,13 +40,10 @@ import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraint
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
-import org.jboss.as.controller.operations.common.OrderedChildTypesAttachment;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.dmr.ModelNode;
 
@@ -84,12 +80,9 @@ public class RemotingExtension implements Extension {
         final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, RemotingSubsystemModel.CURRENT.getVersion());
         registration.registerXMLElementWriter(RemotingSubsystemXMLPersister::new);
 
-        final boolean forDomain = context.getType() == ExtensionContext.ContextType.DOMAIN;
-        final ResourceDefinition root = RemotingSubsystemRootResource.create(context.getProcessType(), forDomain);
+        final ResourceDefinition root = new RemotingSubsystemRootResource();
         final ManagementResourceRegistration subsystem = registration.registerSubsystemModel(root);
-        subsystem.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, new DescribeHandler());
-
-        subsystem.registerSubModel(RemotingEndpointResource.INSTANCE);
+        subsystem.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
         final ManagementResourceRegistration connector = subsystem.registerSubModel(ConnectorResource.INSTANCE);
         connector.registerSubModel(PropertyResource.INSTANCE_CONNECTOR);
@@ -193,21 +186,6 @@ public class RemotingExtension implements Extension {
 
                     RemotingLogger.ROOT_LOGGER.addingIOSubsystem(legacyNS);
                 }
-            }
-        }
-    }
-
-    private static class DescribeHandler extends GenericSubsystemDescribeHandler {
-
-        @Override
-        protected void describe(OrderedChildTypesAttachment orderedChildTypesAttachment, Resource resource,
-                                ModelNode address, ModelNode result, ImmutableManagementResourceRegistration registration) {
-            // Don't describe the configuration=endpoint resource. It's just an alias for
-            // a set of attributes on its parent and the parent description covers those.
-
-            PathElement pe = registration.getPathAddress().getLastElement();
-            if (!pe.equals(RemotingEndpointResource.ENDPOINT_PATH)) {
-                super.describe(orderedChildTypesAttachment, resource, address, result, registration);
             }
         }
     }

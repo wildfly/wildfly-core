@@ -35,6 +35,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 import jakarta.inject.Inject;
@@ -68,12 +69,10 @@ public class OperationWarningTestCase extends AbstractMgmtTestBase {
     protected static final String WORKER_SECOND = "puppet-master";
     protected static final String WORKER_DEFAULT = "default";
     protected static final String WORKER = "worker";
-    protected static final PathAddress ADDRESS_WORKER_SECOND = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "io"),
-            PathElement.pathElement(WORKER, WORKER_SECOND));
-    protected static final PathAddress ADDRESS_WORKER_DEFAULT = PathAddress
-            .pathAddress(PathElement.pathElement(SUBSYSTEM, "io"), PathElement.pathElement(WORKER, WORKER_DEFAULT));
-    protected static final PathAddress ADDRESS_REMOTING = PathAddress
-            .pathAddress(PathElement.pathElement(SUBSYSTEM, "remoting"), PathElement.pathElement("configuration", "endpoint"));
+    protected static final PathAddress ADDRESS_IO_SUBSYSTEM = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "io"));
+    protected static final PathAddress ADDRESS_WORKER_SECOND = ADDRESS_IO_SUBSYSTEM.append(PathElement.pathElement(WORKER, WORKER_SECOND));
+    protected static final PathAddress ADDRESS_WORKER_DEFAULT = ADDRESS_IO_SUBSYSTEM.append(PathElement.pathElement(WORKER, WORKER_DEFAULT));
+    protected static final PathAddress ADDRESS_REMOTING_SUBSYSTEM = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "remoting"));
     protected static final String BAD_LEVEL = "X_X";
 
     @Test
@@ -111,7 +110,11 @@ public class OperationWarningTestCase extends AbstractMgmtTestBase {
     }
 
     private static void add(final PathAddress address) throws Exception {
-        ModelNode addOp = Util.createAddOperation(address);
+        add(address, Map.of());
+    }
+
+    private static void add(final PathAddress address, Map<String, ModelNode> parameters) throws Exception {
+        ModelNode addOp = Util.createAddOperation(address, parameters);
         ModelNode resp = ManagementOperations.executeOperationRaw(serverController.getClient().getControllerClient(), addOp);
         assertEquals("Unexpected outcome " + resp + " of add operation: " + addOp, ModelDescriptionConstants.SUCCESS,
                 resp.get("outcome").asString());
@@ -126,7 +129,7 @@ public class OperationWarningTestCase extends AbstractMgmtTestBase {
 
     private static ModelNode setRemotingWorkerTo(final String name, final String level) throws IOException {
         ModelNode op = new ModelNode();
-        op.get(ModelDescriptionConstants.OP_ADDR).set(ADDRESS_REMOTING.toModelNode());
+        op.get(ModelDescriptionConstants.OP_ADDR).set(ADDRESS_REMOTING_SUBSYSTEM.toModelNode());
         op.get(ModelDescriptionConstants.OP).set(WRITE_ATTRIBUTE_OPERATION);
         op.get(NAME).set(WORKER);
         op.get(VALUE).set(name);
@@ -145,20 +148,19 @@ public class OperationWarningTestCase extends AbstractMgmtTestBase {
 
             add(PathAddress.pathAddress(EXTENSION, "org.jboss.as.remoting"));
 
-            add(PathAddress.pathAddress(SUBSYSTEM, "io"));
+            add(ADDRESS_IO_SUBSYSTEM);
 
             add(ADDRESS_WORKER_DEFAULT);
 
-            add(PathAddress.pathAddress(SUBSYSTEM, "remoting"));
-
+            add(ADDRESS_REMOTING_SUBSYSTEM, Map.of(WORKER, new ModelNode(WORKER_DEFAULT)));
         }
 
         @Override
         public void tearDown(ManagementClient managementClient) throws Exception {
             try {
-                remove(PathAddress.pathAddress(SUBSYSTEM, "remoting"));
+                remove(ADDRESS_REMOTING_SUBSYSTEM);
 
-                remove(PathAddress.pathAddress(SUBSYSTEM, "io"));
+                remove(ADDRESS_IO_SUBSYSTEM);
 
                 remove(PathAddress.pathAddress(EXTENSION, "org.wildfly.extension.io"));
 

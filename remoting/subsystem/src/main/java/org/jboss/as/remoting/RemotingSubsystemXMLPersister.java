@@ -43,7 +43,6 @@ import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -66,10 +65,6 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
         context.startSubsystemElement(Namespace.CURRENT.getUriString(), false);
 
         final ModelNode model = context.getModelNode();
-
-        writeWorkerThreadPoolIfAttributesSet(writer, model);
-
-        writeEndpointIfAttributesSet(writer, model);
 
         if (model.hasDefined(CONNECTOR)) {
             final ModelNode connector = model.get(CONNECTOR);
@@ -127,40 +122,6 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
 
         writer.writeEndElement();
 
-    }
-
-    private void writeWorkerThreadPoolIfAttributesSet(final XMLExtendedStreamWriter writer, final ModelNode node) throws XMLStreamException {
-        if (node.hasDefined(CommonAttributes.WORKER_READ_THREADS) || node.hasDefined(CommonAttributes.WORKER_TASK_CORE_THREADS) || node.hasDefined(CommonAttributes.WORKER_TASK_KEEPALIVE) ||
-                node.hasDefined(CommonAttributes.WORKER_TASK_LIMIT) || node.hasDefined(CommonAttributes.WORKER_TASK_MAX_THREADS) || node.hasDefined(CommonAttributes.WORKER_WRITE_THREADS)) {
-
-            writer.writeStartElement(Element.WORKER_THREAD_POOL.getLocalName());
-
-            RemotingSubsystemRootResource.WORKER_READ_THREADS.marshallAsAttribute(node, false, writer);
-            RemotingSubsystemRootResource.WORKER_TASK_CORE_THREADS.marshallAsAttribute(node, false, writer);
-            RemotingSubsystemRootResource.WORKER_TASK_KEEPALIVE.marshallAsAttribute(node, false, writer);
-            RemotingSubsystemRootResource.WORKER_TASK_LIMIT.marshallAsAttribute(node, false, writer);
-            RemotingSubsystemRootResource.WORKER_TASK_MAX_THREADS.marshallAsAttribute(node, false, writer);
-            RemotingSubsystemRootResource.WORKER_WRITE_THREADS.marshallAsAttribute(node, false, writer);
-
-            writer.writeEndElement();
-        }
-
-    }
-
-    private void writeEndpointIfAttributesSet(final XMLExtendedStreamWriter writer, final ModelNode model) throws XMLStreamException {
-        boolean defined = false;
-        for (String adName : RemotingEndpointResource.ATTRIBUTES.keySet()) {
-            if (model.hasDefined(adName)) {
-                defined = true;
-                break;
-            }
-        }
-        if (defined) {
-            writer.writeEmptyElement(RemotingEndpointResource.ENDPOINT_PATH.getValue());
-            for (AttributeDefinition ad : RemotingEndpointResource.ATTRIBUTES.values()) {
-                ad.getMarshaller().marshallAsAttribute(ad, model, true, writer);
-            }
-        }
     }
 
     private void writeConnector(final XMLExtendedStreamWriter writer, final ModelNode node, final String name) throws XMLStreamException {
