@@ -66,6 +66,10 @@ public class RemotingServices {
     /** The base name of the stream server services */
     private static final ServiceName SERVER_BASE = REMOTING_BASE.append("server");
 
+    /**
+     * @deprecated Reference listener register capability instead
+     */
+    @Deprecated(forRemoval = true)
     public static final ServiceName HTTP_LISTENER_REGISTRY = HTTP_LISTENER_REGISTRY_CAPABILITY.getCapabilityServiceName(ListenerRegistry.class);
 
     /**
