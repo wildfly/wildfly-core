@@ -65,7 +65,8 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         // Additions to these should include good explanations why in the relevant JIRA
         // Keep them alphabetical to avoid the code history getting confused by reordering commits
         final ArrayList<String> modularJavaOpts = new ArrayList<>();
-        if (!Boolean.parseBoolean(System.getProperty("launcher.skip.jpms.properties", "false"))) {
+        final boolean skipJPMSOptions = Boolean.getBoolean("launcher.skip.jpms.properties");
+        if (!skipJPMSOptions) {
             modularJavaOpts.add("--add-exports=java.desktop/sun.awt=ALL-UNNAMED");
             modularJavaOpts.add("--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED");
             modularJavaOpts.add("--add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED");
@@ -88,7 +89,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         DEFAULT_MODULAR_VM_ARGUMENTS = Collections.unmodifiableList(modularJavaOpts);
 
         final ArrayList<String> optionalModularJavaOpts = new ArrayList<>();
-        if (!Boolean.parseBoolean(System.getProperty("launcher.skip.jpms.properties", "false"))) {
+        if (!skipJPMSOptions) {
             optionalModularJavaOpts.add("--add-opens=java.base/com.sun.net.ssl.internal.ssl=ALL-UNNAMED");
         }
         OPTIONAL_DEFAULT_MODULAR_VM_ARGUMENTS = Collections.unmodifiableList(optionalModularJavaOpts);

@@ -259,7 +259,7 @@ class Jvm {
             process = builder.redirectErrorStream(true)
                     .redirectOutput(stdout.toFile()).start();
 
-            if (process.waitFor(1, TimeUnit.SECONDS)) {
+            if (process.waitFor(30, TimeUnit.SECONDS)) {
                 result = process.exitValue() == 0;
             } else {
                 result = false;

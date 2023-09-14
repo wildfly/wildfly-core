@@ -120,6 +120,13 @@ public final class JvmType {
         return isModularJvm ? DEFAULT_MODULAR_JVM_ARGUMENTS : Collections.EMPTY_LIST;
     }
 
+    /**
+     * The expectation is this method is called once per JvmType instance.
+     * In theory we could cache the result for reuse, but if we change how
+     * we use these instances it may not be the case that a cached value
+     * would be correct over multiple invocations.
+     * @return collection of optional (may not be available on all JDK versions) modular JVM arguments
+     */
     public Collection<String> getOptionalDefaultArguments() {
         if (isModularJvm) {
             Collection<String> retVal = null;
@@ -186,7 +193,7 @@ public final class JvmType {
             process = builder.redirectErrorStream(true)
                     .redirectOutput(stdout.toFile()).start();
 
-            if (process.waitFor(1, TimeUnit.SECONDS)) {
+            if (process.waitFor(30, TimeUnit.SECONDS)) {
                 result = process.exitValue() == 0;
             } else {
                 result = false;
