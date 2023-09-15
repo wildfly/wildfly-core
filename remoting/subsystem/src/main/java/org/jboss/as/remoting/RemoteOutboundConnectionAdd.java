@@ -29,10 +29,6 @@ import org.xnio.OptionMap;
  */
 class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
 
-    RemoteOutboundConnectionAdd() {
-        super(RemoteOutboundConnectionResourceDefinition.ATTRIBUTES);
-    }
-
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         final ModelNode fullModel = Resource.Tools.readModel(resource);

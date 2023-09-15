@@ -30,13 +30,6 @@ import org.xnio.OptionMap;
  */
 public class HttpConnectorAdd extends AbstractAddStepHandler {
 
-    static final HttpConnectorAdd INSTANCE = new HttpConnectorAdd();
-
-    private HttpConnectorAdd() {
-        super(HttpConnectorResource.CONNECTOR_REF, HttpConnectorResource.AUTHENTICATION_PROVIDER, HttpConnectorResource.SECURITY_REALM,
-                HttpConnectorResource.SASL_AUTHENTICATION_FACTORY, ConnectorCommon.SASL_PROTOCOL, ConnectorCommon.SERVER_NAME);
-    }
-
     @Override
     protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         super.populateModel(context, operation, resource);
@@ -51,7 +44,7 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
         launchServices(context, connectorName, fullModel);
     }
 
-    void launchServices(OperationContext context, String connectorName, ModelNode model) throws OperationFailedException {
+    static void launchServices(OperationContext context, String connectorName, ModelNode model) throws OperationFailedException {
         OptionMap optionMap = ConnectorUtils.getFullOptions(context, model);
 
         final String connectorRef = HttpConnectorResource.CONNECTOR_REF.resolveModelAttribute(context, model).asString();

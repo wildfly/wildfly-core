@@ -35,12 +35,6 @@ import org.xnio.OptionMap;
  */
 public class ConnectorAdd extends AbstractAddStepHandler {
 
-    static final ConnectorAdd INSTANCE = new ConnectorAdd();
-
-    private ConnectorAdd() {
-        super(ConnectorResource.ATTRIBUTES);
-    }
-
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final ModelNode fullModel = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
@@ -48,7 +42,7 @@ public class ConnectorAdd extends AbstractAddStepHandler {
         launchServices(context, fullModel);
     }
 
-    void launchServices(OperationContext context, ModelNode fullModel) throws OperationFailedException {
+    static void launchServices(OperationContext context, ModelNode fullModel) throws OperationFailedException {
         final String connectorName = context.getCurrentAddressValue();
         OptionMap optionMap = ConnectorUtils.getFullOptions(context, fullModel);
 

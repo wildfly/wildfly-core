@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -71,17 +70,16 @@ public class HttpConnectorResource extends SimpleResourceDefinition {
 
     HttpConnectorResource() {
         super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(HTTP_CONNECTOR))
-                .setAddHandler(HttpConnectorAdd.INSTANCE)
-                .setRemoveHandler(HttpConnectorRemove.INSTANCE)
+                .setAddHandler(new HttpConnectorAdd())
+                .setRemoveHandler(new HttpConnectorRemove())
                 // expose a common connector capability (WFCORE-4875)
                 .setCapabilities(CONNECTOR_CAPABILITY, HTTP_CONNECTOR_CAPABILITY));
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        final OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(ATTRIBUTES);
         for (AttributeDefinition attribute : ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(attribute, null, writeHandler);
+            resourceRegistration.registerReadWriteAttribute(attribute, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
         }
     }
 

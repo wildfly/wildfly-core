@@ -32,10 +32,6 @@ import org.xnio.XnioWorker;
  */
 class RemotingSubsystemAdd extends AbstractAddStepHandler {
 
-    RemotingSubsystemAdd() {
-        super(RemotingSubsystemRootResource.ATTRIBUTES);
-    }
-
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         // DomainServerCommunicationServices will already have created this service if the server group has {@link org.jboss.as.controller.descriptions.ModelDescriptionConstants#MANAGEMENT_SUBSYSTEM_ENDPOINT} enabled.

@@ -7,6 +7,7 @@ package org.jboss.as.remoting;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -17,17 +18,14 @@ import org.jboss.dmr.ModelNode;
  */
 public class ConnectorRemove extends AbstractRemoveStepHandler {
 
-    static final ConnectorRemove INSTANCE = new ConnectorRemove();
-
-    private ConnectorRemove() {
-    }
-
+    @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
         final String name = context.getCurrentAddressValue();
         RemotingServices.removeConnectorServices(context, name);
     }
 
-    protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) {
-        // TODO:  RE-ADD SERVICES
+    @Override
+    protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        ConnectorAdd.launchServices(context, model);
     }
 }

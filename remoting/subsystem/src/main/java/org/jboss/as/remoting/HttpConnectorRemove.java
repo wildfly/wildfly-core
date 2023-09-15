@@ -21,17 +21,17 @@ import org.jboss.dmr.ModelNode;
  */
 public class HttpConnectorRemove extends AbstractRemoveStepHandler {
 
-    static final HttpConnectorRemove INSTANCE = new HttpConnectorRemove();
-
+    @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         final String name = address.getLastElement().getValue();
         context.removeService(RemotingHttpUpgradeService.UPGRADE_SERVICE_NAME.append(name));
     }
 
+    @Override
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
         final String name = address.getLastElement().getValue();
-        HttpConnectorAdd.INSTANCE.launchServices(context, name, model);
+        HttpConnectorAdd.launchServices(context, name, model);
     }
 }
