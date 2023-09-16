@@ -715,6 +715,11 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
         cmd.addAll(processControllerJavaOpts.asList());
         if (environment.getJvm().isModular()) {
             cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
+            for (final String optionalModularArgument : OPTIONAL_DEFAULT_MODULAR_VM_ARGUMENTS) {
+                if (environment.getJvm().isPackageAvailable(environment.getJvm().getPath(), optionalModularArgument)) {
+                    cmd.add(optionalModularArgument);
+                }
+            }
         }
         if (environment.getJvm().enhancedSecurityManagerAvailable()) {
             cmd.add(SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE);
@@ -746,6 +751,11 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
         cmd.addAll(hostControllerJavaOpts.asList());
         if (hostControllerJvm.isModular()) {
             cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
+            for (final String optionalModularArgument : OPTIONAL_DEFAULT_MODULAR_VM_ARGUMENTS) {
+                if (environment.getJvm().isPackageAvailable(environment.getJvm().getPath(), optionalModularArgument)) {
+                    cmd.add(optionalModularArgument);
+                }
+            }
         }
         if (hostControllerJvm.enhancedSecurityManagerAvailable()) {
             cmd.add(SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE);

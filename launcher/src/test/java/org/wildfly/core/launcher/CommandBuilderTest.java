@@ -273,6 +273,10 @@ public class CommandBuilderTest {
         assertArgumentExists(command, "--add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED", expectedCount);
         assertArgumentExists(command, "--add-exports=java.naming/com.sun.jndi.url.ldaps=ALL-UNNAMED", expectedCount);
         assertArgumentExists(command, "--add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED", expectedCount);
+        if (getJavaVersion() <= 12) {
+            // for condition see WFCORE-4296 - java.base/com.sun.net.ssl.internal.ssl isn't available since JDK13
+            assertArgumentExists(command, "--add-opens=java.base/com.sun.net.ssl.internal.ssl=ALL-UNNAMED", expectedCount);
+        }
         assertArgumentExists(command, "--add-opens=java.base/java.lang=ALL-UNNAMED", expectedCount);
         assertArgumentExists(command, "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED", expectedCount);
         assertArgumentExists(command, "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED", expectedCount);
@@ -284,6 +288,12 @@ public class CommandBuilderTest {
         assertArgumentExists(command, "--add-opens=java.management/javax.management=ALL-UNNAMED", expectedCount);
         assertArgumentExists(command, "--add-opens=java.naming/javax.naming=ALL-UNNAMED", expectedCount);
         assertArgumentExists(command, "--add-modules=java.se", expectedCount);
+    }
+
+    private static int getJavaVersion() throws NumberFormatException {
+        final String versionString = System.getProperty("java.version");
+        int indexOfDot = versionString.indexOf('.');
+        return Integer.valueOf(versionString.substring(0, indexOfDot)).intValue();
     }
 
     private void testModularJvmArguments(final Collection<String> command, final int expectedCount) {

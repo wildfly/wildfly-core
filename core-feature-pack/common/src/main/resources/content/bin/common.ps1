@@ -111,6 +111,15 @@ Function Get-Java-Opts {
 	return $JAVA_OPTS
 }
 
+Function SetPackageAvailable($packageName) {
+    $PACKAGE_AVAILABLE = $false
+    & $JAVA "--add-opens=$packageName=ALL-UNNAMED" -version >$null 2>&1
+    if ($LastExitCode -eq 0){
+        $PACKAGE_AVAILABLE = $true
+    }
+    return $PACKAGE_AVAILABLE
+}
+
 Function SetEnhancedSecurityManager {
     $ENHANCED_SM = $false
     & $JAVA "-Djava.security.manager=allow" -version >$null 2>&1
@@ -174,6 +183,12 @@ Param(
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.naming/com.sun.jndi.url.ldaps=ALL-UNNAMED"
         # Needed by Netty
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED"
+        # Needed by WildFly Elytron Extension
+        $packageName = "java.base/com.sun.net.ssl.internal.ssl"
+        $PACKAGE_AVAILABLE = setPackageAvailable($packageName)
+        if($PACKAGE_AVAILABLE) {
+            $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=$packageName=ALL-UNNAMED"
+        }
         # Needed if Hibernate applications use Javassist
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang=ALL-UNNAMED"
         # Needed by the MicroProfile REST Client subsystem

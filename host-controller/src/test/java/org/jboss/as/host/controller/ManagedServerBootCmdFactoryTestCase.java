@@ -118,6 +118,12 @@ public class ManagedServerBootCmdFactoryTestCase {
         Assert.assertNotNull(result);
     }
 
+    private static int getJavaVersion() throws NumberFormatException {
+        final String versionString = System.getProperty("java.version");
+        int indexOfDot = versionString.indexOf('.');
+        return Integer.valueOf(versionString.substring(0, indexOfDot)).intValue();
+    }
+
     /**
      * Test of getServerLaunchCommand method, of class
      * ManagedServerBootCmdFactory.
@@ -129,7 +135,7 @@ public class ManagedServerBootCmdFactoryTestCase {
         List<String> result = instance.getServerLaunchCommand();
         MatcherAssert.assertThat(result.size(), is(notNullValue()));
         if (result.size() > 18) {
-            MatcherAssert.assertThat(result.size(), is(33));
+            MatcherAssert.assertThat(result.size(), is(getJavaVersion() <= 12 ? 34 : 33)); // for condition see WFCORE-4296 - java.base/com.sun.net.ssl.internal.ssl isn't available since JDK13
         } else {
             MatcherAssert.assertThat(result.size(), is(18));
         }
