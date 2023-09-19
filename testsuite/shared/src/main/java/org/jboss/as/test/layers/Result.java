@@ -60,13 +60,16 @@ public class Result {
     private final Map<String, Set<String>> unresolvedOptional;
     private final Set<String> modules;
     private final Set<String> notReferenced;
+    private final Set<String> aliases;
     private final List<ExtensionResult> extensions;
 
-    Result(long size, Set<String> modules, Map<String, Set<String>> unresolvedOptional, Set<String> notReferenced, List<ExtensionResult> extensions) {
+    Result(long size, Set<String> modules, Map<String, Set<String>> unresolvedOptional, Set<String> notReferenced,
+           Set<String> aliases, List<ExtensionResult> extensions) {
         this.size = size;
         this.modules = modules;
         this.unresolvedOptional = unresolvedOptional;
         this.notReferenced = notReferenced;
+        this.aliases = aliases;
         this.extensions = extensions;
     }
 
@@ -96,6 +99,13 @@ public class Result {
      */
     public Set<String> getNotReferenced() {
         return notReferenced;
+    }
+
+    /**
+     * @return the aliases
+     */
+    public Set<String> getAliases() {
+        return aliases;
     }
 
     /**

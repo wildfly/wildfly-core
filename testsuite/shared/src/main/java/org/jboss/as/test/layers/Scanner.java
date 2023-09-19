@@ -41,7 +41,7 @@ public class Scanner {
         Map<String, Set<String>> optionalDependencies = new TreeMap<>();
         List<Long> size = new ArrayList<>();
         size.add((long) 0);
-        Files.walkFileTree(homePath, new SimpleFileVisitor<Path>() {
+        Files.walkFileTree(homePath, new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 size.set(0, size.get(0) + attrs.size());
@@ -50,7 +50,8 @@ public class Scanner {
         });
         Map<String, Set<String>> modulesReference = new HashMap<>();
         Set<String> modules = new HashSet<>();
-        Files.walkFileTree(modulePath, new SimpleFileVisitor<Path>() {
+        Set<String> aliases = new HashSet<>();
+        Files.walkFileTree(modulePath, new SimpleFileVisitor<>() {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                             throws IOException {
@@ -63,13 +64,13 @@ public class Scanner {
                                 Document document = documentBuilder.parse(file.toFile());
                                 Element elemAlias = (Element) document.getElementsByTagName("module-alias").item(0);
                                 if (elemAlias != null) {
+                                    // Track both the alias and the target, with the alias treated as a ref to target
                                     String moduleName = elemAlias.getAttribute("name");
+                                    aliases.add(moduleName);
+                                    modules.add(moduleName);
+                                    modulesReference.computeIfAbsent(moduleName, k -> new HashSet<>());
                                     String target = elemAlias.getAttribute("target-name");
-                                    Set<String> referencing = modulesReference.get(target);
-                                    if (referencing == null) {
-                                        referencing = new HashSet<>();
-                                        modulesReference.put(target, referencing);
-                                    }
+                                    Set<String> referencing = modulesReference.computeIfAbsent(target, k -> new HashSet<>());
                                     referencing.add(moduleName);
                                     return FileVisitResult.CONTINUE;
                                 }
@@ -93,11 +94,7 @@ public class Scanner {
                                                         optionals.add(mod);
                                                     }
                                                 }
-                                                Set<String> referencing = modulesReference.get(mod);
-                                                if (referencing == null) {
-                                                    referencing = new HashSet<>();
-                                                    modulesReference.put(mod, referencing);
-                                                }
+                                                Set<String> referencing = modulesReference.computeIfAbsent(mod, k -> new HashSet<>());
                                                 referencing.add(moduleName);
                                             }
                                         }
@@ -112,8 +109,7 @@ public class Scanner {
                     }
 
                     @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException e)
-                            throws IOException {
+                    public FileVisitResult postVisitDirectory(Path dir, IOException e) {
                         return FileVisitResult.CONTINUE;
                     }
                 }
@@ -123,11 +119,7 @@ public class Scanner {
         for (Map.Entry<String, Set<String>> entry : optionalDependencies.entrySet()) {
             for (String opt : entry.getValue()) {
                 if (!modules.contains(opt)) {
-                    Set<String> roots = missing.get(opt);
-                    if (roots == null) {
-                        roots = new TreeSet<>();
-                        missing.put(opt, roots);
-                    }
+                    Set<String> roots = missing.computeIfAbsent(opt, k -> new TreeSet<>());
                     roots.add(entry.getKey());
                 }
             }
@@ -198,7 +190,7 @@ public class Scanner {
             extensionResults.add(new Result.ExtensionResult(ex, extSize.get(0) / 1024, deps, unresolved));
         }
 
-        return new Result(size.get(0) / 1024, modules, missing, allNotReferenced, extensionResults);
+        return new Result(size.get(0) / 1024, modules, missing, allNotReferenced, aliases, extensionResults);
     }
 
     private static Set<String> retrieveExtensionModules(Path conf) throws Exception {
@@ -240,7 +232,7 @@ public class Scanner {
             return;
         }
         // Add content size.
-        Files.walkFileTree(path.getParent(), new SimpleFileVisitor<Path>() {
+        Files.walkFileTree(path.getParent(), new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 size.set(0, size.get(0) + attrs.size());

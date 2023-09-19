@@ -30,6 +30,7 @@
         <module name="jdk.security.auth"/>
 
         <module name="io.undertow.core" />
+        <module name="io.smallrye.jandex"/>
         <module name="org.eclipse.jgit" optional="true"/>
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.as.deployment-repository"/>
@@ -52,7 +53,6 @@
         <module name="org.jboss.common-beans" services="export" optional="true"/>
         <module name="org.jboss.dmr"/>
         <module name="org.jboss.invocation"/>
-        <module name="org.jboss.jandex"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.logmanager" services="import"/>
         <module name="org.jboss.marshalling"/>

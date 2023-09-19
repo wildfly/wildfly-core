@@ -129,9 +129,11 @@ public class LayersTest {
             appendResult(k, layers.get(k), builder, reference);
         }
 
+
         // The only modules that are expected to be not provisioned are the un-used ones.
         // If more are not provisioned, then we are missing some modules.
-        String missingRequired = listModules(deltaModules, m -> !unused.contains(m));
+        final Set<String> referenceAliases = reference.getAliases();  // don't require callers to include alias modules in 'unused'
+        String missingRequired = listModules(deltaModules, m -> !unused.contains(m) && !referenceAliases.contains(m));
         if (!missingRequired.isEmpty()) {
             String error = "Some expected modules have not been provisioned in " + ALL_LAYERS;
             builder.append("#!!!!!ERROR ").append(error).append("\n");
@@ -204,9 +206,16 @@ public class LayersTest {
         // Check that the reference has no more un-referenced modules than the expected ones.
         Set<String> allUnReferenced = new HashSet<>(unreferenced);
         final Set<String> refUnreferenced = reference.getNotReferenced();
-        String invalidUnref = listModules(refUnreferenced, m -> !allUnReferenced.contains(m));
+        final Set<String> referenceAliases = reference.getAliases(); // don't require callers to include alias modules in 'unreferenced'
+        String invalidUnref = listModules(refUnreferenced, m -> !allUnReferenced.contains(m) && !referenceAliases.contains(m));
         if (!invalidUnref.isEmpty()) {
             appendExceptionMsg(exceptionBuilder, "Some unreferenced modules are unexpected " + invalidUnref, empty);
+        }
+
+        // Check that alias modules are not referenced
+        String referencedAlias = listModules(referenceAliases, m -> !refUnreferenced.contains(m));
+        if (!referencedAlias.isEmpty()) {
+            appendExceptionMsg(exceptionBuilder, "Some alias modules are referenced " + referencedAlias, empty);
         }
 
         if (VALIDATE_INPUTS) {
@@ -469,6 +478,11 @@ public class LayersTest {
                 notReferenced.append(s).append(",");
             }
             builder.append("unreferenced_modules=").append(notReferenced).append("\n");
+            StringBuilder aliases = new StringBuilder();
+            for (String s : result.getAliases()) {
+                aliases.append(s).append(",");
+            }
+            builder.append("alias_modules=").append(aliases).append("\n");
             builder.append("num_unresolved=").append(optionals.size()).append("\n");
         }
         for (Map.Entry<String, Set<String>> entry : optionals.entrySet()) {
