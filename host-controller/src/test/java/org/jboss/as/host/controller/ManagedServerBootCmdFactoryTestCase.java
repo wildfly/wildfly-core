@@ -121,7 +121,7 @@ public class ManagedServerBootCmdFactoryTestCase {
     private static int getJavaVersion() throws NumberFormatException {
         final String versionString = System.getProperty("java.version");
         int indexOfDot = versionString.indexOf('.');
-        return Integer.valueOf(versionString.substring(0, indexOfDot)).intValue();
+        return Integer.valueOf(indexOfDot > 0 ? versionString.substring(0, indexOfDot) : versionString).intValue();
     }
 
     /**
