@@ -120,7 +120,7 @@ public interface DeploymentMountProvider {
                 try {
                     final JBossThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
                         public JBossThreadFactory run() {
-                            return new JBossThreadFactory(new ThreadGroup("ServerDeploymentRepository-temp-threads"), true, null, "%G - %t", null, null);
+                            return new JBossThreadFactory(ThreadGroupHolder.THREAD_GROUP, true, null, "%G - %t", null, null);
                         }
                     });
                     scheduledExecutorService =  Executors.newScheduledThreadPool(2, threadFactory);
@@ -166,6 +166,11 @@ public interface DeploymentMountProvider {
                 }
             }
 
+        }
+
+        // Wrapper class to delay thread group creation until when it's needed.
+        private static class ThreadGroupHolder {
+            private static final ThreadGroup THREAD_GROUP = new ThreadGroup("ServerDeploymentRepository-temp-threads");
         }
     }
 }

@@ -52,7 +52,7 @@ public class TempFileProviderService implements Service<TempFileProvider> {
        try {
            final JBossThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
                public JBossThreadFactory run() {
-                   return new JBossThreadFactory(new ThreadGroup("TempFileProviderService-temp-threads"), Boolean.TRUE, null, "%G - %t", null, null);
+                   return new JBossThreadFactory(ThreadGroupHolder.THREAD_GROUP, Boolean.TRUE, null, "%G - %t", null, null);
                }
            });
            ScheduledThreadPoolExecutor ex = new ScheduledThreadPoolExecutor(0, threadFactory);
@@ -86,5 +86,10 @@ public class TempFileProviderService implements Service<TempFileProvider> {
 
     public static TempFileProvider provider() {
         return PROVIDER;
+    }
+
+    // Wrapper class to delay thread group creation until when it's needed.
+    private static class ThreadGroupHolder {
+        private static final ThreadGroup THREAD_GROUP = new ThreadGroup("TempFileProviderService-temp-threads");
     }
 }

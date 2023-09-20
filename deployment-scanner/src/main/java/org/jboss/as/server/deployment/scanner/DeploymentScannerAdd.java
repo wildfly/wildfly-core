@@ -233,7 +233,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
     static ScheduledExecutorService createScannerExecutorService() {
         final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<ThreadFactory>() {
             public ThreadFactory run() {
-                return new JBossThreadFactory(new ThreadGroup("DeploymentScanner-threads"), Boolean.FALSE, null, "%G - %t", null, null);
+                return new JBossThreadFactory(ThreadGroupHolder.THREAD_GROUP, Boolean.FALSE, null, "%G - %t", null, null);
             }
         });
         return Executors.newScheduledThreadPool(2, threadFactory);
@@ -302,5 +302,10 @@ class DeploymentScannerAdd implements OperationStepHandler {
         public Set<String> getUnrelatedDeployments(ModelNode owner) {
             return Collections.emptySet();
         }
+    }
+
+    // Wrapper class to delay thread group creation until when it's needed.
+    private static class ThreadGroupHolder {
+        private static final ThreadGroup THREAD_GROUP = new ThreadGroup("DeploymentScanner-threads");
     }
 }

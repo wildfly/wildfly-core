@@ -23,6 +23,8 @@
 package org.jboss.as.threads;
 
 import java.security.PrivilegedAction;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
@@ -36,6 +38,9 @@ import static java.security.AccessController.doPrivileged;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public final class ThreadFactoryService implements Service<ThreadFactory> {
+
+    private static final Map<String, ThreadGroup> THREAD_GROUP_CACHE = new ConcurrentHashMap<>();
+
     private String threadGroupName;
     private Integer priority;
     private String namePattern;
@@ -67,7 +72,8 @@ public final class ThreadFactoryService implements Service<ThreadFactory> {
 
     @Override
     public synchronized void start(final StartContext context) throws StartException {
-        final ThreadGroup threadGroup = (threadGroupName != null) ? new ThreadGroup(threadGroupName) : null;
+        final ThreadGroup threadGroup = THREAD_GROUP_CACHE.computeIfAbsent(threadGroupName, name ->
+                name != null ? new ThreadGroup(name) : null);
         value = doPrivileged(new PrivilegedAction<ThreadFactory>() {
             public ThreadFactory run() {
                 return new JBossThreadFactory(threadGroup, Boolean.FALSE, priority, namePattern, null, null);
