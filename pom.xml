@@ -243,7 +243,7 @@
         <version.org.jboss.shrinkwrap.shrinkwrap>1.2.6</version.org.jboss.shrinkwrap.shrinkwrap>
         <version.org.jboss.slf4j.slf4j-jboss-logmanager>2.0.1.Final</version.org.jboss.slf4j.slf4j-jboss-logmanager>
         <version.org.jboss.spec.javax.servlet.jboss-servlet-api_4.0_spec>2.0.0.Final</version.org.jboss.spec.javax.servlet.jboss-servlet-api_4.0_spec>
-        <version.org.jboss.staxmapper>1.4.0.Final</version.org.jboss.staxmapper>
+        <version.org.jboss.staxmapper>1.5.0.Final</version.org.jboss.staxmapper>
         <version.org.jboss.stdio>1.1.0.Final</version.org.jboss.stdio>
         <version.org.jboss.threads>2.4.0.Final</version.org.jboss.threads>
         <version.org.jboss.xnio>3.8.10.Final</version.org.jboss.xnio>
