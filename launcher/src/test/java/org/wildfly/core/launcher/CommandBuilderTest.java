@@ -290,10 +290,8 @@ public class CommandBuilderTest {
         assertArgumentExists(command, "--add-modules=java.se", expectedCount);
     }
 
-    private static int getJavaVersion() throws NumberFormatException {
-        final String versionString = System.getProperty("java.version");
-        int indexOfDot = versionString.indexOf('.');
-        return Integer.valueOf(indexOfDot > 0 ? versionString.substring(0, indexOfDot) : versionString).intValue();
+    private static int getJavaVersion() {
+        return Runtime.version().feature();
     }
 
     private void testModularJvmArguments(final Collection<String> command, final int expectedCount) {

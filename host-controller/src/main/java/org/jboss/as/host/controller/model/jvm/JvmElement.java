@@ -27,8 +27,6 @@ package org.jboss.as.host.controller.model.jvm;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
@@ -284,17 +282,7 @@ public class JvmElement {
     }
 
     public static int getJVMMajorVersion() {
-        try {
-            String vmVersionStr = WildFlySecurityManager.getPropertyPrivileged("java.specification.version", null);
-            Matcher matcher = Pattern.compile("^(?:1\\.)?(\\d+)$").matcher(vmVersionStr); //match 1.<number> or <number>
-            if (matcher.find()) {
-                return Integer.valueOf(matcher.group(1));
-            } else {
-                throw new RuntimeException("Unknown version of jvm " + vmVersionStr);
-            }
-        } catch (Exception e) {
-            return 8;
-        }
+        return Runtime.version().feature();
     }
 
 }

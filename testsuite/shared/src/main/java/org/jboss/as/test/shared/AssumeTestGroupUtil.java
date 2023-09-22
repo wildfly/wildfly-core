@@ -82,9 +82,7 @@ public final class AssumeTestGroupUtil {
     }
 
     private static int getJavaSpecificationVersion() {
-        String versionString = System.getProperty("java.specification.version");
-        versionString = versionString.startsWith("1.") ? versionString.substring(2) : versionString;
-        return Integer.parseInt(versionString);
+        return Runtime.version().feature();
     }
 
     private static void assumeCondition(final String message, final Supplier<Boolean> assumeTrueCondition) {

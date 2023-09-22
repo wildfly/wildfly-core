@@ -30,8 +30,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.wildfly.core.launcher.logger.LauncherMessages;
 
@@ -43,8 +41,8 @@ import org.wildfly.core.launcher.logger.LauncherMessages;
 class Jvm {
     private static final String JAVA_EXE;
     private static final Path JAVA_HOME;
-    private static final boolean MODULAR_JVM;
-    private static final boolean ENHANCED_SECURITY_MANAGER;
+    private static final boolean MODULAR_JVM = true;
+    private static final boolean ENHANCED_SECURITY_MANAGER = Runtime.version().feature() >= 12;
 
     static {
         String exe = "java";
@@ -54,22 +52,6 @@ class Jvm {
         JAVA_EXE = exe;
         final String javaHome = System.getProperty("java.home");
         JAVA_HOME = Paths.get(javaHome);
-
-        // Assume we're in a modular environment
-        final String javaSpecVersion = System.getProperty("java.specification.version");
-        boolean modularJvm = true;
-        boolean enhancedSecurityManager = false;
-        int jvmVersion = 8;
-        if (javaSpecVersion != null) {
-            final Matcher matcher = Pattern.compile("^(?:1\\.)?(\\d+)$").matcher(javaSpecVersion);
-            if (matcher.find()) {
-                jvmVersion = Integer.parseInt(matcher.group(1));
-                modularJvm = jvmVersion >= 9;
-                enhancedSecurityManager = jvmVersion >= 12;
-            }
-        }
-        MODULAR_JVM = modularJvm;
-        ENHANCED_SECURITY_MANAGER = enhancedSecurityManager;
     }
 
     private static final Jvm DEFAULT = new Jvm(JAVA_HOME, MODULAR_JVM, ENHANCED_SECURITY_MANAGER);

@@ -27,8 +27,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.lang.management.MonitorInfo;
 import java.lang.management.ThreadInfo;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.management.JMException;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -37,7 +35,6 @@ import javax.management.ReflectionException;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.dmr.ModelNode;
-import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Utilities for working with platform mbeans.
@@ -46,23 +43,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 public class PlatformMBeanUtil {
 
-    public static final int JVM_MAJOR_VERSION;
-
-    static {
-        int vmVersion;
-        try {
-            String vmVersionStr = WildFlySecurityManager.getPropertyPrivileged("java.specification.version", null);
-            Matcher matcher = Pattern.compile("^(?:1\\.)?(\\d+)$").matcher(vmVersionStr); //match 1.<number> or <number>
-            if (matcher.find()) {
-                vmVersion = Integer.valueOf(matcher.group(1));
-            } else {
-                throw new RuntimeException("Unknown version of jvm " + vmVersionStr);
-            }
-        } catch (Exception e) {
-            vmVersion = 8;
-        }
-        JVM_MAJOR_VERSION = vmVersion;
-    }
+    public static final int JVM_MAJOR_VERSION = Runtime.version().feature();
 
     public static String escapeMBeanName(final String toEscape) {
         return toEscape.replace(' ', '_');
