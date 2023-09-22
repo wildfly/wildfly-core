@@ -35,9 +35,7 @@ import org.jboss.as.test.syslogserver.BlockedSyslogServerEventHandler;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.productivity.java.syslog4j.server.SyslogServerEventIF;
@@ -60,12 +58,6 @@ public class AuditLogBootingSyslogTest {
 
     private static final String DEFAULT_USER_KEY = "wildfly.sasl.local-user.default-user";
     private static final AuditLogToTLSElytronSyslogSetup SYSLOG_SETUP = new AuditLogToTLSElytronSyslogSetup();
-
-
-    @BeforeClass
-    public static void noJDK12Plus() {
-        Assume.assumeFalse("Avoiding JDK 12 due to https://bugs.openjdk.java.net/browse/JDK-8219658", "12".equals(System.getProperty("java.specification.version")));
-    }
 
 
     @Inject
