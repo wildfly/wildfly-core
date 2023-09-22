@@ -35,7 +35,6 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -53,7 +52,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Test case checking whether a module can depend on standard OpenJDK 9+ platform modules (or their emulation in case of Java 8).
+ * Test case checking whether a module can depend on standard OpenJDK 11+ platform modules.
  *
  * @author <a href="mailto:mjurc@redhat.com">Michal Jurc</a> (c) 2018 Red Hat, Inc.
  */
@@ -63,46 +62,9 @@ public class JdkModuleDependencyTestCase {
     public static final String DEPLOYMENT_NAME_SUFFIX = "-test-dep.jar";
 
     /**
-     * A set of modules that we need to emulate to be compatible with JDK8.
+     * A set of all non-internal JDK11 API modules. Extracted from JDK11 GA.
      */
-    public static final Set<String> REQUIRED_1_8_EMULATED_MODULES = Stream.of("java.base", "java.compiler", "java.datatransfer",
-            "java.desktop", "java.instrument", "java.jnlp", "java.logging", "java.management", "java.management.rmi",
-            "java.naming", "java.prefs", "java.rmi", "java.scripting", "java.security.jgss", "java.security.sasl",
-            "java.smartcardio", "java.sql", "java.sql.rowset", "java.xml", "java.xml.crypto", "javafx.base", "javafx.controls",
-            "javafx.fxml", "javafx.graphics", "javafx.media", "javafx.swing", "javafx.web", "jdk.accessibility", "jdk.attach",
-            "jdk.compiler", "jdk.httpserver", "jdk.jartool", "jdk.javadoc", "jdk.jconsole", "jdk.jdi", "jdk.jfr", "jdk.jsobject",
-            "jdk.management", "jdk.management.cmm", "jdk.management.jfr", "jdk.management.resource", "jdk.net", "jdk.plugin.dom",
-            "jdk.scripting.nashorn", "jdk.sctp", "jdk.security.auth", "jdk.security.jgss", "jdk.unsupported", "jdk.xml.dom",
-            "org.jboss.modules").collect(Collectors.toCollection(HashSet::new));
-
-    /**
-     * A set of all non-internal, non-deprecated JDK9 API modules.
-     *
-     * The jdk.* modules are omitted as they are not guaranteed to be present on any given JDK. The same applies for javafx.*
-     * modules.
-     * The modules that are deprecated and marked for removal with JDK9 are omitted as well.
-     *
-     * @see <a href="https://docs.oracle.com/javase/9/docs/api/overview-summary.html">Overview (Java SE 9 &amp; JDK 9 )</a>
-     */
-    public static final Set<String> REQUIRED_9_MODULES = Stream.of("java.base", "java.compiler", "java.datatransfer",
-            "java.desktop", "java.instrument", "java.logging", "java.management", "java.management.rmi", "java.naming",
-            "java.prefs", "java.rmi", "java.scripting", "java.se", "java.security.jgss", "java.security.sasl", "java.smartcardio",
-            "java.sql", "java.sql.rowset", "java.xml", "java.xml.crypto", "org.jboss.modules")
-            .collect(Collectors.toCollection(HashSet::new));
-
-    /**
-     * A set of all non-internal JDK10 API modules.
-     *
-     * @see <a href="https://docs.oracle.com/javase/10/docs/api/overview-summary.html">Overview (Java SE 10 &amp; JDK 10 )</a>
-     */
-    public static final Set<String> REQUIRED_10_MODULES = new HashSet<>(REQUIRED_9_MODULES);
-
-    /**
-     * A set of all non-internal JDK11 API modules. Extracted from JDK11 early access.
-     *
-     * TODO: Check and update with GA release of JDK11.
-     */
-    public static final Set<String> REQUIRED_11_MODULES = Stream.of("java.base", "java.compiler", "java.datatransfer",
+    public static final Set<String> REQUIRED_MODULES = Stream.of("java.base", "java.compiler", "java.datatransfer",
             "java.desktop", "java.instrument", "java.logging", "java.management", "java.management.rmi", "java.naming",
             "java.net.http", "java.prefs", "java.rmi", "java.scripting", "java.se", "java.security.jgss", "java.security.sasl",
             "java.smartcardio", "java.sql", "java.sql.rowset", "java.transaction.xa", "java.xml", "java.xml.crypto")
@@ -112,28 +74,8 @@ public class JdkModuleDependencyTestCase {
     private ManagementClient managementClient;
 
     @Test
-    public void testJdk9ModuleDependencies() throws Exception {
-        Assume.assumeTrue("Skipping testJdk9ModuleDependencies, test is not ran on JDK 9.",
-                System.getProperty("java.specification.version").equals("9"));
-        System.out.println(System.getProperty("java.specification.version"));
-
-        testModuleDependencies(REQUIRED_9_MODULES);
-    }
-
-    @Test
-    public void testJdk10ModuleDependencies() throws Exception {
-        Assume.assumeTrue("Skipping testJdk10ModuleDependencies, test is not ran on JDK 10.",
-                System.getProperty("java.specification.version").equals("10"));
-
-        testModuleDependencies(REQUIRED_10_MODULES);
-    }
-
-    @Test
-    public void testJdk11ModuleDependencies() throws Exception {
-        Assume.assumeTrue("Skipping testJdk11ModuleDependencies, test is not ran on JDK 11.",
-                System.getProperty("java.specification.version").equals("11"));
-
-        testModuleDependencies(REQUIRED_11_MODULES);
+    public void testJdkModuleDependencies() throws Exception {
+        testModuleDependencies(REQUIRED_MODULES);
     }
 
     private ModelNode deployTestDeployment(String deploymentName, String moduleDependency) throws Exception {

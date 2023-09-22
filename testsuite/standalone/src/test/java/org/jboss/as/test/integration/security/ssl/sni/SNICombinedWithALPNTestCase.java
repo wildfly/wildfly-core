@@ -234,8 +234,6 @@ public class SNICombinedWithALPNTestCase {
 
     @BeforeClass
     public static void beforeClass() throws UnknownHostException {
-        Assume.assumeFalse("There is no ALPN implementation in IBM JDK 8 and less; also ALPN-hack that serves" +
-                " as a workaround for other JDKs does not work with IBM JDK.", isIbmJdk() && jdkLessThan9());
         Assume.assumeTrue("Assuming the test if no resolution for the http address",
                 canHostAddressBeTranslated());
     }
@@ -411,20 +409,6 @@ public class SNICombinedWithALPNTestCase {
      */
     private static String keyAlgorithm() {
         return "SunX509";
-    }
-
-    /**
-     * @return true if JVM running is IBM JDK
-     */
-    private static boolean isIbmJdk() {
-        return System.getProperty("java.vendor").startsWith("IBM");
-    }
-
-    /**
-     * @return true if JVM running is version less than 9
-     */
-    private static boolean jdkLessThan9() {
-        return System.getProperty("java.version").startsWith("1.");
     }
 
     /**
