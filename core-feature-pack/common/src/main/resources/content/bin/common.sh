@@ -1,10 +1,5 @@
 #!/bin/sh -x
 
-#
-# Copyright The WildFly Authors
-# SPDX-License-Identifier: Apache-2.0
-#
-
 if [ "x$COMMON_CONF" = "x" ]; then
   COMMON_CONF="$DIRNAME/common.conf"
 else

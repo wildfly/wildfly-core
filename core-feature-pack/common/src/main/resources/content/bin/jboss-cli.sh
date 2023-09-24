@@ -1,10 +1,5 @@
 #!/bin/sh
 
-#
-# Copyright The WildFly Authors
-# SPDX-License-Identifier: Apache-2.0
-#
-
 DIRNAME=`dirname "$0"`
 GREP="grep"
 
