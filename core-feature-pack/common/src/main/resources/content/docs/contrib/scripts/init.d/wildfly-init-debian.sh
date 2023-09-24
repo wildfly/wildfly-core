@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright The WildFly Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
 # /etc/init.d/wildfly -- startup script for WildFly
 #
 # Written by Jorge Solorzano

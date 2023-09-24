@@ -1,5 +1,10 @@
 #!/bin/bash
 
+#
+# Copyright The WildFly Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
 if [ "x$WILDFLY_HOME" = "x" ]; then
     WILDFLY_HOME="/opt/wildfly"
 fi
