@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
 <vdb name="loop" version="1">
     <!-- VDB properties -->
     <property name="UseConnectorMetadata" value="true" />

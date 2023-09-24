@@ -1,4 +1,9 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><identity xmlns="urn:elytron:identity:1.2">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<identity xmlns="urn:elytron:identity:1.2">
     <principal name="user2"/>
     <credentials>
         <password algorithm="digest-md5" format="base64">AgV1c2VyMgpmaWxlc3lzdGVtOi73QqGkmSCHhUlhCQEvRQ==</password>

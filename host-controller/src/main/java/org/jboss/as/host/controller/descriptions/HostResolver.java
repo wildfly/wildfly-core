@@ -1,7 +1,9 @@
 /*
  * Copyright The WildFly Authors
  * SPDX-License-Identifier: Apache-2.0
- */package org.jboss.as.host.controller.descriptions;
+ */
+
+package org.jboss.as.host.controller.descriptions;
 
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
