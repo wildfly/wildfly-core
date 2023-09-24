@@ -1,9 +1,4 @@
 #!/bin/sh
-#
-# Copyright The WildFly Authors
-# SPDX-License-Identifier: Apache-2.0
-#
-
 # This script is only for internal usage and should not be invoked directly by the users from the command line.
 # This script launches the operation to apply a candidate server installation to update or revert.
 # The server JVM writes the required values into the installation-manager.properties file by using InstMgrCandidateStatus.java

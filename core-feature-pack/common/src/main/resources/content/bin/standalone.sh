@@ -1,10 +1,5 @@
 #!/bin/sh
 
-#
-# Copyright The WildFly Authors
-# SPDX-License-Identifier: Apache-2.0
-#
-
 # Use --debug to activate debug mode with an optional argument to specify the port.
 # Usage : standalone.sh --debug
 #         standalone.sh --debug 9797
