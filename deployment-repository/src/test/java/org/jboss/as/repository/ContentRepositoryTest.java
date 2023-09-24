@@ -50,6 +50,23 @@ public class ContentRepositoryTest {
             -> System.getProperty("os.name", null).toLowerCase(Locale.ENGLISH).contains("windows"));
     private static final FileTime time = FileTime.from(Instant.parse("2007-12-03T10:15:30.00Z"));
 
+    // Expected hashes of various forms of content
+    // Hash of testfile.xhtml
+    private static final String TESTFILE_HASH = "0ecff9e47fa7cec402768646050063dc71fac312";
+    // Exploded content hash is different from the simple testfile.xhtml as we add the content folder name in the computation
+    private static final String EXPLODED_HASH = "fa8743759eab0143f4bb3c8f96f8dea49a785869";
+    // Exploded content with the first version of 'test.jsp' added
+    private static final String WITH_TEST_JSP_HASH_1 = "0e6b604dd789bdcc844a5a676a8b44e6d0439817";
+    // Exploded content with the 'test.jsp' content replaced by the second version
+    private static final String WITH_TEST_JSP_HASH_2 = "75c20ffc143e5154f299f17324a3776ff9ba4669";
+    // Hash of a multi-level archive.zip
+    private static final String MULTI_LEVEL_ARCHIVE_HASH = "dedb1d451336fd54e50150e63ee7f71b7735cb34";
+    // Exploded content hash is different from the unexploded archive.zip as we add the content folder name in the computation
+    private static final String EXPLODED_MULTI_LEVEL_ARCHIVE_HASH = "53ed0a55e747f104e0142965947e980fb9fcc129";
+    // Exploding the arhive.zip sub-content results in a different content hash
+    private static final String FULLY_EXPLODED_MULTI_LEVEL_ARCHIVE_HASH = "598c25116bf6059d452e1bd134b6151dd94749e9";
+
+
     private ContentRepository repository;
     private final File rootDir = new File("target", "repository");
     private final File tmpRootDir = new File("target", "tmp");
@@ -101,10 +118,9 @@ public class ContentRepositoryTest {
     @Test
     public void testAddContent() throws Exception {
         try (InputStream stream = getResourceAsStream("testfile.xhtml")) {
-            String expResult = "0c40ffacd15b0f66d5081a93407d3ff5e3c65a71";
             byte[] result = repository.addContent(stream);
             assertThat(result, is(notNullValue()));
-            assertThat(HashUtil.bytesToHexString(result), is(expResult));
+            assertThat(HashUtil.bytesToHexString(result), is(TESTFILE_HASH));
         }
     }
 
@@ -116,14 +132,12 @@ public class ContentRepositoryTest {
         byte[] archive = createArchive(Collections.singletonList("testfile.xhtml"));
         try (ByteArrayInputStream stream = new ByteArrayInputStream(archive)) {
             byte[] hash = repository.explodeContent(repository.addContent(stream));
-            String expResult = "52bac10d999f7c8cfbd8edf5d3a26898dc2ef4ac";
-            //hash is different from the simple testfile.xhtml as we add the content folder name in the computation
             assertThat(hash, is(notNullValue()));
             Path content = repository.getContent(hash).getPhysicalFile().toPath();
             String contentHtml = readFileContent(content.resolve("testfile.xhtml"));
             String expectedContentHtml = readFileContent(getResourceAsStream("testfile.xhtml"));
             assertThat(contentHtml, is(expectedContentHtml));
-            assertThat(HashUtil.bytesToHexString(hash), is(expResult));
+            assertThat(HashUtil.bytesToHexString(hash), is(EXPLODED_HASH));
         }
     }
 
@@ -136,16 +150,16 @@ public class ContentRepositoryTest {
         try (ByteArrayInputStream stream = new ByteArrayInputStream(archive)) {
             byte[] originalHash = repository.addContent(stream);
             assertThat(originalHash, is(notNullValue()));
-            assertThat(HashUtil.bytesToHexString(originalHash), is("abeeeb38bf182a05ec0678b0ee8a681dd3345618"));
+            assertThat(HashUtil.bytesToHexString(originalHash), is(MULTI_LEVEL_ARCHIVE_HASH));
             try {
                 repository.explodeSubContent(originalHash, "test/archive.zip");
                 fail("Shouldn't be able to explode sub content of unexploded content");
             } catch (ExplodedContentException ex) {
             }
             byte[] hash = repository.explodeContent(originalHash);
-            //hash is different from the simple testfile.xhtml as we add the content folder name in the computation
+            //hash is different from the simple archive.zip as we add the content folder name in the computation
             assertThat(hash, is(notNullValue()));
-            assertThat(HashUtil.bytesToHexString(hash), is("361c1eef97474f587dc967d919bd94226fb361e5"));
+            assertThat(HashUtil.bytesToHexString(hash), is(EXPLODED_MULTI_LEVEL_ARCHIVE_HASH));
             Path content = repository.getContent(hash).getPhysicalFile().toPath();
             String contentHtml = readFileContent(content.resolve("testfile.xhtml"));
             String expectedContentHtml = readFileContent(getResourceAsStream("testfile.xhtml"));
@@ -155,7 +169,7 @@ public class ContentRepositoryTest {
             assertTrue(PathUtil.isArchive(archiveFile));
             byte[] fullyExplodedHash = repository.explodeSubContent(hash, "test/archive.zip");
             assertThat(fullyExplodedHash, is(notNullValue()));
-            assertThat(HashUtil.bytesToHexString(fullyExplodedHash), is("a2adc85e63f28e5009aedbd89b92641e7ee5fd08"));
+            assertThat(HashUtil.bytesToHexString(fullyExplodedHash), is(FULLY_EXPLODED_MULTI_LEVEL_ARCHIVE_HASH));
             content = repository.getContent(repository.explodeSubContent(hash, "test/archive.zip")).getPhysicalFile().toPath();
             Path directory = content.resolve("test").resolve("archive.zip");
             assertTrue("Should not be a zip file", Files.isDirectory(directory));
@@ -255,15 +269,13 @@ public class ContentRepositoryTest {
         byte[] archive = createArchive(Collections.singletonList("testfile.xhtml"));
         try (ByteArrayInputStream stream = new ByteArrayInputStream(archive)) {
             byte[] hash = repository.explodeContent(repository.addContent(stream));
-            String expResult = "52bac10d999f7c8cfbd8edf5d3a26898dc2ef4ac";
-            //hash is different from the simple testfile.xhtml as we add the content folder name in the computation
             assertThat(hash, is(notNullValue()));
             Path content = repository.getContent(hash).getPhysicalFile().toPath();
             String contentHtml = readFileContent(content.resolve("testfile.xhtml"));
             String expectedContentHtml = readFileContent(getResourceAsStream("testfile.xhtml"));
             assertThat(contentHtml, is(expectedContentHtml));
-            assertThat(HashUtil.bytesToHexString(hash), is(expResult));
-            String updatedExpectedResult = "89e4a5f77fb19f35a75e23553e2cd0cf5328591b";
+            assertThat(HashUtil.bytesToHexString(hash), is(EXPLODED_HASH));
+            String updatedExpectedResult = WITH_TEST_JSP_HASH_1;
             hash = repository.addContentToExploded(hash,
                     Collections.singletonList(new ExplodedContent("test.jsp",
                             new ByteArrayInputStream("this is a test".getBytes(StandardCharsets.UTF_8)))),
@@ -278,8 +290,8 @@ public class ContentRepositoryTest {
             assertThat(content.toFile().list().length, is(2));
             hash = repository.removeContentFromExploded(hash, Collections.singletonList("test.jsp"));
             assertThat(hash, is(notNullValue()));
-            assertThat(HashUtil.bytesToHexString(hash), is(expResult));
-            updatedExpectedResult = "653b769ec98bc2c19ac952605cf670782d90cfe8";
+            assertThat(HashUtil.bytesToHexString(hash), is(EXPLODED_HASH));
+            updatedExpectedResult = WITH_TEST_JSP_HASH_2;
             hash = repository.addContentToExploded(hash,
                     Collections.singletonList(new ExplodedContent("test.jsp",
                             new ByteArrayInputStream("this is an overwrite test".getBytes(StandardCharsets.UTF_8)))),
@@ -306,15 +318,13 @@ public class ContentRepositoryTest {
         byte[] archive = createArchive(Collections.singletonList("testfile.xhtml"));
         try (ByteArrayInputStream stream = new ByteArrayInputStream(archive)) {
             byte[] hash = repository.explodeContent(repository.addContent(stream));
-            String expResult = "52bac10d999f7c8cfbd8edf5d3a26898dc2ef4ac";
-            //hash is different from the simple testfile.xhtml as we add the content folder name in the computation
             assertThat(hash, is(notNullValue()));
             Path content = repository.getContent(hash).getPhysicalFile().toPath();
             String contentHtml = readFileContent(content.resolve("testfile.xhtml"));
             String expectedContentHtml = readFileContent(getResourceAsStream("testfile.xhtml"));
             assertThat(contentHtml, is(expectedContentHtml));
-            assertThat(HashUtil.bytesToHexString(hash), is(expResult));
-            String updatedExpectedResult = "89e4a5f77fb19f35a75e23553e2cd0cf5328591b";
+            assertThat(HashUtil.bytesToHexString(hash), is(EXPLODED_HASH));
+            String updatedExpectedResult = WITH_TEST_JSP_HASH_1;
             hash = repository.addContentToExploded(hash,
                     Collections.singletonList(new ExplodedContent("test.jsp", new ByteArrayInputStream("this is a test".getBytes(StandardCharsets.UTF_8)))),
                     true);
@@ -394,10 +404,9 @@ public class ContentRepositoryTest {
     @Test
     public void testAddContentReference() throws Exception {
         try (InputStream stream = getResourceAsStream("testfile.xhtml")) {
-            String expResult = "0c40ffacd15b0f66d5081a93407d3ff5e3c65a71";
             byte[] result = repository.addContent(stream);
             assertThat(result, is(notNullValue()));
-            assertThat(HashUtil.bytesToHexString(result), is(expResult));
+            assertThat(HashUtil.bytesToHexString(result), is(TESTFILE_HASH));
             ContentReference reference = new ContentReference("contentReferenceIdentifier", result);
             repository.addContentReference(reference);
         }
@@ -409,10 +418,9 @@ public class ContentRepositoryTest {
     @Test
     public void testGetContent() throws Exception {
         try (InputStream stream = getResourceAsStream("testfile.xhtml")) {
-            String expResult = "0c40ffacd15b0f66d5081a93407d3ff5e3c65a71";
             byte[] result = repository.addContent(stream);
             assertThat(result, is(notNullValue()));
-            assertThat(HashUtil.bytesToHexString(result), is(expResult));
+            assertThat(HashUtil.bytesToHexString(result), is(TESTFILE_HASH));
             Path content = repository.getContent(result).getPhysicalFile().toPath();
             String contentHtml = readFileContent(content);
             String expectedContentHtml = readFileContent(getResourceAsStream("testfile.xhtml"));
@@ -425,13 +433,12 @@ public class ContentRepositoryTest {
      */
     @Test
     public void testHasContent() throws Exception {
-        String expResult = "0c40ffacd15b0f66d5081a93407d3ff5e3c65a71";
         try (InputStream stream = getResourceAsStream("testfile.xhtml")) {
-            assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(false));
+            assertThat(repository.hasContent(HashUtil.hexStringToByteArray(TESTFILE_HASH)), is(false));
             byte[] result = repository.addContent(stream);
             assertThat(result, is(notNullValue()));
-            assertThat(HashUtil.bytesToHexString(result), is(expResult));
-            assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(true));
+            assertThat(HashUtil.bytesToHexString(result), is(TESTFILE_HASH));
+            assertThat(repository.hasContent(HashUtil.hexStringToByteArray(TESTFILE_HASH)), is(true));
         }
     }
 
@@ -440,26 +447,25 @@ public class ContentRepositoryTest {
      */
     @Test
     public void testRemoveContent() throws Exception {
-        String expResult = "0c40ffacd15b0f66d5081a93407d3ff5e3c65a71";
-        Path grandparent = rootDir.toPath().resolve("0c");
-        Path parent = grandparent.resolve("40ffacd15b0f66d5081a93407d3ff5e3c65a71");
+        Path grandparent = rootDir.toPath().resolve(TESTFILE_HASH.substring(0, 2));
+        Path parent = grandparent.resolve(TESTFILE_HASH.substring(2));
         Path expectedContent = parent.resolve("content");
         assertFalse(expectedContent + " shouldn't exist", Files.exists(expectedContent));
         assertFalse(expectedContent.getParent() + " shouldn't exist", Files.exists(parent));
         assertFalse(expectedContent.getParent().getParent() + " shouldn't exist", Files.exists(grandparent));
         byte[] result;
         try (InputStream stream = getResourceAsStream("testfile.xhtml")) {
-            assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(false));
+            assertThat(repository.hasContent(HashUtil.hexStringToByteArray(TESTFILE_HASH)), is(false));
             result = repository.addContent(stream);
         }
         assertThat(result, is(notNullValue()));
-        assertThat(HashUtil.bytesToHexString(result), is(expResult));
-        assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(true));
+        assertThat(HashUtil.bytesToHexString(result), is(TESTFILE_HASH));
+        assertThat(repository.hasContent(HashUtil.hexStringToByteArray(TESTFILE_HASH)), is(true));
         assertTrue(expectedContent + " should have been created", Files.exists(expectedContent));
         assertTrue(parent + " should have been created", Files.exists(parent));
         assertTrue(grandparent + " should have been created", Files.exists(grandparent));
-        repository.removeContent(new ContentReference("testfile.xhtml", expResult));
-        assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(false));
+        repository.removeContent(new ContentReference("testfile.xhtml", TESTFILE_HASH));
+        assertThat(repository.hasContent(HashUtil.hexStringToByteArray(TESTFILE_HASH)), is(false));
         assertFalse(expectedContent + " should have been deleted", Files.exists(expectedContent));
         assertFalse(parent.toAbsolutePath() + " should have been deleted", Files.exists(parent));
         assertFalse(grandparent + " should have been deleted", Files.exists(grandparent));
@@ -540,9 +546,8 @@ public class ContentRepositoryTest {
      */
     @Test
     public void testCleanNotEmptyGrandParentDir() throws Exception {
-        String expResult = "0c40ffacd15b0f66d5081a93407d3ff5e3c65a71";
-        Path grandparent = rootDir.toPath().resolve("0c");
-        Path parent = grandparent.resolve("40ffacd15b0f66d5081a93407d3ff5e3c65a71");
+        Path grandparent = rootDir.toPath().resolve(TESTFILE_HASH.substring(0, 2));
+        Path parent = grandparent.resolve(TESTFILE_HASH.substring(2));
         Path other = grandparent.resolve("40ffacd15b0f66d5081a93407d3ff5e3c65a81");
         Files.createDirectories(other);
         Path expectedContent = parent.resolve("content");
@@ -550,16 +555,16 @@ public class ContentRepositoryTest {
         assertFalse(parent + " shouldn't exist", Files.exists(parent));
         byte[] result;
         try (InputStream stream = getResourceAsStream("testfile.xhtml")) {
-            assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(false));
+            assertThat(repository.hasContent(HashUtil.hexStringToByteArray(TESTFILE_HASH)), is(false));
             result = repository.addContent(stream);
         }
         assertThat(result, is(notNullValue()));
-        assertThat(HashUtil.bytesToHexString(result), is(expResult));
-        assertThat(repository.hasContent(HashUtil.hexStringToByteArray(expResult)), is(true));
+        assertThat(HashUtil.bytesToHexString(result), is(TESTFILE_HASH));
+        assertThat(repository.hasContent(HashUtil.hexStringToByteArray(TESTFILE_HASH)), is(true));
         assertTrue(expectedContent + " should have been created", Files.exists(expectedContent));
         assertTrue(parent + " should have been created", Files.exists(parent));
-        repository.removeContent(new ContentReference("testfile.xhtml", expResult));
-        assertFalse(repository.hasContent(HashUtil.hexStringToByteArray(expResult)));
+        repository.removeContent(new ContentReference("testfile.xhtml", TESTFILE_HASH));
+        assertFalse(repository.hasContent(HashUtil.hexStringToByteArray(TESTFILE_HASH)));
         assertFalse(expectedContent + " should have been deleted", Files.exists(expectedContent));
         assertFalse(parent.toAbsolutePath() + " should have been deleted", Files.exists(parent));
         assertTrue(other + " should not have been deleted", Files.exists(other));

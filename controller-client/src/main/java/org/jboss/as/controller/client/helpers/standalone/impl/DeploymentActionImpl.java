@@ -1,7 +1,9 @@
 /*
  * Copyright The WildFly Authors
  * SPDX-License-Identifier: Apache-2.0
- */package org.jboss.as.controller.client.helpers.standalone.impl;
+ */
+
+package org.jboss.as.controller.client.helpers.standalone.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
