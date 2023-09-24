@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright The WildFly Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
 # WildFly control script
 #
 # chkconfig: 2345 80 20
