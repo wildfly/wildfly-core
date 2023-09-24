@@ -1,3 +1,8 @@
+/*
+ * Copyright The WildFly Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package org.jboss.as.subsystem.test.extrasubsystem.subsystem.dependency;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;

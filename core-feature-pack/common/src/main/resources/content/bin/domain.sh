@@ -1,5 +1,10 @@
 #!/bin/sh
 
+#
+# Copyright The WildFly Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
 # Identifies the launch script type.
 export JBOSS_LAUNCH_SCRIPT="linux"
 
