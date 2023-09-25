@@ -1,3 +1,8 @@
+/*
+ * Copyright The WildFly Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package org.jboss.as.platform.mbean;
 
 import static org.jboss.as.controller.registry.AttributeAccess.Flag.COUNTER_METRIC;

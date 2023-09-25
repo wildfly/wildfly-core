@@ -1,20 +1,6 @@
 /*
- * JBoss, Home of Professional Open Source
- * Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
- * as indicated by the @authors tag. All rights reserved.
- * See the copyright.txt in the distribution for a
- * full listing of individual contributors.
- *
- * This copyrighted material is made available to anyone wishing to use,
- * modify, copy, or redistribute it subject to the terms and conditions
- * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
- * You should have received a copy of the GNU Lesser General Public License,
- * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA  02110-1301, USA.
+ * Copyright The WildFly Authors
+ * SPDX-License-Identifier: Apache-2.0
  */
 package org.jboss.as.server.deployment;
 
@@ -29,10 +15,15 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONT
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNER;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getInputStream;
 import static org.jboss.msc.service.ServiceController.Mode.REMOVE;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
+import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -54,6 +45,7 @@ import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.deployment.annotation.AnnotationIndexSupport;
+import org.jboss.as.server.deployment.transformation.DeploymentTransformer;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
@@ -425,6 +417,36 @@ public class DeploymentHandlerUtil {
 
     static Path getExplodedDeploymentRoot(ServerEnvironment serverEnvironment, String deploymentManagementName) {
         return Paths.get(serverEnvironment.getServerDataDir().getAbsolutePath()).resolve(MANAGED_CONTENT).resolve(deploymentManagementName);
+    }
+
+    @SuppressWarnings("deprecation")
+    static DeploymentTransformer loadDeploymentTransformer() {
+        Iterator<DeploymentTransformer> iter = ServiceLoader.load(DeploymentTransformer.class, DeploymentAddHandler.class.getClassLoader()).iterator();
+        return iter.hasNext() ? iter.next() : null;
+    }
+
+    @SuppressWarnings("deprecation")
+    static InputStream transformDeploymentBytes(OperationContext context, ModelNode contentItemNode, String name, InputStream in, DeploymentTransformer deploymentTransformer) throws IOException, OperationFailedException {
+        InputStream result = in;
+        if (deploymentTransformer != null) {
+            try {
+                result = deploymentTransformer.transform(in, name);
+            } catch (RuntimeException t) {
+                // Check if the InputStream is already attached to the operation request (as per CONTENT_INPUT_STREAM_INDEX check) and ignore that case
+                // as calling getInputStream would of returned the already partially consumed InputStream.
+                // Also verify that the thrown exception is the specific WFCORE-5198 `Error code 3`.
+                if (!contentItemNode.hasDefined(DeploymentAttributes.CONTENT_INPUT_STREAM_INDEX.getName()) &&
+                        t.getCause() != null && t.getCause().getCause() != null &&
+                        t.getCause().getCause() instanceof IOException &&
+                        t.getCause().getCause().getMessage().contains("during transformation. Error code 3")) {
+                    ServerLogger.ROOT_LOGGER.tracef(t, "Ignoring transformation error and using original archive %s", name);
+                    result = getInputStream(context, contentItemNode);
+                } else {
+                    throw t;
+                }
+            }
+        }
+        return result;
     }
 
     private static String getFormattedFailureDescription(OperationContext context) {

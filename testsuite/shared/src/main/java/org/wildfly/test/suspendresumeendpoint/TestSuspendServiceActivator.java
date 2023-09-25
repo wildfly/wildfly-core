@@ -1,3 +1,8 @@
+/*
+ * Copyright The WildFly Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package org.wildfly.test.suspendresumeendpoint;
 
 import org.jboss.as.controller.capability.RuntimeCapability;

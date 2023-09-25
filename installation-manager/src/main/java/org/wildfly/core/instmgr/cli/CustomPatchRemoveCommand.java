@@ -1,3 +1,8 @@
+/*
+ * Copyright The WildFly Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package org.wildfly.core.instmgr.cli;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;

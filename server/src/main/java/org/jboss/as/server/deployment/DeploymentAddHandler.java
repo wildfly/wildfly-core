@@ -1,20 +1,6 @@
 /*
- * JBoss, Home of Professional Open Source
- * Copyright 2011 Red Hat Inc. and/or its affiliates and other contributors
- * as indicated by the @authors tag. All rights reserved.
- * See the copyright.txt in the distribution for a
- * full listing of individual contributors.
- *
- * This copyrighted material is made available to anyone wishing to use,
- * modify, copy, or redistribute it subject to the terms and conditions
- * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
- * You should have received a copy of the GNU Lesser General Public License,
- * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA  02110-1301, USA.
+ * Copyright The WildFly Authors
+ * SPDX-License-Identifier: Apache-2.0
  */
 package org.jboss.as.server.deployment;
 
@@ -32,6 +18,8 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNE
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.SERVER_ADD_ATTRIBUTES;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtil.loadDeploymentTransformer;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtil.transformDeploymentBytes;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.addFlushHandler;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.asString;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getInputStream;
@@ -51,6 +39,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.server.deployment.transformation.DeploymentTransformer;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 
@@ -67,13 +56,13 @@ public class DeploymentAddHandler implements OperationStepHandler {
 
     protected final ContentRepository contentRepository;
 
-    private final DeploymentTransformation deploymentTransformation;
-
+    @SuppressWarnings("deprecation")
+    private final DeploymentTransformer deploymentTransformer;
 
     protected DeploymentAddHandler(final ContentRepository contentRepository) {
         assert contentRepository != null : "Null contentRepository";
         this.contentRepository = contentRepository;
-        this.deploymentTransformation = new DeploymentTransformation();
+        this.deploymentTransformer = loadDeploymentTransformer();
     }
 
     public static DeploymentAddHandler create(final ContentRepository contentRepository) {
@@ -206,7 +195,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
         InputStream transformed = null;
         try {
             try {
-                transformed = deploymentTransformation.doTransformation(context, contentItemNode, name, in);
+                transformed = transformDeploymentBytes(context, contentItemNode, name, in, deploymentTransformer);
                 hash = contentRepository.addContent(transformed);
             } catch (IOException e) {
                 throw createFailureException(e.toString());
