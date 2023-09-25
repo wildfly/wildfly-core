@@ -88,7 +88,7 @@ public interface DeploymentMountProvider {
                 assert contents != null : "null contents";
                 switch (type) {
                     case ZIP:
-                        return VFS.mountZip(contents, mountPoint, tempFileProvider);
+                        return VFS.mountZip(contents.getPhysicalFile(), mountPoint, tempFileProvider);
                     case EXPANDED:
                         return VFS.mountZipExpanded(contents, mountPoint, tempFileProvider);
                     case REAL:

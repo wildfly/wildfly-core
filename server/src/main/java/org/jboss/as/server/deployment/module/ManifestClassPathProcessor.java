@@ -263,7 +263,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
             if(overlay != null) {
                 overlay.remountAsZip(false);
             } else if(file.isFile()) {
-                closable = VFS.mountZip(file, file, TempFileProviderService.provider());
+                closable = VFS.mountZip(file.getPhysicalFile(), file, TempFileProviderService.provider());
             }
             final MountHandle mountHandle = MountHandle.create(closable);
             final ResourceRoot resourceRoot = new ResourceRoot(file, mountHandle);
