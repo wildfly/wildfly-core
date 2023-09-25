@@ -125,7 +125,7 @@
        <cpe>cpe:/a:apache:log4j</cpe>
 	   <vulnerabilityName>CVE-2022-33915</vulnerabilityName>
     </suppress>
-	
+
 	<!-- Vulnerability fixed in undertow 2.2.15 -->
     <suppress>
        <notes><![CDATA[
@@ -134,7 +134,7 @@
        <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server@.*$</packageUrl>
 	   <vulnerabilityName>CVE-2021-3859</vulnerabilityName>
     </suppress>
-	
+
 	<!-- Vulnerability fixed in undertow 2.2.18 -->
     <suppress>
        <notes><![CDATA[
@@ -150,7 +150,7 @@
        <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server@.*$</packageUrl>
 	   <vulnerabilityName>CVE-2022-1319</vulnerabilityName>
     </suppress>
-	
+
 	<!-- CVE-2022-1259 is directly related to undertow-core -->
     <suppress>
        <notes><![CDATA[
@@ -168,7 +168,7 @@
         <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server@.*$</packageUrl>
         <cve>CVE-2022-2053</cve>
     </suppress>
-	
+
 	<!-- False positive, this vulnerability affects module used in wildfly tests only -->
 	<suppress>
 		<notes><![CDATA[
@@ -237,5 +237,12 @@
    ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.wildfly\.security/wildfly\-elytron\-json\-util@.*$</packageUrl>
         <cve>CVE-2023-34615</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: undertow-server-1.10.1.Final.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server@.*$</packageUrl>
+        <cve>CVE-2023-1108</cve>
     </suppress>
 </suppressions>
