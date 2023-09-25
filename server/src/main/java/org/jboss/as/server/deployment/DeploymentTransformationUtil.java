@@ -32,11 +32,11 @@ import org.jboss.dmr.ModelNode;
 
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getInputStream;
 
-public class DeploymentTransformation {
+public class DeploymentTransformationUtil {
     @SuppressWarnings("deprecation")
     private final DeploymentTransformer deploymentTransformer;
 
-    public DeploymentTransformation() {
+    public DeploymentTransformationUtil() {
         this.deploymentTransformer = loadDeploymentTransformer();
     }
 
