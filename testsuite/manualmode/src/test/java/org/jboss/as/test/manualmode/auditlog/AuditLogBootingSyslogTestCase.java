@@ -39,7 +39,7 @@ import org.xnio.IoUtils;
  */
 @RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
-public class AuditLogBootingSyslogTest {
+public class AuditLogBootingSyslogTestCase {
     private final ModelNode userAuthAddress = Operations.createAddress("subsystem", "elytron", "configurable-sasl-server-factory", "configured");
     private final ModelNode userIdentRealmAddress = Operations.createAddress("subsystem", "elytron", "identity-realm", "local");
     private final PathAddress auditLogConfigAddress = PathAddress.pathAddress(CoreManagementResourceDefinition.PATH_ELEMENT,
