@@ -29,10 +29,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.jboss.as.network.NetworkUtils;
+import org.jboss.as.network.OutboundConnection;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.as.remoting.logging.RemotingLogger;
-import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -52,10 +52,8 @@ import javax.net.ssl.SSLContext;
  * @author Jaikiran Pai
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-final class RemoteOutboundConnectionService extends AbstractOutboundConnectionService implements Service<RemoteOutboundConnectionService> {
+final class RemoteOutboundConnectionService implements Service, OutboundConnection {
 
-    static final ServiceName REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("remote-outbound-connection");
-    private static final String JBOSS_LOCAL_USER = "JBOSS-LOCAL-USER";
     private static final AuthenticationContextConfigurationClient AUTH_CONFIGURATION_CLIENT = doPrivileged(AuthenticationContextConfigurationClient.ACTION);
 
     private final Consumer<RemoteOutboundConnectionService> serviceConsumer;
@@ -83,6 +81,7 @@ final class RemoteOutboundConnectionService extends AbstractOutboundConnectionSe
         this.protocol = protocol;
     }
 
+    @Override
     public void start(final StartContext context) throws StartException {
         final OutboundSocketBinding binding = outboundSocketBindingSupplier.get();
         final String hostName = NetworkUtils.formatPossibleIpv6Address(binding.getUnresolvedDestinationAddress());
@@ -124,6 +123,7 @@ final class RemoteOutboundConnectionService extends AbstractOutboundConnectionSe
         this.serviceConsumer.accept(this);
     }
 
+    @Override
     public void stop(final StopContext context) {
         serviceConsumer.accept(null);
         authenticationConfiguration = null;
@@ -131,6 +131,7 @@ final class RemoteOutboundConnectionService extends AbstractOutboundConnectionSe
         sslContext = null;
     }
 
+    @Override
     public AuthenticationConfiguration getAuthenticationConfiguration() {
         final AuthenticationConfiguration authenticationConfiguration = this.authenticationConfiguration.get();
         final OptionMap optionMap = this.connectionCreationOptions;
@@ -140,16 +141,13 @@ final class RemoteOutboundConnectionService extends AbstractOutboundConnectionSe
         return authenticationConfiguration;
     }
 
+    @Override
     public SSLContext getSSLContext() {
         return sslContext;
     }
 
+    @Override
     public URI getDestinationUri() {
         return destination;
-    }
-
-    @Override
-    public RemoteOutboundConnectionService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
     }
 }

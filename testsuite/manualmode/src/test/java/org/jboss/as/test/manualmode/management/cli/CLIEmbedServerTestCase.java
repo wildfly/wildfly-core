@@ -408,8 +408,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         cli.sendLine("/subsystem=jmx/expose-model=resolved:add");
         cli.sendLine("/subsystem=jmx/expose-model=expression:add");
         cli.sendLine("/subsystem=jmx/remoting-connector=jmx:add");
-        cli.sendLine("/subsystem=remoting:add");
-        cli.sendLine("/subsystem=remoting/configuration=endpoint:add(worker=default)");
+        cli.sendLine("/subsystem=remoting:add(worker=default)");
         cli.sendLine("/subsystem=remoting/http-connector=http-remoting-connector:add(connector-ref=default,security-realm=ApplicationRealm)");
         CLIEmbedUtil.configureElytronManagement(cli, null);
         cli.sendLine("/subsystem=elytron/security-domain=ApplicationDomain:add(permission-mapper=default-permission-mapper,default-realm=ApplicationRealm,realms=[{realm=ApplicationRealm,role-decoder=groups-to-roles},{realm=local}])");

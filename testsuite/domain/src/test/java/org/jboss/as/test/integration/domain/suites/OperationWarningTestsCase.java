@@ -57,7 +57,6 @@ public class OperationWarningTestsCase {
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
-    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     protected static final String NAME_WORKER = "puppet-primary";
     protected static final String WORKER = "worker";
@@ -65,15 +64,13 @@ public class OperationWarningTestsCase {
     protected static final PathAddress ADDRESS_WORKER = PathAddress.pathAddress(PathElement.pathElement(PROFILE, NAME_PROFILE),
             PathElement.pathElement(SUBSYSTEM, "io"), PathElement.pathElement(WORKER, NAME_WORKER));
     protected static final PathAddress ADDRESS_REMOTING = PathAddress.pathAddress(
-            PathElement.pathElement(PROFILE, NAME_PROFILE), PathElement.pathElement(SUBSYSTEM, "remoting"),
-            PathElement.pathElement("configuration", "endpoint"));
+            PathElement.pathElement(PROFILE, NAME_PROFILE), PathElement.pathElement(SUBSYSTEM, "remoting"));
     protected static final String BAD_LEVEL = "X_X";
 
     @BeforeClass
     public static void beforeClass() throws Exception {
         testSupport = DomainTestSuite.createSupport(OperationWarningTestsCase.class.getSimpleName());
         domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
-        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
         addWorker();
     }
 
@@ -90,7 +87,6 @@ public class OperationWarningTestsCase {
         }
         testSupport = null;
         domainPrimaryLifecycleUtil = null;
-        domainSecondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
