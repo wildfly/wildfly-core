@@ -185,7 +185,7 @@ public class HostControllerBootOperationsTestCase {
 
         op = Util.getWriteAttributeOperation(SERVER_GROUP_MAIN_SERVER_GROUP.append(JVM_DEFAULT), "heap-size", "64m");
         ModelNode failureDescription = DomainTestUtils.executeForFailure(op, primaryClient);
-        Assert.assertTrue("The secondary host does not return the expected error. Failure Description was:"+failureDescription, failureDescription.get("host-failure-descriptions").get("secondary").asString().startsWith("WFLYCTL0379"));
+        Assert.assertTrue("The secondary host does not return the expected error. Failure Description was:"+failureDescription, failureDescription.get("host-failure-descriptions").get("secondary").asString().startsWith("WFLYDC0098"));
 
         checkReadOperations(true);
 
