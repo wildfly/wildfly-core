@@ -29,6 +29,8 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENAB
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNER;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtil.loadDeploymentTransformer;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtil.transformDeploymentBytes;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.addFlushHandler;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.asString;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.createFailureException;
@@ -51,6 +53,7 @@ import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
+import org.jboss.as.server.deployment.transformation.DeploymentTransformer;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 
@@ -65,9 +68,13 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
 
     protected final ContentRepository contentRepository;
 
+    @SuppressWarnings("deprecation")
+    private final DeploymentTransformer deploymentTransformer;
+
     protected DeploymentFullReplaceHandler(final ContentRepository contentRepository) {
         assert contentRepository != null : "Null contentRepository";
         this.contentRepository = contentRepository;
+        this.deploymentTransformer = loadDeploymentTransformer();
     }
 
     public static DeploymentFullReplaceHandler create(final ContentRepository contentRepository) {
@@ -122,7 +129,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
             ContentReference reference = ModelContentReference.fromModelAddress(address, newHash);
             contentItem = addFromHash(reference);
         } else if (hasValidContentAdditionParameterDefined(contentItemNode)) {
-            contentItem = addFromContentAdditionParameter(context, contentItemNode);
+            contentItem = addFromContentAdditionParameter(context, contentItemNode, name);
             newHash = contentItem.getHash();
 
             // Replace the content data
@@ -196,18 +203,21 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         return new DeploymentHandlerUtil.ContentItem(reference.getHash());
     }
 
-    DeploymentHandlerUtil.ContentItem addFromContentAdditionParameter(OperationContext context, ModelNode contentItemNode) throws OperationFailedException {
+    DeploymentHandlerUtil.ContentItem addFromContentAdditionParameter(OperationContext context, ModelNode contentItemNode, String name) throws OperationFailedException {
         byte[] hash;
         InputStream in = getInputStream(context, contentItemNode);
+        InputStream transformed = null;
         try {
             try {
-                hash = contentRepository.addContent(in);
+                transformed = transformDeploymentBytes(context, contentItemNode, name, in, deploymentTransformer);
+                hash = contentRepository.addContent(transformed);
             } catch (IOException e) {
                 throw createFailureException(e.toString());
             }
 
         } finally {
             StreamUtils.safeClose(in);
+            StreamUtils.safeClose(transformed);
         }
         contentItemNode.clear(); // AS7-1029
         contentItemNode.get(CONTENT_HASH.getName()).set(hash);
