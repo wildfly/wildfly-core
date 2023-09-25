@@ -1,4 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
 <domain xmlns="urn:jboss:domain:20.0">
     <management>
         <access-control provider="rbac" use-identity-roles="true" permission-combination-policy="rejecting">

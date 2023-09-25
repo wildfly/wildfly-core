@@ -76,7 +76,6 @@ Using Eclipse
 7. Use import on the root pom, which will pull in all modules.
 8. Wait (m2e takes awhile on initial import).
 
-Licenses
---------
-* [GNU Lesser General Public License Version 2.1](https://www.gnu.org/licenses/lgpl-2.1-standalone.html)
+License
+-------
 * [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)

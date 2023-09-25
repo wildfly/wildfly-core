@@ -1,3 +1,8 @@
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
 <subsystem xmlns="urn:jboss:domain:threads:1.1">
     <thread-factory name="test-factory" group-name="${test.exp:Thread Group}" thread-name-pattern="${test.exp:%G - %t}" priority="${test.exp:6}"/>
     <unbounded-queue-thread-pool name="test-pool">

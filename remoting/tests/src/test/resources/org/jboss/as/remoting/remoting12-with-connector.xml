@@ -1,3 +1,8 @@
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
 <subsystem xmlns="urn:jboss:domain:remoting:1.2">
     <connector name="test-connector" socket-binding="test" sasl-protocol="myProto" server-name="myServer">
         <properties>

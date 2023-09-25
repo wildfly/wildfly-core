@@ -1,2 +1,7 @@
+#
+# Copyright The WildFly Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
 org.jboss.as.subsystem.test.transformers.subsystem.map_to_child_resource.NewExtension$TransformerRegistration
 org.jboss.as.subsystem.test.transformers.subsystem.simple.VersionedExtension2$TransformerRegistration

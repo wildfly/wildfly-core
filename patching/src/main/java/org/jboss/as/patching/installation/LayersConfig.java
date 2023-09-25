@@ -1,3 +1,8 @@
+/*
+ * Copyright The WildFly Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package org.jboss.as.patching.installation;
 
 import static org.jboss.as.patching.Constants.DEFAULT_ADD_ONS_PATH;

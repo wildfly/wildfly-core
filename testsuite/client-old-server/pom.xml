@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- 
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<!--
   Set these VM properties in your IDE debugger (replace ${VERSION} with actual project version)
 
   -Djava.util.logging.manager=org.jboss.logmanager.LogManager

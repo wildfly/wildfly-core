@@ -1,3 +1,8 @@
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
 <subsystem xmlns="urn:wildfly:elytron:1.1">
     <policy default-policy="elytron-a">
         <jacc-policy name="elytron-a" policy="a.b.Policy" configuration-factory="a.b.PolicyConfigurationFactory" module="a.b"/>

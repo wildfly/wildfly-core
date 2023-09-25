@@ -1,3 +1,8 @@
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
 <!-- for needs of SaslTestCase and KeyStoresTestCase -->
 <subsystem xmlns="urn:wildfly:elytron:18.0" default-ssl-context="ClientSslContextNoAuth">
     <providers>
