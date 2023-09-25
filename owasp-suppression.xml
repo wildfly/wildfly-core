@@ -158,7 +158,7 @@
         <cve>CVE-2021-31684</cve>
         <cve>CVE-2023-1370</cve>
     </suppress>
-	
+
     <!-- This is a false positive because wildfly-core itself does not use mockserver libraries. Mockserver is used only for test purposes (wildfly-core-testsuite-shared module). -->
     <suppress>
         <notes><![CDATA[
@@ -398,5 +398,13 @@
    ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jgit/org\.eclipse\.jgit\.ssh\.apache@.*$</packageUrl>
         <cve>CVE-2023-4759</cve>
+    </suppress>
+<!--    Fixed since undertow 2.2.24.Final -->
+    <suppress>
+        <notes><![CDATA[
+        file name: undertow-server-1.10.1.Final.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server@.*$</packageUrl>
+        <cve>CVE-2023-1108</cve>
     </suppress>
 </suppressions>
