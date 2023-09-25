@@ -17,6 +17,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.remoting3.Endpoint;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.xnio.OptionMap;
 
@@ -64,7 +65,7 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
         ServiceName saslAuthenticationFactorySvc = saslAuthenticationFactory != null ? context.getCapabilityServiceName(
                 SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthenticationFactory, SaslAuthenticationFactory.class) : null;
 
-        RemotingHttpUpgradeService.installServices(context, connectorName, connectorRef, RemotingServices.SUBSYSTEM_ENDPOINT,
+        RemotingHttpUpgradeService.installServices(context, connectorName, connectorRef, context.getCapabilityServiceName(RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY.getName(), Endpoint.class),
                 optionMap, saslAuthenticationFactorySvc);
     }
 

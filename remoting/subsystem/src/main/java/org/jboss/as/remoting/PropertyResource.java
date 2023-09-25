@@ -4,10 +4,12 @@
  */
 package org.jboss.as.remoting;
 
-import static org.jboss.as.remoting.CommonAttributes.CONNECTOR;
-import static org.jboss.as.remoting.CommonAttributes.HTTP_CONNECTOR;
 import static org.jboss.as.remoting.CommonAttributes.PROPERTY;
 
+import java.util.Collection;
+import java.util.List;
+
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -27,22 +29,21 @@ public class PropertyResource extends ConnectorChildResource {
             .setRequired(false)
             .setAllowExpression(true)
             .build();
-    static final PropertyResource INSTANCE_CONNECTOR = new PropertyResource(CONNECTOR);
-    static final PropertyResource INSTANCE_HTTP_CONNECTOR = new PropertyResource(HTTP_CONNECTOR);
 
+    static final Collection<AttributeDefinition> ATTRIBUTES = List.of(VALUE);
 
     private final String parent;
 
-     protected PropertyResource(String parent) {
+    PropertyResource(String parent) {
         super(PATH,
                 RemotingExtension.getResourceDescriptionResolver(PROPERTY),
-                new AddResourceConnectorRestartHandler(parent, PropertyResource.VALUE),
+                new AddResourceConnectorRestartHandler(parent, ATTRIBUTES),
                 new RemoveResourceConnectorRestartHandler(parent));
         this.parent = parent;
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadWriteAttribute(VALUE, null, new RestartConnectorWriteAttributeHandler(parent, VALUE));
+        resourceRegistration.registerReadWriteAttribute(VALUE, null, new RestartConnectorWriteAttributeHandler(parent, ATTRIBUTES));
     }
 }

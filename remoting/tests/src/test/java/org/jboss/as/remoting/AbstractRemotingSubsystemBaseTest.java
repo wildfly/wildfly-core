@@ -4,7 +4,7 @@
  */
 package org.jboss.as.remoting;
 
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
+import org.jboss.as.subsystem.test.AbstractSubsystemSchemaTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.msc.Service;
@@ -22,10 +22,10 @@ import static org.jboss.as.remoting.RemotingSubsystemTestUtil.DEFAULT_ADDITIONAL
 /**
  * @author <a href="opalka.richard@gmail.com">Richard Opalka</a>
  */
-abstract class AbstractRemotingSubsystemBaseTest extends AbstractSubsystemBaseTest {
+abstract class AbstractRemotingSubsystemBaseTest extends AbstractSubsystemSchemaTest<RemotingSubsystemSchema> {
 
-    AbstractRemotingSubsystemBaseTest() {
-        super(RemotingExtension.SUBSYSTEM_NAME, new RemotingExtension());
+    AbstractRemotingSubsystemBaseTest(RemotingSubsystemSchema schema) {
+        super(RemotingExtension.SUBSYSTEM_NAME, new RemotingExtension(), schema, RemotingSubsystemSchema.CURRENT);
     }
 
     @Override

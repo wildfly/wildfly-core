@@ -16,9 +16,6 @@ import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ControlledProcessStateService;
-import org.jboss.as.controller.ExpressionResolver;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.remoting.EndpointConfigFactory;
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
@@ -84,27 +81,22 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
         final ServiceTarget serviceTarget = serviceActivatorContext.getServiceTarget();
         final ServiceName endpointName = managementSubsystemEndpoint ? RemotingServices.SUBSYSTEM_ENDPOINT : ManagementRemotingServices.MANAGEMENT_ENDPOINT;
         final EndpointService.EndpointType endpointType = managementSubsystemEndpoint ? EndpointService.EndpointType.SUBSYSTEM : EndpointService.EndpointType.MANAGEMENT;
-        try {
-            ManagementWorkerService.installService(serviceTarget);
-            // TODO see if we can figure out a way to work in the vault resolver instead of having to use ExpressionResolver.SIMPLE
-            @SuppressWarnings("deprecation")
-            final OptionMap options = EndpointConfigFactory.create(ExpressionResolver.SIMPLE, endpointConfig, DEFAULTS);
-            ManagementRemotingServices.installRemotingManagementEndpoint(serviceTarget, endpointName, WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null), endpointType, options);
+        ManagementWorkerService.installService(serviceTarget);
+        // TODO configure options via io subsystem
+        final OptionMap options = OptionMap.builder().addAll(DEFAULTS).getMap();
+        ManagementRemotingServices.installRemotingManagementEndpoint(serviceTarget, endpointName, WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null), endpointType, options);
 
-            // Install the communication services
-            final ServiceBuilder<?> sb = serviceTarget.addService(HostControllerConnectionService.SERVICE_NAME);
-            final Supplier<ExecutorService> esSupplier = Services.requireServerExecutor(sb);
-            final Supplier<ScheduledExecutorService> sesSupplier = sb.requires(ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
-            final Supplier<Endpoint> eSupplier = sb.requires(endpointName);
-            final Supplier<ProcessStateNotifier> cpsnSupplier = sb.requires(ControlledProcessStateService.INTERNAL_SERVICE_NAME);
-            AuthenticationContext latestAuthenticationContext = DomainServerMain.getLatestAuthenticationContext();
-            sb.setInstance(new HostControllerConnectionService(managementURI, serverName, serverProcessName,
-                    latestAuthenticationContext == null ? createAuthenticationContext(serverName, serverAuthToken) : latestAuthenticationContext,
-                    initialOperationID, managementSubsystemEndpoint, sslContextSupplier, esSupplier, sesSupplier, eSupplier, cpsnSupplier));
-            sb.install();
-        } catch (OperationFailedException e) {
-            throw new ServiceRegistryException(e);
-        }
+        // Install the communication services
+        final ServiceBuilder<?> sb = serviceTarget.addService(HostControllerConnectionService.SERVICE_NAME);
+        final Supplier<ExecutorService> esSupplier = Services.requireServerExecutor(sb);
+        final Supplier<ScheduledExecutorService> sesSupplier = sb.requires(ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
+        final Supplier<Endpoint> eSupplier = sb.requires(endpointName);
+        final Supplier<ProcessStateNotifier> cpsnSupplier = sb.requires(ControlledProcessStateService.INTERNAL_SERVICE_NAME);
+        AuthenticationContext latestAuthenticationContext = DomainServerMain.getLatestAuthenticationContext();
+        sb.setInstance(new HostControllerConnectionService(managementURI, serverName, serverProcessName,
+                latestAuthenticationContext == null ? createAuthenticationContext(serverName, serverAuthToken) : latestAuthenticationContext,
+                initialOperationID, managementSubsystemEndpoint, sslContextSupplier, esSupplier, sesSupplier, eSupplier, cpsnSupplier));
+        sb.install();
     }
 
     /**

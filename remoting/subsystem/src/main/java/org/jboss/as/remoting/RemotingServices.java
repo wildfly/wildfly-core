@@ -36,7 +36,11 @@ public class RemotingServices {
     /** The name of the remoting service */
     public static final ServiceName REMOTING_BASE = ServiceName.JBOSS.append("remoting");
 
-    /** The name of the endpoint service installed by the remoting subsystem.  */
+    /**
+     * The name of the endpoint service installed by the remoting subsystem.
+     * @deprecated Reference remoting endpoint capability instead.
+     */
+    @Deprecated(forRemoval = true)
     public static final ServiceName SUBSYSTEM_ENDPOINT = REMOTING_ENDPOINT_CAPABILITY.getCapabilityServiceName(Endpoint.class);//REMOTING_BASE.append("endpoint", "subsystem");
 
     /** The base name of the connector services */
@@ -45,6 +49,10 @@ public class RemotingServices {
     /** The base name of the stream server services */
     private static final ServiceName SERVER_BASE = REMOTING_BASE.append("server");
 
+    /**
+     * @deprecated Reference listener register capability instead
+     */
+    @Deprecated(forRemoval = true)
     public static final ServiceName HTTP_LISTENER_REGISTRY = HTTP_LISTENER_REGISTRY_CAPABILITY.getCapabilityServiceName(ListenerRegistry.class);
 
     /**

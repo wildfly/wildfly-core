@@ -13,13 +13,13 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceName;
+import org.jboss.remoting3.Endpoint;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.xnio.OptionMap;
 
@@ -29,11 +29,8 @@ import org.xnio.OptionMap;
  */
 class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
 
-
-    static final RemoteOutboundConnectionAdd INSTANCE = new RemoteOutboundConnectionAdd();
-
-    private RemoteOutboundConnectionAdd() {
-        super(RemoteOutboundConnectionResourceDefinition.ATTRIBUTE_DEFINITIONS);
+    RemoteOutboundConnectionAdd() {
+        super(RemoteOutboundConnectionResourceDefinition.ATTRIBUTES);
     }
 
     @Override
@@ -42,26 +39,18 @@ class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
         installRuntimeService(context, fullModel);
     }
 
-    void installRuntimeService(final OperationContext context, final ModelNode fullModel) throws OperationFailedException {
-        final String connectionName = context.getCurrentAddressValue();
+    static void installRuntimeService(final OperationContext context, final ModelNode fullModel) throws OperationFailedException {
         final String outboundSocketBindingRef = RemoteOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_REF.resolveModelAttribute(context, fullModel).asString();
-        final ServiceName outboundSocketBindingDependency = context.getCapabilityServiceName(OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME, outboundSocketBindingRef, OutboundSocketBinding.class);
         final OptionMap connOpts = ConnectorUtils.getOptions(context, fullModel.get(CommonAttributes.PROPERTY));
         final String username = RemoteOutboundConnectionResourceDefinition.USERNAME.resolveModelAttribute(context, fullModel).asStringOrNull();
-        final String securityRealm = RemoteOutboundConnectionResourceDefinition.SECURITY_REALM.resolveModelAttribute(context, fullModel).asStringOrNull();
         final String authenticationContext = RemoteOutboundConnectionResourceDefinition.AUTHENTICATION_CONTEXT.resolveModelAttribute(context, fullModel).asStringOrNull();
         final String protocol = authenticationContext != null ? null : RemoteOutboundConnectionResourceDefinition.PROTOCOL.resolveModelAttribute(context, fullModel).asString();
 
-        // create the service
-        final ServiceName serviceName = OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(connectionName);
-        final ServiceName aliasServiceName = RemoteOutboundConnectionService.REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
-        final ServiceName deprecatedName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
-
-        final ServiceBuilder<?> builder = context.getServiceTarget().addService(serviceName);
-        final Consumer<RemoteOutboundConnectionService> serviceConsumer = builder.provides(deprecatedName, aliasServiceName);
-        final Supplier<OutboundSocketBinding> osbSupplier = builder.requires(outboundSocketBindingDependency);
-        final Supplier<AuthenticationContext> acSupplier = authenticationContext != null ? builder.requires(context.getCapabilityServiceName(AUTHENTICATION_CONTEXT_CAPABILITY, authenticationContext, AuthenticationContext.class)) : null;
-        builder.requires(RemotingServices.SUBSYSTEM_ENDPOINT);
+        final CapabilityServiceBuilder<?> builder = context.getCapabilityServiceTarget().addCapability(OUTBOUND_CONNECTION_CAPABILITY);
+        final Consumer<RemoteOutboundConnectionService> serviceConsumer = builder.provides(OUTBOUND_CONNECTION_CAPABILITY);
+        final Supplier<OutboundSocketBinding> osbSupplier = builder.requiresCapability(OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME, OutboundSocketBinding.class, outboundSocketBindingRef);
+        final Supplier<AuthenticationContext> acSupplier = (authenticationContext != null) ? builder.requiresCapability(AUTHENTICATION_CONTEXT_CAPABILITY, AuthenticationContext.class, authenticationContext) : null;
+        builder.requiresCapability(RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY.getName(), Endpoint.class);
         builder.setInstance(new RemoteOutboundConnectionService(serviceConsumer, osbSupplier, acSupplier, connOpts, username, protocol));
         builder.install();
     }

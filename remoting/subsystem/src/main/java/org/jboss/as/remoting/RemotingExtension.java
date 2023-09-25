@@ -9,15 +9,19 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODULE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.remoting.CommonAttributes.CONNECTOR;
+import static org.jboss.as.remoting.CommonAttributes.HTTP_CONNECTOR;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.PersistentResourceXMLDescription;
+import org.jboss.as.controller.PersistentResourceXMLDescriptionReader;
+import org.jboss.as.controller.PersistentResourceXMLDescriptionWriter;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
@@ -25,13 +29,10 @@ import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraint
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
-import org.jboss.as.controller.operations.common.OrderedChildTypesAttachment;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.dmr.ModelNode;
 
@@ -59,64 +60,52 @@ public class RemotingExtension implements Extension {
 
     static final SensitiveTargetAccessConstraintDefinition REMOTING_SECURITY_DEF = new SensitiveTargetAccessConstraintDefinition(REMOTING_SECURITY);
 
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 6;
-    private static final int MANAGEMENT_API_MINOR_VERSION = 0;
-    private static final int MANAGEMENT_API_MICRO_VERSION = 0;
-
-    private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
-
-
     private static final String IO_EXTENSION_MODULE = "org.wildfly.extension.io";
+
+    private final PersistentResourceXMLDescription currentXMLDescription = RemotingSubsystemSchema.CURRENT.getXMLDescription();
 
     @Override
     public void initialize(ExtensionContext context) {
 
         // Register the remoting subsystem
-        final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, CURRENT_VERSION);
-        registration.registerXMLElementWriter(RemotingSubsystemXMLPersister::new);
+        final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, RemotingSubsystemModel.CURRENT.getVersion());
+        registration.registerXMLElementWriter(new PersistentResourceXMLDescriptionWriter(this.currentXMLDescription));
 
-        final boolean forDomain = context.getType() == ExtensionContext.ContextType.DOMAIN;
-        final ResourceDefinition root = RemotingSubsystemRootResource.create(context.getProcessType(), forDomain);
+        final ResourceDefinition root = new RemotingSubsystemRootResource();
         final ManagementResourceRegistration subsystem = registration.registerSubsystemModel(root);
-        subsystem.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, new DescribeHandler());
+        subsystem.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-        subsystem.registerSubModel(RemotingEndpointResource.INSTANCE);
+        final ManagementResourceRegistration connector = subsystem.registerSubModel(new ConnectorResource());
+        ResourceDefinition connectorPropertyResourceDefinition = new PropertyResource(CONNECTOR);
+        connector.registerSubModel(connectorPropertyResourceDefinition);
+        final ManagementResourceRegistration sasl = connector.registerSubModel(new SaslResource(CONNECTOR));
+        sasl.registerSubModel(new SaslPolicyResource(CONNECTOR));
+        sasl.registerSubModel(connectorPropertyResourceDefinition);
 
-        final ManagementResourceRegistration connector = subsystem.registerSubModel(ConnectorResource.INSTANCE);
-        connector.registerSubModel(PropertyResource.INSTANCE_CONNECTOR);
-        final ManagementResourceRegistration sasl = connector.registerSubModel(SaslResource.INSTANCE_CONNECTOR);
-        sasl.registerSubModel(SaslPolicyResource.INSTANCE_CONNECTOR);
-        sasl.registerSubModel(PropertyResource.INSTANCE_CONNECTOR);
-
-        final ManagementResourceRegistration httpConnector = subsystem.registerSubModel(HttpConnectorResource.INSTANCE);
-        httpConnector.registerSubModel(PropertyResource.INSTANCE_HTTP_CONNECTOR);
-        final ManagementResourceRegistration httpSasl = httpConnector.registerSubModel(SaslResource.INSTANCE_HTTP_CONNECTOR);
-        httpSasl.registerSubModel(SaslPolicyResource.INSTANCE_HTTP_CONNECTOR);
-        httpSasl.registerSubModel(PropertyResource.INSTANCE_HTTP_CONNECTOR);
+        final ManagementResourceRegistration httpConnector = subsystem.registerSubModel(new HttpConnectorResource());
+        ResourceDefinition httpConnectorPropertyResourceDefinition = new PropertyResource(HTTP_CONNECTOR);
+        httpConnector.registerSubModel(httpConnectorPropertyResourceDefinition);
+        final ManagementResourceRegistration httpSasl = httpConnector.registerSubModel(new SaslResource(HTTP_CONNECTOR));
+        httpSasl.registerSubModel(new SaslPolicyResource(HTTP_CONNECTOR));
+        httpSasl.registerSubModel(httpConnectorPropertyResourceDefinition);
 
         // remote outbound connection
-        subsystem.registerSubModel(RemoteOutboundConnectionResourceDefinition.INSTANCE);
+        subsystem.registerSubModel(new RemoteOutboundConnectionResourceDefinition());
         // local outbound connection
-        subsystem.registerSubModel(LocalOutboundConnectionResourceDefinition.INSTANCE);
+        subsystem.registerSubModel(new LocalOutboundConnectionResourceDefinition());
         // (generic) outbound connection
         subsystem.registerSubModel(new GenericOutboundConnectionResourceDefinition());
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_1_0.getUriString(), RemotingSubsystem10Parser::new);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_1_1.getUriString(), RemotingSubsystem11Parser::new);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_1_2.getUriString(), RemotingSubsystem12Parser::new);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_2_0.getUriString(), RemotingSubsystem20Parser::new);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_3_0.getUriString(), RemotingSubsystem30Parser::new);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_4_0.getUriString(), RemotingSubsystem40Parser::new);
-        // For the current version we don't use a Supplier as we want its description initialized
-        // TODO if any new xsd versions are added, use a Supplier for the old version
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_5_0.getUriString(), new RemotingSubsystem50Parser());
+        // Legacy parsers
+        context.setSubsystemXmlMappings(SUBSYSTEM_NAME, EnumSet.complementOf(EnumSet.of(RemotingSubsystemSchema.CURRENT)));
+        // Register parser for current version separately, using pre-built XML description
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, RemotingSubsystemSchema.CURRENT.getNamespace().getUri(), new PersistentResourceXMLDescriptionReader(this.currentXMLDescription));
 
         // For servers only as a migration aid we'll install io if it is missing.
         // It is invalid to do this on an HC as the HC needs to support profiles running legacy
@@ -134,15 +123,14 @@ public class RemotingExtension implements Extension {
 
             // If the namespace used for our subsystem predates the introduction of the IO subsystem,
             // check if the profile includes io and if not add it
-
             String legacyNS = null;
             List<ModelNode> legacyRemotingOps = null;
-            for (Namespace ns : Namespace.values()) {
-                String nsString = ns.getUriString();
-                if (nsString != null && nsString.startsWith("urn:jboss:domain:remoting:1.")) {
-                    legacyRemotingOps = profileBootOperations.get(nsString);
+            for (RemotingSubsystemSchema schema : EnumSet.allOf(RemotingSubsystemSchema.class)) {
+                if (schema.getNamespace().getVersion().major() == 1) {
+                    String uri = schema.getNamespace().getUri();
+                    legacyRemotingOps = profileBootOperations.get(uri);
                     if (legacyRemotingOps != null) {
-                        legacyNS = nsString;
+                        legacyNS = uri;
                         break;
                     }
                 }
@@ -184,21 +172,6 @@ public class RemotingExtension implements Extension {
 
                     RemotingLogger.ROOT_LOGGER.addingIOSubsystem(legacyNS);
                 }
-            }
-        }
-    }
-
-    private static class DescribeHandler extends GenericSubsystemDescribeHandler {
-
-        @Override
-        protected void describe(OrderedChildTypesAttachment orderedChildTypesAttachment, Resource resource,
-                                ModelNode address, ModelNode result, ImmutableManagementResourceRegistration registration) {
-            // Don't describe the configuration=endpoint resource. It's just an alias for
-            // a set of attributes on its parent and the parent description covers those.
-
-            PathElement pe = registration.getPathAddress().getLastElement();
-            if (!pe.equals(RemotingEndpointResource.ENDPOINT_PATH)) {
-                super.describe(orderedChildTypesAttachment, resource, address, result, registration);
             }
         }
     }

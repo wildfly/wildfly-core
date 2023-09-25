@@ -112,7 +112,7 @@ public class RemotingHttpUpgradeService implements Service {
         final ServiceBuilder<?> sb = serviceTarget.addService(serviceName);
         final Consumer<RemotingHttpUpgradeService> serviceConsumer = sb.provides(serviceName);
         final Supplier<ChannelUpgradeHandler> urSupplier = sb.requires(HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
-        final Supplier<ListenerRegistry> lrSupplier = sb.requires(RemotingServices.HTTP_LISTENER_REGISTRY);
+        final Supplier<ListenerRegistry> lrSupplier = sb.requires(context.getCapabilityServiceName(RemotingSubsystemRootResource.HTTP_LISTENER_REGISTRY_CAPABILITY.getName(), ListenerRegistry.class));
         final Supplier<Endpoint> eSupplier = sb.requires(endpointName);
         final Supplier<SaslAuthenticationFactory> safSupplier = saslAuthenticationFactory != null ? sb.requires(saslAuthenticationFactory) : null;
         sb.setInstance(new RemotingHttpUpgradeService(serviceConsumer, urSupplier, lrSupplier, eSupplier, safSupplier, remotingConnectorName, httpConnectorName, endpointName.getSimpleName(), connectorPropertiesOptionMap));

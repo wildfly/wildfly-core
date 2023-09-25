@@ -10,10 +10,4 @@
         <layer name="elytron"/>
     </dependencies>
     <feature-group name="remoting"/>
-
-    <feature spec="subsystem.remoting.http-connector">
-        <param name="http-connector" value="http-remoting-connector"/>
-        <param name="connector-ref" value="default"/>
-        <param name="sasl-authentication-factory" value="application-sasl-authentication"/>
-    </feature>
 </layer-spec>

@@ -30,6 +30,7 @@ import org.jboss.as.server.Services;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.remoting3.Endpoint;
 
 /**
  * The Add handler for the Native Remoting Interface when running a standalone server.
@@ -57,7 +58,7 @@ public class NativeRemotingManagementAddHandler extends ManagementInterfaceAddSt
     @Override
     public void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final ServiceTarget serviceTarget = context.getServiceTarget();
-        final ServiceName endpointName = RemotingServices.SUBSYSTEM_ENDPOINT;
+        final ServiceName endpointName = context.getCapabilityServiceName("org.wildfly.remoting.endpoint", Endpoint.class);
         ManagementChannelRegistryService.addService(serviceTarget, endpointName);
         ManagementRemotingServices.installManagementChannelServices(serviceTarget,
                 endpointName,

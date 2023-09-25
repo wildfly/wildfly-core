@@ -99,7 +99,7 @@
                 <heap size="64m" max-size="256m"/>
             </jvm>
         </server>
-        <server name="other-two" group="other-server-group">
+        <server name="other-two" group="other-server-group" auto-start="false">
             <!--AS7-4177 override the host level config to smoke test that handling
                 Note we use the same values; this is just to check for obvious fatal errors -->
             <interfaces>

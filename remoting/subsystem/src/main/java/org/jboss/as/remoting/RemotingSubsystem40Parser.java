@@ -36,7 +36,9 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class RemotingSubsystem40Parser extends RemotingSubsystem30Parser {
+// N.B. This is final to discourage anyone extending this in the future
+// Parsing logic for new schema versions are to be done in RemotingSubsystemSchema.
+final class RemotingSubsystem40Parser extends RemotingSubsystem30Parser {
 
     @Override
     void parseConnector(boolean http, XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list)
