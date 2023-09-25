@@ -121,9 +121,11 @@ set CONTROLLER=localhost:9990
 set DC_HOST=primary
 set IS_DOMAIN=false
 set LOGLEVEL=INFO
+set ENV_VARS=
 set LOGPATH=
 set JBOSSUSER=
 set JBOSSPASS=
+set PROPERTIES_PATH=
 set SERVICE_USER=
 set SERVICE_PASS=
 set STARTUP_MODE=manual
@@ -201,6 +203,13 @@ echo                                 Must be specified as a fully qualified path
 echo                                 default: %JBOSS_HOME%\standalone or
 echo                                          %JBOSS_HOME%\domain
 echo(
+echo     /environment ^<env^>        : List of key=value pairs that will be provided
+echo                                 to the service as environment variables.
+echo                                 Pairs are separated by either the # or ; character.
+echo                                 If a # or ; appears in a key or value,
+echo                                 wrap it in single quotes.
+echo                                 default: none
+echo(
 echo     /loglevel ^<level^>         : The log level for the service:  Error, Info,
 echo                                 Warn or Debug ^(Case insensitive^)
 echo                                 default: %LOGLEVEL%
@@ -210,6 +219,10 @@ echo                                 default depends on domain or standalone mod
 echo                                 /base applies when /logpath is not set.
 echo                                   %JBOSS_HOME%\domain\log
 echo                                   %JBOSS_HOME%\standalone\log
+echo(
+echo     /properties ^<path^>        : Path of the properties file to pass to the
+echo                                 process for use as system properties.
+echo                                 default none
 echo(
 echo     /debug                      : run the service install in debug mode
 echo(
@@ -283,6 +296,13 @@ if /I "%~1"== "/desc" (
   shift
   goto LoopArgs
 )
+
+if /I "%~1"== "/environment" (
+  CALL :setRequiredValue ENV_VARS "%~2" "You need to specify a list of environment variables"
+  shift
+  shift
+  goto LoopArgs
+)
 if /I "%~1"== "/jbossuser" (
   CALL :setRequiredValue JBOSSUSER "%~2" "You need to specify a username"
   shift
@@ -347,6 +367,12 @@ if /I "%~1"== "/logpath" (
   shift
   goto LoopArgs
 )
+if /I "%~1"== "/properties" (
+  CALL :setRequiredValue PROPERTIES_PATH "%~2" "You need to specify the path to a properties file"
+  shift
+  shift
+  goto LoopArgs
+)
 echo ERROR: Unrecognised option: %1
 echo(
 goto cmdUsage
@@ -404,7 +430,12 @@ if /I "%IS_DOMAIN%" == "true" (
   if "%BASE%"=="" set "BASE=%JBOSS_HOME%\standalone"
   if "%CONFIG%"=="" set CONFIG=standalone.xml
   if "%START_SCRIPT%"=="" set START_SCRIPT=standalone.bat
-  set STARTPARAM="/c#set#NOPAUSE=Y#&&#!START_SCRIPT!#-Djboss.server.base.dir=!BASE!#--server-config=!CONFIG!"
+  if "%PROPERTIES_PATH%"=="" (
+    set "PROPS_PARAM="
+  ) else (
+    set "PROPS_PARAM=#--properties=%PROPERTIES_PATH%"
+  )
+  set STARTPARAM="/c#set#NOPAUSE=Y#&&#!START_SCRIPT!#-Djboss.server.base.dir=!BASE!#--server-config=!CONFIG!!PROPS_PARAM!"
   set STOPPARAM="/c set NOPAUSE=Y && !STOP_SCRIPT! --controller=%CONTROLLER% --connect !CREDENTIALS! --command=:shutdown"
 )
 
@@ -445,8 +476,8 @@ if /I "%ISDEBUG%" == "true" (
 )
 
 @rem quotes around the "%DESCRIPTION%" and "%DISPLAYNAME" but nowhere else
-echo %PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=!STOPPARAM!
-%PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=!STOPPARAM!
+echo %PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%"  ++Environment=%ENV_VARS% --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=!STOPPARAM!
+%PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%"  ++Environment=%ENV_VARS% --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=!STOPPARAM!
 
 @if /I "%ISDEBUG%" == "true" (
   @echo off
