@@ -241,146 +241,56 @@ if /I "%~1"== "/startup" (
   goto LoopArgs
 )
 if /I "%~1"== "/config" (
-  set CONFIG=
-  if not "%~2"=="" (
-    set T=%~2
-    if not "!T:~0,1!"=="/" (
-      set CONFIG=%~2
-    )
-  )
-  if "!CONFIG!" == "" (
-    echo ERROR: You need to specify a config name
-    goto endBatch
-  )
+  CALL :setRequiredValue CONFIG "%~2" "You need to specify a config name"
   shift
   shift
   goto LoopArgs
 )
 if /I "%~1"== "/hostconfig" (
-  set HOSTCONFIG=
-  if not "%~2"=="" (
-    set T=%~2
-    if not "!T:~0,1!"=="/" (
-      set HOSTCONFIG=%~2
-    )
-  )
-  if "!HOSTCONFIG!" == "" (
-    echo ERROR: You need to specify a host-config name
-    goto endBatch
-  )
+  CALL :setRequiredValue HOSTCONFIG "%~2" "You need to specify a host-config name"
   shift
   shift
   goto LoopArgs
 )
 if /I "%~1"== "/base" (
-  set BASE=
-  if not "%~2"=="" (
-    set T=%~2
-    if not "!T:~0,1!"=="/" (
-      set BASE=%~2
-    )
-  )
-  if "!BASE!" == "" (
-    echo ERROR: You need to specify a base directory name
-    goto endBatch
-  )
+  CALL :setRequiredValue BASE "%~2" "You need to specify a base directory name"
   shift
   shift
   goto LoopArgs
 )
 if /I "%~1"== "/controller" (
-  set CONTROLLER=
-  if not "%~2"=="" (
-    set T=%~2
-    if not "!T:~0,1!"=="/" (
-      set CONTROLLER=%~2
-    )
-  )
-  if "!CONTROLLER!" == "" (
-    echo ERROR: The management interface should be specified in the format host:port, example:  127.0.0.1:9999
-    goto endBatch
-  )
+  CALL :setRequiredValue CONTROLLER "%~2" "The management interface should be specified in the format host:port, example:  127.0.0.1:9999"
   shift
   shift
   goto LoopArgs
 )
 if /I "%~1"== "/name" (
-  set SHORTNAME=
-  if not "%~2"=="" (
-    set T=%~2
-    if not "!T:~0,1!"=="/" (
-      set SHORTNAME=%~2
-    )
-  )
-  if "!SHORTNAME!" == "" (
-    echo ERROR: You need to specify a service name
-    goto endBatch
-  )
+  CALL :setRequiredValue SHORTNAME "%~2" "You need to specify a service name"
   shift
   shift
   goto LoopArgs
 )
 if /I "%~1"== "/display" (
-  set DISPLAYNAME=
-  if not "%~2"=="" (
-    set T=%~2
-    if not "!T:~0,1!"=="/" (
-      set DISPLAYNAME=%~2
-    )
-  )
-  if "!DISPLAYNAME!" == "" (
-    echo ERROR: You need to specify a service display name, maximum of 256 characters
-    goto endBatch
-  )
+  CALL :setRequiredValue DISPLAYNAME "%~2" "You need to specify a service display name, maximum of 256 characters"
   shift
   shift
   goto LoopArgs
 )
 
 if /I "%~1"== "/desc" (
-  set DESCRIPTION=
-  if not "%~2"=="" (
-    set T=%~2
-    if not "!T:~0,1!"=="/" (
-      set DESCRIPTION=%~2
-    )
-  )
-  if "!DESCRIPTION!" == "" (
-    echo ERROR: You need to specify a description, maximum of 1024 characters
-    goto endBatch
-  )
+  CALL :setRequiredValue DESCRIPTION "%~2" "You need to specify a description, maximum of 1024 characters"
   shift
   shift
   goto LoopArgs
 )
 if /I "%~1"== "/jbossuser" (
-  set JBOSSUSER=
-  if not "%~2"=="" (
-    set T=%~2
-    if not "!T:~0,1!"=="/" (
-      set JBOSSUSER=%~2
-    )
-  )
-  if "!JBOSSUSER!" == "" (
-    echo ERROR: You need to specify a username
-    goto endBatch
-  )
+  CALL :setRequiredValue JBOSSUSER "%~2" "You need to specify a username"
   shift
   shift
   goto LoopArgs
 )
 if /I "%~1"== "/jbosspass" (
-  set JBOSSPASS=
-  if not "%~2"=="" (
-    set T=%~2
-    if not "!T:~0,1!"=="/" (
-      set "JBOSSPASS=%~2"
-    )
-  )
-  if "!JBOSSPASS!" == "" (
-    echo ERROR: You need to specify a password for /jbosspass
-    goto endBatch
-  )
+  CALL :setRequiredValue JBOSSPASS "%~2" "You need to specify a password for /jbosspass"
 
   for %%C in (^^^^ ^^^( ^^^) ^^^> ^^^< ^^^& ^^^|) do (
     if not "!JBOSSPASS:%%C=!"=="!JBOSSPASS!" set IS_SANITIZED=true
@@ -397,33 +307,13 @@ if /I "%~1"== "/jbosspass" (
   goto LoopArgs
 )
 if /I "%~1"== "/serviceuser" (
-  set SERVICE_USER=
-  if not "%~2"=="" (
-    set T=%~2
-    if not "!T:~0,1!"=="/" (
-      set SERVICE_USER=%~2
-    )
-  )
-  if "!SERVICE_USER!" == "" (
-    echo ERROR: You need to specify a username in the format DOMAIN\USER, or .\USER for the local domain
-    goto endBatch
-  )
+  CALL :setRequiredValue SERVICE_USER "%~2" "You need to specify a username in the format DOMAIN\USER, or .\USER for the local domain"
   shift
   shift
   goto LoopArgs
 )
 if /I "%~1"== "/servicepass" (
-  set SERVICE_PASS=
-  if not "%~2"=="" (
-    set T=%~2
-    if not "!T:~0,1!"=="/" (
-      set SERVICE_PASS=%~2
-    )
-  )
-  if "!SERVICE_PASS!" == "" (
-    echo ERROR: You need to specify a password for /servicepass
-    goto endBatch
-  )
+  CALL :setRequiredValue SERVICE_PASS "%~2" "You need to specify a password for /servicepass"
   shift
   shift
   goto LoopArgs
@@ -452,17 +342,7 @@ if /I "%~1"== "/loglevel" (
   goto LoopArgs
 )
 if /I "%~1"== "/logpath" (
-  set LOGPATH=
-  if not "%~2"=="" (
-    set T=%~2
-    if not "!T:~0,1!"=="/" (
-      set LOGPATH=%~2
-	)
-  )
-  if "!LOGPATH!" == "" (
-    echo ERROR: You need to specify a path for the service log
-    goto endBatch
-  )
+  CALL :setRequiredValue LOGPATH "%~2" "You need to specify a path for the service log"
   shift
   shift
   goto LoopArgs
@@ -470,6 +350,22 @@ if /I "%~1"== "/logpath" (
 echo ERROR: Unrecognised option: %1
 echo(
 goto cmdUsage
+
+rem Set variable named by %1 to the value of %2 if it is valid, or echo error msg %3
+:setRequiredValue
+  set "%~1="
+  if not "%~2"=="" (
+    set T=%~2
+    if not "!T:~0,1!"=="/" (
+      set "%~1=%~2"
+	)
+  )
+  if "!%~1!" == "" (
+    echo ERROR: %~3
+    goto endBatch
+  )
+rem return to wherever we were called
+EXIT /B 0
 
 :doInstall
 set CREDENTIALS=
