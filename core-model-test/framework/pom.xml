@@ -12,7 +12,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-model-test</artifactId>
-        <version>22.0.0.Beta3-SNAPSHOT</version>
+        <version>22.0.0.Beta3</version>
     </parent>
 
     <artifactId>wildfly-core-model-test-framework</artifactId>
