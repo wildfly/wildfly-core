@@ -91,7 +91,6 @@ public class OpenSslTlsTestCase {
     @Inject
     protected ManagementClient managementClient;
 
-    private static final String javaSpecVersion = System.getProperty("java.specification.version");
     private static final String PASSWORD = "Elytron";
 
     private static final String SERVER_KEY_STORE_NAME = "serverKS";
@@ -121,11 +120,6 @@ public class OpenSslTlsTestCase {
     private static final String TEST_JAR = "test.jar";
 
     @BeforeClass
-    public static void noJDK14Plus() {
-        Assume.assumeFalse("Avoiding JDK 14+ due to https://issues.jboss.org/browse/WFCORE-4532", getJavaSpecVersion() >= 14);
-    }
-
-    @BeforeClass
     public static void isOpenSSL111OrHigher() {
         Assume.assumeTrue("OpenSSL version in use does not support TLS 1.3", isOpenSslTls13Enabled());
     }
@@ -144,10 +138,6 @@ public class OpenSslTlsTestCase {
             return false;
         }
         return false;
-    }
-
-    private static int getJavaSpecVersion() {
-        return Integer.parseInt(javaSpecVersion);
     }
 
     static class ServerSetup extends TestRunnerConfigSetupTask {

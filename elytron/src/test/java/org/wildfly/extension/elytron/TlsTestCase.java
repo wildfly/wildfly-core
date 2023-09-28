@@ -295,10 +295,6 @@ public class TlsTestCase extends AbstractSubsystemTest {
         }
     }
 
-    private static boolean isJDK14Plus() {
-        return "14".equals(System.getProperty("java.specification.version"));
-    }
-
     @BeforeClass
     public static void initTests() throws Exception {
         disabledAlgorithms = Security.getProperty("jdk.tls.disabledAlgorithms");
@@ -307,7 +303,6 @@ public class TlsTestCase extends AbstractSubsystemTest {
             Security.setProperty("jdk.tls.disabledAlgorithms", "");
         }
 
-        if (isJDK14Plus()) return; // TODO: remove this line once WFCORE-4532 is fixed
         setUpKeyStores();
         AccessController.doPrivileged((PrivilegedAction<Integer>) () -> Security.insertProviderAt(wildFlyElytronProvider, 1));
         csUtil = new CredentialStoreUtility("target/tlstest.keystore");
@@ -320,7 +315,6 @@ public class TlsTestCase extends AbstractSubsystemTest {
         if (disabledAlgorithms != null) {
             Security.setProperty("jdk.tls.disabledAlgorithms", disabledAlgorithms);
         }
-        if (isJDK14Plus()) return; // TODO: remove this line once WFCORE-4532 is fixed
         deleteKeyStoreFiles();
         csUtil.cleanUp();
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
