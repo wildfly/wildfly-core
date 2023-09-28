@@ -29,26 +29,20 @@ import org.jboss.dmr.ModelNode;
  */
 public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHandler {
 
-    /**
-     * {@inheritDoc}
-     */
     protected AbstractBoottimeAddStepHandler() {
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Deprecated(forRemoval = true)
     protected AbstractBoottimeAddStepHandler(Collection<? extends AttributeDefinition> attributes) {
         super(attributes);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Deprecated(forRemoval = true)
     protected AbstractBoottimeAddStepHandler(AttributeDefinition... attributes) {
         super(attributes);
     }
 
+    @Deprecated(forRemoval = true)
     public AbstractBoottimeAddStepHandler(Parameters parameters) {
         super(parameters);
     }

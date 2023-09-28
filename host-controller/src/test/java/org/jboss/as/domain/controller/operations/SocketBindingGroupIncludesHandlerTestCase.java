@@ -250,7 +250,7 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
 
     MockOperationContext getOperationContext(final PathAddress operationAddress) {
         final Resource root = createRootResource();
-        return new MockOperationContext(root, false, operationAddress, false);
+        return new MockOperationContext(root, operationAddress);
     }
 
 
@@ -263,7 +263,7 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
         socketBindingGroupFour.getModel().get(INCLUDES).add("binding-three");
         root.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-four"), socketBindingGroupFour);
 
-        return new MockOperationContext(root, false, operationAddress, false);
+        return new MockOperationContext(root, operationAddress);
 
     }
 
@@ -279,17 +279,16 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
         root.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-five"), socketBindingGroupFive);
 
         initializer.addAdditionalResources(root);
-        return new MockOperationContext(root, false, operationAddress, false);
+        return new MockOperationContext(root, operationAddress);
     }
 
     private class MockOperationContext extends AbstractOperationTestCase.MockOperationContext {
         private boolean reloadRequired;
-        private boolean rollback;
+        private boolean rollback = false;
         private OperationStepHandler nextStep;
 
-        protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress, final boolean rollback) {
-            super(root, booting, operationAddress);
-            this.rollback = rollback;
+        protected MockOperationContext(Resource root, PathAddress operationAddress) {
+            super(root, false, operationAddress, SocketBindingGroupResourceDefinition.INCLUDES);
             Set<RuntimeCapability> capabilities = new HashSet<>();
             capabilities.add(SocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY);
             capabilities.add(ProfileResourceDefinition.PROFILE_CAPABILITY);

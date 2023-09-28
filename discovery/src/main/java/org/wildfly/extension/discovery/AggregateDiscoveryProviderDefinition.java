@@ -41,6 +41,6 @@ final class AggregateDiscoveryProviderDefinition extends SimpleResourceDefinitio
 
     @Override
     public void registerAttributes(final ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadWriteAttribute(PROVIDER_NAMES, null, new ReloadRequiredWriteAttributeHandler(PROVIDER_NAMES));
+        resourceRegistration.registerReadWriteAttribute(PROVIDER_NAMES, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
     }
 }

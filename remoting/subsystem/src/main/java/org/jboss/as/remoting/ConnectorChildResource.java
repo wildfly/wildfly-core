@@ -38,7 +38,7 @@ abstract class ConnectorChildResource extends SimpleResourceDefinition {
         super(parameters);
     }
     static void recreateParentService(OperationContext context, ModelNode parentModel) throws OperationFailedException {
-        ConnectorAdd.INSTANCE.launchServices(context, parentModel);
+        ConnectorAdd.launchServices(context, parentModel);
     }
 
     static ServiceName getParentServiceName(PathAddress parentAddress) {

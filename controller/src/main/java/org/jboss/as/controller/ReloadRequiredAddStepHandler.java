@@ -28,14 +28,31 @@ import org.jboss.dmr.ModelNode;
  */
 public class ReloadRequiredAddStepHandler extends AbstractAddStepHandler {
 
+    public static final OperationStepHandler INSTANCE = new ReloadRequiredAddStepHandler();
+
+    protected ReloadRequiredAddStepHandler() {
+    }
+
+    /**
+     * @deprecated Use {@link #INSTANCE} instead.
+     */
+    @Deprecated(forRemoval = true)
     public ReloadRequiredAddStepHandler(AttributeDefinition... attributes) {
         super(attributes);
     }
 
+    /**
+     * @deprecated Use {@link #INSTANCE} instead.
+     */
+    @Deprecated(forRemoval = true)
     public ReloadRequiredAddStepHandler(Collection<AttributeDefinition> attributes) {
         super(attributes);
     }
 
+    /**
+     * @deprecated Use {@link #INSTANCE} instead.
+     */
+    @Deprecated(forRemoval = true)
     public ReloadRequiredAddStepHandler(Parameters parameters) {
         super(parameters);
     }

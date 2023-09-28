@@ -16,10 +16,23 @@ import org.jboss.dmr.ModelNode;
  */
 public class ModelOnlyWriteAttributeHandler extends AbstractWriteAttributeHandler<Void> {
 
+    public static final OperationStepHandler INSTANCE = new ModelOnlyWriteAttributeHandler();
+
+    protected ModelOnlyWriteAttributeHandler() {
+    }
+
+    /**
+     * @deprecated Use {@link #INSTANCE} instead.
+     */
+    @Deprecated(forRemoval = true)
     public ModelOnlyWriteAttributeHandler(AttributeDefinition... attributeDefinitions) {
         super(attributeDefinitions);
     }
 
+    /**
+     * @deprecated Use {@link #INSTANCE} instead.
+     */
+    @Deprecated(forRemoval = true)
     public ModelOnlyWriteAttributeHandler(Collection<AttributeDefinition> attributeDefinitions) {
         super(attributeDefinitions);
     }
@@ -32,12 +45,12 @@ public class ModelOnlyWriteAttributeHandler extends AbstractWriteAttributeHandle
     @Override
     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Void> handbackHolder) throws OperationFailedException {
         // should not be called as requiresRuntime returns false
-        throw new UnsupportedOperationException();
+        throw new IllegalStateException();
     }
 
     @Override
     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Void handback) throws OperationFailedException {
         // should not be called as requiresRuntime returns false
-        throw new UnsupportedOperationException();
+        throw new IllegalStateException();
     }
 }

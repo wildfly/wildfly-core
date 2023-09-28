@@ -11,6 +11,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.jboss.as.controller.client.helpers.ClientConstants.RESULT;
 
 import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.junit.Assert.assertEquals;
 
@@ -70,6 +72,7 @@ public class LogFilterTestCase extends AbstractOperationsTestCase {
         assertEquals("{\"replace\" => {\"replace-all\" => true,\"pattern\" => \"JBAS\",\"replacement\" => \"DUMMY\"}}",
                 Operations.readResult(result).asString());
         ModelNode readResourceOp = Operations.createReadResourceOperation(consoleAddress);
+        readResourceOp.get(ModelDescriptionConstants.INCLUDE_ALIASES).set(true);
         result = executeOperation(kernelServices, readResourceOp);
         assertThat(result, is(notNullValue()));
         assertThat(result.get(OUTCOME).asString(), is("success"));
@@ -77,7 +80,7 @@ public class LogFilterTestCase extends AbstractOperationsTestCase {
         ModelNode filterSpec = result.get(RESULT).get("filter-spec");
         assertThat(filterSpec.asString(), is("substituteAll(\"JBAS\",\"DUMMY\")"));
 
-        assertThat(result.get(RESULT).hasDefined("filter"), is(true));
+        assertThat(result.toJSONString(false), result.get(RESULT).hasDefined("filter"), is(true));
         assertThat(result.get(RESULT).get("filter").hasDefined("replace"), is(true));
         ModelNode replaceResult = result.get(RESULT).get("filter").get("replace");
         assertThat(replaceResult.hasDefined("pattern"), is(true));

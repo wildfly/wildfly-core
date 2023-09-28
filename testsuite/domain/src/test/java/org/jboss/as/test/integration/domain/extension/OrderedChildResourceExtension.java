@@ -13,10 +13,10 @@ import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
 import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ModelVersion;
@@ -77,8 +77,8 @@ public class OrderedChildResourceExtension implements Extension {
         public SubsystemResourceDefinition() {
             super(SUBSYSTEM_PATH,
                     NonResolvingResourceDescriptionResolver.INSTANCE,
-                    new AbstractAddStepHandler(REQUEST_ATTRIBUTES),
-                    new ModelOnlyRemoveStepHandler());
+                    ModelOnlyAddStepHandler.INSTANCE,
+                    ModelOnlyRemoveStepHandler.INSTANCE);
         }
 
         @Override
@@ -102,8 +102,8 @@ public class OrderedChildResourceExtension implements Extension {
 
         public OrderedChildResourceDefinition() {
             super(new Parameters(CHILD, NonResolvingResourceDescriptionResolver.INSTANCE)
-                    .setAddHandler(new AbstractAddStepHandler())
-                    .setRemoveHandler(new ModelOnlyRemoveStepHandler())
+                    .setAddHandler(ModelOnlyAddStepHandler.INSTANCE)
+                    .setRemoveHandler(ModelOnlyRemoveStepHandler.INSTANCE)
                     .setOrderedChild());
         }
     }

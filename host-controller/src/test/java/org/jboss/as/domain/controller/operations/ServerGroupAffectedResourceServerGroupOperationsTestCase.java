@@ -23,7 +23,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
@@ -111,7 +110,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
 
     private void testAddServerGroupBadInfo(boolean primary, boolean rollback, boolean badProfile, boolean badSocketBindingGroup) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-three"));
-        final MockOperationContext operationContext = getOperationContext(rollback, pa);
+        final MockOperationContext operationContext = new MockOperationContext(pa, rollback);
 
         String profileName = badProfile ? "bad-profile" : "profile-two";
         String socketBindingGroupName = badSocketBindingGroup ? "bad-group" : "binding-two";
@@ -165,7 +164,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
 
     private void testRemoveServerGroup(boolean primary, boolean rollback) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
-        final MockOperationContext operationContext = getOperationContext(rollback, pa);
+        final MockOperationContext operationContext = new MockOperationContext(pa, rollback);
 
         final ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).set(pa.toModelNode());
@@ -223,7 +222,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
 
     private void testUpdateServerGroupProfile(boolean primary, boolean rollback, boolean badProfile) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
-        final MockOperationContext operationContext = getOperationContext(rollback, pa);
+        final MockOperationContext operationContext = new MockOperationContext(pa, rollback);
 
         String profileName = badProfile ? "bad-profile" : "profile-two";
 
@@ -302,7 +301,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
     private void testUpdateServerGroupSocketBindingGroup(boolean primary, boolean rollback, boolean badSocketBindingGroup) throws Exception {
 
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
-        final MockOperationContext operationContext = getOperationContext(rollback, pa);
+        final MockOperationContext operationContext = new MockOperationContext(pa, rollback);
 
         String socketBindingGroupName = badSocketBindingGroup ? "bad-group" : "binding-two";
 
@@ -332,19 +331,14 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         }
     }
 
-    MockOperationContext getOperationContext(final boolean rollback, final PathAddress operationAddress) {
-        final Resource root = createRootResource();
-        return new MockOperationContext(root, false, operationAddress, rollback);
-    }
-
     private class MockOperationContext extends AbstractOperationTestCase.MockOperationContext {
         private boolean reloadRequired;
         private boolean rollback;
         private OperationStepHandler nextStep;
         private ModelNode nextStepOp;
 
-        protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress, final boolean rollback) {
-            super(root, booting, operationAddress);
+        protected MockOperationContext(PathAddress operationAddress, final boolean rollback) {
+            super(createRootResource(), false, operationAddress, ServerGroupResourceDefinition.ADD_ATTRIBUTES);
             this.rollback = rollback;
             when(this.registration.getCapabilities()).thenReturn(Collections.singleton(ServerGroupResourceDefinition.SERVER_GROUP_CAPABILITY));
         }

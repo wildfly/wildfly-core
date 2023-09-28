@@ -157,7 +157,7 @@ public class RemoveNonExistingResourceTestCase {
             SimpleResourceDefinition subsystemResource = new SimpleResourceDefinition(
                     PathElement.pathElement(SUBSYSTEM, module),
                     NonResolvingResourceDescriptionResolver.INSTANCE,
-                    new AbstractAddStepHandler(),
+                    ModelOnlyAddStepHandler.INSTANCE,
                     ReloadRequiredRemoveStepHandler.INSTANCE
             ){
 
@@ -176,7 +176,7 @@ public class RemoveNonExistingResourceTestCase {
         public FakeSubmodelChild() {
             super(PathElement.pathElement(SUBMODEL_NAME),
                     NonResolvingResourceDescriptionResolver.INSTANCE,
-                    new AbstractAddStepHandler(),
+                    ModelOnlyAddStepHandler.INSTANCE,
                     new RestartParentResourceRemoveHandler("attr") {
 
                         @Override

@@ -26,10 +26,6 @@ import org.jboss.remoting3.Endpoint;
  */
 class LocalOutboundConnectionAdd extends AbstractAddStepHandler {
 
-    LocalOutboundConnectionAdd() {
-        super(LocalOutboundConnectionResourceDefinition.ATTRIBUTES);
-    }
-
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         installRuntimeService(context, resource.getModel());

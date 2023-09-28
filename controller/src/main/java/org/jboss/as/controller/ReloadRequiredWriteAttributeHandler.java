@@ -18,10 +18,23 @@ import org.jboss.dmr.ModelType;
  */
 public class ReloadRequiredWriteAttributeHandler extends AbstractWriteAttributeHandler<Void> {
 
+    public static final OperationStepHandler INSTANCE = new ReloadRequiredWriteAttributeHandler();
+
+    protected ReloadRequiredWriteAttributeHandler() {
+    }
+
+    /**
+     * @deprecated Use {@link #INSTANCE} instead.
+     */
+    @Deprecated(forRemoval = true)
     public ReloadRequiredWriteAttributeHandler(final AttributeDefinition... definitions) {
         super(definitions);
     }
 
+    /**
+     * @deprecated Use {@link #INSTANCE} instead.
+     */
+    @Deprecated(forRemoval = true)
     public ReloadRequiredWriteAttributeHandler(final Collection<AttributeDefinition> definitions) {
         super(definitions);
     }
@@ -34,12 +47,12 @@ public class ReloadRequiredWriteAttributeHandler extends AbstractWriteAttributeH
 //      In fact we just can't resolve the currentValue without any doubt. When in doubt reload, so we will return true in this case.
 //      For example if the currentValue is ${foo} and that for some reason foo has changed in between, then we should reload even if now ${foo} resolves
 //      as resolvedValue.
-        ModelNode resolvedTypedValue = convertToType(attributeName, resolvedValue);
+        ModelNode resolvedTypedValue = convertToType(context, attributeName, resolvedValue);
         return !resolvedTypedValue.equals(currentValue);
     }
 
-    private ModelNode convertToType(String attributeName, ModelNode resolvedValue) {
-        AttributeDefinition attributeDefinition = getAttributeDefinition(attributeName);
+    private static ModelNode convertToType(OperationContext context, String attributeName, ModelNode resolvedValue) {
+        AttributeDefinition attributeDefinition = context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getAttributeDefinition();
         ModelType type = attributeDefinition.getType();
         ModelNode converted = resolvedValue.clone();
         try {

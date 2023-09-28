@@ -31,7 +31,7 @@ class ServerGroupScopedRoleAdd extends ScopedRoleAddHandler {
 
     ServerGroupScopedRoleAdd(Map<String, ServerGroupEffectConstraint> constraintMap,
                              WritableAuthorizerConfiguration authorizerConfiguration) {
-        super(authorizerConfiguration, ServerGroupScopedRoleResourceDefinition.BASE_ROLE, ServerGroupScopedRoleResourceDefinition.SERVER_GROUPS);
+        super(authorizerConfiguration);
         this.constraintMap = constraintMap;
         this.authorizerConfiguration = authorizerConfiguration;
     }

@@ -32,8 +32,7 @@ import org.jboss.dmr.ModelType;
  */
 public class DefaultResourceAddDescriptionProvider implements DescriptionProvider {
 
-
-    private static AttributeDefinition INDEX = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ADD_INDEX, ModelType.INT, true).build();
+    public static final AttributeDefinition INDEX = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ADD_INDEX, ModelType.INT, true).build();
 
     private final ImmutableManagementResourceRegistration registration;
     final ResourceDescriptionResolver descriptionResolver;

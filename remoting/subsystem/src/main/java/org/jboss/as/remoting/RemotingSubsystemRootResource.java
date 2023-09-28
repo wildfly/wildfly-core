@@ -16,7 +16,6 @@ import java.util.stream.Stream;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
@@ -102,9 +101,8 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadWriteAttribute(WORKER, null, new WorkerAttributeWriteHandler());
 
-        OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(OPTIONS);
         for (final AttributeDefinition attribute: OPTIONS) {
-            resourceRegistration.registerReadWriteAttribute(attribute, null, writeHandler);
+            resourceRegistration.registerReadWriteAttribute(attribute, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
         }
     }
 
@@ -120,10 +118,6 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
     }
 
     private static class WorkerAttributeWriteHandler extends ReloadRequiredWriteAttributeHandler {
-
-        WorkerAttributeWriteHandler() {
-            super(WORKER);
-        }
 
         @Override
         protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue,

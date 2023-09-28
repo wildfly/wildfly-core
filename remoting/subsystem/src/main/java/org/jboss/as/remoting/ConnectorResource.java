@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -85,17 +84,15 @@ public class ConnectorResource extends SimpleResourceDefinition {
 
     ConnectorResource() {
         super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(CONNECTOR))
-                .setAddHandler(ConnectorAdd.INSTANCE)
-                .setRemoveHandler(ConnectorRemove.INSTANCE)
+                .setAddHandler(new ConnectorAdd())
+                .setRemoveHandler(new ConnectorRemove())
                 .setCapabilities(CONNECTOR_CAPABILITY));
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        final OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(ATTRIBUTES);
         for (AttributeDefinition ad : ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(ad, null, writeHandler);
+            resourceRegistration.registerReadWriteAttribute(ad, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
         }
     }
-
 }

@@ -14,10 +14,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
 import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
@@ -81,7 +81,7 @@ public class LogStreamExtension implements Extension {
         private final OperationStepHandler handler;
         private LogStreamSubsystemResourceDefinition() {
             super(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), NonResolvingResourceDescriptionResolver.INSTANCE,
-                    new AbstractAddStepHandler(),
+                    ModelOnlyAddStepHandler.INSTANCE,
                     ModelOnlyRemoveStepHandler.INSTANCE);
             this.handler = new LogStreamHandler();
         }

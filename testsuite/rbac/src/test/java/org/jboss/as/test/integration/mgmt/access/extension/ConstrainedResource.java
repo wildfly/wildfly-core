@@ -4,10 +4,9 @@
  */
 package org.jboss.as.test.integration.mgmt.access.extension;
 
-
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
 import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -40,7 +39,7 @@ public class ConstrainedResource extends SimpleResourceDefinition {
             .addAccessConstraint(DS_SECURITY_DEF)
             .build();
 
-    static SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder("security-domain", ModelType.STRING)
+    static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder("security-domain", ModelType.STRING)
             .setAllowExpression(true)
             .setAttributeGroup("security")
             .setRequired(false)
@@ -57,11 +56,11 @@ public class ConstrainedResource extends SimpleResourceDefinition {
             .build();
 
 
-    static SimpleAttributeDefinition NEW_CONNECTION_SQL = new SimpleAttributeDefinitionBuilder("new-connection-sql", ModelType.STRING, true)
+    static final SimpleAttributeDefinition NEW_CONNECTION_SQL = new SimpleAttributeDefinitionBuilder("new-connection-sql", ModelType.STRING, true)
             .setAllowExpression(true)
             .build();
 
-    static SimpleAttributeDefinition JNDI_NAME = new SimpleAttributeDefinitionBuilder("jndi-name", ModelType.STRING, true)
+    static final SimpleAttributeDefinition JNDI_NAME = new SimpleAttributeDefinitionBuilder("jndi-name", ModelType.STRING, true)
             .setAllowExpression(true)
             .setAttributeGroup("naming")
             .setValidator(new ParameterValidator() {
@@ -76,8 +75,6 @@ public class ConstrainedResource extends SimpleResourceDefinition {
                                 throw new OperationFailedException("Jndi name shouldn't include '//' or end with '/'");
                             }
                         }
-                    } else {
-                        throw new OperationFailedException("Jndi name is required");
                     }
                 }
             })
@@ -85,7 +82,7 @@ public class ConstrainedResource extends SimpleResourceDefinition {
 
     public ConstrainedResource(PathElement pathElement) {
         super(new Parameters(pathElement, NonResolvingResourceDescriptionResolver.INSTANCE)
-                .setAddHandler(new AbstractAddStepHandler(PASSWORD, SECURITY_DOMAIN, AUTHENTICATION_INFLOW))
+                .setAddHandler(ModelOnlyAddStepHandler.INSTANCE)
                 .setRemoveHandler(ModelOnlyRemoveStepHandler.INSTANCE)
                 .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig("rbac", "datasource"))));
     }

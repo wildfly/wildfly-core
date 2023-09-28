@@ -10,9 +10,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
 import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
@@ -60,8 +60,8 @@ public class TestAliasReadResourceDescriptionAddressExtension implements Extensi
         public AbstractResourceDefinition(PathElement pathElement) {
             super(pathElement,
                     NonResolvingResourceDescriptionResolver.INSTANCE,
-                    new AbstractAddStepHandler(),
-                    new ModelOnlyRemoveStepHandler());
+                    ModelOnlyAddStepHandler.INSTANCE,
+                    ModelOnlyRemoveStepHandler.INSTANCE);
         }
     }
 

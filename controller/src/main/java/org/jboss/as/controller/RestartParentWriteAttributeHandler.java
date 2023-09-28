@@ -6,6 +6,7 @@
 package org.jboss.as.controller;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.operations.common.Util;
@@ -23,11 +24,22 @@ import org.jboss.msc.service.ServiceName;
 public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAttributeHandler<ModelNode> {
     private final String parentKeyName;
 
-    public RestartParentWriteAttributeHandler(String parentKeyName, AttributeDefinition... definitions) {
-        super(definitions);
+    public RestartParentWriteAttributeHandler(String parentKeyName) {
         this.parentKeyName = parentKeyName;
     }
 
+    /**
+     * @deprecated Use {@link #RestartParentWriteAttributeHandler(String)} instead.
+     */
+    @Deprecated(forRemoval = true)
+    public RestartParentWriteAttributeHandler(String parentKeyName, AttributeDefinition... definitions) {
+        this(parentKeyName, List.of(definitions));
+    }
+
+    /**
+     * @deprecated Use {@link #RestartParentWriteAttributeHandler(String)} instead.
+     */
+    @Deprecated(forRemoval = true)
     public RestartParentWriteAttributeHandler(final String parentKeyName, final Collection<AttributeDefinition> definitions) {
         super(definitions);
         this.parentKeyName = parentKeyName;

@@ -237,9 +237,8 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
 
     MockOperationContext getOperationContext(final PathAddress operationAddress) {
         final Resource root = createRootResource();
-        return new MockOperationContext(root, false, operationAddress, false);
+        return new MockOperationContext(root, operationAddress);
     }
-
 
     MockOperationContext getOperationContextWithIncludes(final PathAddress operationAddress) {
         final Resource root = createRootResource();
@@ -249,8 +248,7 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
         Resource profileFour = Resource.Factory.create();
         profileFour.getModel().get(INCLUDES).add("profile-three");
         root.registerChild(PathElement.pathElement(PROFILE, "profile-four"), profileFour);
-        return new MockOperationContext(root, false, operationAddress, false);
-
+        return new MockOperationContext(root, operationAddress);
     }
 
     MockOperationContext getOperationContextForSubsystemIncludes(final PathAddress operationAddress, RootResourceInitializer initializer) {
@@ -265,17 +263,16 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
         root.registerChild(PathElement.pathElement(PROFILE, "profile-five"), profileFive);
 
         initializer.addAdditionalResources(root);
-        return new MockOperationContext(root, false, operationAddress, false);
+        return new MockOperationContext(root, operationAddress);
     }
 
     private class MockOperationContext extends AbstractOperationTestCase.MockOperationContext {
         private boolean reloadRequired;
-        private boolean rollback;
+        private boolean rollback = false;
         private OperationStepHandler nextStep;
 
-        protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress, final boolean rollback) {
-            super(root, booting, operationAddress);
-            this.rollback = rollback;
+        protected MockOperationContext(Resource root, PathAddress operationAddress) {
+            super(root, false, operationAddress, ProfileResourceDefinition.ATTRIBUTES);
             when(this.registration.getCapabilities()).thenReturn(Collections.singleton(ProfileResourceDefinition.PROFILE_CAPABILITY));
         }
 

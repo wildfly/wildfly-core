@@ -18,13 +18,11 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationDefinition;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
-import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
-import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.constraint.HostEffectConstraint;
 import org.jboss.as.controller.access.management.WritableAuthorizerConfiguration;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -41,15 +39,9 @@ import org.jboss.dmr.ModelType;
  *
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
-public class HostScopedRolesResourceDefinition extends SimpleResourceDefinition {
+public class HostScopedRolesResourceDefinition extends ScopedRoleResourceDefinition {
 
     public static final PathElement PATH_ELEMENT = PathElement.pathElement(HOST_SCOPED_ROLE);
-
-    public static final SimpleAttributeDefinition BASE_ROLE =
-            new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.BASE_ROLE, ModelType.STRING)
-            .setRestartAllServices()
-            .build();
-
 
     public static final ListAttributeDefinition HOSTS = SimpleListAttributeDefinition.Builder.of(ModelDescriptionConstants.HOSTS,
                 new SimpleAttributeDefinitionBuilder(HOST, ModelType.STRING)
@@ -64,12 +56,12 @@ public class HostScopedRolesResourceDefinition extends SimpleResourceDefinition 
             .setWrapXmlList(false)
             .build();
 
-    private final HostScopedRoleAdd addHandler;
-    private final HostScopedRoleRemove removeHandler;
-    private final HostScopedRoleWriteAttributeHandler writeAttributeHandler;
+    private final OperationStepHandler addHandler;
+    private final OperationStepHandler removeHandler;
+    private final OperationStepHandler writeAttributeHandler;
 
     public HostScopedRolesResourceDefinition(WritableAuthorizerConfiguration authorizerConfiguration) {
-        super(PATH_ELEMENT, DomainManagementResolver.getResolver("core.access-control.host-scoped-role"));
+        super(PATH_ELEMENT, DomainManagementResolver.getResolver("core.access-control.host-scoped-role"), authorizerConfiguration);
 
         Map<String, HostEffectConstraint> constraintMap = new HashMap<String, HostEffectConstraint>();
         this.addHandler = new HostScopedRoleAdd(constraintMap, authorizerConfiguration);
@@ -89,7 +81,6 @@ public class HostScopedRolesResourceDefinition extends SimpleResourceDefinition 
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
 
-        resourceRegistration.registerReadWriteAttribute(BASE_ROLE, null, new ReloadRequiredWriteAttributeHandler(BASE_ROLE));
         resourceRegistration.registerReadWriteAttribute(HOSTS, null, writeAttributeHandler);
     }
 }

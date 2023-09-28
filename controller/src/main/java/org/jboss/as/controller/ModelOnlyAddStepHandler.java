@@ -18,15 +18,23 @@ import org.jboss.dmr.ModelNode;
  */
 public class ModelOnlyAddStepHandler extends AbstractAddStepHandler {
 
+    public static final OperationStepHandler INSTANCE = new ModelOnlyAddStepHandler();
+
+    protected ModelOnlyAddStepHandler() {
+    }
+
     /**
-     * Creates a new {@code ModelOnlyStepHandler} that stores the given attributes to the model.
-     *
-     * @param attributes the attributes
+     * @deprecated Use {@link #INSTANCE} instead.
      */
+    @Deprecated(forRemoval = true)
     public ModelOnlyAddStepHandler(AttributeDefinition... attributes) {
         super(attributes);
     }
 
+    /**
+     * @deprecated Use {@link #INSTANCE} instead.
+     */
+    @Deprecated(forRemoval = true)
     public ModelOnlyAddStepHandler(Parameters parameters) {
         super(parameters);
     }
@@ -41,23 +49,13 @@ public class ModelOnlyAddStepHandler extends AbstractAddStepHandler {
         return false;
     }
 
-    /**
-     * Throws {@link UnsupportedOperationException}.
-     *
-     * {@inheritDoc}
-     */
     @Override
     protected final void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        throw new UnsupportedOperationException();
+        throw new IllegalStateException();
     }
 
-    /**
-     * Throws {@link UnsupportedOperationException}.
-     *
-     * {@inheritDoc}
-     */
     @Override
     protected final void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
-        throw new UnsupportedOperationException();
+        throw new IllegalStateException();
     }
 }

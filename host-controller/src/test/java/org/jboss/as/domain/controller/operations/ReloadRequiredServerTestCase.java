@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -63,7 +64,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
     private void testChangeServerGroupProfile(boolean primary) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
-        final MockOperationContext operationContext = getOperationContext(false, pa);
+        final MockOperationContext operationContext = new ServerGroupOperationContext(pa);
 
         final ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).set(pa.toModelNode());
@@ -97,7 +98,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
     private void testChangeServerGroupProfileNoChange(boolean primary) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
-        final MockOperationContext operationContext = getOperationContext(false, pa);
+        final MockOperationContext operationContext = new ServerGroupOperationContext(pa);
 
         final ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).set(pa.toModelNode());
@@ -182,7 +183,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
     public void testChangeServerConfigGroup(boolean primary) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
-        final MockOperationContext operationContext = getOperationContext(false, pa);
+        final MockOperationContext operationContext = new ServerConfigOperationContext(pa);
 
         final ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).set(pa.toModelNode());
@@ -208,7 +209,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
     public void testChangeServerConfigGroupNoChange(boolean primary) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
-        final MockOperationContext operationContext = getOperationContext(false, pa);
+        final MockOperationContext operationContext = new ServerConfigOperationContext(pa);
 
         final ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).set(pa.toModelNode());
@@ -275,7 +276,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
     private void testChangeServerConfigSocketBindingGroup(boolean primary) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
-        final MockOperationContext operationContext = getOperationContext(false, pa);
+        final MockOperationContext operationContext = new ServerConfigOperationContext(pa);
 
         final ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).set(pa.toModelNode());
@@ -301,7 +302,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
     private void testChangeServerConfigSocketBindingGroupNoChange(boolean primary) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
-        final MockOperationContext operationContext = getOperationContext(false, pa);
+        final MockOperationContext operationContext = new ServerConfigOperationContext(pa);
 
         final ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).set(pa.toModelNode());
@@ -363,7 +364,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
     @Test
     public void testChangeServerConfigSocketBindingPortOffset() throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
-        final MockOperationContext operationContext = getOperationContext(false, pa);
+        final MockOperationContext operationContext = new ServerConfigOperationContext(pa);
 
         final ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).set(pa.toModelNode());
@@ -380,7 +381,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
     @Test
     public void testChangeServerConfigSocketBindingPortOffsetNoChange() throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
-        final MockOperationContext operationContext = getOperationContext(false, pa);
+        final MockOperationContext operationContext = new ServerConfigOperationContext(pa);
 
         operationContext.root.getChild(PathElement.pathElement(HOST, "localhost")).getChild(PathElement.pathElement(SERVER_CONFIG, "server-one")).getModel().get(SOCKET_BINDING_PORT_OFFSET).set(10);
 
@@ -399,7 +400,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
     @Test
     public void testChangeServerConfigSocketBindingPortNegativeValue() throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
-        final MockOperationContext operationContext = getOperationContext(false, pa);
+        final MockOperationContext operationContext = new ServerConfigOperationContext(pa);
 
         operationContext.root.getChild(PathElement.pathElement(HOST, "localhost")).getChild(PathElement.pathElement(SERVER_CONFIG, "server-one")).getModel().get(SOCKET_BINDING_PORT_OFFSET).set(10);
 
@@ -417,7 +418,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
     @Test(expected=OperationFailedException.class)
     public void testChangeServerConfigSocketBindingPortOffsetBadPort() throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
-        final MockOperationContext operationContext = getOperationContext(false, pa);
+        final MockOperationContext operationContext = new ServerConfigOperationContext(pa);
 
         operationContext.root.getChild(PathElement.pathElement(HOST, "localhost")).getChild(PathElement.pathElement(SERVER_CONFIG, "server-one")).getModel().get(SOCKET_BINDING_PORT_OFFSET).set(10);
 
@@ -428,11 +429,6 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         operation.get(VALUE).set(65536);
 
         ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE.execute(operationContext, operation);
-    }
-
-    MockOperationContext getOperationContext(boolean serversOnly, final PathAddress operationAddress) {
-        final Resource root = createRootResource();
-        return new MockOperationContext(root, false, operationAddress);
     }
 
     private void checkServerOperationResolver(MockOperationContext context, ModelNode operation, PathAddress address, boolean expectServerOps) {
@@ -500,11 +496,24 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
     }
 
+    private class ServerGroupOperationContext extends MockOperationContext {
+        protected ServerGroupOperationContext(PathAddress operationAddress) {
+            super(operationAddress, ServerGroupResourceDefinition.ADD_ATTRIBUTES);
+        }
+    }
+
+    private class ServerConfigOperationContext extends MockOperationContext {
+        protected ServerConfigOperationContext(PathAddress operationAddress) {
+            super(operationAddress, ServerConfigResourceDefinition.WRITABLE_ATTRIBUTES.toArray(AttributeDefinition[]::new));
+        }
+    }
+
     private class MockOperationContext extends AbstractOperationTestCase.MockOperationContext {
         private boolean reloadRequired;
         private OperationStepHandler nextStep;
-        protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress) {
-            super(root, booting, operationAddress);
+
+        protected MockOperationContext(PathAddress operationAddress, AttributeDefinition... attributes) {
+            super(createRootResource(), false, operationAddress, attributes);
             Set<RuntimeCapability> capabilities = new HashSet<>();
             capabilities.add(ServerConfigResourceDefinition.SERVER_CONFIG_CAPABILITY);
             capabilities.add(ServerGroupResourceDefinition.SERVER_GROUP_CAPABILITY);

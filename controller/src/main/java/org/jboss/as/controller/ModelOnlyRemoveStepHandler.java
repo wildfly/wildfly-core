@@ -19,24 +19,14 @@ public class ModelOnlyRemoveStepHandler extends AbstractRemoveStepHandler {
 
     public static final ModelOnlyRemoveStepHandler INSTANCE = new ModelOnlyRemoveStepHandler();
 
-    /**
-     * Throws {@link UnsupportedOperationException}.
-     *
-     * {@inheritDoc}
-     */
     @Override
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
-        throw new UnsupportedOperationException();
+        throw new IllegalStateException();
     }
 
-    /**
-     * Throws {@link UnsupportedOperationException}.
-     *
-     * {@inheritDoc}
-     */
     @Override
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        throw new UnsupportedOperationException();
+        throw new IllegalStateException();
     }
 
     /**

@@ -11,7 +11,6 @@ import java.util.Collection;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.ServiceRemoveStepHandler;
@@ -91,9 +90,8 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(ATTRIBUTES);
         for (AttributeDefinition attribute : ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(attribute, null, writeHandler);
+            resourceRegistration.registerReadWriteAttribute(attribute, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
         }
     }
 }

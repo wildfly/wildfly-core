@@ -31,7 +31,7 @@ class HostScopedRoleAdd extends ScopedRoleAddHandler {
     private final WritableAuthorizerConfiguration authorizerConfiguration;
 
     HostScopedRoleAdd(Map<String, HostEffectConstraint> constraintMap, WritableAuthorizerConfiguration authorizerConfiguration) {
-        super(authorizerConfiguration, HostScopedRolesResourceDefinition.BASE_ROLE, HostScopedRolesResourceDefinition.HOSTS);
+        super(authorizerConfiguration);
         this.constraintMap = constraintMap;
         this.authorizerConfiguration = authorizerConfiguration;
     }

@@ -28,10 +28,6 @@ import org.jboss.remoting3.Endpoint;
  */
 class GenericOutboundConnectionAdd extends AbstractAddStepHandler {
 
-    GenericOutboundConnectionAdd() {
-        super(GenericOutboundConnectionResourceDefinition.ATTRIBUTES);
-    }
-
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, Resource resource)
             throws OperationFailedException {

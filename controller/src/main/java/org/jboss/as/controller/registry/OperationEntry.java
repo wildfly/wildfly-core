@@ -22,7 +22,7 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
  *
  * @author Emanuel Muckenhuber
  */
-public final class OperationEntry {
+public class OperationEntry {
     public enum EntryType {
         PUBLIC, PRIVATE
     }

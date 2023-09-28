@@ -20,6 +20,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
+import org.jboss.as.controller.registry.AttributeAccess.Flag;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.logging.capabilities.Capabilities;
 import org.jboss.as.logging.correctors.FileCorrector;
@@ -117,6 +118,7 @@ public interface CommonAttributes {
     SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING, true)
             .setAllowExpression(false)
             .setDeprecated(ModelVersion.create(1, 2, 0))
+            .setResourceOnly()
             .build();
 
     SimpleMapAttributeDefinition PROPERTIES = new SimpleMapAttributeDefinition.Builder("properties", true)
@@ -265,6 +267,7 @@ public interface CommonAttributes {
             .addAlternatives("filter-spec")
             .setDeprecated(ModelVersion.create(1, 2, 0))
             .setRequired(false)
+            .addFlag(Flag.ALIAS)
             .build();
 
     String ADD_HANDLER_OPERATION_NAME = "add-handler";
