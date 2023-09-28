@@ -40,9 +40,7 @@ public class SystemPropertiesParsingTestCase {
 
     @BeforeClass
     public static void workAroundWFLY5637() {
-        String versionString = System.getProperty("java.specification.version");
-        versionString = versionString.startsWith("1.") ? versionString.substring(2) : versionString;
-        Assume.assumeTrue("WFCORE-5637 Tests failing if the JDK in use is after 16.", Integer.parseInt(versionString) < 17);
+        Assume.assumeTrue("WFCORE-5637 Tests failing if the JDK in use is after 16.", Runtime.version().compareTo(Runtime.Version.parse("17")) < 0);
     }
 
     @Before

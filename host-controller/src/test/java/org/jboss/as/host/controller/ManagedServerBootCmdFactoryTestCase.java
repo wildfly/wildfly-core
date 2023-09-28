@@ -107,10 +107,8 @@ public class ManagedServerBootCmdFactoryTestCase {
         Assert.assertNotNull(result);
     }
 
-    private static int getJavaVersion() throws NumberFormatException {
-        final String versionString = System.getProperty("java.version");
-        int indexOfDot = versionString.indexOf('.');
-        return Integer.valueOf(indexOfDot > 0 ? versionString.substring(0, indexOfDot) : versionString).intValue();
+    private static int getJavaVersion() {
+        return Runtime.version().feature();
     }
 
     /**

@@ -16,8 +16,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jakarta.json.JsonObject;
 
@@ -41,21 +39,7 @@ import org.wildfly.common.test.LoggingAgent;
  */
 @RunWith(Parameterized.class)
 public class StandaloneScriptTestCase extends ScriptTestCase {
-    private static final boolean MODULAR_JVM;
     private static final String STANDALONE_BASE_NAME = "standalone";
-
-    static {
-        final String javaSpecVersion = System.getProperty("java.specification.version");
-        // Shouldn't happen, but we'll assume we're not a modular environment
-        boolean modularJvm = false;
-        if (javaSpecVersion != null) {
-            final Matcher matcher = Pattern.compile("^(?:1\\.)?(\\d+)$").matcher(javaSpecVersion);
-            if (matcher.find()) {
-                modularJvm = Integer.parseInt(matcher.group(1)) >= 9;
-            }
-        }
-        MODULAR_JVM = modularJvm;
-    }
 
     @Parameter
     public Map<String, String> env;
@@ -104,7 +88,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         // however the workaround is to do something like file=`\`"C:\wildfly\standalong\logs\gc.log`\`". This does not
         // seem to work when a directory has a space. An error indicating the trailing quote cannot be found. Removing
         // the `\ parts and just keeping quotes ends in the error shown in JDK-8215398.
-        Assume.assumeFalse(TestSuiteEnvironment.isWindows() && MODULAR_JVM && env.containsKey("GC_LOG") && script.getScript().toString().contains(" "));
+        Assume.assumeFalse(TestSuiteEnvironment.isWindows() && env.containsKey("GC_LOG") && script.getScript().toString().contains(" "));
         script.start(STANDALONE_CHECK, env, ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
         Assert.assertNotNull("The process is null and may have failed to start.", script);
         Assert.assertTrue("The process is not running and should be", script.isAlive());
@@ -137,13 +121,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         if ("true".equals(env.get("GC_LOG"))) {
             final Path logDir = script.getContainerHome().resolve("standalone").resolve("log");
             Assert.assertTrue(Files.exists(logDir));
-            final String fileName;
-            // The IBM J9 JVM does seems to just use the gc.log name format for the current file name.
-            if (MODULAR_JVM || TestSuiteEnvironment.isJ9Jvm()) {
-                fileName = "gc.log";
-            } else {
-                fileName = "gc.log.0.current";
-            }
+            final String fileName = "gc.log";
             Assert.assertTrue(String.format("Missing %s file in %s", fileName, logDir), Files.exists(logDir.resolve(fileName)));
         }
     }

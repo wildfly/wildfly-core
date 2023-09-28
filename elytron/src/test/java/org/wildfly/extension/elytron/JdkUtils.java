@@ -9,13 +9,12 @@ package org.wildfly.extension.elytron;
  */
 final class JdkUtils {
 
-    private static final String javaSpecVersion = System.getProperty("java.specification.version");
     private static final String javaVendor = System.getProperty("java.vendor");
 
     private JdkUtils() {}
 
     static int getJavaSpecVersion() {
-        return Integer.parseInt(javaSpecVersion);
+        return Runtime.version().feature();
     }
 
     static boolean isIbmJdk() {
