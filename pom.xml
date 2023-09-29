@@ -226,7 +226,7 @@
         <version.org.jboss.threads>2.4.0.Final</version.org.jboss.threads>
         <version.org.jboss.xnio>3.8.10.Final</version.org.jboss.xnio>
         <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
-        <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
+        <version.org.jboss.xnio.xnio-nio>3.8.11.Final-XNIO-385</version.org.jboss.xnio.xnio-nio>
         <version.org.jmockit>1.39</version.org.jmockit>
         <version.org.mock-server.mockserver-netty>5.8.1</version.org.mock-server.mockserver-netty>
         <version.org.mockito>3.10.0</version.org.mockito>
