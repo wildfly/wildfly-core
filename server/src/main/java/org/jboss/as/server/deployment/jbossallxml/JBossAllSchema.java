@@ -13,8 +13,8 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 /**
  * A versioned schema for an XML element contained within <code>jboss-all.xml</code>,
  * @author Paul Ferraro
- * @param S the schema type
- * @param T the type upon which this parser operates
+ * @param <S> the schema type
+ * @param <T> the type upon which this parser operates
  */
 public interface JBossAllSchema<S extends JBossAllSchema<S, T>, T> extends IntVersionSchema<S>, JBossAllXMLParser<T> {
 
