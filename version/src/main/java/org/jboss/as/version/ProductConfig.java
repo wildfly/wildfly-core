@@ -50,7 +50,8 @@ public class ProductConfig implements Serializable {
         String projectName = null;
         String productVersion = null;
         String consoleSlot = null;
-        FeatureStream defaultStream = FeatureStream.COMMUNITY;
+        // TODO Change default stream to COMMUNITY when wildfly galleon plugin supports feature streams.
+        FeatureStream defaultStream = FeatureStream.DEFAULT;
         FeatureStream maxStream = FeatureStream.EXPERIMENTAL;
 
         InputStream manifestStream = null;
