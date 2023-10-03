@@ -507,7 +507,7 @@ public class JBossDeploymentStructureParser10 implements XMLElementReader<ParseR
                             if(overlay != null) {
                                 overlay.remountAsZip(false);
                             } else if(child.isFile()) {
-                                closable = VFS.mountZip(child, child, TempFileProviderService.provider());
+                                closable = VFS.mountZip(child.getPhysicalFile(), child, TempFileProviderService.provider());
                             }
                             final MountHandle mountHandle = MountHandle.create(closable);
                             ResourceRoot resourceRoot = new ResourceRoot(name, child, mountHandle);
