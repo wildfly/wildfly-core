@@ -523,7 +523,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         prepareStepHandler.setExecutorService(executorService);
         ThreadFactory pingerThreadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
             public JBossThreadFactory run() {
-                return new JBossThreadFactory(new ThreadGroup("proxy-pinger-threads"), Boolean.TRUE, null, "%G - %t", null, null);
+                return new JBossThreadFactory(ThreadGroupHolder.THREAD_GROUP, Boolean.TRUE, null, "%G - %t", null, null);
             }
         });
         pingScheduler = Executors.newScheduledThreadPool(PINGER_POOL_SIZE, pingerThreadFactory);
@@ -1782,4 +1782,10 @@ public class DomainModelControllerService extends AbstractControllerService impl
             }
         }
     }
+
+    // Wrapper class to delay thread group creation until when it's needed.
+    private static class ThreadGroupHolder {
+        private static final ThreadGroup THREAD_GROUP = new ThreadGroup("proxy-pinger-threads");
+    }
+
 }

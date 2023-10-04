@@ -173,10 +173,9 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
     }
 
     private ExecutorService createExecutor() {
-        final ThreadGroup group = new ThreadGroup("management-client-thread");
         final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
             public JBossThreadFactory run() {
-                return new JBossThreadFactory(group, Boolean.FALSE, null, "%G " + executorCount.incrementAndGet() + "-%t", null, null);
+                return new JBossThreadFactory(ThreadGroupHolder.THREAD_GROUP, Boolean.FALSE, null, "%G " + executorCount.incrementAndGet() + "-%t", null, null);
             }
         });
         return EnhancedQueueExecutor.DISABLE_HINT ?
@@ -231,5 +230,10 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
                 return;
             }
         }
+    }
+
+    // Wrapper class to delay thread group creation until when it's needed.
+    private static class ThreadGroupHolder {
+        private static final ThreadGroup THREAD_GROUP = new ThreadGroup("management-client-thread");
     }
 }

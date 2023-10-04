@@ -215,11 +215,10 @@ public final class ServerService extends AbstractControllerService {
                                   final SuspendController suspendController) {
 
         // Install Executor services
-        final ThreadGroup threadGroup = new ThreadGroup("ServerService ThreadGroup");
         final String namePattern = "ServerService Thread Pool -- %t";
         final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<ThreadFactory>() {
             public ThreadFactory run() {
-                return new JBossThreadFactory(threadGroup, Boolean.FALSE, null, namePattern, null, null);
+                return new JBossThreadFactory(ThreadGroupHolder.THREAD_GROUP, Boolean.FALSE, null, namePattern, null, null);
             }
         });
 
@@ -259,7 +258,7 @@ public final class ServerService extends AbstractControllerService {
 
         serviceBuilder.install();
 
-        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, EXECUTOR_CAPABILITY.getCapabilityServiceName());
+        ExternalManagementRequestExecutor.install(serviceTarget, ThreadGroupHolder.THREAD_GROUP, EXECUTOR_CAPABILITY.getCapabilityServiceName());
     }
 
     public synchronized void start(final StartContext context) throws StartException {
@@ -676,5 +675,10 @@ public final class ServerService extends AbstractControllerService {
         public synchronized ScheduledExecutorService getValue() throws IllegalStateException {
             return scheduledExecutorService;
         }
+    }
+
+    // Wrapper class to delay thread group creation until when it's needed.
+    private static class ThreadGroupHolder {
+        private static final ThreadGroup THREAD_GROUP = new ThreadGroup("ServerService ThreadGroup");
     }
 }

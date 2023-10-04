@@ -67,10 +67,10 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
     public static final ServiceName HC_EXECUTOR_SERVICE_NAME = HC_SERVICE_NAME.append("executor");
     public static final ServiceName HC_SCHEDULED_EXECUTOR_SERVICE_NAME = HC_SERVICE_NAME.append("scheduled", "executor");
 
-    private final ThreadGroup threadGroup = new ThreadGroup("Host Controller Service Threads");
+    private static final ThreadGroup THREAD_GROUP = new ThreadGroup("Host Controller Service Threads");
     private final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
         public JBossThreadFactory run() {
-            return new JBossThreadFactory(threadGroup, Boolean.FALSE, null, "%G - %t", null, null);
+            return new JBossThreadFactory(THREAD_GROUP, Boolean.FALSE, null, "%G - %t", null, null);
         }
     });
     private final HostControllerEnvironment environment;
@@ -198,7 +198,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         ConsoleAvailabilityService.addService(serviceTarget, bootstrapListener::logAdminConsole);
 
         DomainModelControllerService.addService(serviceTarget, environment, runningModeControl, processState,
-                bootstrapListener, hostPathManagerService, capabilityRegistry, threadGroup);
+                bootstrapListener, hostPathManagerService, capabilityRegistry, THREAD_GROUP);
     }
 
     @Override

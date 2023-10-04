@@ -66,7 +66,7 @@ class ProcessControllerConnectionService implements Service<ProcessControllerCon
         try {
             final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
                 public JBossThreadFactory run() {
-                    return new JBossThreadFactory(new ThreadGroup("ProcessControllerConnection-thread"), Boolean.FALSE, null, "%G - %t", null, null);
+                    return new JBossThreadFactory(ThreadGroupHolder.THREAD_GROUP, Boolean.FALSE, null, "%G - %t", null, null);
                 }
             });
             final ExecutorService executorService;
@@ -199,4 +199,8 @@ class ProcessControllerConnectionService implements Service<ProcessControllerCon
         return client;
     }
 
+    // Wrapper class to delay thread group creation until when it's needed.
+    private static class ThreadGroupHolder {
+        private static final ThreadGroup THREAD_GROUP = new ThreadGroup("ProcessControllerConnection-thread");
+    }
 }

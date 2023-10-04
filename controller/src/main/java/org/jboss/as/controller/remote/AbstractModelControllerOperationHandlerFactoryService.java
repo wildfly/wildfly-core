@@ -71,7 +71,7 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
 
         final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
             public JBossThreadFactory run() {
-                return new JBossThreadFactory(new ThreadGroup("management-handler-thread"), Boolean.FALSE, null, "%G - %t", null, null);
+                return new JBossThreadFactory(ThreadGroupHolder.THREAD_GROUP, Boolean.FALSE, null, "%G - %t", null, null);
             }
         });
         if (EnhancedQueueExecutor.DISABLE_HINT) {
@@ -142,6 +142,11 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
 
     protected final ExecutorService getClientRequestExecutor() {
         return clientRequestExecutor;
+    }
+
+    // Wrapper class to delay thread group creation until when it's needed.
+    private static class ThreadGroupHolder {
+        private static final ThreadGroup THREAD_GROUP = new ThreadGroup("management-handler-thread");
     }
 
 }

@@ -51,7 +51,7 @@ public class ServerToHostOperationHandlerFactoryService implements ManagementCha
 
     private final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
         public JBossThreadFactory run() {
-            return new JBossThreadFactory(new ThreadGroup("server-registration-threads"), Boolean.FALSE, null, "%G - %t", null, null);
+            return new JBossThreadFactory(ThreadGroupHolder.THREAD_GROUP, Boolean.FALSE, null, "%G - %t", null, null);
         }
     });
     private volatile ExecutorService registrations;
@@ -106,4 +106,8 @@ public class ServerToHostOperationHandlerFactoryService implements ManagementCha
         return channelHandler;
     }
 
+    // Wrapper class to delay thread group creation until when it's needed.
+    private static class ThreadGroupHolder {
+        private static final ThreadGroup THREAD_GROUP = new ThreadGroup("server-registration-threads");
+    }
 }
