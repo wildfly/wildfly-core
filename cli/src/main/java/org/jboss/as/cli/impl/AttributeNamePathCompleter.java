@@ -332,6 +332,11 @@ public class AttributeNamePathCompleter implements CommandLineCompleter {
                             candidateIndex += chunk.length();
                         }
                         candidates.add("[");
+                    } else if (modelType.equals(ModelType.STRING) || modelType.equals(ModelType.INT) || modelType.equals(ModelType.BOOLEAN)){
+                        if (candidates.isEmpty()) {
+                            candidateIndex += chunk.length();
+                        }
+                        candidates.add("");
                     }
                 }
             }

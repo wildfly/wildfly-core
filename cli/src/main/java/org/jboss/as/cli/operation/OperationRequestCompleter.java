@@ -23,7 +23,6 @@ import org.jboss.as.cli.parsing.StateParser;
 import org.jboss.as.cli.parsing.StateParser.SubstitutedLine;
 import org.jboss.logging.Logger;
 
-
 /**
  *
  * @author Alexey Loubyansky
@@ -401,13 +400,13 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             // Implies a single candidate to inline, the value is complete.
             // propose the property separator if more properties to come
             // or the propertyListEnd if no more properties.
-            if (suggestionEqualsUserEntry(candidates, chunk, valueResult)) {
+            if (suggestionEqualsUserEntry(candidates, chunk, valueResult)|| areIncludedCandidatesForSpecificValueTypes(candidates)) {
                 final CommandLineFormat format = parsedCmd.getFormat();
                 if (format != null) {
                     for (CommandArgument arg : allArgs) {
                         try {
                             if (arg.canAppearNext(ctx)) {
-                                candidates.set(0, "" + format.getPropertySeparator());
+                                candidates.add("" + format.getPropertySeparator());
                                 return buffer.length();
                             }
                         } catch (CommandFormatException e) {
@@ -415,8 +414,10 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                         }
                     }
                     // inline the end of properties.
-                    candidates.set(0, format.getPropertyListEnd());
                     // at the end of the input.
+                    if((buffer.charAt(buffer.length() - 1))!='='){
+                        candidates.add(format.getPropertyListEnd());
+                    }
                     return buffer.length();
                 }
             }
@@ -717,12 +718,26 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             return false;
         }
 
-        if (suggestionOffset > 0) {
+        if (suggestionOffset > 0 && candidates.get(0)!="") {
             // user entry before suggestionOffset is always the same - compare only part after offset
             return chunk.substring(suggestionOffset).equals(candidates.get(0));
         } else {
-            return chunk.equals(candidates.get(0));
+            if(chunk.equals(candidates.get(0))){
+                candidates.clear();
+                return true;
+            }
+            return false;
         }
+    }
+
+    boolean areIncludedCandidatesForSpecificValueTypes(List<String> candidates){
+        if(candidates.contains("[") || candidates.contains(".")){
+            return true;
+        }else if(candidates.contains("")){
+            candidates.remove("");
+            return true;
+        }
+        return false;
     }
 
     protected CommandLineCompleter getValueCompleter(CommandContext ctx, Iterable<CommandArgument> allArgs, final String argName) {

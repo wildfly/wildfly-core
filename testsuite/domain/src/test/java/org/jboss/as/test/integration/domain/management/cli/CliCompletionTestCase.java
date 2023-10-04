@@ -1140,10 +1140,12 @@ public class CliCompletionTestCase {
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
-                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.size() == 2);
+                assertTrue(candidates.toString(), candidates.contains(" "));
                 assertTrue(candidates.toString(), candidates.contains("namespaces"));
-                candidates = complete(ctx, cmd, false, cmd.length() - "name".length());
-                assertTrue(candidates.toString(), candidates.size() == 1);
+                candidates = complete(ctx, cmd, false, cmd.length());
+                assertTrue(candidates.toString(), candidates.size() == 2);
+                assertTrue(candidates.toString(), candidates.contains(" "));
                 assertTrue(candidates.toString(), candidates.contains("namespaces"));
             }
 
@@ -1155,6 +1157,17 @@ public class CliCompletionTestCase {
                 assertTrue(candidates.toString(), candidates.isEmpty());
                 candidates = complete(ctx, cmd, null, -1);
                 assertTrue(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "read-attribute management-minor-version";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains(" "));
+                candidates = complete(ctx, cmd, false, cmd.length());
+                assertTrue(candidates.toString(), candidates.contains(" "));
             }
 
             {
