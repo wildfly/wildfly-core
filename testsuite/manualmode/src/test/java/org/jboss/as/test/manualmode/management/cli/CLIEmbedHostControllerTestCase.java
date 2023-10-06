@@ -758,8 +758,27 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
     }
 
     private void checkLogging(String line) throws IOException {
-        String logOutput = readLogOut();
-        assertTrue(logOutput, checkLogging(logOutput, line));
+        long delay = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
+        boolean traceSeen = false;
+        StringBuilder allOutput = new StringBuilder();
+        do {
+            String logOutput = readLogOut();
+            if (logOutput != null) {
+                allOutput.append(logOutput);
+            }
+            if (checkLogging(allOutput.toString(), line)) {
+                traceSeen = true;
+                break;
+            } else {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Interrupted");
+                }
+            }
+        } while (System.currentTimeMillis() < delay);
+        assertTrue("Trace " + line + " not seen in log: " + allOutput, traceSeen);
     }
 
     private boolean checkLogging(String logOutput, String line) throws IOException {
