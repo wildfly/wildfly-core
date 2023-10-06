@@ -7,9 +7,11 @@ package org.jboss.as.controller.operations.common;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 
+import java.util.EnumSet;
 import java.util.logging.Level;
 
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -45,6 +47,7 @@ public class ResolveExpressionHandler implements OperationStepHandler {
         .setReadOnly()
         .setRuntimeOnly()
         .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SYSTEM_PROPERTY)
+        .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.JVM) // use the JVM constraint as a guard against unauthorized reads of env vars
         .build();
 
 
@@ -53,6 +56,10 @@ public class ResolveExpressionHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+
+        // Resolving can involve reading a system property or env vars, so ensure the caller
+        // is authorized to do that.
+        context.authorize(operation, EnumSet.of(Action.ActionEffect.ADDRESS, Action.ActionEffect.READ_RUNTIME)).failIfDenied(operation);
 
         // Run at Stage.RUNTIME so we get the current values of system properties set by earlier steps in a composite
         context.addStep(new OperationStepHandler() {
