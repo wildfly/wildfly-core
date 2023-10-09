@@ -29,6 +29,13 @@
             <artifactId>commons-cli</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>commons-daemon</groupId>
+            <artifactId>commons-daemon</artifactId>
+            <classifier>bin-windows</classifier>
+            <type>zip</type>
+        </dependency>
+
         <!-- Dependency for JSonP API and Impl for Jakarta EE 8. We still need this artifact for
              internal.javax.json.api.ee8 Jboss module used by org.wildfly.event.logger and
              org.jboss.logmanager JBoss modules
@@ -860,6 +867,44 @@
                             <outputDirectory>${project.build.directory}</outputDirectory>
                             <workDirectory>${project.build.directory}/assembly/work</workDirectory>
                             <tarLongFileMode>gnu</tarLongFileMode>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>commons-daemon</groupId>
+                                    <artifactId>commons-daemon</artifactId>
+                                    <version>${version.commons-daemon}</version>
+                                    <classifier>bin-windows</classifier>
+                                    <type>zip</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/resources/content/docs/contrib/scripts/service/</outputDirectory>
+                                    <includes>**/*.exe</includes>
+                                    <fileMappers>
+                                        <org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
+                                          <pattern>prunsrv</pattern>
+                                          <replacement>wildfly-service</replacement>
+                                        </org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
+                                        <org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
+                                          <pattern>prunmgr</pattern>
+                                          <replacement>wildfly-mgr</replacement>
+                                        </org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
+                                      </fileMappers>
+                                </artifactItem>
+                            </artifactItems>
                         </configuration>
                     </execution>
                 </executions>
