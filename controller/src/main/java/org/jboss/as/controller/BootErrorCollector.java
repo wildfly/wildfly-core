@@ -74,7 +74,7 @@ public class BootErrorCollector {
         }
     }
 
-    private ModelNode getErrors() {
+    ModelNode getErrors() {
         synchronized (errors) {
             return errors.clone();
         }

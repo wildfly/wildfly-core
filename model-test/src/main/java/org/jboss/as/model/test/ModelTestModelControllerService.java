@@ -67,7 +67,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
     private volatile ManagementResourceRegistration rootRegistration;
     private volatile Throwable error;
     private volatile boolean bootSuccess;
-    private static final OperationFailedException unknownBootFailure = new OperationFailedException("Unknown failure while executing boot operations");
+    private static final String BOOT_ERROR_MESSAGE = "Failure while executing boot operations";
 
     /**
      * This is the constructor to use for 23.0.x core model tests.
@@ -297,7 +297,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
             }
 
             if (!bootSuccess) {
-                error = unknownBootFailure;
+                error = new BootOperationFailedException(BOOT_ERROR_MESSAGE, super.getBootErrors());
             }
             return bootSuccess;
         } catch (Exception e) {
@@ -347,10 +347,10 @@ public abstract class ModelTestModelControllerService extends AbstractController
 
     public void waitForSetup() throws Exception {
         latch.await();
-        // Don't throw exception if a reason for the boot failure is not provided
-        if (error != null && !error.equals(unknownBootFailure)) {
-            if (error instanceof Exception)
+        if (error != null) {
+            if (error instanceof Exception) {
                 throw (Exception) error;
+            }
             throw new RuntimeException(error);
         }
     }
@@ -451,7 +451,13 @@ public abstract class ModelTestModelControllerService extends AbstractController
         }
     }
 
-    //These are here to overload the constuctor used for the different legacy controllers
+    private static class BootOperationFailedException extends OperationFailedException {
+        public BootOperationFailedException(final String msg, final ModelNode description) {
+            super(msg, description);
+        }
+    }
+
+    //These are here to overload the constructor used for the different legacy controllers
 
 
     @SuppressWarnings("InstantiationOfUtilityClass")

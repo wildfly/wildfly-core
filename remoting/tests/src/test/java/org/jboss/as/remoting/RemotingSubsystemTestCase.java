@@ -4,11 +4,14 @@
  */
 package org.jboss.as.remoting;
 
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.remoting.Capabilities.IO_WORKER_CAPABILITY_NAME;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.EnumSet;
@@ -17,6 +20,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
@@ -96,11 +100,15 @@ public class RemotingSubsystemTestCase extends AbstractRemotingSubsystemBaseTest
 
     @Test
     public void testHttpConnectorValidationStepFail() throws Exception {
-        KernelServices services = createKernelServicesBuilder(createAdditionalInitialization())
-                .setSubsystemXml(getSubsystemXml("remoting-with-duplicate-http-connector.xml"))
-                .build();
-
-        Assert.assertFalse(services.isSuccessfulBoot());
+        try {
+            KernelServices services = createKernelServicesBuilder(createAdditionalInitialization())
+                    .setSubsystemXml(getSubsystemXml("remoting-with-duplicate-http-connector.xml"))
+                    .build();
+            fail("Expected boot failed");
+        } catch (OperationFailedException ex) {
+            final String failureDescription = ex.getFailureDescription().asString();
+            MatcherAssert.assertThat(failureDescription, allOf(containsString("WFLYCTL0445:"), containsString("http")));
+        }
     }
 
     @Test

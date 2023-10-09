@@ -4,12 +4,12 @@
  */
 package org.jboss.as.core.model.test.deployment;
 
-import javax.xml.stream.Location;
-import javax.xml.stream.XMLStreamException;
+import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assert.fail;
 
 import org.hamcrest.MatcherAssert;
-import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.TestModelType;
@@ -37,34 +37,15 @@ public class StandaloneDeploymentUnicityTestCase extends AbstractCoreModelTest {
 
     @Test
     public void testIncorrectDeployments() throws Exception {
-        try { createKernelServicesBuilder(TestModelType.STANDALONE)
-            .setXmlResource("standalone_duplicate.xml")
-            .createContentRepositoryContent("12345678901234567890")
-            .build();
-        } catch (XMLStreamException ex) {
-            String expectedMessage = ControllerLogger.ROOT_LOGGER.duplicateNamedElement("abc.war", new Location() {
-                public int getLineNumber() {
-                    return 287;
-                }
-
-                public int getColumnNumber() {
-                    return 1;
-                }
-
-                public int getCharacterOffset() {
-                    return 1;
-                }
-
-                public String getPublicId() {
-                    return "";
-                }
-
-                public String getSystemId() {
-                    return "";
-                }
-            }).getMessage();
-            expectedMessage = expectedMessage.substring(expectedMessage.indexOf("WFLYCTL0073:"));
-            MatcherAssert.assertThat(ex.getMessage(), containsString(expectedMessage));
+        try {
+            createKernelServicesBuilder(TestModelType.STANDALONE)
+                    .setXmlResource("standalone_duplicate.xml")
+                    .createContentRepositoryContent("12345678901234567890")
+                    .build();
+            fail("Expected boot failed");
+        } catch (OperationFailedException ex) {
+            final String failureDescription = ex.getFailureDescription().asString();
+            MatcherAssert.assertThat(failureDescription, allOf(containsString("WFLYSRV0205:"), containsString("abc.war")));
         }
     }
 }
