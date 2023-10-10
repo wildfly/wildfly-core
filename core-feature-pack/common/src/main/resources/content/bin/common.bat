@@ -16,7 +16,9 @@ if exist "%COMMON_CONF%" (
 goto :eof
 
 :setPackageAvailable
-    "%JAVA%" --add-opens=%~1=ALL-UNNAMED -version >nul 2>&1 && (set PACKAGE_AVAILABLE=true) || (set PACKAGE_AVAILABLE=false)
+    rem java -version actually writes what we all read in our terminals to stderr, not stdout!
+    rem So we redirect it to stdout with 2>&1 before piping to findstr
+    "%JAVA%" --add-opens=%~1=ALL-UNNAMED -version 2>&1 | findstr /i /c:"WARNING" >nul 2>&1 && (set PACKAGE_AVAILABLE=false) || (set PACKAGE_AVAILABLE=true)
 goto :eof
 
 :setEnhancedSecurityManager
