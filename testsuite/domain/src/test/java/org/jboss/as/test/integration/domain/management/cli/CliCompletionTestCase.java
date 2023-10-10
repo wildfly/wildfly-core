@@ -116,6 +116,36 @@ public class CliCompletionTestCase {
         }
     }
 
+    /**
+     * Checks CLI completion for "patch" command
+     */
+    @Test
+    public void patchTest() {
+        for (List<String> candidates : getCandidatesLists("patch", true, -1)) {
+            assertTrue(candidates.toString(), candidates.contains("patch"));
+        }
+    }
+
+    /**
+     * Checks CLI completion for "pat" command
+     */
+    @Test
+    public void patchCompleteTest() {
+        for (List<String> candidates : getCandidatesLists("pat", true, -1)) {
+            assertTrue(candidates.toString(), candidates.contains("patch"));
+        }
+    }
+
+    /**
+     * Checks CLI completion for "patch in" command
+     */
+    @Test
+    public void patchInfoCompleteTest() {
+        for (List<String> candidates : getCandidatesLists("patch in", true, -1)) {
+            assertTrue(candidates.toString(), candidates.contains("info"));
+        }
+    }
+
     @Test
     public void testPropertiesNoValue() throws Exception {
         CommandContext ctx = CLITestUtil.getCommandContext(testSupport,

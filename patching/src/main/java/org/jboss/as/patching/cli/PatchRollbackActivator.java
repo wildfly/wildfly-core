@@ -27,6 +27,8 @@ public class PatchRollbackActivator extends AbstractCommandActivator {
 
     @Override
     public boolean isActivated(ParsedCommand command) {
+        if (!getCommandContext().isDomainMode()) return false;
+
         try {
             AbstractDistributionCommand cmd = (AbstractDistributionCommand) command.command();
             return !getPatches(getCommandContext(), cmd, cmd.getPatchStream(), cmd.getHost()).isEmpty();

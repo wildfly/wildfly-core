@@ -14,7 +14,7 @@ import org.jboss.as.patching.tool.PatchOperationBuilder;
  *
  * @author jdenise@redhat.com
  */
-@CommandDefinition(name = "history", description = "")
+@CommandDefinition(name = "history", description = "", activator = PatchCommand.PatchCommandActivator.class)
 public class PatchHistory extends AbstractDistributionCommand {
 
     @Option(name = "patch-stream", hasValue = true, required = false)
