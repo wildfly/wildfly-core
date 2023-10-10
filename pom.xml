@@ -164,7 +164,7 @@
             versions, add the artifactId or other qualifier to the property name.
             For example: <version.org.jboss.hal.release-stream>
          -->
-        <version.com.googlecode.javaewah>1.1.13</version.com.googlecode.javaewah>
+        <version.com.googlecode.javaewah>1.2.3</version.com.googlecode.javaewah>
         <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
         <version.com.google.guava>32.0.1-jre</version.com.google.guava>
         <version.com.google.guava.failureaccess>1.0.1</version.com.google.guava.failureaccess>
@@ -190,10 +190,10 @@
         <version.org.apache.logging.log4j>2.17.2</version.org.apache.logging.log4j>
         <version.org.apache.maven.provider>3.5.4</version.org.apache.maven.provider>
         <version.org.apache.maven.resolver>1.1.1</version.org.apache.maven.resolver>
-        <version.org.apache.sshd>2.9.2</version.org.apache.sshd>
+        <version.org.apache.sshd>2.10.0</version.org.apache.sshd>
         <version.org.bouncycastle>1.69</version.org.bouncycastle>
         <version.org.codehaus.plexus.plexus-utils>3.1.1</version.org.codehaus.plexus.plexus-utils>
-        <version.org.eclipse.jgit>5.13.0.202109080827-r</version.org.eclipse.jgit>
+        <version.org.eclipse.jgit>6.6.1.202309021850-r</version.org.eclipse.jgit>
         <version.org.fusesource.jansi>1.18</version.org.fusesource.jansi>
         <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
         <version.org.jboss.byteman>4.0.18</version.org.jboss.byteman>
@@ -1159,7 +1159,7 @@
                 <version>${version.org.slf4j}</version>
             </dependency>
             <!-- git persistence -->
-           <dependency>
+            <dependency>
                 <groupId>org.eclipse.jgit</groupId>
                 <artifactId>org.eclipse.jgit</artifactId>
                 <version>${version.org.eclipse.jgit}</version>
