@@ -39,6 +39,14 @@ public class CliScriptTestCase extends ScriptTestCase {
 
         validateProcess(script);
 
+        final ModelNode result = outputToModelNode(script);
+        if (!Operations.isSuccessfulOutcome(result)) {
+            Assert.fail(result.asString());
+        }
+        Assert.assertEquals(ClientConstants.CONTROLLER_PROCESS_STATE_RUNNING, Operations.readResult(result).asString());
+    }
+
+    private static ModelNode outputToModelNode(final ScriptProcess script) throws IOException {
         StringBuilder builder = new StringBuilder();
         // Read the output lines which should be valid DMR
         for (String line : script.getStdout()) {
@@ -48,10 +56,12 @@ public class CliScriptTestCase extends ScriptTestCase {
             }
             builder.append(line);
         }
-        final ModelNode result = ModelNode.fromString(builder.toString());
-        if (!Operations.isSuccessfulOutcome(result)) {
-            Assert.fail(result.asString());
+        final String modelNodeInput = builder.toString();
+        try {
+            return ModelNode.fromString(modelNodeInput);
+        } catch (Exception e) {
+            Assert.fail(String.format("Cannot convert %s into a ModelNode -- %s", modelNodeInput, e));
+            throw new IllegalStateException("unreachable");
         }
-        Assert.assertEquals(ClientConstants.CONTROLLER_PROCESS_STATE_RUNNING, Operations.readResult(result).asString());
     }
 }
