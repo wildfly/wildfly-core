@@ -19,7 +19,8 @@
     <properties>
         <!-- TlsTestCase specifies use of sun.security.ssl.SunJSSE in the server config,
              so make it available. -->
-        <modular.jdk.args>${standard.client.modular.jdk.args}
+        <modular.jdk11.args/>
+        <modular.jdk.args>${standard.client.modular.jdk.args} ${modular.jdk11.args}
             --add-opens=java.base/sun.security.ssl=ALL-UNNAMED
         </modular.jdk.args>
     </properties>
@@ -408,5 +409,24 @@
             </plugin>
         </plugins>
     </build>
+
+    <!-- Profiles -->
+    <profiles>
+        <!--
+          Name: JDK11
+          Descr: JDK11 specific settings
+        -->
+        <profile>
+            <id>jdk11</id>
+            <activation>
+                <jdk>11</jdk>
+            </activation>
+            <properties>
+                <modular.jdk11.args>
+                    --add-opens=java.base/com.sun.net.ssl.internal.ssl=ALL-UNNAMED
+                </modular.jdk11.args>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>
