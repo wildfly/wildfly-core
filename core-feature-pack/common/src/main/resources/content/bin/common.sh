@@ -13,6 +13,8 @@ if [ -r "$COMMON_CONF" ]; then
 fi
 
 setPackageAvailable() {
+  # java -version actually writes what we all read in our terminals to stderr, not stdout!
+  # So we redirect it to stdout with 2>&1 before piping to grep
   PACKAGE_STRING=`"$JAVA" --add-opens=$1=ALL-UNNAMED -version 2>&1 | $GREP "WARNING"`
   if [ "x$PACKAGE_STRING" = "x" ]; then
      PACKAGE_AVAILABLE=true
