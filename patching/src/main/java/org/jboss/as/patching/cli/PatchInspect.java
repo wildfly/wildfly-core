@@ -38,7 +38,7 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
  *
  * @author jdenise@redhat.com
  */
-@CommandDefinition(name = "inspect", description = "")
+@CommandDefinition(name = "inspect", description = "", activator = PatchCommand.PatchCommandActivator.class)
 public class PatchInspect implements Command<CLICommandInvocation> {
 
     // Argument comes first, aesh behavior.

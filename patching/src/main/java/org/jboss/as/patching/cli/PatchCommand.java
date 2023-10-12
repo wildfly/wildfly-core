@@ -38,7 +38,12 @@ public class PatchCommand implements Command<CLICommandInvocation> {
     }
 
     /**
-     * Hides the high level patch commands on a standalone installation only.
+     * Activates the high level patch command only under Domain Mode context.
+     *
+     * Since the introduction of Prospero as the tool to patch, the "patch" command only makes sense in domain
+     * mode to patch legacy host controllers that do not use Prospero. For example, in mixed domains where you
+     * need to patch a remote secondary host using the Domain Controller. The remote legacy hosts could only understand
+     * the "patch" command. Only in such a case, we activate the "patch" command.
      */
     public static class PatchCommandActivator extends AbstractCommandActivator {
         @Override

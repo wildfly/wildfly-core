@@ -209,6 +209,37 @@ public class CliCompletionTestCase {
         }
     }
 
+    /**
+     * Checks CLI completion for "patch" command
+     */
+    @Test
+    public void patchTest() {
+        for (List<String> candidates : getCandidatesLists("patch", true)) {
+            assertTrue(candidates.toString(), candidates.isEmpty());
+        }
+    }
+
+    /**
+     * Checks CLI completion for "pat" command
+     */
+    @Test
+    public void patchDoNotCompleteTest() {
+        for (List<String> candidates : getCandidatesLists("pat", true)) {
+            assertTrue(candidates.toString(), candidates.isEmpty());
+        }
+    }
+
+
+    /**
+     * Checks CLI completion for "patch in" command
+     */
+    @Test
+    public void patchInfoDoNotCompleteTest() {
+        for (List<String> candidates : getCandidatesLists("patch in", true)) {
+            assertTrue(candidates.toString(), candidates.isEmpty());
+        }
+    }
+
     @Test
     public void deployTest() {
         String cmd = "deploy";

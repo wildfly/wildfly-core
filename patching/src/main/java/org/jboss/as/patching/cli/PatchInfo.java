@@ -26,7 +26,7 @@ import org.wildfly.core.cli.command.aesh.activator.HideOptionActivator;
  *
  * @author jdenise@redhat.com
  */
-@CommandDefinition(name = "info", description = "")
+@CommandDefinition(name = "info", description = "", activator = PatchCommand.PatchCommandActivator.class)
 public class PatchInfo extends AbstractDistributionCommand {
 
     public static class NoStreamsActivator extends AbstractRejectOptionActivator {

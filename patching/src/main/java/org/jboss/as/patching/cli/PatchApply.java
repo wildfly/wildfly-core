@@ -15,7 +15,7 @@ import org.jboss.as.patching.tool.PatchOperationBuilder;
  *
  * @author jdenise@redhat.com
  */
-@CommandDefinition(name = "apply", description = "")
+@CommandDefinition(name = "apply", description = "", activator = PatchCommand.PatchCommandActivator.class)
 public class PatchApply extends PatchOverrideCommand {
 
     // Argument comes first, aesh behavior.

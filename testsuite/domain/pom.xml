@@ -80,6 +80,11 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-installation-manager</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-patching</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
