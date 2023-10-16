@@ -8,9 +8,7 @@ package org.wildfly.scripts.test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -52,11 +50,12 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
 
     @Parameters
     public static Collection<Object> data() {
-        final Collection<Object> result = new ArrayList<>(2);
-        result.add(Collections.emptyMap());
-        result.add(Collections.singletonMap("GC_LOG", "true"));
-        result.add(Collections.singletonMap("MODULE_OPTS", "-javaagent:logging-agent-tests.jar=" + LoggingAgent.DEBUG_ARG));
-        return result;
+        return List.of(
+                Map.of(),
+                Map.of("GC_LOG", "true"),
+                Map.of("MODULE_OPTS", "-javaagent:logging-agent-tests.jar=" + LoggingAgent.DEBUG_ARG),
+                Map.of("SECMGR", "true")
+        );
     }
 
     @Test
@@ -90,6 +89,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         // the `\ parts and just keeping quotes ends in the error shown in JDK-8215398.
         Assume.assumeFalse(TestSuiteEnvironment.isWindows() && env.containsKey("GC_LOG") && script.getScript().toString().contains(" "));
         script.start(STANDALONE_CHECK, env, ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
+
         Assert.assertNotNull("The process is null and may have failed to start.", script);
         Assert.assertTrue("The process is not running and should be", script.isAlive());
 
