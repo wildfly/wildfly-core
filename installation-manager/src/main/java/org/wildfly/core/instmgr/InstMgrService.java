@@ -5,11 +5,14 @@
 
 package org.wildfly.core.instmgr;
 
+import static org.wildfly.core.instmgr.logging.InstMgrLogger.ROOT_LOGGER;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
@@ -28,12 +31,18 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.wildfly.core.instmgr.logging.InstMgrLogger;
+import org.wildfly.installationmanager.ManifestVersion;
+import org.wildfly.installationmanager.MavenOptions;
+import org.wildfly.installationmanager.spi.InstallationManager;
+import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 
 /**
  * This is the main service used by the installation manager management operation handlers.
  */
 class InstMgrService implements Service {
     private static final Logger LOG = Logger.getLogger(InstMgrService.class);
+
+    private final InstallationManagerFactory imf;
     private final Supplier<PathManager> pathManagerSupplier;
     private final Consumer<InstMgrService> consumer;
     private final Supplier<ExecutorService> executorSupplier;
@@ -48,7 +57,8 @@ class InstMgrService implements Service {
     private final InstMgrCandidateStatus candidateStatus;
     private ExecutorService executor;
 
-    InstMgrService(Supplier<PathManager> pathManagerSupplier, Supplier<ExecutorService> executorSupplier, Consumer<InstMgrService> consumer) {
+    InstMgrService(InstallationManagerFactory imf, Supplier<PathManager> pathManagerSupplier, Supplier<ExecutorService> executorSupplier, Consumer<InstMgrService> consumer) {
+        this.imf = imf;
         this.pathManagerSupplier = pathManagerSupplier;
         this.candidateStatus = new InstMgrCandidateStatus();
         this.executorSupplier = executorSupplier;
@@ -83,6 +93,9 @@ class InstMgrService implements Service {
         } catch (IOException e) {
             throw new StartException(e);
         }
+
+        logInstallationStatus();
+
         started.set(true);
         this.consumer.accept(this);
     }
@@ -194,5 +207,26 @@ class InstMgrService implements Service {
 
     public ExecutorService getMgmtExecutor() {
         return executor;
+    }
+
+
+
+    private void logInstallationStatus() {
+        if (ROOT_LOGGER.isInfoEnabled()) {
+            MavenOptions mavenOptions = new MavenOptions(null, false);
+            InstallationManager installationManager = null;
+            Collection<ManifestVersion> channels = null;
+            try {
+                installationManager = imf.create(homeDir, mavenOptions);
+                channels = installationManager.getInstalledVersions();
+                ROOT_LOGGER.provisioningChannels(channels);
+            } catch (Exception e) {
+                if (installationManager == null) {
+                    ROOT_LOGGER.failedToCreateInstallationManager(homeDir, e);
+                } else if (channels == null) {
+                    ROOT_LOGGER.failedToFindInstallationChannels(e);
+                }
+            }
+        }
     }
 }

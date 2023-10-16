@@ -5,13 +5,17 @@
 
 package org.wildfly.core.instmgr.logging;
 
+import java.nio.file.Path;
+import java.util.Collection;
 import java.util.zip.ZipException;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
+import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
+import org.wildfly.installationmanager.ManifestVersion;
 
 /**
  * Installation Manager logger.
@@ -19,6 +23,7 @@ import org.jboss.logging.annotations.MessageLogger;
 @SuppressWarnings("DefaultAnnotationParam")
 @MessageLogger(projectCode = "WFLYIM", length = 4)
 public interface InstMgrLogger extends BasicLogger {
+
     InstMgrLogger ROOT_LOGGER = Logger.getMessageLogger(InstMgrLogger.class, "org.wildfly.core.installationmanager");
 
     @Message(id = 1, value = "There is an installation prepared and ready to be applied. The current prepared installation can be discarded by using the 'clean' operation.")
@@ -86,6 +91,18 @@ public interface InstMgrLogger extends BasicLogger {
 
     @Message(id = 22, value = "'no-resolve-local-cache' and 'use-default-local-cache' are mutually exclusive (specify only one).")
     OperationFailedException noResolveLocalCacheWithUseDefaultLocalCache();
+
+    @LogMessage(level = Logger.Level.INFO)
+    @Message(id = 23, value = "Installation was provisioned using the following channel versions: '%s'")
+    void provisioningChannels(Collection<ManifestVersion> channels);
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 24, value = "Cannot report installation status. Cannot create an InstallationManager for path '%s': '%s'")
+    void failedToCreateInstallationManager(Path homeDir, Exception failure);
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 25, value = "Cannot report installation channels: '%s'")
+    void failedToFindInstallationChannels(Exception failure);
 
     ////////////////////////////////////////////////
     // Messages without IDs
