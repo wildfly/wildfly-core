@@ -163,8 +163,8 @@
         <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
         <version.com.google.guava>31.1-jre</version.com.google.guava>
         <version.com.google.guava.failureaccess>1.0.1</version.com.google.guava.failureaccess>
-        <version.com.fasterxml.jackson>2.15.2</version.com.fasterxml.jackson>
-        <version.com.fasterxml.jackson.databind>2.15.3</version.com.fasterxml.jackson.databind>
+        <version.com.fasterxml.jackson>2.15.3</version.com.fasterxml.jackson>
+        <version.com.fasterxml.jackson.databind>${version.com.fasterxml.jackson}</version.com.fasterxml.jackson.databind>
         <version.com.jcraft.jsch>0.1.55</version.com.jcraft.jsch>
         <version.commons-cli>1.5.0</version.commons-cli>
         <version.commons-collections>3.2.2</version.commons-collections>
