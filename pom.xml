@@ -173,7 +173,7 @@
         <version.commons-io>2.10.0</version.commons-io>
         <version.io.netty>4.1.100.Final</version.io.netty>
         <version.io.smallrye.jandex>3.1.5</version.io.smallrye.jandex>
-        <version.io.undertow>2.3.9.Final</version.io.undertow>
+        <version.io.undertow>2.3.10.Final</version.io.undertow>
         <version.jakarta.json.jakarta-json-api>2.1.2</version.jakarta.json.jakarta-json-api>
         <version.jakarta.interceptor.jakarta-interceptors-api>2.1.0</version.jakarta.interceptor.jakarta-interceptors-api>
         <version.jakarta.inject.jakarta.inject-api>2.0.1</version.jakarta.inject.jakarta.inject-api>
