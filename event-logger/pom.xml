@@ -24,7 +24,7 @@
     <parent>
         <artifactId>wildfly-core-parent</artifactId>
         <groupId>org.wildfly.core</groupId>
-        <version>18.1.2-10-PSI-SNAPSHOT</version>
+        <version>18.1.2-10-PSI</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
