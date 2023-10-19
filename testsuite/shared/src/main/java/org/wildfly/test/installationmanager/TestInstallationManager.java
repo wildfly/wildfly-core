@@ -26,6 +26,7 @@ import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.ChannelChange;
 import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.InstallationChanges;
+import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.OperationNotAvailableException;
 import org.wildfly.installationmanager.Repository;
@@ -248,6 +249,11 @@ public class TestInstallationManager implements InstallationManager {
     @Override
     public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell) throws OperationNotAvailableException {
         return scriptHome + APPLY_REVERT_BASE_GENERATED_COMMAND + candidatePath.toString();
+    }
+
+    @Override
+    public Collection<ManifestVersion> getInstalledVersions() throws Exception {
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     public static void zipDir(Path inputFile, Path target) throws IOException {
