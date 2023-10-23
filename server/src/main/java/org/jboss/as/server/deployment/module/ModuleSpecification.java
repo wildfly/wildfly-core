@@ -57,7 +57,6 @@ public class ModuleSpecification extends SimpleAttachable {
     private final List<ModuleDependency> userDependencies = new ArrayList<>();
     /**
      * Set view of user dependencies, used to prevent duplicates in the userDependencies list.
-     * TODO update getMutableUserDependencies and replace the list with this.
      */
     private final Set<ModuleDependency> userDependenciesSet = new HashSet<>();
 
@@ -235,11 +234,11 @@ public class ModuleSpecification extends SimpleAttachable {
     /**
      * Gets a modifiable view of the user dependencies list.
      *
-     * @return The user dependencies TODO change the return type to Collection and return a Set
+     * @return The user dependencies
      */
-    public List<ModuleDependency> getMutableUserDependencies() {
+    public Collection<ModuleDependency> getMutableUserDependencies() {
         allDependencies = null;
-        return userDependencies;
+        return userDependenciesSet;
     }
 
     public void addResourceLoader(final ResourceLoaderSpec resourceLoader) {
