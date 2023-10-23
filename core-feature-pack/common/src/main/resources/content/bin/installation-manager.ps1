@@ -7,6 +7,21 @@ param (
     [string]$instMgrLogProperties
 )
 
+# Sanitizes URLs to avoid issues with unsupported long paths
+function Sanitize-Path {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$inputPath
+    )
+
+    # Check if the path starts with double backslashes and contains at least one additional character
+    if ($inputPath -match '^\\\\[^\\]+\\.*') {
+        $removedBackslash = $inputPath.Substring(2)
+        return "\\?\UNC\$removedBackslash"
+    } else {
+        return "\\?\$inputPath"
+    }
+}
 
 # For security, reset the environment variables first
 Set-Variable -Name INST_MGR_COMMAND -Scope Script
@@ -36,7 +51,7 @@ if (Test-Path -Path $propsFile -PathType Leaf) {
             $value = $value -replace '\:(.)', ':$1'
 
             Write-Debug "Creating variable: $key=$value"
-            Set-Variable -Name $key -Value $value -Scope Script
+            Set-Variable -Name $key -Value "$value" -Scope Script
         }
     }
 } else {
@@ -61,6 +76,9 @@ if ($INST_MGR_PREPARED_SERVER_DIR -eq $null) {
     Write-Error "ERROR: Installation Manager prepared server directory was not set."
     return
 }
+
+$INST_MGR_PREPARED_SERVER_DIR = Sanitize-Path -inputPath $INST_MGR_PREPARED_SERVER_DIR
+Write-Debug "Sanitized INST_MGR_PREPARED_SERVER_DIR=$INST_MGR_PREPARED_SERVER_DIR"
 
 if (Test-Path -Path $INST_MGR_PREPARED_SERVER_DIR -PathType Container) {
     $files = Get-ChildItem -Path $INST_MGR_PREPARED_SERVER_DIR
