@@ -1072,7 +1072,11 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
             }
         } catch (Throwable t) {
             // Handling for throwables that don't implement OperationClientException marker interface
-            MGMT_OP_LOGGER.operationFailed(t, step.operation.get(OP), step.operation.get(OP_ADDR));
+            if (!step.requiresDoneStage && !isExternalClient()) {
+                logStepFailure(step, false);
+            } else {
+                MGMT_OP_LOGGER.operationFailed(t, step.operation.get(OP), step.operation.get(OP_ADDR));
+            }
 
             // Provide a failure description if there isn't one already
             if (!step.hasFailed()) {
