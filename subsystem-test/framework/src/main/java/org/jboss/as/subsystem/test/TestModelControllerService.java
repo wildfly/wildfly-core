@@ -64,7 +64,7 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
                                             final ExtensionRegistry extensionRegistry, final StringConfigurationPersister persister,
                                             final ModelTestOperationValidatorFilter validateOpsFilter, final boolean registerTransformers,
                                             final ExpressionResolver expressionResolver, final CapabilityRegistry capabilityRegistry) {
-           super(additionalInit.getProcessType(), additionalInit.getFeatureStream(), runningModeControl, extensionRegistry.getTransformerRegistry(), persister, validateOpsFilter,
+           super(additionalInit.getProcessType(), additionalInit.getQuality(), runningModeControl, extensionRegistry.getTransformerRegistry(), persister, validateOpsFilter,
                    new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE) , expressionResolver, new ControlledProcessState(true),capabilityRegistry);
            this.mainExtension = mainExtension;
            this.additionalInit = additionalInit;
@@ -165,7 +165,7 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
             throw new RuntimeException(e);
         }
         props.put(ServerEnvironment.JBOSS_SERVER_DEFAULT_CONFIG, "standalone.xml");
-        props.put(ProcessEnvironment.FEATURE_STREAM, this.additionalInit.getFeatureStream().toString());
+        props.put(ProcessEnvironment.QUALITY, this.additionalInit.getQuality().toString());
 
         return new ServerEnvironment(null, props, new HashMap<>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), productConfig, false);
     }

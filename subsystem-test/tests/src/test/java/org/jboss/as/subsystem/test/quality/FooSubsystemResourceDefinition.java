@@ -2,7 +2,7 @@
  * Copyright The WildFly Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package org.jboss.as.subsystem.test.experimental;
+package org.jboss.as.subsystem.test.quality;
 
 import java.util.Collection;
 import java.util.List;
@@ -17,7 +17,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -30,7 +30,7 @@ public class FooSubsystemResourceDefinition extends SimpleResourceDefinition {
 
     static final AttributeDefinition EXPERIMENTAL = new SimpleAttributeDefinitionBuilder("experimental", ModelType.STRING)
             .setRequired(false)
-            .setFeatureStream(FeatureStream.EXPERIMENTAL)
+            .setQuality(Quality.EXPERIMENTAL)
             .build();
 
     static final Collection<AttributeDefinition> ATTRIBUTES = List.of(EXPERIMENTAL);

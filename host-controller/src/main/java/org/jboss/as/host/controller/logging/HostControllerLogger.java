@@ -27,7 +27,7 @@ import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 import org.jboss.as.host.controller.model.jvm.JvmType;
 import org.jboss.as.protocol.mgmt.RequestProcessingException;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
@@ -1458,14 +1458,14 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 220, value = "Failed to synchronize server status upon a Host Controller registration. There is no handler registered to manage the operation %s for the server %s.")
     IllegalStateException failedToSyncServerStatus(String opName, String serverAddress);
 
-    @Message(id = 221, value = "%s feature stream of domain controller does not match %s feature stream of connecting host")
-    OperationFailedException incompatibleFeatureStream(FeatureStream domainFeatureStream, FeatureStream hostFeatureStream);
+    @Message(id = 221, value = "%s quality level of domain controller does not match %s quality level of connecting host")
+    OperationFailedException incompatibleQuality(Quality domainQuality, Quality hostQuality);
 
-    @Message(id = 222, value = "%s feature stream is not supported for legacy connecting host")
-    OperationFailedException incompatibleFeatureStreamForLegacyHost(FeatureStream hostFeatureStream);
+    @Message(id = 222, value = "%s quality level is not supported for legacy connecting host")
+    OperationFailedException incompatibleQualityForLegacyHost(Quality hostQuality);
 
-    @Message(id = 223, value = "%s feature stream is not supported in %s")
-    IllegalArgumentException unsupportedFeatureStream(FeatureStream featureStream, String name);
+    @Message(id = 223, value = "%s quality level is not supported in %s")
+    IllegalArgumentException unsupportedQuality(Quality quality, String name);
 
     ////////////////////////////////////////////////
     //Messages without IDs

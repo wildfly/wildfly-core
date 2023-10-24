@@ -2,7 +2,7 @@
  * Copyright The WildFly Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package org.jboss.as.subsystem.test.experimental;
+package org.jboss.as.subsystem.test.quality;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 
@@ -15,7 +15,7 @@ import org.jboss.as.controller.PersistentResourceXMLDescription.PersistentResour
 import org.jboss.as.controller.PersistentSubsystemSchema;
 import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.controller.xml.VersionedNamespace;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.staxmapper.IntVersion;
 
 /**
@@ -23,19 +23,19 @@ import org.jboss.staxmapper.IntVersion;
  */
 public enum FooSubsystemSchema implements PersistentSubsystemSchema<FooSubsystemSchema> {
     VERSION_1_0(1),
-    VERSION_1_0_PREVIEW(1, FeatureStream.PREVIEW),
-    VERSION_1_0_EXPERIMENTAL(1, FeatureStream.EXPERIMENTAL),
+    VERSION_1_0_PREVIEW(1, Quality.PREVIEW),
+    VERSION_1_0_EXPERIMENTAL(1, Quality.EXPERIMENTAL),
     ;
-    static final Map<FeatureStream, FooSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_1_0, VERSION_1_0_PREVIEW, VERSION_1_0_EXPERIMENTAL));
+    static final Map<Quality, FooSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_1_0, VERSION_1_0_PREVIEW, VERSION_1_0_EXPERIMENTAL));
 
     private final VersionedNamespace<IntVersion, FooSubsystemSchema> namespace;
 
     FooSubsystemSchema(int major) {
-        this(major, FeatureStream.DEFAULT);
+        this(major, Quality.DEFAULT);
     }
 
-    FooSubsystemSchema(int major, FeatureStream stream) {
-        this.namespace = SubsystemSchema.createSubsystemURN(FooSubsystemResourceDefinition.SUBSYSTEM_NAME, stream, new IntVersion(major));
+    FooSubsystemSchema(int major, Quality quality) {
+        this.namespace = SubsystemSchema.createSubsystemURN(FooSubsystemResourceDefinition.SUBSYSTEM_NAME, quality, new IntVersion(major));
     }
 
     @Override

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import org.jboss.as.controller.FeatureRegistry;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.staxmapper.Namespace;
 import org.jboss.staxmapper.Versioned;
 import org.wildfly.common.iteration.CompositeIterable;
@@ -28,7 +28,7 @@ public interface VersionedNamespace<V extends Comparable<V>, N extends Versioned
      * @return a versioned URN
      */
     static <V extends Comparable<V>, N extends Versioned<V, N>> VersionedNamespace<V, N> createURN(List<String> identifiers, V version) {
-        return createURN(identifiers, FeatureStream.DEFAULT, version);
+        return createURN(identifiers, Quality.DEFAULT, version);
     }
 
     /**
@@ -36,12 +36,12 @@ public interface VersionedNamespace<V extends Comparable<V>, N extends Versioned
      * @param <V> the version type
      * @param <N> the namespace type
      * @param identifiers a list of namespace identifiers
-     * @param stream the target feature stream
+     * @param quality the quality of this namespace version variant
      * @param version a version
      * @return a versioned URN
      */
-    static <V extends Comparable<V>, N extends Versioned<V, N>> VersionedNamespace<V, N> createURN(List<String> identifiers, FeatureStream stream, V version) {
-        return createURN(identifiers, stream, version, Object::toString);
+    static <V extends Comparable<V>, N extends Versioned<V, N>> VersionedNamespace<V, N> createURN(List<String> identifiers, Quality quality, V version) {
+        return createURN(identifiers, quality, version, Object::toString);
     }
 
     /**
@@ -54,7 +54,7 @@ public interface VersionedNamespace<V extends Comparable<V>, N extends Versioned
      * @return a versioned URN
      */
     static <V extends Comparable<V>, N extends Versioned<V, N>> VersionedNamespace<V, N> createURN(List<String> identifiers, V version, Function<V, String> versionFormatter) {
-        return createURN(identifiers, FeatureStream.DEFAULT, version, versionFormatter);
+        return createURN(identifiers, Quality.DEFAULT, version, versionFormatter);
     }
 
     /**
@@ -62,12 +62,12 @@ public interface VersionedNamespace<V extends Comparable<V>, N extends Versioned
      * @param <V> the version type
      * @param <N> the namespace type
      * @param identifiers a list of namespace identifiers
-     * @param stream the target feature stream
+     * @param quality the quality of this namespace version variant
      * @param version a version
      * @param versionFormatter a version formatter
      * @return a versioned URN
      */
-    static <V extends Comparable<V>, N extends Versioned<V, N>> VersionedNamespace<V, N> createURN(List<String> identifiers, FeatureStream stream, V version, Function<V, String> versionFormatter) {
-        return new SimpleVersionedNamespace<>(String.join(":", new CompositeIterable<>(List.of("urn"), identifiers, (stream != FeatureStream.DEFAULT) ? List.of(stream.toString(), versionFormatter.apply(version)) : List.of(versionFormatter.apply(version)))), version, stream);
+    static <V extends Comparable<V>, N extends Versioned<V, N>> VersionedNamespace<V, N> createURN(List<String> identifiers, Quality quality, V version, Function<V, String> versionFormatter) {
+        return new SimpleVersionedNamespace<>(String.join(":", new CompositeIterable<>(List.of("urn"), identifiers, (quality != Quality.DEFAULT) ? List.of(quality.toString(), versionFormatter.apply(version)) : List.of(versionFormatter.apply(version)))), version, quality);
     }
 }

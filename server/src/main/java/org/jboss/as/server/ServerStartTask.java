@@ -104,7 +104,7 @@ public final class ServerStartTask implements ServerTask, Serializable, ObjectIn
         setPropertyIfFound(launchProperties, ServerEnvironment.SERVER_CONTENT_DIR, properties);
         setPropertyIfFound(launchProperties, ServerEnvironment.SERVER_LOG_DIR, properties);
         setPropertyIfFound(launchProperties, ServerEnvironment.SERVER_TEMP_DIR, properties);
-        setPropertyIfFound(launchProperties, ProcessEnvironment.FEATURE_STREAM, properties);
+        setPropertyIfFound(launchProperties, ProcessEnvironment.QUALITY, properties);
     }
 
     @Override

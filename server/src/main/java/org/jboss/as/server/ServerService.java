@@ -112,7 +112,7 @@ import org.jboss.as.server.moduleservice.ExtensionIndexService;
 import org.jboss.as.server.moduleservice.ExternalModule;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.as.server.suspend.SuspendController;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
@@ -184,7 +184,7 @@ public final class ServerService extends AbstractControllerService {
                           final RunningModeControl runningModeControl, final ManagedAuditLogger auditLogger,
                           final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                           final CapabilityRegistry capabilityRegistry, final SuspendController suspendController, final RuntimeExpressionResolver expressionResolver) {
-        super(executorService, instabilityListener, getProcessType(configuration.getServerEnvironment()), getFeatureStream(configuration.getServerEnvironment()), runningModeControl, null, processState,
+        super(executorService, instabilityListener, getProcessType(configuration.getServerEnvironment()), getQuality(configuration.getServerEnvironment()), runningModeControl, null, processState,
                 rootResourceDefinition, prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry,
                 configuration.getServerEnvironment().getConfigurationExtension());
         this.configuration = configuration;
@@ -201,8 +201,8 @@ public final class ServerService extends AbstractControllerService {
             : ProcessType.EMBEDDED_SERVER;
     }
 
-    static FeatureStream getFeatureStream(ServerEnvironment serverEnvironment) {
-        return serverEnvironment != null ? serverEnvironment.getFeatureStream() : FeatureStream.DEFAULT;
+    static Quality getQuality(ServerEnvironment serverEnvironment) {
+        return serverEnvironment != null ? serverEnvironment.getQuality() : Quality.DEFAULT;
     }
 
     /**

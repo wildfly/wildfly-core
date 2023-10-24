@@ -367,12 +367,12 @@ public final class Main {
                     } else {
                         gitBranch = arg.substring(idx + 1);
                     }
-                } else if (arg.startsWith(CommandLineConstants.FEATURE_STREAM)) {
-                    String stream = parseValue(arg, CommandLineConstants.FEATURE_STREAM);
-                    if (stream == null) {
+                } else if (arg.startsWith(CommandLineConstants.QUALITY)) {
+                    String quality = (arg.length() == CommandLineConstants.QUALITY.length()) ? args[++i] : parseValue(arg, CommandLineConstants.QUALITY);
+                    if (quality == null) {
                         return new ServerEnvironmentWrapper(ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
-                    systemProperties.setProperty(ProcessEnvironment.FEATURE_STREAM, stream);
+                    systemProperties.setProperty(ProcessEnvironment.QUALITY, quality);
                 } else if(ConfigurationExtensionFactory.isConfigurationExtensionSupported()
                         && ConfigurationExtensionFactory.commandLineContainsArgument(arg)) {
                     int idx = arg.indexOf("=");

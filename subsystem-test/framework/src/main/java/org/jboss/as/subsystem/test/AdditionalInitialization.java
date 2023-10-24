@@ -24,7 +24,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.model.test.ModelTestModelDescriptionValidator.AttributeOrParameterArbitraryDescriptorValidator;
 import org.jboss.as.subsystem.test.ModelDescriptionValidator.ValidationConfiguration;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceTarget;
@@ -71,23 +71,23 @@ public class AdditionalInitialization extends AdditionalParsers implements Featu
     public static class ManagementAdditionalInitialization extends AdditionalInitialization implements Serializable {
         private static final long serialVersionUID = -509444465514822866L;
 
-        private final FeatureStream stream;
+        private final Quality quality;
 
         public ManagementAdditionalInitialization() {
-            this(FeatureStream.DEFAULT);
+            this(Quality.DEFAULT);
         }
 
         public <S extends SubsystemSchema<S>> ManagementAdditionalInitialization(S schema) {
-            this(schema.getFeatureStream());
+            this(schema.getQuality());
         }
 
-        public ManagementAdditionalInitialization(FeatureStream stream) {
-            this.stream = stream;
+        public ManagementAdditionalInitialization(Quality quality) {
+            this.quality = quality;
         }
 
         @Override
-        public FeatureStream getFeatureStream() {
-            return this.stream;
+        public Quality getQuality() {
+            return this.quality;
         }
 
         @Override
@@ -289,13 +289,13 @@ public class AdditionalInitialization extends AdditionalParsers implements Featu
     }
 
     /**
-     * The feature stream to be used for the installed controller
+     * The quality level to be used for the installed controller
      *
-     * @return the feature stream
+     * @return the quality level of the installed controller
      */
     @Override
-    public FeatureStream getFeatureStream() {
-        return FeatureStream.DEFAULT;
+    public Quality getQuality() {
+        return Quality.DEFAULT;
     }
 
     /**

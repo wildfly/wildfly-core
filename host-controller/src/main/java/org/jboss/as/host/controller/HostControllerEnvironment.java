@@ -30,7 +30,7 @@ import org.jboss.as.host.controller.jvm.JvmType;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.Assert;
@@ -233,7 +233,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     private final boolean useCachedDc;
 
     private final RunningMode initialRunningMode;
-    private final FeatureStream stream;
+    private final Quality quality;
     private final ProductConfig productConfig;
     private final String qualifiedHostName;
     private final String hostName;
@@ -484,12 +484,12 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         this.securityManagerEnabled = securityManagerEnabled || isJavaSecurityManagerConfigured(hostSystemProperties);
         this.processType = processType;
 
-        this.stream = getEnumProperty(hostSystemProperties, FEATURE_STREAM, this.productConfig.getDefaultFeatureStream());
-        if (!this.productConfig.getMaxFeatureStream().enables(this.stream)) {
-            throw HostControllerLogger.ROOT_LOGGER.unsupportedFeatureStream(this.stream, this.productConfig.getProductName());
+        this.quality = getEnumProperty(hostSystemProperties, QUALITY, this.productConfig.getDefaultQuality());
+        if (!this.productConfig.getMinimumQuality().enables(this.quality)) {
+            throw HostControllerLogger.ROOT_LOGGER.unsupportedQuality(this.quality, this.productConfig.getProductName());
         }
-        if (!hostSystemProperties.containsKey(FEATURE_STREAM)) {
-            WildFlySecurityManager.setPropertyPrivileged(FEATURE_STREAM, this.stream.toString());
+        if (!hostSystemProperties.containsKey(QUALITY)) {
+            WildFlySecurityManager.setPropertyPrivileged(QUALITY, this.quality.toString());
         }
     }
 
@@ -804,8 +804,8 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     }
 
     @Override
-    public FeatureStream getFeatureStream() {
-        return this.stream;
+    public Quality getQuality() {
+        return this.quality;
     }
 
     @Override

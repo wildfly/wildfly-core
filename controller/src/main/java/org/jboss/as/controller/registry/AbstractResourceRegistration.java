@@ -28,7 +28,7 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.Assert;
 
@@ -44,17 +44,17 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     private final NodeSubregistry parent;
     private final PathAddress pathAddress;
     private final ProcessType processType;
-    private final FeatureStream stream;
+    private final Quality quality;
     private RootInvocation rootInvocation;
 
     /** Constructor for a root MRR */
-    AbstractResourceRegistration(final ProcessType processType, FeatureStream stream) {
+    AbstractResourceRegistration(final ProcessType processType, Quality quality) {
         checkPermission();
         this.valueString = null;
         this.parent = null;
         this.pathAddress = PathAddress.EMPTY_ADDRESS;
         this.processType = Assert.checkNotNullParam("processType", processType);
-        this.stream = Assert.checkNotNullParam("stream", stream);
+        this.quality = Assert.checkNotNullParam("quality", quality);
     }
 
     /** Constructor for a non-root MRR */
@@ -64,7 +64,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         this.parent = Assert.checkNotNullParam("parent", parent);
         this.pathAddress = parent.getPathAddress(valueString);
         this.processType = parent.getProcessType();
-        this.stream = parent.getFeatureStream();
+        this.quality = parent.getQuality();
     }
 
     static void checkPermission() {
@@ -88,8 +88,8 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     }
 
     @Override
-    public FeatureStream getFeatureStream() {
-        return this.stream;
+    public Quality getQuality() {
+        return this.quality;
     }
 
     /** {@inheritDoc} */

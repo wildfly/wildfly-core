@@ -550,6 +550,18 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         return setYamlFiles(List.of(yamlFiles));
     }
 
+    /**
+     * Sets the quality level of the domain controller process.
+     * @param quality a quality level
+     * @return a reference to this builder
+     */
+    public StandaloneCommandBuilder setQuality(String quality) {
+        if (quality != null) {
+            this.setSingleServerArg("--quality", quality);
+        }
+        return this;
+    }
+
     @Override
     public List<String> buildArguments() {
         final List<String> cmd = new ArrayList<>();

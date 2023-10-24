@@ -8,6 +8,7 @@ package org.jboss.as.cli.embedded;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,6 +28,7 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.modules.ModuleLoader;
@@ -69,6 +71,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     private ArgumentWithoutValue removeExistingDomainConfig;
     private ArgumentWithoutValue emptyHostConfig;
     private ArgumentWithoutValue removeExistingHostConfig;
+    private ArgumentWithValue quality;
 
     static EmbedHostControllerHandler create(final AtomicReference<EmbeddedProcessLaunch> hostControllerReference, final CommandContext ctx, final boolean modular) {
         EmbedHostControllerHandler result = new EmbedHostControllerHandler(hostControllerReference);
@@ -87,6 +90,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
         result.removeExistingDomainConfig = new ArgumentWithoutValue(result, REMOVE_EXISTING_DOMAIN_CONFIG);
         result.emptyHostConfig = new ArgumentWithoutValue(result, EMPTY_HOST_CONFIG);
         result.removeExistingHostConfig = new ArgumentWithoutValue(result, REMOVE_EXISTING_HOST_CONFIG);
+        result.quality = new ArgumentWithValue(result, new SimpleTabCompleter(EnumSet.allOf(Quality.class)), "--quality");
         return result;
     }
 
@@ -218,6 +222,11 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
             File hostXmlCfgFile = new File(controllerCfgDir + File.separator + (hostConfig.isPresent(parsedCmd) ? hostXml : "host.xml"));
             if (emptyHost && !removeHost && hostXmlCfgFile.exists() && hostXmlCfgFile.length() != 0) {
                 throw new CommandFormatException("The specified host configuration file already exists and has size > 0 and may not be overwritten unless --remove-existing-host-config is also specified.");
+            }
+
+            String quality = this.quality.getValue(parsedCmd);
+            if (quality != null) {
+                cmdsList.add("--quality=" + quality);
             }
 
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);

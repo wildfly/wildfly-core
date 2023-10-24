@@ -678,6 +678,18 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
     }
 
     /**
+     * Sets the quality level of the standalone server process.
+     * @param quality a quality level
+     * @return a reference to this builder
+     */
+    public DomainCommandBuilder setQuality(String quality) {
+        if (quality != null) {
+            this.setSingleServerArg("--quality", quality);
+        }
+        return this;
+    }
+
+    /**
      * Returns the Java home path the servers will use.
      *
      * @return the path to the Java home for the servers

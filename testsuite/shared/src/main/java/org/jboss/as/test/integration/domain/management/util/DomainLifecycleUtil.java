@@ -254,6 +254,7 @@ public class DomainLifecycleUtil implements AutoCloseable {
                 commandBuilder.setInterProcessHostControllerAddress(configuration.getHostControllerManagementAddress());
                 commandBuilder.setProcessControllerAddress(configuration.getHostControllerManagementAddress());
             }
+            commandBuilder.setQuality(this.configuration.getQuality().toString());
             // the process working dir
             final String workingDir = domainDir.toString();
 

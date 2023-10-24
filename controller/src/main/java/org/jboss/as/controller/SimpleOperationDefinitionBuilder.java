@@ -13,7 +13,7 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -42,7 +42,7 @@ public class SimpleOperationDefinitionBuilder {
     protected AttributeDefinition[] replyParameters = NO_ATTRIBUTES;
     protected AccessConstraintDefinition[] accessConstraints;
     DescriptionProvider descriptionProvider;
-    FeatureStream stream = FeatureStream.DEFAULT;
+    Quality quality = Quality.DEFAULT;
 
     public SimpleOperationDefinitionBuilder(String name, ResourceDescriptionResolver resolver) {
         this.name = name;
@@ -189,8 +189,8 @@ public class SimpleOperationDefinitionBuilder {
         return this;
     }
 
-    public SimpleOperationDefinitionBuilder setFeatureStream(FeatureStream stream) {
-        this.stream = stream;
+    public SimpleOperationDefinitionBuilder setQuality(Quality quality) {
+        this.quality = quality;
         return this;
     }
 }

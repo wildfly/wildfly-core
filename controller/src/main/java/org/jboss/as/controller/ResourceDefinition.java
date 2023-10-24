@@ -17,7 +17,7 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 
 /**
  * Provides essential information defining a management resource.
@@ -27,8 +27,8 @@ import org.jboss.as.version.FeatureStream;
 public interface ResourceDefinition extends Feature {
 
     @Override
-    default FeatureStream getFeatureStream() {
-        return this.getPathElement().getFeatureStream();
+    default Quality getQuality() {
+        return this.getPathElement().getQuality();
     }
 
     /**

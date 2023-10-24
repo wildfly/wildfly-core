@@ -10,7 +10,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.xml.IntVersionSchema;
 import org.jboss.as.controller.xml.VersionedNamespace;
 import org.jboss.as.controller.xml.XMLElementSchema;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.IntVersion;
 
@@ -36,7 +36,7 @@ public interface SubsystemSchema<S extends SubsystemSchema<S>> extends XMLElemen
      * @return a versioned namespace
      */
     static <S extends SubsystemSchema<S>> VersionedNamespace<IntVersion, S> createSubsystemURN(String subsystemName, IntVersion version) {
-        return createSubsystemURN(subsystemName, FeatureStream.DEFAULT, version);
+        return createSubsystemURN(subsystemName, Quality.DEFAULT, version);
     }
 
     /**
@@ -45,12 +45,12 @@ public interface SubsystemSchema<S extends SubsystemSchema<S>> extends XMLElemen
      * for the specified subsystem name and version.
      * @param <S> the schema type
      * @param subsystemName the subsystem name
-     * @param stream the target feature stream
+     * @param quality the quality of this schema version variant
      * @param version the schema version
      * @return a versioned namespace
      */
-    static <S extends SubsystemSchema<S>> VersionedNamespace<IntVersion, S> createSubsystemURN(String subsystemName, FeatureStream stream, IntVersion version) {
-        return IntVersionSchema.createURN(List.of(IntVersionSchema.WILDFLY_IDENTIFIER, subsystemName), stream, version);
+    static <S extends SubsystemSchema<S>> VersionedNamespace<IntVersion, S> createSubsystemURN(String subsystemName, Quality quality, IntVersion version) {
+        return IntVersionSchema.createURN(List.of(IntVersionSchema.WILDFLY_IDENTIFIER, subsystemName), quality, version);
     }
 
     /**
@@ -63,7 +63,7 @@ public interface SubsystemSchema<S extends SubsystemSchema<S>> extends XMLElemen
      * @return a versioned namespace
      */
     static <S extends SubsystemSchema<S>> VersionedNamespace<IntVersion, S> createLegacySubsystemURN(String subsystemName, IntVersion version) {
-        return createLegacySubsystemURN(subsystemName, FeatureStream.DEFAULT, version);
+        return createLegacySubsystemURN(subsystemName, Quality.DEFAULT, version);
     }
 
     /**
@@ -72,11 +72,11 @@ public interface SubsystemSchema<S extends SubsystemSchema<S>> extends XMLElemen
      * for the specified subsystem name and version.
      * @param <S> the schema type
      * @param subsystemName the subsystem name
-     * @param stream the target feature stream
+     * @param quality the quality of this schema version variant
      * @param version the schema version
      * @return a versioned namespace
      */
-    static <S extends SubsystemSchema<S>> VersionedNamespace<IntVersion, S> createLegacySubsystemURN(String subsystemName, FeatureStream stream, IntVersion version) {
-        return IntVersionSchema.createURN(List.of(IntVersionSchema.JBOSS_IDENTIFIER, ModelDescriptionConstants.DOMAIN, subsystemName), stream, version);
+    static <S extends SubsystemSchema<S>> VersionedNamespace<IntVersion, S> createLegacySubsystemURN(String subsystemName, Quality quality, IntVersion version) {
+        return IntVersionSchema.createURN(List.of(IntVersionSchema.JBOSS_IDENTIFIER, ModelDescriptionConstants.DOMAIN, subsystemName), quality, version);
     }
 }

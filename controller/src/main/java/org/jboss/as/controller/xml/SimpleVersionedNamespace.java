@@ -4,7 +4,7 @@
  */
 package org.jboss.as.controller.xml;
 
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.staxmapper.Versioned;
 
 /**
@@ -16,16 +16,16 @@ import org.jboss.staxmapper.Versioned;
 public class SimpleVersionedNamespace<V extends Comparable<V>, N extends Versioned<V, N>> extends SimpleNamespace implements VersionedNamespace<V, N> {
 
     private final V version;
-    private final FeatureStream stream;
+    private final Quality quality;
 
     public SimpleVersionedNamespace(String uri, V version) {
-        this(uri, version, FeatureStream.DEFAULT);
+        this(uri, version, Quality.DEFAULT);
     }
 
-    public SimpleVersionedNamespace(String uri, V version, FeatureStream stream) {
+    public SimpleVersionedNamespace(String uri, V version, Quality quality) {
         super(uri);
         this.version = version;
-        this.stream = stream;
+        this.quality = quality;
     }
 
     @Override
@@ -34,7 +34,7 @@ public class SimpleVersionedNamespace<V extends Comparable<V>, N extends Version
     }
 
     @Override
-    public FeatureStream getFeatureStream() {
-        return this.stream;
+    public Quality getQuality() {
+        return this.quality;
     }
 }

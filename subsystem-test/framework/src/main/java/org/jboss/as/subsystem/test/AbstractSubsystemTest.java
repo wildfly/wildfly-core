@@ -23,7 +23,7 @@ import org.jboss.as.model.test.ModelFixer;
 import org.jboss.as.model.test.ModelTestKernelServices;
 import org.jboss.as.model.test.ModelTestModelControllerService;
 import org.jboss.as.model.test.ModelTestUtils;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Before;
@@ -39,19 +39,19 @@ public abstract class AbstractSubsystemTest {
     private final SubsystemTestDelegate delegate;
 
     protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension) {
-        this(mainSubsystemName, mainExtension, FeatureStream.DEFAULT);
+        this(mainSubsystemName, mainExtension, Quality.DEFAULT);
     }
 
-    protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension, FeatureStream stream) {
-        this(mainSubsystemName, mainExtension, stream, null);
+    protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension, Quality quality) {
+        this(mainSubsystemName, mainExtension, quality, null);
     }
 
     protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension, final Comparator<PathAddress> removeOrderComparator) {
-        this.delegate = new SubsystemTestDelegate(this.getClass(), mainSubsystemName, mainExtension, FeatureStream.DEFAULT, removeOrderComparator);
+        this.delegate = new SubsystemTestDelegate(this.getClass(), mainSubsystemName, mainExtension, Quality.DEFAULT, removeOrderComparator);
     }
 
-    protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension, FeatureStream stream, final Comparator<PathAddress> removeOrderComparator) {
-        this.delegate = new SubsystemTestDelegate(this.getClass(), mainSubsystemName, mainExtension, stream, removeOrderComparator);
+    protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension, Quality quality, final Comparator<PathAddress> removeOrderComparator) {
+        this.delegate = new SubsystemTestDelegate(this.getClass(), mainSubsystemName, mainExtension, quality, removeOrderComparator);
     }
 
     public String getMainSubsystemName() {

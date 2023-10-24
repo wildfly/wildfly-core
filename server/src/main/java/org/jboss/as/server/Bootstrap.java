@@ -91,7 +91,7 @@ public interface Bootstrap {
             this.securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
             this.extensionRegistry = ExtensionRegistry.builder(serverEnvironment.getLaunchType().getProcessType())
                     .withRunningModeControl(this.runningModeControl)
-                    .withFeatureStream(serverEnvironment.getFeatureStream())
+                    .withQuality(serverEnvironment.getQuality())
                     .withAuditLogger(this.auditLogger)
                     .withAuthorizer(this.authorizer)
                     .withSecurityIdentitySupplier(this.securityIdentitySupplier)

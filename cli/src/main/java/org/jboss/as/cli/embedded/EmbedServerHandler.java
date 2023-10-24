@@ -8,6 +8,7 @@ package org.jboss.as.cli.embedded;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,6 +28,7 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.modules.ModuleLoader;
@@ -61,6 +63,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     private ArgumentWithoutValue emptyConfig;
     private ArgumentWithoutValue removeExisting;
     private ArgumentWithValue timeout;
+    private ArgumentWithValue quality;
 
     static EmbedServerHandler create(final AtomicReference<EmbeddedProcessLaunch> serverReference, CommandContext ctx, boolean modular) {
         EmbedServerHandler result = new EmbedServerHandler(serverReference);
@@ -78,6 +81,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         result.removeExisting = new ArgumentWithoutValue(result, "--remove-existing");
         result.removeExisting.addRequiredPreceding(result.emptyConfig);
         result.timeout = new ArgumentWithValue(result, "--timeout");
+        result.quality = new ArgumentWithValue(result, new SimpleTabCompleter(EnumSet.allOf(Quality.class)), "--quality");
 
         return result;
     }
@@ -205,7 +209,10 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                     cmdsList.add("--internal-remove-config");
                 }
             }
-
+            String quality = this.quality.getValue(parsedCmd);
+            if (quality != null) {
+                cmdsList.add("--quality=" + quality);
+            }
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);
 
             final Configuration.Builder configBuilder;

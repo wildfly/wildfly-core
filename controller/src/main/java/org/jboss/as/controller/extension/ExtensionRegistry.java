@@ -75,7 +75,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.transform.TransformerRegistry;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
@@ -114,7 +114,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
         private JmxAuthorizer authorizer = NO_OP_AUTHORIZER;
         private Supplier<SecurityIdentity> securityIdentitySupplier = Functions.constantSupplier(null);
         private RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = RuntimeHostControllerInfoAccessor.SERVER;
-        private FeatureStream stream = FeatureStream.DEFAULT;
+        private Quality quality = Quality.DEFAULT;
 
         private Builder(ProcessType processType) {
             this.processType = processType;
@@ -180,12 +180,12 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         /**
-         * Overrides the default {@link FeatureStream} of the extension registry.
-         * @param stream a feature stream
+         * Overrides the default quality of the extension registry.
+         * @param quality a quality level
          * @return a reference to this builder
          */
-        public Builder withFeatureStream(FeatureStream stream) {
-            this.stream = stream;
+        public Builder withQuality(Quality quality) {
+            this.quality = quality;
             return this;
         }
 
@@ -206,7 +206,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
     }
 
     private final ProcessType processType;
-    private final FeatureStream stream;
+    private final Quality quality;
 
     private SubsystemXmlWriterRegistry writerRegistry;
     private volatile PathManager pathManager;
@@ -230,7 +230,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
         this.authorizer = builder.authorizer;
         this.securityIdentitySupplier = builder.securityIdentitySupplier;
         this.hostControllerInfoAccessor = builder.hostControllerInfoAccessor;
-        this.stream = builder.stream;
+        this.quality = builder.quality;
     }
 
     /**
@@ -519,8 +519,8 @@ public final class ExtensionRegistry implements FeatureRegistry {
     }
 
     @Override
-    public FeatureStream getFeatureStream() {
-        return this.stream;
+    public Quality getQuality() {
+        return this.quality;
     }
 
     private class ExtensionParsingContextImpl implements ExtensionParsingContext {
@@ -550,8 +550,8 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         @Override
-        public FeatureStream getFeatureStream() {
-            return ExtensionRegistry.this.getFeatureStream();
+        public Quality getQuality() {
+            return ExtensionRegistry.this.getQuality();
         }
 
         @Override
@@ -671,7 +671,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
                 ControllerLogger.DEPRECATED_LOGGER.extensionDeprecated(name);
             }
             SubsystemRegistrationImpl result =  new SubsystemRegistrationImpl(name, version,
-                                profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName, processType, stream);
+                                profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName, processType, quality);
             if (registerTransformers){
                 transformerRegistry.loadAndRegisterTransformers(name, version, extension.extensionModuleName);
             }
@@ -706,8 +706,8 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         @Override
-        public FeatureStream getFeatureStream() {
-            return this.profileRegistration.getFeatureStream();
+        public Quality getQuality() {
+            return this.profileRegistration.getQuality();
         }
 
         @Override
@@ -820,7 +820,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
     private class SubsystemRegistrationImpl implements SubsystemRegistration {
         private final String name;
         private final ModelVersion version;
-        private final FeatureStream stream;
+        private final Quality quality;
         private final ManagementResourceRegistration profileRegistration;
         private final ManagementResourceRegistration deploymentsRegistration;
         private final ExtensionRegistryType extensionRegistryType;
@@ -832,24 +832,24 @@ public final class ExtensionRegistry implements FeatureRegistry {
                                           ManagementResourceRegistration deploymentsRegistration,
                                           ExtensionRegistryType extensionRegistryType,
                                           String extensionModuleName,
-                                          ProcessType processType, FeatureStream stream) {
+                                          ProcessType processType, Quality quality) {
             assert profileRegistration != null;
             this.name = name;
             this.profileRegistration = profileRegistration;
             if (deploymentsRegistration == null){
-                this.deploymentsRegistration = ManagementResourceRegistration.Factory.forProcessType(processType, stream).createRegistration(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
+                this.deploymentsRegistration = ManagementResourceRegistration.Factory.forProcessType(processType, quality).createRegistration(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
             }else {
                 this.deploymentsRegistration = deploymentsRegistration;
             }
             this.version = version;
-            this.stream = stream;
+            this.quality = quality;
             this.extensionRegistryType = extensionRegistryType;
             this.extensionModuleName = extensionModuleName;
         }
 
         @Override
-        public FeatureStream getFeatureStream() {
-            return this.stream;
+        public Quality getQuality() {
+            return this.quality;
         }
 
         @Override
@@ -950,8 +950,8 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         @Override
-        public FeatureStream getFeatureStream() {
-            return this.deployments.getFeatureStream();
+        public Quality getQuality() {
+            return this.deployments.getQuality();
         }
 
         @Override

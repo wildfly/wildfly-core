@@ -23,7 +23,7 @@ import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceName;
@@ -138,7 +138,7 @@ public class ConsoleAvailabilityUnitTestCase {
     class ConsoleAvailabilityControllerTmp extends TestModelControllerService {
 
         ConsoleAvailabilityControllerTmp(ControlledProcessState controlledProcessState) {
-            super(ProcessType.EMBEDDED_SERVER, FeatureStream.DEFAULT, new NullConfigurationPersister(), controlledProcessState);
+            super(ProcessType.EMBEDDED_SERVER, Quality.DEFAULT, new NullConfigurationPersister(), controlledProcessState);
         }
 
         @Override

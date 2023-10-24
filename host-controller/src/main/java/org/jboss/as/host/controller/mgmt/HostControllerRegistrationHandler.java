@@ -61,7 +61,7 @@ import org.jboss.as.protocol.mgmt.ManagementRequestHandler;
 import org.jboss.as.protocol.mgmt.ManagementRequestHandlerFactory;
 import org.jboss.as.protocol.mgmt.ManagementRequestHeader;
 import org.jboss.as.protocol.mgmt.ManagementResponseHeader;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.remoting3.Channel;
@@ -332,16 +332,16 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                     registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
                     throw failure;
                 }
-                // Ensure feature stream of host is compatible
+                // Ensure quality level of host is compatible
                 LocalHostControllerInfo domainInfo = domainController.getLocalHostInfo();
-                if (domainInfo.getFeatureStream() != hostInfo.getFeatureStream()) {
-                    OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.incompatibleFeatureStream(domainInfo.getFeatureStream(), hostInfo.getFeatureStream());
+                if (domainInfo.getQuality() != hostInfo.getQuality()) {
+                    OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.incompatibleQuality(domainInfo.getQuality(), hostInfo.getQuality());
                     registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
                     throw failure;
                 }
                 // Legacy hosts must use default stream
-                if ((hostVersion.compareTo(ModelVersion.CURRENT) < 0) && (hostInfo.getFeatureStream() != FeatureStream.DEFAULT)) {
-                    OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.incompatibleFeatureStreamForLegacyHost(hostInfo.getFeatureStream());
+                if ((hostVersion.compareTo(ModelVersion.CURRENT) < 0) && (hostInfo.getQuality() != Quality.DEFAULT)) {
+                    OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.incompatibleQualityForLegacyHost(hostInfo.getQuality());
                     registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
                     throw failure;
                 }

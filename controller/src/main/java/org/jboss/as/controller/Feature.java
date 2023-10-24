@@ -7,31 +7,31 @@ package org.jboss.as.controller;
 import java.util.EnumMap;
 import java.util.Map;
 
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 
 /**
  * @author Paul Ferraro
  */
 public interface Feature {
     /**
-     * Returns the stream for which this feature is enabled.
-     * @return a feature stream
+     * Returns the quality of this feature.
+     * @return a quality level
      */
-    default FeatureStream getFeatureStream() {
-        return FeatureStream.DEFAULT;
+    default Quality getQuality() {
+        return Quality.DEFAULT;
     }
 
     /**
-     * Returns a map of features to enable per stream.
+     * Returns a complete map of a feature per quality.
      * @param <F> the feature type
-     * @param features a collection of stream-specific features
-     * @return a mapping of features per stream
+     * @param features a collection of features of different qualities
+     * @return a full mapping of feature per quality
      */
-    static <F extends Feature> Map<FeatureStream, F> map(Iterable<F> features) {
-        Map<FeatureStream, F> map = new EnumMap<>(FeatureStream.class);
+    static <F extends Feature> Map<Quality, F> map(Iterable<F> features) {
+        Map<Quality, F> map = new EnumMap<>(Quality.class);
         for (F feature : features) {
-            map.put(feature.getFeatureStream(), feature);
+            map.put(feature.getQuality(), feature);
         }
-        return FeatureStream.map(map::get);
+        return Quality.map(map::get);
     }
 }

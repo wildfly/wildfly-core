@@ -6,7 +6,7 @@ package org.jboss.as.controller.xml;
 
 import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.FeatureRegistry;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.staxmapper.Versioned;
 
 /**
@@ -28,7 +28,7 @@ public interface VersionedSchema<V extends Comparable<V>, S extends VersionedSch
     }
 
     @Override
-    default FeatureStream getFeatureStream() {
-        return this.getNamespace().getFeatureStream();
+    default Quality getQuality() {
+        return this.getNamespace().getQuality();
     }
 }

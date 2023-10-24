@@ -23,7 +23,7 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 
 /**
  * {@link ManagementResourceRegistration} implementation that simply delegates to another
@@ -86,8 +86,8 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
-    public FeatureStream getFeatureStream() {
-        return this.getDelegate().getFeatureStream();
+    public Quality getQuality() {
+        return this.getDelegate().getQuality();
     }
 
     @Override

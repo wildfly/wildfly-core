@@ -47,7 +47,7 @@ import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.as.process.ProcessInfo;
 import org.jboss.as.process.ProcessMessageHandler;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceRegistry;
 import org.junit.Assert;
@@ -489,8 +489,8 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
-        public FeatureStream getFeatureStream() {
-            return FeatureStream.DEFAULT;
+        public Quality getQuality() {
+            return Quality.DEFAULT;
         }
     }
 

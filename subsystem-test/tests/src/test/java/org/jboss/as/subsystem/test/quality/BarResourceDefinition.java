@@ -2,7 +2,7 @@
  * Copyright The WildFly Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package org.jboss.as.subsystem.test.experimental;
+package org.jboss.as.subsystem.test.quality;
 
 import java.util.EnumSet;
 import java.util.stream.Collectors;
@@ -19,14 +19,14 @@ import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResol
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelType;
 
 /**
  * @author Paul Ferraro
  */
 public class BarResourceDefinition extends SimpleResourceDefinition {
-    static final PathElement PATH = PathElement.pathElement("bar", FeatureStream.PREVIEW);
+    static final PathElement PATH = PathElement.pathElement("bar", Quality.PREVIEW);
 
     static final SimpleAttributeDefinition TYPE = new SimpleAttributeDefinitionBuilder("type", ModelType.STRING)
             .build();
@@ -34,21 +34,21 @@ public class BarResourceDefinition extends SimpleResourceDefinition {
     enum Values implements Feature {
         FOO,
         BAR,
-        EXPERIMENTAL(FeatureStream.EXPERIMENTAL), // Experimental value
+        EXPERIMENTAL(Quality.EXPERIMENTAL), // Experimental value
         ;
-        private final FeatureStream stream;
+        private final Quality quality;
 
         Values() {
-            this(PATH.getFeatureStream());
+            this(PATH.getQuality());
         }
 
-        Values(FeatureStream stream) {
-            this.stream = stream;
+        Values(Quality quality) {
+            this.quality = quality;
         }
 
         @Override
-        public FeatureStream getFeatureStream() {
-            return this.stream;
+        public Quality getQuality() {
+            return this.quality;
         }
     }
 

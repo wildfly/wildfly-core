@@ -9,7 +9,7 @@ import java.io.IOException;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.model.test.ModelFixer;
 import org.jboss.as.model.test.ModelTestUtils;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Before;
@@ -42,11 +42,11 @@ public abstract class AbstractCoreModelTest {
     }
 
     protected KernelServicesBuilder createKernelServicesBuilder(TestModelType type) {
-        return this.createKernelServicesBuilder(type, FeatureStream.DEFAULT);
+        return this.createKernelServicesBuilder(type, Quality.DEFAULT);
     }
 
-    protected KernelServicesBuilder createKernelServicesBuilder(TestModelType type, FeatureStream stream) {
-        return delegate.createKernelServicesBuilder(type, stream);
+    protected KernelServicesBuilder createKernelServicesBuilder(TestModelType type, Quality quality) {
+        return delegate.createKernelServicesBuilder(type, quality);
     }
 
     /**

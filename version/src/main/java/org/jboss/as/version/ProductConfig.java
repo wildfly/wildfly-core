@@ -15,7 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.jar.Manifest;
@@ -34,8 +33,8 @@ public class ProductConfig implements Serializable {
     private final String name;
     private final String version;
     private final String consoleSlot;
-    private final FeatureStream defaultStream;
-    private final FeatureStream maxStream;
+    private final Quality defaultQuality;
+    private final Quality minQuality;
     private boolean isProduct;
 
     public static ProductConfig fromFilesystemSlot(ModuleLoader loader, String home, Map<?, ?> providedProperties) {
@@ -50,9 +49,8 @@ public class ProductConfig implements Serializable {
         String projectName = null;
         String productVersion = null;
         String consoleSlot = null;
-        // TODO Change default stream to COMMUNITY when wildfly galleon plugin supports feature streams.
-        FeatureStream defaultStream = FeatureStream.DEFAULT;
-        FeatureStream maxStream = FeatureStream.EXPERIMENTAL;
+        Quality defaultQuality = Quality.COMMUNITY;
+        Quality minQuality = Quality.EXPERIMENTAL;
 
         InputStream manifestStream = null;
         try {
@@ -71,13 +69,13 @@ public class ProductConfig implements Serializable {
                     productVersion = manifest.getMainAttributes().getValue("JBoss-Product-Release-Version");
                     consoleSlot = manifest.getMainAttributes().getValue("JBoss-Product-Console-Slot");
                     projectName = manifest.getMainAttributes().getValue("JBoss-Project-Release-Name");
-                    String defaultStreamValue = manifest.getMainAttributes().getValue("JBoss-Product-Feature-Stream");
-                    if (defaultStreamValue != null) {
-                        defaultStream = FeatureStream.valueOf(defaultStreamValue.toUpperCase(Locale.ENGLISH));
+                    String defaultQualityValue = manifest.getMainAttributes().getValue("JBoss-Product-Quality");
+                    if (defaultQualityValue != null) {
+                        defaultQuality = Quality.fromString(defaultQualityValue);
                     }
-                    String maxStreamValue = manifest.getMainAttributes().getValue("JBoss-Product-Feature-Stream-Max");
-                    if (maxStreamValue != null) {
-                        maxStream = FeatureStream.valueOf(maxStreamValue.toUpperCase(Locale.ENGLISH));
+                    String minQualityValue = manifest.getMainAttributes().getValue("JBoss-Product-Minimum-Quality");
+                    if (minQualityValue != null) {
+                        minQuality = Quality.fromString(minQualityValue);
                     }
                 }
             }
@@ -92,8 +90,8 @@ public class ProductConfig implements Serializable {
         name = isProduct ? productName : projectName;
         version = productVersion;
         this.consoleSlot = consoleSlot;
-        this.defaultStream = defaultStream;
-        this.maxStream = maxStream;
+        this.defaultQuality = defaultQuality;
+        this.minQuality = minQuality;
     }
 
     private static String getProductConf(String home) {
@@ -130,8 +128,8 @@ public class ProductConfig implements Serializable {
         this.name = productName;
         this.version = productVersion;
         this.consoleSlot = consoleSlot;
-        this.defaultStream = FeatureStream.DEFAULT;
-        this.maxStream = FeatureStream.DEFAULT;
+        this.defaultQuality = Quality.DEFAULT;
+        this.minQuality = Quality.DEFAULT;
     }
 
     public String getProductName() {
@@ -150,12 +148,12 @@ public class ProductConfig implements Serializable {
         return consoleSlot;
     }
 
-    public FeatureStream getDefaultFeatureStream() {
-        return this.defaultStream;
+    public Quality getDefaultQuality() {
+        return this.defaultQuality;
     }
 
-    public FeatureStream getMaxFeatureStream() {
-        return this.maxStream;
+    public Quality getMinimumQuality() {
+        return this.minQuality;
     }
 
     public String getPrettyVersionString() {

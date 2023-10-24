@@ -17,7 +17,7 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -59,7 +59,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     private CapabilityReferenceRecorder referenceRecorder;
     private Map<String, ModelNode> arbitraryDescriptors = null;
     private ModelNode undefinedMetricValue;
-    private FeatureStream stream = FeatureStream.DEFAULT;
+    private Quality quality = Quality.DEFAULT;
 
     private static final AccessConstraintDefinition[] ZERO_CONSTRAINTS = new AccessConstraintDefinition[0];
 
@@ -133,7 +133,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
             this.arbitraryDescriptors = new HashMap<>(basis.getArbitraryDescriptors());
         }
         this.referenceRecorder = basis.getReferenceRecorder();
-        this.stream = basis.getFeatureStream();
+        this.quality = basis.getQuality();
     }
 
     /**
@@ -809,12 +809,12 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     /**
-     * Defines the feature stream for which this attribute should be registered.
-     * @param stream a feature stream
+     * Defines the quality of the feature enabled by this attribute.
+     * @param quality a quality level
      * @return a reference to this builder
      */
-    public BUILDER setFeatureStream(FeatureStream stream) {
-        this.stream = stream;
+    public BUILDER setQuality(Quality quality) {
+        this.quality = quality;
         return (BUILDER) this;
     }
 
@@ -921,8 +921,8 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return referenceRecorder;
     }
 
-    public FeatureStream getFeatureStream() {
-        return this.stream;
+    public Quality getQuality() {
+        return this.quality;
     }
 
     private String[] copyStrings(String[] toCopy) {

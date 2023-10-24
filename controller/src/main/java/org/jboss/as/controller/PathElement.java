@@ -6,7 +6,7 @@
 package org.jboss.as.controller;
 
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
@@ -23,7 +23,7 @@ public class PathElement implements Feature {
     private final String value;
     private final boolean multiTarget;
     private final int hashCode;
-    private final FeatureStream stream;
+    private final Quality quality;
 
     /**
      * Construct a new instance with a wildcard value.
@@ -49,8 +49,8 @@ public class PathElement implements Feature {
      * @param key the path key to match
      * @return the new path element
      */
-    public static PathElement pathElement(final String key, FeatureStream stream) {
-        return new PathElement(key, stream);
+    public static PathElement pathElement(final String key, Quality quality) {
+        return new PathElement(key, quality);
     }
 
     /**
@@ -59,8 +59,8 @@ public class PathElement implements Feature {
      * @param value the path value or wildcard to match
      * @return the new path element
      */
-    public static PathElement pathElement(final String key, final String value, FeatureStream stream) {
-        return new PathElement(key, value, stream);
+    public static PathElement pathElement(final String key, final String value, Quality quality) {
+        return new PathElement(key, value, quality);
     }
 
     /**
@@ -75,8 +75,8 @@ public class PathElement implements Feature {
      * Construct a new instance with a wildcard value.
      * @param key the path key to match
      */
-    PathElement(final String key, FeatureStream stream) {
-        this(key, WILDCARD_VALUE, stream);
+    PathElement(final String key, Quality quality) {
+        this(key, WILDCARD_VALUE, quality);
     }
 
     /**
@@ -85,7 +85,7 @@ public class PathElement implements Feature {
      * @param value the path value or wildcard to match
      */
     PathElement(final String key, final String value) {
-        this(key, value, FeatureStream.DEFAULT);
+        this(key, value, Quality.DEFAULT);
     }
 
     /**
@@ -93,7 +93,7 @@ public class PathElement implements Feature {
      * @param key the path key to match
      * @param value the path value or wildcard to match
      */
-    PathElement(final String key, final String value, FeatureStream stream) {
+    PathElement(final String key, final String value, Quality quality) {
         if (!isValidKey(key)) {
             final String element = key + "=" + value;
             throw new OperationClientIllegalArgumentException(ControllerLogger.ROOT_LOGGER.invalidPathElementKey(element, key));
@@ -120,7 +120,7 @@ public class PathElement implements Feature {
         }
         this.multiTarget = multiTarget;
         hashCode = key.hashCode() * 19 + value.hashCode();
-        this.stream = stream;
+        this.quality = quality;
     }
 
     /**
@@ -174,8 +174,8 @@ public class PathElement implements Feature {
     }
 
     @Override
-    public FeatureStream getFeatureStream() {
-        return this.stream;
+    public Quality getQuality() {
+        return this.quality;
     }
 
     /**

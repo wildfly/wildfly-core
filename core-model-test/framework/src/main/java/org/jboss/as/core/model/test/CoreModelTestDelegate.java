@@ -87,7 +87,7 @@ import org.jboss.as.model.test.ModelTestModelDescriptionValidator.ValidationConf
 import org.jboss.as.model.test.ModelTestModelDescriptionValidator.ValidationFailure;
 import org.jboss.as.model.test.ModelTestOperationValidatorFilter;
 import org.jboss.as.model.test.ModelTestOperationValidatorFilter.Action;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -157,8 +157,8 @@ public class CoreModelTestDelegate {
     }
 
 
-    protected KernelServicesBuilder createKernelServicesBuilder(TestModelType type, FeatureStream stream) {
-        return new KernelServicesBuilderImpl(type, stream);
+    protected KernelServicesBuilder createKernelServicesBuilder(TestModelType type, Quality quality) {
+        return new KernelServicesBuilderImpl(type, quality);
     }
 
     private void validateDescriptionProviders(TestModelType type, KernelServices kernelServices,
@@ -440,11 +440,11 @@ public class CoreModelTestDelegate {
         private Map<ModelNode, Map<String, Map<String, Set<String>>>> operationParameterDescriptors = new HashMap<>();
 
 
-        KernelServicesBuilderImpl(TestModelType type, FeatureStream stream) {
+        KernelServicesBuilderImpl(TestModelType type, Quality quality) {
             this.type = type;
             this.processType = type == TestModelType.HOST || type == TestModelType.DOMAIN ? ProcessType.HOST_CONTROLLER : ProcessType.STANDALONE_SERVER;
             runningModeControl = type == TestModelType.HOST ? new HostRunningModeControl(RunningMode.ADMIN_ONLY, RestartMode.HC_ONLY) : new RunningModeControl(RunningMode.ADMIN_ONLY);
-            extensionRegistry = ExtensionRegistry.builder(this.processType).withRunningModeControl(this.runningModeControl).withFeatureStream(stream).build();
+            extensionRegistry = ExtensionRegistry.builder(this.processType).withRunningModeControl(this.runningModeControl).withQuality(quality).build();
             testParser = TestParser.create(extensionRegistry, xmlMapper, type);
         }
 
@@ -792,7 +792,7 @@ public class CoreModelTestDelegate {
         }
 
         private KernelServices bootCurrentVersionWithLegacyBootOperations(List<ModelNode> bootOperations, ModelInitializer modelInitializer, ModelWriteSanitizer modelWriteSanitizer, List<String> contentRepositoryHashes, KernelServices mainServices) throws Exception {
-            KernelServicesBuilder reverseServicesBuilder = createKernelServicesBuilder(TestModelType.DOMAIN, FeatureStream.DEFAULT)
+            KernelServicesBuilder reverseServicesBuilder = createKernelServicesBuilder(TestModelType.DOMAIN, Quality.DEFAULT)
                 .setBootOperations(bootOperations)
                 .setModelInitializer(modelInitializer, modelWriteSanitizer);
             for (String hash : contentRepositoryHashes) {

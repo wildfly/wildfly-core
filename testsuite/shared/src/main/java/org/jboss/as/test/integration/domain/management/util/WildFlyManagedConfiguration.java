@@ -11,6 +11,7 @@ import java.net.URL;
 import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.test.shared.TimeoutUtil;
+import org.jboss.as.version.Quality;
 
 /**
  * WildFlyManagedConfiguration
@@ -95,6 +96,8 @@ public class WildFlyManagedConfiguration {
     private boolean enableAssertions = true;
 
     private boolean rewriteConfigFiles = true;
+
+    private Quality quality = Quality.DEFAULT;
 
     public WildFlyManagedConfiguration(String jbossHome) {
         if (jbossHome != null) {
@@ -379,6 +382,15 @@ public class WildFlyManagedConfiguration {
 
     public WildFlyManagedConfiguration setRewriteConfigFiles(boolean rewriteConfigFiles) {
         this.rewriteConfigFiles = rewriteConfigFiles;
+        return this;
+    }
+
+    public Quality getQuality() {
+        return this.quality;
+    }
+
+    public WildFlyManagedConfiguration setQuality(Quality quality) {
+        this.quality = quality;
         return this;
     }
 }

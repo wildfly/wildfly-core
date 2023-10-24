@@ -16,7 +16,7 @@ import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceNameFactory;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.Assert;
 import org.wildfly.service.descriptor.BinaryServiceDescriptor;
@@ -125,7 +125,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
     private volatile ServiceName serviceName;
     private final T runtimeAPI;
     private final boolean allowMultipleRegistrations;
-    private final FeatureStream stream;
+    private final Quality quality;
 
     /**
      * Constructor for use by the builder.
@@ -139,7 +139,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceValueType = builder.serviceValueType;
         this.allowMultipleRegistrations = builder.allowMultipleRegistrations;
-        this.stream = builder.stream;
+        this.quality = builder.quality;
     }
 
     private static Set<String> establishRequirements(Set<String> input) {
@@ -157,7 +157,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
                               Set<String> requirements,
                               boolean allowMultipleRegistrations,
                               Function<PathAddress, String[]> dynamicNameMapper,
-                              FeatureStream stream,
+                              Quality quality,
                               String... dynamicElement
     ) {
         this.name = buildDynamicCapabilityName(baseName, dynamicElement);
@@ -173,7 +173,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
             assert baseServiceName == null;
         }
         this.allowMultipleRegistrations = allowMultipleRegistrations;
-        this.stream = stream;
+        this.quality = quality;
     }
 
     /**
@@ -323,7 +323,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
         assert dynamicElement != null;
         assert dynamicElement.length > 0;
         return new RuntimeCapability<>(getName(), serviceValueType, getServiceName(), runtimeAPI,
-                getRequirements(), allowMultipleRegistrations,dynamicNameMapper, this.stream, dynamicElement);
+                getRequirements(), allowMultipleRegistrations,dynamicNameMapper, this.quality, dynamicElement);
 
     }
 
@@ -351,7 +351,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
         String[] dynamicElement = dynamicNameMapper.apply(path);
         assert dynamicElement.length > 0;
         return new RuntimeCapability<>(getName(), serviceValueType, getServiceName(), runtimeAPI,
-                getRequirements(), allowMultipleRegistrations, dynamicNameMapper, this.stream, dynamicElement);
+                getRequirements(), allowMultipleRegistrations, dynamicNameMapper, this.quality, dynamicElement);
     }
 
     @Override
@@ -387,8 +387,8 @@ public class RuntimeCapability<T> implements Capability, Feature {
     }
 
     @Override
-    public FeatureStream getFeatureStream() {
-        return this.stream;
+    public Quality getQuality() {
+        return this.quality;
     }
 
     @Override
@@ -424,7 +424,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
         private Set<String> requirements;
         private boolean allowMultipleRegistrations = ALLOW_MULTIPLE;
         private Function<PathAddress, String[]> dynamicNameMapper = UnaryCapabilityNameResolver.DEFAULT;
-        private FeatureStream stream = FeatureStream.DEFAULT;
+        private Quality quality = Quality.DEFAULT;
 
         /**
          * Create a builder for a non-dynamic capability with no custom runtime API.
@@ -596,12 +596,12 @@ public class RuntimeCapability<T> implements Capability, Feature {
         }
 
         /**
-         * Sets the feature stream for which this capability should be registered
-         * @param stream a feature stream
+         * Sets the target quality of this capability.
+         * @param quality a quality level
          * @return a reference to this builder
          */
-        public Builder<T> setFeatureStream(FeatureStream stream) {
-            this.stream = stream;
+        public Builder<T> setQuality(Quality quality) {
+            this.quality = quality;
             return this;
         }
 

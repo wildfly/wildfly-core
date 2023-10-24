@@ -13,7 +13,7 @@ import org.jboss.as.controller.persistence.ConfigurationExtensionFactory;
 import org.jboss.as.process.CommandLineArgumentUsage;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 
 public class CommandLineArgumentUsageImpl extends CommandLineArgumentUsage {
 
@@ -81,8 +81,8 @@ public class CommandLineArgumentUsageImpl extends CommandLineArgumentUsage {
             instructions.add(ConfigurationExtensionFactory.getCommandLineInstructions());
         }
 
-        addArguments(CommandLineConstants.FEATURE_STREAM + "=<value>");
-        instructions.add(ServerLogger.ROOT_LOGGER.argFeatureStream(EnumSet.allOf(FeatureStream.class), FeatureStream.DEFAULT));
+        addArguments(CommandLineConstants.QUALITY + "=<value>");
+        instructions.add(ServerLogger.ROOT_LOGGER.argQuality(EnumSet.allOf(Quality.class), Quality.DEFAULT));
     }
 
     public static void printUsage(final PrintStream out) {

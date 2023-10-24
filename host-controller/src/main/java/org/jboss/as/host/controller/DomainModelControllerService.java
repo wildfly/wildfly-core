@@ -163,7 +163,7 @@ import org.jboss.as.server.RuntimeExpressionResolver;
 import org.jboss.as.server.controller.resources.VersionModelInitializer;
 import org.jboss.as.server.deployment.ContentCleanerService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
@@ -261,10 +261,10 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final ManagementSecurityIdentitySupplier securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
         final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = new DomainHostControllerInfoAccessor(hostControllerInfo);
         final ProcessType processType = environment.getProcessType();
-        final FeatureStream stream = environment.getFeatureStream();
+        final Quality quality = environment.getQuality();
         final ExtensionRegistry hostExtensionRegistry = ExtensionRegistry.builder(processType)
                 .withRunningModeControl(runningModeControl)
-                .withFeatureStream(stream)
+                .withQuality(quality)
                 .withAuditLogger(auditLogger)
                 .withAuthorizer(authorizer)
                 .withSecurityIdentitySupplier(securityIdentitySupplier)
@@ -272,7 +272,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 .build();
         final ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(processType)
                 .withRunningModeControl(runningModeControl)
-                .withFeatureStream(stream)
+                .withQuality(quality)
                 .withAuditLogger(auditLogger)
                 .withAuthorizer(authorizer)
                 .withSecurityIdentitySupplier(securityIdentitySupplier)
@@ -322,7 +322,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                          final CapabilityRegistry capabilityRegistry,
                                          final DomainHostExcludeRegistry domainHostExcludeRegistry) {
-        super(executorService, null, environment.getProcessType(), environment.getFeatureStream(), runningModeControl, null, processState,
+        super(executorService, null, environment.getProcessType(), environment.getQuality(), runningModeControl, null, processState,
                 rootResourceDefinition, prepareStepHandler, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, null);
         this.environment = environment;
         this.runningModeControl = runningModeControl;

@@ -17,7 +17,7 @@ import java.net.ServerSocket;
 import java.util.Set;
 
 import org.jboss.as.process.CommandLineConstants;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -446,12 +446,12 @@ public interface ProcessLogger extends BasicLogger {
     String argSecMgr();
 
     /**
-     * Instructions for the {@link CommandLineConstants#FEATURE_STREAM} command line argument.
+     * Instructions for the {@link CommandLineConstants#QUALITY} command line argument.
      *
      * @return the message
      */
-    @Message(id = Message.NONE, value = "Runs the server using a specific feature stream.  Possible values: %s, Default = %s")
-    String argFeatureStream(Set<FeatureStream> streams, FeatureStream defaultStream);
+    @Message(id = Message.NONE, value = "Runs the server using a specific quality level.  Possible values: %s, Default = %s")
+    String argQuality(Set<Quality> qualities, Quality defaultQuality);
 
     /**
      * Error message indicating no value was provided for a command line argument.

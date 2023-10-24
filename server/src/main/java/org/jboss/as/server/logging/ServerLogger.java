@@ -38,7 +38,7 @@ import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.deployment.module.ExtensionListEntry;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.suspend.ServerActivity;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.jboss.invocation.proxy.MethodIdentifier;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
@@ -590,12 +590,12 @@ public interface ServerLogger extends BasicLogger {
     String argGitAuth();
 
     /**
-     * Instructions for the {@link CommandLineConstants#FEATURE_STREAM} command line argument.
+     * Instructions for the {@link CommandLineConstants#QUALITY} command line argument.
      *
      * @return the message
      */
-    @Message(id = Message.NONE, value = "Runs the server using a specific feature stream.  Possible values: %s, Default = %s")
-    String argFeatureStream(Set<FeatureStream> streams, FeatureStream defaultStream);
+    @Message(id = Message.NONE, value = "Runs the server using a specific quality level.  Possible values: %s, Default = %s")
+    String argQuality(Set<Quality> qualities, Quality defaultQuality);
 
     /**
      * Creates an error message indicating a value was expected for the given command line option.
@@ -1453,8 +1453,8 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 308, value = "Failed to parse property (%s), value (%s) should match one of: %s")
     IllegalArgumentException failedToParseEnumProperty(String name, String value, Set<?> values);
 
-    @Message(id = 309, value = "%s feature stream is not supported in %s")
-    IllegalArgumentException unsupportedFeatureStream(FeatureStream featureStream, String name);
+    @Message(id = 309, value = "%s quality level is not supported in %s")
+    IllegalArgumentException unsupportedQuality(Quality quality, String name);
 
     ////////////////////////////////////////////////
     //Messages without IDs

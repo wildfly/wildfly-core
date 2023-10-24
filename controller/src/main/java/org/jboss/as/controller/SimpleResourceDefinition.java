@@ -29,7 +29,7 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.RuntimePackageDependency;
-import org.jboss.as.version.FeatureStream;
+import org.jboss.as.version.Quality;
 import org.wildfly.common.Assert;
 
 /**
@@ -54,7 +54,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
     private final Set<RuntimeCapability> incorporatingCapabilities;
     private final Set<CapabilityReferenceRecorder> requirements;
     private final RuntimePackageDependency[] additionalPackages;
-    private final FeatureStream stream;
+    private final Quality quality;
 
     /**
      * {@link ResourceDefinition} that uses the given {code descriptionResolver} to configure a
@@ -109,7 +109,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
         this.incorporatingCapabilities = parameters.incorporatingCapabilities;
         this.requirements = new HashSet<>(parameters.requirements);
         this.additionalPackages = parameters.additionalPackages;
-        this.stream = parameters.stream;
+        this.quality = parameters.quality;
     }
 
     private static OperationEntry.Flag restartLevelForAdd(OperationStepHandler addHandler) {
@@ -180,8 +180,8 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
     }
 
     @Override
-    public FeatureStream getFeatureStream() {
-        return this.stream;
+    public Quality getQuality() {
+        return this.quality;
     }
 
     /**
@@ -306,7 +306,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
         private Set<RuntimeCapability> incorporatingCapabilities;
         private Set<CapabilityReferenceRecorder> requirements = new HashSet<>();
         private RuntimePackageDependency[] additionalPackages;
-        private FeatureStream stream = FeatureStream.DEFAULT;
+        private Quality quality = Quality.DEFAULT;
 
         /**
          * Creates a Parameters object
@@ -543,8 +543,13 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
             return !feature ? this.asNonFeature() : this;
         }
 
-        public Parameters setFeatureStream(FeatureStream stream) {
-            this.stream = stream;
+        /**
+         * Defines the target quality of this resource definition.
+         * @param quality a feature set
+         * @return a reference to this object.
+         */
+        public Parameters setQuality(Quality quality) {
+            this.quality = quality;
             return this;
         }
 

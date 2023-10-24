@@ -185,7 +185,7 @@ public class ModelDescriptionConstants {
     public static final String FEATURE = "feature";
     public static final String FEATURE_ID = "feature-id";
     public static final String FEATURE_REFERENCE = "feature-reference";
-    public static final String FEATURE_STREAM = "feature-stream";
+    public static final String QUALITY = "quality";
     public static final String FILE = "file";
     public static final String FILE_HANDLER = "file-handler";
     public static final String FILE_SIZE = "file-size";
