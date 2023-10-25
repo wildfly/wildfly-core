@@ -120,7 +120,6 @@
         <!-- Non-default maven plugin versions and configuration -->
         <version.jacoco.plugin>0.8.10</version.jacoco.plugin>
         <version.org.jboss.galleon>5.2.1.Final</version.org.jboss.galleon>
-        <version.org.wildfly.build-tools>1.2.13.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
         <version.org.wildfly.galleon-plugins>6.5.0.Final</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
@@ -641,20 +640,9 @@
                     <version>${version.org.jboss.galleon}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.wildfly.build</groupId>
-                    <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
-                    <version>${version.org.wildfly.build-tools}</version>
-                </plugin>
-
-                <plugin>
                     <groupId>org.wildfly.maven.plugins</groupId>
                     <artifactId>licenses-plugin</artifactId>
                     <version>${version.org.wildfly.plugins}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.wildfly.build</groupId>
-                    <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
-                    <version>${version.org.wildfly.build-tools}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.wildfly.galleon-plugins</groupId>
@@ -1307,12 +1295,6 @@
                         <artifactId>jcl-over-slf4j</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.build</groupId>
-                <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
-                <version>${version.org.wildfly.build-tools}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.client</groupId>
