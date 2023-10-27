@@ -1461,10 +1461,7 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 221, value = "%s quality level of domain controller does not match %s quality level of connecting host")
     OperationFailedException incompatibleQuality(Quality domainQuality, Quality hostQuality);
 
-    @Message(id = 222, value = "%s quality level is not supported for legacy connecting host")
-    OperationFailedException incompatibleQualityForLegacyHost(Quality hostQuality);
-
-    @Message(id = 223, value = "%s quality level is not supported in %s")
+    @Message(id = 222, value = "%s quality level is not supported in %s")
     IllegalArgumentException unsupportedQuality(Quality quality, String name);
 
     ////////////////////////////////////////////////
