@@ -30,6 +30,7 @@ public class ManagedCreateTransport extends AnnotationLiteral<CreateTransport> i
     private boolean ssl;
     /** The number of threads to use. Default to 3 */
     private int nbThreads;
+    private boolean clientAuth;
 
     // Constructors ----------------------------------------------------------
 
@@ -46,6 +47,7 @@ public class ManagedCreateTransport extends AnnotationLiteral<CreateTransport> i
         backlog = original.backlog();
         ssl = original.ssl();
         nbThreads = original.nbThreads();
+        clientAuth = original.clientAuth();
     }
 
     // Public methods --------------------------------------------------------
@@ -111,6 +113,11 @@ public class ManagedCreateTransport extends AnnotationLiteral<CreateTransport> i
      */
     public int nbThreads() {
         return nbThreads;
+    }
+
+    @Override
+    public boolean clientAuth() {
+        return clientAuth;
     }
 
     /**

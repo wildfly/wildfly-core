@@ -124,7 +124,7 @@
         <dependency>
             <groupId>org.apache.directory.api</groupId>
             <artifactId>api-ldap-codec-core</artifactId>
-            <version>1.0.0</version>
+            <version>${version.org.apache.directory.api}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -137,7 +137,7 @@
         <dependency>
             <groupId>org.apache.directory.api</groupId>
             <artifactId>api-ldap-codec-standalone</artifactId>
-            <version>1.0.3</version>
+            <version>${version.org.apache.directory.api}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -150,7 +150,7 @@
         <dependency>
             <groupId>org.apache.directory.api</groupId>
             <artifactId>api-ldap-net-mina</artifactId>
-            <version>1.0.3</version>
+            <version>${version.org.apache.directory.api}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -163,7 +163,7 @@
         <dependency>
             <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-core-annotations</artifactId>
-            <version>2.0.0-M24</version>
+            <version>${version.org.apache.ds}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -178,13 +178,17 @@
                     <groupId>org.bouncycastle</groupId>
                     <artifactId>bcprov-jdk15on</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcpkix-jdk15on</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-core-api</artifactId>
-            <version>2.0.0-M24</version>
+            <version>${version.org.apache.ds}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -197,7 +201,7 @@
         <dependency>
             <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-protocol-ldap</artifactId>
-            <version>2.0.0-M24</version>
+            <version>${version.org.apache.ds}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
