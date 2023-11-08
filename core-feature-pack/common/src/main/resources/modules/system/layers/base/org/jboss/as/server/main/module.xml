@@ -62,7 +62,6 @@
         </module>
         <module name="org.jboss.as.remoting"/>
         <module name="org.wildfly.security.elytron-private" services="import"/>
-        <module name="org.jboss.as.security" optional="true" services="import"/>
         <module name="org.jboss.as.version"/>
         <module name="io.undertow.core" />
         <module name="org.wildfly.common"/>
