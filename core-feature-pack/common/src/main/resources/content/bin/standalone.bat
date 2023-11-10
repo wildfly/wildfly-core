@@ -239,6 +239,18 @@ setlocal EnableDelayedExpansion
 call "!DIRNAME!common.bat" :setModularJdk
 setlocal DisableDelayedExpansion
 
+if not "%PRESERVE_JAVA_OPTS%" == "true" (
+  rem Add -Djdk.serialFilter if not specified
+  echo "%JAVA_OPTS%" | findstr /I "\-Djdk.serialFilter" > nul
+  if errorlevel == 1 (
+    if "x%DISABLE_JDK_SERIAL_FILTER%" == "x" (
+      setlocal EnableDelayedExpansion
+      set "JAVA_OPTS=!JAVA_OPTS! -Djdk.serialFilter="!JDK_SERIAL_FILTER!""
+      setlocal DisableDelayedExpansion
+    )
+  )
+)
+
 if not "%PRESERVE_JAVA_OPT%" == "true" (
     if "%GC_LOG%" == "true" (
         if not exist "%JBOSS_LOG_DIR%" > nul 2>&1 (

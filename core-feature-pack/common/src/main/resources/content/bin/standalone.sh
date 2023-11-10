@@ -279,6 +279,11 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
         fi
     fi
 
+    JDK_FILTER_SET=`echo $JAVA_OPTS | $GREP "\-Djdk.serialFilter"`
+    if [ "x$DISABLE_JDK_SERIAL_FILTER" = "x" -a "x$JDK_FILTER_SET" = "x" ]; then
+        PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -Djdk.serialFilter=\"$JDK_SERIAL_FILTER\""
+    fi
+
     # Set default modular JVM options
     setDefaultModularJvmOptions $JAVA_OPTS
     JAVA_OPTS="$JAVA_OPTS $DEFAULT_MODULAR_JVM_OPTIONS"
