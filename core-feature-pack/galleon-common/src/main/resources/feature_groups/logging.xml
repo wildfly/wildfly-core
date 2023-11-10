@@ -31,6 +31,14 @@
         <param name="logger" value="com.arjuna"/>
         <param name="level" value="WARN"/>
       </feature>
+      <!--
+        ~ The com.networknt.schema is not a directly used in Wildfly, but it is used by installation-manager
+        ~ See https://issues.redhat.com/browse/WFCORE-6600
+      -->
+      <feature spec="subsystem.logging.logger">
+        <param name="logger" value="com.networknt.schema"/>
+        <param name="level" value="WARN"/>
+      </feature>
       <feature spec="subsystem.logging.logger">
         <param name="logger" value="io.jaegertracing.Configuration"/>
         <param name="level" value="WARN"/>
