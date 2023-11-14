@@ -41,6 +41,7 @@ import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -152,6 +153,12 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     @SuppressWarnings("deprecation")
     private final DeploymentTransformer deploymentTransformer;
 
+    /**
+     * Property have to be guarded by scanLock.
+     * Reads or writes of this field can be done only in code executing
+     * between a call to {@link #acquireScanLock()} and {@link #releaseScanLock()}
+     */
+    private ScanContext scanContext;
 
     @Override
     public void handleNotification(Notification notification) {
@@ -505,6 +512,23 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     }
 
     /**
+     * This method exists only for testing purposes
+     *
+     * @return unmodifiable collection of registered deployments, null otherwise
+     */
+    Map<String,Boolean> getScanContextRegisteredDeployments() {
+        if (acquireScanLock()) {
+            try {
+                assert scanContext != null;
+                return Collections.unmodifiableMap(scanContext.registeredDeployments);
+            } finally {
+                releaseScanLock();
+            }
+        }
+        return null;
+    }
+
+    /**
      * Perform a post-boot scan to remove any deployments added during boot that failed to deploy properly.
      * This method isn't private solely to allow a unit test in the same package to call it.
      */
@@ -513,7 +537,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         if (acquireScanLock()) {
             try {
                 ROOT_LOGGER.tracef("Performing a post-boot forced undeploy scan for scan directory %s", deploymentDir.getAbsolutePath());
-                ScanContext scanContext = new ScanContext(deploymentOperations);
+                scanContext = new ScanContext(deploymentOperations);
 
                 // Add remove actions to the plan for anything we count as
                 // deployed that we didn't find on the scan
@@ -540,6 +564,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
             } catch (Exception e) {
                 ROOT_LOGGER.scanException(e, deploymentDir.getAbsolutePath());
             } finally {
+                scanContext = null;
                 releaseScanLock();
             }
         }
@@ -581,7 +606,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                 deployedContentEstablished = true;
             }
 
-            ScanContext scanContext = null;
+            scanContext = null;
             try {
                 scanContext = new ScanContext(deploymentOperations);
             } catch (RuntimeException ex) {
@@ -592,7 +617,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                 throw ex;
             }
 
-            scanDirectory(deploymentDir, relativePath, scanContext);
+            scanDirectory(deploymentDir, relativePath);
 
             // WARN about markers with no associated content. Do this first in case any auto-deploy issue
             // is due to a file that wasn't meant to be auto-deployed, but has a misspelled marker
@@ -628,7 +653,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
             }
 
             // Deal with any incomplete or non-scannable auto-deploy content
-            ScanStatus status = handleAutoDeployFailures(scanContext);
+            ScanStatus status = handleAutoDeployFailures();
             if (status != ScanStatus.PROCEED) {
                 if (status == ScanStatus.RETRY && scanInterval > 1000) {
                     // schedule a non-repeating task to try again more quickly
@@ -837,9 +862,8 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
      * Scan the given directory for content changes.
      *
      * @param directory   the directory to scan
-     * @param scanContext context of the scan
      */
-    private void scanDirectory(final File directory, final String relativePath, final ScanContext scanContext) {
+    private void scanDirectory(final File directory, final String relativePath) {
         final List<File> children = listDirectoryChildren(directory, filter);
         for (File child : children) {
             final String fileName = child.getName();
@@ -909,20 +933,30 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                 // the
                 // deploymentDir
                 final boolean archive = deploymentFile.isFile();
-                addContentAddingTask(path, archive, deploymentName, deploymentFile, timestamp, scanContext);
+                addContentAddingTask(path, archive, deploymentName, deploymentFile, timestamp);
             } else if (fileName.endsWith(FAILED_DEPLOY)) {
                 final String deploymentName = fileName.substring(0, fileName.length() - FAILED_DEPLOY.length());
-                scanContext.toRemove.remove(deploymentName);
-                if (!deployed.containsKey(deploymentName) && !(new File(child.getParent(), deploymentName).exists())) {
-                    removeExtraneousMarker(child, fileName);
+                if (acquireScanLock()) {
+                    try {
+                        assert scanContext != null;
+                        scanContext.toRemove.remove(deploymentName);
+                        if (!deployed.containsKey(deploymentName) && !(new File(child.getParent(), deploymentName).exists())) {
+                            if (scanContext.registeredDeployments.containsKey(deploymentName)) {
+                                scanContext.scannerTasks.add(new UndeployTask(deploymentName, deploymentDir, scanContext.scanStartTime, true));
+                            }
+                            removeExtraneousMarker(child, fileName);
+                        }
+                    } finally {
+                        releaseScanLock();
+                    }
                 }
             } else if (isEEArchive(fileName)) {
                 boolean autoDeployable = child.isDirectory() ? autoDeployExploded : autoDeployZip;
                 if (autoDeployable) {
                     if (!isAutoDeployDisabled(child)) {
                         long timestamp = getDeploymentTimestamp(child);
-                        synchronizeScannerStatus(scanContext, directory, fileName, timestamp);
-                        if (isFailedOrUndeployed(scanContext, directory, fileName, timestamp) || scanContext.firstScanDeployments.contains(fileName)) {
+                        synchronizeScannerStatus(directory, fileName, timestamp);
+                        if (isFailedOrUndeployed(directory, fileName, timestamp) || scanContext.firstScanDeployments.contains(fileName)) {
                             continue;
                         }
 
@@ -935,7 +969,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                                     if(firstScan){
                                         scanContext.firstScanDeployments.add(fileName);
                                     }
-                                    addContentAddingTask(path, archive, fileName, child, timestamp, scanContext);
+                                    addContentAddingTask(path, archive, fileName, child, timestamp);
                                 } else {
                                     //we need to make sure that the file was not deleted while
                                     //the scanner was running
@@ -958,7 +992,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                 if (autoDeployXml) {
                     if (!isAutoDeployDisabled(child)) {
                         long timestamp = getDeploymentTimestamp(child);
-                        if (isFailedOrUndeployed(scanContext, directory, fileName, timestamp) || scanContext.firstScanDeployments.contains(fileName)) {
+                        if (isFailedOrUndeployed(directory, fileName, timestamp) || scanContext.firstScanDeployments.contains(fileName)) {
                             continue;
                         }
 
@@ -969,7 +1003,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                                 if(firstScan){
                                     scanContext.firstScanDeployments.add(fileName);
                                 }
-                                addContentAddingTask(path, true, fileName, child, timestamp, scanContext);
+                                addContentAddingTask(path, true, fileName, child, timestamp);
                             } else {
                                 //we need to make sure that the file was not deleted while
                                 //the scanner was running
@@ -1001,7 +1035,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                     // Track for possible ERROR logging
                     scanContext.illegalDir.add(fileName);
                 } else {
-                    scanDirectory(child, relativePath + child.getName() + File.separator, scanContext);
+                    scanDirectory(child, relativePath + child.getName() + File.separator);
                 }
             }
         }
@@ -1016,20 +1050,20 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         }
     }
 
-    private boolean isFailedOrUndeployed(final ScanContext scanContext, final File directory, final String fileName, final long timestamp) {
+    private boolean isFailedOrUndeployed(final File directory, final String fileName, final long timestamp) {
         final File failedMarker = new File(directory, fileName + FAILED_DEPLOY);
         if (failedMarker.exists() && timestamp <= failedMarker.lastModified()) {
             return true;
         }
         final File undeployedMarker = new File(directory, fileName + UNDEPLOYED);
-        if (isMarkedUndeployed(undeployedMarker, timestamp) && !isRegisteredDeployment(scanContext, fileName)) {
+        if (isMarkedUndeployed(undeployedMarker, timestamp) && !isRegisteredDeployment(fileName)) {
             return true;
         }
         return false;
     }
 
-    private void synchronizeScannerStatus(ScanContext scanContext, File directory, String fileName, long timestamp) {
-        if (isRegisteredDeployment(scanContext, fileName)) {
+    private void synchronizeScannerStatus(File directory, String fileName, long timestamp) {
+        if (isRegisteredDeployment(fileName)) {
             final File undeployedMarker = new File(directory, fileName + UNDEPLOYED);
             if (isMarkedUndeployed(undeployedMarker, timestamp) && !scanContext.persistentDeployments.contains(fileName)) {
                 try {
@@ -1058,7 +1092,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     }
 
     private long addContentAddingTask(final String path, final boolean archive, final String deploymentName,
-                                      final File deploymentFile, final long timestamp, final ScanContext scanContext) {
+                                      final File deploymentFile, final long timestamp) {
         if (deploymentTransformer != null) {
             try {
                 deploymentTransformer.transform(deploymentFile.toPath(), deploymentFile.toPath());
@@ -1076,7 +1110,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         return timestamp;
     }
 
-    private boolean isRegisteredDeployment(final ScanContext scanContext, final String fileName) {
+    private boolean isRegisteredDeployment(final String fileName) {
         if(!scanContext.persistentDeployments.contains(fileName)) {//check that we are talking about the deployment in the scanned folder
             return scanContext.registeredDeployments.get(fileName) == null ? false : scanContext.registeredDeployments.get(fileName);
         }
@@ -1149,7 +1183,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
      *
      * @return true if the scan should be aborted
      */
-    private ScanStatus handleAutoDeployFailures(ScanContext scanContext) {
+    private ScanStatus handleAutoDeployFailures() {
 
         ScanStatus result = ScanStatus.PROCEED;
         boolean warnLogged = false;

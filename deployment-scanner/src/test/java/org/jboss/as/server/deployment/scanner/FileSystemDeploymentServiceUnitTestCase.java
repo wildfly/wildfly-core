@@ -478,6 +478,8 @@ public class FileSystemDeploymentServiceUnitTestCase {
         f1 = createFile("spurious" + FileSystemDeploymentService.DEPLOYED);
         f2 = createFile(new File(tmpDir, "nested"), "nested" + FileSystemDeploymentService.DEPLOYED);
 
+        // WFCORE-6255 added UndeployTask, so here needs to be added mocked response which serves as counter of requests in the processOp()
+        ts.controller.addCompositeSuccessResponse(1);
         ts.testee.scan();
 
         // Failed deployments should be cleaned on subsequent scans.
@@ -686,6 +688,66 @@ public class FileSystemDeploymentServiceUnitTestCase {
         assertTrue(deployed.exists());
         assertFalse(failed.exists());
 
+    }
+
+    /**
+     * Test for WFCORE-6255
+     * It tests that the failed archives are undeployed
+     */
+    @Test
+    public void testRemoveFailedDeployment() throws Exception {
+        File war = createFile("foo.war");
+        File dodeploy = createFile("foo.war" + FileSystemDeploymentService.DO_DEPLOY);
+        File deployed = new File(tmpDir, "foo.war" + FileSystemDeploymentService.DEPLOYED);
+        File failed = new File(tmpDir, "foo.war" + FileSystemDeploymentService.FAILED_DEPLOY);
+        TesteeSet ts = createTestee();
+        ts.testee.setAutoDeployZippedContent(true);
+
+        // failure of deploying the foo.war (must be ready before scan)
+        ts.controller.addCompositeFailureResponse(1, 1);
+        ts.testee.scan();
+        assertTrue(war.exists());
+        assertFalse(dodeploy.exists());
+        assertFalse(deployed.exists());
+        assertTrue(failed.exists());
+
+        assertTrue(war.delete());
+        // success of undeploying failed foo.war from the server (must be ready before scan)
+        ts.controller.addCompositeSuccessResponse(1);
+        ts.testee.scan();
+        assertFalse(war.exists());
+        assertFalse(dodeploy.exists());
+        assertFalse(deployed.exists());
+        assertFalse(failed.exists());
+        assertEquals(0, ts.controller.added.size());
+        assertEquals(0, ts.controller.deployed.size());
+        assertTrue(ts.testee.getScanContextRegisteredDeployments().containsKey("foo.war"));
+
+        // failed deployment is released from registeredDeployments at the beginning of the next scan (schedule rescan)
+        ts.testee.scan();
+        assertEquals(0, ts.testee.getScanContextRegisteredDeployments().size());
+    }
+
+    /**
+     * After WFCORE-6255 we need a test that validates that the deployment not associated with the scanner being tested isn't undeployed because
+     * a FAILED_DEPLOY marker file is left in the scanner's directory
+     */
+    @Test
+    public void testIgnoreExternalScannerFailedDeployment() throws Exception {
+        MockServerController sc = new MockServerController("foo.war");
+        TesteeSet ts = createTestee(sc);
+        ts.controller.externallyDeployed.put("foo.war", null);
+        assertThat(ts.controller.deployed.size(), is(1));
+        ts.testee.bootTimeScan(sc.create());
+        File failed = new File(tmpDir, "foo.war" + FileSystemDeploymentService.FAILED_DEPLOY);
+
+        // there is no need for mocked method addCompositeSuccessResponse associated with UndeployTask that means
+        // that there is no undeployment attempt
+        ts.testee.scan();
+
+        assertFalse(failed.exists());
+        assertThat(ts.controller.deployed.size(), is(1));
+        assertThat(ts.controller.deployed.keySet(), hasItems("foo.war"));
     }
 
     @Test
