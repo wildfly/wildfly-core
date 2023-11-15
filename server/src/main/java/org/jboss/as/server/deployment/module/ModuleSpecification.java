@@ -130,6 +130,7 @@ public class ModuleSpecification extends SimpleAttachable {
     private final List<PermissionFactory> permissionFactories = new ArrayList<>();
 
     public void addSystemDependency(final ModuleDependency dependency) {
+        allDependencies = null;
         if (!exclusions.contains(dependency.getIdentifier())) {
             if (!systemDependenciesSet.contains(dependency.getIdentifier())) {
                 this.systemDependencies.add(dependency);
