@@ -57,6 +57,7 @@ import javax.management.openmbean.OpenMBeanParameterInfo;
 import javax.management.openmbean.OpenMBeanParameterInfoSupport;
 import javax.management.openmbean.OpenType;
 import javax.management.openmbean.SimpleType;
+import javax.management.openmbean.TabularType;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CompositeOperationHandler;
@@ -263,9 +264,16 @@ public class MBeanInfoFactory {
             boolean expressionsAllowed = value.hasDefined(EXPRESSIONS_ALLOWED) && value.get(EXPRESSIONS_ALLOWED).asBoolean();
             descriptions.put(DESC_EXPRESSIONS_ALLOWED, String.valueOf(expressionsAllowed));
 
+            OpenType<?> mbeanType = converters.convertToMBeanType(attributeDefinition, value);
             if (!expressionsAllowed) {
                 Object defaultValue = getIfExists(attributeDefinition, value, DEFAULT);
-                descriptions.put(DEFAULT_VALUE_FIELD, defaultValue);
+
+                // The OpenMBeanParameterInfoSupport constructor makes sure that arrays
+                // and TabularTypes do not have a default value. Avoid that exception
+                // by checking here and not adding a default value in this case.
+                if (!mbeanType.isArray() && !((Object)mbeanType instanceof TabularType) ) {
+                    descriptions.put(DEFAULT_VALUE_FIELD, defaultValue);
+                }
                 if (value.has(ALLOWED)) {
                     if (value.get(TYPE).asType()!=ModelType.LIST){
                         List<ModelNode> allowed = value.get(ALLOWED).asList();
@@ -287,12 +295,11 @@ public class MBeanInfoFactory {
                 }
             }
 
-
             params.add(
                     new OpenMBeanParameterInfoSupport(
                             paramName,
                             getDescription(value),
-                            converters.convertToMBeanType(attributeDefinition, value),
+                            mbeanType,
                             new ImmutableDescriptor(descriptions)));
 
         }
