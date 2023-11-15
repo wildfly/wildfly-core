@@ -27,7 +27,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.wildfly.security.asn1.ASN1Encodable;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.principal.NamePrincipal;
@@ -51,13 +50,10 @@ import org.wildfly.security.x500.X500PrincipalBuilder;
 import org.wildfly.security.x500.cert.SubjectAlternativeNamesExtension;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
-import mockit.integration.junit4.JMockit;
-
 
 /**
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
  */
-@RunWith(JMockit.class)
 public class DomainTestCase extends AbstractSubsystemTest {
 
     public DomainTestCase() {
@@ -81,7 +77,6 @@ public class DomainTestCase extends AbstractSubsystemTest {
     }
 
     private void init() throws Exception {
-        TestEnvironment.mockCallerModuleClassloader();
         services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("domain-test.xml").build();
         if (!services.isSuccessfulBoot()) {
             if (services.getBootError() != null) {

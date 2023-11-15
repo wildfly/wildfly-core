@@ -26,7 +26,6 @@ import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.msc.service.ServiceName;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.wildfly.security.auth.callback.ChannelBindingCallback;
 import org.wildfly.security.auth.callback.CredentialCallback;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
@@ -37,12 +36,10 @@ import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
 import org.wildfly.security.sasl.util.SaslMechanismInformation;
 
-import mockit.integration.junit4.JMockit;
 
 /**
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
  */
-@RunWith(JMockit.class)
 public class SaslTestCase extends AbstractSubsystemTest {
 
     public SaslTestCase() {
@@ -52,7 +49,6 @@ public class SaslTestCase extends AbstractSubsystemTest {
     private KernelServices services = null;
 
     private void init() throws Exception {
-        TestEnvironment.mockCallerModuleClassloader(); // to allow loading classes from testsuite
         services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("sasl-test.xml").build();
         if (!services.isSuccessfulBoot()) {
             if (services.getBootError() != null) {

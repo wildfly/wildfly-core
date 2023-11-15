@@ -240,12 +240,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.jmockit</groupId>
-                <artifactId>jmockit</artifactId>
-                <version>${version.org.jmockit}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.mock-server</groupId>
                 <artifactId>mockserver-netty</artifactId>
                 <version>${version.org.mock-server.mockserver-netty}</version>
