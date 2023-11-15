@@ -14,6 +14,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import org.jboss.as.server.deployment.SimpleAttachable;
 import org.jboss.modules.DependencySpec;
@@ -24,6 +25,10 @@ import org.jboss.modules.security.PermissionFactory;
 /**
  * Information used to build a module.
  *
+ * <strong>This class is not thread safe.</strong> It should only be used by the deployment unit processors
+ * associated with a single deployment unit, with a parent deployment and a subdeployment considered to
+ * be separate deployments.
+ *
  * @author Stuart Douglas
  * @author Marius Bogoevici
  */
@@ -32,15 +37,19 @@ public class ModuleSpecification extends SimpleAttachable {
     /**
      * System dependencies are dependencies that are added automatically by the container.
      */
-    private final List<ModuleDependency> systemDependencies = new ArrayList<>();
-
-    /** Unique names of system dependencies, used to ensure only one system ModuleDependency per name is added. */
-    private final Set<ModuleIdentifier> systemDependenciesSet = new HashSet<>();
+    private final Set<ModuleDependency> systemDependenciesSet = new LinkedHashSet<>();
 
     /**
-     * Local dependencies are dependencies on other parts of the deployment, such as class-path entry
+     * List view of {@link #systemDependenciesSet}.
      */
-    private final Set<ModuleDependency> localDependencies = new LinkedHashSet<>();
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated(forRemoval = true)
+    private final List<ModuleDependency> systemDependencies = new ArrayList<>();
+
+    /**
+     * Local dependencies are dependencies on other parts of the deployment, such as a class-path entry
+     */
+    private final Set<ModuleDependency> localDependenciesSet = new LinkedHashSet<>();
 
     /**
      * If set to true this indicates that a dependency on this module requires a dependency on all it's local
@@ -54,11 +63,14 @@ public class ModuleSpecification extends SimpleAttachable {
      * <p/>
      * User dependencies are not affected by exclusions.
      */
-    private final List<ModuleDependency> userDependencies = new ArrayList<>();
-    /**
-     * Set view of user dependencies, used to prevent duplicates in the userDependencies list.
-     */
     private final Set<ModuleDependency> userDependenciesSet = new HashSet<>();
+
+    /**
+     * List view of {@link #userDependenciesSet}.
+     */
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated(forRemoval = true)
+    private final List<ModuleDependency> userDependencies = new ArrayList<>();
 
     private final List<ResourceLoaderSpec> resourceLoaders = new ArrayList<>();
 
@@ -122,7 +134,7 @@ public class ModuleSpecification extends SimpleAttachable {
      * JBoss modules system dependencies, which allow you to specify dependencies on the app class loader
      * to get access to JDK classes.
      */
-    private final List<DependencySpec> moduleSystemDependencies = new ArrayList<DependencySpec>();
+    private final List<DependencySpec> moduleSystemDependencies = new ArrayList<>();
 
     /**
      * The minimum permission set for this module, wrapped as {@code PermissionFactory} instances.
@@ -130,11 +142,9 @@ public class ModuleSpecification extends SimpleAttachable {
     private final List<PermissionFactory> permissionFactories = new ArrayList<>();
 
     public void addSystemDependency(final ModuleDependency dependency) {
-        allDependencies = null;
         if (!exclusions.contains(dependency.getIdentifier())) {
-            if (!systemDependenciesSet.contains(dependency.getIdentifier())) {
-                this.systemDependencies.add(dependency);
-                this.systemDependenciesSet.add(dependency.getIdentifier());
+            if (systemDependenciesSet.add(dependency)) {
+                resetDependencyLists(this.systemDependencies);
             }
         } else {
             excludedDependencies.add(dependency.getIdentifier());
@@ -142,48 +152,74 @@ public class ModuleSpecification extends SimpleAttachable {
     }
 
     public void addSystemDependencies(final Collection<ModuleDependency> dependencies) {
-        allDependencies = null;
         for (final ModuleDependency dependency : dependencies) {
             addSystemDependency(dependency);
         }
     }
 
     public void addUserDependency(final ModuleDependency dependency) {
-        allDependencies = null;
         if (this.userDependenciesSet.add(dependency)) {
-            this.userDependencies.add(dependency);
+            resetDependencyLists(this.userDependencies);
         }
     }
 
     public void addUserDependencies(final Collection<ModuleDependency> dependencies) {
-        allDependencies = null;
         for (final ModuleDependency dependency : dependencies) {
             addUserDependency(dependency);
         }
     }
 
+    /**
+     * Remove user dependencies that match the predicate.
+     *
+     * @param predicate test for whether a dependency should be removed. Cannot be {@code null}.
+     */
+    public void removeUserDependencies(final Predicate<ModuleDependency> predicate) {
+        Iterator<ModuleDependency> iter = userDependenciesSet.iterator();
+        while (iter.hasNext()) {
+            ModuleDependency md = iter.next();
+            if (predicate.test(md)) {
+                iter.remove();
+                resetDependencyLists(userDependencies);
+            }
+        }
+    }
+
     public void addLocalDependency(final ModuleDependency dependency) {
-        allDependencies = null;
         if (!exclusions.contains(dependency.getIdentifier())) {
-            this.localDependencies.add(dependency);
+            if (this.localDependenciesSet.add(dependency)) {
+                resetDependencyLists(null);
+            }
         } else {
             excludedDependencies.add(dependency.getIdentifier());
         }
     }
 
     public void addLocalDependencies(final Collection<ModuleDependency> dependencies) {
-        allDependencies = null;
         for (final ModuleDependency dependency : dependencies) {
             addLocalDependency(dependency);
         }
     }
 
+    /** @deprecated use {@link #getSystemDependenciesSet()} */
+    @Deprecated(forRemoval = true)
     public List<ModuleDependency> getSystemDependencies() {
+        if (systemDependencies.isEmpty()) {
+            systemDependencies.addAll(systemDependenciesSet);
+        }
         return Collections.unmodifiableList(systemDependencies);
     }
 
+    /**
+     * System dependencies are dependencies that are added automatically by the container.
+     *
+     * @return system dependencies iterable in order of addition. Will not return {@code null}.
+     */
+    public Set<ModuleDependency> getSystemDependenciesSet() {
+        return Collections.unmodifiableSet(systemDependenciesSet);
+    }
+
     public void addExclusion(final ModuleIdentifier exclusion) {
-        allDependencies = null;
         final String targetModule = ModuleAliasChecker.getTargetModule(exclusion.toString());
         if (targetModule != null) {
             final ModuleIdentifier identifier = ModuleIdentifier.create(targetModule);
@@ -203,18 +239,20 @@ public class ModuleSpecification extends SimpleAttachable {
         }
         // list of exclusions, aliases or target modules
         exclusions.add(exclusion);
-        Iterator<ModuleDependency> it = systemDependencies.iterator();
+        Iterator<ModuleDependency> it = systemDependenciesSet.iterator();
         while (it.hasNext()) {
             final ModuleDependency dep = it.next();
             if (dep.getIdentifier().equals(exclusion)) {
                 it.remove();
+                resetDependencyLists(this.systemDependencies);
             }
         }
-        it = localDependencies.iterator();
+        it = localDependenciesSet.iterator();
         while (it.hasNext()) {
             final ModuleDependency dep = it.next();
             if (dep.getIdentifier().equals(exclusion)) {
                 it.remove();
+                resetDependencyLists(null);
             }
         }
     }
@@ -226,24 +264,63 @@ public class ModuleSpecification extends SimpleAttachable {
     }
 
 
+    /**
+     * @deprecated use {@link #getLocalDependenciesSet()} ()}
+     */
+    @Deprecated(forRemoval = true)
     public List<ModuleDependency> getLocalDependencies() {
-        return Collections.unmodifiableList(new ArrayList<>(localDependencies));
+        return Collections.unmodifiableList(new ArrayList<>(localDependenciesSet));
     }
 
+
+    /**
+     * Local dependencies are dependencies on other parts of the deployment, such as a class-path entry
+     *
+     * @return local dependencies iterable in order of addition. Will not return {@code null}.
+     */
+    public Set<ModuleDependency> getLocalDependenciesSet() {
+        return Collections.unmodifiableSet(localDependenciesSet);
+    }
+
+    /**
+     * @deprecated use {@link #getUserDependenciesSet()}
+     */
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated(forRemoval = true)
     public List<ModuleDependency> getUserDependencies() {
+        if (userDependencies.isEmpty()) {
+            userDependencies.addAll(userDependenciesSet);
+        }
         return Collections.unmodifiableList(userDependencies);
+    }
+
+    /**
+     * User dependencies are dependencies that the user has specifically added, either via jboss-deployment-structure.xml
+     * or via the manifest.
+     * <p/>
+     * User dependencies are not affected by exclusions.
+     *
+     * @return user dependencies iterable in order of addition. Will not return {@code null}.
+     */
+    public Set<ModuleDependency> getUserDependenciesSet() {
+        return Collections.unmodifiableSet(userDependenciesSet);
     }
 
     /**
      * Gets a modifiable view of the user dependencies list.
      *
      * @return The user dependencies
+     *
+     * @deprecated use {@link #addUserDependency(ModuleDependency)} and {@link #removeUserDependencies(Predicate)}
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated(forRemoval = true)
     public Collection<ModuleDependency> getMutableUserDependencies() {
-        allDependencies = null;
+        resetDependencyLists(this.userDependencies);
         return userDependenciesSet;
     }
 
+    @SuppressWarnings("unused")
     public void addResourceLoader(final ResourceLoaderSpec resourceLoader) {
         this.resourceLoaders.add(resourceLoader);
     }
@@ -288,32 +365,32 @@ public class ModuleSpecification extends SimpleAttachable {
         return publicModule;
     }
 
+    @SuppressWarnings("unused")
     public void setPublicModule(boolean publicModule) {
         this.publicModule = publicModule;
     }
 
     /**
-     * Returns true if the {@link #localDependencies} added for this {@link ModuleSpecification} should be made
+     * Returns true if the {@link #getLocalDependenciesSet() local dependencies} added for this {@link ModuleSpecification} should be made
      * transitive (i.e. if any other module 'B' depends on the module 'A' represented by this {@link ModuleSpecification}, then
      * module 'B' will be added with all "local dependencies" that are applicable for module "A"). Else returns false.
      *
-     * @return
-     * @see {@link #localDependencies}
+     * @return {@code true} if local dependencies should be made transitive
+     * @see #getLocalDependenciesSet()
      */
     public boolean isLocalDependenciesTransitive() {
         return localDependenciesTransitive;
     }
 
     /**
-     * Sets whether the {@link #localDependencies} applicable for this {@link ModuleSpecification} are to be treated as transitive dependencies
+     * Sets whether the {@link #getLocalDependenciesSet() local dependencies} applicable for this {@link ModuleSpecification} are to be treated as transitive dependencies
      * for modules which depend on the module represented by this {@link ModuleSpecification}
      *
-     * @param localDependenciesTransitive True if the {@link #localDependencies} added for this {@link ModuleSpecification} should be made
+     * @param localDependenciesTransitive {@code true} if the {@link #getLocalDependenciesSet()} added for this {@link ModuleSpecification} should be made
      *                                    transitive (i.e. if any other module 'B' depends on the module 'A' represented by
      *                                    this {@link ModuleSpecification}, then module 'B' will be added with
      *                                    all "local dependencies" that are applicable for module "A"). False otherwise
-     * @return
-     * @see {@link #localDependencies}
+     * @see #getLocalDependenciesSet()
      */
     public void setLocalDependenciesTransitive(final boolean localDependenciesTransitive) {
         this.localDependenciesTransitive = localDependenciesTransitive;
@@ -327,6 +404,7 @@ public class ModuleSpecification extends SimpleAttachable {
         this.localLast = localLast;
     }
 
+    @SuppressWarnings("unused")
     public void addAlias(final ModuleIdentifier moduleIdentifier) {
         aliases.add(moduleIdentifier);
     }
@@ -341,10 +419,10 @@ public class ModuleSpecification extends SimpleAttachable {
 
     public List<ModuleDependency> getAllDependencies() {
         if (allDependencies == null) {
-            allDependencies = new ArrayList<ModuleDependency>();
-            allDependencies.addAll(systemDependencies);
-            allDependencies.addAll(userDependencies);
-            allDependencies.addAll(localDependencies);
+            allDependencies = new ArrayList<>();
+            allDependencies.addAll(systemDependenciesSet);
+            allDependencies.addAll(userDependenciesSet);
+            allDependencies.addAll(localDependenciesSet);
         }
         return allDependencies;
     }
@@ -391,6 +469,13 @@ public class ModuleSpecification extends SimpleAttachable {
             }
         }
         return unExcludedModuleExclusion;
+    }
+
+    private void resetDependencyLists(List<ModuleDependency> listView) {
+        if (listView != null) {
+            listView.clear();
+        }
+        allDependencies = null;
     }
 
 }

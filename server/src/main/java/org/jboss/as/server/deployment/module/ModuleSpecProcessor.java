@@ -9,11 +9,13 @@ import java.io.IOException;
 import java.security.Permission;
 import java.security.Permissions;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.PropertyPermission;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.jboss.as.server.deployment.Attachments;
@@ -146,9 +148,9 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
      * @param module              The additional module
      */
     private void addAllDependenciesAndPermissions(final ModuleSpecification moduleSpecification, final AdditionalModuleSpecification module) {
-        module.addSystemDependencies(moduleSpecification.getSystemDependencies());
-        module.addLocalDependencies(moduleSpecification.getLocalDependencies());
-        for(ModuleDependency dep : moduleSpecification.getUserDependencies()) {
+        module.addSystemDependencies(moduleSpecification.getSystemDependenciesSet());
+        module.addLocalDependencies(moduleSpecification.getLocalDependenciesSet());
+        for(ModuleDependency dep : moduleSpecification.getUserDependenciesSet()) {
             if(!dep.getIdentifier().equals(module.getModuleIdentifier())) {
                 module.addUserDependency(dep);
             }
@@ -202,9 +204,9 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         for (final DependencySpec dep : moduleSpecification.getModuleSystemDependencies()) {
             specBuilder.addDependency(dep);
         }
-        final List<ModuleDependency> dependencies = moduleSpecification.getSystemDependencies();
-        final List<ModuleDependency> localDependencies = moduleSpecification.getLocalDependencies();
-        final List<ModuleDependency> userDependencies = moduleSpecification.getUserDependencies();
+        final Set<ModuleDependency> dependencies = moduleSpecification.getSystemDependenciesSet();
+        final Set<ModuleDependency> localDependencies = moduleSpecification.getLocalDependenciesSet();
+        final Set<ModuleDependency> userDependencies = moduleSpecification.getUserDependenciesSet();
 
         final List<PermissionFactory> permFactories = moduleSpecification.getPermissionFactories();
 
@@ -301,7 +303,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         }
     }
 
-    private void createDependencies(final ModuleSpec.Builder specBuilder, final List<ModuleDependency> apiDependencies, final boolean requireTransitive) {
+    private void createDependencies(final ModuleSpec.Builder specBuilder, final Collection<ModuleDependency> apiDependencies, final boolean requireTransitive) {
         if (apiDependencies != null) {
             for (final ModuleDependency dependency : apiDependencies) {
                 final boolean export = requireTransitive ? true : dependency.isExport();
