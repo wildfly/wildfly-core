@@ -115,7 +115,7 @@
 
         <!-- This overrides default surefire plugin version specified in parent pom - reason is to enable TCP/IP communication,
              see https://maven.apache.org/surefire/maven-surefire-plugin/examples/process-communication.html -->
-	<version.surefire.plugin>3.1.2</version.surefire.plugin>
+        <version.surefire.plugin>3.1.2</version.surefire.plugin>
 
         <!-- Non-default maven plugin versions and configuration -->
         <version.jacoco.plugin>0.8.10</version.jacoco.plugin>
@@ -128,7 +128,7 @@
         <version.org.wildfly.jar.plugin>8.1.0.Final</version.org.wildfly.jar.plugin>
         <!-- plugins related to wildfly build and tooling -->
         <version.org.wildfly.component-matrix-plugin>1.0.3.Final</version.org.wildfly.component-matrix-plugin>
-        <version.org.wildfly.plugins>2.2.0.Final</version.org.wildfly.plugins>
+        <version.org.wildfly.licenses.plugin>2.4.0.Final</version.org.wildfly.licenses.plugin>
         <version.versions.plugin>2.5</version.versions.plugin>
         <version.xml.plugin>1.1.0</version.xml.plugin>
         <wildfly.build.output.dir>dist/target/${server.output.dir.prefix}-${wildfly.core.release.version}</wildfly.build.output.dir>
@@ -643,7 +643,7 @@
                 <plugin>
                     <groupId>org.wildfly.maven.plugins</groupId>
                     <artifactId>licenses-plugin</artifactId>
-                    <version>${version.org.wildfly.plugins}</version>
+                    <version>${version.org.wildfly.licenses.plugin}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.wildfly.galleon-plugins</groupId>
@@ -696,7 +696,7 @@
                 <classifier>bin-windows</classifier>
                 <type>zip</type>
                 <version>${version.commons-daemon}</version>
-            </dependency>            
+            </dependency>
             <dependency>
                 <groupId>io.smallrye</groupId>
                 <artifactId>jandex</artifactId>
