@@ -269,7 +269,6 @@
                      <plugin>
                          <groupId>org.wildfly.plugins</groupId>
                          <artifactId>wildfly-maven-plugin</artifactId>
-                         <version>${version.wildfly.plugin}</version>
                          <configuration>
                              <!-- We turn off the ${ts.enable.elytron.cli}
                                   script as Galleon already enabled it-->
@@ -380,7 +379,6 @@
                     <plugin>
                          <groupId>org.wildfly.plugins</groupId>
                          <artifactId>wildfly-maven-plugin</artifactId>
-                         <version>${version.wildfly.plugin}</version>
                          <executions>
                              <execution>
                                  <goals>
