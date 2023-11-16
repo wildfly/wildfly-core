@@ -674,6 +674,11 @@
                     <artifactId>wildfly-component-matrix-plugin</artifactId>
                     <version>${version.org.wildfly.component-matrix-plugin}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.wildfly.plugins</groupId>
+                    <artifactId>wildfly-maven-plugin</artifactId>
+                    <version>${version.wildfly.plugin}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
