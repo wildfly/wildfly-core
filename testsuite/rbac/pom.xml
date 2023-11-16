@@ -69,8 +69,8 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.jboss.galleon</groupId>
-                <artifactId>galleon-maven-plugin</artifactId>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>server-provisioning</id>
@@ -79,14 +79,15 @@
                         </goals>
                         <phase>generate-test-resources</phase>
                         <configuration>
-                            <install-dir>${project.build.directory}/${server.output.dir.prefix}</install-dir>
-                            <record-state>false</record-state>
-                            <log-time>${galleon.log.time}</log-time>
-                            <offline>true</offline>
-                            <plugin-options>
+                            <provisioning-dir>${project.build.directory}/${server.output.dir.prefix}</provisioning-dir>
+                            <record-provisioning-state>false</record-provisioning-state>
+                            <log-provisioning-time>${galleon.log.time}</log-provisioning-time>
+                            <offline-provisioning>true</offline-provisioning>
+                            <overwrite-provisioned-server>true</overwrite-provisioned-server>
+                            <galleon-options>
                                 <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
-                            </plugin-options>
+                            </galleon-options>
                             <feature-packs>
                                 <feature-pack>
                                     <groupId>org.wildfly.core</groupId>
@@ -289,8 +290,8 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.jboss.galleon</groupId>
-                        <artifactId>galleon-maven-plugin</artifactId>
+                        <groupId>org.wildfly.plugins</groupId>
+                        <artifactId>wildfly-maven-plugin</artifactId>
                         <executions>
                             <!-- Disable the default provisioning -->
                             <execution>
@@ -308,15 +309,16 @@
                                 </goals>
                                 <phase>compile</phase>
                                 <configuration>
-                                    <install-dir>${project.build.directory}/${server.output.dir.prefix}</install-dir>
-                                    <record-state>false</record-state>
-                                    <log-time>${galleon.log.time}</log-time>
-                                    <offline>true</offline>
-                                    <plugin-options>
+                                    <provisioning-dir>${project.build.directory}/${server.output.dir.prefix}</provisioning-dir>
+                                    <record-provisioning-state>false</record-provisioning-state>
+                                    <log-provisioning-time>${galleon.log.time}</log-provisioning-time>
+                                    <offline-provisioning>true</offline-provisioning>
+                                    <overwrite-provisioned-server>true</overwrite-provisioned-server>
+                                    <galleon-options>
                                         <jboss-maven-dist/>
                                         <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                         <optional-packages>passive+</optional-packages>
-                                    </plugin-options>
+                                    </galleon-options>
                                     <feature-packs>
                                         <feature-pack>
                                             <groupId>org.wildfly.core</groupId>
@@ -334,17 +336,11 @@
                                             </excluded-packages>
                                         </feature-pack>
                                     </feature-packs>
-                                    <configurations>
-                                        <config>
-                                            <model>standalone</model>
-                                            <name>standalone.xml</name>
-                                            <layers>
-                                                <layer>core-server</layer>
-                                                <layer>core-tools</layer>
-                                                <layer>deployment-scanner</layer>
-                                            </layers>
-                                        </config>
-                                    </configurations>
+                                    <layers>
+                                        <layer>core-server</layer>
+                                        <layer>core-tools</layer>
+                                        <layer>deployment-scanner</layer>
+                                    </layers>
                                 </configuration>
                             </execution>
                         </executions>
@@ -364,8 +360,8 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.jboss.galleon</groupId>
-                        <artifactId>galleon-maven-plugin</artifactId>   
+                        <groupId>org.wildfly.plugins</groupId>
+                        <artifactId>wildfly-maven-plugin</artifactId>
                         <executions>
                             <!-- Disable the default provisioning, TODO, to provision multiple bootable-jars-->
                             <execution>
