@@ -39,6 +39,7 @@ import org.jboss.as.controller.transform.TransformationTargetImpl;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.host.controller.mgmt.HostInfo;
+import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
@@ -89,7 +90,7 @@ public class ReadPrimaryDomainModelHandlerTestCase {
         hostInfo.get(INITIAL_SERVER_GROUPS).setEmptyObject();
         hostInfo.get("domain-connection-id").set(1361470170404L);
 
-        Resource transformedResource = transformResource(registry, resourceRoot, resourceRegistration, HostInfo.fromModelNode(hostInfo));
+        Resource transformedResource = transformResource(registry, resourceRoot, resourceRegistration, HostInfo.fromModelNode(hostInfo, new ProductConfig("name", "version", "slot")));
         ModelNode transformed = Resource.Tools.readModel(transformedResource);
 
         Assert.assertEquals("value", transformed.get("extension", "not-ignored", "attr").asString());

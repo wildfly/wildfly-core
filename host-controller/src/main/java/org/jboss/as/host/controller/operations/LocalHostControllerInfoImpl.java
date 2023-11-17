@@ -12,6 +12,7 @@ import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
+import org.jboss.as.version.ProductConfig;
 import org.jboss.as.version.Quality;
 import org.jboss.msc.service.ServiceName;
 
@@ -43,7 +44,7 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     private volatile boolean overrideLocalHostName = false;
 
     /** Constructor solely for test cases */
-    public LocalHostControllerInfoImpl(final ControlledProcessState processState, final String localHostName) {
+    protected LocalHostControllerInfoImpl(final ControlledProcessState processState, final String localHostName) {
         this.processState = processState;
         this.hostEnvironment = null;
         this.localHostName = localHostName;
@@ -152,6 +153,11 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     @Override
     public boolean isUsingCachedDc() {
         return hostEnvironment == null ? false : hostEnvironment.isUseCachedDc();
+    }
+
+    @Override
+    public ProductConfig getProductConfig() {
+        return hostEnvironment != null ? hostEnvironment.getProductConfig() : null;
     }
 
     public AdminOnlyDomainConfigPolicy getAdminOnlyDomainConfigPolicy() {

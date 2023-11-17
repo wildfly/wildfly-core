@@ -10,6 +10,7 @@ import java.util.List;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
+import org.jboss.as.version.ProductConfig;
 
 /**
  * Core information about the local host controller.
@@ -122,4 +123,9 @@ public interface LocalHostControllerInfo extends FeatureRegistry {
      */
     ControlledProcessState.State getProcessState();
 
+    /**
+     * Returns the product configuration of the host controller process.
+     * @return the host controller process product configuration
+     */
+    ProductConfig getProductConfig();
 }

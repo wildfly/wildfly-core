@@ -96,12 +96,12 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         return info;
     }
 
-    public static HostInfo fromModelNode(final ModelNode hostInfo) {
-        return new HostInfo(hostInfo, null);
+    public static HostInfo fromModelNode(final ModelNode hostInfo, ProductConfig productConfig) {
+        return fromModelNode(hostInfo, null, productConfig);
     }
 
-    public static HostInfo fromModelNode(final ModelNode hostInfo, DomainHostExcludeRegistry hostIgnoreRegistry) {
-        return new HostInfo(hostInfo, hostIgnoreRegistry);
+    public static HostInfo fromModelNode(final ModelNode hostInfo, DomainHostExcludeRegistry hostIgnoreRegistry, ProductConfig productConfig) {
+        return new HostInfo(hostInfo, hostIgnoreRegistry, productConfig);
     }
 
     private final String hostName;
@@ -122,7 +122,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
     // GuardedBy this
     private ReadMasterDomainModelUtil.RequiredConfigurationHolder requiredConfigurationHolder;
 
-    private HostInfo(final ModelNode hostInfo, DomainHostExcludeRegistry hostIgnoreRegistry) {
+    private HostInfo(final ModelNode hostInfo, DomainHostExcludeRegistry hostIgnoreRegistry, ProductConfig productConfig) {
         hostName = hostInfo.require(NAME).asString();
         releaseVersion = hostInfo.require(RELEASE_VERSION).asString();
         releaseCodeName = hostInfo.require(RELEASE_CODENAME).asString();
@@ -133,7 +133,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         productVersion = hostInfo.hasDefined(PRODUCT_VERSION) ? hostInfo.require(PRODUCT_VERSION).asString() : null;
         remoteConnectionId = hostInfo.hasDefined(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID)
                 ? hostInfo.get(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID).asLong() : null;
-        this.quality = Optional.ofNullable(hostInfo.get(ModelDescriptionConstants.QUALITY).asStringOrNull()).map(Quality::valueOf).orElse(Quality.DEFAULT);
+        this.quality = Optional.ofNullable(hostInfo.get(ModelDescriptionConstants.QUALITY).asStringOrNull()).map(Quality::valueOf).orElse(productConfig.getDefaultQuality());
 
         Set<String> domainIgnoredExtensions = null;
         Set<String> domainActiveServerGroups = null;

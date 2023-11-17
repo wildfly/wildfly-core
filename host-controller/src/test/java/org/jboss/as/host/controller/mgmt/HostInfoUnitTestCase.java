@@ -47,7 +47,7 @@ public class HostInfoUnitTestCase {
         Assert.assertEquals(new ModelNode().setEmptyObject(), model.get(INITIAL_SERVER_GROUPS));
 
 
-        HostInfo testee = HostInfo.fromModelNode(model);
+        HostInfo testee = HostInfo.fromModelNode(model, productConfig);
         Assert.assertEquals("test", testee.getHostName());
         Assert.assertEquals("product", testee.getProductName());
         Assert.assertEquals("version", testee.getProductVersion());
@@ -61,7 +61,7 @@ public class HostInfoUnitTestCase {
         productConfig = new ProductConfig(null, null, "main");
         model = HostInfo.createLocalHostHostInfo(lch, productConfig, ignoredRegistry, Resource.Factory.create());
         model.get(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID).set(1L);
-        testee = HostInfo.fromModelNode(model);
+        testee = HostInfo.fromModelNode(model, productConfig);
         Assert.assertNull(testee.getProductName());
         Assert.assertNull(testee.getProductVersion());
         Assert.assertNotNull(testee.getRemoteConnectionId());
@@ -132,7 +132,7 @@ public class HostInfoUnitTestCase {
 
         ModelNode model = HostInfo.createLocalHostHostInfo(lch, productConfig, ignoredRegistry, Resource.Factory.create());
 
-        HostInfo testee = HostInfo.fromModelNode(model);
+        HostInfo testee = HostInfo.fromModelNode(model, productConfig);
 
         Assert.assertTrue(testee.isResourceTransformationIgnored(PathAddress.pathAddress(PathElement.pathElement("wildcard", "ignored"))));
         Assert.assertTrue(testee.isResourceTransformationIgnored(PathAddress.pathAddress(PathElement.pathElement("list", "ignored"))));
