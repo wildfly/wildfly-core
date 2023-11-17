@@ -118,6 +118,7 @@
         <version.surefire.plugin>3.1.2</version.surefire.plugin>
 
         <!-- Non-default maven plugin versions and configuration -->
+        <version.buildhelper.plugin>3.4.0</version.buildhelper.plugin>
         <version.jacoco.plugin>0.8.10</version.jacoco.plugin>
         <version.org.jboss.galleon>5.2.2.Final</version.org.jboss.galleon>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
@@ -668,6 +669,11 @@
                     <groupId>org.wildfly.plugins</groupId>
                     <artifactId>wildfly-component-matrix-plugin</artifactId>
                     <version>${version.org.wildfly.component-matrix-plugin}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${version.buildhelper.plugin}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1336,6 +1342,13 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-channel</artifactId>
+                <version>${project.version}</version>
+                <type>yaml</type>
+                <classifier>channel</classifier>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-core-dist</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
@@ -1416,6 +1429,13 @@
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-core-management-subsystem</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-manifest</artifactId>
+                <version>${project.version}</version>
+                <type>yaml</type>
+                <classifier>manifest</classifier>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
