@@ -34,9 +34,6 @@ import org.wildfly.security.x500.cert.BasicConstraintsExtension;
 import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
-import mockit.Mock;
-import mockit.MockUp;
-
 class TestEnvironment extends AdditionalInitialization {
 
     static final int LDAPS1_PORT = 11391;
@@ -192,18 +189,6 @@ class TestEnvironment extends AdditionalInitialization {
                 return FileVisitResult.CONTINUE;
             }
         });
-    }
-
-    // classloader obtaining mock to load classes from testsuite
-    private static class ClassLoadingAttributeDefinitionsMock extends MockUp<ClassLoadingAttributeDefinitions> {
-        @Mock
-        static ClassLoader resolveClassLoader(String module) {
-            return SaslTestCase.class.getClassLoader();
-        }
-    }
-
-    static void mockCallerModuleClassloader() {
-        new ClassLoadingAttributeDefinitionsMock();
     }
 
     static void activateService(KernelServices services, RuntimeCapability capability, String... dynamicNameElements) throws InterruptedException {
