@@ -32,7 +32,6 @@
         <byteman.jvm.args>-javaagent:${org.jboss.byteman:byteman:jar}=port:${byteman.port},address:${byteman.host},boot:${org.jboss.byteman:byteman:jar} -Dorg.jboss.byteman.transform.all -Dorg.jboss.byteman.verbose=true</byteman.jvm.args>
         -->
 								
-        <ts.elytron.cli>../shared/enable-elytron.cli</ts.elytron.cli>
     </properties>
     
     <dependencies>
@@ -348,49 +347,6 @@
                                 </configuration>
                             </execution>
                         </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <!-- profile to configure WildFly to use Elytron instead of legacy security: -Delytron -->
-        <profile>
-            <id>elytron.profile</id>
-            <activation>
-                <property>
-                    <name>elytron</name>
-                </property>
-                <file>
-                    <exists>${ts.elytron.cli}</exists>
-                </file>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.wildfly.plugins</groupId>
-                        <artifactId>wildfly-maven-plugin</artifactId>
-                        <version>${version.wildfly.plugin}</version>
-                        <executions>
-                            <execution>
-                                <phase>process-test-resources</phase>
-                                <goals>
-                                    <goal>execute-commands</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <offline>true</offline>
-                            <scripts>
-                                <script>${ts.elytron.cli}</script>
-                            </scripts>
-                            <jboss-home>${project.build.directory}/wildfly-core</jboss-home>
-                            <stdout>${project.build.directory}/wildfly-plugin.log</stdout>
-                            <java-opts>${modular.jdk.args}</java-opts>
-                            <system-properties>
-                                <maven.repo.local>${settings.localRepository}</maven.repo.local>
-                                <module.path>${jboss.dist}/modules</module.path>
-                            </system-properties>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>

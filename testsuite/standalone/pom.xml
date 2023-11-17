@@ -32,9 +32,6 @@
         <jbossas.ts.dir>${jbossas.ts.integ.dir}/..</jbossas.ts.dir>
         <jbossas.project.dir>${jbossas.ts.dir}</jbossas.project.dir>
         <wildfly.home>${project.basedir}/target/wildfly-core</wildfly.home>
-
-        <ts.elytron.cli>enable-elytron.cli</ts.elytron.cli>
-
         <exclude.tests>nothing-to-exclude</exclude.tests>
     </properties>
 
@@ -465,53 +462,6 @@
                 </plugins>
             </build>
         </profile>
-
-         <!-- profile to configure WildFly to use Elytron instead of legacy security: -Delytron -->
-         <profile>
-             <id>elytron.profile</id>
-             <activation>
-                 <property>
-                     <name>elytron</name>
-                 </property>
-                 <file>
-                     <exists>${ts.elytron.cli}</exists>
-                 </file>
-             </activation>
-             <properties>
-                 <exclude.tests>org.jboss.as.test.integration.credential.store.ManagementAuthenticationUsersTestCase.java</exclude.tests>
-             </properties>
-             <build>
-                 <plugins>
-                     <plugin>
-                         <groupId>org.wildfly.plugins</groupId>
-                         <artifactId>wildfly-maven-plugin</artifactId>
-                         <version>${version.wildfly.plugin}</version>
-                         <executions>
-                             <execution>
-                                 <phase>process-test-resources</phase>
-                                 <goals>
-                                     <goal>execute-commands</goal>
-                                 </goals>
-                             </execution>
-                         </executions>
-                         <configuration>
-                             <offline>true</offline>
-                             <scripts>
-                                 <script>${ts.elytron.cli}</script>
-                             </scripts>
-                             <jboss-home>${project.build.directory}/${server.output.dir.prefix}</jboss-home>
-                             <stdout>${project.build.directory}/wildfly-plugin.log</stdout>
-                             <java-opts>${modular.jdk.args}</java-opts>
-                             <system-properties>
-                                 <maven.repo.local>${settings.localRepository}</maven.repo.local>
-                                 <module.path>${jboss.dist}/modules</module.path>
-                             </system-properties>
-                         </configuration>
-                     </plugin>
-                 </plugins>
-             </build>
-         </profile>
-
      </profiles>
 
 </project>
