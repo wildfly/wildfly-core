@@ -50,6 +50,7 @@ import org.jboss.as.controller.client.helpers.domain.ServerIdentity;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.as.version.Quality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
@@ -254,7 +255,10 @@ public class DomainLifecycleUtil implements AutoCloseable {
                 commandBuilder.setInterProcessHostControllerAddress(configuration.getHostControllerManagementAddress());
                 commandBuilder.setProcessControllerAddress(configuration.getHostControllerManagementAddress());
             }
-            commandBuilder.setQuality(this.configuration.getQuality().toString());
+            Quality quality = this.configuration.getQuality();
+            if (quality != Quality.DEFAULT) {
+                commandBuilder.setQuality(quality.toString());
+            }
             // the process working dir
             final String workingDir = domainDir.toString();
 
