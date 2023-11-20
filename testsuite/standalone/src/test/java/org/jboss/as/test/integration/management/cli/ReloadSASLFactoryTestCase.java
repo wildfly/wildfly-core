@@ -92,7 +92,6 @@ public class ReloadSASLFactoryTestCase {
                 + "add(security-domain=Other,sasl-server-factory=elytron,mechanism-configurations="
                 + "[{mechanism-name=DIGEST-MD5,mechanism-realm-configurations=[{realm-name=OtherRealm}]}])");
 
-        // -Delytron profile, the factory is already attached to management interface.
         ModelNode getSaslFactory = createOpNode("core-service=management/management-interface=http-interface", "read-attribute");
         getSaslFactory.get("name").set("http-upgrade");
         ModelNode res = ctx.getModelControllerClient().execute(getSaslFactory);
