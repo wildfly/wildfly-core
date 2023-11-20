@@ -1428,7 +1428,7 @@ public class S3Util {
                     if (hashKey == null) {
                         continue;
                     }
-                    String lk = hashKey.toLowerCase();
+                    String lk = hashKey.toLowerCase(Locale.ENGLISH);
 
                     // Ignore any headers that are not particularly interesting.
                     if (lk.equals("content-type") || lk.equals("content-md5") || lk.equals("date")

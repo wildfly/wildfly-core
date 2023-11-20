@@ -46,7 +46,7 @@ final class JmxInterfaceStringUtils {
     static String toDashCase(String string) {
         String regex = "([a-z])([A-Z])";
         String replacement = "$1-$2";
-        return string.replaceAll(regex, replacement).toLowerCase();
+        return string.replaceAll(regex, replacement).toLowerCase(Locale.ENGLISH);
     }
 
     static String toCamelCase(String str) {

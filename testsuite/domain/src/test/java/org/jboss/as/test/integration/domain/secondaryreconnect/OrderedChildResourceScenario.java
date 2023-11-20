@@ -15,6 +15,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 
+import java.util.Locale;
 import java.util.Set;
 
 import org.jboss.as.controller.PathAddress;
@@ -120,7 +121,7 @@ public class OrderedChildResourceScenario extends ReconnectTestScenario {
 
     private void addChild(DomainClient primaryClient, String childName, int index) throws Exception {
         final ModelNode op =  Util.createAddOperation(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(OrderedChildResourceExtension.CHILD.getKey(), childName)));
-        op.get("attr").set(childName.toLowerCase());
+        op.get("attr").set(childName.toLowerCase(Locale.ENGLISH));
         if (index >= 0) {
             op.get(ADD_INDEX).set(index);
         }

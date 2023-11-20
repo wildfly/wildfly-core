@@ -6,6 +6,8 @@ package org.jboss.as.cli.handlers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContext.TIMEOUT_RESET_VALUE;
 import org.jboss.as.cli.CommandFormatException;
@@ -32,7 +34,7 @@ public class CommandTimeoutHandler extends CommandHandlerWithHelp {
         ACTIONS.add(RESET);
         ACTIONS.add(SET);
         for (TIMEOUT_RESET_VALUE tr : TIMEOUT_RESET_VALUE.values()) {
-            VALUES.add(tr.name().toLowerCase());
+            VALUES.add(tr.name().toLowerCase(Locale.ENGLISH));
         }
     }
 
@@ -99,7 +101,7 @@ public class CommandTimeoutHandler extends CommandHandlerWithHelp {
                     throw new CommandLineException("No reset value");
                 }
                 String v = value.getValue(ctx.getParsedCommandLine());
-                TIMEOUT_RESET_VALUE resetValue = Enum.valueOf(TIMEOUT_RESET_VALUE.class, v.toUpperCase());
+                TIMEOUT_RESET_VALUE resetValue = Enum.valueOf(TIMEOUT_RESET_VALUE.class, v.toUpperCase(Locale.ENGLISH));
                 ctx.resetTimeout(resetValue);
                 break;
             }

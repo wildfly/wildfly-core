@@ -14,6 +14,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRI
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import javax.xml.stream.XMLStreamException;
@@ -105,7 +106,7 @@ public class NewExtension implements Extension {
                         @Override
                         protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
                             if (attributeValue.isDefined()) {
-                                attributeValue.set(attributeValue.asString().toUpperCase());
+                                attributeValue.set(attributeValue.asString().toUpperCase(Locale.ENGLISH));
                             }
                         }
                     }, TEST)

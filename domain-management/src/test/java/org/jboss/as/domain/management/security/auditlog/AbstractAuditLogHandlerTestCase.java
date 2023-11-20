@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.jboss.as.controller.OperationFailedException;
@@ -393,7 +394,7 @@ public class AbstractAuditLogHandlerTestCase extends ManagementControllerTestBas
     protected PathAddress createSyslogHandlerProtocolAddress(String handlerName, SyslogAuditLogHandler.Transport transport){
         return AUDIT_ADDR.append(
                 PathElement.pathElement(ModelDescriptionConstants.SYSLOG_HANDLER, handlerName),
-                PathElement.pathElement(PROTOCOL, transport.name().toLowerCase()));
+                PathElement.pathElement(PROTOCOL, transport.name().toLowerCase(Locale.ENGLISH)));
     }
 
     protected ModelNode createAddHandlerReferenceOperation(String name){

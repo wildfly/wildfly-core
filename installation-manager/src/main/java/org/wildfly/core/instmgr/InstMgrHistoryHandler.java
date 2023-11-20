@@ -7,6 +7,7 @@ package org.wildfly.core.instmgr;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -51,7 +52,7 @@ public class InstMgrHistoryHandler extends InstMgrOperationStepHandler {
                         ModelNode entry = new ModelNode();
                         entry.get(InstMgrConstants.HISTORY_RESULT_HASH).set(hr.getName());
                         entry.get(InstMgrConstants.HISTORY_RESULT_TIMESTAMP).set(hr.timestamp().toString());
-                        entry.get(InstMgrConstants.HISTORY_RESULT_TYPE).set(hr.getType().toLowerCase());
+                        entry.get(InstMgrConstants.HISTORY_RESULT_TYPE).set(hr.getType().toLowerCase(Locale.ENGLISH));
                         if (hr.getDescription() != null) {
                             entry.get(InstMgrConstants.HISTORY_RESULT_DESCRIPTION).set(hr.getDescription());
                         }

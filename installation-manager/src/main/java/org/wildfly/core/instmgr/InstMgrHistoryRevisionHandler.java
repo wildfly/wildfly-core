@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -66,7 +67,7 @@ public class InstMgrHistoryRevisionHandler extends InstMgrOperationStepHandler {
                         for (ArtifactChange artifactChange : artifactChanges) {
                             ModelNode artifactChangeMn = new ModelNode();
                             artifactChangeMn.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_NAME).set(artifactChange.getArtifactName());
-                            artifactChangeMn.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_STATUS).set(artifactChange.getStatus().name().toLowerCase());
+                            artifactChangeMn.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_STATUS).set(artifactChange.getStatus().name().toLowerCase(Locale.ENGLISH));
                             switch (artifactChange.getStatus()) {
                                 case REMOVED:
                                     artifactChangeMn.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_OLD_VERSION).set(artifactChange.getOldVersion());
@@ -90,7 +91,7 @@ public class InstMgrHistoryRevisionHandler extends InstMgrOperationStepHandler {
                     if (!channelChanges.isEmpty()) {
                         for (ChannelChange channelChange : channelChanges) {
                             ModelNode channelChangeMn = new ModelNode();
-                            channelChangeMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_STATUS).set(channelChange.getStatus().name().toLowerCase());
+                            channelChangeMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_STATUS).set(channelChange.getStatus().name().toLowerCase(Locale.ENGLISH));
                             switch (channelChange.getStatus()) {
                                 case REMOVED: {
                                     Channel channel = channelChange.getOldChannel().get();

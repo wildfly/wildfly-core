@@ -50,6 +50,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1593,7 +1594,7 @@ class SSLDefinitions {
             ROOT_LOGGER.trace("Unable to find com.sun.net.ssl.internal.ssl.Provider.isFIPS() method.", e);
         }
 
-        return () -> new SecureRandom().getProvider().getName().toLowerCase().contains("fips");
+        return () -> new SecureRandom().getProvider().getName().toLowerCase(Locale.ENGLISH).contains("fips");
     }
 
     static ModifiableKeyStoreService getModifiableKeyStoreService(OperationContext context, String keyStoreName) {

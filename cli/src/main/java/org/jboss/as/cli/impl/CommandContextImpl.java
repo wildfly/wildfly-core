@@ -859,7 +859,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                 handleOperation(parsedCmd);
             } else {
                 final String cmdName = parsedCmd.getOperationName();
-                CommandHandler handler = cmdRegistry.getCommandHandler(cmdName.toLowerCase());
+                CommandHandler handler = cmdRegistry.getCommandHandler(cmdName.toLowerCase(Locale.ENGLISH));
                 if (handler != null) {
                     handleLegacyCommand(line, handler, false);
                 } else {
@@ -1869,7 +1869,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
             // Deprecated commands for backward compat.
             // Commands that are not exposed in completion.
             if (parsedCmd.getFormat() != OperationFormat.INSTANCE) {
-                CommandHandler h = cmdRegistry.getCommandHandler(ex.getCommandName().toLowerCase());
+                CommandHandler h = cmdRegistry.getCommandHandler(ex.getCommandName().toLowerCase(Locale.ENGLISH));
                 if (h != null) {
                     handleLegacyCommand(line, h, false);
                     return;
@@ -2516,7 +2516,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                     handleOperation(parsedCmd);
                 } else {
                     final String cmdName = parsedCmd.getOperationName();
-                    CommandHandler handler = cmdRegistry.getCommandHandler(cmdName.toLowerCase());
+                    CommandHandler handler = cmdRegistry.getCommandHandler(cmdName.toLowerCase(Locale.ENGLISH));
                     if (handler != null) {
                         handleLegacyCommand(parsedLine.getOriginalLine(), handler, true);
                     } else {

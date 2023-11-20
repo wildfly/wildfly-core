@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -243,7 +244,7 @@ public class AeshCommands {
         // That is a legacy behavior, lowerCase command name.
         if (line.getFormat() != OperationFormat.INSTANCE) {
             String name = line.getOperationName();
-            l = name.toLowerCase() + l.substring(name.length());
+            l = name.toLowerCase(Locale.ENGLISH) + l.substring(name.length());
         }
         CLIExecutor exe = newExecutor(l);
         if (exe.getExecutions().isEmpty()) {
