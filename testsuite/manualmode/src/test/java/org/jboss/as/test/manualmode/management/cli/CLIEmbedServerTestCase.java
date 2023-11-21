@@ -101,6 +101,9 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
+        if (Runtime.version().feature() > 21) {
+            System.setProperty("jdk.console", "java.base"); // WFCORE-6167 workaround on JDK22+
+        }
         Assume.assumeFalse("This test does not work with the IBM J9 JVM. There seems to be an issue with stdout" +
                 " logging.", TestSuiteEnvironment.isIbmJvm());
 
@@ -137,6 +140,9 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     @AfterClass
     public static void afterClass() throws IOException {
+        if (Runtime.version().feature() > 21) {
+            System.setProperty("jdk.console", "jdk.internal.le"); // WFCORE-6167 workaround on JDK22+
+        }
         if (!TestSuiteEnvironment.isIbmJvm()) {
             CLIEmbedUtil.copyConfig(ROOT, "standalone", "logging.properties.backup", "logging.properties", false);
             try {
