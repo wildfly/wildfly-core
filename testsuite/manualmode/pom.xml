@@ -223,6 +223,40 @@
                                     </feature-packs>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>channel-provisioning-comparison</id>
+                                <goals>
+                                    <goal>provision</goal>
+                                </goals>
+                                <phase>process-test-resources</phase>
+                                <configuration>
+                                    <provisioning-dir>${project.build.directory}/wildfly-from-channel</provisioning-dir>
+                                    <record-provisioning-state>false</record-provisioning-state>
+                                    <log-provisioning-time>${galleon.log.time}</log-provisioning-time>
+                                    <offline-provisioning>true</offline-provisioning>
+                                    <overwrite-provisioned-server>true</overwrite-provisioned-server>
+                                    <galleon-options>
+                                        <jboss-maven-dist>false</jboss-maven-dist>
+                                        <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                                    </galleon-options>
+                                    <channels>
+                                        <channel>
+                                            <manifest>
+                                                <groupId>org.wildfly.core</groupId>
+                                                <artifactId>wildfly-core-manifest</artifactId>
+                                                <version>${project.version}</version>
+                                            </manifest>
+                                        </channel>
+                                    </channels>
+                                    <feature-packs>
+                                        <feature-pack>
+                                            <groupId>org.wildfly.core</groupId>
+                                            <artifactId>wildfly-core-galleon-pack</artifactId>
+                                            <version>${project.version}</version>
+                                        </feature-pack>
+                                    </feature-packs>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
 
@@ -260,6 +294,7 @@
                                 <javax.net.ssl.keyStore>${basedir}/target/test-classes/ssl/jbossClient.keystore</javax.net.ssl.keyStore>
                                 <javax.net.ssl.trustStorePassword>clientPassword</javax.net.ssl.trustStorePassword>
                                 <javax.net.ssl.keyStorePassword>clientPassword</javax.net.ssl.keyStorePassword>
+                                <standard.dist.version>${project.version}</standard.dist.version>
                             </systemPropertyVariables>
                             <environmentVariables>
                                 <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
