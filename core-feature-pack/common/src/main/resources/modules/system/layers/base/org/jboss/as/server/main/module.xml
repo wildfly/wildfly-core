@@ -28,24 +28,9 @@
         <module name="java.xml"/>
         <!-- Workaround for ELY-1561 -->
         <module name="jdk.security.auth"/>
-        <!--this needs to remain here until common-beans is fixed to use passed classloader -->
-        <module name="org.jboss.common-beans" services="export" optional="true"/>
 
-        <module name="org.jboss.staxmapper"/>
-        <module name="org.jboss.dmr"/>
-        <module name="org.jboss.classfilewriter"/>
-        <module name="org.jboss.invocation"/>
-        <module name="org.jboss.jandex"/>
-        <module name="org.jboss.marshalling"/>
-        <module name="org.jboss.marshalling.river" services="import"/>
-        <module name="org.jboss.modules"/>
-        <module name="org.jboss.msc" export="true"/>
-        <module name="org.jboss.logging"/>
-        <module name="org.jboss.logmanager" services="import"/>
-        <module name="org.jboss.remoting"/>
-        <module name="org.jboss.stdio"/>
-        <module name="org.jboss.threads"/>
-        <module name="org.jboss.vfs" services="import"/>
+        <module name="io.undertow.core" />
+        <module name="org.eclipse.jgit" optional="true"/>
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.as.deployment-repository"/>
         <module name="org.jboss.as.domain-http-interface"/>
@@ -61,14 +46,30 @@
             </imports> 
         </module>
         <module name="org.jboss.as.remoting"/>
-        <module name="org.wildfly.security.elytron-private" services="import"/>
         <module name="org.jboss.as.version"/>
-        <module name="io.undertow.core" />
+        <module name="org.jboss.classfilewriter"/>
+        <!--this needs to remain here until common-beans is fixed to use passed classloader -->
+        <module name="org.jboss.common-beans" services="export" optional="true"/>
+        <module name="org.jboss.dmr"/>
+        <module name="org.jboss.invocation"/>
+        <module name="org.jboss.jandex"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.jboss.logmanager" services="import"/>
+        <module name="org.jboss.marshalling"/>
+        <module name="org.jboss.marshalling.river" services="import"/>
+        <module name="org.jboss.modules"/>
+        <module name="org.jboss.msc" export="true"/>
+        <module name="org.jboss.remoting"/>
+        <module name="org.jboss.staxmapper"/>
+        <module name="org.jboss.stdio"/>
+        <module name="org.jboss.threads"/>
+        <module name="org.jboss.vfs" services="import"/>
         <module name="org.wildfly.common"/>
-        <module name="org.wildfly.extension.core-management-client" />
         <!-- Allow javax->jakarta deployment transformation if this module is provided -->
         <module name="org.wildfly.deployment.transformation" optional="true" services="import"/>
-        <module name="org.eclipse.jgit" optional="true"/>
-        <module name="org.wildfly.installation-manager" services="import" />
+        <module name="org.wildfly.extension.core-management-client" />
+        <module name="org.wildfly.installation-manager" services="import"/>
+        <module name="org.wildfly.security.elytron-private" services="import"/>
+        <module name="org.wildfly.service"/>
     </dependencies>
 </module>

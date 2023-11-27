@@ -192,7 +192,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
         return isAllowExpression() ? convertStringExpression(parameterElement) : parameterElement;
     }
 
-    public abstract static class Builder<BUILDER extends Builder, ATTRIBUTE extends ListAttributeDefinition>
+    public abstract static class Builder<BUILDER extends Builder<BUILDER, ATTRIBUTE>, ATTRIBUTE extends ListAttributeDefinition>
             extends AbstractAttributeDefinitionBuilder<BUILDER, ATTRIBUTE> {
 
         private ParameterValidator elementValidator;

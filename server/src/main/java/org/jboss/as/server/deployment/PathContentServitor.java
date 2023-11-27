@@ -28,7 +28,7 @@ class PathContentServitor implements Service<VirtualFile> {
     static ServiceController<VirtualFile> addService(OperationContext context, final ServiceTarget serviceTarget, final ServiceName serviceName, final String path, final String relativeTo) {
         final PathContentServitor service = new PathContentServitor(path, relativeTo);
         return serviceTarget.addService(serviceName, service)
-                .addDependency(context.getCapabilityServiceName("org.wildfly.management.path-manager", PathManager.class),
+                .addDependency(context.getCapabilityServiceName(PathManager.SERVICE_DESCRIPTOR),
                         PathManager.class, service.pathManagerValue)
                 .install();
     }

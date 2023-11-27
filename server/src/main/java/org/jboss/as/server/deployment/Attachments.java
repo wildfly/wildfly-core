@@ -10,6 +10,7 @@ import java.security.PermissionCollection;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.jar.Manifest;
 
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
@@ -74,8 +75,15 @@ public final class Attachments {
     public static final AttachmentKey<VirtualFile> DEPLOYMENT_CONTENTS = AttachmentKey.create(VirtualFile.class);
 
     /**
-     * A builder used to install a deployment phase
+     * An attachment defining a transformer of the ServiceTarget used to install a deployment unit phase.
      */
+    public static final AttachmentKey<UnaryOperator<ServiceTarget>> DEPLOYMENT_UNIT_PHASE_SERVICE_TARGET_TRANSFORMER = AttachmentKey.create(UnaryOperator.class);
+
+    /**
+     * A builder used to install a deployment phase
+     * @deprecated Use {@link #DEPLOYMENT_UNIT_PHASE_SERVICE_TARGET_TRANSFORMER} instead
+     */
+    @Deprecated(forRemoval = true)
     public static final AttachmentKey<DeploymentUnitPhaseBuilder> DEPLOYMENT_UNIT_PHASE_BUILDER = AttachmentKey.create(DeploymentUnitPhaseBuilder.class);
 
     /**

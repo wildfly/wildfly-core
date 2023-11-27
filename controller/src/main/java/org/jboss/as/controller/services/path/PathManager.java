@@ -5,6 +5,8 @@
 package org.jboss.as.controller.services.path;
 
 import org.jboss.as.controller.services.path.PathManager.Callback.Handle;
+import org.wildfly.service.descriptor.NullaryServiceDescriptor;
+import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 
 
 /**
@@ -13,6 +15,9 @@ import org.jboss.as.controller.services.path.PathManager.Callback.Handle;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public interface PathManager {
+
+    NullaryServiceDescriptor<PathManager> SERVICE_DESCRIPTOR = NullaryServiceDescriptor.of("org.wildfly.management.path-manager", PathManager.class);
+    UnaryServiceDescriptor<String> PATH_SERVICE_DESCRIPTOR = UnaryServiceDescriptor.of("org.wildfly.management.path", String.class);
 
     /**
      * Resolves a relative path

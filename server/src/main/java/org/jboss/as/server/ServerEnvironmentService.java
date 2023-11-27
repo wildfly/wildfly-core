@@ -6,41 +6,25 @@
 package org.jboss.as.server;
 
 import static org.jboss.as.server.ServerService.SERVER_ENVIRONMENT_CAPABILITY;
-import org.jboss.msc.service.Service;
+
+import java.util.function.Consumer;
+
+import org.jboss.msc.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
-import org.jboss.msc.service.StopContext;
 
 /**
  * Exposes the {@link ServerEnvironment} via a {@link Service}.
- * <p>
- * Services that need access to the {@code ServerEnvironment} can use this service to
- * have it injected. For example, suppose we have a service {@code MyService}
- * that has a field {@code injectedEnvironment} into which it wants the
- * ServerEnvironment injected. And suppose {@code MyService} exposes a utility method
- * to facilitate installing it via a {@link ServiceTarget}. The {@code ServerEnvironment}
- * injection could be done as follows:
- * </p>
- *
- * <pre>
- * public static void addService(BatchBuilder batchBuilder) {
- *     MyService myService = new MyService();
- *     InjectedValue<ServerEnvironment> injectedEnvironment = myService.injectedEnvironment;
- *
- *     batchBuilder.addService(MyService.SERVICE_NAME, myService)
- *                 .addSystemDependency(ServerEnvironmentService.SERVICE_NAME, ServerEnvironment.class, injectedEnvironment);
- * }
- * </pre>
  *
  * @author Brian Stansberry
  */
-public class ServerEnvironmentService implements Service<ServerEnvironment> {
+public class ServerEnvironmentService {
 
-
-    /** Standard ServiceName under which a ServerEnvironmentService would be registered */
-    /** @deprecated Use {@link #SERVER_ENVIRONMENT_CAPABILITY.getCapabilityServiceName() instead} */
+    /**
+     * Standard ServiceName under which a ServerEnvironmentService would be registered
+     * @deprecated Generate ServiceName via {@link ServerEnvironment#SERVICE_DESCRIPTOR} instead.
+     */
     @Deprecated
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("server", "environment");
 
@@ -52,37 +36,12 @@ public class ServerEnvironmentService implements Service<ServerEnvironment> {
      * @param target the batch builder. Cannot be {@code null}
      */
     public static void addService(ServerEnvironment serverEnvironment, ServiceTarget target) {
-        target.addService(SERVER_ENVIRONMENT_CAPABILITY.getCapabilityServiceName(), new ServerEnvironmentService(serverEnvironment))
-                .addAliases(SERVICE_NAME)
-                .install();
+        ServiceBuilder<?> builder = target.addService();
+        Consumer<ServerEnvironment> injector = builder.provides(SERVER_ENVIRONMENT_CAPABILITY.getCapabilityServiceName(), SERVICE_NAME);
+        builder.setInstance(Service.newInstance(injector, serverEnvironment)).install();
     }
 
-    private final ServerEnvironment serverEnvironment;
-
-    /**
-     * Creates a ServerEnvironmentService that uses the given {@code serverEnvironment}
-     * as its {@link #getValue() value}.
-     *
-     * @param serverEnvironment the {@code ServerEnvironment}. Cannot be {@code null}
-     */
-    ServerEnvironmentService(ServerEnvironment serverEnvironment) {
-        assert serverEnvironment != null : "serverEnvironment is null";
-        this.serverEnvironment = serverEnvironment;
+    private ServerEnvironmentService() {
+        // Hide
     }
-
-    @Override
-    public void start(StartContext context) throws StartException {
-        // no-op
-    }
-
-    @Override
-    public void stop(StopContext context) {
-        // no-op
-    }
-
-    @Override
-    public ServerEnvironment getValue() throws IllegalStateException {
-        return serverEnvironment;
-    }
-
 }

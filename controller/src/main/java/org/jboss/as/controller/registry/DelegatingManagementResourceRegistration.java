@@ -330,7 +330,7 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
-    public void registerRequirements(Set<CapabilityReferenceRecorder> requirements) {
+    public void registerRequirements(Set<? extends CapabilityReferenceRecorder> requirements) {
         getDelegate().registerRequirements(requirements);
     }
 

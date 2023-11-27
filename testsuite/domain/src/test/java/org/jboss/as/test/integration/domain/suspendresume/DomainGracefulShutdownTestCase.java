@@ -296,7 +296,7 @@ public class DomainGracefulShutdownTestCase {
         JavaArchive jar = ShrinkWrap.create(JavaArchive.class, WEB_SUSPEND_JAR);
         jar.addPackage(SuspendResumeHandler.class.getPackage());
         jar.addAsServiceProvider(ServiceActivator.class, TestSuspendServiceActivator.class);
-        jar.addAsResource(new StringAsset("Dependencies: org.jboss.dmr, org.jboss.as.controller, io.undertow.core, org.jboss.as.server,org.wildfly.extension.request-controller, org.jboss.as.network\n"), "META-INF/MANIFEST.MF");
+        jar.addAsResource(new StringAsset("Dependencies: org.jboss.dmr, org.jboss.as.controller, io.undertow.core, org.jboss.as.server, org.wildfly.extension.request-controller, org.jboss.as.network, org.wildfly.service\n"), "META-INF/MANIFEST.MF");
         jar.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
                 new ReflectPermission("suppressAccessChecks"),
                 new RuntimePermission("createXnioWorker"),

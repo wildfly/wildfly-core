@@ -696,7 +696,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
-    public void registerRequirements(Set<CapabilityReferenceRecorder> requirements) {
+    public void registerRequirements(Set<? extends CapabilityReferenceRecorder> requirements) {
         writeLock.lock();
         try {
             if (requirements == null || requirements.isEmpty()) {

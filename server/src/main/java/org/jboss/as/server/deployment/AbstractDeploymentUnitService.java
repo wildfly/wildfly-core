@@ -8,13 +8,16 @@ package org.jboss.as.server.deployment;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.msc.service.DelegatingServiceTarget;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
@@ -23,7 +26,6 @@ import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.wildfly.common.function.ExceptionConsumer;
 
 /**
  * Abstract service responsible for managing the life-cycle of a {@link DeploymentUnit}.
@@ -40,7 +42,7 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
     final CapabilityServiceSupport capabilityServiceSupport;
     private final Consumer<DeploymentUnit> deploymentUnitConsumer;
     protected final String name;
-    private volatile DeploymentUnitPhaseBuilder phaseBuilder = null;
+    private volatile UnaryOperator<ServiceTarget> serviceTargetTransformer = null;
     private volatile DeploymentUnit deploymentUnit;
     private volatile StabilityMonitor monitor;
 
@@ -67,28 +69,56 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
             ServerLogger.DEPLOYMENT_LOGGER.startingSubDeployment(name);
         }
 
-        ExceptionConsumer<StartContext, StartException> installer = startContext -> {
-            ServiceName serviceName = this.deploymentUnit.getServiceName().append(FIRST_PHASE_NAME);
-            DeploymentUnitPhaseService<?> phaseService = DeploymentUnitPhaseService.create(this.deploymentUnit, Phase.values()[0]);
-            startContext.getChildTarget().addService(serviceName, phaseService)
-                    .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, phaseService.getDeployerChainsInjector())
-                    .install();
+        Consumer<StartContext> installer = new Consumer<>() {
+            @Override
+            public void accept(StartContext context) {
+                ServiceName serviceName = AbstractDeploymentUnitService.this.deploymentUnit.getServiceName().append(FIRST_PHASE_NAME);
+                DeploymentUnitPhaseService<?> phaseService = DeploymentUnitPhaseService.create(AbstractDeploymentUnitService.this.deploymentUnit, Phase.values()[0]);
+                context.getChildTarget().addService(serviceName, phaseService)
+                        .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, phaseService.getDeployerChainsInjector())
+                        .install();
+            }
         };
 
         // If a builder was previously attached, reattach to the new deployment unit instance and build the initial phase using that builder
-        if (this.phaseBuilder != null) {
-            this.deploymentUnit.putAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER, this.phaseBuilder);
+        if (this.serviceTargetTransformer != null) {
+            this.deploymentUnit.putAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_SERVICE_TARGET_TRANSFORMER, this.serviceTargetTransformer);
+            // TODO Remove this after WildFly migrates away from DeploymentUnitPhaseBuilder
+            this.deploymentUnit.putAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER, new DeploymentUnitPhaseBuilder() {
+                @Override
+                public <T> ServiceBuilder<T> build(ServiceTarget target, ServiceName name, Service<T> service) {
+                    return AbstractDeploymentUnitService.this.serviceTargetTransformer.apply(target).addService(name, service);
+                }
+            });
             Set<AttachmentKey<?>> initialAttachmentKeys = this.getDeploymentUnitAttachmentKeys();
-            Consumer<StopContext> uninstaller = stopContext -> {
-                // Cleanup any deployment unit attachments that were not properly removed during DUP undeploy
-                for (AttachmentKey<?> key : this.getDeploymentUnitAttachmentKeys()) {
-                    if (! initialAttachmentKeys.contains(key)) {
-                        this.deploymentUnit.removeAttachment(key);
+            Runnable uninstaller = new Runnable() {
+                @Override
+                public void run() {
+                    // Cleanup any deployment unit attachments that were not properly removed during DUP undeploy
+                    for (AttachmentKey<?> key : AbstractDeploymentUnitService.this.getDeploymentUnitAttachmentKeys()) {
+                        if (! initialAttachmentKeys.contains(key)) {
+                            AbstractDeploymentUnitService.this.deploymentUnit.removeAttachment(key);
+                        }
                     }
                 }
             };
-            ServiceName serviceName = this.deploymentUnit.getServiceName().append("installer");
-            this.phaseBuilder.build(target, serviceName, new FunctionalVoidService(installer, uninstaller)).install();
+            // TODO Use legacy service installation until DeploymentUnitPhaseBuilder migration is complete
+            this.serviceTargetTransformer.apply(target).addService(this.deploymentUnit.getServiceName().append("installer"), new org.jboss.msc.service.Service<Void>() {
+                    @Override
+                    public void start(StartContext context) throws StartException {
+                        installer.accept(context);
+                    }
+
+                    @Override
+                    public void stop(StopContext context) {
+                        uninstaller.run();
+                    }
+
+                    @Override
+                    public Void getValue() {
+                        return null;
+                    }
+                }).install();
         } else {
             installer.accept(context);
         }
@@ -114,7 +144,24 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
             ServerLogger.DEPLOYMENT_LOGGER.stoppedSubDeployment(name, (int) (context.getElapsedTime() / 1000000L));
         }
         // Retain any attached builder across restarts
-        this.phaseBuilder = this.deploymentUnit.getAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER);
+        this.serviceTargetTransformer = this.deploymentUnit.getAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_SERVICE_TARGET_TRANSFORMER);
+        if (this.serviceTargetTransformer == null) {
+            // TODO Remove this after WildFly migrates away from DeploymentUnitPhaseBuilder
+            DeploymentUnitPhaseBuilder builder = this.deploymentUnit.getAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER);
+            if (builder != null) {
+                this.serviceTargetTransformer = new UnaryOperator<>() {
+                    @Override
+                    public ServiceTarget apply(ServiceTarget target) {
+                        return new DelegatingServiceTarget(target) {
+                            @Override
+                            public <T> ServiceBuilder<T> addService(ServiceName name, Service<T> service) {
+                                return builder.build(target, name, service);
+                            }
+                        };
+                    }
+                };
+            }
+        }
         //clear up all attachments
         for (AttachmentKey<?> key : this.getDeploymentUnitAttachmentKeys()) {
             deploymentUnit.removeAttachment(key);
@@ -131,6 +178,7 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
     private Set<AttachmentKey<?>> getDeploymentUnitAttachmentKeys() {
         return ((SimpleAttachable) this.deploymentUnit).attachmentKeys();
     }
+
     public synchronized DeploymentUnit getValue() throws IllegalStateException, IllegalArgumentException {
         return deploymentUnit;
     }

@@ -4,6 +4,8 @@
  */
 package org.jboss.as.network;
 
+import static org.jboss.as.network.logging.NetworkMessages.MESSAGES;
+
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -14,7 +16,7 @@ import java.net.SocketException;
 import java.util.Collections;
 import java.util.List;
 
-import static org.jboss.as.network.logging.NetworkMessages.MESSAGES;
+import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 
 /**
  * An encapsulation of socket binding related information.
@@ -22,6 +24,7 @@ import static org.jboss.as.network.logging.NetworkMessages.MESSAGES;
  * @author Emanuel Muckenhuber
  */
 public final class SocketBinding {
+    public static final UnaryServiceDescriptor<SocketBinding> SERVICE_DESCRIPTOR = UnaryServiceDescriptor.of("org.wildfly.network.socket-binding", SocketBinding.class);
 
     private final String name;
     private volatile int port;

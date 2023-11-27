@@ -80,6 +80,7 @@ public class PropertyObjectTypeAttributeDefinition extends ObjectTypeAttributeDe
             return new Builder(name, valueTypes);
         }
 
+        @Override
         public PropertyObjectTypeAttributeDefinition build() {
             if (getValidator() == null) {
                 setValidator(new ObjectTypeValidator(isNillable(), valueTypes));

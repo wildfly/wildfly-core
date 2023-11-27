@@ -15,6 +15,7 @@ import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.network.SocketBinding;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -24,14 +25,12 @@ import org.jboss.dmr.ModelType;
  */
 public class LocalDestinationOutboundSocketBindingResourceDefinition extends OutboundSocketBindingResourceDefinition {
 
-    static final String SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
-
     public static final SimpleAttributeDefinition SOCKET_BINDING_REF = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING_REF, ModelType.STRING, false)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
-            .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, OUTBOUND_SOCKET_BINDING_CAPABILITY)
+            .setCapabilityReference(SocketBinding.SERVICE_DESCRIPTOR.getName(), OUTBOUND_SOCKET_BINDING_CAPABILITY)
             .build();
 
     public static final SimpleAttributeDefinition[] ATTRIBUTES = {SOURCE_PORT, SOURCE_INTERFACE, FIXED_SOURCE_PORT, SOCKET_BINDING_REF};

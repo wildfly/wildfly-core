@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller.RequirementServiceBuilder;
@@ -111,7 +112,7 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
         final RequirementServiceTarget serviceTarget = new DeploymentUnitServiceTarget(context.getChildTarget().subTarget(), deploymentUnit.getAttachment(Attachments.CAPABILITY_SERVICE_SUPPORT));
         final DeploymentUnit parent = deploymentUnit.getParent();
 
-        final List<DeploymentUnitPhaseDependency> dependencies = new LinkedList<>();
+        final List<Consumer<ServiceBuilder<?>>> dependencies = new LinkedList<>();
         final DeploymentPhaseContext processorContext = new DeploymentPhaseContextImpl(serviceTarget, new DelegatingServiceRegistry(container), dependencies, deploymentUnit, phase);
 
         // attach any injected values from the last phase
@@ -185,8 +186,8 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
             final DeploymentUnitPhaseService<?> phaseService = DeploymentUnitPhaseService.create(deploymentUnit, nextPhase);
             final ServiceBuilder<?> phaseServiceBuilder = serviceTarget.addService(serviceName, phaseService);
 
-            for (DeploymentUnitPhaseDependency dependency: dependencies) {
-                dependency.register(phaseServiceBuilder);
+            for (Consumer<ServiceBuilder<?>> dependency: dependencies) {
+                dependency.accept(phaseServiceBuilder);
             }
 
             phaseServiceBuilder.addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, phaseService.getDeployerChainsInjector());

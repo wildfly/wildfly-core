@@ -81,9 +81,8 @@ public final class ManagementRemotingServices extends RemotingServices {
                                                       final OptionMap options,
                                                       final ServiceName saslAuthenticationFactory,
                                                       final ServiceName sslContext) {
-        String sbmCap = "org.wildfly.management.socket-binding-manager";
-        ServiceName sbmName = context.hasOptionalCapability(sbmCap, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY.getName(), null)
-                ? context.getCapabilityServiceName(sbmCap, SocketBindingManager.class) : null;
+        ServiceName sbmName = context.hasOptionalCapability(SocketBindingManager.SERVICE_DESCRIPTOR.getName(), NATIVE_MANAGEMENT_RUNTIME_CAPABILITY.getName(), null)
+                ? context.getCapabilityServiceName(SocketBindingManager.SERVICE_DESCRIPTOR) : null;
         installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName, MANAGEMENT_CONNECTOR,
                 networkInterfaceBinding, port, options, saslAuthenticationFactory, sslContext, sbmName);
     }

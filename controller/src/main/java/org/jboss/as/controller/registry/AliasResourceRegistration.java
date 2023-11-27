@@ -192,7 +192,7 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
-    public void registerRequirements(Set<CapabilityReferenceRecorder> requirements) {
+    public void registerRequirements(Set<? extends CapabilityReferenceRecorder> requirements) {
         throw alreadyRegistered();
     }
 

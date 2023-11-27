@@ -5,6 +5,8 @@
 
 package org.wildfly.extension.discovery;
 
+import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
+
 import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.as.controller.PersistentSubsystemSchema;
 import org.jboss.as.controller.SubsystemSchema;
@@ -23,7 +25,7 @@ enum DiscoverySubsystemSchema implements PersistentSubsystemSchema<DiscoverySubs
     private final VersionedNamespace<IntVersion, DiscoverySubsystemSchema> namespace;
 
     DiscoverySubsystemSchema(int major, int minor) {
-        this.namespace = SubsystemSchema.createLegacySubsystemURN(DiscoveryExtension.SUBSYSTEM_NAME, new IntVersion(major, minor));
+        this.namespace = SubsystemSchema.createLegacySubsystemURN(DiscoverySubsystemRegistrar.NAME, new IntVersion(major, minor));
     }
 
     @Override
@@ -33,6 +35,9 @@ enum DiscoverySubsystemSchema implements PersistentSubsystemSchema<DiscoverySubs
 
     @Override
     public PersistentResourceXMLDescription getXMLDescription() {
-        return DiscoverySubsystemXMLDescriptionFactory.INSTANCE.apply(this);
+        return builder(DiscoverySubsystemRegistrar.PATH, this.getNamespace())
+                .addChild(builder(StaticDiscoveryProviderRegistrar.PATH).addAttributes(StaticDiscoveryProviderRegistrar.ATTRIBUTES.stream()))
+                .addChild(builder(AggregateDiscoveryProviderRegistrar.PATH).addAttributes(AggregateDiscoveryProviderRegistrar.ATTRIBUTES.stream()))
+                .build();
     }
 }

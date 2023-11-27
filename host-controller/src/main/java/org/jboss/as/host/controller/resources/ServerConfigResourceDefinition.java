@@ -61,6 +61,7 @@ import org.jboss.as.host.controller.operations.ServerStartHandler;
 import org.jboss.as.host.controller.operations.ServerStatusHandler;
 import org.jboss.as.host.controller.operations.ServerStopHandler;
 import org.jboss.as.host.controller.operations.ServerSuspendHandler;
+import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition.Location;
 import org.jboss.as.server.services.net.InterfaceResourceDefinition;
@@ -98,7 +99,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(false)
             .setXmlName(Attribute.DEFAULT_INTERFACE.getLocalName())
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
-            .setCapabilityReference("org.wildfly.network.interface", SERVER_CONFIG_CAPABILITY)
+            .setCapabilityReference(NetworkInterfaceBinding.SERVICE_DESCRIPTOR.getName(), SERVER_CONFIG_CAPABILITY)
             .build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_PORT_OFFSET = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET, ModelType.INT, true)

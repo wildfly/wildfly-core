@@ -212,7 +212,7 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
 
 
 
-    public abstract static class Builder<BUILDER extends Builder, ATTRIBUTE extends MapAttributeDefinition>
+    public abstract static class Builder<BUILDER extends Builder<BUILDER, ATTRIBUTE>, ATTRIBUTE extends MapAttributeDefinition>
             extends AbstractAttributeDefinitionBuilder<BUILDER, ATTRIBUTE> {
 
         protected ParameterValidator elementValidator;

@@ -125,7 +125,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
-    public void registerRequirements(Set<CapabilityReferenceRecorder> requirements) {
+    public void registerRequirements(Set<? extends CapabilityReferenceRecorder> requirements) {
         throw alreadyRegistered();
     }
 

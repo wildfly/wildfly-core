@@ -8,12 +8,15 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Collection;
 
+import org.wildfly.service.descriptor.UnaryServiceDescriptor;
+
 /**
  * The resolved network interface bindings.
  *
  * @author Emanuel Muckenhuber
  */
 public final class NetworkInterfaceBinding {
+    public static final UnaryServiceDescriptor<NetworkInterfaceBinding> SERVICE_DESCRIPTOR = UnaryServiceDescriptor.of("org.wildfly.network.interface", NetworkInterfaceBinding.class);
 
     private final InetAddress address;
     private final Collection<NetworkInterface> networkInterfaces;

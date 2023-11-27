@@ -44,7 +44,7 @@ public class ReadOperationNamesHandler implements OperationStepHandler {
         .setDefaultValue(ModelNode.FALSE)
         .build();
 
-    static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_OPERATION_NAMES_OPERATION, ControllerResolver.getResolver("global"))
+    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_OPERATION_NAMES_OPERATION, ControllerResolver.getResolver("global"))
             .setReadOnly()
             .setParameters(ACCESS_CONTROL)
             .setReplyType(ModelType.LIST)
@@ -52,7 +52,7 @@ public class ReadOperationNamesHandler implements OperationStepHandler {
             .build();
 
 
-    static OperationStepHandler INSTANCE = new ReadOperationNamesHandler();
+    public static final OperationStepHandler INSTANCE = new ReadOperationNamesHandler();
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {

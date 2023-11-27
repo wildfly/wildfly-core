@@ -21,6 +21,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
 import org.jboss.as.controller.registry.AttributeAccess.Flag;
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.logging.capabilities.Capabilities;
 import org.jboss.as.logging.correctors.FileCorrector;
@@ -68,7 +69,7 @@ public interface CommonAttributes {
 
     // Defined out of order as it needs to be used in the FILE
     SimpleAttributeDefinition RELATIVE_TO = SimpleAttributeDefinitionBuilder.create(PathResourceDefinition.RELATIVE_TO)
-            .setCapabilityReference(Capabilities.PATH_CAPABILITY)
+            .setCapabilityReference(PathManager.PATH_SERVICE_DESCRIPTOR.getName())
             .build();
 
     PropertyObjectTypeAttributeDefinition FILE = PropertyObjectTypeAttributeDefinition.Builder.of("file", RELATIVE_TO, PATH)

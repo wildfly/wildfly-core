@@ -6,10 +6,8 @@
 package org.jboss.as.server.operations;
 
 import static org.jboss.as.remoting.RemotingHttpUpgradeService.HTTP_UPGRADE_REGISTRY;
-import static org.jboss.as.server.ServerService.SERVER_ENVIRONMENT_CAPABILITY_NAME;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURE_SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING;
-import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
 import static org.jboss.as.server.mgmt.UndertowHttpManagementService.EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY;
 
 import java.util.Arrays;
@@ -132,15 +130,15 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         final Consumer<HttpManagement> hmConsumer = builder.provides(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY);
         final Supplier<ListenerRegistry> lrSupplier = builder.requires(RemotingServices.HTTP_LISTENER_REGISTRY);
         final Supplier<ModelController> mcSupplier = builder.requires(Services.JBOSS_SERVER_CONTROLLER);
-        final Supplier<SocketBinding> sbSupplier = socketBindingName != null ? builder.requiresCapability(SOCKET_BINDING_CAPABILITY_NAME, SocketBinding.class, socketBindingName) : null;
-        final Supplier<SocketBinding> ssbSupplier = secureSocketBindingName != null ? builder.requiresCapability(SOCKET_BINDING_CAPABILITY_NAME, SocketBinding.class, secureSocketBindingName) : null;
-        final Supplier<SocketBindingManager> sbmSupplier = builder.requiresCapability("org.wildfly.management.socket-binding-manager", SocketBindingManager.class);
+        final Supplier<SocketBinding> sbSupplier = socketBindingName != null ? builder.requires(SocketBinding.SERVICE_DESCRIPTOR, socketBindingName) : null;
+        final Supplier<SocketBinding> ssbSupplier = secureSocketBindingName != null ? builder.requires(SocketBinding.SERVICE_DESCRIPTOR, secureSocketBindingName) : null;
+        final Supplier<SocketBindingManager> sbmSupplier = builder.requires(SocketBindingManager.SERVICE_DESCRIPTOR);
         final Supplier<ConsoleAvailability> caSupplier = builder.requiresCapability("org.wildfly.management.console-availability", ConsoleAvailability.class);
         final Supplier<ManagementHttpRequestProcessor> rpSupplier = builder.requires(requestProcessorName);
         final Supplier<XnioWorker> xwSupplier = builder.requires(ManagementWorkerService.SERVICE_NAME);
         final Supplier<Executor> eSupplier = builder.requires(ExternalManagementRequestExecutor.SERVICE_NAME);
         final Supplier<HttpAuthenticationFactory> hafSupplier = httpAuthenticationFactory != null ? builder.requiresCapability(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, HttpAuthenticationFactory.class, httpAuthenticationFactory) : null;
-        Supplier<ServerEnvironment> environment = builder.requiresCapability(SERVER_ENVIRONMENT_CAPABILITY_NAME, ServerEnvironment.class);
+        Supplier<ServerEnvironment> environment = builder.requires(ServerEnvironment.SERVICE_DESCRIPTOR);
         Supplier<String> consoleSlot = new Supplier<>() {
             @Override
             public String get() {

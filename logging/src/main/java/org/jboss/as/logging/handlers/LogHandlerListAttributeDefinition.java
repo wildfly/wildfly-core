@@ -82,6 +82,7 @@ public class LogHandlerListAttributeDefinition extends SimpleListAttributeDefini
             return new Builder(valueType, name);
         }
 
+        @Override
         public LogHandlerListAttributeDefinition build() {
             if (propertyName == null) propertyName = getName();
             if (getAttributeMarshaller() == null) {

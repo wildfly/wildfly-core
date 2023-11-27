@@ -10,6 +10,7 @@ import java.net.URI;
 import javax.net.ssl.SSLContext;
 
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
+import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 
 /**
  * Allows callers to get information of an outbound connection.
@@ -17,6 +18,7 @@ import org.wildfly.security.auth.client.AuthenticationConfiguration;
  * @author <a href="mailto:yborgess@redhat.com">Yeray Borges</a>
  */
 public interface OutboundConnection {
+    UnaryServiceDescriptor<OutboundConnection> SERVICE_DESCRIPTOR = UnaryServiceDescriptor.of("org.wildfly.remoting.outbound-connection", OutboundConnection.class);
 
     /**
      * Get the destination URI for the connection.

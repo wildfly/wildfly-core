@@ -17,6 +17,7 @@ import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.host.controller.operations.NativeManagementAddHandler;
 import org.jboss.as.host.controller.operations.NativeManagementRemoveHandler;
+import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -30,7 +31,7 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
             .setAllowExpression(true).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .setRestartAllServices()
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
-            .setCapabilityReference("org.wildfly.network.interface", NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
+            .setCapabilityReference(NetworkInterfaceBinding.SERVICE_DESCRIPTOR.getName(), NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
             .build();
 
     public static final SimpleAttributeDefinition NATIVE_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT, false)

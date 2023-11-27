@@ -141,9 +141,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
      * This capability isn't necessarily directly related to this class but we declare it
      * here as it's as good a place as any at this time.
      */
-    public static final RuntimeCapability<Void> PATH_MANAGER_CAPABILITY =
-            RuntimeCapability.Builder.of("org.wildfly.management.path-manager", PathManager.class)
-                    .build();
+    public static final RuntimeCapability<Void> PATH_MANAGER_CAPABILITY = RuntimeCapability.Builder.of(PathManager.SERVICE_DESCRIPTOR).build();
 
     /**
      * Capability users of the controller use to perform asynchronous management tasks.

@@ -24,6 +24,7 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.network.ProtocolSocketBinding;
+import org.jboss.as.network.SocketBinding;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -35,7 +36,6 @@ public class ConnectorResource extends SimpleResourceDefinition {
 
     static final PathElement PATH = PathElement.pathElement(CommonAttributes.CONNECTOR);
 
-    static final String SOCKET_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
     private static final String CONNECTOR_CAPABILITY_NAME = "org.wildfly.remoting.connector";
     static final RuntimeCapability<Void> CONNECTOR_CAPABILITY =
             RuntimeCapability.Builder.of(CONNECTOR_CAPABILITY_NAME, true, ProtocolSocketBinding.class)
@@ -52,7 +52,7 @@ public class ConnectorResource extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(CommonAttributes.SOCKET_BINDING, ModelType.STRING, false)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
-            .setCapabilityReference(SOCKET_CAPABILITY_NAME, CONNECTOR_CAPABILITY)
+            .setCapabilityReference(SocketBinding.SERVICE_DESCRIPTOR.getName(), CONNECTOR_CAPABILITY)
             .setRestartAllServices()
             .build();
 

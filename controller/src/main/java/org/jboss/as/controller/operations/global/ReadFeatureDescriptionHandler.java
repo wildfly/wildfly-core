@@ -81,6 +81,7 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.registry.RuntimePackageDependency;
+import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.AliasStepHandler;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -843,7 +844,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         }
         capability.get(OPTIONAL).set(attrDescription.hasDefined(NILLABLE) && attrDescription.get(NILLABLE).asBoolean());
         if (isProfile) {
-            if (!capabilityName.startsWith("org.wildfly.network.socket-binding")) {
+            if (!capabilityName.startsWith(AbstractSocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME)) {
                 capabilityName = PROFILE_PREFIX + capabilityName;
             }
         }

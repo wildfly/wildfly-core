@@ -48,7 +48,7 @@ import org.jboss.dmr.ModelType;
  */
 public class InterfaceDefinition extends SimpleResourceDefinition {
 
-    public static final String INTERFACE_CAPABILITY_NAME = "org.wildfly.network.interface";
+    static final String INTERFACE_CAPABILITY_NAME = "org.wildfly.network.interface";
 
     public static final String[] OTHERS = new String[]{localName(Element.INET_ADDRESS), localName(Element.LINK_LOCAL_ADDRESS),
             localName(Element.LOOPBACK), localName(Element.LOOPBACK_ADDRESS), localName(Element.MULTICAST), localName(Element.NIC),

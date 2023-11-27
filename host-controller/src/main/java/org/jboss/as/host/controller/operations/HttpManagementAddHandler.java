@@ -137,8 +137,8 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         final Consumer<HttpManagement> hmConsumer = builder.provides(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY);
         final Supplier<ListenerRegistry> lrSupplier = builder.requires(RemotingServices.HTTP_LISTENER_REGISTRY);
         final Supplier<ModelController> mcSupplier = builder.requires(DomainModelControllerService.SERVICE_NAME);
-        final Supplier<NetworkInterfaceBinding> ibSupplier = builder.requiresCapability("org.wildfly.network.interface", NetworkInterfaceBinding.class, interfaceName);
-        final Supplier<NetworkInterfaceBinding> sibSupplier = builder.requiresCapability("org.wildfly.network.interface", NetworkInterfaceBinding.class, secureInterfaceName);
+        final Supplier<NetworkInterfaceBinding> ibSupplier = builder.requires(NetworkInterfaceBinding.SERVICE_DESCRIPTOR, interfaceName);
+        final Supplier<NetworkInterfaceBinding> sibSupplier = builder.requires(NetworkInterfaceBinding.SERVICE_DESCRIPTOR, secureInterfaceName);
         final Supplier<ConsoleAvailability> caSupplier = builder.requiresCapability("org.wildfly.management.console-availability", ConsoleAvailability.class);
         final Supplier<ManagementHttpRequestProcessor> rpSupplier = builder.requires(requestProcessorName);
         final Supplier<XnioWorker> xwSupplier = builder.requires(ManagementWorkerService.SERVICE_NAME);

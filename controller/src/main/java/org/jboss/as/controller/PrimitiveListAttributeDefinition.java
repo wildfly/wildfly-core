@@ -166,6 +166,7 @@ public class PrimitiveListAttributeDefinition extends ListAttributeDefinition {
             return valueType;
         }
 
+        @Override
         public PrimitiveListAttributeDefinition build() {
             return new PrimitiveListAttributeDefinition(this, getValueType());
         }

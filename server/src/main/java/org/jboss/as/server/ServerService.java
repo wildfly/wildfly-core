@@ -161,7 +161,6 @@ public final class ServerService extends AbstractControllerService {
 
     static final String SUSPEND_CONTROLLER_CAPABILITY_NAME = "org.wildfly.server.suspend-controller";
     static final String EXTERNAL_MODULE_CAPABILITY_NAME = "org.wildfly.management.external-module";
-    public static final String SERVER_ENVIRONMENT_CAPABILITY_NAME = "org.wildfly.server.environment";
 
     static final RuntimeCapability<Void> SUSPEND_CONTROLLER_CAPABILITY =
             RuntimeCapability.Builder.of(SUSPEND_CONTROLLER_CAPABILITY_NAME, SuspendController.class)
@@ -170,7 +169,7 @@ public final class ServerService extends AbstractControllerService {
     static final RuntimeCapability<Void> EXTERNAL_MODULE_CAPABILITY =
             RuntimeCapability.Builder.of(EXTERNAL_MODULE_CAPABILITY_NAME, ExternalModule.class)
                     .build();
-   static final RuntimeCapability<Void> SERVER_ENVIRONMENT_CAPABILITY = RuntimeCapability.Builder.of(SERVER_ENVIRONMENT_CAPABILITY_NAME, ServerEnvironment.class).build();
+    static final RuntimeCapability<Void> SERVER_ENVIRONMENT_CAPABILITY = RuntimeCapability.Builder.of(ServerEnvironment.SERVICE_DESCRIPTOR).build();
 
 
     /**

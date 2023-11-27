@@ -29,7 +29,7 @@ import org.jboss.dmr.ModelType;
  * @author Tomaz Cerar
  */
 @SuppressWarnings("unchecked")
-public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends AbstractAttributeDefinitionBuilder, ATTRIBUTE extends AttributeDefinition> {
+public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends AbstractAttributeDefinitionBuilder<BUILDER, ATTRIBUTE>, ATTRIBUTE extends AttributeDefinition> {
 
     private final String name;
     private final ModelType type;

@@ -6,6 +6,7 @@
 package org.jboss.as.server.deployment;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.jboss.as.controller.RequirementServiceTarget;
 import org.jboss.msc.service.ServiceBuilder;
@@ -19,11 +20,11 @@ import org.jboss.msc.service.ServiceRegistry;
 final class DeploymentPhaseContextImpl extends SimpleAttachable implements DeploymentPhaseContext {
     private final RequirementServiceTarget serviceTarget;
     private final ServiceRegistry serviceRegistry;
-    private final List<DeploymentUnitPhaseDependency> dependencies;
+    private final List<Consumer<ServiceBuilder<?>>> dependencies;
     private final DeploymentUnit deploymentUnitContext;
     private final Phase phase;
 
-    DeploymentPhaseContextImpl(final RequirementServiceTarget serviceTarget, final ServiceRegistry serviceRegistry, final List<DeploymentUnitPhaseDependency> dependencies, final DeploymentUnit deploymentUnitContext, final Phase phase) {
+    DeploymentPhaseContextImpl(final RequirementServiceTarget serviceTarget, final ServiceRegistry serviceRegistry, final List<Consumer<ServiceBuilder<?>>> dependencies, final DeploymentUnit deploymentUnitContext, final Phase phase) {
         this.serviceTarget = serviceTarget;
         this.serviceRegistry = serviceRegistry;
         this.dependencies = dependencies;
@@ -71,7 +72,7 @@ final class DeploymentPhaseContextImpl extends SimpleAttachable implements Deplo
         addToAttachmentList(Attachments.NEXT_PHASE_ATTACHABLE_DEPS, new AttachableDependency(attachmentKey, serviceName, true));
     }
 
-    private static final class SupplierDeploymentPhaseDependency<T> implements DeploymentUnitPhaseDependency {
+    private static final class SupplierDeploymentPhaseDependency<T> implements Consumer<ServiceBuilder<?>> {
         private final ServiceName name;
         private final DelegatingSupplier<T> supplier;
 
@@ -81,7 +82,7 @@ final class DeploymentPhaseContextImpl extends SimpleAttachable implements Deplo
         }
 
         @Override
-        public void register(final ServiceBuilder<?> builder) {
+        public void accept(ServiceBuilder<?> builder) {
             supplier.set(builder.requires(name));
         }
     }

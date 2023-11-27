@@ -76,7 +76,6 @@ public class TestHostCapableExtension implements Extension {
     }
 
     private static class RootResourceDefinition extends SimpleResourceDefinition {
-        static final String SOCKET_CAPABILITY_NAME = "org.wildfly.network.socket-binding";
         private static final String TEST_CAPABILITY_NAME = "org.wildfly.test.hc.capability";
         static final RuntimeCapability<Void> TEST_CAPABILITY =
                 RuntimeCapability.Builder.of(TEST_CAPABILITY_NAME, true)
@@ -87,7 +86,7 @@ public class TestHostCapableExtension implements Extension {
         private static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder("name", ModelType.STRING, false).build();
         private static final SimpleAttributeDefinition SOCKET_BINDING =
                 new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING, ModelType.STRING, true)
-                .setCapabilityReference(SOCKET_CAPABILITY_NAME, TEST_CAPABILITY_NAME)
+                .setCapabilityReference(SocketBinding.SERVICE_DESCRIPTOR.getName(), TEST_CAPABILITY_NAME)
                 .build();
         private static final OperationDefinition TEST_OP = new SimpleOperationDefinitionBuilder("test-op", NonResolvingResourceDescriptionResolver.INSTANCE).build();
 
@@ -142,7 +141,7 @@ public class TestHostCapableExtension implements Extension {
                 ServiceBuilder<TestService> serviceBuilder = context.getServiceTarget().addService(createServiceName(context.getCurrentAddress()), service);
                 if (hasSocketBinding) {
                     final String socketName = SOCKET_BINDING.resolveModelAttribute(context, resource.getModel()).asString();
-                    final ServiceName socketBindingName = context.getCapabilityServiceName(RootResourceDefinition.SOCKET_CAPABILITY_NAME, socketName, SocketBinding.class);
+                    final ServiceName socketBindingName = context.getCapabilityServiceName(SocketBinding.SERVICE_DESCRIPTOR, socketName);
                     serviceBuilder.addDependency(socketBindingName, SocketBinding.class, service.socketBindingInjector);
                 }
                 serviceBuilder.install();

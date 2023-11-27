@@ -17,6 +17,8 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import org.wildfly.service.descriptor.NullaryServiceDescriptor;
+
 /**
  * The socket binding manager represents a registry of all
  * active (bound) sockets.
@@ -24,6 +26,7 @@ import java.nio.channels.SocketChannel;
  * @author Emanuel Muckenhuber
  */
 public interface SocketBindingManager {
+    NullaryServiceDescriptor<SocketBindingManager> SERVICE_DESCRIPTOR = NullaryServiceDescriptor.of("org.wildfly.management.socket-binding-manager", SocketBindingManager.class);
 
     /**
      * Get the managed server socket factory.

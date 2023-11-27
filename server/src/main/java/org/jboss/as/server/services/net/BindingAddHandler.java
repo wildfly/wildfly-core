@@ -89,8 +89,8 @@ public class BindingAddHandler extends SocketBindingAddHandler {
 
         final CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(SOCKET_BINDING_CAPABILITY);
         final Consumer<SocketBinding> sbConsumer = builder.provides(SOCKET_BINDING_CAPABILITY);
-        final Supplier<NetworkInterfaceBinding> ibSupplier = intf != null ? builder.requiresCapability("org.wildfly.network.interface", NetworkInterfaceBinding.class, intf) : null;
-        final Supplier<SocketBindingManager> sbSupplier = builder.requiresCapability("org.wildfly.management.socket-binding-manager", SocketBindingManager.class);
+        final Supplier<NetworkInterfaceBinding> ibSupplier = intf != null ? builder.requires(NetworkInterfaceBinding.SERVICE_DESCRIPTOR, intf) : null;
+        final Supplier<SocketBindingManager> sbSupplier = builder.requires(SocketBindingManager.SERVICE_DESCRIPTOR);
         final SocketBindingService service = new SocketBindingService(sbConsumer, ibSupplier, sbSupplier, name, port, fixedPort, mcastInet, mcastPort, clientMappings);
         builder.setInstance(service);
         builder.addAliases(SOCKET_BINDING_CAPABILITY.getCapabilityServiceName((name)));

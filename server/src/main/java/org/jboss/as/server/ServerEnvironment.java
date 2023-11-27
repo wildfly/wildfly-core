@@ -42,6 +42,7 @@ import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoader;
 import org.wildfly.common.cpu.ProcessorInfo;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.service.descriptor.NullaryServiceDescriptor;
 
 /**
  * Encapsulates the runtime environment for a server.
@@ -51,6 +52,8 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * @author Mike M. Clark
  */
 public class ServerEnvironment extends ProcessEnvironment implements Serializable {
+
+    public static final NullaryServiceDescriptor<ServerEnvironment> SERVICE_DESCRIPTOR = NullaryServiceDescriptor.of("org.wildfly.server.environment", ServerEnvironment.class);
 
     private static final long serialVersionUID = 1725061010357265545L;
 

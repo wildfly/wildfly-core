@@ -6,6 +6,7 @@
 package org.jboss.as.controller;
 
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -14,6 +15,7 @@ import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.ResourceAuthorization;
+import org.jboss.as.controller.capability.CapabilityServiceDescriptorResolver;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
@@ -27,13 +29,18 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.service.descriptor.BinaryServiceDescriptor;
+import org.wildfly.service.descriptor.NullaryServiceDescriptor;
+import org.wildfly.service.descriptor.QuaternaryServiceDescriptor;
+import org.wildfly.service.descriptor.TernaryServiceDescriptor;
+import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 
 /**
  * The context for an operation step execution.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface OperationContext extends ExpressionResolver {
+public interface OperationContext extends ExpressionResolver, CapabilityServiceDescriptorResolver {
 
     /**
      * Add an execution step to this operation process.  Runtime operation steps are automatically added after
@@ -1021,7 +1028,6 @@ public interface OperationContext extends ExpressionResolver {
      */
     ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart, Class<?> serviceType);
 
-
     /**
      * Gets the name of a service associated with a given {@link RuntimeCapability#isDynamicallyNamed() dynamically named}
      * capability, if there is one.
@@ -1056,6 +1062,35 @@ public interface OperationContext extends ExpressionResolver {
      *  <li>The process is a HC, and the address of the operation is a subsystem in the host model or a child thereof</li>
      */
     boolean isDefaultRequiresRuntime();
+
+    @Override
+    default <T> ServiceName getCapabilityServiceName(NullaryServiceDescriptor<T> descriptor) {
+        return this.getCapabilityServiceName(descriptor.getName(), descriptor.getType());
+    }
+
+    @Override
+    default <T> ServiceName getCapabilityServiceName(UnaryServiceDescriptor<T> descriptor, String name) {
+        Map.Entry<String, String[]> resolved = descriptor.resolve(name);
+        return this.getCapabilityServiceName(resolved.getKey(), descriptor.getType(), resolved.getValue());
+    }
+
+    @Override
+    default <T> ServiceName getCapabilityServiceName(BinaryServiceDescriptor<T> descriptor, String parent, String child) {
+        Map.Entry<String, String[]> resolved = descriptor.resolve(parent, child);
+        return this.getCapabilityServiceName(resolved.getKey(), descriptor.getType(), resolved.getValue());
+    }
+
+    @Override
+    default <T> ServiceName getCapabilityServiceName(TernaryServiceDescriptor<T> descriptor, String grandparent, String parent, String child) {
+        Map.Entry<String, String[]> resolved = descriptor.resolve(grandparent, parent, child);
+        return this.getCapabilityServiceName(resolved.getKey(), descriptor.getType(), resolved.getValue());
+    }
+
+    @Override
+    default <T> ServiceName getCapabilityServiceName(QuaternaryServiceDescriptor<T> descriptor, String greatGrandparent, String grandparent, String parent, String child) {
+        Map.Entry<String, String[]> resolved = descriptor.resolve(greatGrandparent, grandparent, parent, child);
+        return this.getCapabilityServiceName(resolved.getKey(), descriptor.getType(), resolved.getValue());
+    }
 
     /**
      * The stage at which a step should apply.

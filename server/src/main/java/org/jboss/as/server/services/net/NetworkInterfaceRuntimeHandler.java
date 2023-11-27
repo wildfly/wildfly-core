@@ -44,7 +44,7 @@ public class NetworkInterfaceRuntimeHandler implements OperationStepHandler {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-                final ServiceName svcName = context.getCapabilityServiceName("org.wildfly.network.interface", interfaceName, NetworkInterfaceBinding.class);
+                final ServiceName svcName = context.getCapabilityServiceName(NetworkInterfaceBinding.SERVICE_DESCRIPTOR, interfaceName);
                 final ServiceController<?> controller = context.getServiceRegistry(false).getService(svcName);
                 if(controller != null && controller.getState() == ServiceController.State.UP) {
                     final NetworkInterfaceBinding binding = NetworkInterfaceBinding.class.cast(controller.getValue());

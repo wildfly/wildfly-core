@@ -85,7 +85,7 @@ public class SuspendOnShutdownTestCase {
         final JavaArchive jar = ShrinkWrap.create(JavaArchive.class, WEB_SUSPEND_JAR)
                 .addPackage(SuspendResumeHandler.class.getPackage())
                 .addAsServiceProvider(ServiceActivator.class, TestSuspendServiceActivator.class)
-                .addAsResource(new StringAsset("Dependencies: org.jboss.dmr, org.jboss.as.controller, io.undertow.core, org.jboss.as.server,org.wildfly.extension.request-controller, org.jboss.as.network\n"), "META-INF/MANIFEST.MF")
+                .addAsResource(new StringAsset("Dependencies: org.jboss.dmr, org.jboss.as.controller, io.undertow.core, org.jboss.as.server, org.wildfly.extension.request-controller, org.jboss.as.network, org.wildfly.service\n"), "META-INF/MANIFEST.MF")
                 .addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
                         new RuntimePermission("createXnioWorker"),
                         new SocketPermission(TestSuiteEnvironment.getServerAddress() + ":8080", "listen,resolve"),

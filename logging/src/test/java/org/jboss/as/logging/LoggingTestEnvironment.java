@@ -91,7 +91,7 @@ class LoggingTestEnvironment extends AdditionalInitialization implements Seriali
         super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
         if (runningMode == RunningMode.NORMAL) {
             registerCapabilities(capabilityRegistry,
-                    RuntimeCapability.Builder.of("org.wildfly.network.outbound-socket-binding", true, OutboundSocketBinding.class).build()
+                    RuntimeCapability.Builder.of(OutboundSocketBinding.SERVICE_DESCRIPTOR).build()
             );
         }
     }

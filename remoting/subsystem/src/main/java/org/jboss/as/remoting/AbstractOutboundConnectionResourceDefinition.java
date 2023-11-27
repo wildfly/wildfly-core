@@ -14,10 +14,7 @@ import org.jboss.as.network.OutboundConnection;
  */
 abstract class AbstractOutboundConnectionResourceDefinition extends SimpleResourceDefinition {
 
-    static final String OUTBOUND_CONNECTION_CAPABILITY_NAME = "org.wildfly.remoting.outbound-connection";
-    static final String OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.outbound-socket-binding";
-    static final RuntimeCapability<Void> OUTBOUND_CONNECTION_CAPABILITY =
-            RuntimeCapability.Builder.of(OUTBOUND_CONNECTION_CAPABILITY_NAME, true, OutboundConnection.class)
+    static final RuntimeCapability<Void> OUTBOUND_CONNECTION_CAPABILITY = RuntimeCapability.Builder.of(OutboundConnection.SERVICE_DESCRIPTOR)
                     .addRequirements(Capabilities.REMOTING_ENDPOINT_CAPABILITY_NAME)
                     .build();
 

@@ -27,13 +27,12 @@ import org.jboss.dmr.ModelType;
  */
 public abstract class PathResourceDefinition extends SimpleResourceDefinition {
 
-    public static final RuntimeCapability<Void> PATH_CAPABILITY =
-            RuntimeCapability.Builder.of("org.wildfly.management.path", true, String.class)
-                .setAllowMultipleRegistrations(true) // both /host=master/path=x and /path=x are legal and in the same scope
-                                                     // In a better world we'd only set this true in an HC process
-                                                     // but that's more trouble than I want to take. Adding a path
-                                                     // twice in a server will fail in MODEL due to the dup resource anyway
-                .build();
+    public static final RuntimeCapability<Void> PATH_CAPABILITY = RuntimeCapability.Builder.of(PathManager.PATH_SERVICE_DESCRIPTOR)
+            .setAllowMultipleRegistrations(true) // both /host=master/path=x and /path=x are legal and in the same scope
+                                                 // In a better world we'd only set this true in an HC process
+                                                 // but that's more trouble than I want to take. Adding a path
+                                                 // twice in a server will fail in MODEL due to the dup resource anyway
+            .build();
 
     private static final String SPECIFIED_PATH_RESOURCE_PREFIX = "specified_path";
     private static final String NAMED_PATH_RESOURCE_PREFIX = "named_path";

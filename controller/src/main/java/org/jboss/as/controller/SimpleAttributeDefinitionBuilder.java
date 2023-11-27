@@ -72,6 +72,7 @@ public class SimpleAttributeDefinitionBuilder extends AbstractAttributeDefinitio
         super(attributeName, basis);
     }
 
+    @Override
     public SimpleAttributeDefinition build() {
         return new SimpleAttributeDefinition(this);
     }
