@@ -12,7 +12,7 @@
     <parent>
         <artifactId>wildfly-core-parent</artifactId>
         <groupId>org.wildfly.core</groupId>
-        <version>22.0.2.Final-SNAPSHOT</version>
+        <version>22.0.2.Final</version>
     </parent>
 
     <artifactId>wildfly-installation-manager</artifactId>
