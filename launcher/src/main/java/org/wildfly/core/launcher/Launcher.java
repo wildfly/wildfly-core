@@ -21,6 +21,7 @@ import java.util.Map;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@SuppressWarnings("unused")
 public class Launcher {
 
     private final CommandBuilder builder;
@@ -187,7 +188,7 @@ public class Launcher {
      * @see java.lang.ProcessBuilder#directory(java.io.File)
      */
     public Launcher setDirectory(final String dir) {
-        return setDirectory(AbstractCommandBuilder.validateAndNormalizeDir(dir, true));
+        return setDirectory(Environment.validateAndNormalizeDir(dir, true));
     }
 
     /**

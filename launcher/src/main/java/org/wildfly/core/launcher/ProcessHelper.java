@@ -18,15 +18,12 @@ public class ProcessHelper {
      * @param process the process to check
      *
      * @return {@code true} if the process has died, otherwise {@code false}
+     * @see Process#isAlive()
      */
+    @SuppressWarnings("unused")
+    @Deprecated(forRemoval = true)
     public static boolean processHasDied(final Process process) {
-        try {
-            // The process is still running
-            process.exitValue();
-            return true;
-        } catch (IllegalThreadStateException ignore) {
-        }
-        return false;
+        return !process.isAlive();
     }
 
     /**
@@ -54,16 +51,13 @@ public class ProcessHelper {
      *                                     java.lang.RuntimePermission <code>RuntimePermission("shutdownHooks")</code>}
      */
     public static Thread addShutdownHook(final Process process) {
-        final Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if (process != null) {
-                    process.destroy();
-                    try {
-                        process.waitFor();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+        final Thread thread = new Thread(() -> {
+            if (process != null) {
+                process.destroyForcibly();
+                try {
+                    process.waitFor();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
             }
         });

@@ -231,8 +231,7 @@ class Environment {
         if (Files.isDirectory(jarPath)) {
             throw LauncherMessages.MESSAGES.pathNotAFile(jarPath);
         }
-        final Path result = jarPath.toAbsolutePath().normalize();
-        return result;
+        return jarPath.toAbsolutePath().normalize();
     }
 
     static Path validateJar(final String jarPath) {
@@ -240,5 +239,25 @@ class Environment {
             throw LauncherMessages.MESSAGES.pathDoesNotExist(null);
         }
         return validateJar(Paths.get(jarPath));
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    static Path validateAndNormalizeDir(final String path, final boolean allowNull) {
+        if (path == null) {
+            if (allowNull) return null;
+            throw LauncherMessages.MESSAGES.pathDoesNotExist(null);
+        }
+        return validateAndNormalizeDir(Paths.get(path), allowNull);
+    }
+
+    static Path validateAndNormalizeDir(final Path path, final boolean allowNull) {
+        if (allowNull && path == null) return null;
+        if (path == null || Files.notExists(path)) {
+            throw LauncherMessages.MESSAGES.pathDoesNotExist(path);
+        }
+        if (!Files.isDirectory(path)) {
+            throw LauncherMessages.MESSAGES.invalidDirectory(path);
+        }
+        return path.toAbsolutePath().normalize();
     }
 }
