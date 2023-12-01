@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
@@ -136,7 +137,7 @@ public class TransformerAttachmentAndInspectModelSubsystemTestCase extends Abstr
 
     private void checkModels(ModelNode mainModel, ModelNode legacyModel, String testValue, String... properties) {
         checkMainModel(mainModel, testValue, properties);
-        checkLegacyModel(legacyModel, testValue.toUpperCase(), properties);
+        checkLegacyModel(legacyModel, testValue.toUpperCase(Locale.ENGLISH), properties);
     }
 
     private void checkMainModel(ModelNode model, String testValue, String... properties) {

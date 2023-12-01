@@ -37,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -71,7 +72,7 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
     private ModelNode createOSNode() throws OperationFailedException {
         String osName = getProperty("os.name");
         final ModelNode os = new ModelNode();
-        if (osName != null && osName.toLowerCase().contains("linux")) {
+        if (osName != null && osName.toLowerCase(Locale.ENGLISH).contains("linux")) {
             try {
                 os.set(GnuLinuxDistribution.discover());
             } catch (IOException ex) {

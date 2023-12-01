@@ -12,6 +12,7 @@ import org.jboss.dmr.Property;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Locale;
 
 /**
  * original code taken from http://www.catalysoft.com/articles/StrikeAMatch.html
@@ -52,8 +53,8 @@ class SimilarityIndex {
      */
 
     public static double compareStrings(String str1, String str2) {
-        ArrayList pairs1 = wordLetterPairs(str1.toUpperCase());
-        ArrayList pairs2 = wordLetterPairs(str2.toUpperCase());
+        ArrayList pairs1 = wordLetterPairs(str1.toUpperCase(Locale.ENGLISH));
+        ArrayList pairs2 = wordLetterPairs(str2.toUpperCase(Locale.ENGLISH));
         int intersection = 0;
         int union = pairs1.size() + pairs2.size();
         for (Object pair1 : pairs1) {

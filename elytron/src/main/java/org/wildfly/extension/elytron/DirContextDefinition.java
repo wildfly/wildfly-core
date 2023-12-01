@@ -14,6 +14,7 @@ import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.CommonAttributes.PROPERTIES;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
+import java.util.Locale;
 import java.util.Properties;
 
 import javax.net.ssl.SSLContext;
@@ -181,7 +182,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
         }
         ModelNode connectionTimeout = CONNECTION_TIMEOUT.resolveModelAttribute(context, model);
         ModelNode readTimeout = READ_TIMEOUT.resolveModelAttribute(context, model);
-        ReferralMode referralMode = ReferralMode.valueOf(REFERRAL_MODE.resolveModelAttribute(context, model).asString().toUpperCase());
+        ReferralMode referralMode = ReferralMode.valueOf(REFERRAL_MODE.resolveModelAttribute(context, model).asString().toUpperCase(Locale.ENGLISH));
 
         return () -> {
             SimpleDirContextFactoryBuilder builder = SimpleDirContextFactoryBuilder.builder()

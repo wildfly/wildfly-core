@@ -11,6 +11,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRI
 
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Locale;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -252,7 +253,7 @@ public class StandaloneRootResourceTestCase extends AbstractCoreModelTest {
     }
 
     private String getDefaultServerName() throws Exception {
-        String hostName = NetworkUtils.canonize(InetAddress.getLocalHost().getHostName().toLowerCase());
+        String hostName = NetworkUtils.canonize(InetAddress.getLocalHost().getHostName().toLowerCase(Locale.ENGLISH));
         int index = hostName.indexOf('.');
         return index == -1 ? hostName : hostName.substring(0, index);
     }

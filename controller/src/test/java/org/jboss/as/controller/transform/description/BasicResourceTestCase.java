@@ -13,6 +13,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 
 import java.util.Collections;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 
 import org.jboss.as.controller.ExpressionResolver;
@@ -160,7 +161,7 @@ public class BasicResourceTestCase {
                 .setValueConverter(new AttributeConverter.DefaultAttributeConverter() {
                     @Override
                     protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
-                        attributeValue.set(attributeValue.asString().toUpperCase());
+                        attributeValue.set(attributeValue.asString().toUpperCase(Locale.ENGLISH));
                     }
                 }, "attribute");
 
@@ -169,7 +170,7 @@ public class BasicResourceTestCase {
                 .setValueConverter(new AttributeConverter.DefaultAttributeConverter() {
                     @Override
                     protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
-                        attributeValue.set(attributeValue.asString().toUpperCase());
+                        attributeValue.set(attributeValue.asString().toUpperCase(Locale.ENGLISH));
                     }
                 }, "attribute");
 

@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -524,7 +525,7 @@ class CliConfigImpl implements CliConfig {
         }
 
         public Color convertColor(String name) throws CliInitializationException {
-            switch (name.toLowerCase()) {
+            switch (name.toLowerCase(Locale.ENGLISH)) {
                 case "black":
                     return Color.BLACK;
                 case "red":

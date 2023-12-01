@@ -9,6 +9,7 @@
 package org.jboss.as.host.controller.model.jvm;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.jboss.as.host.controller.logging.HostControllerLogger;
@@ -256,7 +257,7 @@ public class JvmElement {
     }
 
     private void determinateJVMParams() {
-        String vendor = WildFlySecurityManager.getPropertyPrivileged("java.vendor", "oracle").toLowerCase();
+        String vendor = WildFlySecurityManager.getPropertyPrivileged("java.vendor", "oracle").toLowerCase(Locale.ENGLISH);
         if (vendor.contains("ibm")) {
             type = JvmType.IBM;
         } else {

@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -307,7 +308,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
                 // Give up
                 qualifiedHostName = "unknown-host.unknown-domain";
             } else {
-                qualifiedHostName = qualifiedHostName.trim().toLowerCase();
+                qualifiedHostName = qualifiedHostName.trim().toLowerCase(Locale.getDefault());
             }
         }
         this.qualifiedHostName = qualifiedHostName;

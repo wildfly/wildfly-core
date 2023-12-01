@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.zip.ZipException;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -125,7 +126,7 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
                     if (!updates.isEmpty()) {
                         for (ArtifactChange artifactChange : updates) {
                             ModelNode artifactChangeMn = new ModelNode();
-                            artifactChangeMn.get(InstMgrConstants.LIST_UPDATES_STATUS).set(artifactChange.getStatus().name().toLowerCase());
+                            artifactChangeMn.get(InstMgrConstants.LIST_UPDATES_STATUS).set(artifactChange.getStatus().name().toLowerCase(Locale.ENGLISH));
                             artifactChangeMn.get(InstMgrConstants.LIST_UPDATES_ARTIFACT_NAME).set(artifactChange.getArtifactName());
                             switch (artifactChange.getStatus()) {
                                 case REMOVED:

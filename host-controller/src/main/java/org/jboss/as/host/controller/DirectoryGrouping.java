@@ -38,7 +38,7 @@ public enum DirectoryGrouping {
         if (localName == null) {
             return null;
         }
-        final DirectoryGrouping directoryGrouping = MAP.get(localName.toLowerCase());
+        final DirectoryGrouping directoryGrouping = MAP.get(localName.toLowerCase(Locale.ENGLISH));
         return directoryGrouping == null ? DirectoryGrouping.valueOf(localName.toUpperCase(Locale.ENGLISH)) : directoryGrouping;
     }
 

@@ -91,7 +91,7 @@ public class ConfirmationChoice implements State {
 
     private int convertResponse(final String response) {
         if (response != null) {
-            String temp = response.toLowerCase(); // We now need to match on the current local.
+            String temp = response.toLowerCase(Locale.getDefault()); // We now need to match on the current local.
             if (LONG_YES.equals(temp) || SHORT_YES.equals(temp)) {
                 return YES;
             }
