@@ -22,10 +22,12 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>channel</module>
         <module>common</module>
         <module>ee-10-api</module>
         <module>galleon-common</module>
         <module>galleon-feature-pack</module>
+        <module>manifest</module>
     </modules>
 
 

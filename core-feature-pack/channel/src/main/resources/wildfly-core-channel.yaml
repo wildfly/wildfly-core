@@ -1,0 +1,9 @@
+---
+schemaVersion: "2.0.0"
+repositories:
+  - id: "central"
+    url: "https://repo1.maven.org/maven2/"
+  - id: "jboss-public"
+    url: "https://repository.jboss.org/nexus/content/groups/public/"
+manifest:
+  maven: "org.wildfly.core:wildfly-core-manifest:${project.version}"
