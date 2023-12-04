@@ -121,7 +121,7 @@ final class DefaultDeploymentOperations implements DeploymentOperations {
 
         Execution PRIVILEGED = new Execution() {
             @Override
-            public <T, R> R execute(Function<T, R> function, T t) {
+            public <T, R> R execute(final Function<T, R> function, final T t) {
                 try {
                     return doPrivileged((PrivilegedExceptionAction<R>) () -> NON_PRIVILEGED.execute(function, t) );
                 } catch (PrivilegedActionException e) {

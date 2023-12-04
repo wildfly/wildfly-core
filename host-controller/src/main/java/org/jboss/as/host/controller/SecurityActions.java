@@ -73,7 +73,7 @@ final class SecurityActions {
 
         Execution PRIVILEGED = new Execution() {
             @Override
-            public <T, R> R execute(Function<T, R> function, T t) {
+            public <T, R> R execute(final Function<T, R> function, final T t) {
                 try {
                     return doPrivileged((PrivilegedExceptionAction<R>) () -> NON_PRIVILEGED.execute(function, t) );
                 } catch (PrivilegedActionException e) {
@@ -83,7 +83,7 @@ final class SecurityActions {
                 }
             }
             @Override
-            public <T, U, R> R execute(BiFunction<T, U, R> function, T t, U u) {
+            public <T, U, R> R execute(final BiFunction<T, U, R> function, final T t, final U u) {
                 try {
                     return doPrivileged((PrivilegedExceptionAction<R>) () -> NON_PRIVILEGED.execute(function, t, u) );
                 } catch (PrivilegedActionException e) {
