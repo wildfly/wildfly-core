@@ -744,7 +744,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
 
         Execution PRIVILEGED = new Execution() {
             @Override
-            public <T> T execute(Supplier<T> supplier) {
+            public <T> T execute(final Supplier<T> supplier) {
                 try {
                     return doPrivileged((PrivilegedExceptionAction<T>) () -> NON_PRIVILEGED.execute(supplier));
                 } catch (PrivilegedActionException e) {

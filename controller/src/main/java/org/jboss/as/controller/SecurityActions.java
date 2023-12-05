@@ -95,7 +95,7 @@ class SecurityActions {
         InVmActions PRIVILEGED = new InVmActions() {
 
             @Override
-            public <T> T runInVm(PrivilegedAction<T> action) {
+            public <T> T runInVm(final PrivilegedAction<T> action) {
                 return doPrivileged((PrivilegedAction<T>) () -> InVmAccess.runInVm(action));
             }
 
