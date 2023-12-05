@@ -240,7 +240,7 @@
         <version.org.wildfly.openssl.wildfly-openssl-linux-s390x>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-s390x>
         <version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.19.2-1-PSI</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.19.2-2-PSI</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.10.1.Final</version.org.wildfly.security.elytron-web>
         <version.org.yaml.snakeyaml>2.0</version.org.yaml.snakeyaml>
     </properties>
