@@ -2,7 +2,7 @@
  * Copyright The WildFly Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package org.jboss.as.subsystem.test.quality;
+package org.jboss.as.subsystem.test.stability;
 
 import java.util.EnumSet;
 
@@ -25,7 +25,7 @@ public class FooSubsystemExtension implements Extension {
         ManagementResourceRegistration registration = subsystem.registerSubsystemModel(new FooSubsystemResourceDefinition());
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-        subsystem.registerXMLElementWriter(new PersistentResourceXMLDescriptionWriter(FooSubsystemSchema.CURRENT.get(context.getQuality())));
+        subsystem.registerXMLElementWriter(new PersistentResourceXMLDescriptionWriter(FooSubsystemSchema.CURRENT.get(context.getStability())));
     }
 
     @Override

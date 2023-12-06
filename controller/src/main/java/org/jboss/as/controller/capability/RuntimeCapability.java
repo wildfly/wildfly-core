@@ -16,7 +16,7 @@ import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceNameFactory;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.Assert;
 import org.wildfly.service.descriptor.BinaryServiceDescriptor;
@@ -125,7 +125,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
     private volatile ServiceName serviceName;
     private final T runtimeAPI;
     private final boolean allowMultipleRegistrations;
-    private final Quality quality;
+    private final Stability stability;
 
     /**
      * Constructor for use by the builder.
@@ -139,7 +139,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceValueType = builder.serviceValueType;
         this.allowMultipleRegistrations = builder.allowMultipleRegistrations;
-        this.quality = builder.quality;
+        this.stability = builder.stability;
     }
 
     private static Set<String> establishRequirements(Set<String> input) {
@@ -157,7 +157,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
                               Set<String> requirements,
                               boolean allowMultipleRegistrations,
                               Function<PathAddress, String[]> dynamicNameMapper,
-                              Quality quality,
+                              Stability stability,
                               String... dynamicElement
     ) {
         this.name = buildDynamicCapabilityName(baseName, dynamicElement);
@@ -173,7 +173,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
             assert baseServiceName == null;
         }
         this.allowMultipleRegistrations = allowMultipleRegistrations;
-        this.quality = quality;
+        this.stability = stability;
     }
 
     /**
@@ -323,7 +323,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
         assert dynamicElement != null;
         assert dynamicElement.length > 0;
         return new RuntimeCapability<>(getName(), serviceValueType, getServiceName(), runtimeAPI,
-                getRequirements(), allowMultipleRegistrations,dynamicNameMapper, this.quality, dynamicElement);
+                getRequirements(), allowMultipleRegistrations,dynamicNameMapper, this.stability, dynamicElement);
 
     }
 
@@ -351,7 +351,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
         String[] dynamicElement = dynamicNameMapper.apply(path);
         assert dynamicElement.length > 0;
         return new RuntimeCapability<>(getName(), serviceValueType, getServiceName(), runtimeAPI,
-                getRequirements(), allowMultipleRegistrations, dynamicNameMapper, this.quality, dynamicElement);
+                getRequirements(), allowMultipleRegistrations, dynamicNameMapper, this.stability, dynamicElement);
     }
 
     @Override
@@ -387,8 +387,8 @@ public class RuntimeCapability<T> implements Capability, Feature {
     }
 
     @Override
-    public Quality getQuality() {
-        return this.quality;
+    public Stability getStability() {
+        return this.stability;
     }
 
     @Override
@@ -424,7 +424,7 @@ public class RuntimeCapability<T> implements Capability, Feature {
         private Set<String> requirements;
         private boolean allowMultipleRegistrations = ALLOW_MULTIPLE;
         private Function<PathAddress, String[]> dynamicNameMapper = UnaryCapabilityNameResolver.DEFAULT;
-        private Quality quality = Quality.DEFAULT;
+        private Stability stability = Stability.DEFAULT;
 
         /**
          * Create a builder for a non-dynamic capability with no custom runtime API.
@@ -596,12 +596,12 @@ public class RuntimeCapability<T> implements Capability, Feature {
         }
 
         /**
-         * Sets the target quality of this capability.
-         * @param quality a quality level
+         * Sets the stability level of this capability.
+         * @param stability a stability level
          * @return a reference to this builder
          */
-        public Builder<T> setQuality(Quality quality) {
-            this.quality = quality;
+        public Builder<T> setStability(Stability stability) {
+            this.stability = stability;
             return this;
         }
 

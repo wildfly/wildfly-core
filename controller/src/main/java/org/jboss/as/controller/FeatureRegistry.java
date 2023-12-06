@@ -4,7 +4,7 @@
  */
 package org.jboss.as.controller;
 
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 
 /**
  * Implemented by objects that register features.
@@ -12,22 +12,22 @@ import org.jboss.as.version.Quality;
  */
 public interface FeatureRegistry {
     /**
-     * Returns the feature quality supported by this feature registry.
-     * @return a quality level
+     * Returns the feature stability supported by this feature registry.
+     * @return a stability level
      */
-    default Quality getQuality() {
+    default Stability getStability() {
         // TODO Default implementation is only here to prevent wildfly-full integration test failures
-        // Remove before branch is merged
-        return Quality.DEFAULT;
+        // Remove this once that is no longer the case
+        return Stability.DEFAULT;
     }
 
     /**
-     * Determines whether the specified feature is enabled by the configured quality level of the feature registry.
+     * Determines whether the specified feature is enabled by the configured stability level of the feature registry.
      * @param <F> the feature type
      * @param feature a feature
      * @return true, if the specified feature is enabled, false otherwise.
      */
     default <F extends Feature> boolean enables(F feature) {
-        return this.getQuality().enables(feature.getQuality());
+        return this.getStability().enables(feature.getStability());
     }
 }

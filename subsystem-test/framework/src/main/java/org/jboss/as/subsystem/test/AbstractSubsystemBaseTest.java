@@ -16,7 +16,7 @@ import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.model.test.ModelTestUtils;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -35,16 +35,16 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
         super(mainSubsystemName, mainExtension);
     }
 
-    public AbstractSubsystemBaseTest(final String mainSubsystemName, final Extension mainExtension, Quality quality) {
-        super(mainSubsystemName, mainExtension, quality);
+    public AbstractSubsystemBaseTest(final String mainSubsystemName, final Extension mainExtension, Stability stability) {
+        super(mainSubsystemName, mainExtension, stability);
     }
 
     public AbstractSubsystemBaseTest(final String mainSubsystemName, final Extension mainExtension, final Comparator<PathAddress> removeOrderComparator) {
         super(mainSubsystemName, mainExtension, removeOrderComparator);
     }
 
-    public AbstractSubsystemBaseTest(final String mainSubsystemName, final Extension mainExtension, Quality quality, final Comparator<PathAddress> removeOrderComparator) {
-        super(mainSubsystemName, mainExtension, quality, removeOrderComparator);
+    public AbstractSubsystemBaseTest(final String mainSubsystemName, final Extension mainExtension, Stability stability, final Comparator<PathAddress> removeOrderComparator) {
+        super(mainSubsystemName, mainExtension, stability, removeOrderComparator);
     }
 
     /**

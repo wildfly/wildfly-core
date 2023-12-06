@@ -551,13 +551,13 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
     }
 
     /**
-     * Sets the quality level of the domain controller process.
-     * @param quality a quality level
+     * Sets the stability level of the domain controller process.
+     * @param stability a stability level
      * @return a reference to this builder
      */
-    public StandaloneCommandBuilder setQuality(String quality) {
-        if (quality != null) {
-            this.setSingleServerArg("--quality", quality);
+    public StandaloneCommandBuilder setStability(String stability) {
+        if (stability != null) {
+            this.setSingleServerArg("--stability", stability);
         }
         return this;
     }

@@ -20,7 +20,7 @@ import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.persistence.ConfigurationExtension;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 
@@ -73,7 +73,7 @@ public abstract class TestModelControllerService extends AbstractControllerServi
     protected TestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, Supplier<ExecutorService> executorService,
                                          final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                          final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension) {
-        super(executorService, null, processType, Quality.DEFAULT, runningModeControl, configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
+        super(executorService, null, processType, Stability.DEFAULT, runningModeControl, configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
                 AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), capabilityRegistry, configExtension);
         this.processState = processState;
         this.capabilityRegistry = capabilityRegistry;

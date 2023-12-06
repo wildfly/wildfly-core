@@ -75,7 +75,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.transform.TransformerRegistry;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
@@ -114,7 +114,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
         private JmxAuthorizer authorizer = NO_OP_AUTHORIZER;
         private Supplier<SecurityIdentity> securityIdentitySupplier = Functions.constantSupplier(null);
         private RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = RuntimeHostControllerInfoAccessor.SERVER;
-        private Quality quality = Quality.DEFAULT;
+        private Stability stability = Stability.DEFAULT;
 
         private Builder(ProcessType processType) {
             this.processType = processType;
@@ -180,12 +180,12 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         /**
-         * Overrides the default quality of the extension registry.
-         * @param quality a quality level
+         * Overrides the default stability level of the extension registry.
+         * @param stability a stability level
          * @return a reference to this builder
          */
-        public Builder withQuality(Quality quality) {
-            this.quality = quality;
+        public Builder withStability(Stability stability) {
+            this.stability = stability;
             return this;
         }
 
@@ -206,7 +206,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
     }
 
     private final ProcessType processType;
-    private final Quality quality;
+    private final Stability stability;
 
     private SubsystemXmlWriterRegistry writerRegistry;
     private volatile PathManager pathManager;
@@ -230,7 +230,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
         this.authorizer = builder.authorizer;
         this.securityIdentitySupplier = builder.securityIdentitySupplier;
         this.hostControllerInfoAccessor = builder.hostControllerInfoAccessor;
-        this.quality = builder.quality;
+        this.stability = builder.stability;
     }
 
     /**
@@ -519,8 +519,8 @@ public final class ExtensionRegistry implements FeatureRegistry {
     }
 
     @Override
-    public Quality getQuality() {
-        return this.quality;
+    public Stability getStability() {
+        return this.stability;
     }
 
     private class ExtensionParsingContextImpl implements ExtensionParsingContext {
@@ -550,8 +550,8 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         @Override
-        public Quality getQuality() {
-            return ExtensionRegistry.this.getQuality();
+        public Stability getStability() {
+            return ExtensionRegistry.this.getStability();
         }
 
         @Override
@@ -671,7 +671,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
                 ControllerLogger.DEPRECATED_LOGGER.extensionDeprecated(name);
             }
             SubsystemRegistrationImpl result =  new SubsystemRegistrationImpl(name, version,
-                                profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName, processType, quality);
+                                profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName, processType, stability);
             if (registerTransformers){
                 transformerRegistry.loadAndRegisterTransformers(name, version, extension.extensionModuleName);
             }
@@ -706,8 +706,8 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         @Override
-        public Quality getQuality() {
-            return this.profileRegistration.getQuality();
+        public Stability getStability() {
+            return this.profileRegistration.getStability();
         }
 
         @Override
@@ -820,7 +820,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
     private class SubsystemRegistrationImpl implements SubsystemRegistration {
         private final String name;
         private final ModelVersion version;
-        private final Quality quality;
+        private final Stability stability;
         private final ManagementResourceRegistration profileRegistration;
         private final ManagementResourceRegistration deploymentsRegistration;
         private final ExtensionRegistryType extensionRegistryType;
@@ -832,24 +832,24 @@ public final class ExtensionRegistry implements FeatureRegistry {
                                           ManagementResourceRegistration deploymentsRegistration,
                                           ExtensionRegistryType extensionRegistryType,
                                           String extensionModuleName,
-                                          ProcessType processType, Quality quality) {
+                                          ProcessType processType, Stability stability) {
             assert profileRegistration != null;
             this.name = name;
             this.profileRegistration = profileRegistration;
             if (deploymentsRegistration == null){
-                this.deploymentsRegistration = ManagementResourceRegistration.Factory.forProcessType(processType, quality).createRegistration(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
+                this.deploymentsRegistration = ManagementResourceRegistration.Factory.forProcessType(processType, stability).createRegistration(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
             }else {
                 this.deploymentsRegistration = deploymentsRegistration;
             }
             this.version = version;
-            this.quality = quality;
+            this.stability = stability;
             this.extensionRegistryType = extensionRegistryType;
             this.extensionModuleName = extensionModuleName;
         }
 
         @Override
-        public Quality getQuality() {
-            return this.quality;
+        public Stability getStability() {
+            return this.stability;
         }
 
         @Override
@@ -950,8 +950,8 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         @Override
-        public Quality getQuality() {
-            return this.deployments.getQuality();
+        public Stability getStability() {
+            return this.deployments.getStability();
         }
 
         @Override

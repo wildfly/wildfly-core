@@ -6,7 +6,7 @@
 package org.jboss.as.controller;
 
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
@@ -23,7 +23,7 @@ public class PathElement implements Feature {
     private final String value;
     private final boolean multiTarget;
     private final int hashCode;
-    private final Quality quality;
+    private final Stability stability;
 
     /**
      * Construct a new instance with a wildcard value.
@@ -47,20 +47,22 @@ public class PathElement implements Feature {
     /**
      * Construct a new instance with a wildcard value.
      * @param key the path key to match
+     * @param stability the stability level of the associated resources
      * @return the new path element
      */
-    public static PathElement pathElement(final String key, Quality quality) {
-        return new PathElement(key, quality);
+    public static PathElement pathElement(final String key, Stability stability) {
+        return new PathElement(key, stability);
     }
 
     /**
      * Construct a new instance.
      * @param key the path key to match
      * @param value the path value or wildcard to match
+     * @param stability the stability level of the associated resource
      * @return the new path element
      */
-    public static PathElement pathElement(final String key, final String value, Quality quality) {
-        return new PathElement(key, value, quality);
+    public static PathElement pathElement(final String key, final String value, Stability stability) {
+        return new PathElement(key, value, stability);
     }
 
     /**
@@ -75,8 +77,8 @@ public class PathElement implements Feature {
      * Construct a new instance with a wildcard value.
      * @param key the path key to match
      */
-    PathElement(final String key, Quality quality) {
-        this(key, WILDCARD_VALUE, quality);
+    PathElement(final String key, Stability stability) {
+        this(key, WILDCARD_VALUE, stability);
     }
 
     /**
@@ -85,7 +87,7 @@ public class PathElement implements Feature {
      * @param value the path value or wildcard to match
      */
     PathElement(final String key, final String value) {
-        this(key, value, Quality.DEFAULT);
+        this(key, value, Stability.DEFAULT);
     }
 
     /**
@@ -93,7 +95,7 @@ public class PathElement implements Feature {
      * @param key the path key to match
      * @param value the path value or wildcard to match
      */
-    PathElement(final String key, final String value, Quality quality) {
+    PathElement(final String key, final String value, Stability stability) {
         if (!isValidKey(key)) {
             final String element = key + "=" + value;
             throw new OperationClientIllegalArgumentException(ControllerLogger.ROOT_LOGGER.invalidPathElementKey(element, key));
@@ -120,7 +122,7 @@ public class PathElement implements Feature {
         }
         this.multiTarget = multiTarget;
         hashCode = key.hashCode() * 19 + value.hashCode();
-        this.quality = quality;
+        this.stability = stability;
     }
 
     /**
@@ -174,8 +176,8 @@ public class PathElement implements Feature {
     }
 
     @Override
-    public Quality getQuality() {
-        return this.quality;
+    public Stability getStability() {
+        return this.stability;
     }
 
     /**

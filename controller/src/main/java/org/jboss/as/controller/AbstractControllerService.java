@@ -60,7 +60,7 @@ import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoadException;
@@ -174,7 +174,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         .build();
 
     protected final ProcessType processType;
-    protected final Quality quality;
+    protected final Stability stability;
     protected final DelegatingConfigurableAuthorizer authorizer;
     protected final ManagementSecurityIdentitySupplier securityIdentitySupplier;
     private final RunningModeControl runningModeControl;
@@ -214,7 +214,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
                                         final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
                                         final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
-        this(null, null, processType, Quality.DEFAULT, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
+        this(null, null, processType, Stability.DEFAULT, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
                 prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, null);
     }
 
@@ -243,7 +243,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
                                         final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                         final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension) {
-        this(executorService, instabilityListener, processType, Quality.DEFAULT, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
+        this(executorService, instabilityListener, processType, Stability.DEFAULT, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
                 prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, configExtension);
     }
 
@@ -251,6 +251,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
      * Construct a new instance.
      *
      * @param processType             the type of process being controlled
+     * @param stability               the stability level of the controlled process
      * @param runningModeControl      the controller of the process' running mode
      * @param configurationPersister  the configuration persister
      * @param processState            the controlled process state
@@ -263,20 +264,20 @@ public abstract class AbstractControllerService implements Service<ModelControll
      */
     protected AbstractControllerService(final Supplier<ExecutorService> executorService,
                                         final Supplier<ControllerInstabilityListener> instabilityListener,
-                                        final ProcessType processType, Quality quality, final RunningModeControl runningModeControl,
+                                        final ProcessType processType, Stability stability, final RunningModeControl runningModeControl,
                                         final ConfigurationPersister configurationPersister,
                                         final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
                                         final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
                                         final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                         final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension) {
-        this(executorService, instabilityListener, processType, quality, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
+        this(executorService, instabilityListener, processType, stability, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
                 prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, configExtension);
     }
 
     private AbstractControllerService(final Supplier<ExecutorService> executorService,
                                       final Supplier<ControllerInstabilityListener> instabilityListener,
-                                      final ProcessType processType, Quality quality, final RunningModeControl runningModeControl,
+                                      final ProcessType processType, Stability stability, final RunningModeControl runningModeControl,
                                       final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                       final ResourceDefinition rootResourceDefinition, final DescriptionProvider rootDescriptionProvider,
                                       final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver, final ManagedAuditLogger auditLogger,
@@ -292,7 +293,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         this.executorService = executorService;
         this.instabilityListener = instabilityListener;
         this.processType = processType;
-        this.quality = quality;
+        this.stability = stability;
         this.runningModeControl = runningModeControl;
         this.configurationPersister = configurationPersister;
         this.rootResourceDefinition = rootResourceDefinition;
@@ -329,7 +330,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         final NotificationSupport notificationSupport = NotificationSupport.Factory.create(executorService);
         WritableAuthorizerConfiguration authorizerConfig = authorizer.getWritableAuthorizerConfiguration();
         authorizerConfig.reset();
-        ManagementResourceRegistration rootResourceRegistration = ManagementResourceRegistration.Factory.forProcessType(processType, this.quality).createRegistration(rootResourceDefinition, authorizerConfig, capabilityRegistry);
+        ManagementResourceRegistration rootResourceRegistration = ManagementResourceRegistration.Factory.forProcessType(processType, this.stability).createRegistration(rootResourceDefinition, authorizerConfig, capabilityRegistry);
         final ModelControllerImpl controller = new ModelControllerImpl(container, target,
                 rootResourceRegistration,
                 new ContainerStateMonitor(container),

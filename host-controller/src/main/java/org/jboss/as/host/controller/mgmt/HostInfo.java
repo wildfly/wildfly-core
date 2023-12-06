@@ -7,7 +7,7 @@ package org.jboss.as.host.controller.mgmt;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLONE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.QUALITY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCE_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORE_UNUSED_CONFIG;
@@ -46,7 +46,7 @@ import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil;
 import org.jboss.as.host.controller.IgnoredNonAffectedServerGroupsUtil.ServerConfigInfo;
 import org.jboss.as.host.controller.RemoteDomainConnectionService;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
@@ -78,7 +78,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         info.get(MANAGEMENT_MAJOR_VERSION).set(Version.MANAGEMENT_MAJOR_VERSION);
         info.get(MANAGEMENT_MINOR_VERSION).set(Version.MANAGEMENT_MINOR_VERSION);
         info.get(MANAGEMENT_MICRO_VERSION).set(Version.MANAGEMENT_MICRO_VERSION);
-        info.get(QUALITY).set(hostInfo.getQuality().name());
+        info.get(STABILITY).set(hostInfo.getStability().name());
         final String productName = productConfig.getProductName();
         final String productVersion = productConfig.getProductVersion();
         if(productName != null) {
@@ -118,7 +118,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
     private final Set<ServerConfigInfo> serverConfigInfos;
     private final Set<String> domainIgnoredExtensions;
     private final boolean hostDeclaredIgnoreUnaffected;
-    private final Quality quality;
+    private final Stability stability;
     // GuardedBy this
     private ReadMasterDomainModelUtil.RequiredConfigurationHolder requiredConfigurationHolder;
 
@@ -133,7 +133,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         productVersion = hostInfo.hasDefined(PRODUCT_VERSION) ? hostInfo.require(PRODUCT_VERSION).asString() : null;
         remoteConnectionId = hostInfo.hasDefined(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID)
                 ? hostInfo.get(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID).asLong() : null;
-        this.quality = Optional.ofNullable(hostInfo.get(ModelDescriptionConstants.QUALITY).asStringOrNull()).map(Quality::valueOf).orElse(productConfig.getDefaultQuality());
+        this.stability = Optional.ofNullable(hostInfo.get(ModelDescriptionConstants.STABILITY).asStringOrNull()).map(Stability::valueOf).orElse(productConfig.getDefaultStability());
 
         Set<String> domainIgnoredExtensions = null;
         Set<String> domainActiveServerGroups = null;
@@ -172,8 +172,8 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
     }
 
     @Override
-    public Quality getQuality() {
-        return this.quality;
+    public Stability getStability() {
+        return this.stability;
     }
 
     public String getHostName() {

@@ -27,7 +27,7 @@ import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 
 /**
  * A registry of values within a specific key type.
@@ -50,7 +50,7 @@ final class NodeSubregistry {
     private final AccessConstraintUtilizationRegistry constraintUtilizationRegistry;
     private final CapabilityRegistry capabilityRegistry;
     private final ProcessType processType;
-    private final Quality quality;
+    private final Stability stability;
     @SuppressWarnings( { "unused" })
     private volatile Map<String, AbstractResourceRegistration> childRegistries;
 
@@ -62,7 +62,7 @@ final class NodeSubregistry {
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         this.capabilityRegistry = capabilityRegistry;
         this.processType = parent.getProcessType();
-        this.quality = parent.getQuality();
+        this.stability = parent.getStability();
         childRegistriesUpdater.clear(this);
     }
 
@@ -503,8 +503,8 @@ final class NodeSubregistry {
         return processType;
     }
 
-    Quality getQuality() {
-        return this.quality;
+    Stability getStability() {
+        return this.stability;
     }
 
     boolean isRuntimeOnly() {

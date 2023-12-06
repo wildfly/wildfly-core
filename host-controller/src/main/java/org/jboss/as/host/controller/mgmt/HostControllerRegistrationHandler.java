@@ -331,10 +331,10 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                     registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
                     throw failure;
                 }
-                // Ensure quality level of host is compatible
+                // Ensure stability level of host is compatible
                 LocalHostControllerInfo domainInfo = domainController.getLocalHostInfo();
-                if (domainInfo.getQuality() != hostInfo.getQuality()) {
-                    OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.incompatibleQuality(domainInfo.getQuality(), hostInfo.getQuality());
+                if (domainInfo.getStability() != hostInfo.getStability()) {
+                    OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.incompatibleStability(domainInfo.getStability(), hostInfo.getStability());
                     registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
                     throw failure;
                 }

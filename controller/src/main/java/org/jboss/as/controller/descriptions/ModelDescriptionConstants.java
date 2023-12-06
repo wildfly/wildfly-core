@@ -185,7 +185,6 @@ public class ModelDescriptionConstants {
     public static final String FEATURE = "feature";
     public static final String FEATURE_ID = "feature-id";
     public static final String FEATURE_REFERENCE = "feature-reference";
-    public static final String QUALITY = "quality";
     public static final String FILE = "file";
     public static final String FILE_HANDLER = "file-handler";
     public static final String FILE_SIZE = "file-size";
@@ -521,6 +520,7 @@ public class ModelDescriptionConstants {
     public static final String SPEC = "spec";
     public static final String SSL = "ssl";
     public static final String SSL_CONTEXT = "ssl-context";
+    public static final String STABILITY = "stability";
     public static final String STANDARD_ROLE_NAMES = "standard-role-names";
     public static final String START = "start";
     public static final String START_MODE = "start-mode";

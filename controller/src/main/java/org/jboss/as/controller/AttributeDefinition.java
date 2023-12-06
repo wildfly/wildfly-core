@@ -38,7 +38,7 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -78,7 +78,7 @@ public abstract class AttributeDefinition implements Feature {
     private final ModelNode undefinedMetricValue;
     private final CapabilityReferenceRecorder referenceRecorder;
     private final Map<String, ModelNode> arbitraryDescriptors;
-    private final Quality quality;
+    private final Stability stability;
 
     // NOTE: Standards for creating a constructor variant are:
     // 1) Don't.
@@ -109,7 +109,7 @@ public abstract class AttributeDefinition implements Feature {
         this.undefinedMetricValue = Optional.ofNullable(builder.getUndefinedMetricValue()).filter(ModelNode::isDefined).map(AttributeDefinition::protect).orElse(null);
         this.referenceRecorder = builder.getCapabilityReferenceRecorder();
         this.arbitraryDescriptors = Optional.ofNullable(builder.getArbitraryDescriptors()).map(Map::copyOf).orElse(Map.of());
-        this.quality = builder.getQuality();
+        this.stability = builder.getStability();
     }
 
     private static ModelNode protect(ModelNode value) {
@@ -163,8 +163,8 @@ public abstract class AttributeDefinition implements Feature {
     }
 
     @Override
-    public Quality getQuality() {
-        return this.quality;
+    public Stability getStability() {
+        return this.stability;
     }
 
     /**

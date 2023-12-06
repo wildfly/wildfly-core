@@ -39,7 +39,7 @@ import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.server.controller.git.GitRepository;
 import org.jboss.as.server.controller.git.GitRepositoryConfiguration;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoader;
@@ -251,12 +251,12 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private static final Set<String> ILLEGAL_PROPERTIES = new HashSet<>(Arrays.asList(DOMAIN_BASE_DIR,
             DOMAIN_CONFIG_DIR, JAVA_EXT_DIRS, HOME_DIR, "modules.path", SERVER_BASE_DIR, SERVER_CONFIG_DIR,
             SERVER_DATA_DIR, SERVER_LOG_DIR, BOOTSTRAP_MAX_THREADS, CONTROLLER_TEMP_DIR,
-            JBOSS_SERVER_DEFAULT_CONFIG, JBOSS_PERSIST_SERVER_CONFIG, JBOSS_SERVER_MANAGEMENT_UUID, QUALITY));
+            JBOSS_SERVER_DEFAULT_CONFIG, JBOSS_PERSIST_SERVER_CONFIG, JBOSS_SERVER_MANAGEMENT_UUID, STABILITY));
     /**
      * Properties that can only be set via {@link #systemPropertyUpdated(String, String)} during server boot.
      */
     private static final Set<String> BOOT_PROPERTIES = new HashSet<>(Arrays.asList(SERVER_TEMP_DIR,
-            NODE_NAME, SERVER_NAME, HOST_NAME, QUALIFIED_HOST_NAME, QUALITY));
+            NODE_NAME, SERVER_NAME, HOST_NAME, QUALIFIED_HOST_NAME, STABILITY));
 
     /**
      * Properties that we care about that were provided to the constructor (i.e. by the user via cmd line)
@@ -303,7 +303,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final boolean startSuspended;
     private final boolean startGracefully;
     private final GitRepository repository;
-    private final Quality quality;
+    private final Stability stability;
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
@@ -366,7 +366,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             domainBaseDir = null;
             domainConfigurationDir = null;
             repository = null;
-            this.quality = productConfig.getDefaultQuality();
+            this.stability = productConfig.getDefaultStability();
             WildFlySecurityManager.setPropertyPrivileged(ServerEnvironment.JBOSS_PERSIST_SERVER_CONFIG, "false");
         } else {
 
@@ -522,9 +522,9 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                 this.domainConfigurationDir = null;
             }
 
-            this.quality = getEnumProperty(props, ProcessEnvironment.QUALITY, productConfig.getDefaultQuality());
-            if (!productConfig.getMinimumQuality().enables(this.quality)) {
-                throw ServerLogger.ROOT_LOGGER.unsupportedQuality(this.quality, productConfig.getProductName());
+            this.stability = getEnumProperty(props, ProcessEnvironment.STABILITY, productConfig.getDefaultStability());
+            if (!productConfig.getMinimumStability().enables(this.stability)) {
+                throw ServerLogger.ROOT_LOGGER.unsupportedStability(this.stability, productConfig.getProductName());
             }
         }
         boolean allowExecutor = true;
@@ -1013,8 +1013,8 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     }
 
     @Override
-    public Quality getQuality() {
-        return this.quality;
+    public Stability getStability() {
+        return this.stability;
     }
 
     /**

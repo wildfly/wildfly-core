@@ -23,7 +23,7 @@ import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -1065,8 +1065,8 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
     boolean isDefaultRequiresRuntime();
 
     @Override
-    default Quality getQuality() {
-        return this.getResourceRegistration().getQuality();
+    default Stability getStability() {
+        return this.getResourceRegistration().getStability();
     }
 
     @Override

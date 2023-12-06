@@ -28,7 +28,7 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.modules.ModuleLoader;
@@ -63,7 +63,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
     private ArgumentWithoutValue emptyConfig;
     private ArgumentWithoutValue removeExisting;
     private ArgumentWithValue timeout;
-    private ArgumentWithValue quality;
+    private ArgumentWithValue stability;
 
     static EmbedServerHandler create(final AtomicReference<EmbeddedProcessLaunch> serverReference, CommandContext ctx, boolean modular) {
         EmbedServerHandler result = new EmbedServerHandler(serverReference);
@@ -81,7 +81,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         result.removeExisting = new ArgumentWithoutValue(result, "--remove-existing");
         result.removeExisting.addRequiredPreceding(result.emptyConfig);
         result.timeout = new ArgumentWithValue(result, "--timeout");
-        result.quality = new ArgumentWithValue(result, new SimpleTabCompleter(EnumSet.allOf(Quality.class)), "--quality");
+        result.stability = new ArgumentWithValue(result, new SimpleTabCompleter(EnumSet.allOf(Stability.class)), "--stability");
 
         return result;
     }
@@ -209,9 +209,9 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                     cmdsList.add("--internal-remove-config");
                 }
             }
-            String quality = this.quality.getValue(parsedCmd);
-            if (quality != null) {
-                cmdsList.add("--quality=" + quality);
+            String stability = this.stability.getValue(parsedCmd);
+            if (stability != null) {
+                cmdsList.add("--stability=" + stability);
             }
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);
 

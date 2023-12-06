@@ -12,7 +12,7 @@ import java.util.ResourceBundle;
 import org.jboss.as.controller.descriptions.DefaultNotificationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -25,18 +25,18 @@ public class NotificationDefinition implements Feature {
     private final String type;
     private final ResourceDescriptionResolver resolver;
     private final DataValueDescriptor dataValueDescriptor;
-    private final Quality quality;
+    private final Stability stability;
 
     private NotificationDefinition(Builder builder) {
         this.type = builder.type;
         this.resolver = builder.resolver;
         this.dataValueDescriptor = builder.dataValueDescriptor;
-        this.quality = builder.quality;
+        this.stability = builder.stability;
     }
 
     @Override
-    public Quality getQuality() {
-        return this.quality;
+    public Stability getStability() {
+        return this.stability;
     }
 
     public String getType() {
@@ -51,7 +51,7 @@ public class NotificationDefinition implements Feature {
         private final String type;
         private final ResourceDescriptionResolver resolver;
         private DataValueDescriptor dataValueDescriptor = NO_DATA;
-        private Quality quality = Quality.DEFAULT;
+        private Stability stability = Stability.DEFAULT;
 
         private Builder(String type, ResourceDescriptionResolver resolver) {
             this.type = type;
@@ -67,8 +67,8 @@ public class NotificationDefinition implements Feature {
             return this;
         }
 
-        public Builder setQuality(Quality quality) {
-            this.quality = quality;
+        public Builder setStability(Stability stability) {
+            this.stability = stability;
             return this;
         }
 

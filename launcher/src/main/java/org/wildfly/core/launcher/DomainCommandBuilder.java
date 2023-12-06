@@ -678,13 +678,13 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
     }
 
     /**
-     * Sets the quality level of the standalone server process.
-     * @param quality a quality level
+     * Sets the stability level of the standalone server process.
+     * @param stability a stability level
      * @return a reference to this builder
      */
-    public DomainCommandBuilder setQuality(String quality) {
-        if (quality != null) {
-            this.setSingleServerArg("--quality", quality);
+    public DomainCommandBuilder setStability(String stability) {
+        if (stability != null) {
+            this.setSingleServerArg("--stability", stability);
         }
         return this;
     }

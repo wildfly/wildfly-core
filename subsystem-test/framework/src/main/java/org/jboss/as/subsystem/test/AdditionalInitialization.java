@@ -24,7 +24,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.model.test.ModelTestModelDescriptionValidator.AttributeOrParameterArbitraryDescriptorValidator;
 import org.jboss.as.subsystem.test.ModelDescriptionValidator.ValidationConfiguration;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceTarget;
@@ -71,23 +71,23 @@ public class AdditionalInitialization extends AdditionalParsers implements Featu
     public static class ManagementAdditionalInitialization extends AdditionalInitialization implements Serializable {
         private static final long serialVersionUID = -509444465514822866L;
 
-        private final Quality quality;
+        private final Stability stability;
 
         public ManagementAdditionalInitialization() {
-            this(Quality.DEFAULT);
+            this(Stability.DEFAULT);
         }
 
         public <S extends SubsystemSchema<S>> ManagementAdditionalInitialization(S schema) {
-            this(schema.getQuality());
+            this(schema.getStability());
         }
 
-        public ManagementAdditionalInitialization(Quality quality) {
-            this.quality = quality;
+        public ManagementAdditionalInitialization(Stability stability) {
+            this.stability = stability;
         }
 
         @Override
-        public Quality getQuality() {
-            return this.quality;
+        public Stability getStability() {
+            return this.stability;
         }
 
         @Override
@@ -289,13 +289,13 @@ public class AdditionalInitialization extends AdditionalParsers implements Featu
     }
 
     /**
-     * The quality level to be used for the installed controller
+     * The stability level to be used for the installed controller
      *
-     * @return the quality level of the installed controller
+     * @return the stability level of the installed controller
      */
     @Override
-    public Quality getQuality() {
-        return Quality.DEFAULT;
+    public Stability getStability() {
+        return Stability.DEFAULT;
     }
 
     /**

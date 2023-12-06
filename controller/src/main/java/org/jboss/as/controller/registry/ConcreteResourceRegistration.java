@@ -39,7 +39,7 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
 import org.jboss.as.controller.registry.AttributeAccess.Storage;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.wildfly.common.Assert;
 
 final class ConcreteResourceRegistration extends AbstractResourceRegistration {
@@ -79,8 +79,8 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
                                  final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
                                  final CapabilityRegistry capabilityRegistry,
                                  final ProcessType processType,
-                                 final Quality quality) {
-        super(processType, quality);
+                                 final Stability stability) {
+        super(processType, stability);
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         this.capabilityRegistry = capabilityRegistry;
         this.resourceDefinition = definition;

@@ -41,7 +41,7 @@ import org.jboss.as.model.test.ModelTestModelControllerService;
 import org.jboss.as.model.test.StringConfigurationPersister;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.version.ProductConfig;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceContainer;
 
@@ -252,8 +252,8 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl {
             }
 
             @Override
-            public Quality getQuality() {
-                return Quality.DEFAULT;
+            public Stability getStability() {
+                return Stability.DEFAULT;
             }
 
             @Override

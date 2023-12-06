@@ -13,7 +13,7 @@ import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 import org.jboss.as.version.ProductConfig;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.msc.service.ServiceName;
 
 /**
@@ -87,8 +87,8 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     }
 
     @Override
-    public Quality getQuality() {
-        return (this.hostEnvironment != null) ? this.hostEnvironment.getQuality() : Quality.DEFAULT;
+    public Stability getStability() {
+        return (this.hostEnvironment != null) ? this.hostEnvironment.getStability() : Stability.DEFAULT;
     }
 
     public ServiceName getAuthenticationContext() {

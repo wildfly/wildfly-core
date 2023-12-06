@@ -4,7 +4,7 @@
  */
 package org.jboss.as.controller.xml;
 
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.staxmapper.Versioned;
 
 /**
@@ -16,16 +16,16 @@ import org.jboss.staxmapper.Versioned;
 public class SimpleVersionedNamespace<V extends Comparable<V>, N extends Versioned<V, N>> extends SimpleNamespace implements VersionedNamespace<V, N> {
 
     private final V version;
-    private final Quality quality;
+    private final Stability stability;
 
     public SimpleVersionedNamespace(String uri, V version) {
-        this(uri, version, Quality.DEFAULT);
+        this(uri, version, Stability.DEFAULT);
     }
 
-    public SimpleVersionedNamespace(String uri, V version, Quality quality) {
+    public SimpleVersionedNamespace(String uri, V version, Stability stabilty) {
         super(uri);
         this.version = version;
-        this.quality = quality;
+        this.stability = stabilty;
     }
 
     @Override
@@ -34,7 +34,7 @@ public class SimpleVersionedNamespace<V extends Comparable<V>, N extends Version
     }
 
     @Override
-    public Quality getQuality() {
-        return this.quality;
+    public Stability getStability() {
+        return this.stability;
     }
 }

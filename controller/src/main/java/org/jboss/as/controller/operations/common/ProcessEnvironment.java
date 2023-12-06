@@ -52,7 +52,7 @@ public abstract class ProcessEnvironment implements FeatureRegistry {
     public static final AttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING, true)
             .setAllowExpression(true).build();
 
-    public static final String QUALITY = "jboss.quality";
+    public static final String STABILITY = "jboss.stability";
 
     /**
      * Gets an {@link OperationStepHandler} that can read the {@code name} attribute for a processes root resource

@@ -21,7 +21,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.wildfly.common.Assert;
 
 /**
@@ -316,16 +316,16 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
     class Factory {
 
         private final ProcessType processType;
-        private final Quality quality;
+        private final Stability stability;
 
-        private Factory(ProcessType processType, Quality quality) {
+        private Factory(ProcessType processType, Stability stability) {
             this.processType = processType;
-            this.quality = quality;
+            this.stability = stability;
         }
 
         /**
          * Returns a ManagementResourceRegistration's Factory that will use the specified {@code processType}
-         * and default quality level to determine whether resource metrics are registered or not.
+         * and default stability level to determine whether resource metrics are registered or not.
          *
          * If the {@code processType} id {@code null}, metrics are <em>always</em> registered.
          *
@@ -334,22 +334,22 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
          * dynamically determine whether resource metrics are actually registered
          */
         public static Factory forProcessType(ProcessType processType) {
-            return forProcessType(processType, Quality.DEFAULT);
+            return forProcessType(processType, Stability.DEFAULT);
         }
 
         /**
          * Returns a ManagementResourceRegistration's Factory that will use the specified {@code processType}
-         * and quality level to determine whether resource metrics are registered or not.
+         * and stability level to determine whether resource metrics are registered or not.
          *
          * If the {@code processType} id {@code null}, metrics are <em>always</em> registered.
          *
          * @param processType can be {@code null}
-         * @param quality a quality level
+         * @param stability a stability level
          * @return a Factory which creates ManagementResourceRegistration that
          * dynamically determine whether resource metrics are actually registered
          */
-        public static Factory forProcessType(ProcessType processType, Quality quality) {
-            return new Factory(processType, quality);
+        public static Factory forProcessType(ProcessType processType, Stability stability) {
+            return new Factory(processType, stability);
         }
 
         /**
@@ -380,7 +380,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
                                                                  CapabilityRegistry registry) {
             Assert.checkNotNullParam("resourceDefinition", resourceDefinition);
             ConcreteResourceRegistration resourceRegistration =
-                    new ConcreteResourceRegistration(resourceDefinition, constraintUtilizationRegistry, registry, processType, this.quality);
+                    new ConcreteResourceRegistration(resourceDefinition, constraintUtilizationRegistry, registry, processType, this.stability);
             resourceDefinition.registerAttributes(resourceRegistration);
             resourceDefinition.registerOperations(resourceRegistration);
             resourceDefinition.registerChildren(resourceRegistration);

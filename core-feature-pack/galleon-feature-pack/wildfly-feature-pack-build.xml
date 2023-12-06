@@ -20,7 +20,7 @@
         </props>
         -->
         <props>
-            <prop name="--quality" value="community"/>
+            <prop name="--stability" value="community"/>
         </props>
     </config>
 
@@ -31,7 +31,7 @@
         </props>
         -->
         <props>
-            <prop name="--quality" value="community"/>
+            <prop name="--stability" value="community"/>
         </props>
     </config>
 
@@ -42,7 +42,7 @@
         </props>
         -->
         <props>
-            <prop name="--quality" value="community"/>
+            <prop name="--stability" value="community"/>
         </props>
     </config>
 

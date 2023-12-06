@@ -30,7 +30,7 @@ import org.jboss.as.host.controller.jvm.JvmType;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.version.Quality;
+import org.jboss.as.version.Stability;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.Assert;
@@ -233,7 +233,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     private final boolean useCachedDc;
 
     private final RunningMode initialRunningMode;
-    private final Quality quality;
+    private final Stability stability;
     private final ProductConfig productConfig;
     private final String qualifiedHostName;
     private final String hostName;
@@ -484,12 +484,12 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         this.securityManagerEnabled = securityManagerEnabled || isJavaSecurityManagerConfigured(hostSystemProperties);
         this.processType = processType;
 
-        this.quality = getEnumProperty(hostSystemProperties, QUALITY, this.productConfig.getDefaultQuality());
-        if (!this.productConfig.getMinimumQuality().enables(this.quality)) {
-            throw HostControllerLogger.ROOT_LOGGER.unsupportedQuality(this.quality, this.productConfig.getProductName());
+        this.stability = getEnumProperty(hostSystemProperties, STABILITY, this.productConfig.getDefaultStability());
+        if (!this.productConfig.getMinimumStability().enables(this.stability)) {
+            throw HostControllerLogger.ROOT_LOGGER.unsupportedStability(this.stability, this.productConfig.getProductName());
         }
-        if (!hostSystemProperties.containsKey(QUALITY)) {
-            WildFlySecurityManager.setPropertyPrivileged(QUALITY, this.quality.toString());
+        if (!hostSystemProperties.containsKey(STABILITY)) {
+            WildFlySecurityManager.setPropertyPrivileged(STABILITY, this.stability.toString());
         }
     }
 
@@ -804,8 +804,8 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     }
 
     @Override
-    public Quality getQuality() {
-        return this.quality;
+    public Stability getStability() {
+        return this.stability;
     }
 
     @Override
