@@ -10,7 +10,7 @@ import org.jboss.as.version.Stability;
  * Implemented by objects that register features.
  * @author Paul Ferraro
  */
-public interface FeatureRegistry {
+public interface FeatureRegistry extends FeatureFilter {
     /**
      * Returns the feature stability supported by this feature registry.
      * @return a stability level
@@ -27,6 +27,7 @@ public interface FeatureRegistry {
      * @param feature a feature
      * @return true, if the specified feature is enabled, false otherwise.
      */
+    @Override
     default <F extends Feature> boolean enables(F feature) {
         return this.getStability().enables(feature.getStability());
     }
