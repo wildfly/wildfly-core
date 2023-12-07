@@ -206,7 +206,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (address == null) {
             throw ControllerLogger.ROOT_LOGGER.cannotRegisterSubmodelWithNullPath();
         }
-        if (!this.enables(address)) return null;
+        if (!this.enables(resourceDefinition)) return null;
         final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
         if (existing != null && existing.getPathAddress().getLastElement().getValue().equals(address.getValue())) {
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getPathAddress().toCLIStyleString());
@@ -240,42 +240,41 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         }
     }
 
+    @Override
     public void unregisterSubModel(final PathElement address) throws IllegalArgumentException {
-        if (this.enables(address)) {
-            writeLock.lock();
-            try {
-                final NodeSubregistry subregistry = getSubregistry(address.getKey());
+        writeLock.lock();
+        try {
+            final NodeSubregistry subregistry = getSubregistry(address.getKey());
 
-                if (subregistry != null) {
-                    //we remove also children, effectively doing recursive delete
-                    // WFCORE-3410 -- do not call the getChildAddresses(PathAddress) variant
-                    // that results in querying (and thus read locking) nodes above
-                    // this one as that can lead to deadlocks.
-                    // Reading from the root would allow the call to find addresses
-                    // associated with a wildcard registration for which this MRR
-                    // is an override (if it is such an MRR.) But, we only end up
-                    // reading our own subregistry to find the MRR
-                    // to invoke the recursive delete on anyway, and an override MRR
-                    // trying to somehow remove children from the related wildcard MRR
-                    // would be wrong, so there's no point reading from the root to
-                    // find those kinds of addresses.
-                    Set<PathElement> childAddresses = getChildAddresses(PathAddress.pathAddress(address).iterator());
-                    if (childAddresses != null) {
-                        ManagementResourceRegistration registration = subregistry.getResourceRegistration(PathAddress.EMPTY_ADDRESS.iterator(), address.getValue());
-                        if(!registration.isAlias()) {
-                            for (PathElement a : childAddresses) {
-                                registration.unregisterSubModel(a);
-                            }
+            if (subregistry != null) {
+                //we remove also children, effectively doing recursive delete
+                // WFCORE-3410 -- do not call the getChildAddresses(PathAddress) variant
+                // that results in querying (and thus read locking) nodes above
+                // this one as that can lead to deadlocks.
+                // Reading from the root would allow the call to find addresses
+                // associated with a wildcard registration for which this MRR
+                // is an override (if it is such an MRR.) But, we only end up
+                // reading our own subregistry to find the MRR
+                // to invoke the recursive delete on anyway, and an override MRR
+                // trying to somehow remove children from the related wildcard MRR
+                // would be wrong, so there's no point reading from the root to
+                // find those kinds of addresses.
+                Set<PathElement> childAddresses = getChildAddresses(PathAddress.pathAddress(address).iterator());
+                if (childAddresses != null) {
+                    ManagementResourceRegistration registration = subregistry.getResourceRegistration(PathAddress.EMPTY_ADDRESS.iterator(), address.getValue());
+                    if(!registration.isAlias()) {
+                        for (PathElement a : childAddresses) {
+                            registration.unregisterSubModel(a);
                         }
                     }
-                    subregistry.unregisterSubModel(address.getValue());
                 }
-                if (constraintUtilizationRegistry != null) {
-                    constraintUtilizationRegistry.unregisterAccessConstraintUtilizations(getPathAddress().append(address));
-                }
-            } finally {
-                writeLock.unlock();
+                subregistry.unregisterSubModel(address.getValue());
             }
+            if (constraintUtilizationRegistry != null) {
+                constraintUtilizationRegistry.unregisterAccessConstraintUtilizations(getPathAddress().append(address));
+            }
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -643,39 +642,31 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public void registerProxyController(final PathElement address, final ProxyController controller) throws IllegalArgumentException {
-        if (this.enables(address)) {
-            final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
-            if (existing != null && existing.getPathAddress().getLastElement().getValue().equals(address.getValue())) {
-                throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getPathAddress().toCLIStyleString());
-            }
-            getOrCreateSubregistry(address.getKey()).registerProxyController(address.getValue(), controller);
+        final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
+        if (existing != null && existing.getPathAddress().getLastElement().getValue().equals(address.getValue())) {
+            throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getPathAddress().toCLIStyleString());
         }
+        getOrCreateSubregistry(address.getKey()).registerProxyController(address.getValue(), controller);
     }
 
     @Override
     public void unregisterProxyController(final PathElement address) throws IllegalArgumentException {
-        if (this.enables(address)) {
-            final NodeSubregistry subregistry = getSubregistry(address.getKey());
-            if (subregistry != null) {
-                subregistry.unregisterProxyController(address.getValue());
-            }
+        final NodeSubregistry subregistry = getSubregistry(address.getKey());
+        if (subregistry != null) {
+            subregistry.unregisterProxyController(address.getValue());
         }
     }
 
     @Override
     public void registerAlias(PathElement address, AliasEntry alias, AbstractResourceRegistration target) {
-        if (this.enables(address)) {
-            getOrCreateSubregistry(address.getKey()).registerAlias(address.getValue(), alias, target);
-        }
+        getOrCreateSubregistry(address.getKey()).registerAlias(address.getValue(), alias, target);
     }
 
     @Override
     public void unregisterAlias(PathElement address) {
-        if (this.enables(address)) {
-            final NodeSubregistry subregistry = getSubregistry(address.getKey());
-            if (subregistry != null) {
-                subregistry.unregisterAlias(address.getValue());
-            }
+        final NodeSubregistry subregistry = getSubregistry(address.getKey());
+        if (subregistry != null) {
+            subregistry.unregisterAlias(address.getValue());
         }
     }
 

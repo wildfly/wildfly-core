@@ -7,6 +7,7 @@ package org.wildfly.extension.discovery;
 
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.descriptions.ParentResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.SubsystemResourceDescriptionResolver;
@@ -29,7 +30,7 @@ class DiscoverySubsystemRegistrar implements SubsystemResourceDefinitionRegistra
     @Override
     public ManagementResourceRegistration register(SubsystemRegistration parent, ManagementResourceRegistrationContext context) {
         parent.setHostCapable();
-        ManagementResourceRegistration registration = parent.registerSubsystemModel(ResourceDefinition.builder(PATH, RESOLVER).build());
+        ManagementResourceRegistration registration = parent.registerSubsystemModel(ResourceDefinition.builder(ResourceRegistration.of(PATH), RESOLVER).build());
         ResourceDescriptor descriptor = ResourceDescriptor.builder(RESOLVER).build();
         ManagementResourceRegistrar.of(descriptor).register(registration);
         new AggregateDiscoveryProviderRegistrar().register(registration, context);

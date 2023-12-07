@@ -12,6 +12,7 @@ import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredAddStepHandler;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -26,7 +27,7 @@ import org.jboss.dmr.ModelType;
  * @author Paul Ferraro
  */
 public class BarResourceDefinition extends SimpleResourceDefinition {
-    static final PathElement PATH = PathElement.pathElement("bar", Stability.PREVIEW);
+    static final ResourceRegistration REGISTRATION = ResourceRegistration.of(PathElement.pathElement("bar"), Stability.PREVIEW);
 
     static final SimpleAttributeDefinition TYPE = new SimpleAttributeDefinitionBuilder("type", ModelType.STRING)
             .build();
@@ -39,7 +40,7 @@ public class BarResourceDefinition extends SimpleResourceDefinition {
         private final Stability stability;
 
         Values() {
-            this(PATH.getStability());
+            this(REGISTRATION.getStability());
         }
 
         Values(Stability stability) {
@@ -53,7 +54,7 @@ public class BarResourceDefinition extends SimpleResourceDefinition {
     }
 
     BarResourceDefinition() {
-        super(new Parameters(PATH, NonResolvingResourceDescriptionResolver.INSTANCE)
+        super(new Parameters(REGISTRATION, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddHandler(ReloadRequiredAddStepHandler.INSTANCE)
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE));
     }

@@ -81,6 +81,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ProxyOperationAddressTranslator;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.TransformingProxyController;
@@ -936,7 +937,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         boolean ok = boot(Collections.singletonList(registerModelControllerServiceInitializationBootStep(context)), true, true);
         // until a host is added with the host add op, there is no root description provider delegate. We just install a non-resolving one for now, so the
         // CLI doesn't get a lot of NPEs from :read-resource-description etc.
-        SimpleResourceDefinition def = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(null, NonResolvingResourceDescriptionResolver.INSTANCE));
+        SimpleResourceDefinition def = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(ResourceRegistration.root(), NonResolvingResourceDescriptionResolver.INSTANCE));
         rootResourceDefinition.setFakeDelegate(def);
         // just initialize the persister and return, we have to wait for /host=foo:add()
         hostControllerConfigurationPersister.initializeDomainConfigurationPersister(false);

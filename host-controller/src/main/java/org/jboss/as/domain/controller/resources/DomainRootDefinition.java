@@ -31,6 +31,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -189,7 +190,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
             final HostRegistrations hostRegistrations,
             final DomainHostExcludeRegistry domainHostExcludeRegistry,
             final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
-        super(new Parameters(null, DomainResolver.getResolver(DOMAIN, false)).setFeature(false));
+        super(new Parameters(ResourceRegistration.root(), DomainResolver.getResolver(DOMAIN, false)).setFeature(false));
         this.domainController = domainController;
         this.isMaster = isMaster;
         this.environment = environment;

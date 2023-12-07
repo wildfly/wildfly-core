@@ -37,7 +37,6 @@ import org.wildfly.common.Assert;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-@SuppressWarnings("deprecation")
 abstract class AbstractResourceRegistration implements ManagementResourceRegistration {
 
     private final String valueString;
@@ -492,20 +491,18 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
 
     @Override
     public void registerAlias(PathElement address, AliasEntry alias) {
-        if (this.enables(address)) {
-            RootInvocation rootInvocation = parent == null ? null : getRootInvocation();
-            AbstractResourceRegistration root = rootInvocation == null ? this : rootInvocation.root;
-            PathAddress myaddr = rootInvocation == null ? PathAddress.EMPTY_ADDRESS : rootInvocation.pathAddress;
+        RootInvocation rootInvocation = parent == null ? null : getRootInvocation();
+        AbstractResourceRegistration root = rootInvocation == null ? this : rootInvocation.root;
+        PathAddress myaddr = rootInvocation == null ? PathAddress.EMPTY_ADDRESS : rootInvocation.pathAddress;
 
-            PathAddress targetAddress = alias.getTarget().getPathAddress();
-            alias.setAddresses(targetAddress, myaddr.append(address));
-            AbstractResourceRegistration target = (AbstractResourceRegistration)root.getSubModel(alias.getTargetAddress());
-            if (target == null) {
-                throw ControllerLogger.ROOT_LOGGER.aliasTargetResourceRegistrationNotFound(alias.getTargetAddress());
-            }
-
-            registerAlias(address, alias, target);
+        PathAddress targetAddress = alias.getTarget().getPathAddress();
+        alias.setAddresses(targetAddress, myaddr.append(address));
+        AbstractResourceRegistration target = (AbstractResourceRegistration)root.getSubModel(alias.getTargetAddress());
+        if (target == null) {
+            throw ControllerLogger.ROOT_LOGGER.aliasTargetResourceRegistrationNotFound(alias.getTargetAddress());
         }
+
+        registerAlias(address, alias, target);
     }
 
     protected abstract void registerAlias(PathElement address, AliasEntry alias, AbstractResourceRegistration target);

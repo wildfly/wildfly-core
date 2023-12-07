@@ -31,6 +31,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PrimitiveListAttributeDefinition;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -63,7 +64,7 @@ public class YamlConfigurationExtensionTest {
     @BeforeClass
     public static void setUp() {
         StandardResourceDescriptionResolver descriptionResolver = new StandardResourceDescriptionResolver(MY_RESOURCE, YamlConfigurationExtensionTest.class.getName(), Thread.currentThread().getContextClassLoader());
-        SimpleResourceDefinition rootResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(null, descriptionResolver));
+        SimpleResourceDefinition rootResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(ResourceRegistration.root(), descriptionResolver));
         AttributeDefinition valueAtt = SimpleAttributeDefinitionBuilder.create(VALUE, STRING, true)
                 .setAllowExpression(true)
                 .setValidator(new StringLengthValidator(0, true, true))

@@ -27,6 +27,7 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -281,7 +282,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider,
             final BootErrorCollector bootErrorCollector,
             final CapabilityRegistry capabilityRegistry) {
-        super(new Parameters(null, ServerDescriptions.getResourceDescriptionResolver(SERVER, false))
+        super(new Parameters(ResourceRegistration.root(), ServerDescriptions.getResourceDescriptionResolver(SERVER, false))
                 .addCapabilities(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.HOME_DIR),
                         PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_BASE_DIR),
                         PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_CONFIG_DIR),
