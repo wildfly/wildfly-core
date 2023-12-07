@@ -4,14 +4,11 @@
  */
 package org.jboss.as.subsystem.test.stability;
 
-import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
-
 import java.util.EnumSet;
 import java.util.Map;
 
 import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
-import org.jboss.as.controller.PersistentResourceXMLDescription.PersistentResourceXMLBuilder;
 import org.jboss.as.controller.PersistentSubsystemSchema;
 import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.controller.xml.VersionedNamespace;
@@ -45,11 +42,10 @@ public enum FooSubsystemSchema implements PersistentSubsystemSchema<FooSubsystem
 
     @Override
     public PersistentResourceXMLDescription getXMLDescription() {
-        PersistentResourceXMLBuilder builder = builder(FooSubsystemResourceDefinition.PATH, this.namespace);
-        builder.addAttributes(FooSubsystemResourceDefinition.ATTRIBUTES.stream().filter(this::enables));
-        if (this.enables(BarResourceDefinition.PATH)) {
-            builder.addChild(builder(BarResourceDefinition.PATH).addAttribute(BarResourceDefinition.TYPE));
-        }
+        PersistentResourceXMLDescription.Factory factory = PersistentResourceXMLDescription.factory(this);
+        PersistentResourceXMLDescription.Builder builder = factory.builder(FooSubsystemResourceDefinition.PATH);
+        builder.addAttributes(FooSubsystemResourceDefinition.ATTRIBUTES.stream());
+        builder.addChild(factory.builder(BarResourceDefinition.REGISTRATION).addAttribute(BarResourceDefinition.TYPE).build());
         return builder.build();
     }
 }
