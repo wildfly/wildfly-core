@@ -12,9 +12,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceNameFactory;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.version.Stability;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.Assert;
 import org.wildfly.service.descriptor.BinaryServiceDescriptor;
@@ -30,7 +32,7 @@ import org.wildfly.service.descriptor.UnaryServiceDescriptor;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-public class RuntimeCapability<T> implements Capability {
+public class RuntimeCapability<T> implements Capability, Feature {
 
     //todo remove, here only for binary compatibility of elytron subsystem, drop once it is in.
     public static String buildDynamicCapabilityName(String baseName, String dynamicNameElement) {
@@ -123,6 +125,7 @@ public class RuntimeCapability<T> implements Capability {
     private volatile ServiceName serviceName;
     private final T runtimeAPI;
     private final boolean allowMultipleRegistrations;
+    private final Stability stability;
 
     /**
      * Constructor for use by the builder.
@@ -136,6 +139,7 @@ public class RuntimeCapability<T> implements Capability {
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceValueType = builder.serviceValueType;
         this.allowMultipleRegistrations = builder.allowMultipleRegistrations;
+        this.stability = builder.stability;
     }
 
     private static Set<String> establishRequirements(Set<String> input) {
@@ -153,6 +157,7 @@ public class RuntimeCapability<T> implements Capability {
                               Set<String> requirements,
                               boolean allowMultipleRegistrations,
                               Function<PathAddress, String[]> dynamicNameMapper,
+                              Stability stability,
                               String... dynamicElement
     ) {
         this.name = buildDynamicCapabilityName(baseName, dynamicElement);
@@ -168,6 +173,7 @@ public class RuntimeCapability<T> implements Capability {
             assert baseServiceName == null;
         }
         this.allowMultipleRegistrations = allowMultipleRegistrations;
+        this.stability = stability;
     }
 
     /**
@@ -317,7 +323,7 @@ public class RuntimeCapability<T> implements Capability {
         assert dynamicElement != null;
         assert dynamicElement.length > 0;
         return new RuntimeCapability<>(getName(), serviceValueType, getServiceName(), runtimeAPI,
-                getRequirements(), allowMultipleRegistrations,dynamicNameMapper, dynamicElement);
+                getRequirements(), allowMultipleRegistrations,dynamicNameMapper, this.stability, dynamicElement);
 
     }
 
@@ -345,7 +351,7 @@ public class RuntimeCapability<T> implements Capability {
         String[] dynamicElement = dynamicNameMapper.apply(path);
         assert dynamicElement.length > 0;
         return new RuntimeCapability<>(getName(), serviceValueType, getServiceName(), runtimeAPI,
-                getRequirements(), allowMultipleRegistrations, dynamicNameMapper, dynamicElement);
+                getRequirements(), allowMultipleRegistrations, dynamicNameMapper, this.stability, dynamicElement);
     }
 
     @Override
@@ -381,6 +387,11 @@ public class RuntimeCapability<T> implements Capability {
     }
 
     @Override
+    public Stability getStability() {
+        return this.stability;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -413,6 +424,7 @@ public class RuntimeCapability<T> implements Capability {
         private Set<String> requirements;
         private boolean allowMultipleRegistrations = ALLOW_MULTIPLE;
         private Function<PathAddress, String[]> dynamicNameMapper = UnaryCapabilityNameResolver.DEFAULT;
+        private Stability stability = Stability.DEFAULT;
 
         /**
          * Create a builder for a non-dynamic capability with no custom runtime API.
@@ -580,6 +592,16 @@ public class RuntimeCapability<T> implements Capability {
         public Builder<T> setDynamicNameMapper(Function<PathAddress,String[]> mapper) {
             assert mapper != null;
             this.dynamicNameMapper = mapper;
+            return this;
+        }
+
+        /**
+         * Sets the stability level of this capability.
+         * @param stability a stability level
+         * @return a reference to this builder
+         */
+        public Builder<T> setStability(Stability stability) {
+            this.stability = stability;
             return this;
         }
 

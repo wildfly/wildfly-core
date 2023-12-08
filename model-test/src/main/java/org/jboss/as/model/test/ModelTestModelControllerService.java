@@ -43,6 +43,7 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.TransformerRegistry;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -190,6 +191,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
         super(null,
                 null,
                 processType,
+                Stability.DEFAULT,
                 runningModeControl,
                 persister,
                 processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition,
@@ -209,13 +211,14 @@ public abstract class ModelTestModelControllerService extends AbstractController
     /**
      * This is the constructor to use for current subsystem tests
      */
-    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+    protected ModelTestModelControllerService(final ProcessType processType, Stability stability, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
                                               final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
                                               final ResourceDefinition resourceDefinition, final ExpressionResolver expressionResolver, final ControlledProcessState processState,
                                               final CapabilityRegistry capabilityRegistry) {
         super(null,
                 null,
                 processType,
+                stability,
                 runningModeControl,
                 persister,
                 processState == null ? new ControlledProcessState(true) : processState,

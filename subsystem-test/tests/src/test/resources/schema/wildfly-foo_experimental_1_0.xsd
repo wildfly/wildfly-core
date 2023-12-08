@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="urn:wildfly:foo:experimental:1.0"
+            xmlns="urn:wildfly:foo:experimental:1.0"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified"
+            version="1.0">
+
+    <!-- The jmx subsystem root element -->
+    <xs:element name="subsystem" type="subsystem"/>
+
+    <xs:complexType name="subsystem">
+        <xs:sequence>
+            <xs:element name="bar" type="bar"/>
+        </xs:sequence>
+        <xs:attribute name="experimental" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="bar">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="type" type="type" use="required"/>
+    </xs:complexType>
+
+    <xs:simpleType name="type">
+        <xs:restriction base="xs:token">
+            <xs:enumeration value="FOO"/>
+            <xs:enumeration value="BAR"/>
+            <xs:enumeration value="EXPERIMENTAL"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

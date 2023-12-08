@@ -8,8 +8,10 @@ import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineCompleter;
@@ -27,6 +29,10 @@ public class SimpleTabCompleter implements CommandLineCompleter {
     public SimpleTabCompleter(String[] candidates) {
         all = Arrays.asList(checkNotNullParam("candidates", candidates));
         Collections.sort(all);
+    }
+
+    public SimpleTabCompleter(Collection<? extends Object> candidates) {
+        this.all = candidates.stream().map(Object::toString).collect(Collectors.toList());
     }
 
     /* (non-Javadoc)

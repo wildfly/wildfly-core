@@ -18,6 +18,7 @@ import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.version.Stability;
 
 /**
  * {@link ImmutableManagementResourceRegistration} implementation that simply delegates to another
@@ -47,6 +48,11 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     @Override
     public ProcessType getProcessType() {
         return delegate.getProcessType();
+    }
+
+    @Override
+    public Stability getStability() {
+        return this.delegate.getStability();
     }
 
     @Override

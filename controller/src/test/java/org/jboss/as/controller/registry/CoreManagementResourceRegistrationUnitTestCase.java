@@ -22,6 +22,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition.Parameters;
@@ -318,7 +319,7 @@ public class CoreManagementResourceRegistrationUnitTestCase {
     @Test
     public void testInheritedAccessConstraints() {
 
-        ResourceDefinition rootRd = new SimpleResourceDefinition(new Parameters(null, NonResolvingResourceDescriptionResolver.INSTANCE)
+        ResourceDefinition rootRd = new SimpleResourceDefinition(new Parameters(ResourceRegistration.root(), NonResolvingResourceDescriptionResolver.INSTANCE)
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.EXTENSIONS, ApplicationTypeAccessConstraintDefinition.DEPLOYMENT));
         ManagementResourceRegistration root = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(rootRd);
 

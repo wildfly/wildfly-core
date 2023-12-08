@@ -305,11 +305,20 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
          * @param descriptionResolver the description resolver. Cannot be {@code null}
          */
         public Parameters(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {
-            this(pathElement, new AtomicReference<>(descriptionResolver), new AtomicReference<>());
+            this(ResourceRegistration.of(pathElement), new AtomicReference<>(descriptionResolver), new AtomicReference<>());
         }
 
-        private Parameters(PathElement pathElement, AtomicReference<ResourceDescriptionResolver> descriptionResolver, AtomicReference<DeprecationData> deprecationData) {
-            super(pathElement, new Function<>() {
+        /**
+         * Creates a Parameters object
+         * @param pathElement the path element of the created ResourceDefinition. Cannot be {@code null}
+         * @param descriptionResolver the description resolver. Cannot be {@code null}
+         */
+        public Parameters(ResourceRegistration registration, ResourceDescriptionResolver descriptionResolver) {
+            this(registration, new AtomicReference<>(descriptionResolver), new AtomicReference<>());
+        }
+
+        private Parameters(ResourceRegistration registration, AtomicReference<ResourceDescriptionResolver> descriptionResolver, AtomicReference<DeprecationData> deprecationData) {
+            super(registration, new Function<>() {
                 @Override
                 public DescriptionProvider apply(ImmutableManagementResourceRegistration registration) {
                     return new DefaultResourceDescriptionProvider(registration, descriptionResolver.get(), deprecationData.get());
@@ -326,7 +335,24 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
          * @param descriptionProvider the description provider. Cannot be {@code null}
          */
         public Parameters(PathElement pathElement, DescriptionProvider descriptionProvider) {
-            super(pathElement, new Function<>() {
+            super(ResourceRegistration.of(pathElement), new Function<>() {
+                @Override
+                public DescriptionProvider apply(ImmutableManagementResourceRegistration t) {
+                    return descriptionProvider;
+                }
+            });
+            this.descriptionResolver = new AtomicReference<>();
+            this.deprecationData = new AtomicReference<>();
+        }
+
+        /**
+         * Creates a Parameters object
+         *
+         * @param pathElement         the path element of the created ResourceDefinition. Cannot be {@code null}
+         * @param descriptionProvider the description provider. Cannot be {@code null}
+         */
+        public Parameters(ResourceRegistration registration, DescriptionProvider descriptionProvider) {
+            super(registration, new Function<>() {
                 @Override
                 public DescriptionProvider apply(ImmutableManagementResourceRegistration t) {
                     return descriptionProvider;

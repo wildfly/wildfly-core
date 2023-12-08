@@ -87,6 +87,7 @@ import org.jboss.as.model.test.ModelTestModelDescriptionValidator.ValidationConf
 import org.jboss.as.model.test.ModelTestModelDescriptionValidator.ValidationFailure;
 import org.jboss.as.model.test.ModelTestOperationValidatorFilter;
 import org.jboss.as.model.test.ModelTestOperationValidatorFilter.Action;
+import org.jboss.as.version.Stability;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -156,8 +157,8 @@ public class CoreModelTestDelegate {
     }
 
 
-    protected KernelServicesBuilder createKernelServicesBuilder(TestModelType type) {
-        return new KernelServicesBuilderImpl(type);
+    protected KernelServicesBuilder createKernelServicesBuilder(TestModelType type, Stability stability) {
+        return new KernelServicesBuilderImpl(type, stability);
     }
 
     private void validateDescriptionProviders(TestModelType type, KernelServices kernelServices,
@@ -439,11 +440,11 @@ public class CoreModelTestDelegate {
         private Map<ModelNode, Map<String, Map<String, Set<String>>>> operationParameterDescriptors = new HashMap<>();
 
 
-        public KernelServicesBuilderImpl(TestModelType type) {
+        KernelServicesBuilderImpl(TestModelType type, Stability stability) {
             this.type = type;
             this.processType = type == TestModelType.HOST || type == TestModelType.DOMAIN ? ProcessType.HOST_CONTROLLER : ProcessType.STANDALONE_SERVER;
             runningModeControl = type == TestModelType.HOST ? new HostRunningModeControl(RunningMode.ADMIN_ONLY, RestartMode.HC_ONLY) : new RunningModeControl(RunningMode.ADMIN_ONLY);
-            extensionRegistry = ExtensionRegistry.builder(this.processType).withRunningModeControl(this.runningModeControl).build();
+            extensionRegistry = ExtensionRegistry.builder(this.processType).withRunningModeControl(this.runningModeControl).withStability(stability).build();
             testParser = TestParser.create(extensionRegistry, xmlMapper, type);
         }
 
@@ -791,7 +792,7 @@ public class CoreModelTestDelegate {
         }
 
         private KernelServices bootCurrentVersionWithLegacyBootOperations(List<ModelNode> bootOperations, ModelInitializer modelInitializer, ModelWriteSanitizer modelWriteSanitizer, List<String> contentRepositoryHashes, KernelServices mainServices) throws Exception {
-            KernelServicesBuilder reverseServicesBuilder = createKernelServicesBuilder(TestModelType.DOMAIN)
+            KernelServicesBuilder reverseServicesBuilder = createKernelServicesBuilder(TestModelType.DOMAIN, Stability.DEFAULT)
                 .setBootOperations(bootOperations)
                 .setModelInitializer(modelInitializer, modelWriteSanitizer);
             for (String hash : contentRepositoryHashes) {

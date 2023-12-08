@@ -33,6 +33,8 @@ public class ProductConfig implements Serializable {
     private final String name;
     private final String version;
     private final String consoleSlot;
+    private final Stability defaultStability;
+    private final Stability minStability;
     private boolean isProduct;
 
     public static ProductConfig fromFilesystemSlot(ModuleLoader loader, String home, Map<?, ?> providedProperties) {
@@ -47,6 +49,8 @@ public class ProductConfig implements Serializable {
         String projectName = null;
         String productVersion = null;
         String consoleSlot = null;
+        Stability defaultStability = Stability.COMMUNITY;
+        Stability minStability = Stability.EXPERIMENTAL;
 
         InputStream manifestStream = null;
         try {
@@ -65,6 +69,14 @@ public class ProductConfig implements Serializable {
                     productVersion = manifest.getMainAttributes().getValue("JBoss-Product-Release-Version");
                     consoleSlot = manifest.getMainAttributes().getValue("JBoss-Product-Console-Slot");
                     projectName = manifest.getMainAttributes().getValue("JBoss-Project-Release-Name");
+                    String defaultStabilityValue = manifest.getMainAttributes().getValue("JBoss-Product-Stability");
+                    if (defaultStabilityValue != null) {
+                        defaultStability = Stability.fromString(defaultStabilityValue);
+                    }
+                    String minStabilityValue = manifest.getMainAttributes().getValue("JBoss-Product-Minimum-Stability");
+                    if (minStabilityValue != null) {
+                        minStability = Stability.fromString(minStabilityValue);
+                    }
                 }
             }
 
@@ -78,6 +90,8 @@ public class ProductConfig implements Serializable {
         name = isProduct ? productName : projectName;
         version = productVersion;
         this.consoleSlot = consoleSlot;
+        this.defaultStability = defaultStability;
+        this.minStability = minStability;
     }
 
     private static String getProductConf(String home) {
@@ -114,6 +128,8 @@ public class ProductConfig implements Serializable {
         this.name = productName;
         this.version = productVersion;
         this.consoleSlot = consoleSlot;
+        this.defaultStability = Stability.DEFAULT;
+        this.minStability = Stability.DEFAULT;
     }
 
     public String getProductName() {
@@ -130,6 +146,14 @@ public class ProductConfig implements Serializable {
 
     public String getConsoleSlot() {
         return consoleSlot;
+    }
+
+    public Stability getDefaultStability() {
+        return this.defaultStability;
+    }
+
+    public Stability getMinimumStability() {
+        return this.minStability;
     }
 
     public String getPrettyVersionString() {

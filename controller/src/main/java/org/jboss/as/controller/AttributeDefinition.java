@@ -10,11 +10,11 @@ import static org.jboss.as.controller.registry.AttributeAccess.Flag.immutableSet
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 
@@ -38,6 +38,7 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -49,7 +50,7 @@ import org.jboss.dmr.Property;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public abstract class AttributeDefinition {
+public abstract class AttributeDefinition implements Feature {
 
     /** The {@link ModelType} types that reflect complex DMR structures -- {@code LIST}, {@code OBJECT}, {@code PROPERTY}} */
     protected static final Set<ModelType> COMPLEX_TYPES = Collections.unmodifiableSet(EnumSet.of(ModelType.LIST, ModelType.OBJECT, ModelType.PROPERTY));
@@ -77,75 +78,43 @@ public abstract class AttributeDefinition {
     private final ModelNode undefinedMetricValue;
     private final CapabilityReferenceRecorder referenceRecorder;
     private final Map<String, ModelNode> arbitraryDescriptors;
+    private final Stability stability;
 
     // NOTE: Standards for creating a constructor variant are:
     // 1) Don't.
     // 2) See 1)
     //
     // Use the constructor that takes a builder
-
-    protected AttributeDefinition(AbstractAttributeDefinitionBuilder<?, ?> toCopy) {
-        this(toCopy.getName(), toCopy.getXmlName(), toCopy.getDefaultValue(), toCopy.getType(),
-                toCopy.isNillable(), toCopy.isAllowExpression(), toCopy.getMeasurementUnit(), toCopy.getCorrector(),
-                wrapValidator(toCopy.getValidator(), toCopy.isNillable(), toCopy.getAlternatives(), toCopy.isAllowExpression(),
-                        toCopy.getType(), toCopy.getConfiguredMinSize(), toCopy.getConfiguredMaxSize()),
-                toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
-                toCopy.isResourceOnly(), toCopy.getDeprecated(),
-                wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
-                toCopy.getAttributeGroup(), toCopy.getCapabilityReferenceRecorder(), toCopy.getAllowedValues(), toCopy.getArbitraryDescriptors(),
-                toCopy.getUndefinedMetricValue(), immutableSetOf(toCopy.getFlags()));
+    protected AttributeDefinition(AbstractAttributeDefinitionBuilder<?, ?> builder) {
+        this.name = builder.getName();
+        this.xmlName = Optional.ofNullable(builder.getXmlName()).orElse(this.name);
+        this.type = builder.getType();
+        this.required = !builder.isNillable();
+        this.allowExpression = builder.isAllowExpression();
+        this.parser = Optional.ofNullable(builder.getParser()).orElse(AttributeParser.SIMPLE);
+        this.defaultValue = Optional.ofNullable(builder.getDefaultValue()).filter(ModelNode::isDefined).map(AttributeDefinition::protect).orElse(null);
+        this.measurementUnit = builder.getMeasurementUnit();
+        this.alternatives = builder.getAlternatives();
+        this.requires = builder.getRequires();
+        this.valueCorrector = builder.getCorrector();
+        this.validator = wrapValidator(builder.getValidator(), !this.required, this.alternatives, this.allowExpression, this.type, builder.getConfiguredMinSize(), builder.getConfiguredMaxSize());
+        this.flags = immutableSetOf(builder.getFlags());
+        this.attributeMarshaller = Optional.ofNullable(builder.getAttributeMarshaller()).orElse(AttributeMarshaller.SIMPLE);
+        this.resourceOnly = builder.isResourceOnly();
+        this.accessConstraints = wrapConstraints(builder.getAccessConstraints());
+        this.deprecationData = builder.getDeprecated();
+        this.nilSignificant = builder.getNullSignificant();
+        this.attributeGroup = builder.getAttributeGroup();
+        this.allowedValues = builder.getAllowedValues();
+        this.undefinedMetricValue = Optional.ofNullable(builder.getUndefinedMetricValue()).filter(ModelNode::isDefined).map(AttributeDefinition::protect).orElse(null);
+        this.referenceRecorder = builder.getCapabilityReferenceRecorder();
+        this.arbitraryDescriptors = Optional.ofNullable(builder.getArbitraryDescriptors()).map(Map::copyOf).orElse(Map.of());
+        this.stability = builder.getStability();
     }
 
-    private AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
-                                final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
-                                final ParameterCorrector valueCorrector, final ParameterValidator validator,
-                                final String[] alternatives, final String[] requires, AttributeMarshaller marshaller,
-                                boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
-                                Boolean nilSignificant, AttributeParser parser, final String attributeGroup, CapabilityReferenceRecorder referenceRecorder,
-                                ModelNode[] allowedValues, final Map<String, ModelNode> arbitraryDescriptors, final ModelNode undefinedMetricValue, final Set<AttributeAccess.Flag> flags) {
-
-        this.name = name;
-        this.xmlName = xmlName == null ? name : xmlName;
-        this.type = type;
-        this.required = !allowNull;
-        this.allowExpression = allowExpression;
-        this.parser = parser != null ? parser : AttributeParser.SIMPLE;
-        if (defaultValue != null && defaultValue.isDefined()) {
-            this.defaultValue = defaultValue;
-            this.defaultValue.protect();
-        } else {
-            this.defaultValue = null;
-        }
-        this.measurementUnit = measurementUnit;
-        this.alternatives = alternatives;
-        this.requires = requires;
-        this.valueCorrector = valueCorrector;
-        this.validator = validator;
-        this.flags = flags;
-        this.attributeMarshaller = marshaller != null ? marshaller : AttributeMarshaller.SIMPLE;
-        this.resourceOnly = resourceOnly;
-        this.accessConstraints = accessConstraints;
-        this.deprecationData = deprecationData;
-        this.nilSignificant = nilSignificant;
-        this.attributeGroup = attributeGroup;
-        this.allowedValues = allowedValues;
-        if (undefinedMetricValue != null && undefinedMetricValue.isDefined()) {
-            this.undefinedMetricValue = undefinedMetricValue;
-            this.undefinedMetricValue.protect();
-        } else {
-            this.undefinedMetricValue = null;
-        }
-        this.referenceRecorder = referenceRecorder;
-        if (arbitraryDescriptors != null && !arbitraryDescriptors.isEmpty()) {
-            if (arbitraryDescriptors.size() == 1) {
-                Map.Entry<String, ModelNode> entry = arbitraryDescriptors.entrySet().iterator().next();
-                this.arbitraryDescriptors = Collections.singletonMap(entry.getKey(), entry.getValue());
-            } else {
-                this.arbitraryDescriptors = Collections.unmodifiableMap(new HashMap<>(arbitraryDescriptors));
-            }
-        } else {
-            this.arbitraryDescriptors = Collections.emptyMap();
-        }
+    private static ModelNode protect(ModelNode value) {
+        value.protect();
+        return value;
     }
 
     private static ParameterValidator wrapValidator(ParameterValidator toWrap, boolean allowNull,
@@ -191,6 +160,11 @@ public abstract class AttributeDefinition {
         } else {
             return Collections.unmodifiableList(Arrays.asList(accessConstraints));
         }
+    }
+
+    @Override
+    public Stability getStability() {
+        return this.stability;
     }
 
     /**

@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.version.ProductConfig;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -56,6 +57,7 @@ public class HostControllerEnvironmentTestCase {
 
     @Test
     public void testUUIDLifeCycle() throws IOException {
+        ProductConfig productConfig = new ProductConfig(null, null, null);
         Map<String, String> hostProperties = new HashMap();
         Path domainDir = homeDir.resolve("domain");
         Files.createDirectories(domainDir.resolve("configuration"));
@@ -65,7 +67,7 @@ public class HostControllerEnvironmentTestCase {
         //Check creation on startup
         HostControllerEnvironment hcEnvironment = new HostControllerEnvironment(hostProperties, false, "",
                 InetAddress.getLocalHost(), 8080, InetAddress.getLocalHost(), 9990, null, null, null, null, null,
-                RunningMode.NORMAL, true, true, null);
+                RunningMode.NORMAL, true, true, productConfig);
         assertThat(Files.exists(uuidPath), is(true));
         List<String> uuids = Files.readAllLines(uuidPath);
         assertThat(uuids, is(not(nullValue())));
@@ -74,7 +76,7 @@ public class HostControllerEnvironmentTestCase {
         //Check nothing happens on startup if file is already there
         hcEnvironment = new HostControllerEnvironment(hostProperties, false, "",
                 InetAddress.getLocalHost(), 8080, InetAddress.getLocalHost(), 9990, null, null, null, null, null,
-                RunningMode.NORMAL, true, true, null);
+                RunningMode.NORMAL, true, true, productConfig);
         assertThat(Files.exists(uuidPath), is(true));
         uuids = Files.readAllLines(uuidPath);
         assertThat(uuids, is(not(nullValue())));
@@ -85,7 +87,7 @@ public class HostControllerEnvironmentTestCase {
         assertThat(Files.notExists(uuidPath), is(true));
         hcEnvironment = new HostControllerEnvironment(hostProperties, false, "",
                 InetAddress.getLocalHost(), 8080, InetAddress.getLocalHost(), 9990, null, null, null, null, null,
-                RunningMode.NORMAL, true, true, null);
+                RunningMode.NORMAL, true, true, productConfig);
         assertThat(Files.exists(uuidPath), is(true));
         uuids = Files.readAllLines(uuidPath);
         assertThat(uuids, is(not(nullValue())));

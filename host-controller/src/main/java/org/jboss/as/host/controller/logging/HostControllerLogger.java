@@ -27,6 +27,7 @@ import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 import org.jboss.as.host.controller.model.jvm.JvmType;
 import org.jboss.as.protocol.mgmt.RequestProcessingException;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
@@ -1456,6 +1457,12 @@ public interface HostControllerLogger extends BasicLogger {
 
     @Message(id = 220, value = "Failed to synchronize server status upon a Host Controller registration. There is no handler registered to manage the operation %s for the server %s.")
     IllegalStateException failedToSyncServerStatus(String opName, String serverAddress);
+
+    @Message(id = 221, value = "%s stability level of domain controller does not match %s stability level of connecting host")
+    OperationFailedException incompatibleStability(Stability domainStability, Stability hostStability);
+
+    @Message(id = 222, value = "%s stability level is not supported in %s")
+    IllegalArgumentException unsupportedStability(Stability stability, String name);
 
     ////////////////////////////////////////////////
     //Messages without IDs

@@ -15,6 +15,7 @@ import java.util.Set;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -22,7 +23,7 @@ import org.jboss.dmr.ModelType;
  *
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
-public abstract class OperationDefinition {
+public abstract class OperationDefinition implements Feature {
 
     protected final String name;
     protected final OperationEntry.EntryType entryType;
@@ -35,6 +36,7 @@ public abstract class OperationDefinition {
     protected final AttributeDefinition[] replyParameters;
     protected final List<AccessConstraintDefinition> accessConstraints;
     protected final DescriptionProvider descriptionProvider;
+    private final Stability stability;
 
     protected OperationDefinition(SimpleOperationDefinitionBuilder builder) {
         this.name = builder.name;
@@ -52,7 +54,12 @@ public abstract class OperationDefinition {
             this.accessConstraints = Collections.unmodifiableList(Arrays.asList(builder.accessConstraints));
         }
         this.descriptionProvider = builder.descriptionProvider;
+        this.stability = builder.stability;
+    }
 
+    @Override
+    public Stability getStability() {
+        return this.stability;
     }
 
     public String getName() {

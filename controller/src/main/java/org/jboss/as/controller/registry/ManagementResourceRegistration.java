@@ -18,9 +18,11 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
+import org.jboss.as.version.Stability;
 import org.wildfly.common.Assert;
 
 /**
@@ -94,7 +96,6 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      */
     boolean isAllowsOverride();
 
-
     /**
      * Register a specifically named resource that overrides this {@link PathElement#WILDCARD_VALUE wildcard registration}
      * by adding additional attributes, operations or child types.
@@ -109,6 +110,23 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
      */
     ManagementResourceRegistration registerOverrideModel(final String name, final OverrideDescriptionProvider descriptionProvider);
+
+    /**
+     * Register a specifically named resource that overrides this {@link PathElement#WILDCARD_VALUE wildcard registration}
+     * by adding additional attributes, operations or child types.
+     *
+     * @param registration the child registration of this registry that should no longer be available
+     * @param descriptionProvider provider for descriptions of the additional attributes or child types
+     *
+     * @return a resource registration which may be used to add attributes, operations and sub-models
+     *
+     * @throws IllegalArgumentException if either parameter is null or if there is already a registration under {@code name}
+     * @throws IllegalStateException if {@link #isRuntimeOnly()} returns {@code true} or if {@link #isAllowsOverride()} returns false
+     * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
+     */
+    default ManagementResourceRegistration registerOverrideModel(ResourceRegistration registration, final OverrideDescriptionProvider descriptionProvider) {
+        return this.enables(registration) ? this.registerOverrideModel(registration.getPathElement().getValue(), descriptionProvider) : null;
+    }
 
     /**
      * Unregister a specifically named resource that overrides a {@link PathElement#WILDCARD_VALUE wildcard registration}
@@ -228,6 +246,19 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
     void registerAlias(PathElement address, AliasEntry aliasEntry);
 
     /**
+     * Register an alias registration to another part of the model
+     *
+     * @param registration the registration of the child of this registry that is an alias
+     * @param aliasEntry the target model
+     * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
+     */
+    default void registerAlias(ResourceRegistration registration, AliasEntry aliasEntry) {
+        if (this.enables(registration)) {
+            this.registerAlias(registration.getPathElement(), aliasEntry);
+        }
+    }
+
+    /**
      * Unregister an alias
      *
      * @param address the child of this registry that is an alias
@@ -315,24 +346,40 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
     class Factory {
 
         private final ProcessType processType;
+        private final Stability stability;
 
-        private Factory(ProcessType processType) {
+        private Factory(ProcessType processType, Stability stability) {
             this.processType = processType;
+            this.stability = stability;
         }
 
         /**
          * Returns a ManagementResourceRegistration's Factory that will use the specified {@code processType}
-         * to determine whether resource metrics are registered or not.
+         * and default stability level to determine whether resource metrics are registered or not.
          *
          * If the {@code processType} id {@code null}, metrics are <em>always</em> registered.
          *
          * @param processType can be {@code null}
-
          * @return a Factory which creates ManagementResourceRegistration that
          * dynamically determine whether resource metrics are actually registered
          */
         public static Factory forProcessType(ProcessType processType) {
-            return new Factory(processType);
+            return forProcessType(processType, Stability.DEFAULT);
+        }
+
+        /**
+         * Returns a ManagementResourceRegistration's Factory that will use the specified {@code processType}
+         * and stability level to determine whether resource metrics are registered or not.
+         *
+         * If the {@code processType} id {@code null}, metrics are <em>always</em> registered.
+         *
+         * @param processType can be {@code null}
+         * @param stability a stability level
+         * @return a Factory which creates ManagementResourceRegistration that
+         * dynamically determine whether resource metrics are actually registered
+         */
+        public static Factory forProcessType(ProcessType processType, Stability stability) {
+            return new Factory(processType, stability);
         }
 
         /**
@@ -363,7 +410,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
                                                                  CapabilityRegistry registry) {
             Assert.checkNotNullParam("resourceDefinition", resourceDefinition);
             ConcreteResourceRegistration resourceRegistration =
-                    new ConcreteResourceRegistration(resourceDefinition, constraintUtilizationRegistry, registry, processType);
+                    new ConcreteResourceRegistration(resourceDefinition, constraintUtilizationRegistry, registry, processType, this.stability);
             resourceDefinition.registerAttributes(resourceRegistration);
             resourceDefinition.registerOperations(resourceRegistration);
             resourceDefinition.registerChildren(resourceRegistration);

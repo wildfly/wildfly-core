@@ -17,21 +17,14 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.version.Stability;
 
 /**
  * Provides essential information defining a management resource.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public interface ResourceDefinition {
-
-    /**
-     * Gets the path element that describes how to navigate to this resource from its parent resource, or {@code null}
-     * if this is a definition of a root resource.
-     *
-     * @return the path element, or {@code null} if this is a definition of a root resource.
-     */
-    PathElement getPathElement();
+public interface ResourceDefinition extends ResourceRegistration {
 
     /**
      * Gets a {@link DescriptionProvider} for the given resource.
@@ -184,34 +177,34 @@ public interface ResourceDefinition {
     }
 
     /**
-     * Creates a minimal {@link ResourceDefinition} builder using the specified path and description resolver.
-     * @param path the resource path
+     * Creates a minimal {@link ResourceDefinition} builder using the specified registration and description resolver.
+     * @param registration the resource registration
      * @param descriptionResolver the resource description resolver
      * @return a builder instance
      */
-    static Builder builder(PathElement path, ResourceDescriptionResolver descriptionResolver) {
-        return new MinimalBuilder(path, descriptionResolver);
+    static Builder builder(ResourceRegistration registration, ResourceDescriptionResolver descriptionResolver) {
+        return new MinimalBuilder(registration, descriptionResolver);
     }
 
     /**
-     * Creates a minimal {@link ResourceDefinition} builder using the specified path and description resolver, deprecated as of the version of the specified model.
-     * @param path the resource path
+     * Creates a minimal {@link ResourceDefinition} builder using the specified registration and description resolver, deprecated as of the version of the specified model.
+     * @param registration the resource registration
      * @param descriptionResolver a resolver of model descriptions for this resource
      * @param deprecation the model that deprecates this resource
      * @return a builder instance
      */
-    static Builder builder(PathElement path, ResourceDescriptionResolver descriptionResolver, SubsystemModel deprecation) {
-        return new MinimalBuilder(path, descriptionResolver, new DeprecationData(deprecation.getVersion()));
+    static Builder builder(ResourceRegistration registration, ResourceDescriptionResolver descriptionResolver, SubsystemModel deprecation) {
+        return new MinimalBuilder(registration, descriptionResolver, new DeprecationData(deprecation.getVersion()));
     }
 
     /**
-     * Creates a {@link ResourceDefinition} builder.
-     * @param path the resource path
+     * Creates a {@link ResourceDefinition} builder using the specified registration and description resolver
+     * @param registration the resource registration
      * @param descriptionProvider provides model descriptions for this resource
      * @return a builder instance
      */
-    static Builder builder(PathElement path, DescriptionProvider descriptionProvider) {
-        return new MinimalBuilder(path, descriptionProvider);
+    static Builder builder(ResourceRegistration registration, DescriptionProvider descriptionProvider) {
+        return new MinimalBuilder(registration, descriptionProvider);
     }
 
     /**
@@ -305,6 +298,7 @@ public interface ResourceDefinition {
      */
     abstract class AbstractConfigurator<C extends Configurator<C>> implements Configurator<C> {
         private final PathElement path;
+        private final Stability stability;
         private final Function<ImmutableManagementResourceRegistration, DescriptionProvider> descriptionProviderFactory;
         private int minOccurance;
         private int maxOccurance;
@@ -313,8 +307,9 @@ public interface ResourceDefinition {
         private boolean orderedChild = false;
         private boolean feature = true;
 
-        AbstractConfigurator(PathElement path, Function<ImmutableManagementResourceRegistration, DescriptionProvider> descriptionProviderFactory) {
-            this.path = path;
+        AbstractConfigurator(ResourceRegistration registration, Function<ImmutableManagementResourceRegistration, DescriptionProvider> descriptionProviderFactory) {
+            this.path = registration.getPathElement();
+            this.stability = registration.getStability();
             this.descriptionProviderFactory = descriptionProviderFactory;
             this.minOccurance = (path == null) ? 1 : 0;
             this.maxOccurance = (path == null) || !path.isWildcard() ? 1 : Integer.MAX_VALUE;
@@ -384,8 +379,8 @@ public interface ResourceDefinition {
      */
     static class MinimalBuilder extends AbstractConfigurator<Builder> implements Builder {
 
-        MinimalBuilder(PathElement path, ResourceDescriptionResolver resolver) {
-            super(path, new Function<>() {
+        MinimalBuilder(ResourceRegistration registration, ResourceDescriptionResolver resolver) {
+            super(registration, new Function<>() {
                 @Override
                 public DescriptionProvider apply(ImmutableManagementResourceRegistration registration) {
                     return new DefaultResourceDescriptionProvider(registration, resolver);
@@ -393,8 +388,8 @@ public interface ResourceDefinition {
             });
         }
 
-        MinimalBuilder(PathElement path, ResourceDescriptionResolver resolver, DeprecationData deprecation) {
-            super(path, new Function<>() {
+        MinimalBuilder(ResourceRegistration registration, ResourceDescriptionResolver resolver, DeprecationData deprecation) {
+            super(registration, new Function<>() {
                 @Override
                 public DescriptionProvider apply(ImmutableManagementResourceRegistration registration) {
                     return new DefaultResourceDescriptionProvider(registration, resolver, deprecation);
@@ -402,8 +397,8 @@ public interface ResourceDefinition {
             });
         }
 
-        MinimalBuilder(PathElement path, DescriptionProvider provider) {
-            super(path, new Function<>() {
+        MinimalBuilder(ResourceRegistration registration, DescriptionProvider provider) {
+            super(registration, new Function<>() {
                 @Override
                 public DescriptionProvider apply(ImmutableManagementResourceRegistration registration) {
                     return provider;
@@ -428,6 +423,7 @@ public interface ResourceDefinition {
     static class MinimalResourceDefinition implements ResourceDefinition {
 
         private final PathElement path;
+        private final Stability stability;
         private final Function<ImmutableManagementResourceRegistration, DescriptionProvider> descriptionProviderFactory;
         private final int minOccurance;
         private final int maxOccurance;
@@ -438,6 +434,7 @@ public interface ResourceDefinition {
 
         MinimalResourceDefinition(AbstractConfigurator<?> configurator) {
             this.path = configurator.path;
+            this.stability = configurator.stability;
             this.descriptionProviderFactory = configurator.descriptionProviderFactory;
             this.minOccurance = configurator.minOccurance;
             this.maxOccurance = configurator.maxOccurance;
@@ -450,6 +447,11 @@ public interface ResourceDefinition {
         @Override
         public PathElement getPathElement() {
             return this.path;
+        }
+
+        @Override
+        public Stability getStability() {
+            return this.stability;
         }
 
         @Override

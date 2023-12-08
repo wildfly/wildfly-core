@@ -550,6 +550,18 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         return setYamlFiles(List.of(yamlFiles));
     }
 
+    /**
+     * Sets the stability level of the domain controller process.
+     * @param stability a stability level
+     * @return a reference to this builder
+     */
+    public StandaloneCommandBuilder setStability(String stability) {
+        if (stability != null) {
+            this.setSingleServerArg("--stability", stability);
+        }
+        return this;
+    }
+
     @Override
     public List<String> buildArguments() {
         final List<String> cmd = new ArrayList<>();

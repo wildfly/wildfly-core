@@ -563,7 +563,221 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         return new PersistentResourceXMLBuilder(PathElement.pathElement(elementName), null).setDecoratorGroup(elementName);
     }
 
-    public static final class PersistentResourceXMLBuilder {
+    /**
+     * Creates a factory for creating a {@link PersistentResourceXMLDescription} builders for the specified subsystem schema.
+     * @param <S> the schema type
+     * @param schema a subsystem schema
+     * @return a factory for creating a {@link PersistentResourceXMLDescription} builders
+     */
+    public static <S extends PersistentSubsystemSchema<S>> Factory factory(PersistentSubsystemSchema<S> schema) {
+        return new Factory() {
+            @Override
+            public Builder builder(ResourceRegistration registration) {
+                if (!schema.enables(registration)) {
+                    // If resource is not enabled for this schema, return a builder stub that returns a null description
+                    return new Builder() {
+                        @Override
+                        public Builder addChild(PersistentResourceXMLDescription description) {
+                            return this;
+                        }
+
+                        @Override
+                        public Builder addAttribute(AttributeDefinition attribute) {
+                            return this;
+                        }
+
+                        @Override
+                        public Builder addAttribute(AttributeDefinition attribute, AttributeParser attributeParser, AttributeMarshaller attributeMarshaller) {
+                            return this;
+                        }
+
+                        @Override
+                        public Builder addAttributes(AttributeDefinition... attributes) {
+                            return this;
+                        }
+
+                        @Override
+                        public Builder addAttributes(Stream<? extends AttributeDefinition> attributes) {
+                            return this;
+                        }
+
+                        @Override
+                        public Builder setXmlWrapperElement(String xmlWrapperElement) {
+                            return this;
+                        }
+
+                        @Override
+                        public Builder setXmlElementName(String xmlElementName) {
+                            return this;
+                        }
+
+                        @Override
+                        public Builder setNoAddOperation(boolean noAddOperation) {
+                            return this;
+                        }
+
+                        @Override
+                        public Builder setAdditionalOperationsGenerator(AdditionalOperationsGenerator additionalOperationsGenerator) {
+                            return this;
+                        }
+
+                        @Override
+                        public Builder setUseElementsForGroups(boolean useElementsForGroups) {
+                            return this;
+                        }
+
+                        @Override
+                        public Builder setNameAttributeName(String nameAttributeName) {
+                            return this;
+                        }
+
+                        @Override
+                        public PersistentResourceXMLDescription build() {
+                            return null;
+                        }
+                    };
+                }
+                PathElement path = registration.getPathElement();
+                Builder builder = path.getKey().equals(ModelDescriptionConstants.SUBSYSTEM) ? PersistentResourceXMLDescription.builder(path, schema.getNamespace()) : PersistentResourceXMLDescription.builder(path);
+                // Return decorated builder that filters its attributes
+                return new Builder() {
+                    @Override
+                    public Builder addChild(PersistentResourceXMLDescription description) {
+                        // Description might be null if this resource is not enabled by this schema
+                        if (description != null) {
+                            builder.addChild(description);
+                        }
+                        return this;
+                    }
+
+                    @Override
+                    public Builder addAttribute(AttributeDefinition attribute) {
+                        if (schema.enables(attribute)) {
+                            builder.addAttribute(attribute);
+                        }
+                        return this;
+                    }
+
+                    @Override
+                    public Builder addAttribute(AttributeDefinition attribute, AttributeParser attributeParser, AttributeMarshaller attributeMarshaller) {
+                        if (schema.enables(attribute)) {
+                            builder.addAttribute(attribute, attributeParser, attributeMarshaller);
+                        }
+                        return this;
+                    }
+
+                    @Override
+                    public Builder addAttributes(AttributeDefinition... attributes) {
+                        for (AttributeDefinition attribute : attributes) {
+                            if (schema.enables(attribute)) {
+                                builder.addAttribute(attribute);
+                            }
+                        }
+                        return this;
+                    }
+
+                    @Override
+                    public Builder addAttributes(Stream<? extends AttributeDefinition> attributes) {
+                        builder.addAttributes(attributes.filter(schema::enables));
+                        return this;
+                    }
+
+                    @Override
+                    public Builder setXmlWrapperElement(String xmlWrapperElement) {
+                        builder.setXmlElementName(xmlWrapperElement);
+                        return this;
+                    }
+
+                    @Override
+                    public Builder setXmlElementName(String xmlElementName) {
+                        builder.setXmlElementName(xmlElementName);
+                        return this;
+                    }
+
+                    @Override
+                    public Builder setNoAddOperation(boolean noAddOperation) {
+                        builder.setNoAddOperation(noAddOperation);
+                        return this;
+                    }
+
+                    @Override
+                    public Builder setAdditionalOperationsGenerator(AdditionalOperationsGenerator additionalOperationsGenerator) {
+                        builder.setAdditionalOperationsGenerator(additionalOperationsGenerator);
+                        return this;
+                    }
+
+                    @Override
+                    public Builder setUseElementsForGroups(boolean useElementsForGroups) {
+                        builder.setUseElementsForGroups(useElementsForGroups);
+                        return this;
+                    }
+
+                    @Override
+                    public Builder setNameAttributeName(String nameAttributeName) {
+                        builder.setNameAttributeName(nameAttributeName);
+                        return this;
+                    }
+
+                    @Override
+                    public PersistentResourceXMLDescription build() {
+                        return builder.build();
+                    }
+                };
+            }
+        };
+    }
+
+    /**
+     * Factory for creating a {@link PersistentResourceXMLDescription} builder.
+     */
+    public static interface Factory {
+        /**
+         * Creates a builder for the resource registered at the specified path.
+         * @param path a path element
+         * @return a builder of a {@link PersistentResourceXMLDescription}
+         */
+        default Builder builder(PathElement path) {
+            return builder(ResourceRegistration.of(path));
+        }
+
+        /**
+         * Creates a builder for the specified resource registration.
+         * @param path a resource registration
+         * @return a builder of a {@link PersistentResourceXMLDescription}
+         */
+        Builder builder(ResourceRegistration registration);
+    }
+
+    /**
+     * Builds a {@link PersistentResourceXMLDescription}.
+     */
+    public static interface Builder {
+        Builder addChild(PersistentResourceXMLDescription description);
+
+        Builder addAttribute(AttributeDefinition attribute);
+
+        Builder addAttribute(AttributeDefinition attribute, AttributeParser attributeParser, AttributeMarshaller attributeMarshaller);
+
+        Builder addAttributes(AttributeDefinition... attributes);
+
+        Builder addAttributes(Stream<? extends AttributeDefinition> attributes);
+
+        Builder setXmlWrapperElement(String xmlWrapperElement);
+
+        Builder setXmlElementName(String xmlElementName);
+
+        Builder setNoAddOperation(boolean noAddOperation);
+
+        Builder setAdditionalOperationsGenerator(AdditionalOperationsGenerator additionalOperationsGenerator);
+
+        Builder setUseElementsForGroups(boolean useElementsForGroups);
+
+        Builder setNameAttributeName(String nameAttributeName);
+
+        PersistentResourceXMLDescription build();
+    }
+
+    public static final class PersistentResourceXMLBuilder implements Builder {
         private final PathElement pathElement;
         private final String namespaceURI;
         private String xmlElementName;
@@ -601,9 +815,12 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
             return this;
         }
 
+        @Override
         public PersistentResourceXMLBuilder addChild(PersistentResourceXMLDescription description) {
-            this.children.add(description);
-            this.marshallers.add(description);
+            if (description != null) {
+                this.children.add(description);
+                this.marshallers.add(description);
+            }
             return this;
         }
 
@@ -620,6 +837,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
             return this;
         }*/
 
+        @Override
         public PersistentResourceXMLBuilder addAttribute(AttributeDefinition attribute) {
             this.attributeList.add(attribute);
             return this;
@@ -631,6 +849,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
             return this;
         }
 
+        @Override
         public PersistentResourceXMLBuilder addAttribute(AttributeDefinition attribute, AttributeParser attributeParser, AttributeMarshaller attributeMarshaller) {
             this.attributeList.add(attribute);
             this.attributeParsers.put(attribute.getXmlName(), attributeParser);
@@ -638,21 +857,25 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
             return this;
         }
 
+        @Override
         public PersistentResourceXMLBuilder addAttributes(AttributeDefinition... attributes) {
             Collections.addAll(this.attributeList, attributes);
             return this;
         }
 
+        @Override
         public PersistentResourceXMLBuilder addAttributes(Stream<? extends AttributeDefinition> attributes) {
             attributes.forEach(this::addAttribute);
             return this;
         }
 
+        @Override
         public PersistentResourceXMLBuilder setXmlWrapperElement(final String xmlWrapperElement) {
             this.xmlWrapperElement = xmlWrapperElement;
             return this;
         }
 
+        @Override
         public PersistentResourceXMLBuilder setXmlElementName(final String xmlElementName) {
             this.xmlElementName = xmlElementName;
             return this;
@@ -667,12 +890,14 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
             return this;
         }
 
+        @Override
         @SuppressWarnings("unused")
         public PersistentResourceXMLBuilder setNoAddOperation(final boolean noAddOperation) {
             this.noAddOperation = noAddOperation;
             return this;
         }
 
+        @Override
         @SuppressWarnings("unused")
         public PersistentResourceXMLBuilder setAdditionalOperationsGenerator(final AdditionalOperationsGenerator additionalOperationsGenerator) {
             this.additionalOperationsGenerator = additionalOperationsGenerator;
@@ -705,6 +930,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
          * @param useElementsForGroups {@code true} if child elements should be used.
          * @return a builder that can be used for further configuration or to build the xml description
          */
+        @Override
         public PersistentResourceXMLBuilder setUseElementsForGroups(boolean useElementsForGroups) {
             this.useElementsForGroups = useElementsForGroups;
             return this;
@@ -729,6 +955,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
          * @param nameAttributeName xml attribute name to be used for resource name
          * @return builder
          */
+        @Override
         public PersistentResourceXMLBuilder setNameAttributeName(String nameAttributeName) {
             this.nameAttributeName = nameAttributeName;
             return this;
@@ -739,6 +966,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
             return this;
         }
 
+        @Override
         public PersistentResourceXMLDescription build() {
 
             return new PersistentResourceXMLDescription(this);

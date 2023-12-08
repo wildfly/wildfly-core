@@ -28,6 +28,7 @@ import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResol
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.extension.ResolverExtensionRegistry;
+import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -41,6 +42,7 @@ import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.ServerEnvironment.LaunchType;
 import org.jboss.as.server.controller.resources.ServerDeploymentResourceDefinition;
 import org.jboss.as.subsystem.test.ControllerInitializer.TestControllerAccessor;
+import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.vfs.VirtualFile;
 
@@ -62,7 +64,7 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
                                             final ExtensionRegistry extensionRegistry, final StringConfigurationPersister persister,
                                             final ModelTestOperationValidatorFilter validateOpsFilter, final boolean registerTransformers,
                                             final ExpressionResolver expressionResolver, final CapabilityRegistry capabilityRegistry) {
-           super(additionalInit.getProcessType(), runningModeControl, extensionRegistry.getTransformerRegistry(), persister, validateOpsFilter,
+           super(additionalInit.getProcessType(), additionalInit.getStability(), runningModeControl, extensionRegistry.getTransformerRegistry(), persister, validateOpsFilter,
                    new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE) , expressionResolver, new ControlledProcessState(true),capabilityRegistry);
            this.mainExtension = mainExtension;
            this.additionalInit = additionalInit;
@@ -139,7 +141,9 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
         file.delete();
     }
 
+    @Override
     public ServerEnvironment getServerEnvironment() {
+        ProductConfig productConfig = new ProductConfig(null, null, null);
         Properties props = new Properties();
         File home = new File("target/jbossas");
         delete(home);
@@ -161,8 +165,9 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
             throw new RuntimeException(e);
         }
         props.put(ServerEnvironment.JBOSS_SERVER_DEFAULT_CONFIG, "standalone.xml");
+        props.put(ProcessEnvironment.STABILITY, this.additionalInit.getStability().toString());
 
-        return new ServerEnvironment(null, props, new HashMap<>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), null, false);
+        return new ServerEnvironment(null, props, new HashMap<>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), productConfig, false);
     }
 
     private static class MockContentRepository implements ContentRepository {

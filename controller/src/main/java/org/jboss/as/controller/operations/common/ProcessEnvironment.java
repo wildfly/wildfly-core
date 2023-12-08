@@ -19,6 +19,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
@@ -37,7 +38,7 @@ import org.jboss.dmr.ModelType;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public abstract class ProcessEnvironment {
+public abstract class ProcessEnvironment implements FeatureRegistry {
     /** The name of the file used to store the process UUID */
     protected static final String UUID_FILE = "process-uuid";
 
@@ -50,6 +51,8 @@ public abstract class ProcessEnvironment {
     /** {@link AttributeDefinition} for the {@code name} attribute for a processes root resource */
     public static final AttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING, true)
             .setAllowExpression(true).build();
+
+    public static final String STABILITY = "jboss.stability";
 
     /**
      * Gets an {@link OperationStepHandler} that can read the {@code name} attribute for a processes root resource

@@ -6,11 +6,14 @@
 package org.jboss.as.server;
 
 import java.io.PrintStream;
+import java.util.EnumSet;
+
 import org.jboss.as.controller.persistence.ConfigurationExtensionFactory;
 
 import org.jboss.as.process.CommandLineArgumentUsage;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.version.Stability;
 
 public class CommandLineArgumentUsageImpl extends CommandLineArgumentUsage {
 
@@ -78,6 +81,8 @@ public class CommandLineArgumentUsageImpl extends CommandLineArgumentUsage {
             instructions.add(ConfigurationExtensionFactory.getCommandLineInstructions());
         }
 
+        addArguments(CommandLineConstants.STABILITY + "=<value>");
+        instructions.add(ServerLogger.ROOT_LOGGER.argStability(EnumSet.allOf(Stability.class), Stability.DEFAULT));
     }
 
     public static void printUsage(final PrintStream out) {

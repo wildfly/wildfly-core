@@ -84,6 +84,7 @@ import org.jboss.as.model.test.StringConfigurationPersister;
 import org.jboss.as.subsystem.bridge.impl.LegacyControllerKernelServicesProxy;
 import org.jboss.as.subsystem.bridge.local.ScopedKernelServicesBootstrap;
 import org.jboss.as.subsystem.test.ModelDescriptionValidator.ValidationConfiguration;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.filter.ClassFilter;
 import org.jboss.staxmapper.XMLElementReader;
@@ -126,6 +127,7 @@ final class SubsystemTestDelegate {
     private ModelTestParser testParser;
     private boolean addedExtraParsers;
     private XMLMapper xmlMapper;
+    private final Stability stability;
 
     /**
      * Creates a new delegate.
@@ -133,13 +135,15 @@ final class SubsystemTestDelegate {
      * @param testClass             the test class
      * @param mainSubsystemName     the name of the subsystem
      * @param mainExtension         the extension to test
+     * @param stability             the test stability level
      * @param removeOrderComparator a comparator to sort addresses when removing the subsystem, {@code null} if order
      *                              doesn't matter
      */
-    SubsystemTestDelegate(final Class<?> testClass, final String mainSubsystemName, final Extension mainExtension, final Comparator<PathAddress> removeOrderComparator) {
+    SubsystemTestDelegate(final Class<?> testClass, final String mainSubsystemName, final Extension mainExtension, Stability stability, final Comparator<PathAddress> removeOrderComparator) {
         this.testClass = testClass;
         this.mainSubsystemName = mainSubsystemName;
         this.mainExtension = mainExtension;
+        this.stability = stability;
         this.removeOrderComparator = removeOrderComparator;
     }
 
@@ -150,7 +154,7 @@ final class SubsystemTestDelegate {
     void initializeParser() throws Exception {
         //Initialize the parser
         xmlMapper = XMLMapper.Factory.create();
-        extensionParsingRegistry = ExtensionRegistry.builder(this.getProcessType()).build();
+        extensionParsingRegistry = ExtensionRegistry.builder(this.getProcessType()).withStability(this.stability).build();
         testParser = new TestParser(mainSubsystemName, extensionParsingRegistry);
         xmlMapper.registerRootElement(new QName(TEST_NAMESPACE, "test"), testParser);
         mainExtension.initializeParsers(extensionParsingRegistry.getExtensionParsingContext("Test", xmlMapper));
@@ -218,9 +222,8 @@ final class SubsystemTestDelegate {
 
         // Use ProcessType.HOST_CONTROLLER for this ExtensionRegistry so we don't need to provide
         // a PathManager via the ExtensionContext. All we need the Extension to do here is register the xml writers
-        ExtensionRegistry outputExtensionRegistry = ExtensionRegistry.builder(ProcessType.HOST_CONTROLLER).build();
+        ExtensionRegistry outputExtensionRegistry = ExtensionRegistry.builder(ProcessType.HOST_CONTROLLER).withStability(this.stability).build();
         outputExtensionRegistry.setWriterRegistry(persister);
-
 
         Extension extension = mainExtension.getClass().newInstance();
         extension.initialize(outputExtensionRegistry.getExtensionContext("Test", MOCK_RESOURCE_REG, ExtensionRegistryType.SLAVE));
@@ -414,7 +417,7 @@ final class SubsystemTestDelegate {
         //2) Check that the transformed model is valid according to the resource definition in the legacy subsystem controller
         ResourceDefinition rd = TransformationUtils.getResourceDefinition(kernelServices, modelVersion, mainSubsystemName);
         Assert.assertNotNull("Could not load legacy dmr for subsystem '" + mainSubsystemName + "' version: '" + modelVersion + "' please add it", rd);
-        ManagementResourceRegistration rr = ManagementResourceRegistration.Factory.forProcessType(getProcessType()).createRegistration(rd);
+        ManagementResourceRegistration rr = ManagementResourceRegistration.Factory.forProcessType(getProcessType(), this.stability).createRegistration(rd);
         ModelTestUtils.checkModelAgainstDefinition(transformed, rr);
         return legacyModel;
     }
@@ -427,7 +430,7 @@ final class SubsystemTestDelegate {
     }
 
     private ExtensionRegistry cloneExtensionRegistry(AdditionalInitialization additionalInit) {
-        final ExtensionRegistry clone = ExtensionRegistry.builder(additionalInit.getProcessType()).withRunningMode(additionalInit.getExtensionRegistryRunningMode()).build();
+        final ExtensionRegistry clone = ExtensionRegistry.builder(additionalInit.getProcessType()).withRunningMode(additionalInit.getExtensionRegistryRunningMode()).withStability(additionalInit.getStability()).build();
         for (String extension : extensionParsingRegistry.getExtensionModuleNames()) {
             ExtensionParsingContext epc = clone.getExtensionParsingContext(extension, null);
             for (Map.Entry<String, SubsystemInformation> entry : extensionParsingRegistry.getAvailableSubsystems(extension).entrySet()) {
@@ -835,6 +838,11 @@ final class SubsystemTestDelegate {
         @Override
         public ProcessType getProcessType() {
             return ProcessType.STANDALONE_SERVER;
+        }
+
+        @Override
+        public Stability getStability() {
+            return SubsystemTestDelegate.this.stability;
         }
 
         @Override

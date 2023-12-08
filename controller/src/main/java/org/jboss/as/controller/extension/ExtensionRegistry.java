@@ -27,6 +27,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -74,6 +75,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.transform.TransformerRegistry;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
@@ -91,7 +93,7 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  * </ul>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public final class ExtensionRegistry {
+public final class ExtensionRegistry implements FeatureRegistry {
 
     /**
      * Returns a builder for creating an {@link ExtensionRegistry}.
@@ -112,6 +114,7 @@ public final class ExtensionRegistry {
         private JmxAuthorizer authorizer = NO_OP_AUTHORIZER;
         private Supplier<SecurityIdentity> securityIdentitySupplier = Functions.constantSupplier(null);
         private RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = RuntimeHostControllerInfoAccessor.SERVER;
+        private Stability stability = Stability.DEFAULT;
 
         private Builder(ProcessType processType) {
             this.processType = processType;
@@ -177,6 +180,16 @@ public final class ExtensionRegistry {
         }
 
         /**
+         * Overrides the default stability level of the extension registry.
+         * @param stability a stability level
+         * @return a reference to this builder
+         */
+        public Builder withStability(Stability stability) {
+            this.stability = stability;
+            return this;
+        }
+
+        /**
          * Constructs an extension registry.
          * @return a new extension registry
          */
@@ -193,6 +206,7 @@ public final class ExtensionRegistry {
     }
 
     private final ProcessType processType;
+    private final Stability stability;
 
     private SubsystemXmlWriterRegistry writerRegistry;
     private volatile PathManager pathManager;
@@ -216,6 +230,7 @@ public final class ExtensionRegistry {
         this.authorizer = builder.authorizer;
         this.securityIdentitySupplier = builder.securityIdentitySupplier;
         this.hostControllerInfoAccessor = builder.hostControllerInfoAccessor;
+        this.stability = builder.stability;
     }
 
     /**
@@ -228,7 +243,7 @@ public final class ExtensionRegistry {
      * @param hostControllerInfoAccessor the host controller
      * @deprecated Use {@link #builder(ProcessType)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated
     public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl, ManagedAuditLogger auditLogger, JmxAuthorizer authorizer,
             Supplier<SecurityIdentity> securityIdentitySupplier, RuntimeHostControllerInfoAccessor hostControllerInfoAccessor) {
         this(builder(processType).withRunningModeControl(runningModeControl)
@@ -503,6 +518,11 @@ public final class ExtensionRegistry {
         return transformerRegistry;
     }
 
+    @Override
+    public Stability getStability() {
+        return this.stability;
+    }
+
     private class ExtensionParsingContextImpl implements ExtensionParsingContext {
 
         private final ExtensionInfo extension;
@@ -527,6 +547,11 @@ public final class ExtensionRegistry {
         @Override
         public RunningMode getRunningMode() {
             return runningModeControl.getRunningMode();
+        }
+
+        @Override
+        public Stability getStability() {
+            return ExtensionRegistry.this.getStability();
         }
 
         @Override
@@ -646,7 +671,7 @@ public final class ExtensionRegistry {
                 ControllerLogger.DEPRECATED_LOGGER.extensionDeprecated(name);
             }
             SubsystemRegistrationImpl result =  new SubsystemRegistrationImpl(name, version,
-                                profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName, processType);
+                                profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName, processType, stability);
             if (registerTransformers){
                 transformerRegistry.loadAndRegisterTransformers(name, version, extension.extensionModuleName);
             }
@@ -678,6 +703,11 @@ public final class ExtensionRegistry {
         @Override
         public ProcessType getProcessType() {
             return processType;
+        }
+
+        @Override
+        public Stability getStability() {
+            return this.profileRegistration.getStability();
         }
 
         @Override
@@ -790,6 +820,7 @@ public final class ExtensionRegistry {
     private class SubsystemRegistrationImpl implements SubsystemRegistration {
         private final String name;
         private final ModelVersion version;
+        private final Stability stability;
         private final ManagementResourceRegistration profileRegistration;
         private final ManagementResourceRegistration deploymentsRegistration;
         private final ExtensionRegistryType extensionRegistryType;
@@ -801,18 +832,24 @@ public final class ExtensionRegistry {
                                           ManagementResourceRegistration deploymentsRegistration,
                                           ExtensionRegistryType extensionRegistryType,
                                           String extensionModuleName,
-                                          ProcessType processType) {
+                                          ProcessType processType, Stability stability) {
             assert profileRegistration != null;
             this.name = name;
             this.profileRegistration = profileRegistration;
             if (deploymentsRegistration == null){
-                this.deploymentsRegistration = ManagementResourceRegistration.Factory.forProcessType(processType).createRegistration(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
+                this.deploymentsRegistration = ManagementResourceRegistration.Factory.forProcessType(processType, stability).createRegistration(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
             }else {
                 this.deploymentsRegistration = deploymentsRegistration;
             }
             this.version = version;
+            this.stability = stability;
             this.extensionRegistryType = extensionRegistryType;
             this.extensionModuleName = extensionModuleName;
+        }
+
+        @Override
+        public Stability getStability() {
+            return this.stability;
         }
 
         @Override
@@ -910,6 +947,11 @@ public final class ExtensionRegistry {
         @Override
         public ProcessType getProcessType() {
             return deployments.getProcessType();
+        }
+
+        @Override
+        public Stability getStability() {
+            return this.deployments.getStability();
         }
 
         @Override

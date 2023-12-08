@@ -517,7 +517,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                 @Override
                 public boolean applyDomainModel(final List<ModelNode> bootOperations) {
                     // Apply the model..
-                    final HostInfo info = HostInfo.fromModelNode(createLocalHostInfo());
+                    final HostInfo info = HostInfo.fromModelNode(createLocalHostInfo(), null, productConfig);
                     return applyRemoteDomainModel(bootOperations, info);
                 }
 

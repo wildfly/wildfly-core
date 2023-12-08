@@ -9,9 +9,11 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
@@ -22,6 +24,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.model.test.ModelTestModelDescriptionValidator.AttributeOrParameterArbitraryDescriptorValidator;
 import org.jboss.as.subsystem.test.ModelDescriptionValidator.ValidationConfiguration;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceTarget;
@@ -32,7 +35,7 @@ import org.jboss.msc.service.ServiceTarget;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class AdditionalInitialization extends AdditionalParsers {
+public class AdditionalInitialization extends AdditionalParsers implements FeatureRegistry {
     public static final AdditionalInitialization MANAGEMENT = new ManagementAdditionalInitialization();
 
     public static final AdditionalInitialization ADMIN_ONLY_HC = new ManagementAdditionalInitialization() {
@@ -68,6 +71,25 @@ public class AdditionalInitialization extends AdditionalParsers {
     public static class ManagementAdditionalInitialization extends AdditionalInitialization implements Serializable {
         private static final long serialVersionUID = -509444465514822866L;
 
+        private final Stability stability;
+
+        public ManagementAdditionalInitialization() {
+            this(Stability.DEFAULT);
+        }
+
+        public <S extends SubsystemSchema<S>> ManagementAdditionalInitialization(S schema) {
+            this(schema.getStability());
+        }
+
+        public ManagementAdditionalInitialization(Stability stability) {
+            this.stability = stability;
+        }
+
+        @Override
+        public Stability getStability() {
+            return this.stability;
+        }
+
         @Override
         protected RunningMode getRunningMode() {
             return RunningMode.ADMIN_ONLY;
@@ -85,6 +107,26 @@ public class AdditionalInitialization extends AdditionalParsers {
      */
     public static AdditionalInitialization withCapabilities(final String... capabilities) {
         return new ManagementAdditionalInitialization() {
+
+            @Override
+            protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
+                super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
+                registerCapabilities(capabilityRegistry, capabilities);
+            }
+        };
+    }
+
+    /**
+     * Creates a {@link org.jboss.as.subsystem.test.AdditionalInitialization.ManagementAdditionalInitialization} with
+     * the given {@link org.jboss.as.controller.capability.RuntimeCapability capabilities} registered, making it
+     * possible for subsystems under test to require them. No runtime API will be available, but that should not
+     * be needed for a {@link org.jboss.as.controller.RunningMode#ADMIN_ONLY} test.
+     *
+     * @param capabilities the capabilities
+     * @return the additional initialization
+     */
+    public static <S extends SubsystemSchema<S>> AdditionalInitialization withCapabilities(S schema, String... capabilities) {
+        return new ManagementAdditionalInitialization(schema) {
 
             @Override
             protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
@@ -247,6 +289,16 @@ public class AdditionalInitialization extends AdditionalParsers {
     }
 
     /**
+     * The stability level to be used for the installed controller
+     *
+     * @return the stability level of the installed controller
+     */
+    @Override
+    public Stability getStability() {
+        return Stability.DEFAULT;
+    }
+
+    /**
      * The running mode to be used for the installed controller when deciding whether to
      * execute the runtime parts of the operation handlers. e.g. if {@link RunningMode#ADMIN_ONLY} the
      * runtime parts of the operation handlers should not get called since that will make {@link org.jboss.as.controller.OperationContext#isNormalServer()}
@@ -267,7 +319,6 @@ public class AdditionalInitialization extends AdditionalParsers {
     protected RunningMode getExtensionRegistryRunningMode() {
         return RunningMode.NORMAL;
     }
-
 
     /**
      * Return {@code true} to validate operations against their description provider when executing in the controller. The default is
@@ -329,5 +380,4 @@ public class AdditionalInitialization extends AdditionalParsers {
     protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration,
                                                     RuntimeCapabilityRegistry capabilityRegistry) {
     }
-
 }

@@ -40,6 +40,8 @@ import org.jboss.as.management.client.content.ManagedDMRContentTypeResource;
 import org.jboss.as.model.test.ModelTestModelControllerService;
 import org.jboss.as.model.test.StringConfigurationPersister;
 import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.version.ProductConfig;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceContainer;
 
@@ -249,7 +251,15 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl {
                 return false;
             }
 
+            @Override
+            public Stability getStability() {
+                return Stability.DEFAULT;
+            }
 
+            @Override
+            public ProductConfig getProductConfig() {
+                return null;
+            }
         });
 
         for (IgnoreDomainResourceTypeResource resource : ignoredResources) {

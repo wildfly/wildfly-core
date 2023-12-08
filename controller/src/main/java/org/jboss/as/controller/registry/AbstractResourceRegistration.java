@@ -28,6 +28,7 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.Assert;
 
@@ -36,22 +37,23 @@ import org.wildfly.common.Assert;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-@SuppressWarnings("deprecation")
 abstract class AbstractResourceRegistration implements ManagementResourceRegistration {
 
     private final String valueString;
     private final NodeSubregistry parent;
     private final PathAddress pathAddress;
     private final ProcessType processType;
+    private final Stability stability;
     private RootInvocation rootInvocation;
 
     /** Constructor for a root MRR */
-    AbstractResourceRegistration(final ProcessType processType) {
+    AbstractResourceRegistration(final ProcessType processType, Stability stability) {
         checkPermission();
         this.valueString = null;
         this.parent = null;
         this.pathAddress = PathAddress.EMPTY_ADDRESS;
         this.processType = Assert.checkNotNullParam("processType", processType);
+        this.stability = Assert.checkNotNullParam("stability", stability);
     }
 
     /** Constructor for a non-root MRR */
@@ -61,6 +63,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         this.parent = Assert.checkNotNullParam("parent", parent);
         this.pathAddress = parent.getPathAddress(valueString);
         this.processType = parent.getProcessType();
+        this.stability = parent.getStability();
     }
 
     static void checkPermission() {
@@ -81,6 +84,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public ProcessType getProcessType() {
         return processType;
+    }
+
+    @Override
+    public Stability getStability() {
+        return this.stability;
     }
 
     /** {@inheritDoc} */
@@ -135,7 +143,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     }
 
     @Override
-    public abstract void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler,boolean inherited);
+    public abstract void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler, boolean inherited);
 
     /** {@inheritDoc} */
     @Override

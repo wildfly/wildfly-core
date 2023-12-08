@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
@@ -38,6 +39,7 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess.AccessType;
 import org.jboss.as.controller.registry.AttributeAccess.Storage;
+import org.jboss.as.version.Stability;
 import org.wildfly.common.Assert;
 
 final class ConcreteResourceRegistration extends AbstractResourceRegistration {
@@ -76,8 +78,9 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     ConcreteResourceRegistration(final ResourceDefinition definition,
                                  final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
                                  final CapabilityRegistry capabilityRegistry,
-                                 final ProcessType processType) {
-        super(processType);
+                                 final ProcessType processType,
+                                 final Stability stability) {
+        super(processType, stability);
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         this.capabilityRegistry = capabilityRegistry;
         this.resourceDefinition = definition;
@@ -203,6 +206,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (address == null) {
             throw ControllerLogger.ROOT_LOGGER.cannotRegisterSubmodelWithNullPath();
         }
+        if (!this.enables(resourceDefinition)) return null;
         final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
         if (existing != null && existing.getPathAddress().getLastElement().getValue().equals(address.getValue())) {
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getPathAddress().toCLIStyleString());
@@ -214,26 +218,29 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     @Override
     public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
         checkPermission();
-        String opName = definition.getName();
-        OperationEntry entry = new OperationEntry(definition, handler, inherited);
-        writeLock.lock();
-        try {
-            if (operations == null) {
-                operations = new HashMap<>();
-            } else if (operations.containsKey(opName)) {
-                throw alreadyRegistered("operation handler", opName);
-            }
-            operations.put(opName, entry);
-            if (constraintUtilizationRegistry != null) {
-                for (AccessConstraintDefinition acd : definition.getAccessConstraints()) {
-                    constraintUtilizationRegistry.registerAccessConstraintOperationUtilization(acd.getKey(), getPathAddress(), opName);
+        if (this.enables(definition)) {
+            String opName = definition.getName();
+            OperationEntry entry = new OperationEntry(definition, handler, inherited);
+            writeLock.lock();
+            try {
+                if (operations == null) {
+                    operations = new HashMap<>();
+                } else if (operations.containsKey(opName)) {
+                    throw alreadyRegistered("operation handler", opName);
                 }
+                operations.put(opName, entry);
+                if (constraintUtilizationRegistry != null) {
+                    for (AccessConstraintDefinition acd : definition.getAccessConstraints()) {
+                        constraintUtilizationRegistry.registerAccessConstraintOperationUtilization(acd.getKey(), getPathAddress(), opName);
+                    }
+                }
+            } finally {
+                writeLock.unlock();
             }
-        } finally {
-            writeLock.unlock();
         }
     }
 
+    @Override
     public void unregisterSubModel(final PathElement address) throws IllegalArgumentException {
         writeLock.lock();
         try {
@@ -386,24 +393,22 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     public void registerReadWriteAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler, final OperationStepHandler writeHandler) {
         assert definition.getUndefinedMetricValue() == null : "Attributes cannot have undefined metric value set";
         checkPermission();
-        if (!isAttributeRegistrationAllowed(definition)) {
-            return;
+        if (isAttributeRegistrationAllowed(definition) && this.enables(definition)) {
+            AttributeAccess.Storage storage = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
+            AttributeAccess aa = new AttributeAccess(AccessType.READ_WRITE, storage, readHandler, writeHandler, definition);
+            storeAttribute(definition, aa);
         }
-        AttributeAccess.Storage storage = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
-        AttributeAccess aa = new AttributeAccess(AccessType.READ_WRITE, storage, readHandler, writeHandler, definition);
-        storeAttribute(definition, aa);
     }
 
     @Override
     public void registerReadOnlyAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler) {
         assert definition.getUndefinedMetricValue() == null : "Attributes cannot have undefined metric value set";
         checkPermission();
-        if (!isAttributeRegistrationAllowed(definition)) {
-            return;
+        if (isAttributeRegistrationAllowed(definition) && this.enables(definition)) {
+            AttributeAccess.Storage storage = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
+            AttributeAccess aa = new AttributeAccess(AccessType.READ_ONLY, storage, readHandler, null, definition);
+            storeAttribute(definition, aa);
         }
-        AttributeAccess.Storage storage = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
-        AttributeAccess aa = new AttributeAccess(AccessType.READ_ONLY, storage, readHandler, null, definition);
-        storeAttribute(definition, aa);
     }
 
     @Override
@@ -420,23 +425,25 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     @Override
     public void registerNotification(NotificationDefinition notification, boolean inherited) {
         checkPermission();
-        String type = notification.getType();
-        NotificationEntry entry = new NotificationEntry(notification.getDescriptionProvider(), inherited);
-        writeLock.lock();
-        try {
-            if (notifications == null) {
-                notifications = Collections.singletonMap(type, entry);
-            } else {
-                if (notifications.containsKey(type)) {
-                    throw alreadyRegistered(NOTIFICATION, type);
+        if (this.enables(notification)) {
+            String type = notification.getType();
+            NotificationEntry entry = new NotificationEntry(notification.getDescriptionProvider(), inherited);
+            writeLock.lock();
+            try {
+                if (notifications == null) {
+                    notifications = Collections.singletonMap(type, entry);
+                } else {
+                    if (notifications.containsKey(type)) {
+                        throw alreadyRegistered(NOTIFICATION, type);
+                    }
+                    if (notifications.size() == 1) {
+                        notifications = new HashMap<>(notifications);
+                    }
+                    notifications.put(type, entry);
                 }
-                if (notifications.size() == 1) {
-                    notifications = new HashMap<>(notifications);
-                }
-                notifications.put(type, entry);
+            } finally {
+                writeLock.unlock();
             }
-        } finally {
-            writeLock.unlock();
         }
     }
 
@@ -463,7 +470,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     public void registerMetric(AttributeDefinition definition, OperationStepHandler metricHandler) {
         assert assertMetricValues(definition); //The real message will be in an assertion thrown by assertMetricValues
         checkPermission();
-        if (isAttributeRegistrationAllowed(definition) && !isProfileResource()) {
+        if (isAttributeRegistrationAllowed(definition) && !isProfileResource() && this.enables(definition)) {
             AttributeAccess aa = new AttributeAccess(AccessType.METRIC, AttributeAccess.Storage.RUNTIME, metricHandler, null, definition);
             storeAttribute(definition, aa);
         }
@@ -665,17 +672,19 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public void registerCapability(RuntimeCapability capability) {
-        writeLock.lock();
-        try {
-            if (capabilities == null) {
-                capabilities = new HashSet<>();
+        if (this.enables(capability)) {
+            writeLock.lock();
+            try {
+                if (capabilities == null) {
+                    capabilities = new HashSet<>();
+                }
+                capabilities.add(capability);
+                if (capabilityRegistry != null) {
+                    capabilityRegistry.registerPossibleCapability(capability, getPathAddress());
+                }
+            } finally {
+                writeLock.unlock();
             }
-            capabilities.add(capability);
-            if (capabilityRegistry != null) {
-                capabilityRegistry.registerPossibleCapability(capability, getPathAddress());
-            }
-        } finally {
-            writeLock.unlock();
         }
     }
 
@@ -688,7 +697,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             } else if (capabilities.isEmpty()) {
                 incorporatingCapabilities = Collections.emptySet();
             } else {
-                incorporatingCapabilities = Collections.unmodifiableSet(new HashSet<>(capabilities));
+                incorporatingCapabilities = capabilities.stream().filter(this::enables).collect(Collectors.toUnmodifiableSet());
             }
         } finally {
             writeLock.unlock();
@@ -702,7 +711,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             if (requirements == null || requirements.isEmpty()) {
                 this.requirements = Collections.emptySet();
             } else {
-                this.requirements = Collections.unmodifiableSet(new HashSet<>(requirements));
+                this.requirements = requirements.stream().filter(this::enables).collect(Collectors.toUnmodifiableSet());
             }
         } finally {
             writeLock.unlock();

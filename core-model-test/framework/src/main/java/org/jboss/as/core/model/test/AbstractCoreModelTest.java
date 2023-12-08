@@ -9,6 +9,7 @@ import java.io.IOException;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.model.test.ModelFixer;
 import org.jboss.as.model.test.ModelTestUtils;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Before;
@@ -41,7 +42,11 @@ public abstract class AbstractCoreModelTest {
     }
 
     protected KernelServicesBuilder createKernelServicesBuilder(TestModelType type) {
-        return delegate.createKernelServicesBuilder(type);
+        return this.createKernelServicesBuilder(type, Stability.DEFAULT);
+    }
+
+    protected KernelServicesBuilder createKernelServicesBuilder(TestModelType type, Stability stability) {
+        return delegate.createKernelServicesBuilder(type, stability);
     }
 
     /**

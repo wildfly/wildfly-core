@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -29,6 +30,7 @@ import org.jboss.as.host.controller.jvm.JvmType;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.version.Stability;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.Assert;
@@ -231,6 +233,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     private final boolean useCachedDc;
 
     private final RunningMode initialRunningMode;
+    private final Stability stability;
     private final ProductConfig productConfig;
     private final String qualifiedHostName;
     private final String hostName;
@@ -480,11 +483,32 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         // Note the java.security.manager property shouldn't be set, but we'll check to ensure the security manager should be enabled
         this.securityManagerEnabled = securityManagerEnabled || isJavaSecurityManagerConfigured(hostSystemProperties);
         this.processType = processType;
+
+        this.stability = getEnumProperty(hostSystemProperties, STABILITY, this.productConfig.getDefaultStability());
+        if (!this.productConfig.getMinimumStability().enables(this.stability)) {
+            throw HostControllerLogger.ROOT_LOGGER.unsupportedStability(this.stability, this.productConfig.getProductName());
+        }
+        if (!hostSystemProperties.containsKey(STABILITY)) {
+            WildFlySecurityManager.setPropertyPrivileged(STABILITY, this.stability.toString());
+        }
     }
 
     private static boolean isJavaSecurityManagerConfigured(final Map<String, String> props) {
         final String value = props.get("java.security.manager");
         return value != null && !"allow".equals(value) && !"disallow".equals(value);
+    }
+
+    private static <E extends Enum<E>> E getEnumProperty(Map<String, String> properties, String key, E defaultValue) {
+        String value = properties.get(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        Class<E> enumClass = defaultValue.getDeclaringClass();
+        try {
+            return Enum.valueOf(enumClass, value.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw ServerLogger.ROOT_LOGGER.failedToParseEnumProperty(key, value, EnumSet.allOf(enumClass));
+        }
     }
 
     /**
@@ -777,6 +801,11 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      */
     public ProcessType getProcessType() {
         return processType;
+    }
+
+    @Override
+    public Stability getStability() {
+        return this.stability;
     }
 
     @Override

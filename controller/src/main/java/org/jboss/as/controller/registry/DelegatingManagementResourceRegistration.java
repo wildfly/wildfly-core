@@ -23,6 +23,7 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
+import org.jboss.as.version.Stability;
 
 /**
  * {@link ManagementResourceRegistration} implementation that simply delegates to another
@@ -82,6 +83,11 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     @Override
     public ProcessType getProcessType() {
         return getDelegate().getProcessType();
+    }
+
+    @Override
+    public Stability getStability() {
+        return this.getDelegate().getStability();
     }
 
     @Override

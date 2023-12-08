@@ -25,6 +25,7 @@ import java.util.Map;
 import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -67,6 +68,7 @@ public class ManagedServerBootCmdFactoryTestCase {
     }
 
     private static HostControllerEnvironment getTestHostEnvironment() throws UnknownHostException {
+        ProductConfig productConfig = new ProductConfig(null, null, null);
         Map<String, String> hostSystemProperties = new HashMap<>();
         hostSystemProperties.put("jboss.server.log.dir", "/tmp/");
         hostSystemProperties.put("jboss.domain.log.dir", "/tmp/");
@@ -75,7 +77,7 @@ public class ManagedServerBootCmdFactoryTestCase {
         return new HostControllerEnvironment(
                 hostSystemProperties, false, "/opt/wildfly/modules",
                 InetAddress.getLocalHost(), 8080, InetAddress.getLocalHost(), 9990, null, null, null, null, null,
-                RunningMode.NORMAL, true, true, null);
+                RunningMode.NORMAL, true, true, productConfig);
     }
 
     private static ModelNode getHostModel() {

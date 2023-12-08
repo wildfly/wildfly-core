@@ -19,6 +19,9 @@
             <prop name="- -server-config" value="standalone-custom.xml"/>
         </props>
         -->
+        <props>
+            <prop name="--stability" value="community"/>
+        </props>
     </config>
 
     <config name="domain.xml" model="domain">
@@ -27,6 +30,9 @@
             <prop name="- -domain-config" value="domain-custom.xml"/>
         </props>
         -->
+        <props>
+            <prop name="--stability" value="community"/>
+        </props>
     </config>
 
     <config name="host.xml" model="host">
@@ -35,6 +41,9 @@
             <prop name="- -host-config" value="host-custom.xml"/>
         </props>
         -->
+        <props>
+            <prop name="--stability" value="community"/>
+        </props>
     </config>
 
     <config name="host-primary.xml" model="host"/>

@@ -24,6 +24,7 @@ import java.util.Properties;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.interfaces.InetAddressUtil;
+import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.process.CommandLineArgumentUsageImpl;
@@ -445,6 +446,12 @@ public final class Main {
                 } else if (arg.equals(CommandLineConstants.SECMGR)) {
                     // Enable the security manager
                     securityManagerEnabled = true;
+                } else if (arg.startsWith(CommandLineConstants.STABILITY)) {
+                    String stabilityName = (arg.length() == CommandLineConstants.STABILITY.length()) ? args[++i] : parseValue(arg, CommandLineConstants.STABILITY);
+                    if (stabilityName == null) {
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
+                    }
+                    hostSystemProperties.put(ProcessEnvironment.STABILITY, stabilityName);
                 } else {
                     STDERR.println(HostControllerLogger.ROOT_LOGGER.invalidOption(arg, usageNote()));
                     return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);

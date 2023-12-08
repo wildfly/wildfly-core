@@ -47,6 +47,8 @@ import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.as.process.ProcessInfo;
 import org.jboss.as.process.ProcessMessageHandler;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
+import org.jboss.as.version.ProductConfig;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceRegistry;
 import org.junit.Assert;
@@ -413,6 +415,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
 
     private static class MockHostControllerInfo implements LocalHostControllerInfo {
         private final boolean primary;
+
         public MockHostControllerInfo(boolean primary) {
             this.primary = primary;
         }
@@ -487,6 +490,15 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
             return false;
         }
 
+        @Override
+        public Stability getStability() {
+            return Stability.DEFAULT;
+        }
+
+        @Override
+        public ProductConfig getProductConfig() {
+            return null;
+        }
     }
 
     private static class ServerInventoryMock implements ServerInventory {

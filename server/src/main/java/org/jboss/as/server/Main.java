@@ -19,6 +19,7 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationExtensionFactory;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.process.CommandLineConstants;
@@ -366,6 +367,12 @@ public final class Main {
                     } else {
                         gitBranch = arg.substring(idx + 1);
                     }
+                } else if (arg.startsWith(CommandLineConstants.STABILITY)) {
+                    String stability = (arg.length() == CommandLineConstants.STABILITY.length()) ? args[++i] : parseValue(arg, CommandLineConstants.STABILITY);
+                    if (stability == null) {
+                        return new ServerEnvironmentWrapper(ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                    }
+                    systemProperties.setProperty(ProcessEnvironment.STABILITY, stability);
                 } else if(ConfigurationExtensionFactory.isConfigurationExtensionSupported()
                         && ConfigurationExtensionFactory.commandLineContainsArgument(arg)) {
                     int idx = arg.indexOf("=");

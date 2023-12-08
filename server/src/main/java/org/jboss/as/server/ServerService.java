@@ -112,6 +112,7 @@ import org.jboss.as.server.moduleservice.ExtensionIndexService;
 import org.jboss.as.server.moduleservice.ExternalModule;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
@@ -156,7 +157,6 @@ public final class ServerService extends AbstractControllerService {
     private volatile ExtensibleConfigurationPersister extensibleConfigurationPersister;
     private final ServerDelegatingResourceDefinition rootResourceDefinition;
     private final SuspendController suspendController;
-    private final RuntimeExpressionResolver expressionResolver;
     public static final String SERVER_NAME = "server";
 
     static final String SUSPEND_CONTROLLER_CAPABILITY_NAME = "org.wildfly.server.suspend-controller";
@@ -184,7 +184,7 @@ public final class ServerService extends AbstractControllerService {
                           final RunningModeControl runningModeControl, final ManagedAuditLogger auditLogger,
                           final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                           final CapabilityRegistry capabilityRegistry, final SuspendController suspendController, final RuntimeExpressionResolver expressionResolver) {
-        super(executorService, instabilityListener, getProcessType(configuration.getServerEnvironment()), runningModeControl, null, processState,
+        super(executorService, instabilityListener, getProcessType(configuration.getServerEnvironment()), getStability(configuration.getServerEnvironment()), runningModeControl, null, processState,
                 rootResourceDefinition, prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry,
                 configuration.getServerEnvironment().getConfigurationExtension());
         this.configuration = configuration;
@@ -193,13 +193,16 @@ public final class ServerService extends AbstractControllerService {
         this.runningModeControl = runningModeControl;
         this.rootResourceDefinition = rootResourceDefinition;
         this.suspendController = suspendController;
-        this.expressionResolver = expressionResolver;
     }
 
     static ProcessType getProcessType(ServerEnvironment serverEnvironment) {
         return serverEnvironment != null
             ? serverEnvironment.getLaunchType().getProcessType()
             : ProcessType.EMBEDDED_SERVER;
+    }
+
+    static Stability getStability(ServerEnvironment serverEnvironment) {
+        return serverEnvironment != null ? serverEnvironment.getStability() : Stability.DEFAULT;
     }
 
     /**

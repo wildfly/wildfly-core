@@ -678,6 +678,18 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
     }
 
     /**
+     * Sets the stability level of the standalone server process.
+     * @param stability a stability level
+     * @return a reference to this builder
+     */
+    public DomainCommandBuilder setStability(String stability) {
+        if (stability != null) {
+            this.setSingleServerArg("--stability", stability);
+        }
+        return this;
+    }
+
+    /**
      * Returns the Java home path the servers will use.
      *
      * @return the path to the Java home for the servers

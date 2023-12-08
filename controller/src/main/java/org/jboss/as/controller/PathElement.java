@@ -101,38 +101,38 @@ public class PathElement {
             return false;
         }
         if (!isValidKeyStartCharacter(s.charAt(0))) {
-          return false;
+            return false;
         }
         for (int i = 1; i < lastIndex; i++) {
-          if (!isValidKeyCharacter(s.charAt(i))) {
-            return false;
-          }
+            if (!isValidKeyCharacter(s.charAt(i))) {
+                return false;
+            }
         }
         if (lastIndex > 0 && !isValidKeyEndCharacter(s.charAt(lastIndex))) {
-          return false;
+            return false;
         }
         return true;
-      }
+    }
 
-      private static boolean isValidKeyStartCharacter(final char c) {
+    private static boolean isValidKeyStartCharacter(final char c) {
         return c == '_'
             || c >= 'a' && c <= 'z'
             || c >= 'A' && c <= 'Z';
-      }
+    }
 
-      private static boolean isValidKeyEndCharacter(final char c) {
+    private static boolean isValidKeyEndCharacter(final char c) {
         return c == '_'
             || c >= '0' && c <= '9'
             || c >= 'a' && c <= 'z'
             || c >= 'A' && c <= 'Z';
-      }
+    }
 
-      private static boolean isValidKeyCharacter(char c) {
+    private static boolean isValidKeyCharacter(char c) {
         return c == '_' || c == '-'
             || c >= '0' && c <= '9'
             || c >= 'a' && c <= 'z'
             || c >= 'A' && c <= 'Z';
-      }
+    }
 
     /**
      * Get the path key.

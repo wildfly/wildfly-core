@@ -17,6 +17,7 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -58,6 +59,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     private CapabilityReferenceRecorder referenceRecorder;
     private Map<String, ModelNode> arbitraryDescriptors = null;
     private ModelNode undefinedMetricValue;
+    private Stability stability = Stability.DEFAULT;
 
     private static final AccessConstraintDefinition[] ZERO_CONSTRAINTS = new AccessConstraintDefinition[0];
 
@@ -131,6 +133,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
             this.arbitraryDescriptors = new HashMap<>(basis.getArbitraryDescriptors());
         }
         this.referenceRecorder = basis.getReferenceRecorder();
+        this.stability = basis.getStability();
     }
 
     /**
@@ -805,6 +808,15 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return (BUILDER) this;
     }
 
+    /**
+     * Defines the stability level of the feature enabled by this attribute.
+     * @param stability a stability level
+     * @return a reference to this builder
+     */
+    public BUILDER setStability(Stability stability) {
+        this.stability = stability;
+        return (BUILDER) this;
+    }
 
     public String getName() {
         return name;
@@ -907,6 +919,10 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     @SuppressWarnings({"WeakerAccess", "unused"})
     protected final CapabilityReferenceRecorder getCapabilityReferenceRecorder() {
         return referenceRecorder;
+    }
+
+    public Stability getStability() {
+        return this.stability;
     }
 
     private String[] copyStrings(String[] toCopy) {

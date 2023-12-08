@@ -38,6 +38,7 @@ import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.deployment.module.ExtensionListEntry;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.suspend.ServerActivity;
+import org.jboss.as.version.Stability;
 import org.jboss.invocation.proxy.MethodIdentifier;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
@@ -587,6 +588,14 @@ public interface ServerLogger extends BasicLogger {
      */
     @Message(id = Message.NONE, value = "The elytron configuration file for managing git credentials. Default is 'null'")
     String argGitAuth();
+
+    /**
+     * Instructions for the {@link CommandLineConstants#STABILITY} command line argument.
+     *
+     * @return the message
+     */
+    @Message(id = Message.NONE, value = "Runs the server using a specific stability level.  Possible values: %s, Default = %s")
+    String argStability(Set<Stability> stabilities, Stability defaultStability);
 
     /**
      * Creates an error message indicating a value was expected for the given command line option.
@@ -1390,6 +1399,7 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 291, value = "The error cause is unknown at this thread. Check other log messages and caller to know the possible cause.")
     IllegalStateException throwableIsNull();
 
+
     @Message(id = 292, value = "The required service '%s' is not UP, it is currently '%s'.")
     DeploymentUnitProcessingException requiredServiceNotUp(ServiceName serviceName, State state);
 
@@ -1439,6 +1449,12 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 307, value = "No authentication mechanism login name was given")
     AuthenticationMechanismException mechNoLoginNameGiven();
+
+    @Message(id = 308, value = "Failed to parse property (%s), value (%s) should match one of: %s")
+    IllegalArgumentException failedToParseEnumProperty(String name, String value, Set<?> values);
+
+    @Message(id = 309, value = "%s stability level is not supported in %s")
+    IllegalArgumentException unsupportedStability(Stability stability, String name);
 
     ////////////////////////////////////////////////
     //Messages without IDs

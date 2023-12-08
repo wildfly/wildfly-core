@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -38,6 +39,7 @@ import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.server.controller.git.GitRepository;
 import org.jboss.as.server.controller.git.GitRepositoryConfiguration;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.version.Stability;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoader;
@@ -249,12 +251,12 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private static final Set<String> ILLEGAL_PROPERTIES = new HashSet<>(Arrays.asList(DOMAIN_BASE_DIR,
             DOMAIN_CONFIG_DIR, JAVA_EXT_DIRS, HOME_DIR, "modules.path", SERVER_BASE_DIR, SERVER_CONFIG_DIR,
             SERVER_DATA_DIR, SERVER_LOG_DIR, BOOTSTRAP_MAX_THREADS, CONTROLLER_TEMP_DIR,
-            JBOSS_SERVER_DEFAULT_CONFIG, JBOSS_PERSIST_SERVER_CONFIG, JBOSS_SERVER_MANAGEMENT_UUID));
+            JBOSS_SERVER_DEFAULT_CONFIG, JBOSS_PERSIST_SERVER_CONFIG, JBOSS_SERVER_MANAGEMENT_UUID, STABILITY));
     /**
      * Properties that can only be set via {@link #systemPropertyUpdated(String, String)} during server boot.
      */
     private static final Set<String> BOOT_PROPERTIES = new HashSet<>(Arrays.asList(SERVER_TEMP_DIR,
-            NODE_NAME, SERVER_NAME, HOST_NAME, QUALIFIED_HOST_NAME));
+            NODE_NAME, SERVER_NAME, HOST_NAME, QUALIFIED_HOST_NAME, STABILITY));
 
     /**
      * Properties that we care about that were provided to the constructor (i.e. by the user via cmd line)
@@ -301,6 +303,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final boolean startSuspended;
     private final boolean startGracefully;
     private final GitRepository repository;
+    private final Stability stability;
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
@@ -363,6 +366,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             domainBaseDir = null;
             domainConfigurationDir = null;
             repository = null;
+            this.stability = productConfig.getDefaultStability();
             WildFlySecurityManager.setPropertyPrivileged(ServerEnvironment.JBOSS_PERSIST_SERVER_CONFIG, "false");
         } else {
 
@@ -516,6 +520,11 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                 this.domainConfigurationDir = tmp;
             } else {
                 this.domainConfigurationDir = null;
+            }
+
+            this.stability = getEnumProperty(props, ProcessEnvironment.STABILITY, productConfig.getDefaultStability());
+            if (!productConfig.getMinimumStability().enables(this.stability)) {
+                throw ServerLogger.ROOT_LOGGER.unsupportedStability(this.stability, productConfig.getProductName());
             }
         }
         boolean allowExecutor = true;
@@ -1003,6 +1012,11 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         return launchType;
     }
 
+    @Override
+    public Stability getStability() {
+        return this.stability;
+    }
+
     /**
      * Gets whether this server is an independently managed server, not managed as part of a managed domain.
      *
@@ -1166,6 +1180,19 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      */
     private File getFileFromProperty(final String name, final Properties props) {
         return getFileFromPath(props.getProperty(name));
+    }
+
+    private static <E extends Enum<E>> E getEnumProperty(Properties properties, String key, E defaultValue) {
+        String value = properties.getProperty(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        Class<E> enumClass = defaultValue.getDeclaringClass();
+        try {
+            return Enum.valueOf(enumClass, value.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw ServerLogger.ROOT_LOGGER.failedToParseEnumProperty(key, value, EnumSet.allOf(enumClass));
+        }
     }
 
     /**
