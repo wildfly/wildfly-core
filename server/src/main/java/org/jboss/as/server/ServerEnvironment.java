@@ -523,7 +523,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             }
 
             this.stability = getEnumProperty(props, ProcessEnvironment.STABILITY, productConfig.getDefaultStability());
-            if (!productConfig.getMinimumStability().enables(this.stability)) {
+            if (!productConfig.getStabilitySet().contains(this.stability)) {
                 throw ServerLogger.ROOT_LOGGER.unsupportedStability(this.stability, productConfig.getProductName());
             }
         }

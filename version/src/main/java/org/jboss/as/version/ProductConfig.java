@@ -15,8 +15,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.jar.Manifest;
 
 import org.jboss.modules.Module;
@@ -34,7 +36,7 @@ public class ProductConfig implements Serializable {
     private final String version;
     private final String consoleSlot;
     private final Stability defaultStability;
-    private final Stability minStability;
+    private final Set<Stability> stabilities;
     private boolean isProduct;
 
     public static ProductConfig fromFilesystemSlot(ModuleLoader loader, String home, Map<?, ?> providedProperties) {
@@ -51,6 +53,7 @@ public class ProductConfig implements Serializable {
         String consoleSlot = null;
         Stability defaultStability = Stability.COMMUNITY;
         Stability minStability = Stability.EXPERIMENTAL;
+        Stability maxStability = Stability.DEFAULT;
 
         InputStream manifestStream = null;
         try {
@@ -91,7 +94,7 @@ public class ProductConfig implements Serializable {
         version = productVersion;
         this.consoleSlot = consoleSlot;
         this.defaultStability = defaultStability;
-        this.minStability = minStability;
+        this.stabilities = EnumSet.range(maxStability, minStability);
     }
 
     private static String getProductConf(String home) {
@@ -129,7 +132,7 @@ public class ProductConfig implements Serializable {
         this.version = productVersion;
         this.consoleSlot = consoleSlot;
         this.defaultStability = Stability.DEFAULT;
-        this.minStability = Stability.DEFAULT;
+        this.stabilities = EnumSet.of(this.defaultStability);
     }
 
     public String getProductName() {
@@ -148,12 +151,20 @@ public class ProductConfig implements Serializable {
         return consoleSlot;
     }
 
+    /**
+     * Returns the presumed stability level of this product.
+     * @return a stability level
+     */
     public Stability getDefaultStability() {
         return this.defaultStability;
     }
 
-    public Stability getMinimumStability() {
-        return this.minStability;
+    /**
+     * Returns the set of permissible stability levels for this product.
+     * @return a set of stability levels
+     */
+    public Set<Stability> getStabilitySet() {
+        return this.stabilities;
     }
 
     public String getPrettyVersionString() {

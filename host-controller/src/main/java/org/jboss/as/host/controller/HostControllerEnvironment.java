@@ -485,7 +485,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         this.processType = processType;
 
         this.stability = getEnumProperty(hostSystemProperties, STABILITY, this.productConfig.getDefaultStability());
-        if (!this.productConfig.getMinimumStability().enables(this.stability)) {
+        if (!this.productConfig.getStabilitySet().contains(this.stability)) {
             throw HostControllerLogger.ROOT_LOGGER.unsupportedStability(this.stability, this.productConfig.getProductName());
         }
         if (!hostSystemProperties.containsKey(STABILITY)) {
