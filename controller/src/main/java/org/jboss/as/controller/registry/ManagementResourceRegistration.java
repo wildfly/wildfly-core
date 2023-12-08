@@ -67,7 +67,8 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      *
      * @param resourceDefinition source for descriptive information describing this
      *                            portion of the model (must not be {@code null})
-     * @return a resource registration which may be used to add attributes, operations, notifications and sub-models
+     * @return a resource registration which may be used to add attributes, operations, notifications and sub-models,
+     *         or null, if this resource definition is not enabled by the current stability level.
      *
      * @throws IllegalArgumentException if a submodel is already registered at {@code address}
      * @throws IllegalStateException if {@link #isRuntimeOnly()} returns {@code true}
@@ -103,7 +104,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      * @param name the specific name of the resource. Cannot be {@code null} or {@link PathElement#WILDCARD_VALUE}
      * @param descriptionProvider provider for descriptions of the additional attributes or child types
      *
-     * @return a resource registration which may be used to add attributes, operations and sub-models
+     * @return a resource registration which may be used to add attributes, operations and sub-models.
      *
      * @throws IllegalArgumentException if either parameter is null or if there is already a registration under {@code name}
      * @throws IllegalStateException if {@link #isRuntimeOnly()} returns {@code true} or if {@link #isAllowsOverride()} returns false
@@ -118,7 +119,8 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      * @param registration the child registration of this registry that should no longer be available
      * @param descriptionProvider provider for descriptions of the additional attributes or child types
      *
-     * @return a resource registration which may be used to add attributes, operations and sub-models
+     * @return a resource registration which may be used to add attributes, operations and sub-models,
+     *         or null, if this resource definition is not enabled by the current stability level.
      *
      * @throws IllegalArgumentException if either parameter is null or if there is already a registration under {@code name}
      * @throws IllegalStateException if {@link #isRuntimeOnly()} returns {@code true} or if {@link #isAllowsOverride()} returns false
