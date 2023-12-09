@@ -5,6 +5,8 @@
 
 package org.jboss.as.host.controller;
 
+import org.jboss.as.version.ProductConfig;
+
 /**
  * @author wangc
  *
@@ -18,18 +20,20 @@ public final class HostControllerEnvironmentWrapper {
 
     private HostControllerEnvironment hostControllerEnvironment;
     private HostControllerEnvironmentStatus hostControllerEnvironmentStatus;
+    private ProductConfig productConfig;
 
-    private HostControllerEnvironmentWrapper(HostControllerEnvironment hostControllerEnvironment, HostControllerEnvironmentStatus hostControllerEnvironmentStatus) {
+    private HostControllerEnvironmentWrapper(HostControllerEnvironment hostControllerEnvironment, HostControllerEnvironmentStatus hostControllerEnvironmentStatus, ProductConfig productConfig) {
         this.hostControllerEnvironment = hostControllerEnvironment;
         this.hostControllerEnvironmentStatus = hostControllerEnvironmentStatus;
+        this.productConfig = productConfig;
     }
 
     HostControllerEnvironmentWrapper(HostControllerEnvironment hostControllerEnvironment) {
-        this(hostControllerEnvironment, null);
+        this(hostControllerEnvironment, null, hostControllerEnvironment.getProductConfig());
     }
 
-    HostControllerEnvironmentWrapper(HostControllerEnvironmentStatus hostControllerEnvironmentStatus) {
-        this(null, hostControllerEnvironmentStatus);
+    HostControllerEnvironmentWrapper(HostControllerEnvironmentStatus hostControllerEnvironmentStatus, ProductConfig productConfig) {
+        this(null, hostControllerEnvironmentStatus, productConfig);
     }
 
     public HostControllerEnvironment getHostControllerEnvironment() {
@@ -38,5 +42,9 @@ public final class HostControllerEnvironmentWrapper {
 
     public HostControllerEnvironmentStatus getHostControllerEnvironmentStatus() {
         return hostControllerEnvironmentStatus;
+    }
+
+    public ProductConfig getProductConfig() {
+        return this.productConfig;
     }
 }

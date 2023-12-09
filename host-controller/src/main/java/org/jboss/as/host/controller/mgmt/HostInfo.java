@@ -133,6 +133,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         productVersion = hostInfo.hasDefined(PRODUCT_VERSION) ? hostInfo.require(PRODUCT_VERSION).asString() : null;
         remoteConnectionId = hostInfo.hasDefined(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID)
                 ? hostInfo.get(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID).asLong() : null;
+        // Legacy hosts may return null - if so, assume default stability per our ProductConfig
         this.stability = Optional.ofNullable(hostInfo.get(ModelDescriptionConstants.STABILITY).asStringOrNull()).map(Stability::valueOf).orElse(productConfig.getDefaultStability());
 
         Set<String> domainIgnoredExtensions = null;

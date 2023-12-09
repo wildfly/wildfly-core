@@ -44,8 +44,8 @@ public final class Main {
         return Version.AS_VERSION;
     }
 
-    private static void usage() {
-        CommandLineArgumentUsageImpl.printUsage(System.out);
+    private static void usage(ProductConfig productConfig) {
+        CommandLineArgumentUsageImpl.printUsage(productConfig, System.out);
     }
 
     private Main() {
@@ -68,8 +68,8 @@ public final class Main {
         String modulePath = null;
         String bootJar = null;
         String bootModule = HOST_CONTROLLER_MODULE;
-        final PCSocketConfig pcSocketConfig = new PCSocketConfig();
-
+        ProductConfig productConfig = ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), jbossHome, null);
+        final PCSocketConfig pcSocketConfig = new PCSocketConfig(productConfig);
         String currentWorkingDir = WildFlySecurityManager.getPropertyPrivileged("user.dir", null);
 
         final List<String> javaOptions = new ArrayList<String>();
@@ -100,7 +100,7 @@ public final class Main {
                     if ("--".equals(arg)) {
                         for (i++; i < args.length; i++) {
                             arg = args[i];
-                            if (handleHelpOrVersion(arg, jbossHome)) {
+                            if (handleHelpOrVersion(productConfig, arg, jbossHome)) {
                                 return null;
                             } else if (pcSocketConfig.processPCSocketConfigArgument(arg, args, i)) {
                                 if (pcSocketConfig.isParseFailed()) {
@@ -109,12 +109,12 @@ public final class Main {
                                 i += pcSocketConfig.getArgIncrement();
                             } else if (arg.startsWith("-D" + CommandLineConstants.PREFER_IPV4_STACK + "=")) {
                                 // AS7-5409 set the property for this process and pass it to HC via javaOptions
-                                String val = parseValue(arg, "-D" + CommandLineConstants.PREFER_IPV4_STACK);
+                                String val = parseValue(productConfig, arg, "-D" + CommandLineConstants.PREFER_IPV4_STACK);
                                 WildFlySecurityManager.setPropertyPrivileged(CommandLineConstants.PREFER_IPV4_STACK, val);
                                 addJavaOption(arg, javaOptions);
                             } else if (arg.startsWith("-D" + CommandLineConstants.PREFER_IPV6_ADDRESSES + "=")) {
                                 // AS7-5409 set the property for this process and pass it to HC via javaOptions
-                                String val = parseValue(arg, "-D" + CommandLineConstants.PREFER_IPV6_ADDRESSES);
+                                String val = parseValue(productConfig, arg, "-D" + CommandLineConstants.PREFER_IPV6_ADDRESSES);
                                 WildFlySecurityManager.setPropertyPrivileged(CommandLineConstants.PREFER_IPV6_ADDRESSES, val);
                                 addJavaOption(arg, javaOptions);
 
@@ -123,7 +123,7 @@ public final class Main {
                             }
                         }
                         break OUT;
-                    } else if (handleHelpOrVersion(arg, jbossHome)) {
+                    } else if (handleHelpOrVersion(productConfig, arg, jbossHome)) {
                         // This would normally come in via the nested if ("--".equals(arg)) case above, but in case someone tweaks the
                         // script to set it directly, we've handled it
                         return null;
@@ -145,7 +145,7 @@ public final class Main {
                     }
                 }
                 break OUT;
-            } else if (handleHelpOrVersion(arg, jbossHome)) {
+            } else if (handleHelpOrVersion(productConfig, arg, jbossHome)) {
                 // This would normally come in via the if ("--".equals(arg)) cases above, but in case someone tweaks the
                 // script to set it directly, we've handled it)
                 return null;
@@ -249,12 +249,12 @@ public final class Main {
                 && !"-Djava.security.manager=disallow".equals(arg);
     }
 
-    private static String parseValue(final String arg, final String key) {
+    private static String parseValue(ProductConfig productConfig, final String arg, final String key) {
         String value = null;
         int splitPos = key.length();
         if (arg.length() <= splitPos + 1 || arg.charAt(splitPos) != '=') {
             System.out.println(ProcessLogger.ROOT_LOGGER.noArgValue(key));
-            usage();
+            usage(productConfig);
         } else {
             value = arg.substring(splitPos + 1);
         }
@@ -283,10 +283,10 @@ public final class Main {
         javaOptions.add(option);
     }
 
-    private static boolean handleHelpOrVersion(String arg, String jbossHome) {
+    private static boolean handleHelpOrVersion(ProductConfig productConfig, String arg, String jbossHome) {
         if (CommandLineConstants.HELP.equals(arg) || CommandLineConstants.SHORT_HELP.equals(arg)
             || CommandLineConstants.OLD_HELP.equals(arg)) {
-            usage();
+            usage(productConfig);
             return true;
         } else if (CommandLineConstants.VERSION.equals(arg) || CommandLineConstants.SHORT_VERSION.equals(arg)
                 || CommandLineConstants.OLD_VERSION.equals(arg) || CommandLineConstants.OLD_SHORT_VERSION.equals(arg)) {
@@ -297,12 +297,14 @@ public final class Main {
     }
 
     private static class PCSocketConfig {
+        private final ProductConfig productConfig;
         private String bindAddress;
         private int bindPort = 0;
         private int argIncrement = 0;
         private boolean parseFailed;
 
-        private PCSocketConfig() {
+        private PCSocketConfig(ProductConfig productConfig) {
+            this.productConfig = productConfig;
         }
 
         private String getBindAddress() {
@@ -336,14 +338,14 @@ public final class Main {
                 bindAddress = args[index +1];
                 argIncrement = 1;
             } else if (arg.startsWith(CommandLineConstants.PROCESS_CONTROLLER_BIND_ADDR)) {
-                String addr = parseValue(arg, CommandLineConstants.PROCESS_CONTROLLER_BIND_ADDR);
+                String addr = parseValue(this.productConfig, arg, CommandLineConstants.PROCESS_CONTROLLER_BIND_ADDR);
                 if (addr == null) {
                     parseFailed = true;
                 } else {
                     bindAddress = addr;
                 }
             } else if (arg.startsWith(CommandLineConstants.OLD_PROCESS_CONTROLLER_BIND_ADDR)) {
-                String addr = parseValue(arg, CommandLineConstants.OLD_PROCESS_CONTROLLER_BIND_ADDR);
+                String addr = parseValue(this.productConfig, arg, CommandLineConstants.OLD_PROCESS_CONTROLLER_BIND_ADDR);
                 if (addr == null) {
                     parseFailed = true;
                 } else {
@@ -353,14 +355,14 @@ public final class Main {
                 bindPort = Integer.parseInt(args[index + 1]);
                 argIncrement = 1;
             } else if (arg.startsWith(CommandLineConstants.PROCESS_CONTROLLER_BIND_PORT)) {
-                String port = parseValue(arg, CommandLineConstants.PROCESS_CONTROLLER_BIND_PORT);
+                String port = parseValue(this.productConfig, arg, CommandLineConstants.PROCESS_CONTROLLER_BIND_PORT);
                 if (port == null) {
                     parseFailed = true;
                 } else {
                     bindPort = Integer.parseInt(port);
                 }
             } else if (arg.startsWith(CommandLineConstants.OLD_PROCESS_CONTROLLER_BIND_PORT)) {
-                String port = parseValue(arg, CommandLineConstants.OLD_PROCESS_CONTROLLER_BIND_PORT);
+                String port = parseValue(this.productConfig, arg, CommandLineConstants.OLD_PROCESS_CONTROLLER_BIND_PORT);
                 if (port == null) {
                     parseFailed = true;
                 } else {

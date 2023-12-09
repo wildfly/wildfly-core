@@ -81,6 +81,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         result.removeExisting = new ArgumentWithoutValue(result, "--remove-existing");
         result.removeExisting.addRequiredPreceding(result.emptyConfig);
         result.timeout = new ArgumentWithValue(result, "--timeout");
+        // TODO: Use ProductConfig.getStabilitySet()
         result.stability = new ArgumentWithValue(result, new SimpleTabCompleter(EnumSet.allOf(Stability.class)), "--stability");
 
         return result;

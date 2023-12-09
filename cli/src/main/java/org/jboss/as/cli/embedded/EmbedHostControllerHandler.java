@@ -90,6 +90,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
         result.removeExistingDomainConfig = new ArgumentWithoutValue(result, REMOVE_EXISTING_DOMAIN_CONFIG);
         result.emptyHostConfig = new ArgumentWithoutValue(result, EMPTY_HOST_CONFIG);
         result.removeExistingHostConfig = new ArgumentWithoutValue(result, REMOVE_EXISTING_HOST_CONFIG);
+        // TODO: Use ProductConfig.getStabilitySet()
         result.stability = new ArgumentWithValue(result, new SimpleTabCompleter(EnumSet.allOf(Stability.class)), "--stability");
         return result;
     }
