@@ -89,6 +89,16 @@ public final class Main {
         } catch (Throwable ignored) {
         }
 
+        // This message is not used to display any information on the stdout and stderr of this process, it signals the
+        // Process Controller to switch the stdout and stderr of this managed process from the process controller log to
+        // the process controller stdout and stderr.
+        // Once the StdioContext gets installed, both the stdout and stderr of this managed process will be captured,
+        // aggregated and handled by this process logging framework.
+        STDOUT.println(ProcessController.STDIO_ABOUT_TO_INSTALL_MSG);
+        STDOUT.flush();
+        STDERR.println(ProcessController.STDIO_ABOUT_TO_INSTALL_MSG);
+        STDERR.flush();
+
         // Install JBoss Stdio to avoid any nasty crosstalk.
         StdioContext.install();
         final StdioContext context = StdioContext.create(

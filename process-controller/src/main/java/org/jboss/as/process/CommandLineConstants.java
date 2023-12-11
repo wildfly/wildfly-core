@@ -121,6 +121,9 @@ public class CommandLineConstants {
     public static final String PREFER_IPV4_STACK = "java.net.preferIPv4Stack";
     public static final String PREFER_IPV6_ADDRESSES = "java.net.preferIPv6Addresses";
 
+    public static final String MANAGED_PROCESS_SYSTEM_ERROR_TO_LOG = "jboss.domain.managed-process.system.stderr.to.process-controller.log";
+    public static final String MANAGED_PROCESS_SYSTEM_OUT_TO_LOG = "jboss.domain.managed-process.system.stdout.to.process-controller.log";
+
     /** Additional class path items, used only by app client*/
     public static final String APPCLIENT_CONFIG = "--appclient-config";
     public static final String SHORT_HOST = "-H";

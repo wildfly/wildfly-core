@@ -5,12 +5,11 @@
 
 package org.jboss.as.server;
 
-import static org.jboss.as.server.DomainServerCommunicationServices.createAuthenticationContext;
-
 import static org.jboss.as.process.protocol.StreamUtils.readBoolean;
 import static org.jboss.as.process.protocol.StreamUtils.readFully;
 import static org.jboss.as.process.protocol.StreamUtils.readInt;
 import static org.jboss.as.process.protocol.StreamUtils.readUTFZBytes;
+import static org.jboss.as.server.DomainServerCommunicationServices.createAuthenticationContext;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -55,6 +54,9 @@ import org.wildfly.security.auth.client.AuthenticationContext;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public final class DomainServerMain {
+    // Capture System.out and System.err before they are redirected by STDIO
+    private static final PrintStream STDOUT = System.out;
+    private static final PrintStream STDERR = System.err;
 
     /**
      * Cache of the latest {@code AuthenticationContext} based on updates received
@@ -80,6 +82,16 @@ public final class DomainServerMain {
             Class.forName(ConsoleHandler.class.getName(), true, ConsoleHandler.class.getClassLoader());
         } catch (Throwable ignored) {
         }
+
+        // This message is not used to display any information on the stdout and stderr of this process, it signals the
+        // Process Controller to switch the stdout and stderr of this managed process from the process controller log to
+        // the process controller stdout and stderr.
+        // Once the StdioContext gets installed, both the stdout and stderr of this managed process will be captured,
+        // aggregated and handled by this process logging framework.
+        STDOUT.println(ProcessController.STDIO_ABOUT_TO_INSTALL_MSG);
+        STDOUT.flush();
+        STDERR.println(ProcessController.STDIO_ABOUT_TO_INSTALL_MSG);
+        STDERR.flush();
 
         // Install JBoss Stdio to avoid any nasty crosstalk.
         StdioContext.install();

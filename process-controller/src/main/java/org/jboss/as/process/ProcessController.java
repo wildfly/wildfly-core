@@ -31,6 +31,7 @@ import org.jboss.as.process.protocol.StreamUtils;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public final class ProcessController {
+    public static final String STDIO_ABOUT_TO_INSTALL_MSG = "--Installing Stdio Context--";
 
     /**
      * Main lock - anything which opens a file descriptor or spawns a process must
