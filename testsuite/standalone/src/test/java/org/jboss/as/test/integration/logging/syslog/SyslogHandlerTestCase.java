@@ -110,7 +110,9 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
     @Test
     public void testLogOnSpecificLevel() throws Exception {
         final BlockingQueue<SyslogServerEventIF> queue = BlockedSyslogServerEventHandler.getQueue();
-        executeOperation(Operations.createWriteAttributeOperation(SYSLOG_HANDLER_ADDR, "level", "ERROR"));
+        // TODO (jrp) testing to see if this fails
+        System.out.println(executeOperation(Operations.createWriteAttributeOperation(SYSLOG_HANDLER_ADDR, "level", "ERROR")));
+        System.out.println(executeOperation(Operations.createReadResourceOperation(SYSLOG_HANDLER_ADDR, true)));
         queue.clear();
         makeLogs();
         testLog(queue, Level.FATAL);
