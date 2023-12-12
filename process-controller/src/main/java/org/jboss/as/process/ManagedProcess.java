@@ -6,6 +6,8 @@
 package org.jboss.as.process;
 
 import static java.lang.Thread.holdsLock;
+import static org.jboss.as.process.CommandLineConstants.MANAGED_PROCESS_SYSTEM_ERROR_TO_LOG;
+import static org.jboss.as.process.CommandLineConstants.MANAGED_PROCESS_SYSTEM_OUT_TO_LOG;
 import static org.jboss.as.process.protocol.StreamUtils.copyStream;
 import static org.jboss.as.process.protocol.StreamUtils.safeClose;
 import static org.jboss.as.process.protocol.StreamUtils.writeBoolean;
@@ -27,11 +29,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import org.jboss.as.process.logging.ProcessLogger;
 import org.jboss.as.process.stdin.Base64OutputStream;
 import org.jboss.logging.Logger;
 import org.wildfly.common.Assert;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * A managed process.
@@ -41,12 +45,26 @@ import org.wildfly.common.Assert;
  * @author Emanuel Muckenhuber
  */
 final class ManagedProcess {
+    // If true, the managed process standard error will be captured in the process controller log file until the managed
+    // process has installed the JBoss Stdio context, otherwise the output will be redirected to the Process Controller
+    // standard error.
+    private static final boolean MANAGED_PROCESS_SYSTEM_ERROR_TO_PROCESS_CONTROLLER_LOG = Boolean.parseBoolean(
+            WildFlySecurityManager.getPropertyPrivileged(MANAGED_PROCESS_SYSTEM_ERROR_TO_LOG, "true")
+    );
+    // If true, the managed process standard output will be captured in the process controller log file until the managed
+    // process has installed the JBoss Stdio context, otherwise the output will be redirected to the Process Controller
+    // standard output.
+    private static final boolean MANAGED_PROCESS_SYSTEM_OUT_TO_PROCESS_CONTROLLER_LOG = Boolean.parseBoolean(
+            WildFlySecurityManager.getPropertyPrivileged(MANAGED_PROCESS_SYSTEM_OUT_TO_LOG, "true")
+    );
 
     private final String processName;
     private final List<String> command;
     private final Map<String, String> env;
     private final String workingDirectory;
-    private final ProcessLogger log;
+    private final ProcessLogger logStatus;
+    private final ProcessLogger logSystemErr;
+    private final ProcessLogger logSystemOut;
     private final Object lock;
 
     private final ProcessController processController;
@@ -107,7 +125,9 @@ final class ManagedProcess {
         this.pcAuthKey = pcAuthKey;
         isPrivileged = privileged;
         respawnPolicy = respawn ? RespawnPolicy.RESPAWN : RespawnPolicy.NONE;
-        log = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.process." + processName + ".status");
+        logStatus = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.process." + processName + ".status");
+        logSystemErr = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.process." + processName + ".system.stderr");
+        logSystemOut = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.process." + processName + ".system.stdout");
     }
 
     int incrementAndGetRespawnCount() {
@@ -125,7 +145,7 @@ final class ManagedProcess {
     public void start() {
         synchronized (lock) {
             if (state != State.DOWN) {
-                log.debugf("Attempted to start already-running process '%s'", processName);
+                logStatus.debugf("Attempted to start already-running process '%s'", processName);
                 return;
             }
             resetRespawnCount();
@@ -142,7 +162,7 @@ final class ManagedProcess {
             base64.close(); // not flush(). close() writes extra data to the stream allowing Base64 input stream
                             // to distinguish end of message
         } catch (IOException e) {
-            log.failedToSendDataBytes(e, processName);
+            logStatus.failedToSendDataBytes(e, processName);
             throw e;
         }
     }
@@ -162,7 +182,7 @@ final class ManagedProcess {
         } catch (IOException e) {
             if(state == State.STARTED) {
                 // Only log in case the process is still running
-                log.failedToSendReconnect(e, processName);
+                logStatus.failedToSendReconnect(e, processName);
             }
         }
     }
@@ -176,8 +196,8 @@ final class ManagedProcess {
             //Add the restart flag to the HC process if we are respawning it
             command.add(CommandLineConstants.PROCESS_RESTARTED);
         }
-        log.startingProcess(processName);
-        log.debugf("Process name='%s' command='%s' workingDirectory='%s'", processName, command, workingDirectory);
+        logStatus.startingProcess(processName);
+        logStatus.debugf("Process name='%s' command='%s' workingDirectory='%s'", processName, command, workingDirectory);
         List<String> list = new ArrayList<>();
         for (String c : command) {
             String trim = c.trim();
@@ -191,17 +211,23 @@ final class ManagedProcess {
             process = builder.start();
         } catch (IOException e) {
             processController.operationFailed(processName, ProcessMessageHandler.OperationType.START);
-            log.failedToStartProcess(e,processName);
+            logStatus.failedToStartProcess(e,processName);
             return;
         }
         final long startTime = System.currentTimeMillis();
         final OutputStream stdin = process.getOutputStream();
         final InputStream stderr = process.getErrorStream();
         final InputStream stdout = process.getInputStream();
-        final Thread stderrThread = new Thread(new ReadTask(stderr, processController.getStderr()));
+        final Thread stderrThread = new Thread( new ReadTask(stderr, processController.getStderr(),
+                MANAGED_PROCESS_SYSTEM_ERROR_TO_PROCESS_CONTROLLER_LOG,
+                logSystemErr::error)
+        );
         stderrThread.setName(String.format("stderr for %s", processName));
         stderrThread.start();
-        final Thread stdoutThread = new Thread(new ReadTask(stdout, processController.getStdout()));
+        final Thread stdoutThread = new Thread(new ReadTask(stdout, processController.getStdout(),
+                MANAGED_PROCESS_SYSTEM_OUT_TO_PROCESS_CONTROLLER_LOG,
+                logSystemOut::info)
+        );
         stdoutThread.setName(String.format("stdout for %s", processName));
         stdoutThread.start();
 
@@ -217,7 +243,7 @@ final class ManagedProcess {
                             // to distinguish end of message
             ok = true;
         } catch (Exception e) {
-            log.failedToSendAuthKey(processName, e);
+            logStatus.failedToSendAuthKey(processName, e);
         }
 
         this.process = process;
@@ -229,16 +255,15 @@ final class ManagedProcess {
         } else {
             processController.operationFailed(processName, ProcessMessageHandler.OperationType.START);
         }
-        return;
     }
 
     public void stop() {
         synchronized (lock) {
             if (state != State.STARTED) {
-                log.debugf("Attempted to stop already-stopping or down process '%s'", processName);
+                logStatus.debugf("Attempted to stop already-stopping or down process '%s'", processName);
                 return;
             }
-            log.stoppingProcess(processName);
+            logStatus.stoppingProcess(processName);
             stopRequested = true;
             safeClose(stdin);
             state = State.STOPPING;
@@ -265,7 +290,7 @@ final class ManagedProcess {
                 }
             }
             if (state != State.DOWN || jt == null || jt.isAlive()) { // Cover all bases just to be robust
-                log.destroyingProcess(processName, timeout);
+                logStatus.destroyingProcess(processName, timeout);
                 process.destroyForcibly();
             }
         }
@@ -292,10 +317,10 @@ final class ManagedProcess {
             }
 
             if (state != State.DOWN || jt == null || jt.isAlive()) { // Cover all bases just to be robust
-                log.attemptingToKillProcess(processName, timeout);
+                logStatus.attemptingToKillProcess(processName, timeout);
                 if (!ProcessUtils.killProcess(processName, id)) {
                     // Fallback to destroy if kill is not available
-                    log.failedToKillProcess(processName);
+                    logStatus.failedToKillProcess(processName);
                     process.destroyForcibly();
                 }
             }
@@ -309,7 +334,7 @@ final class ManagedProcess {
             }
             shutdown = true;
             if (state == State.STARTED) {
-                log.stoppingProcess(processName);
+                logStatus.stoppingProcess(processName);
                 stopRequested = true;
                 safeClose(stdin);
                 state = State.STOPPING;
@@ -329,7 +354,7 @@ final class ManagedProcess {
     void respawn() {
         synchronized (lock) {
             if (state != State.DOWN) {
-                log.debugf("Attempted to respawn already-running process '%s'", processName);
+                logStatus.debugf("Attempted to respawn already-running process '%s'", processName);
                 return;
             }
             doStart(true);
@@ -363,7 +388,7 @@ final class ManagedProcess {
             int exitCode;
             for (;;) try {
                 exitCode = process.waitFor();
-                log.processFinished(processName, exitCode);
+                logStatus.processFinished(processName, exitCode);
                 break;
             } catch (InterruptedException e) {
                 // ignore
@@ -433,10 +458,14 @@ final class ManagedProcess {
     private final class ReadTask implements Runnable {
         private final InputStream source;
         private final PrintStream target;
+        private boolean useLog;
+        private final Consumer<String> logConsumer;
 
-        private ReadTask(final InputStream source, final PrintStream target) {
+        private ReadTask(final InputStream source, final PrintStream target, boolean useLog, Consumer<String> logConsumer) {
             this.source = source;
             this.target = target;
+            this.useLog = useLog;
+            this.logConsumer = logConsumer;
         }
 
         public void run() {
@@ -448,25 +477,46 @@ final class ManagedProcess {
                 String s;
                 String prevEscape = "";
                 while ((s = reader.readLine()) != null) {
+
+                    if (s.contains(ProcessController.STDIO_ABOUT_TO_INSTALL_MSG)) {
+                        useLog = false;
+                        continue;
+                    }
+
                     // Has ANSI?
                     int i = s.lastIndexOf('\033');
                     int j = i != -1 ? s.indexOf('m', i) : 0;
 
-                    synchronized (target) {
-                        writer.write('[');
-                        writer.write(processName);
-                        writer.write("] ");
-                        writer.write(prevEscape);
-                        writer.write(s);
+                    if (useLog) {
+                        StringBuilder sp = new StringBuilder();
+                        sp.append("[");
+                        sp.append(processName);
+                        sp.append("] ");
+                        sp.append(prevEscape);
+                        sp.append(s);
 
                         // Reset if there was ANSI
-                        if (j != 0 || prevEscape != "") {
-                            writer.write("\033[0m");
+                        if (j != 0 || !prevEscape.isEmpty()) {
+                            sp.append("\033[0m");
                         }
-                        writer.write('\n');
-                        writer.flush();
-                    }
 
+                        logConsumer.accept(sp.toString());
+                    } else {
+                        synchronized (target) {
+                            writer.write('[');
+                            writer.write(processName);
+                            writer.write("] ");
+                            writer.write(prevEscape);
+                            writer.write(s);
+
+                            // Reset if there was ANSI
+                            if (j != 0 || !prevEscape.isEmpty()) {
+                                writer.write("\033[0m");
+                            }
+                            writer.write('\n');
+                            writer.flush();
+                        }
+                    }
 
                     // Remember escape code for the next line
                     if (j != 0) {
@@ -480,7 +530,7 @@ final class ManagedProcess {
                 }
                 source.close();
             } catch (IOException e) {
-                log.streamProcessingFailed(processName, e);
+                logStatus.streamProcessingFailed(processName, e);
             } finally {
                 safeClose(source);
             }
