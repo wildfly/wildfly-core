@@ -39,6 +39,8 @@ public class Log4j2LoggingProfilesTestCase extends AbstractLoggingProfilesTestCa
                 new RuntimePermission("getenv.*"),
                 // Required for the SystemPropertiesPropertySource System.getProperties().
                 new PropertyPermission("*", "read,write"),
+                // The the org.apache.logging.log4j.util.ProviderUtil requires this for the Class.getDeclaredConstructor()
+                new RuntimePermission("accessDeclaredMembers"),
         };
         addPermissions(deployment, permissions);
     }
