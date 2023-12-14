@@ -32,6 +32,8 @@ public class Log4j2LoggingProfilesTestCase extends AbstractLoggingProfilesTestCa
         final Permission[] permissions = {
                 // The getClassLoader permissions is required for the org.apache.logging.log4j.util.ProviderUtil.
                 new RuntimePermission("getClassLoader"),
+                // The the org.apache.logging.log4j.util.ProviderUtil requires this for the Class.getDeclaredConstructor()
+                new RuntimePermission("accessDeclaredMembers"),
                 // The FilePermissions is also for the org.apache.logging.log4j.util.ProviderUtil as it needs to read the JAR
                 // for the service loader.
                 new FilePermission(resolveFilePermissions(), "read"),
