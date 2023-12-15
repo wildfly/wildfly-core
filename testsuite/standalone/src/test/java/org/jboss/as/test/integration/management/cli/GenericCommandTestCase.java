@@ -83,7 +83,7 @@ public class GenericCommandTestCase extends AbstractCliTestBase {
             assertTrue(readOutput2.contains("use-identity-roles=true"));
             assertTrue(readOutput2.contains("permission-combination-policy=rejecting"));
         } finally {
-            cli.sendLine("/core-service=management/access=authorization:write-attribute(name=use-identity-roles, value=false");
+            cli.sendLine("/core-service=management/access=authorization:undefine-attribute(name=use-identity-roles");
             cli.sendLine("/core-service=management/access=authorization:undefine-attribute(name=permission-combination-policy");
             cli.sendLine("command remove --command-name=authorization");
         }

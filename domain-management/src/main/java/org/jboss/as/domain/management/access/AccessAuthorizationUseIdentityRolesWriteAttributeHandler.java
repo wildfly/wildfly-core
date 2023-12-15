@@ -2,7 +2,6 @@
  * Copyright The WildFly Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-
 package org.jboss.as.domain.management.access;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
@@ -29,13 +28,13 @@ class AccessAuthorizationUseIdentityRolesWriteAttributeHandler extends AbstractW
     @Override
     protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue,
             ModelNode oldValue, Resource model) throws OperationFailedException {
-        boolean useIdentityRoles = newValue.asBoolean();
-         if (useIdentityRoles == false) {
-             /*
+        boolean useIdentityRoles = newValue.isDefined() ? newValue.asBoolean() : AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES.getDefaultValue().asBoolean();
+        if (useIdentityRoles == false) {
+            /*
               * As we are no longer using identity roles we may need another role mapping strategy.
-              */
-             RbacSanityCheckOperation.addOperation(context);
-         }
+             */
+            RbacSanityCheckOperation.addOperation(context);
+        }
     }
 
     @Override
