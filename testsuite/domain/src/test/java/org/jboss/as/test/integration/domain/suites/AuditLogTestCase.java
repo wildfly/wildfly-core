@@ -267,11 +267,13 @@ public class AuditLogTestCase {
         Assert.assertTrue(otherTwo);
         Assert.assertTrue(domainCopy);
 
+
         ModelNode secondaryServerRecord = readFile(secondaryServerAuditLog, 1).get(0);
         Assert.assertEquals(domainUUID, secondaryServerRecord.get(JsonAuditLogItemFormatter.DOMAIN_UUID).asString());
         ModelNode secondaryServerOp = getOp(secondaryServerRecord);
         Assert.assertEquals(domainUUID, secondaryServerOp.get(OPERATION_HEADERS, DOMAIN_UUID).asString());
         compareOpsWithoutHeaders(addOp, secondaryServerOp, BOOT_TIME);
+        primaryLifecycleUtil.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(SYSTEM_PROPERTY, propertyName)));
     }
 
     @Test

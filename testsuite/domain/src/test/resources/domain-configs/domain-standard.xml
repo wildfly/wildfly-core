@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='UTF-8'?>
 <!--
   ~ Copyright The WildFly Authors
   ~ SPDX-License-Identifier: Apache-2.0
@@ -9,10 +10,10 @@
         <extension module="org.jboss.as.jmx"/>
         <extension module="org.jboss.as.logging"/>
         <extension module="org.jboss.as.remoting"/>
-        <extension module="org.wildfly.extension.io"/>
-        <extension module="org.wildfly.extension.request-controller"/>
         <extension module="org.wildfly.extension.core-management"/>
         <extension module="org.wildfly.extension.elytron"/>
+        <extension module="org.wildfly.extension.io"/>
+        <extension module="org.wildfly.extension.request-controller"/>
         <extension module="org.wildfly.extension.security.manager"/>
     </extensions>
 
@@ -40,7 +41,7 @@
     <profiles>
 
         <profile name="web-only">
-            <subsystem xmlns="urn:jboss:domain:io:1.1">
+            <subsystem xmlns="urn:jboss:domain:io:3.0">
                 <worker name="default" />
                 <buffer-pool name="default" />
             </subsystem>
@@ -53,13 +54,7 @@
             </subsystem>
         </profile>
         <profile name="default">
-            <!-- include profile="web-only"/ -->
-            <subsystem xmlns="urn:jboss:domain:io:1.1">
-                <worker name="default" />
-                <buffer-pool name="default" />
-            </subsystem>
-
-            <subsystem xmlns="urn:jboss:domain:logging:1.2">
+            <subsystem xmlns="urn:jboss:domain:logging:8.0">
                 <console-handler name="CONSOLE">
                     <level name="INFO"/>
                     <formatter>
@@ -86,19 +81,8 @@
                     </handlers>
                 </root-logger>
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:remoting:4.0">
-                <connector name="remoting-connector" socket-binding="remoting" sasl-authentication-factory="application-sasl-authentication"/>
-            </subsystem>
-            <subsystem xmlns="urn:jboss:domain:jmx:1.3">
-                <expose-resolved-model/>
-                <expose-expression-model/>
-                <remoting-connector/>
-            </subsystem>
-            <subsystem xmlns="urn:jboss:domain:request-controller:1.0">
-            </subsystem>
-            <subsystem xmlns="urn:jboss:domain:core-management:1.0">
-            </subsystem>
-            <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+            <subsystem xmlns="urn:jboss:domain:core-management:1.0"/>
+            <subsystem xmlns="urn:wildfly:elytron:18.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
                 <providers>
                     <aggregate-providers name="combined-providers">
                         <providers name="elytron"/>
@@ -187,6 +171,20 @@
                     </server-ssl-contexts>
                 </tls>
             </subsystem>
+            <!-- include profile="web-only"/ -->
+            <subsystem xmlns="urn:jboss:domain:io:3.0">
+                <worker name="default" />
+                <buffer-pool name="default" />
+            </subsystem>
+            <subsystem xmlns="urn:jboss:domain:jmx:1.3">
+                <expose-resolved-model/>
+                <expose-expression-model/>
+                <remoting-connector/>
+            </subsystem>
+            <subsystem xmlns="urn:jboss:domain:remoting:6.0">
+                <http-connector name="http-remoting-connector" connector-ref="default" sasl-authentication-factory="application-sasl-authentication"/>
+            </subsystem>
+            <subsystem xmlns="urn:jboss:domain:request-controller:1.0"/>
             <subsystem xmlns="urn:jboss:domain:security-manager:1.0">
                 <deployment-permissions>
                     <maximum-set>
@@ -196,13 +194,7 @@
             </subsystem>
         </profile>
         <profile name="other">
-            <!-- include profile="default"/ -->
-            <subsystem xmlns="urn:jboss:domain:io:1.1">
-                <worker name="default"/>
-                <buffer-pool name="default"/>
-            </subsystem>
-
-            <subsystem xmlns="urn:jboss:domain:logging:1.2">
+            <subsystem xmlns="urn:jboss:domain:logging:8.0">
                 <console-handler name="CONSOLE">
                     <level name="INFO"/>
                     <formatter>
@@ -229,10 +221,7 @@
                     </handlers>
                 </root-logger>
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:remoting:4.0">
-                <connector name="remoting-connector" socket-binding="remoting" sasl-authentication-factory="application-sasl-authentication"/>
-            </subsystem>
-            <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+            <subsystem xmlns="urn:wildfly:elytron:18.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
                 <providers>
                     <aggregate-providers name="combined-providers">
                         <providers name="elytron"/>
@@ -322,14 +311,22 @@
                 </tls>
             </subsystem>
 
+            <!-- include profile="default"/ -->
+            <subsystem xmlns="urn:jboss:domain:io:3.0">
+                <worker name="default"/>
+                <buffer-pool name="default"/>
+            </subsystem>
+
             <subsystem xmlns="urn:jboss:domain:jmx:1.3">
                 <expose-resolved-model/>
                 <expose-expression-model/>
                 <remoting-connector/>
             </subsystem>
-
-            <subsystem xmlns="urn:jboss:domain:request-controller:1.0">
+            <subsystem xmlns="urn:jboss:domain:remoting:6.0">
+                <http-connector name="http-remoting-connector" connector-ref="default" sasl-authentication-factory="application-sasl-authentication"/>
             </subsystem>
+
+            <subsystem xmlns="urn:jboss:domain:request-controller:1.0"/>
             <subsystem xmlns="urn:jboss:domain:security-manager:1.0">
                 <deployment-permissions>
                     <maximum-set>
@@ -349,7 +346,7 @@
             </subsystem>
         </profile>
         <profile name="minimal">
-            <subsystem xmlns="urn:jboss:domain:logging:1.2">
+            <subsystem xmlns="urn:jboss:domain:logging:8.0">
                 <console-handler name="CONSOLE">
                     <level name="INFO"/>
                     <formatter>
@@ -407,11 +404,11 @@
             <!-- include socket-binding-group="web-sockets"/-->
             <socket-binding name="jmx-connector-registry" interface="management" port="1090"/>
             <socket-binding name="jmx-connector-server" interface="management" port="1091"/>
+            <socket-binding name="messaging" port="5445"/>
+            <socket-binding name="messaging-throughput" port="5455"/>
             <socket-binding name="remoting" port="4447"/>
             <socket-binding name="txn-recovery-environment" port="4712"/>
             <socket-binding name="txn-status-manager" port="4713"/>
-            <socket-binding name="messaging" port="5445"/>
-            <socket-binding name="messaging-throughput" port="5455"/>
             <outbound-socket-binding name="mail-smtp">
                 <remote-destination host="localhost" port="25"/>
             </outbound-socket-binding>
@@ -422,11 +419,11 @@
             <socket-binding name="https" port="8443"/>
             <socket-binding name="jmx-connector-registry" interface="management" port="1090"/>
             <socket-binding name="jmx-connector-server" interface="management" port="1091"/>
+            <socket-binding name="messaging" port="5445"/>
+            <socket-binding name="messaging-throughput" port="5455"/>
             <socket-binding name="remoting" port="4447"/>
             <socket-binding name="txn-recovery-environment" port="4712"/>
             <socket-binding name="txn-status-manager" port="4713"/>
-            <socket-binding name="messaging" port="5445"/>
-            <socket-binding name="messaging-throughput" port="5455"/>
             <outbound-socket-binding name="mail-smtp">
                 <remote-destination host="localhost" port="25"/>
             </outbound-socket-binding>
@@ -457,32 +454,32 @@
         </server-group>
 
         <server-group name="ignored-profile" profile="ignored">
-            <socket-binding-group ref="standard-sockets"/>
             <jvm name="default" />
+            <socket-binding-group ref="standard-sockets"/>
         </server-group>
 
         <server-group name="ignored-sockets" profile="default">
-            <socket-binding-group ref="ignored"/>
             <jvm name="default" />
+            <socket-binding-group ref="ignored"/>
         </server-group>
 
         <server-group name="minimal" profile="minimal">
-            <socket-binding-group ref="standard-sockets"/>
             <jvm name="default" />
+            <socket-binding-group ref="standard-sockets"/>
         </server-group>
 
         <server-group name="reload-test-group" profile="minimal">
-            <socket-binding-group ref="reload-sockets"/>
             <jvm name="default">
                 <heap size="64m" max-size="64m"/>
             </jvm>
+            <socket-binding-group ref="reload-sockets"/>
         </server-group>
 
         <server-group name="failure-test-group" profile="default">
-            <socket-binding-group ref="standard-sockets"/>
             <jvm name="default" java-home="/usr/java/wrongPath">
                 <heap size="64m" max-size="64m"/>
             </jvm>
+            <socket-binding-group ref="standard-sockets"/>
         </server-group>
     </server-groups>
 
