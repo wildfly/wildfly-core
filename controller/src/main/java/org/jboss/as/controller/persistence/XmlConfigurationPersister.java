@@ -11,6 +11,7 @@ import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -105,7 +106,7 @@ public class XmlConfigurationPersister extends AbstractConfigurationPersister {
         XMLStreamReader streamReader = null;
         try {
             input = new BufferedInputStream(new FileInputStream(fileName));
-            streamReader = XMLInputFactoryUtil.create().createXMLStreamReader(input);
+            streamReader = XMLInputFactoryUtil.create().createXMLStreamReader(input, StandardCharsets.UTF_8.toString());
             mapper.parseDocument(updates, streamReader);
         } catch (XMLStreamException e) {
             final boolean reported = reportValidationError(e);

@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='UTF-8'?>
 <!--
   ~ Copyright The WildFly Authors
   ~ SPDX-License-Identifier: Apache-2.0
@@ -24,8 +25,8 @@
                 <json-formatter name="json-formatter"/>
             </formatters>
             <handlers>
-                <file-handler name="host-file" formatter="json-formatter" relative-to="jboss.domain.data.dir" path="audit-log.log"/>
-                <file-handler name="server-file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
+                <file-handler name="host-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.domain.data.dir"/>
+                <file-handler name="server-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.server.data.dir"/>
             </handlers>
             <logger log-boot="true" log-read-only="true" enabled="false">
                 <handlers>
@@ -50,7 +51,7 @@
     </management>
 
     <domain-controller>
-       <local/>
+        <local/>
     </domain-controller>
 
     <interfaces>
@@ -60,15 +61,15 @@
         <!-- AS7-4177 specify the "public" interface in each server to test that handling -->
     </interfaces>
 
- 	<jvms>
- 	   <jvm name="default">
-          <heap size="64m" max-size="128m"/>
-           <jvm-options>
-               <option value="-ea"/>
-           </jvm-options>
-          <environment-variables>
-              <variable name="DOMAIN_TEST_JVM" value="jvm"/>
-          </environment-variables>
+    <jvms>
+        <jvm name="default">
+            <heap size="64m" max-size="128m"/>
+            <jvm-options>
+                <option value="-ea"/>
+            </jvm-options>
+            <environment-variables>
+                <variable name="DOMAIN_TEST_JVM" value="jvm"/>
+            </environment-variables>
             <!--
             <jvm-options>
                 <option value="-Xdebug"/>
@@ -78,8 +79,8 @@
 
             </jvm-options>
             -->
-       </jvm>
- 	</jvms>
+        </jvm>
+    </jvms>
 
     <servers>
         <server name="main-one" group="main-server-group">
@@ -93,9 +94,9 @@
             </interfaces>
             <!-- server-one inherits the default socket-group declared in the server-group -->
             <jvm name="default">
-	             <environment-variables>
-	                 <variable name="DOMAIN_TEST_SERVER" value="server"/>
-	             </environment-variables>
+                <environment-variables>
+                    <variable name="DOMAIN_TEST_SERVER" value="server"/>
+                </environment-variables>
             </jvm>
         </server>
         <server name="main-two" group="main-server-group" auto-start="false">
@@ -105,11 +106,11 @@
                 </interface>
             </interfaces>
             <!-- server-two avoids port conflicts by incrementing the ports in
-                 the default socket-group declared in the server-group -->
-            <socket-bindings socket-binding-group="standard-sockets" port-offset="150"/>
+            the default socket-group declared in the server-group -->
             <jvm name="default">
                 <heap size="64m" max-size="256m"/>
             </jvm>
+            <socket-bindings socket-binding-group="standard-sockets" port-offset="150"/>
         </server>
         <server name="other-one" group="other-server-group" auto-start="false">
             <interfaces>
@@ -118,9 +119,9 @@
                 </interface>
             </interfaces>
             <!-- server-three avoids port conflicts by incrementing the ports in
-                 the default socket-group declared in the server-group -->
-            <socket-bindings port-offset="250"/>
+            the default socket-group declared in the server-group -->
             <jvm name="default" />
+            <socket-bindings port-offset="250"/>
         </server>
         <server name="reload-one" group="reload-test-group" auto-start="false">
             <interfaces>
@@ -133,7 +134,8 @@
     </servers>
 
     <profile>
-        <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+        <subsystem xmlns="urn:jboss:domain:core-management:1.0"/>
+        <subsystem xmlns="urn:wildfly:elytron:18.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
             <providers>
                 <aggregate-providers name="combined-providers">
                     <providers name="elytron"/>
@@ -216,8 +218,6 @@
             <expose-resolved-model/>
             <expose-expression-model/>
             <remoting-connector/>
-        </subsystem>
-        <subsystem xmlns="urn:jboss:domain:core-management:1.0">
         </subsystem>
     </profile>
 </host>

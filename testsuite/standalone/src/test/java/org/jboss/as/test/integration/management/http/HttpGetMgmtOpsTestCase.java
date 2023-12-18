@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import jakarta.inject.Inject;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 
@@ -180,6 +181,11 @@ public class HttpGetMgmtOpsTestCase {
     }
 
     private void removeDeployment() {
+        try {
+            managementClient.getControllerClient().execute(Operations.createRemoveOperation(Operations.createAddress("deployment", "test-http-deployment.jar")));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         final ServerDeploymentManager manager = ServerDeploymentManager.Factory.create(managementClient.getControllerClient());
         Future<?> future = manager.execute(manager.newDeploymentPlan().remove("test-deployment.jar").build());
         awaitDeploymentExecution(future);

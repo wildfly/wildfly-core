@@ -527,6 +527,8 @@ public class CoreResourceManagementTestCase {
         response = secondaryClient.execute(getResolveExpressionOperation(propThree, OTHER_RUNNING_SERVER_ADDRESS));
         returnVal = validateResponse(response);
         Assert.assertEquals("ONE", returnVal.asString());
+
+        primaryClient.execute(Util.createRemoveOperation(PathAddress.pathAddress(SYSTEM_PROPERTY, propThree)));
     }
 
     @Test
@@ -609,6 +611,7 @@ public class CoreResourceManagementTestCase {
             validateResponse(response);
             Assert.assertFalse(response.get(RESULT).isDefined());
         }
+        primaryClient.execute(Util.getUndefineAttributeOperation(PathAddress.pathAddress(address), "socket-binding-port-offset"));
     }
 
     @Test

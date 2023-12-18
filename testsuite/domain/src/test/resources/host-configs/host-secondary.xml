@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='UTF-8'?>
 <!--
   ~ Copyright The WildFly Authors
   ~ SPDX-License-Identifier: Apache-2.0
@@ -23,8 +24,8 @@
                 <json-formatter name="json-formatter"/>
             </formatters>
             <handlers>
-                <file-handler name="host-file" formatter="json-formatter" relative-to="jboss.domain.data.dir" path="audit-log.log"/>
-                <file-handler name="server-file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
+                <file-handler name="host-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.domain.data.dir"/>
+                <file-handler name="server-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.server.data.dir"/>
             </handlers>
             <logger log-boot="true" log-read-only="true" enabled="false">
                 <handlers>
@@ -54,13 +55,10 @@
             <ignored-resources type="extension">
                 <instance name="org.jboss.as.threads"/>
             </ignored-resources>
-            <ignored-resources type="profile">
-                <instance name="ignored"/>
-            </ignored-resources>
             <ignored-resources type="socket-binding-group">
                 <instance name="ignored"/>
             </ignored-resources>
-            <ignored-resources type="foo" wildcard="true">
+            <ignored-resources type="profile">
                 <instance name="ignored"/>
             </ignored-resources>
             <ignored-resources type="server-group">
@@ -80,36 +78,36 @@
         </interface>
     </interfaces>
 
- 	<jvms>
- 	   <jvm name="default">
-          <heap size="64m" max-size="128m"/>
-           <jvm-options>
-               <option value="-ea"/>
-           </jvm-options>
-       </jvm>
- 	</jvms>
+    <jvms>
+        <jvm name="default">
+            <heap size="64m" max-size="128m"/>
+            <jvm-options>
+                <option value="-ea"/>
+            </jvm-options>
+        </jvm>
+    </jvms>
 
     <servers directory-grouping="by-type">
         <server name="main-three" group="main-server-group">
-            <socket-bindings socket-binding-group="standard-sockets" port-offset="350"/>
             <jvm name="default"/>
+            <socket-bindings socket-binding-group="standard-sockets" port-offset="350"/>
         </server>
         <server name="main-four" group="main-server-group" auto-start="false">
-            <socket-bindings port-offset="450"/>
             <jvm name="default">
                 <heap size="64m" max-size="256m"/>
             </jvm>
+            <socket-bindings port-offset="450"/>
         </server>
         <server name="other-two" group="other-server-group">
             <!--AS7-4177 override the host level config to smoke test that handling
-                Note we use the same values; this is just to check for obvious fatal errors -->
+            Note we use the same values; this is just to check for obvious fatal errors -->
             <interfaces>
                 <interface name="public">
                     <inet-address value="${jboss.test.host.secondary.address}"/>
                 </interface>
             </interfaces>
-            <socket-bindings socket-binding-group="other-sockets" port-offset="550"/>
             <jvm name="default"/>
+            <socket-bindings socket-binding-group="other-sockets" port-offset="550"/>
         </server>
         <server name="reload-two" group="reload-test-group"  auto-start="false">
             <jvm name="default" />
@@ -118,10 +116,10 @@
 
 
     <profile>
-        <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+        <subsystem xmlns="urn:wildfly:elytron:18.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
             <authentication-client>
                 <!-- corresponding secret: <secret value="c2xhdmVfdXMzcl9wYXNzd29yZA==" /> -->
-                <authentication-configuration sasl-mechanism-selector="DIGEST-MD5" name="secondaryHostAConfiguration" authentication-name="secondary" realm="ManagementRealm">
+                <authentication-configuration name="secondaryHostAConfiguration"  authentication-name="secondary" realm="ManagementRealm" sasl-mechanism-selector="DIGEST-MD5">
                     <credential-reference clear-text="secondary_us3r_password"/>
                 </authentication-configuration>
                 <authentication-context name="secondaryHostAContext">

@@ -52,6 +52,7 @@ import org.jboss.as.controller.operations.common.SnapshotDeleteHandler;
 import org.jboss.as.controller.operations.common.SnapshotListHandler;
 import org.jboss.as.controller.operations.common.SnapshotTakeHandler;
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
+import org.jboss.as.controller.operations.common.XmlFileMarshallingHandler;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
 import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
 import org.jboss.as.controller.operations.global.ReadConfigAsFeaturesOperationHandler;
@@ -249,6 +250,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         // Other root resource operations
         XmlMarshallingHandler xmh = new XmlMarshallingHandler(configurationPersister);
         resourceRegistration.registerOperationHandler(XmlMarshallingHandler.DEFINITION, xmh);
+        resourceRegistration.registerOperationHandler(XmlFileMarshallingHandler.DEFINITION, new XmlFileMarshallingHandler(configurationPersister));
 
         resourceRegistration.registerOperationHandler(NamespaceAddHandler.DEFINITION, NamespaceAddHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(NamespaceRemoveHandler.DEFINITION, NamespaceRemoveHandler.INSTANCE);

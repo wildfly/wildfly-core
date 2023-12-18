@@ -16,6 +16,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PAS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CONFIG_AS_XML_FILE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CONFIG_AS_XML_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
@@ -128,6 +129,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         ManagementInterface client = getClientForUser(MONITOR_USER);
         whoami(client, MONITOR_USER);
         readWholeConfig(client, Outcome.UNAUTHORIZED);
+        readWholeConfigAsXMLFile(client, Outcome.UNAUTHORIZED);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.HIDDEN);
         checkSensitiveAttribute(client, false);
@@ -150,6 +152,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         ManagementInterface client = getClientForUser(OPERATOR_USER);
         whoami(client, OPERATOR_USER);
         readWholeConfig(client, Outcome.UNAUTHORIZED);
+        readWholeConfigAsXMLFile(client, Outcome.UNAUTHORIZED);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.HIDDEN);
         checkSensitiveAttribute(client, false);
@@ -169,6 +172,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         ManagementInterface client = getClientForUser(MAINTAINER_USER);
         whoami(client, MAINTAINER_USER);
         readWholeConfig(client, Outcome.UNAUTHORIZED);
+        readWholeConfigAsXMLFile(client, Outcome.UNAUTHORIZED);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.HIDDEN);
         checkSensitiveAttribute(client, false);
@@ -188,6 +192,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         ManagementInterface client = getClientForUser(DEPLOYER_USER);
         whoami(client, DEPLOYER_USER);
         readWholeConfig(client, Outcome.UNAUTHORIZED);
+        readWholeConfigAsXMLFile(client, Outcome.UNAUTHORIZED);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.HIDDEN);
         checkSensitiveAttribute(client, false);
@@ -210,6 +215,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         ManagementInterface client = getClientForUser(ADMINISTRATOR_USER);
         whoami(client, ADMINISTRATOR_USER);
         readWholeConfig(client, Outcome.SUCCESS);
+        readWholeConfigAsXMLFile(client, Outcome.SUCCESS);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.SUCCESS);
         checkSensitiveAttribute(client, true);
@@ -231,6 +237,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         ManagementInterface client = getClientForUser(AUDITOR_USER);
         whoami(client, AUDITOR_USER);
         readWholeConfig(client, Outcome.SUCCESS);
+        readWholeConfigAsXMLFile(client, Outcome.SUCCESS);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.SUCCESS);
         checkSensitiveAttribute(client, true);
@@ -254,6 +261,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         ManagementInterface client = getClientForUser(SUPERUSER_USER);
         whoami(client, SUPERUSER_USER);
         readWholeConfig(client, Outcome.SUCCESS);
+        readWholeConfigAsXMLFile(client, Outcome.SUCCESS);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.SUCCESS);
         checkSensitiveAttribute(client, true);
@@ -278,6 +286,25 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
 
     private void readWholeConfig(ManagementInterface client, Outcome expectedOutcome) throws IOException {
         ModelNode op = createOpNode(null, READ_CONFIG_AS_XML_OPERATION);
+        RbacUtil.executeOperation(client, op, expectedOutcome);
+
+        // the code below calls the non-published operation 'describe'; see WFLY-2379 for more info
+        // once that issue is fixed, the test will only make sense for native mgmt interface
+        // (or maybe not even that)
+        if (this instanceof JmxInterfaceStandardRolesBasicTestCase) {
+            return;
+        }
+        op = createOpNode(null, READ_CHILDREN_NAMES_OPERATION);
+        op.get(CHILD_TYPE).set(SUBSYSTEM);
+        ModelNode subsystems = RbacUtil.executeOperation(getManagementClient().getControllerClient(), op, Outcome.SUCCESS);
+        for (ModelNode subsystem : subsystems.get(RESULT).asList()) {
+            op = createOpNode("subsystem=" + subsystem.asString(), DESCRIBE);
+            ModelNode result = RbacUtil.executeOperation(client, op, expectedOutcome);
+            assertEquals(expectedOutcome == Outcome.SUCCESS, result.hasDefined(RESULT));
+        }
+    }
+    private void readWholeConfigAsXMLFile(ManagementInterface client, Outcome expectedOutcome) throws IOException {
+        ModelNode op = createOpNode(null, READ_CONFIG_AS_XML_FILE_OPERATION);
         RbacUtil.executeOperation(client, op, expectedOutcome);
 
         // the code below calls the non-published operation 'describe'; see WFLY-2379 for more info
