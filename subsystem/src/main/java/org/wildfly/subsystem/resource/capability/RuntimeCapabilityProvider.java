@@ -14,16 +14,14 @@ import org.wildfly.service.descriptor.ServiceDescriptor;
  */
 public interface RuntimeCapabilityProvider<T> extends Supplier<RuntimeCapability<Void>>, ServiceDescriptor<T> {
 
-    RuntimeCapability<Void> getCapability();
-
     @Override
     default String getName() {
-        return this.getCapability().getName();
+        return this.get().getName();
     }
 
     @SuppressWarnings("unchecked")
     @Override
     default Class<T> getType() {
-        return (Class<T>) this.getCapability().getCapabilityServiceValueType();
+        return (Class<T>) this.get().getCapabilityServiceValueType();
     }
 }
