@@ -213,7 +213,7 @@ public class DeploymentHandlerUtil {
         final Supplier<VirtualFile> contentsSupplier = sb.requires(contentsServiceName);
         final RootDeploymentUnitService service = new RootDeploymentUnitService(deploymentUnitConsumer,
                 serverDeploymentRepositorySupplier, pathManagerSupplier, contentsSupplier,
-                deploymentUnitName, managementName, null,
+                deploymentUnitName, managementName, null, context.getStability(),
                 registration, mutableRegistration, deploymentResource, context.getCapabilityServiceSupport(), overlays,
                 annotationIndexSupport, isExplodedContent);
         final ServiceController<?> deploymentUnitController = sb.setInstance(service).install();

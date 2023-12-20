@@ -5,6 +5,7 @@
 
 package org.jboss.as.server.deployment;
 
+import org.jboss.as.version.Stability;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 
@@ -17,6 +18,7 @@ class DeploymentUnitImpl extends SimpleAttachable implements DeploymentUnit {
     private final DeploymentUnit parent;
     private final String name;
     private final ServiceRegistry serviceRegistry;
+    private final Stability stability;
 
     /**
      * Construct a new instance.
@@ -24,11 +26,13 @@ class DeploymentUnitImpl extends SimpleAttachable implements DeploymentUnit {
      * @param parent the parent (enclosing) deployment unit, if any
      * @param name the deployment unit name
      * @param serviceRegistry the service registry
+     * @param stability the stability level of the current process
      */
-    DeploymentUnitImpl(final DeploymentUnit parent, final String name, final ServiceRegistry serviceRegistry) {
+    DeploymentUnitImpl(final DeploymentUnit parent, final String name, final ServiceRegistry serviceRegistry, Stability stability) {
         this.parent = parent;
         this.name = name;
         this.serviceRegistry = serviceRegistry;
+        this.stability = stability;
     }
 
     public ServiceName getServiceName() {
@@ -52,6 +56,11 @@ class DeploymentUnitImpl extends SimpleAttachable implements DeploymentUnit {
     /** {@inheritDoc} */
     public ServiceRegistry getServiceRegistry() {
         return serviceRegistry;
+    }
+
+    @Override
+    public Stability getStability() {
+        return this.stability;
     }
 
     /** {@inheritDoc} */

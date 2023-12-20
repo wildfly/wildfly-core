@@ -5,6 +5,7 @@
 
 package org.jboss.as.server.deployment;
 
+import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 
@@ -12,7 +13,7 @@ import org.jboss.msc.service.ServiceRegistry;
  * The deployment unit.  This object retains data which is persistent for the life of the
  * deployment.
  */
-public interface DeploymentUnit extends Attachable {
+public interface DeploymentUnit extends Attachable, FeatureRegistry {
 
     /**
      * Get the service name of the root deployment unit service.
