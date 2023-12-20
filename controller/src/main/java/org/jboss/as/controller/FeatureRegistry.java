@@ -15,11 +15,7 @@ public interface FeatureRegistry extends FeatureFilter {
      * Returns the feature stability supported by this feature registry.
      * @return a stability level
      */
-    default Stability getStability() {
-        // TODO Default implementation is only here to prevent wildfly-full integration test failures
-        // Remove this once that is no longer the case
-        return Stability.DEFAULT;
-    }
+    Stability getStability();
 
     /**
      * Determines whether the specified feature is enabled by the configured stability level of the feature registry.
