@@ -15,7 +15,6 @@ import org.jboss.as.controller.PersistentResourceXMLDescriptionWriter;
 import org.jboss.as.controller.PersistentSubsystemSchema;
 import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
-import org.jboss.as.controller.xml.Schema;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
@@ -25,7 +24,7 @@ import org.jboss.staxmapper.XMLElementWriter;
  * @author Paul Ferraro
  * @param <S> the schema type
  */
-public interface SubsystemPersistence<S extends Schema> {
+public interface SubsystemPersistence<S extends SubsystemSchema<S>> {
 
     /**
      * Returns the supported schemas of this subsystem.
@@ -79,7 +78,7 @@ public interface SubsystemPersistence<S extends Schema> {
      * @param writer an XML reader
      * @return a subsystem persistence configuration
      */
-    static <S extends Schema, R extends XMLElementReader<List<ModelNode>>> SubsystemPersistence<S> of(Set<S> schemas, Function<S, R> readerFactory, XMLElementWriter<SubsystemMarshallingContext> writer) {
+    static <S extends SubsystemSchema<S>, R extends XMLElementReader<List<ModelNode>>> SubsystemPersistence<S> of(Set<S> schemas, Function<S, R> readerFactory, XMLElementWriter<SubsystemMarshallingContext> writer) {
         return new DefaultSubsystemPersistence<>(schemas, readerFactory, writer);
     }
 
@@ -94,7 +93,7 @@ public interface SubsystemPersistence<S extends Schema> {
      * @param writer an XML reader
      * @return a subsystem persistence configuration
      */
-    static <S extends Schema, R extends XMLElementReader<List<ModelNode>>> SubsystemPersistence<S> of(Set<S> schemas, Function<S, R> readerFactory, S currentSchema, XMLElementReader<List<ModelNode>> currentReader, XMLElementWriter<SubsystemMarshallingContext> writer) {
+    static <S extends SubsystemSchema<S>, R extends XMLElementReader<List<ModelNode>>> SubsystemPersistence<S> of(Set<S> schemas, Function<S, R> readerFactory, S currentSchema, XMLElementReader<List<ModelNode>> currentReader, XMLElementWriter<SubsystemMarshallingContext> writer) {
         return new DefaultSubsystemPersistence<>(schemas, readerFactory, writer) {
             @Override
             public Set<S> getSchemas() {
@@ -113,7 +112,7 @@ public interface SubsystemPersistence<S extends Schema> {
         };
     }
 
-    class DefaultSubsystemPersistence<S extends Schema, R extends XMLElementReader<List<ModelNode>>> implements SubsystemPersistence<S> {
+    class DefaultSubsystemPersistence<S extends SubsystemSchema<S>, R extends XMLElementReader<List<ModelNode>>> implements SubsystemPersistence<S> {
         private final Set<S> schemas;
         private final Function<S, R> readerFactory;
         private final XMLElementWriter<SubsystemMarshallingContext> writer;
