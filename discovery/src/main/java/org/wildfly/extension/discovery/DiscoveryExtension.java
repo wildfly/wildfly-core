@@ -5,11 +5,9 @@
 
 package org.wildfly.extension.discovery;
 
-import org.jboss.as.controller.SubsystemModel;
 import org.wildfly.subsystem.SubsystemConfiguration;
 import org.wildfly.subsystem.SubsystemExtension;
 import org.wildfly.subsystem.SubsystemPersistence;
-import org.wildfly.subsystem.resource.SubsystemResourceDefinitionRegistrar;
 
 /**
  * The extension class for the WildFly Discovery extension.
@@ -19,21 +17,6 @@ import org.wildfly.subsystem.resource.SubsystemResourceDefinitionRegistrar;
 public class DiscoveryExtension extends SubsystemExtension<DiscoverySubsystemSchema> {
 
     public DiscoveryExtension() {
-        super(new SubsystemConfiguration() {
-            @Override
-            public String getName() {
-                return DiscoverySubsystemRegistrar.NAME;
-            }
-
-            @Override
-            public SubsystemModel getModel() {
-                return DiscoverySubsystemModel.CURRENT;
-            }
-
-            @Override
-            public SubsystemResourceDefinitionRegistrar getRegistrar() {
-                return new DiscoverySubsystemRegistrar();
-            }
-        }, SubsystemPersistence.of(DiscoverySubsystemSchema.CURRENT));
+        super(SubsystemConfiguration.of(DiscoverySubsystemRegistrar.NAME, DiscoverySubsystemModel.CURRENT, DiscoverySubsystemRegistrar::new), SubsystemPersistence.of(DiscoverySubsystemSchema.CURRENT));
     }
 }
