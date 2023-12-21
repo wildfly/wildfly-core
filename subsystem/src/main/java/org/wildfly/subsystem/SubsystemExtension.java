@@ -9,24 +9,24 @@ import java.util.Optional;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.SubsystemRegistration;
+import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.services.path.PathManager;
-import org.jboss.as.controller.xml.Schema;
 import org.wildfly.subsystem.resource.ManagementResourceRegistrationContext;
 
 /**
  * Generic extension implementation that registers a single subsystem.
  * @author Paul Ferraro
  */
-public class SubsystemExtension<S extends Schema> implements Extension {
+public class SubsystemExtension<S extends SubsystemSchema<S>> implements Extension {
 
     private final SubsystemConfiguration configuration;
-    private final SubsystemPersistence<S> persistenceConfiguration;
+    private final SubsystemPersistence<S> persistence;
 
-    public SubsystemExtension(SubsystemConfiguration configuration, SubsystemPersistence<S> persistenceConfiguration) {
+    public SubsystemExtension(SubsystemConfiguration configuration, SubsystemPersistence<S> persistence) {
         this.configuration = configuration;
-        this.persistenceConfiguration = persistenceConfiguration;
+        this.persistence = persistence;
     }
 
     @Override
@@ -45,13 +45,11 @@ public class SubsystemExtension<S extends Schema> implements Extension {
         };
         // Auto-register subsystem describe handler
         this.configuration.getRegistrar().register(registration, registrationContext).registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
-        registration.registerXMLElementWriter(this.persistenceConfiguration.getWriter());
+        registration.registerXMLElementWriter(this.persistence.getWriter());
     }
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        for (S schema : this.persistenceConfiguration.getSchemas()) {
-            context.setSubsystemXmlMapping(this.configuration.getName(), schema.getNamespace().getUri(), this.persistenceConfiguration.getReader(schema));
-        }
+        context.setSubsystemXmlMappings(this.configuration.getName(), this.persistence.getSchemas());
     }
 }
