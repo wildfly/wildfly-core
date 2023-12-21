@@ -18,6 +18,13 @@ import org.jboss.as.controller.OperationContext;
 public interface ResourceServiceInstaller {
 
     /**
+     * Installs a service into the target associated with the specified operation context.
+     * @param context an operation context
+     * @return a mechanism to remove the installed service
+     */
+    Consumer<OperationContext> install(OperationContext context);
+
+    /**
      * Returns a composite {@link ResourceServiceInstaller} that installs the specified installers.
      * @param installers a variable number of installers
      * @return a composite installer
@@ -50,11 +57,4 @@ public interface ResourceServiceInstaller {
             }
         };
     }
-
-    /**
-     * Installs a service into the target associated with the specified operation context.
-     * @param context an operation context
-     * @return a mechanism to remove the installed service
-     */
-    Consumer<OperationContext> install(OperationContext context);
 }
