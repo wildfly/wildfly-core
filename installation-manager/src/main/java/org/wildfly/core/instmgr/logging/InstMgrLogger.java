@@ -81,6 +81,12 @@ public interface InstMgrLogger extends BasicLogger {
     @Message(id = 20, value = "No custom patches installed found for the specified manifest maven coordinates: '%s'")
     OperationFailedException noCustomPatchFound(String manifestGA);
 
+    @Message(id = 21, value = "You cannot use the 'local-cache' option when the 'use-default-local-cache' option is enabled.")
+    OperationFailedException localCacheWithUseDefaultLocalCache();
+
+    @Message(id = 22, value = "'no-resolve-local-cache' and 'use-default-local-cache' are mutually exclusive (specify only one).")
+    OperationFailedException noResolveLocalCacheWithUseDefaultLocalCache();
+
     ////////////////////////////////////////////////
     // Messages without IDs
 
@@ -89,4 +95,6 @@ public interface InstMgrLogger extends BasicLogger {
 
     @Message(id = Message.NONE, value = "The structure of directories and files in the .zip file is invalid. The '%s' directory cannot be found as a second-level entry in the extracted .zip file.")
     ZipException invalidZipEntry(String directory);
+
+
 }

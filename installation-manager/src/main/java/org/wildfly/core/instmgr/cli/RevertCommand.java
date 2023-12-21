@@ -19,6 +19,7 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.aesh.cmd.HeadersCompleter;
 import org.jboss.as.cli.impl.aesh.cmd.HeadersConverter;
+import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -33,8 +34,10 @@ public class RevertCommand extends AbstractInstMgrCommand {
     private List<String> repositories;
     @Option(name = "local-cache")
     private File localCache;
-    @Option(name = "no-resolve-local-cache", hasValue = false)
+    @Option(name = NO_RESOLVE_LOCAL_CACHE_OPTION, hasValue = false, activator = AbstractInstMgrCommand.NoResolveLocalCacheActivator.class)
     private boolean noResolveLocalCache;
+    @Option(name = USE_DEFAULT_LOCAL_CACHE_OPTION, hasValue = false, activator = AbstractInstMgrCommand.UseDefaultLocalCacheActivator.class)
+    private boolean useDefaultLocalCache;
     @Option(name = "offline", hasValue = false)
     private boolean offline;
     @OptionList(name = "maven-repo-files")
@@ -45,6 +48,9 @@ public class RevertCommand extends AbstractInstMgrCommand {
     @Option(converter = HeadersConverter.class, completer = HeadersCompleter.class)
     public ModelNode headers;
 
+    private Boolean optNoResolveLocalCache;
+    private Boolean optUseDefaultLocalCache;
+
     @Override
     public CommandResult execute(CLICommandInvocation commandInvocation) throws CommandException, InterruptedException {
         final CommandContext ctx = commandInvocation.getCommandContext();
@@ -52,6 +58,14 @@ public class RevertCommand extends AbstractInstMgrCommand {
         if (client == null) {
             ctx.printLine("You are disconnected at the moment. Type 'connect' to connect to the server or 'help' for the list of supported commands.");
             return CommandResult.FAILURE;
+        }
+
+        ParsedCommandLine cmdParser = ctx.getParsedCommandLine();
+        optNoResolveLocalCache = cmdParser.hasProperty("--" + NO_RESOLVE_LOCAL_CACHE_OPTION) ? noResolveLocalCache : null;
+        optUseDefaultLocalCache = cmdParser.hasProperty("--" + USE_DEFAULT_LOCAL_CACHE_OPTION) ? useDefaultLocalCache : null;
+
+        if (optNoResolveLocalCache != null && optUseDefaultLocalCache != null) {
+            throw new CommandException(String.format("%s and %s cannot be used at the same time.", NO_RESOLVE_LOCAL_CACHE_OPTION, USE_DEFAULT_LOCAL_CACHE_OPTION));
         }
 
         commandInvocation.println("\nThe new installation is being prepared ...\n");
@@ -83,7 +97,14 @@ public class RevertCommand extends AbstractInstMgrCommand {
             op.get(InstMgrConstants.LOCAL_CACHE).set(localCache.toPath().normalize().toAbsolutePath().toString());
         }
 
-        op.get(InstMgrConstants.NO_RESOLVE_LOCAL_CACHE).set(noResolveLocalCache);
+        if (optNoResolveLocalCache != null) {
+            op.get(InstMgrConstants.NO_RESOLVE_LOCAL_CACHE).set(noResolveLocalCache);
+        }
+
+        if (optUseDefaultLocalCache != null) {
+            op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(useDefaultLocalCache);
+        }
+
         op.get(InstMgrConstants.OFFLINE).set(offline);
 
         if (revision != null) {

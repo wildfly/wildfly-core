@@ -80,13 +80,22 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         final boolean offline = OFFLINE.resolveModelAttribute(context, operation).asBoolean(false);
         final String pathLocalRepo = LOCAL_CACHE.resolveModelAttribute(context, operation).asStringOrNull();
-        final boolean noResolveLocalCache = NO_RESOLVE_LOCAL_CACHE.resolveModelAttribute(context, operation).asBoolean(false);
+        final Boolean noResolveLocalCache = NO_RESOLVE_LOCAL_CACHE.resolveModelAttribute(context, operation).asBooleanOrNull();
+        final Boolean useDefaultLocalCache = USE_DEFAULT_LOCAL_CACHE.resolveModelAttribute(context, operation).asBooleanOrNull();
         final Path localRepository = pathLocalRepo != null ? Path.of(pathLocalRepo) : null;
         final List<ModelNode> mavenRepoFileIndexes = MAVEN_REPO_FILES.resolveModelAttribute(context, operation).asListOrEmpty();
         final List<ModelNode> repositoriesMn = REPOSITORIES.resolveModelAttribute(context, operation).asListOrEmpty();
         final String revision = REVISION.resolveModelAttribute(context, operation).asString();
 
-        if (pathLocalRepo != null && noResolveLocalCache) {
+        if (noResolveLocalCache != null && useDefaultLocalCache !=null) {
+            throw InstMgrLogger.ROOT_LOGGER.noResolveLocalCacheWithUseDefaultLocalCache();
+        }
+
+        if (pathLocalRepo != null && useDefaultLocalCache != null && useDefaultLocalCache) {
+            throw InstMgrLogger.ROOT_LOGGER.localCacheWithUseDefaultLocalCache();
+        }
+
+        if (pathLocalRepo != null && noResolveLocalCache != null && noResolveLocalCache) {
             throw InstMgrLogger.ROOT_LOGGER.localCacheWithNoResolveLocalCache();
         }
 
@@ -106,7 +115,10 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
                     imService.beginCandidateServer();
                     addCompleteStep(context, imService, null);
                     final Path homeDir = imService.getHomeDir();
-                    final MavenOptions mavenOptions = new MavenOptions(localRepository, noResolveLocalCache, offline);
+                    boolean noResolveLocalCacheResult = noResolveLocalCache != null
+                            ? noResolveLocalCache
+                            : useDefaultLocalCache == null ? localRepository == null : (!useDefaultLocalCache && localRepository == null);
+                    final MavenOptions mavenOptions = new MavenOptions(localRepository, noResolveLocalCacheResult, offline);
                     final InstallationManager im = imf.create(homeDir, mavenOptions);
 
                     final List<Repository> repositories = new ArrayList<>();

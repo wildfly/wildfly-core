@@ -101,7 +101,7 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
             List<Path> entries = content
                     .filter(e -> e.toFile().isDirectory() && e.getFileName().toString().equals(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES))
                     .collect(Collectors.toList());
-            if (entries.isEmpty() || entries.size() != 1) {
+            if (entries.size() != 1) {
                 throw InstMgrLogger.ROOT_LOGGER.invalidZipEntry(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES);
             }
 

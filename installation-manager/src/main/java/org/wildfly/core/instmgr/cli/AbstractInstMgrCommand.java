@@ -10,6 +10,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.wildfly.core.instmgr.cli.UpdateCommand.CONFIRM_OPTION;
 import static org.wildfly.core.instmgr.cli.UpdateCommand.DRY_RUN_OPTION;
+import static org.wildfly.core.instmgr.cli.UpdateCommand.NO_RESOLVE_LOCAL_CACHE_OPTION;
+import static org.wildfly.core.instmgr.cli.UpdateCommand.USE_DEFAULT_LOCAL_CACHE_OPTION;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -45,6 +47,8 @@ import org.wildfly.core.instmgr.InstMgrConstants;
 @CommandDefinition(name = "abstract-inst-mgr-cmd", description = "", activator = InstMgrActivator.class)
 public abstract class AbstractInstMgrCommand implements Command<CLICommandInvocation> {
     static final PathElement CORE_SERVICE_INSTALLER = PathElement.pathElement(CORE_SERVICE, InstMgrGroupCommand.COMMAND_NAME);
+    static final String NO_RESOLVE_LOCAL_CACHE_OPTION= "no-resolve-local-cache";
+    static final String USE_DEFAULT_LOCAL_CACHE_OPTION = "use-default-local-cache";
 
     @Option(name = "host", completer = AbstractInstMgrCommand.HostsCompleter.class, activator = AbstractInstMgrCommand.HostsActivator.class)
     protected String host;
@@ -118,6 +122,18 @@ public abstract class AbstractInstMgrCommand implements Command<CLICommandInvoca
     public static class ConfirmActivator extends AbstractRejectOptionActivator {
         public ConfirmActivator() {
             super(DRY_RUN_OPTION);
+        }
+    }
+
+    public static class UseDefaultLocalCacheActivator extends AbstractRejectOptionActivator {
+        public UseDefaultLocalCacheActivator() {
+            super(NO_RESOLVE_LOCAL_CACHE_OPTION);
+        }
+    }
+
+    public static class NoResolveLocalCacheActivator extends AbstractRejectOptionActivator {
+        public NoResolveLocalCacheActivator() {
+            super(USE_DEFAULT_LOCAL_CACHE_OPTION);
         }
     }
 

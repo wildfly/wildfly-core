@@ -24,7 +24,8 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
     private final List<File> mavenRepoFiles;
     private final List<String> repositories;
     private final Path localCache;
-    private final boolean noResolveLocalCache;
+    private final Boolean noResolveLocalCache;
+    private final Boolean useDefaultLocalCache;
     private final boolean offline;
     private final ModelNode headers;
 
@@ -35,6 +36,7 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
         this.noResolveLocalCache = builder.noResolveLocalCache;
         this.offline = builder.offline;
         this.headers = builder.headers;
+        this.useDefaultLocalCache = builder.useDefaultLocalCache;
     }
 
     @Override
@@ -59,7 +61,14 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
             op.get(InstMgrConstants.LOCAL_CACHE).set(localCache.normalize().toAbsolutePath().toString());
         }
 
-        op.get(InstMgrConstants.NO_RESOLVE_LOCAL_CACHE).set(noResolveLocalCache);
+        if (useDefaultLocalCache != null) {
+            op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(useDefaultLocalCache);
+        }
+
+        if (noResolveLocalCache != null) {
+            op.get(InstMgrConstants.NO_RESOLVE_LOCAL_CACHE).set(noResolveLocalCache);
+        }
+
         op.get(InstMgrConstants.OFFLINE).set(offline);
 
         if (this.headers != null && headers.isDefined()) {
@@ -76,12 +85,12 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
         private List<String> repositories;
         private Path localCache;
 
-        private boolean noResolveLocalCache;
+        private Boolean noResolveLocalCache;
+        private Boolean useDefaultLocalCache;
 
         public Builder() {
             this.repositories = new ArrayList<>();
             this.offline = false;
-            this.noResolveLocalCache = false;
             this.mavenRepoFiles = new ArrayList<>();
         }
 
@@ -94,7 +103,7 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
 
         public Builder setRepositories(List<String> repositories) {
             if (repositories != null) {
-                this.repositories = new ArrayList<>(repositories);
+                this.repositories.addAll(repositories);
             }
             return this;
         }
@@ -106,8 +115,13 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
             return this;
         }
 
-        public Builder setNoResolveLocalCache(boolean noResolveLocalCache) {
+        public Builder setNoResolveLocalCache(Boolean noResolveLocalCache) {
             this.noResolveLocalCache = noResolveLocalCache;
+            return this;
+        }
+
+        public Builder setUseDefaultLocalCache(Boolean useDefaultLocalCache) {
+            this.useDefaultLocalCache = useDefaultLocalCache;
             return this;
         }
 
