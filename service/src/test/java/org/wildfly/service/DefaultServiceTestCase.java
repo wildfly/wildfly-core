@@ -8,8 +8,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -31,14 +31,15 @@ public class DefaultServiceTestCase {
         Consumer<Object> injector = mock(Consumer.class);
         Function<Object, Object> mapper = mock(Function.class);
         Supplier<Object> factory = mock(Supplier.class);
+        Consumer<Object> initializer = mock(Consumer.class);
         Consumer<Object> destroyer = mock(Consumer.class);
         Object value = "value";
         Object mappedValue = "mapped";
 
-        test(new Installer.DefaultService<>(injector, mapper, factory, destroyer), value, mappedValue, List.of(injector), mapper, factory, destroyer);
+        test(new Installer.DefaultService<>(injector, mapper, factory, initializer, destroyer), value, mappedValue, injector, mapper, factory, initializer, destroyer);
     }
 
-    static <T, V> void test(Service service, T value, V mappedValue, Iterable<Consumer<V>> consumers, Function<T, V> mapper, Supplier<T> factory, Consumer<T> stopTask) throws StartException {
+    static <T, V> void test(Service service, T value, V mappedValue, Consumer<V> consumer, Function<T, V> mapper, Supplier<T> factory, Consumer<T> startTask, Consumer<T> stopTask) throws StartException {
         StartContext startContext = mock(StartContext.class);
 
         doReturn(value).when(factory).get();
@@ -46,9 +47,8 @@ public class DefaultServiceTestCase {
 
         service.start(startContext);
 
-        for (Consumer<V> consumer : consumers) {
-            verify(consumer).accept(mappedValue);
-        }
+        verify(consumer).accept(mappedValue);
+        verify(startTask).accept(value);
         verifyNoInteractions(startContext);
         verifyNoInteractions(stopTask);
 
@@ -56,9 +56,8 @@ public class DefaultServiceTestCase {
 
         service.stop(stopContext);
 
-        for (Consumer<V> consumer : consumers) {
-            verify(consumer).accept(null);
-        }
+        verify(consumer).accept(null);
+        verifyNoMoreInteractions(startTask);
         verify(stopTask).accept(value);
         verifyNoInteractions(stopContext);
     }

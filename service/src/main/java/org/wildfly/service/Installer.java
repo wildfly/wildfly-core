@@ -35,44 +35,6 @@ public interface Installer<ST extends ServiceTarget> {
     ServiceController<?> install(ST target);
 
     /**
-     * Returns a composite dependency that delegates to the specified dependencies.
-     * @param <T> the consumed object type
-     * @param dependency1 a consumer
-     * @param dependency2 a consumer
-     * @return a composite dependency
-     */
-    static <T> Consumer<T> combine(Consumer<T> dependency1, Consumer<T> dependency2) {
-        return combine(List.of(dependency1, dependency2));
-    }
-
-    /**
-     * Returns a composite dependency that delegates to the specified dependencies.
-     * @param <T> the consumed object type
-     * @param dependencies an arbitrary number of dependencies
-     * @return a composite dependency
-     */
-    static <T> Consumer<T> combine(@SuppressWarnings("unchecked") Consumer<T>... dependencies) {
-        return combine(List.of(dependencies));
-    }
-
-    /**
-     * Returns a composite dependency that delegates to the specified dependencies.
-     * @param <T> the consumed object type
-     * @param dependencies an arbitrary number of dependencies
-     * @return a composite dependency
-     */
-    static <T> Consumer<T> combine(Iterable<? extends Consumer<T>> dependencies) {
-        return new Consumer<>() {
-            @Override
-            public void accept(T value) {
-                for (Consumer<? super T> dependency : dependencies) {
-                    dependency.accept(value);
-                }
-            }
-        };
-    }
-
-    /**
      * Builds an installer.
      * @param <B> the builder type
      * @param <I> the installer type
@@ -104,30 +66,18 @@ public interface Installer<ST extends ServiceTarget> {
 
         /**
          * Configures the dependencies of the installed service.
-         * @param dependency1 a dependency
-         * @param dependency2 a second dependency
-         * @return a reference to this builder
-         */
-        default B withDependencies(Consumer<SB> dependency1, Consumer<SB> dependency2) {
-            return this.withDependency(combine(dependency1, dependency2));
-        }
-
-        /**
-         * Configures the dependencies of the installed service.
-         * @param dependencies a variable number of dependencies
-         * @return a reference to this builder
-         */
-        default B withDependencies(@SuppressWarnings("unchecked") Consumer<SB>... dependencies) {
-            return this.withDependency(combine(dependencies));
-        }
-
-        /**
-         * Configures the dependencies of the installed service.
          * @param dependencies a variable number of dependencies
          * @return a reference to this builder
          */
         default B withDependencies(Iterable<? extends Consumer<SB>> dependencies) {
-            return this.withDependency(combine(dependencies));
+            return this.withDependency(new Consumer<>() {
+                @Override
+                public void accept(SB builder) {
+                    for (Consumer<SB> dependency : dependencies) {
+                        dependency.accept(builder);
+                    }
+                }
+            });
         }
 
         /**
@@ -138,11 +88,18 @@ public interface Installer<ST extends ServiceTarget> {
         B provides(ServiceName name);
 
         /**
-         * Configures a task to run on {@link org.jboss.msc.Service#start(org.jboss.msc.service.StartContext)}.
-         * @param task a task consuming the service value
+         * Configures a captor invoked with the service value on {@link org.jboss.msc.Service#start(org.jboss.msc.service.StartContext)}, and with null on {@link org.jboss.msc.Service#stop(StopContext)}.
+         * @param captor a consumer of the service value on start, and null on stop.
          * @return a reference to this builder
          */
-        B onStart(Consumer<V> task);
+        B withCaptor(Consumer<V> captor);
+
+        /**
+         * Configures a task to run on {@link org.jboss.msc.Service#start(org.jboss.msc.service.StartContext)}.
+         * @param task a task consuming the service value source
+         * @return a reference to this builder
+         */
+        B onStart(Consumer<T> task);
 
         /**
          * Configures a task to run on {@link org.jboss.msc.Service#stop(org.jboss.msc.service.StopContext)}.
@@ -191,6 +148,12 @@ public interface Installer<ST extends ServiceTarget> {
         Function<SB, Consumer<V>> getProvider();
 
         /**
+         * Returns a consumer that captures and nulls the provided value.
+         * @return a capturing consumer
+         */
+        Consumer<V> getCaptor();
+
+        /**
          * Returns the dependency of this service
          * @return a service dependency
          */
@@ -200,7 +163,7 @@ public interface Installer<ST extends ServiceTarget> {
          * Returns a task that consumes the service value on {@link org.jboss.msc.Service#start(org.jboss.msc.service.StartContext)}.
          * @return a service value consumer
          */
-        Consumer<V> getStartTask();
+        Consumer<T> getStartTask();
 
         /**
          * Returns a task that consumes the source value on {@link org.jboss.msc.Service#stop(org.jboss.msc.service.StopContext)}.
@@ -232,7 +195,8 @@ public interface Installer<ST extends ServiceTarget> {
         private final Supplier<T> factory;
         private final ServiceController.Mode mode;
         private final Consumer<DSB> dependency;
-        private final Consumer<V> startTask;
+        private final Consumer<V> captor;
+        private final Consumer<T> startTask;
         private final Consumer<T> stopTask;
         private final UnaryOperator<SB> decorator;
 
@@ -243,6 +207,7 @@ public interface Installer<ST extends ServiceTarget> {
             this.factory = config.getFactory();
             this.mode = config.getInitialMode();
             this.dependency = config.getDependency();
+            this.captor = config.getCaptor();
             this.startTask = config.getStartTask();
             this.stopTask = config.getStopTask();
             this.decorator = config.getServiceBuilderDecorator();
@@ -253,7 +218,7 @@ public interface Installer<ST extends ServiceTarget> {
             SB builder = this.decorator.apply(this.serviceBuilderFactory.apply(target));
             Consumer<V> injector = this.provider.apply(builder);
             this.dependency.accept(builder);
-            Service service = new DefaultService<>(combine(injector, this.startTask), this.mapper, this.factory, this.stopTask);
+            Service service = new DefaultService<>(injector.andThen(this.captor), this.mapper, this.factory, this.startTask, this.stopTask);
             return builder.setInstance(service).setInitialMode(this.mode).install();
         }
 
@@ -263,7 +228,8 @@ public interface Installer<ST extends ServiceTarget> {
             private final Supplier<T> factory;
             private volatile ServiceController.Mode mode = ServiceController.Mode.ON_DEMAND;
             private volatile Consumer<DSB> dependency = Functions.discardingConsumer();
-            private volatile Consumer<V> startTask = Functions.discardingConsumer();
+            private volatile Consumer<V> captor = Functions.discardingConsumer();
+            private volatile Consumer<T> startTask = Functions.discardingConsumer();
             private volatile Consumer<T> stopTask = Functions.discardingConsumer();
 
             protected Builder(Function<T, V> mapper, Supplier<T> factory) {
@@ -298,14 +264,20 @@ public interface Installer<ST extends ServiceTarget> {
             }
 
             @Override
-            public B onStart(Consumer<V> consumer) {
-                this.startTask = consumer;
+            public B withCaptor(Consumer<V> captor) {
+                this.captor = captor;
                 return this.builder();
             }
 
             @Override
-            public B onStop(Consumer<T> consumer) {
-                this.stopTask = consumer;
+            public B onStart(Consumer<T> task) {
+                this.startTask = task;
+                return this.builder();
+            }
+
+            @Override
+            public B onStop(Consumer<T> task) {
+                this.stopTask = task;
                 return this.builder();
             }
 
@@ -345,7 +317,12 @@ public interface Installer<ST extends ServiceTarget> {
             }
 
             @Override
-            public Consumer<V> getStartTask() {
+            public Consumer<V> getCaptor() {
+                return this.captor;
+            }
+
+            @Override
+            public Consumer<T> getStartTask() {
                 return this.startTask;
             }
 
@@ -358,28 +335,27 @@ public interface Installer<ST extends ServiceTarget> {
 
     class DefaultService<T, V> implements Service {
 
-        private final Consumer<V> consumer;
+        private final Consumer<V> captor;
         private final Function<T, V> mapper;
         private final Supplier<T> factory;
+        private final Consumer<T> startTask;
         private final Consumer<T> stopTask;
 
         private volatile T value;
 
-        DefaultService(Consumer<V> consumer, Function<T, V> mapper, Supplier<T> factory, Consumer<T> stopTask) {
-            this.consumer = consumer;
+        DefaultService(Consumer<V> captor, Function<T, V> mapper, Supplier<T> factory, Consumer<T> startTask, Consumer<T> stopTask) {
+            this.captor = captor;
             this.mapper = mapper;
             this.factory = factory;
+            this.startTask = startTask;
             this.stopTask = stopTask;
         }
 
         @Override
         public void start(StartContext context) throws StartException {
-            try {
-                this.value = this.factory.get();
-                this.consumer.accept(this.mapper.apply(this.value));
-            } catch (RuntimeException | Error e) {
-                throw new StartException(e);
-            }
+            this.value = this.factory.get();
+            this.startTask.accept(this.value);
+            this.captor.accept(this.mapper.apply(this.value));
         }
 
         @Override
@@ -388,7 +364,7 @@ public interface Installer<ST extends ServiceTarget> {
                 this.stopTask.accept(this.value);
             } finally {
                 this.value = null;
-                this.consumer.accept(null);
+                this.captor.accept(null);
             }
         }
     }
