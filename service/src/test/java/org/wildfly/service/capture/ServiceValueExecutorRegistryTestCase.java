@@ -2,7 +2,7 @@
  * Copyright The WildFly Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package org.wildfly.subsystem.service.capture;
+package org.wildfly.service.capture;
 
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -11,12 +11,6 @@ import org.jboss.msc.service.ServiceName;
 import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.common.function.ExceptionFunction;
-import org.wildfly.service.capture.FunctionExecutor;
-import org.wildfly.service.descriptor.BinaryServiceDescriptor;
-import org.wildfly.service.descriptor.NullaryServiceDescriptor;
-import org.wildfly.service.descriptor.TernaryServiceDescriptor;
-import org.wildfly.service.descriptor.UnaryServiceDescriptor;
-import org.wildfly.subsystem.service.ServiceDependency;
 
 /**
  * @author Paul Ferraro
@@ -27,14 +21,10 @@ public class ServiceValueExecutorRegistryTestCase {
 
     @Test
     public void test() {
-        this.test(ServiceDependency.on(ServiceName.JBOSS.append("foo")), ServiceDependency.on(ServiceName.JBOSS.append("bar")));
-        this.test(ServiceDependency.on(NullaryServiceDescriptor.of("foo", Object.class)), ServiceDependency.on(NullaryServiceDescriptor.of("bar", Object.class)));
-        this.test(ServiceDependency.on(UnaryServiceDescriptor.of("test", Object.class), "foo"), ServiceDependency.on(UnaryServiceDescriptor.of("test", Object.class), "bar"));
-        this.test(ServiceDependency.on(BinaryServiceDescriptor.of("test", Object.class), "foo", "bar"), ServiceDependency.on(BinaryServiceDescriptor.of("test", Object.class), "foo", "baz"));
-        this.test(ServiceDependency.on(TernaryServiceDescriptor.of("test", Object.class), "foo", "bar", "baz"), ServiceDependency.on(TernaryServiceDescriptor.of("test", Object.class), "foo", "bar", "qux"));
+        this.test(ServiceName.JBOSS.append("foo"), ServiceName.JBOSS.append("bar"));
     }
 
-    private void test(ServiceDependency<Object> service1, ServiceDependency<Object> service2) {
+    private void test(ServiceName service1, ServiceName service2) {
         Object value1 = UUID.randomUUID();
         Object value2 = UUID.randomUUID();
 

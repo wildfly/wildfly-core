@@ -2,19 +2,25 @@
  * Copyright The WildFly Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package org.wildfly.subsystem.service.capture;
+package org.wildfly.service.capture;
 
 import java.util.function.Supplier;
 
 import org.wildfly.common.function.ExceptionFunction;
 
 /**
- * Encapsulates execution of a function.
+ * Encapsulates execution of a single argument function.
  * @author Paul Ferraro
  * @param <V> the type of the function argument
  */
 public interface FunctionExecutor<V> {
 
+    /**
+     * Creates a function executor from the specified argument supplier.
+     * @param <V> the value type of the function argument
+     * @param reference a supplier of the function argument
+     * @return a new function executor instance
+     */
     static <V> FunctionExecutor<V> of(Supplier<V> reference) {
         return new FunctionExecutor<>() {
             @Override

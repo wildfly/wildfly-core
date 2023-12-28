@@ -37,7 +37,8 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
      * @return a service installer builder
      */
     static <V> Builder<V, V> builder(ServiceDependency<V> dependency) {
-        return builder(dependency).withDependency(dependency).asPassive();
+        Supplier<V> supplier = dependency;
+        return builder(supplier).withDependency(dependency).asPassive();
     }
 
     /**

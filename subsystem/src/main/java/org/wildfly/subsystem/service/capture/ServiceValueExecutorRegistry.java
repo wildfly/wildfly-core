@@ -4,11 +4,10 @@
  */
 package org.wildfly.subsystem.service.capture;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import org.wildfly.service.capture.FunctionExecutor;
+import org.wildfly.service.capture.ValueExecutorRegistry;
 import org.wildfly.subsystem.service.ServiceDependency;
 
 /**
@@ -23,34 +22,23 @@ public interface ServiceValueExecutorRegistry<V> extends ServiceValueRegistry<V>
      * @param <V> the captured value type
      * @return a new value executor registry
      */
-    static <V> ServiceValueExecutorRegistry<V> create() {
+    static <V> ServiceValueExecutorRegistry<V> newInstance() {
+        ValueExecutorRegistry<ServiceDependency<V>, V> registry = ValueExecutorRegistry.newInstance();
         return new ServiceValueExecutorRegistry<>() {
-            private final Map<ServiceDependency<V>, AtomicReference<V>> references = new ConcurrentHashMap<>();
-
-            private AtomicReference<V> create(ServiceDependency<V> dependency) {
-                return new AtomicReference<>();
-            }
-
             @Override
             public Consumer<V> add(ServiceDependency<V> dependency) {
-                AtomicReference<V> reference = this.references.computeIfAbsent(dependency, this::create);
-                return reference::set;
+                return registry.add(dependency);
             }
 
             @Override
             public void remove(ServiceDependency<V> dependency) {
-                AtomicReference<V> reference = this.references.remove(dependency);
-                if (reference != null) {
-                    reference.set(null);
-                }
+                registry.remove(dependency);
             }
 
             @Override
             public FunctionExecutor<V> getExecutor(ServiceDependency<V> dependency) {
-                AtomicReference<V> reference = this.references.get(dependency);
-                return (reference != null) ? FunctionExecutor.of(reference::get) : null;
+                return registry.getExecutor(dependency);
             }
         };
     }
-
 }
