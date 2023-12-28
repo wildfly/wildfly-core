@@ -9,13 +9,8 @@ import org.wildfly.subsystem.service.ServiceDependency;
 /**
  * Registry of {@link FunctionExecutor} objects.
  * @author Paul Ferraro
- * @param <V> the argument type of the function executor
+ * @param <K> the registry key type
+ * @param <V> the registry value type
  */
-public interface FunctionExecutorRegistry<V> {
-    /**
-     * Returns the function executor for the value provided by the specified dependency
-     * @param dependency a service dependency
-     * @return a function executor
-     */
-    FunctionExecutor<V> getExecutor(ServiceDependency<V> dependency);
+public interface FunctionExecutorRegistry<V> extends org.wildfly.service.capture.FunctionExecutorRegistry<ServiceDependency<V>, V> {
 }
