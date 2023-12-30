@@ -58,19 +58,19 @@ public interface Installer<ST extends ServiceTarget> {
         B asActive();
 
         /**
-         * Configures the dependency of the installed service.
+         * Configures a dependency of the installed service.
          * @param dependency a dependency
          * @return a reference to this builder
          */
-        B withDependency(Consumer<SB> dependency);
+        B requires(Consumer<SB> dependency);
 
         /**
-         * Configures the dependencies of the installed service.
+         * Configures dependencies of the installed service.
          * @param dependencies a variable number of dependencies
          * @return a reference to this builder
          */
-        default B withDependencies(Iterable<? extends Consumer<SB>> dependencies) {
-            return this.withDependency(new Consumer<>() {
+        default B requires(Iterable<? extends Consumer<SB>> dependencies) {
+            return this.requires(new Consumer<>() {
                 @Override
                 public void accept(SB builder) {
                     for (Consumer<SB> dependency : dependencies) {
@@ -148,8 +148,8 @@ public interface Installer<ST extends ServiceTarget> {
         Function<SB, Consumer<V>> getProvider();
 
         /**
-         * Returns a consumer that captures and nulls the provided value.
-         * @return a capturing consumer
+         * Returns a consumer invoked with provided value on start, and with null on stop.
+         * @return a consumer for capturing the service value
          */
         Consumer<V> getCaptor();
 
@@ -252,8 +252,8 @@ public interface Installer<ST extends ServiceTarget> {
             }
 
             @Override
-            public B withDependency(Consumer<DSB> dependency) {
-                this.dependency = dependency;
+            public B requires(Consumer<DSB> dependency) {
+                this.dependency = (this.dependency == Functions.<DSB>discardingConsumer()) ? dependency : this.dependency.andThen(dependency);
                 return this.builder();
             }
 
@@ -265,19 +265,19 @@ public interface Installer<ST extends ServiceTarget> {
 
             @Override
             public B withCaptor(Consumer<V> captor) {
-                this.captor = captor;
+                this.captor = (this.captor == Functions.<V>discardingConsumer()) ? captor : this.captor.andThen(captor);
                 return this.builder();
             }
 
             @Override
             public B onStart(Consumer<T> task) {
-                this.startTask = task;
+                this.startTask = (this.startTask == Functions.<T>discardingConsumer()) ? task : this.startTask.andThen(task);
                 return this.builder();
             }
 
             @Override
             public B onStop(Consumer<T> task) {
-                this.stopTask = task;
+                this.stopTask = (this.stopTask == Functions.<T>discardingConsumer()) ? task : this.stopTask.andThen(task);
                 return this.builder();
             }
 

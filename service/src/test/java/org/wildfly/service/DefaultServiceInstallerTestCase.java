@@ -43,7 +43,7 @@ public class DefaultServiceInstallerTestCase {
         ArgumentCaptor<Service> service = ArgumentCaptor.forClass(Service.class);
         ArgumentCaptor<ServiceController.Mode> mode = ArgumentCaptor.forClass(ServiceController.Mode.class);
 
-        ServiceInstaller installer = ServiceInstaller.builder(mapper, dependency).provides(name).withDependency(dependency).withCaptor(captor).onStart(startTask).onStop(stopTask).build();
+        ServiceInstaller installer = ServiceInstaller.builder(mapper, dependency).provides(name).requires(dependency).withCaptor(captor).onStart(startTask).onStop(stopTask).build();
 
         doReturn(builder).when(target).addService();
         doReturn(injector).when(builder).provides(name);
