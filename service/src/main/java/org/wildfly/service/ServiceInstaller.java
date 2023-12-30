@@ -10,8 +10,11 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StopContext;
 import org.wildfly.common.function.Functions;
 
 /**
@@ -19,6 +22,24 @@ import org.wildfly.common.function.Functions;
  * @author Paul Ferraro
  */
 public interface ServiceInstaller extends Installer<ServiceTarget> {
+
+    /**
+     * Returns a service implementation that installs this installer on {@link Service#start(StartContext)} via its child target.
+     * @return an installer service
+     */
+    default Service asService() {
+        return new Service() {
+            @Override
+            public void start(StartContext context) {
+                ServiceInstaller.this.install(context.getChildTarget());
+            }
+
+            @Override
+            public void stop(StopContext context) {
+                // Services installed into child target are auto-removed after this service stops.
+            }
+        };
+    }
 
     /**
      * Returns a {@link ServiceInstaller} builder whose installed service provides the specified value.
@@ -38,7 +59,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
      */
     static <V> Builder<V, V> builder(ServiceDependency<V> dependency) {
         Supplier<V> supplier = dependency;
-        return builder(supplier).withDependency(dependency).asPassive();
+        return builder(supplier).requires(dependency).asPassive();
     }
 
     /**

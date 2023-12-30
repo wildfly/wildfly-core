@@ -39,6 +39,6 @@ public class AggregateDiscoveryProviderServiceConfigurator implements ResourceSe
                 return new AggregateDiscoveryProvider(dependencies.stream().map(Supplier::get).toArray(DiscoveryProvider[]::new));
             }
         };
-        return CapabilityServiceInstaller.builder(DiscoveryProviderRegistrar.DISCOVERY_PROVIDER_CAPABILITY, factory).withDependencies(dependencies).build();
+        return CapabilityServiceInstaller.builder(DiscoveryProviderRegistrar.DISCOVERY_PROVIDER_CAPABILITY, factory).requires(dependencies).build();
     }
 }

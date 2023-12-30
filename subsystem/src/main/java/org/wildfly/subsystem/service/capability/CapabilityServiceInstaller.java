@@ -48,7 +48,8 @@ public interface CapabilityServiceInstaller extends ResourceServiceInstaller, In
      * @return a service installer builder
      */
     static <V> Builder<V, V> builder(RuntimeCapability<Void> capability, ServiceDependency<V> dependency) {
-        return builder(capability, dependency).withDependency(dependency).asPassive();
+        Supplier<V> supplier = dependency;
+        return builder(capability, supplier).requires(dependency).asPassive();
     }
 
     /**

@@ -16,7 +16,7 @@ import org.wildfly.common.Assert;
 public interface UnaryServiceDescriptor<T> extends ServiceDescriptor<T> {
 
     /**
-     * Creates a unary service descriptor with the specified name and type
+     * Creates a unary service descriptor with the specified name and type.
      * @param <T> the service type
      * @param name the service name
      * @param type the service type
@@ -32,6 +32,32 @@ public interface UnaryServiceDescriptor<T> extends ServiceDescriptor<T> {
             @Override
             public Class<T> getType() {
                 return type;
+            }
+        };
+    }
+
+    /**
+     * Creates a unary service descriptor with the specified name and default service descriptor.
+     * @param <T> the service type
+     * @param name the service name
+     * @param defaultDescriptor the service descriptor used to resolve an undefined dynamic name
+     * @return a service descriptor
+     */
+    static <T> UnaryServiceDescriptor<T> of(String name, NullaryServiceDescriptor<T> defaultDescriptor) {
+        return new UnaryServiceDescriptor<>() {
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public Class<T> getType() {
+                return defaultDescriptor.getType();
+            }
+
+            @Override
+            public Map.Entry<String, String[]> resolve(String name) {
+                return (name != null) ? UnaryServiceDescriptor.super.resolve(name) : defaultDescriptor.resolve();
             }
         };
     }
