@@ -13,13 +13,13 @@ import org.junit.Test;
  * Validates logic for defaultable service capabilities.
  * @author Paul Ferraro
  */
-public class DefaultableServiceDescriptorTestCase {
+public class DefaultServiceDescriptorTestCase {
 
     private final NullaryServiceDescriptor<String> nullaryDescriptor = NullaryServiceDescriptor.of("nullary", String.class);
-    private final DefaultableUnaryServiceDescriptor<String> unaryDescriptor = DefaultableUnaryServiceDescriptor.of("unary", this.nullaryDescriptor);
-    private final DefaultableBinaryServiceDescriptor<String> binaryDescriptor = DefaultableBinaryServiceDescriptor.of("binary", this.unaryDescriptor);
-    private final DefaultableTernaryServiceDescriptor<String> ternaryDescriptor = DefaultableTernaryServiceDescriptor.of("ternary", this.binaryDescriptor);
-    private final DefaultableQuaternaryServiceDescriptor<String> quaternaryDescriptor = DefaultableQuaternaryServiceDescriptor.of("quaternary", this.ternaryDescriptor);
+    private final UnaryServiceDescriptor<String> unaryDescriptor = UnaryServiceDescriptor.of("unary", this.nullaryDescriptor);
+    private final BinaryServiceDescriptor<String> binaryDescriptor = BinaryServiceDescriptor.of("binary", this.unaryDescriptor);
+    private final TernaryServiceDescriptor<String> ternaryDescriptor = TernaryServiceDescriptor.of("ternary", this.binaryDescriptor);
+    private final QuaternaryServiceDescriptor<String> quaternaryDescriptor = QuaternaryServiceDescriptor.of("quaternary", this.ternaryDescriptor);
 
     @Test
     public void test() {

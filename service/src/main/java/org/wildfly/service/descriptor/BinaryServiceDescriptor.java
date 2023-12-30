@@ -16,7 +16,7 @@ import org.wildfly.common.Assert;
 public interface BinaryServiceDescriptor<T> extends ServiceDescriptor<T> {
 
     /**
-     * Creates a binary service descriptor with the specified name and type
+     * Creates a binary service descriptor with the specified name and type.
      * @param <T> the service type
      * @param name the service name
      * @param type the service type
@@ -32,6 +32,32 @@ public interface BinaryServiceDescriptor<T> extends ServiceDescriptor<T> {
             @Override
             public Class<T> getType() {
                 return type;
+            }
+        };
+    }
+
+    /**
+     * Creates a binary service descriptor with the specified name and default descriptor.
+     * @param <T> the service type
+     * @param name the service name
+     * @param defaultDescriptor the service descriptor used to resolve an undefined dynamic child name
+     * @return a service descriptor
+     */
+    static <T> BinaryServiceDescriptor<T> of(String name, UnaryServiceDescriptor<T> defaultDescriptor) {
+        return new BinaryServiceDescriptor<>() {
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public Class<T> getType() {
+                return defaultDescriptor.getType();
+            }
+
+            @Override
+            public Map.Entry<String, String[]> resolve(String parent, String child) {
+                return (child != null) ? BinaryServiceDescriptor.super.resolve(parent, child) : defaultDescriptor.resolve(parent);
             }
         };
     }

@@ -16,7 +16,7 @@ import org.wildfly.common.Assert;
 public interface TernaryServiceDescriptor<T> extends ServiceDescriptor<T> {
 
     /**
-     * Creates a ternary service descriptor with the specified name and type
+     * Creates a ternary service descriptor with the specified name and type.
      * @param <T> the service type
      * @param name the service name
      * @param type the service type
@@ -32,6 +32,32 @@ public interface TernaryServiceDescriptor<T> extends ServiceDescriptor<T> {
             @Override
             public Class<T> getType() {
                 return type;
+            }
+        };
+    }
+
+    /**
+     * Creates a ternary service descriptor with the specified name and default service descriptor.
+     * @param <T> the service type
+     * @param name the service name
+     * @param defaultDescriptor the service descriptor used to resolve an undefined dynamic child name
+     * @return a service descriptor
+     */
+    static <T> TernaryServiceDescriptor<T> of(String name, BinaryServiceDescriptor<T> defaultDescriptor) {
+        return new TernaryServiceDescriptor<>() {
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public Class<T> getType() {
+                return defaultDescriptor.getType();
+            }
+
+            @Override
+            public Map.Entry<String, String[]> resolve(String grandparent, String parent, String child) {
+                return (child != null) ? TernaryServiceDescriptor.super.resolve(grandparent, parent, child) : defaultDescriptor.resolve(grandparent, parent);
             }
         };
     }
