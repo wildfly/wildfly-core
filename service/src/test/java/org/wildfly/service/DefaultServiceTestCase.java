@@ -36,7 +36,7 @@ public class DefaultServiceTestCase {
         Object value = "value";
         Object mappedValue = "mapped";
 
-        test(new Installer.DefaultService<>(injector, mapper, factory, initializer, destroyer), value, mappedValue, injector, mapper, factory, initializer, destroyer);
+        test(new Installer.UnaryService<>(injector, mapper, factory, initializer, destroyer), value, mappedValue, injector, mapper, factory, initializer, destroyer);
     }
 
     static <T, V> void test(Service service, T value, V mappedValue, Consumer<V> consumer, Function<T, V> mapper, Supplier<T> factory, Consumer<T> startTask, Consumer<T> stopTask) throws StartException {
