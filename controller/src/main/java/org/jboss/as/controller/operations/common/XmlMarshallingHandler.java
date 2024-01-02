@@ -8,7 +8,6 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -25,12 +24,13 @@ public class XmlMarshallingHandler extends AbstractXmlMarshallingHandler {
 
     private static final String OPERATION_NAME = ModelDescriptionConstants.READ_CONFIG_AS_XML_OPERATION;
 
-    public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, ControllerResolver.getResolver())
+    public static SimpleOperationDefinitionBuilder createOperationDefinitionBuilder() {
+        return new SimpleOperationDefinitionBuilder(OPERATION_NAME, ControllerResolver.getResolver())
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.READ_WHOLE_CONFIG)
             .setReplyType(ModelType.STRING)
             .setReadOnly()
-            .setRuntimeOnly()
-            .build();
+            .setRuntimeOnly();
+    }
 
     public XmlMarshallingHandler(final ConfigurationPersister configPersister) {
         super(configPersister);

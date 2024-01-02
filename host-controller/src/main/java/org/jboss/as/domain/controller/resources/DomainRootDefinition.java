@@ -23,6 +23,7 @@ import java.util.Set;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -34,6 +35,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
@@ -248,8 +250,11 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         super.registerOperations(resourceRegistration);
 
         // Other root resource operations
-        XmlMarshallingHandler xmh = new XmlMarshallingHandler(configurationPersister);
-        resourceRegistration.registerOperationHandler(XmlMarshallingHandler.DEFINITION, xmh);
+        SimpleOperationDefinitionBuilder xmlMarshallingHandlerBuilder = XmlMarshallingHandler.createOperationDefinitionBuilder();
+        if(resourceRegistration.enables(XmlFileMarshallingHandler.DEFINITION)) {
+            xmlMarshallingHandlerBuilder.setDeprecated(ModelVersion.create(24, 0, 0 ));
+        }
+        resourceRegistration.registerOperationHandler(xmlMarshallingHandlerBuilder.build(), new XmlMarshallingHandler(configurationPersister));
         resourceRegistration.registerOperationHandler(XmlFileMarshallingHandler.DEFINITION, new XmlFileMarshallingHandler(configurationPersister));
 
         resourceRegistration.registerOperationHandler(NamespaceAddHandler.DEFINITION, NamespaceAddHandler.INSTANCE);

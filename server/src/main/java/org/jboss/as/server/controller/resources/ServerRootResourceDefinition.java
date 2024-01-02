@@ -336,8 +336,11 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         // Other root resource operations
         resourceRegistration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE, false);
 
-        XmlMarshallingHandler xmh = new XmlMarshallingHandler(extensibleConfigurationPersister);
-        resourceRegistration.registerOperationHandler(XmlMarshallingHandler.DEFINITION, xmh);
+        SimpleOperationDefinitionBuilder xmlMarshallingHandlerBuilder = XmlMarshallingHandler.createOperationDefinitionBuilder();
+        if(resourceRegistration.enables(XmlFileMarshallingHandler.DEFINITION)) {
+            xmlMarshallingHandlerBuilder.setDeprecated(ModelVersion.create(24, 0, 0 ));
+        }
+        resourceRegistration.registerOperationHandler(xmlMarshallingHandlerBuilder.build(), new XmlMarshallingHandler(extensibleConfigurationPersister));
         resourceRegistration.registerOperationHandler(XmlFileMarshallingHandler.DEFINITION, new XmlFileMarshallingHandler(extensibleConfigurationPersister));
         resourceRegistration.registerOperationHandler(NamespaceAddHandler.DEFINITION, NamespaceAddHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(NamespaceRemoveHandler.DEFINITION, NamespaceRemoveHandler.INSTANCE);

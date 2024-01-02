@@ -57,6 +57,8 @@ import org.jboss.as.controller.services.path.PathResourceDefinition;
 
 import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_CAPABILITY;
 
+import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.operations.common.XmlFileMarshallingHandler;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
@@ -349,7 +351,11 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerOperationHandler(CleanObsoleteContentHandler.DEFINITION, CleanObsoleteContentHandler.createOperation(contentRepository));
         hostRegistration.registerOperationHandler(WriteConfigHandler.DEFINITION, WriteConfigHandler.INSTANCE);
 
-        hostRegistration.registerOperationHandler(XmlMarshallingHandler.DEFINITION, new HostXmlMarshallingHandler(configurationPersister.getHostPersister(), hostControllerInfo));
+        SimpleOperationDefinitionBuilder xmlMarshallingHandlerBuilder = XmlMarshallingHandler.createOperationDefinitionBuilder();
+        if(hostRegistration.enables(HostXmlFileMarshallingHandler.DEFINITION)) {
+            xmlMarshallingHandlerBuilder.setDeprecated(ModelVersion.create(24, 0, 0 ));
+        }
+        hostRegistration.registerOperationHandler(xmlMarshallingHandlerBuilder.build(), new HostXmlMarshallingHandler(configurationPersister.getHostPersister(), hostControllerInfo));
         hostRegistration.registerOperationHandler(XmlFileMarshallingHandler.DEFINITION, new HostXmlFileMarshallingHandler(configurationPersister.getHostPersister(), hostControllerInfo));
 
 
