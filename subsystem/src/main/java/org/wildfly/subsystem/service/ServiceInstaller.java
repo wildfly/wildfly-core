@@ -7,13 +7,16 @@ package org.wildfly.subsystem.service;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.RequirementServiceBuilder;
 import org.jboss.as.controller.RequirementServiceTarget;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.StopContext;
 import org.wildfly.common.function.Functions;
 import org.wildfly.service.Installer;
 
@@ -29,7 +32,7 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
      * @param value the service value
      * @return a service installer builder
      */
-    static <V> Builder<V, V> builder(V value) {
+    static <V> UnaryBuilder<V, V> builder(V value) {
         return builder(Functions.constantSupplier(value)).asActive();
     }
 
@@ -39,7 +42,7 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
      * @param dependency a service dependency
      * @return a service installer builder
      */
-    static <V> Builder<V, V> builder(ServiceDependency<V> dependency) {
+    static <V> UnaryBuilder<V, V> builder(ServiceDependency<V> dependency) {
         Supplier<V> supplier = dependency;
         return builder(supplier).requires(dependency).asPassive();
     }
@@ -50,7 +53,7 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
      * @param factory provides the service value
      * @return a service installer builder
      */
-    static <V> Builder<V, V> builder(Supplier<V> factory) {
+    static <V> UnaryBuilder<V, V> builder(Supplier<V> factory) {
         return builder(Function.identity(), factory);
     }
 
@@ -62,8 +65,47 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
      * @param factory provides the input to the specified mapper
      * @return a service installer builder
      */
-    static <T, V> Builder<T, V> builder(Function<T, V> mapper, Supplier<T> factory) {
-        return new DefaultServiceInstaller.Builder<>(mapper, factory);
+    static <T, V> UnaryBuilder<T, V> builder(Function<T, V> mapper, Supplier<T> factory) {
+        return new DefaultUnaryBuilder<>(mapper, factory);
+    }
+
+    /**
+     * Returns a {@link ServiceInstaller} builder that installs the specified installer into a child target.
+     * @param installer a service installer
+     * @return a service installer builder
+     */
+    static Builder builder(org.wildfly.service.ServiceInstaller installer) {
+        return new DefaultNullaryBuilder(new Service() {
+            @Override
+            public void start(StartContext context) {
+                installer.install(context.getChildTarget());
+            }
+
+            @Override
+            public void stop(StopContext context) {
+                // Services installed into child target are auto-removed after this service stops.
+            }
+        }).asActive();
+    }
+
+    /**
+     * Returns a {@link ServiceInstaller} builder that executes the specified tasks on {@link Service#start(StartContext)} and {@link Service#stop(StopContext)}, respectively.
+     * @param startTask a start task
+     * @param stopTask a stop task
+     * @return a service installer builder
+     */
+    static Builder builder(Runnable startTask, Runnable stopTask) {
+        return new DefaultNullaryBuilder(new Service() {
+            @Override
+            public void start(StartContext context) throws StartException {
+                startTask.run();
+            }
+
+            @Override
+            public void stop(StopContext context) {
+                stopTask.run();
+            }
+        });
     }
 
     /**
@@ -71,12 +113,15 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
      * @param <T> the source value type
      * @param <V> the service value type
      */
-    interface Builder<T, V> extends Installer.Builder<Builder<T, V>, ServiceInstaller, RequirementServiceTarget, RequirementServiceBuilder<?>, T, V> {
-        /**
-         * Indicates that the installed service should start and, if a stop task is configured, stop asynchronously.
-         * @return a reference to this builder
-         */
-        Builder<T, V> async();
+    interface Builder extends AsyncBuilder<Builder>, Installer.Builder<Builder, ServiceInstaller, RequirementServiceTarget, RequirementServiceBuilder<?>> {
+    }
+
+    /**
+     * Builds a {@link ServiceInstaller} whose installed service provides a single value.
+     * @param <T> the source value type
+     * @param <V> the service value type
+     */
+    interface UnaryBuilder<T, V> extends AsyncBuilder<UnaryBuilder<T, V>>, Installer.UnaryBuilder<UnaryBuilder<T, V>, ServiceInstaller, RequirementServiceTarget, RequirementServiceBuilder<?>, T, V> {
     }
 
     @Override
@@ -95,59 +140,74 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
         this.install(context.getRequirementServiceTarget());
     }
 
-    /**
-     * Default service installer using native MSC service installation.
-     * @param <T> the source value type
-     * @param <V> the service value type
-     */
-    class DefaultServiceInstaller<T, V> extends AbstractInstaller<RequirementServiceTarget, RequirementServiceBuilder<?>, RequirementServiceBuilder<?>, T, V> implements ServiceInstaller {
-        private static final Function<RequirementServiceTarget, RequirementServiceBuilder<?>> FACTORY = RequirementServiceTarget::addService;
+    class DefaultServiceInstaller extends DefaultInstaller<RequirementServiceTarget, RequirementServiceBuilder<?>, RequirementServiceBuilder<?>> implements ServiceInstaller {
 
-        DefaultServiceInstaller(Installer.Configuration<RequirementServiceBuilder<?>, RequirementServiceBuilder<?>, T, V> config) {
-            super(config, FACTORY);
+        DefaultServiceInstaller(Configuration<RequirementServiceBuilder<?>, RequirementServiceBuilder<?>> config, Function<RequirementServiceTarget, RequirementServiceBuilder<?>> serviceBuilderFactory) {
+            super(config, serviceBuilderFactory);
+        }
+    }
+
+    class DefaultNullaryBuilder extends AbstractNullaryBuilder<Builder, ServiceInstaller, RequirementServiceTarget, RequirementServiceBuilder<?>, RequirementServiceBuilder<?>> implements Builder {
+        private volatile boolean sync = true;
+
+        DefaultNullaryBuilder(Service service) {
+            super(service);
         }
 
-        static class Builder<T, V> extends AbstractInstaller.Builder<ServiceInstaller.Builder<T, V>, ServiceInstaller, RequirementServiceTarget, RequirementServiceBuilder<?>, RequirementServiceBuilder<?>, T, V> implements ServiceInstaller.Builder<T, V> {
-            private volatile boolean sync = true;
+        @Override
+        public Builder async() {
+            this.sync = false;
+            return this;
+        }
+
+        @Override
+        public ServiceInstaller build() {
+            boolean sync = this.sync;
+            return new DefaultServiceInstaller(this, new Function<>() {
+                @Override
+                public RequirementServiceBuilder<?> apply(RequirementServiceTarget target) {
+                    RequirementServiceBuilder<?> builder = target.addService();
+                    return !sync ? new AsyncServiceBuilder<>(builder, AsyncServiceBuilder.Async.START_AND_STOP) : builder;
+                }
+            });
+        }
+
+        @Override
+        protected Builder builder() {
+            return this;
+        }
+    }
+
+    class DefaultUnaryBuilder<T, V> extends AbstractUnaryBuilder<UnaryBuilder<T, V>, ServiceInstaller, RequirementServiceTarget, RequirementServiceBuilder<?>, RequirementServiceBuilder<?>, T, V> implements UnaryBuilder<T, V> {
+        private volatile boolean sync = true;
+
+        DefaultUnaryBuilder(Function<T, V> mapper, Supplier<T> factory) {
+            super(mapper, factory);
+        }
+
+        @Override
+        public UnaryBuilder<T, V> async() {
+            this.sync = false;
+            return this;
+        }
+
+        @Override
+        public ServiceInstaller build() {
+            boolean sync = this.sync;
             // If no stop task is specified, we can stop synchronously
-            private volatile AsyncServiceBuilder.Async async = AsyncServiceBuilder.Async.START_ONLY;
+            AsyncServiceBuilder.Async async = this.hasStopTask() ? AsyncServiceBuilder.Async.START_AND_STOP : AsyncServiceBuilder.Async.START_ONLY;
+            return new DefaultServiceInstaller(this, new Function<>() {
+                @Override
+                public RequirementServiceBuilder<?> apply(RequirementServiceTarget target) {
+                    RequirementServiceBuilder<?> builder = target.addService();
+                    return !sync ? new AsyncServiceBuilder<>(builder, async) : builder;
+                }
+            });
+        }
 
-            Builder(Function<T, V> mapper, Supplier<T> factory) {
-                super(mapper, factory);
-            }
-
-            @Override
-            public ServiceInstaller.Builder<T, V> async() {
-                this.sync = false;
-                return this;
-            }
-
-            @Override
-            public ServiceInstaller.Builder<T, V> onStop(Consumer<T> consumer) {
-                this.async = AsyncServiceBuilder.Async.START_AND_STOP;
-                return super.onStop(consumer);
-            }
-
-            @Override
-            public UnaryOperator<RequirementServiceBuilder<?>> getServiceBuilderDecorator() {
-                AsyncServiceBuilder.Async async = this.async;
-                return this.sync ? UnaryOperator.identity() : new UnaryOperator<>() {
-                    @Override
-                    public RequirementServiceBuilder<?> apply(RequirementServiceBuilder<?> builder) {
-                        return new AsyncServiceBuilder<>(builder, async);
-                    }
-                };
-            }
-
-            @Override
-            public ServiceInstaller build() {
-                return new DefaultServiceInstaller<>(this);
-            }
-
-            @Override
-            protected ServiceInstaller.Builder<T, V> builder() {
-                return this;
-            }
+        @Override
+        protected UnaryBuilder<T, V> builder() {
+            return this;
         }
     }
 }

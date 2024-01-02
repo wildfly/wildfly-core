@@ -4,16 +4,18 @@
  */
 package org.wildfly.service;
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
@@ -35,28 +37,13 @@ public interface Installer<ST extends ServiceTarget> {
     ServiceController<?> install(ST target);
 
     /**
-     * Builds an installer.
+     * Builds an installer of a service.
      * @param <B> the builder type
      * @param <I> the installer type
      * @param <ST> the service target type
      * @param <SB> the service builder type
-     * @param <T> the source value type
-     * @param <V> the service value type
      */
-    interface Builder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> {
-        /**
-         * Configures the installed service to automatically start when all of its dependencies are available
-         * and to automatically stop when any of its dependencies are no longer available.
-         * @return a reference to this builder
-         */
-        B asPassive();
-
-        /**
-         * Configures the installed service to start immediately after installation, forcing any dependencies to start.
-         * @return a reference to this builder
-         */
-        B asActive();
-
+    interface Builder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>> {
         /**
          * Configures a dependency of the installed service.
          * @param dependency a dependency
@@ -80,6 +67,48 @@ public interface Installer<ST extends ServiceTarget> {
             });
         }
 
+        /**
+         * Configures the installed service to automatically start when all of its dependencies are available
+         * and to automatically stop when any of its dependencies are no longer available.
+         * @return a reference to this builder
+         */
+        B asPassive();
+
+        /**
+         * Configures the installed service to start immediately after installation, forcing any dependencies to start.
+         * @return a reference to this builder
+         */
+        B asActive();
+
+        /**
+         * Builds a service installer.
+         * @return a service installer
+         */
+        I build();
+    }
+
+    /**
+     * Implemented by builds with asynchronous service support.
+     * @param <B> the builder type
+     */
+    interface AsyncBuilder<B> {
+        /**
+         * Indicates that the installed service should start and, if a stop task is configured, stop asynchronously.
+         * @return a reference to this builder
+         */
+        B async();
+    }
+
+    /**
+     * Builds an installer of a service providing a single value.
+     * @param <B> the builder type
+     * @param <I> the installer type
+     * @param <ST> the service target type
+     * @param <SB> the service builder type
+     * @param <T> the source value type
+     * @param <V> the service value type
+     */
+    interface UnaryBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends Builder<B, I, ST, SB> {
         /**
          * Configures a service name provided by this service.
          * @param name a service name
@@ -107,12 +136,6 @@ public interface Installer<ST extends ServiceTarget> {
          * @return a reference to this builder
          */
         B onStop(Consumer<T> task);
-
-        /**
-         * Builds a service installer.
-         * @return a service installer
-         */
-        I build();
     }
 
     /**
@@ -122,18 +145,7 @@ public interface Installer<ST extends ServiceTarget> {
      * @param <T> the source value type
      * @param <V> the service value type
      */
-    interface Configuration<SB extends DSB, DSB extends ServiceBuilder<?>, T, V> {
-        /**
-         * Returns a function that maps the source type to the service type
-         * @return a mapping function
-         */
-        Function<T, V> getMapper();
-
-        /**
-         * Returns a supplier of the source value of the service
-         * @return a source value supplier
-         */
-        Supplier<T> getFactory();
+    interface Configuration<SB extends DSB, DSB extends ServiceBuilder<?>> {
 
         /**
          * Returns the initial mode of the installed service.
@@ -142,198 +154,178 @@ public interface Installer<ST extends ServiceTarget> {
         ServiceController.Mode getInitialMode();
 
         /**
-         * Returns a function returning a consumer into which the service should inject its provided value
-         * @return a provider function
-         */
-        Function<SB, Consumer<V>> getProvider();
-
-        /**
-         * Returns a consumer invoked with provided value on start, and with null on stop.
-         * @return a consumer for capturing the service value
-         */
-        Consumer<V> getCaptor();
-
-        /**
          * Returns the dependency of this service
          * @return a service dependency
          */
         Consumer<DSB> getDependency();
 
         /**
-         * Returns a task that consumes the service value on {@link org.jboss.msc.Service#start(org.jboss.msc.service.StartContext)}.
-         * @return a service value consumer
+         * Returns the factory of this service
+         * @return a service factory
          */
-        Consumer<T> getStartTask();
-
-        /**
-         * Returns a task that consumes the source value on {@link org.jboss.msc.Service#stop(org.jboss.msc.service.StopContext)}.
-         * Typically used to close/destroys the value returned by @@link {@link #getFactory()}.
-         * @return a source value consumer
-         */
-        Consumer<T> getStopTask();
-
-        /**
-         * Returns a service builder decorator used during service installation
-         * @return a service builder decorator
-         */
-        UnaryOperator<SB> getServiceBuilderDecorator();
-    }
+        Function<SB, Service> getServiceFactory();
+     }
 
     /**
-     * Generic abstract installer implementation that installs a {@link DefaultService}.
+     * Generic abstract installer implementation that installs a {@link UnaryService}.
      * @param <ST> the service target type
      * @param <SB> the service builder type
      * @param <DSB> the dependency service builder type
      * @param <T> the source value type
      * @param <V> the provided value type of the service
      */
-    abstract class AbstractInstaller<ST extends ServiceTarget, SB extends DSB, DSB extends ServiceBuilder<?>, T, V> implements Installer<ST> {
+    class DefaultInstaller<ST extends ServiceTarget, SB extends DSB, DSB extends ServiceBuilder<?>> implements Installer<ST> {
 
         private final Function<ST, SB> serviceBuilderFactory;
-        private final Function<SB, Consumer<V>> provider;
-        private final Function<T, V> mapper;
-        private final Supplier<T> factory;
         private final ServiceController.Mode mode;
         private final Consumer<DSB> dependency;
-        private final Consumer<V> captor;
-        private final Consumer<T> startTask;
-        private final Consumer<T> stopTask;
-        private final UnaryOperator<SB> decorator;
+        private final Function<SB, Service> serviceFactory;
 
-        protected AbstractInstaller(Installer.Configuration<SB, DSB, T, V> config, Function<ST, SB> serviceBuilderFactory) {
+        protected DefaultInstaller(Installer.Configuration<SB, DSB> config, Function<ST, SB> serviceBuilderFactory) {
             this.serviceBuilderFactory = serviceBuilderFactory;
-            this.provider = config.getProvider();
-            this.mapper = config.getMapper();
-            this.factory = config.getFactory();
+            this.serviceFactory = config.getServiceFactory();
             this.mode = config.getInitialMode();
             this.dependency = config.getDependency();
-            this.captor = config.getCaptor();
-            this.startTask = config.getStartTask();
-            this.stopTask = config.getStopTask();
-            this.decorator = config.getServiceBuilderDecorator();
         }
 
         @Override
         public ServiceController<?> install(ST target) {
-            SB builder = this.decorator.apply(this.serviceBuilderFactory.apply(target));
-            Consumer<V> injector = this.provider.apply(builder);
+            SB builder = this.serviceBuilderFactory.apply(target);
             this.dependency.accept(builder);
-            Service service = new DefaultService<>(injector.andThen(this.captor), this.mapper, this.factory, this.startTask, this.stopTask);
-            return builder.setInstance(service).setInitialMode(this.mode).install();
-        }
-
-        protected abstract static class Builder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends DSB, DSB extends ServiceBuilder<?>, T, V> implements Installer.Builder<B, I, ST, DSB, T, V>, Installer.Configuration<SB, DSB, T, V> {
-            private final List<ServiceName> names = new LinkedList<>();
-            private final Function<T, V> mapper;
-            private final Supplier<T> factory;
-            private volatile ServiceController.Mode mode = ServiceController.Mode.ON_DEMAND;
-            private volatile Consumer<DSB> dependency = Functions.discardingConsumer();
-            private volatile Consumer<V> captor = Functions.discardingConsumer();
-            private volatile Consumer<T> startTask = Functions.discardingConsumer();
-            private volatile Consumer<T> stopTask = Functions.discardingConsumer();
-
-            protected Builder(Function<T, V> mapper, Supplier<T> factory) {
-                this.mapper = mapper;
-                this.factory = factory;
-            }
-
-            protected abstract B builder();
-
-            @Override
-            public B asPassive() {
-                this.mode = ServiceController.Mode.PASSIVE;
-                return this.builder();
-            }
-
-            @Override
-            public B asActive() {
-                this.mode = ServiceController.Mode.ACTIVE;
-                return this.builder();
-            }
-
-            @Override
-            public B requires(Consumer<DSB> dependency) {
-                this.dependency = (this.dependency == Functions.<DSB>discardingConsumer()) ? dependency : this.dependency.andThen(dependency);
-                return this.builder();
-            }
-
-            @Override
-            public B provides(ServiceName name) {
-                this.names.add(name);
-                return this.builder();
-            }
-
-            @Override
-            public B withCaptor(Consumer<V> captor) {
-                this.captor = (this.captor == Functions.<V>discardingConsumer()) ? captor : this.captor.andThen(captor);
-                return this.builder();
-            }
-
-            @Override
-            public B onStart(Consumer<T> task) {
-                this.startTask = (this.startTask == Functions.<T>discardingConsumer()) ? task : this.startTask.andThen(task);
-                return this.builder();
-            }
-
-            @Override
-            public B onStop(Consumer<T> task) {
-                this.stopTask = (this.stopTask == Functions.<T>discardingConsumer()) ? task : this.stopTask.andThen(task);
-                return this.builder();
-            }
-
-            @Override
-            public Function<T, V> getMapper() {
-                return this.mapper;
-            }
-
-            @Override
-            public Supplier<T> getFactory() {
-                return this.factory;
-            }
-
-            @Override
-            public ServiceController.Mode getInitialMode() {
-                return this.mode;
-            }
-
-            protected List<ServiceName> getServiceNames() {
-                return List.copyOf(this.names);
-            }
-
-            @Override
-            public Function<SB, Consumer<V>> getProvider() {
-                List<ServiceName> names = this.getServiceNames();
-                return new Function<>() {
-                    @Override
-                    public Consumer<V> apply(SB builder) {
-                        return !names.isEmpty() ? builder.provides(names.toArray(ServiceName[]::new)) : Functions.discardingConsumer();
-                    }
-                };
-            }
-
-            @Override
-            public Consumer<DSB> getDependency() {
-                return this.dependency;
-            }
-
-            @Override
-            public Consumer<V> getCaptor() {
-                return this.captor;
-            }
-
-            @Override
-            public Consumer<T> getStartTask() {
-                return this.startTask;
-            }
-
-            @Override
-            public Consumer<T> getStopTask() {
-                return this.stopTask;
-            }
+            return builder.setInstance(this.serviceFactory.apply(builder)).setInitialMode(this.mode).install();
         }
     }
 
-    class DefaultService<T, V> implements Service {
+    abstract class AbstractBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends DSB, DSB extends ServiceBuilder<?>> implements Installer.Builder<B, I, ST, DSB>, Installer.Configuration<SB, DSB> {
+        private volatile ServiceController.Mode mode = ServiceController.Mode.ON_DEMAND;
+        private volatile Consumer<DSB> dependency = Functions.discardingConsumer();
+
+        protected abstract B builder();
+
+        @Override
+        public B asPassive() {
+            this.mode = ServiceController.Mode.PASSIVE;
+            return this.builder();
+        }
+
+        @Override
+        public B asActive() {
+            this.mode = ServiceController.Mode.ACTIVE;
+            return this.builder();
+        }
+
+        @Override
+        public B requires(Consumer<DSB> dependency) {
+            this.dependency = (this.dependency == Functions.<DSB>discardingConsumer()) ? dependency : this.dependency.andThen(dependency);
+            return this.builder();
+        }
+
+        @Override
+        public Mode getInitialMode() {
+            return this.mode;
+        }
+
+        @Override
+        public Consumer<DSB> getDependency() {
+            return this.dependency;
+        }
+    }
+
+    abstract class AbstractNullaryBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends DSB, DSB extends ServiceBuilder<?>> extends AbstractBuilder<B, I, ST, SB, DSB> implements Function<SB, Service> {
+        private final Service service;
+
+        protected AbstractNullaryBuilder(Service service) {
+            this.service = service;
+        }
+
+        @Override
+        public Function<SB, Service> getServiceFactory() {
+            return this;
+        }
+
+        @Override
+        public Service apply(SB builder) {
+            return this.service;
+        }
+    }
+
+    abstract class AbstractUnaryBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends DSB, DSB extends ServiceBuilder<?>, T, V> extends AbstractBuilder<B, I, ST, SB, DSB> implements Installer.UnaryBuilder<B, I, ST, DSB, T, V>, Function<SB, Service> {
+        private final List<ServiceName> names = new LinkedList<>();
+        private final Function<T, V> mapper;
+        private final Supplier<T> factory;
+        private final BiFunction<SB, Collection<ServiceName>, Consumer<V>> provider;
+        private volatile Consumer<V> captor = Functions.discardingConsumer();
+        private volatile Consumer<T> startTask = Functions.discardingConsumer();
+        private volatile Consumer<T> stopTask = Functions.discardingConsumer();
+
+        protected AbstractUnaryBuilder(Function<T, V> mapper, Supplier<T> factory) {
+            this(mapper, factory, new BiFunction<>() {
+                @Override
+                public Consumer<V> apply(SB builder, Collection<ServiceName> names) {
+                    return !names.isEmpty() ? builder.provides(names.toArray(ServiceName[]::new)) : Functions.discardingConsumer();
+                }
+            });
+        }
+
+        protected AbstractUnaryBuilder(Function<T, V> mapper, Supplier<T> factory, BiFunction<SB, Collection<ServiceName>, Consumer<V>> provider) {
+            this.mapper = mapper;
+            this.factory = factory;
+            this.provider = provider;
+        }
+
+        @Override
+        public B provides(ServiceName name) {
+            this.names.add(name);
+            return this.builder();
+        }
+
+        @Override
+        public B withCaptor(Consumer<V> captor) {
+            this.captor = compose(this.captor, captor);
+            return this.builder();
+        }
+
+        @Override
+        public B onStart(Consumer<T> task) {
+            this.startTask = compose(this.startTask, task);
+            return this.builder();
+        }
+
+        @Override
+        public B onStop(Consumer<T> task) {
+            this.stopTask = compose(this.stopTask, task);
+            return this.builder();
+        }
+
+        private static <X> boolean isDefined(Consumer<X> task) {
+            return task != Functions.discardingConsumer();
+        }
+
+        private static <X> Consumer<X> compose(Consumer<X> currentTask, Consumer<X> newTask) {
+            return isDefined(currentTask) ? currentTask.andThen(newTask) : newTask;
+        }
+
+        @Override
+        public Function<SB, Service> getServiceFactory() {
+            return this;
+        }
+
+        @Override
+        public Service apply(SB builder) {
+            Consumer<V> injector = this.provider.apply(builder, this.names);
+            Consumer<V> captor = this.captor;
+            if (isDefined(captor)) {
+                injector = isDefined(injector) ? injector.andThen(captor) : captor;
+            }
+            return new UnaryService<>(injector, this.mapper, this.factory, this.startTask, this.stopTask);
+        }
+
+        protected boolean hasStopTask() {
+            return isDefined(this.stopTask);
+        }
+    }
+
+    class UnaryService<T, V> implements Service {
 
         private final Consumer<V> captor;
         private final Function<T, V> mapper;
@@ -343,7 +335,7 @@ public interface Installer<ST extends ServiceTarget> {
 
         private volatile T value;
 
-        DefaultService(Consumer<V> captor, Function<T, V> mapper, Supplier<T> factory, Consumer<T> startTask, Consumer<T> stopTask) {
+        UnaryService(Consumer<V> captor, Function<T, V> mapper, Supplier<T> factory, Consumer<T> startTask, Consumer<T> stopTask) {
             this.captor = captor;
             this.mapper = mapper;
             this.factory = factory;

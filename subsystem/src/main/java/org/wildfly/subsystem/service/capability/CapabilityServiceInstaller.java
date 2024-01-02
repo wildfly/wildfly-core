@@ -4,11 +4,11 @@
  */
 package org.wildfly.subsystem.service.capability;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.CapabilityServiceTarget;
@@ -73,7 +73,7 @@ public interface CapabilityServiceInstaller extends ResourceServiceInstaller, In
      * @return a service installer builder
      */
     static <T, V> Builder<T, V> builder(RuntimeCapability<Void> capability, Function<T, V> mapper, Supplier<T> factory) {
-        return new DefaultCapabilityServiceInstaller.Builder<>(capability, mapper, factory);
+        return new DefaultBuilder<>(capability, mapper, factory);
     }
 
     /**
@@ -81,7 +81,7 @@ public interface CapabilityServiceInstaller extends ResourceServiceInstaller, In
      * @param <T> the source value type
      * @param <V> the service value type
      */
-    interface Builder<T, V> extends Installer.Builder<Builder<T, V>, CapabilityServiceInstaller, CapabilityServiceTarget, RequirementServiceBuilder<?>, T, V> {
+    interface Builder<T, V> extends UnaryBuilder<Builder<T, V>, CapabilityServiceInstaller, CapabilityServiceTarget, RequirementServiceBuilder<?>, T, V> {
         /**
          * Indicates that the installed service should start and, if a stop task is configured, stop asynchronously.
          * @return a reference to this builder
@@ -100,73 +100,48 @@ public interface CapabilityServiceInstaller extends ResourceServiceInstaller, In
         };
     }
 
-    /**
-     * A default {@link CapabilityServiceInstaller} that installs a generic service.
-     * @param <T> the source value type
-     * @param <V> the service value type
-     */
-    class DefaultCapabilityServiceInstaller<T, V> extends AbstractInstaller<CapabilityServiceTarget, CapabilityServiceBuilder<?>, RequirementServiceBuilder<?>, T, V> implements CapabilityServiceInstaller {
-        private static final Function<CapabilityServiceTarget, CapabilityServiceBuilder<?>> FACTORY = CapabilityServiceTarget::addService;
+    class DefaultCapabilityServiceInstaller extends DefaultInstaller<CapabilityServiceTarget, CapabilityServiceBuilder<?>, RequirementServiceBuilder<?>> implements CapabilityServiceInstaller {
 
-        DefaultCapabilityServiceInstaller(Installer.Configuration<CapabilityServiceBuilder<?>, RequirementServiceBuilder<?>, T, V> config) {
-            super(config, FACTORY);
+        DefaultCapabilityServiceInstaller(Configuration<CapabilityServiceBuilder<?>, RequirementServiceBuilder<?>> config, Function<CapabilityServiceTarget, CapabilityServiceBuilder<?>> serviceBuilderFactory) {
+            super(config, serviceBuilderFactory);
+        }
+    }
+
+    class DefaultBuilder<T, V> extends AbstractUnaryBuilder<Builder<T, V>, CapabilityServiceInstaller, CapabilityServiceTarget, CapabilityServiceBuilder<?>, RequirementServiceBuilder<?>, T, V> implements Builder<T, V> {
+        private volatile boolean sync = true;
+
+        DefaultBuilder(RuntimeCapability<Void> capability, Function<T, V> mapper, Supplier<T> factory) {
+            super(mapper, factory, new BiFunction<>() {
+                @Override
+                public Consumer<V> apply(CapabilityServiceBuilder<?> builder, Collection<ServiceName> names) {
+                    return names.isEmpty() ? builder.provides(capability) : builder.provides(new RuntimeCapability[] { capability }, names.toArray(ServiceName[]::new));
+                }
+            });
         }
 
-        static class Builder<T, V> extends AbstractInstaller.Builder<CapabilityServiceInstaller.Builder<T, V>, CapabilityServiceInstaller, CapabilityServiceTarget, CapabilityServiceBuilder<?>, RequirementServiceBuilder<?>, T, V> implements CapabilityServiceInstaller.Builder<T, V> {
-            private final RuntimeCapability<Void> capability;
-            private volatile boolean sync = true;
+        @Override
+        public Builder<T, V> async() {
+            this.sync = false;
+            return this;
+        }
+
+        @Override
+        public CapabilityServiceInstaller build() {
+            boolean sync = this.sync;
             // If no stop task is specified, we can stop synchronously
-            private volatile AsyncServiceBuilder.Async async = AsyncServiceBuilder.Async.START_ONLY;
+            AsyncServiceBuilder.Async async = this.hasStopTask() ? AsyncServiceBuilder.Async.START_AND_STOP : AsyncServiceBuilder.Async.START_ONLY;
+            return new DefaultCapabilityServiceInstaller(this, new Function<>() {
+                @Override
+                public CapabilityServiceBuilder<?> apply(CapabilityServiceTarget target) {
+                    CapabilityServiceBuilder<?> builder = target.addService();
+                    return !sync ? new AsyncCapabilityServiceBuilder<>(builder, async) : builder;
+                }
+            });
+        }
 
-            Builder(RuntimeCapability<Void> capability, Function<T, V> mapper, Supplier<T> factory) {
-                super(mapper, factory);
-                this.capability = capability;
-            }
-
-            @Override
-            public CapabilityServiceInstaller.Builder<T, V> async() {
-                this.sync = false;
-                return this;
-            }
-
-            @Override
-            public Function<CapabilityServiceBuilder<?>, Consumer<V>> getProvider() {
-                RuntimeCapability<Void> capability = this.capability;
-                List<ServiceName> names = this.getServiceNames();
-                return new Function<>() {
-                    @Override
-                    public Consumer<V> apply(CapabilityServiceBuilder<?> builder) {
-                        return names.isEmpty() ? builder.provides(capability) : builder.provides(new RuntimeCapability[] { capability }, names.toArray(ServiceName[]::new));
-                    }
-                };
-            }
-
-            @Override
-            public CapabilityServiceInstaller.Builder<T, V> onStop(Consumer<T> consumer) {
-                this.async = AsyncServiceBuilder.Async.START_AND_STOP;
-                return super.onStop(consumer);
-            }
-
-            @Override
-            public UnaryOperator<CapabilityServiceBuilder<?>> getServiceBuilderDecorator() {
-                AsyncServiceBuilder.Async async = this.async;
-                return this.sync ? UnaryOperator.identity() : new UnaryOperator<>() {
-                    @Override
-                    public CapabilityServiceBuilder<?> apply(CapabilityServiceBuilder<?> builder) {
-                        return new AsyncCapabilityServiceBuilder<>(builder, async);
-                    }
-                };
-            }
-
-            @Override
-            public CapabilityServiceInstaller build() {
-                return new DefaultCapabilityServiceInstaller<>(this);
-            }
-
-            @Override
-            protected CapabilityServiceInstaller.Builder<T, V> builder() {
-                return this;
-            }
+        @Override
+        protected Builder<T, V> builder() {
+            return this;
         }
     }
 }
