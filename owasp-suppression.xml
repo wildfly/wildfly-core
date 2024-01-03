@@ -277,4 +277,12 @@
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jgit/org\.eclipse\.jgit\.ssh\.apache@.*$</packageUrl>
         <cve>CVE-2023-4759</cve>
     </suppress>
+    <!-- Dependency used only in test modules -->
+    <suppress>
+        <notes><![CDATA[
+        file name: json-path-2.4.0.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.jayway\.jsonpath/json\-path@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-51074</vulnerabilityName>
+    </suppress>
 </suppressions>
