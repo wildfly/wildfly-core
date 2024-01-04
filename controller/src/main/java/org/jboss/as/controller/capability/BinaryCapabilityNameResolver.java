@@ -19,6 +19,12 @@ public enum BinaryCapabilityNameResolver implements Function<PathAddress, String
             return new String[] { address.getParent().getLastElement().getValue(), address.getLastElement().getValue() };
         }
     },
+    GRANDPARENT_CHILD() {
+        @Override
+        public String[] apply(PathAddress address) {
+            return new String[] { address.getParent().getParent().getLastElement().getValue(), address.getLastElement().getValue() };
+        }
+    },
     GRANDPARENT_PARENT() {
         @Override
         public String[] apply(PathAddress address) {
@@ -26,10 +32,24 @@ public enum BinaryCapabilityNameResolver implements Function<PathAddress, String
             return new String[] { parent.getParent().getLastElement().getValue(), parent.getLastElement().getValue() };
         }
     },
-    GRANDPARENT_CHILD() {
+    GREATGRANDPARENT_CHILD() {
         @Override
         public String[] apply(PathAddress address) {
-            return new String[] { address.getParent().getParent().getLastElement().getValue(), address.getLastElement().getValue() };
+            return new String[] { address.getParent().getParent().getParent().getLastElement().getValue(), address.getLastElement().getValue() };
+        }
+    },
+    GREATGRANDPARENT_PARENT() {
+        @Override
+        public String[] apply(PathAddress address) {
+            PathAddress parent = address.getParent();
+            return new String[] { parent.getParent().getParent().getLastElement().getValue(), parent.getLastElement().getValue() };
+        }
+    },
+    GREATGRANDPARENT_GRANDPARENT() {
+        @Override
+        public String[] apply(PathAddress address) {
+            PathAddress grandparent = address.getParent().getParent();
+            return new String[] { grandparent.getParent().getLastElement().getValue(), grandparent.getLastElement().getValue() };
         }
     },
 }
