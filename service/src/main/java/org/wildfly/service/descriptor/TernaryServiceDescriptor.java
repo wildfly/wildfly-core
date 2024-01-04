@@ -16,6 +16,33 @@ import org.wildfly.common.Assert;
 public interface TernaryServiceDescriptor<T> extends ServiceDescriptor<T> {
 
     /**
+     * Resolves the dynamic name the service using the specified segments.
+     * @param grandparent the first dynamic segment
+     * @param parent the second dynamic segment
+     * @param child the third dynamic segment
+     * @return a tuple containing the resolved name and dynamic segments
+     */
+    default Map.Entry<String, String[]> resolve(String grandparent, String parent, String child) {
+        return Map.entry(this.getName(), new String[] {
+                Assert.checkNotNullParamWithNullPointerException("grandparent", grandparent),
+                Assert.checkNotNullParamWithNullPointerException("parent", parent),
+                Assert.checkNotNullParamWithNullPointerException("child", child)
+        });
+    }
+
+    /**
+     * Provides a three segment service descriptor.
+     * Typically implemented by enumerations providing service descriptors of the same type.
+     * @param <T> the service value type
+     */
+    interface Provider<T> extends ServiceDescriptor.Provider<T, TernaryServiceDescriptor<T>>, TernaryServiceDescriptor<T> {
+        @Override
+        default Map.Entry<String, String[]> resolve(String grandparent, String parent, String child) {
+            return this.get().resolve(grandparent, parent, child);
+        }
+    }
+
+    /**
      * Creates a ternary service descriptor with the specified name and type.
      * @param <T> the service type
      * @param name the service name
@@ -60,20 +87,5 @@ public interface TernaryServiceDescriptor<T> extends ServiceDescriptor<T> {
                 return (child != null) ? TernaryServiceDescriptor.super.resolve(grandparent, parent, child) : defaultDescriptor.resolve(grandparent, parent);
             }
         };
-    }
-
-    /**
-     * Resolves the dynamic name the service using the specified segments.
-     * @param grandparent the first dynamic segment
-     * @param parent the second dynamic segment
-     * @param child the third dynamic segment
-     * @return a tuple containing the resolved name and dynamic segments
-     */
-    default Map.Entry<String, String[]> resolve(String grandparent, String parent, String child) {
-        return Map.entry(this.getName(), new String[] {
-                Assert.checkNotNullParamWithNullPointerException("grandparent", grandparent),
-                Assert.checkNotNullParamWithNullPointerException("parent", parent),
-                Assert.checkNotNullParamWithNullPointerException("child", child)
-        });
     }
 }

@@ -4,6 +4,8 @@
  */
 package org.wildfly.service.descriptor;
 
+import java.util.function.Supplier;
+
 /**
  * Describes a service by its name and provided value type.
  * @author Paul Ferraro
@@ -22,4 +24,22 @@ public interface ServiceDescriptor<T> {
      * @return the provided value type of this described service.
      */
     Class<T> getType();
+
+    /**
+     * Provides a service descriptor.
+     * Typically implemented by enumerations providing service descriptors of the same type.
+     * @param <T> the service value type
+     * @param <SD> the provided service descriptor type
+     */
+    interface Provider<T, SD extends ServiceDescriptor<T>> extends Supplier<SD>, ServiceDescriptor<T> {
+        @Override
+        default String getName() {
+            return this.get().getName();
+        }
+
+        @Override
+        default Class<T> getType() {
+            return this.get().getType();
+        }
+    }
 }

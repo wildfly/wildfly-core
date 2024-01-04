@@ -14,6 +14,26 @@ import java.util.Map;
 public interface NullaryServiceDescriptor<T> extends ServiceDescriptor<T> {
 
     /**
+     * Resolves the constant name of the service.
+     * @return a tuple containing the resolved name and zero segments
+     */
+    default Map.Entry<String, String[]> resolve() {
+        return Map.entry(this.getName(), new String[0]);
+    }
+
+    /**
+     * Provides a zero segment service descriptor.
+     * Typically implemented by enumerations providing service descriptors of the same type.
+     * @param <T> the service value type
+     */
+    interface Provider<T> extends ServiceDescriptor.Provider<T, NullaryServiceDescriptor<T>>, NullaryServiceDescriptor<T> {
+        @Override
+        default Map.Entry<String, String[]> resolve() {
+            return this.get().resolve();
+        }
+    }
+
+    /**
      * Creates a service descriptor with the specified name and type
      * @param <T> the service type
      * @param name the service name
@@ -32,13 +52,5 @@ public interface NullaryServiceDescriptor<T> extends ServiceDescriptor<T> {
                 return type;
             }
         };
-    }
-
-    /**
-     * Resolves the constant name of the service.
-     * @return a tuple containing the resolved name and zero segments
-     */
-    default Map.Entry<String, String[]> resolve() {
-        return Map.entry(this.getName(), new String[0]);
     }
 }
