@@ -232,7 +232,7 @@
         <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>2.1.0.SP01</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.19.2-1-PSI</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.19.2-2-PSI</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.10.1.Final</version.org.wildfly.security.elytron-web>
         <version.xalan>2.7.1.redhat-00013</version.xalan>
 
