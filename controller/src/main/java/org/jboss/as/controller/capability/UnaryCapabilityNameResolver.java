@@ -32,6 +32,12 @@ public enum UnaryCapabilityNameResolver implements Function<PathAddress, String[
             return new String[] { address.getParent().getParent().getLastElement().getValue() };
         }
     },
+    GREATGRANDPARENT() {
+        @Override
+        public String[] apply(PathAddress address) {
+            return new String[] { address.getParent().getParent().getParent().getLastElement().getValue() };
+        }
+    },
     LOCAL() {
         @Override
         public String[] apply(PathAddress address) {

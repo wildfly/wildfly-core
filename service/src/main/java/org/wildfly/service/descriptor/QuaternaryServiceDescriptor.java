@@ -16,6 +16,35 @@ import org.wildfly.common.Assert;
 public interface QuaternaryServiceDescriptor<T> extends ServiceDescriptor<T> {
 
     /**
+     * Resolves the dynamic name the service using the specified segments.
+     * @param greatGrandparent the first dynamic segment
+     * @param grandparent the second dynamic segment
+     * @param parent the third dynamic segment
+     * @param child the fourth dynamic segment
+     * @return a tuple containing the resolved name and dynamic segments
+     */
+    default Map.Entry<String, String[]> resolve(String greatGrandparent, String grandparent, String parent, String child) {
+        return Map.entry(this.getName(), new String[] {
+                Assert.checkNotNullParamWithNullPointerException("greatGrandparent", greatGrandparent),
+                Assert.checkNotNullParamWithNullPointerException("grandparent", grandparent),
+                Assert.checkNotNullParamWithNullPointerException("parent", parent),
+                Assert.checkNotNullParamWithNullPointerException("child", child)
+        });
+    }
+
+    /**
+     * Provides a four segment service descriptor.
+     * Typically implemented by enumerations providing service descriptors of the same type.
+     * @param <T> the service value type
+     */
+    interface Provider<T> extends ServiceDescriptor.Provider<T, QuaternaryServiceDescriptor<T>>, QuaternaryServiceDescriptor<T> {
+        @Override
+        default Map.Entry<String, String[]> resolve(String greatGrandparent, String grandparent, String parent, String child) {
+            return this.get().resolve(greatGrandparent, grandparent, parent, child);
+        }
+    }
+
+    /**
      * Creates a quaternary service descriptor with the specified name and type.
      * @param <T> the service type
      * @param name the service name
@@ -60,22 +89,5 @@ public interface QuaternaryServiceDescriptor<T> extends ServiceDescriptor<T> {
                 return (child != null) ? QuaternaryServiceDescriptor.super.resolve(greatGrandparent, grandparent, parent, child) : defaultDescriptor.resolve(greatGrandparent, grandparent, parent);
             }
         };
-    }
-
-    /**
-     * Resolves the dynamic name the service using the specified segments.
-     * @param greatGrandparent the first dynamic segment
-     * @param grandparent the second dynamic segment
-     * @param parent the third dynamic segment
-     * @param child the fourth dynamic segment
-     * @return a tuple containing the resolved name and dynamic segments
-     */
-    default Map.Entry<String, String[]> resolve(String greatGrandparent, String grandparent, String parent, String child) {
-        return Map.entry(this.getName(), new String[] {
-                Assert.checkNotNullParamWithNullPointerException("greatGrandparent", greatGrandparent),
-                Assert.checkNotNullParamWithNullPointerException("grandparent", grandparent),
-                Assert.checkNotNullParamWithNullPointerException("parent", parent),
-                Assert.checkNotNullParamWithNullPointerException("child", child)
-        });
     }
 }

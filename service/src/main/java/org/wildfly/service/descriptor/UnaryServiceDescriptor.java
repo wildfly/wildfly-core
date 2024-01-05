@@ -16,6 +16,29 @@ import org.wildfly.common.Assert;
 public interface UnaryServiceDescriptor<T> extends ServiceDescriptor<T> {
 
     /**
+     * Resolves the dynamic name of the service using the specified segment.
+     * @param reference a dynamic segment
+     * @return a tuple containing the resolved name and dynamic segments
+     */
+    default Map.Entry<String, String[]> resolve(String reference) {
+        return Map.entry(this.getName(), new String[] {
+                Assert.checkNotNullParamWithNullPointerException("reference", reference)
+        });
+    }
+
+    /**
+     * Provides a one segment service descriptor.
+     * Typically implemented by enumerations providing service descriptors of the same type.
+     * @param <T> the service value type
+     */
+    interface Provider<T> extends ServiceDescriptor.Provider<T, UnaryServiceDescriptor<T>>, UnaryServiceDescriptor<T> {
+        @Override
+        default Map.Entry<String, String[]> resolve(String reference) {
+            return this.get().resolve(reference);
+        }
+    }
+
+    /**
      * Creates a unary service descriptor with the specified name and type.
      * @param <T> the service type
      * @param name the service name
@@ -60,16 +83,5 @@ public interface UnaryServiceDescriptor<T> extends ServiceDescriptor<T> {
                 return (name != null) ? UnaryServiceDescriptor.super.resolve(name) : defaultDescriptor.resolve();
             }
         };
-    }
-
-    /**
-     * Resolves the dynamic name of the service using the specified segment.
-     * @param reference a dynamic segment
-     * @return a tuple containing the resolved name and dynamic segments
-     */
-    default Map.Entry<String, String[]> resolve(String reference) {
-        return Map.entry(this.getName(), new String[] {
-                Assert.checkNotNullParamWithNullPointerException("reference", reference)
-        });
     }
 }
