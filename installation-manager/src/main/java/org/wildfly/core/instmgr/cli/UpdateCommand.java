@@ -20,6 +20,7 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.aesh.cmd.HeadersCompleter;
 import org.jboss.as.cli.impl.aesh.cmd.HeadersConverter;
+import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.dmr.ModelNode;
@@ -38,8 +39,10 @@ public class UpdateCommand extends AbstractInstMgrCommand {
     private List<String> repositories;
     @Option(name = "local-cache")
     private File localCache;
-    @Option(name = "no-resolve-local-cache", hasValue = false)
+    @Option(name = NO_RESOLVE_LOCAL_CACHE_OPTION, hasValue = false, activator = AbstractInstMgrCommand.NoResolveLocalCacheActivator.class, defaultValue = "true")
     private boolean noResolveLocalCache;
+    @Option(name = USE_DEFAULT_LOCAL_CACHE_OPTION, hasValue = false, activator = AbstractInstMgrCommand.UseDefaultLocalCacheActivator.class)
+    private boolean useDefaultLocalCache;
     @Option(name = "offline", hasValue = false)
     private boolean offline;
     @OptionList(name = "maven-repo-files")
@@ -61,8 +64,13 @@ public class UpdateCommand extends AbstractInstMgrCommand {
             throw new CommandException(String.format("%s and %s cannot be used at the same time.", CONFIRM_OPTION, DRY_RUN_OPTION));
         }
 
+        ParsedCommandLine cmdParser = ctx.getParsedCommandLine();
+        final Boolean optNoResolveLocalCache = cmdParser.hasProperty("--" + NO_RESOLVE_LOCAL_CACHE_OPTION) ? noResolveLocalCache : null;
+        final Boolean optUseDefaultLocalCache = cmdParser.hasProperty("--" + USE_DEFAULT_LOCAL_CACHE_OPTION) ? useDefaultLocalCache : null;
+
         ListUpdatesAction.Builder listUpdatesCmdBuilder = new ListUpdatesAction.Builder()
-                .setNoResolveLocalCache(noResolveLocalCache)
+                .setNoResolveLocalCache(optNoResolveLocalCache)
+                .setUseDefaultLocalCache(optUseDefaultLocalCache)
                 .setLocalCache(localCache)
                 .setRepositories(repositories)
                 .setMavenRepoFiles(mavenRepoFiles)
@@ -119,7 +127,8 @@ public class UpdateCommand extends AbstractInstMgrCommand {
                 commandInvocation.println("\nThe new installation is being prepared ...\n");
                 // trigger an prepare-update
                 PrepareUpdateAction.Builder prepareUpdateActionBuilder = new PrepareUpdateAction.Builder()
-                        .setNoResolveLocalCache(noResolveLocalCache)
+                        .setNoResolveLocalCache(optNoResolveLocalCache)
+                        .setUseDefaultLocalCache(optUseDefaultLocalCache)
                         .setLocalCache(localCache)
                         .setRepositories(repositories)
                         .setOffline(offline)
@@ -146,7 +155,7 @@ public class UpdateCommand extends AbstractInstMgrCommand {
         int maxLength = 0;
         for (ModelNode artifactChange : changesMn) {
             String channelName = artifactChange.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_NAME).asString();
-            maxLength = maxLength < channelName.length() ? channelName.length() : maxLength;
+            maxLength = Math.max(maxLength, channelName.length());
         }
         maxLength += 1;
 

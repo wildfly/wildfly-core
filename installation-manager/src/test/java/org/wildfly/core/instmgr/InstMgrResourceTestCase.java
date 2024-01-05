@@ -502,6 +502,28 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(MavenOptions.LOCAL_MAVEN_REPO, TestInstallationManagerFactory.mavenOptions.getLocalRepository());
 
 
+        op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.OFFLINE).set(true);
+        op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(false);
+
+        response = executeForResult(op);
+        verifyListUpdatesResult(response, false);
+
+        Assert.assertTrue(TestInstallationManagerFactory.mavenOptions.isOffline());
+        Assert.assertNull(TestInstallationManagerFactory.mavenOptions.getLocalRepository());
+
+
+        op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.OFFLINE).set(false);
+        op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(true);
+
+        response = executeForResult(op);
+        verifyListUpdatesResult(response, false);
+
+        Assert.assertFalse(TestInstallationManagerFactory.mavenOptions.isOffline());
+        Assert.assertEquals(MavenOptions.LOCAL_MAVEN_REPO, TestInstallationManagerFactory.mavenOptions.getLocalRepository());
+
+
         Path localCache = Paths.get("one").resolve("two").toAbsolutePath();
         op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
         op.get(InstMgrConstants.LOCAL_CACHE).set(localCache.toString());
@@ -541,6 +563,31 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     }
 
     @Test
+    public void listUpdatesCannotUseLocalCacheWithUseDefaultLocalCache() throws OperationFailedException {
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        Path localCache = Paths.get("dummy").resolve("something");
+        ModelNode op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(true);
+        op.get(InstMgrConstants.LOCAL_CACHE).set(localCache.toString());
+
+        ModelNode failed = executeCheckForFailure(op);
+        String expectedCode = "WFLYIM0021:";
+        Assert.assertTrue(
+                getCauseLogFailure(failed.get(FAILURE_DESCRIPTION).asString(), expectedCode),
+                failed.get(FAILURE_DESCRIPTION).asString().startsWith(expectedCode)
+        );
+
+        op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(false);
+        op.get(InstMgrConstants.LOCAL_CACHE).set(localCache.toString());
+
+        executeForResult(op);
+
+        Assert.assertFalse(TestInstallationManagerFactory.mavenOptions.isOffline());
+        Assert.assertEquals(localCache, TestInstallationManagerFactory.mavenOptions.getLocalRepository());
+    }
+
+    @Test
     public void listUpdatesCannotUseMavenRepoFileWithRepositories() {
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
         ModelNode op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
@@ -561,6 +608,30 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         );
     }
 
+    @Test
+    public void listUpdatesCannotUseNoResolveLocalCacheWithUseDefaultLocalCache() throws OperationFailedException {
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(true);
+        op.get(InstMgrConstants.NO_RESOLVE_LOCAL_CACHE).set(true);
+
+        ModelNode failed = executeCheckForFailure(op);
+        String expectedCode = "WFLYIM0022:";
+        Assert.assertTrue(
+                getCauseLogFailure(failed.get(FAILURE_DESCRIPTION).asString(), expectedCode),
+                failed.get(FAILURE_DESCRIPTION).asString().startsWith(expectedCode)
+        );
+
+        op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(true);
+
+        executeForResult(op);
+
+        op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.NO_RESOLVE_LOCAL_CACHE).set(true);
+
+        executeForResult(op);
+    }
     @Test
     public void listUpdatesWithRepositories() throws OperationFailedException, IOException, URISyntaxException {
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
@@ -743,6 +814,34 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         op = Util.createEmptyOperation(InstMgrCleanHandler.OPERATION_NAME, pathElements);
         executeForResult(op);
 
+        op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.OFFLINE).set(true);
+        op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(false);
+
+        response = executeForResult(op);
+        Assert.assertEquals(instMgrService.getPreparedServerDir().toString(), response.asString());
+        Assert.assertTrue(TestInstallationManagerFactory.mavenOptions.isOffline());
+        Assert.assertNull(TestInstallationManagerFactory.mavenOptions.getLocalRepository());
+
+        // Clean it to be able to prepare another
+        op = Util.createEmptyOperation(InstMgrCleanHandler.OPERATION_NAME, pathElements);
+        executeForResult(op);
+
+
+        op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.OFFLINE).set(false);
+        op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(true);
+
+        response = executeForResult(op);
+        Assert.assertEquals(instMgrService.getPreparedServerDir().toString(), response.asString());
+        Assert.assertFalse(TestInstallationManagerFactory.mavenOptions.isOffline());
+        Assert.assertEquals(MavenOptions.LOCAL_MAVEN_REPO, TestInstallationManagerFactory.mavenOptions.getLocalRepository());
+
+
+        // Clean it to be able to prepare another
+        op = Util.createEmptyOperation(InstMgrCleanHandler.OPERATION_NAME, pathElements);
+        executeForResult(op);
+
 
         Path localCache = Paths.get("one").resolve("two").toAbsolutePath();
         op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
@@ -782,6 +881,31 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
                 getCauseLogFailure(failed.get(FAILURE_DESCRIPTION).asString(), expectedCode),
                 failed.get(FAILURE_DESCRIPTION).asString().startsWith(expectedCode)
         );
+    }
+
+    @Test
+    public void prepareUpdatesCannotUseLocalCacheWithUseDefaultLocalCache() throws OperationFailedException {
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        Path localCache = Paths.get("dummy").resolve("something");
+        ModelNode op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(true);
+        op.get(InstMgrConstants.LOCAL_CACHE).set(localCache.toString());
+
+        ModelNode failed = executeCheckForFailure(op);
+        String expectedCode = "WFLYIM0021:";
+        Assert.assertTrue(
+                getCauseLogFailure(failed.get(FAILURE_DESCRIPTION).asString(), expectedCode),
+                failed.get(FAILURE_DESCRIPTION).asString().startsWith(expectedCode)
+        );
+
+        op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(false);
+        op.get(InstMgrConstants.LOCAL_CACHE).set(localCache.toString());
+
+        executeForResult(op);
+
+        Assert.assertFalse(TestInstallationManagerFactory.mavenOptions.isOffline());
+        Assert.assertEquals(localCache, TestInstallationManagerFactory.mavenOptions.getLocalRepository());
     }
 
     @Test
@@ -998,6 +1122,34 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
             Assert.assertEquals(JBOSS_HOME.resolve("bin") + TestInstallationManager.APPLY_UPDATE_BASE_GENERATED_COMMAND+instMgrService.getPreparedServerDir(), prop.get(InstMgrCandidateStatus.INST_MGR_COMMAND_KEY));
         }
     }
+
+    @Test
+    public void prepareRevertCannotUseLocalCacheWithUseDefaultLocalCache() throws OperationFailedException {
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        Path localCache = Paths.get("dummy").resolve("something");
+        ModelNode op = Util.createEmptyOperation(InstMgrPrepareRevertHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.REVISION).set("aaaabbbb");
+        op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(true);
+        op.get(InstMgrConstants.LOCAL_CACHE).set(localCache.toString());
+
+        ModelNode failed = executeCheckForFailure(op);
+        String expectedCode = "WFLYIM0021:";
+        Assert.assertTrue(
+                getCauseLogFailure(failed.get(FAILURE_DESCRIPTION).asString(), expectedCode),
+                failed.get(FAILURE_DESCRIPTION).asString().startsWith(expectedCode)
+        );
+
+        op = Util.createEmptyOperation(InstMgrPrepareRevertHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.REVISION).set("aaaabbbb");
+        op.get(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE).set(false);
+        op.get(InstMgrConstants.LOCAL_CACHE).set(localCache.toString());
+
+        executeForResult(op);
+
+        Assert.assertFalse(TestInstallationManagerFactory.mavenOptions.isOffline());
+        Assert.assertEquals(localCache, TestInstallationManagerFactory.mavenOptions.getLocalRepository());
+    }
+
 
     @Test
     public void prepareRevertCannotUseLocalCacheWithNoResolveLocalCache() throws OperationFailedException {

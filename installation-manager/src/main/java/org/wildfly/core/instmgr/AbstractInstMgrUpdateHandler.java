@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -63,16 +64,28 @@ abstract class AbstractInstMgrUpdateHandler extends InstMgrOperationStepHandler 
             .addArbitraryDescriptor(FILESYSTEM_PATH, ModelNode.TRUE)
             .setMinSize(1)
             .setRequired(false)
-            .setAlternatives(InstMgrConstants.NO_RESOLVE_LOCAL_CACHE)
+            .setAlternatives(InstMgrConstants.NO_RESOLVE_LOCAL_CACHE, InstMgrConstants.USE_DEFAULT_LOCAL_CACHE)
             .build();
 
+    /**
+     * @deprecated Use USE_DEFAULT_LOCAL_CACHE instead.
+     */
+    @Deprecated(forRemoval = true)
     protected static final AttributeDefinition NO_RESOLVE_LOCAL_CACHE = SimpleAttributeDefinitionBuilder.create(InstMgrConstants.NO_RESOLVE_LOCAL_CACHE, ModelType.BOOLEAN)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
-            .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
             .setStorageRuntime()
-            .setAlternatives(InstMgrConstants.LOCAL_CACHE)
+            .setAlternatives(InstMgrConstants.LOCAL_CACHE, InstMgrConstants.USE_DEFAULT_LOCAL_CACHE)
+            .setDeprecated(ModelVersion.create(24))
+            .build();
+
+    protected static final AttributeDefinition USE_DEFAULT_LOCAL_CACHE = SimpleAttributeDefinitionBuilder.create(InstMgrConstants.USE_DEFAULT_LOCAL_CACHE, ModelType.BOOLEAN)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setRequired(false)
+            .setStorageRuntime()
+            .setAlternatives(InstMgrConstants.LOCAL_CACHE, InstMgrConstants.NO_RESOLVE_LOCAL_CACHE)
             .build();
 
     AbstractInstMgrUpdateHandler(InstMgrService imService, InstallationManagerFactory imf) {
