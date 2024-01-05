@@ -44,4 +44,5 @@ public enum UnaryCapabilityNameResolver implements Function<PathAddress, String[
             return new String[] { ModelDescriptionConstants.LOCAL };
         }
     },
+    ;
 }
