@@ -23,7 +23,7 @@ public class AggregateDiscoveryProviderRegistrar extends DiscoveryProviderRegist
     static final PathElement PATH = PathElement.pathElement("aggregate-provider");
 
     static final StringListAttributeDefinition PROVIDER_NAMES = new StringListAttributeDefinition.Builder("providers")
-        .setCapabilityReference(CapabilityReferenceRecorder.of(DISCOVERY_PROVIDER_CAPABILITY, DISCOVERY_PROVIDER_DESCRIPTOR))
+        .setCapabilityReference(CapabilityReferenceRecorder.builder(DISCOVERY_PROVIDER_CAPABILITY, DISCOVERY_PROVIDER_DESCRIPTOR).build())
         .setFlags(Flag.RESTART_RESOURCE_SERVICES)
         .build();
 

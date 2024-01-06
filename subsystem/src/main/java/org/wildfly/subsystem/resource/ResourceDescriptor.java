@@ -366,15 +366,6 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
 
         /**
          * Adds the specified runtime capabilities to this resource.
-         * @param capabilities a variable number of runtime capabilities
-         * @return a reference to this configurator
-         */
-        default C addCapabilities(RuntimeCapability<?>... capabilities) {
-            return this.addCapabilities(Set.of(capabilities));
-        }
-
-        /**
-         * Adds the specified runtime capabilities to this resource.
          * @param capabilities a collection of runtime capabilities
          * @return a reference to this configurator
          */
@@ -429,15 +420,6 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          */
         default C addResourceCapabilityReference(ResourceCapabilityReferenceRecorder<?> reference) {
             return this.addResourceCapabilityReferences(Set.of(reference));
-        }
-
-        /**
-         * Adds a number of capability references that records requirements for this resource.
-         * @param references a variable number of capability reference recorders
-         * @return a reference to this configurator
-         */
-        default C addResourceCapabilityReferences(ResourceCapabilityReferenceRecorder<?>... references) {
-            return this.addResourceCapabilityReferences(Set.of(references));
         }
 
         /**

@@ -52,4 +52,5 @@ public enum BinaryCapabilityNameResolver implements Function<PathAddress, String
             return new String[] { grandparent.getParent().getLastElement().getValue(), grandparent.getLastElement().getValue() };
         }
     },
+    ;
 }
