@@ -24,10 +24,10 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ProcessStateNotifier;
-import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -41,7 +41,6 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.value.Value;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
 
 /**
@@ -256,13 +255,12 @@ public class EmbeddedHostControllerFactory {
                     final byte[] authBytes = new byte[16];
                     new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
                     final String pcAuthCode = Base64.getEncoder().encodeToString(authBytes);
+                    final AtomicReference<ProcessStateNotifier> notifierReference = new AtomicReference<>();
                     hostControllerBootstrap = new EmbeddedHostControllerBootstrap(futureContainer, environment, pcAuthCode);
-                    hostControllerBootstrap.bootstrap(processStateListener);
+                    hostControllerBootstrap.bootstrap(processStateListener, notifierReference);
                     serviceContainer = futureContainer.get();
                     executorService = Executors.newCachedThreadPool();
-                    @SuppressWarnings({"unchecked", "deprecation"})
-                    final Value<ProcessStateNotifier> processStateNotifierValue = (Value<ProcessStateNotifier>) serviceContainer.getRequiredService(ControlledProcessStateService.SERVICE_NAME);
-                    processStateNotifier = processStateNotifierValue.getValue();
+                    processStateNotifier = notifierReference.get();
                     establishModelControllerClient(currentProcessState, false);
                 } catch (RuntimeException rte) {
                     if (hostControllerBootstrap != null) {
