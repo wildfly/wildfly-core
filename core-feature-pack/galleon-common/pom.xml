@@ -27,7 +27,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-feature-pack-parent</artifactId>
-        <version>13.0.3-18-PSI-SNAPSHOT</version>
+        <version>13.0.3-18-PSI</version>
     </parent>
 
     <artifactId>wildfly-core-feature-pack-galleon-common</artifactId>
