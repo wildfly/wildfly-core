@@ -30,6 +30,26 @@ public interface TernaryServiceDescriptor<T> extends ServiceDescriptor<T> {
         });
     }
 
+    @Override
+    default <U extends T> TernaryServiceDescriptor<U> asType(Class<U> type) {
+        return new TernaryServiceDescriptor<>() {
+            @Override
+            public String getName() {
+                return TernaryServiceDescriptor.this.getName();
+            }
+
+            @Override
+            public Class<U> getType() {
+                return type;
+            }
+
+            @Override
+            public Map.Entry<String, String[]> resolve(String grandparent, String parent, String child) {
+                return TernaryServiceDescriptor.this.resolve(grandparent, parent, child);
+            }
+        };
+    }
+
     /**
      * Provides a three segment service descriptor.
      * Typically implemented by enumerations providing service descriptors of the same type.

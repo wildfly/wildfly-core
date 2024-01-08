@@ -21,6 +21,26 @@ public interface NullaryServiceDescriptor<T> extends ServiceDescriptor<T> {
         return Map.entry(this.getName(), new String[0]);
     }
 
+    @Override
+    default <U extends T> NullaryServiceDescriptor<U> asType(Class<U> type) {
+        return new NullaryServiceDescriptor<>() {
+            @Override
+            public String getName() {
+                return NullaryServiceDescriptor.this.getName();
+            }
+
+            @Override
+            public Class<U> getType() {
+                return type;
+            }
+
+            @Override
+            public Map.Entry<String, String[]> resolve() {
+                return NullaryServiceDescriptor.this.resolve();
+            }
+        };
+    }
+
     /**
      * Provides a zero segment service descriptor.
      * Typically implemented by enumerations providing service descriptors of the same type.
