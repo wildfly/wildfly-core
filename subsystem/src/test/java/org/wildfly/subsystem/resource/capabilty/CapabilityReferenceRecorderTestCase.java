@@ -174,7 +174,6 @@ public class CapabilityReferenceRecorderTestCase {
         Resource resource = mock(Resource.class);
 
         doReturn(address).when(context).getCurrentAddress();
-        doReturn(resource).when(context).readResource(PathAddress.EMPTY_ADDRESS, false);
         doReturn(model).when(resource).getModel();
         doAnswer(invocation -> invocation.getArgument(0)).when(context).resolveExpressions(any());
 
@@ -300,7 +299,6 @@ public class CapabilityReferenceRecorderTestCase {
         Resource resource = mock(Resource.class);
 
         doReturn(address).when(context).getCurrentAddress();
-        doReturn(resource).when(context).readResource(PathAddress.EMPTY_ADDRESS, false);
         doAnswer(invocation -> invocation.getArgument(0)).when(context).resolveExpressions(any());
         doReturn(model).when(resource).getModel();
 

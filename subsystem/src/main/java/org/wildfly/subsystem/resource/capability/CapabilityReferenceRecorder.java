@@ -7,8 +7,8 @@ package org.wildfly.subsystem.resource.capability;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -17,7 +17,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.dmr.ModelNode;
 import org.wildfly.service.descriptor.BinaryServiceDescriptor;
 import org.wildfly.service.descriptor.QuaternaryServiceDescriptor;
 import org.wildfly.service.descriptor.ServiceDescriptor;
@@ -189,13 +188,13 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
         private static final Function<PathAddress, PathElement> CHILD_PATH = PathAddress::getLastElement;
         private static final Function<PathAddress, PathElement> PARENT_PATH = CHILD_PATH.compose(PathAddress::getParent);
         private static final Function<PathAddress, PathElement> GRANDPARENT_PATH = PARENT_PATH.compose(PathAddress::getParent);
-        private static final BiFunction<OperationContext, String, String> CHILD_REQUIREMENT_NAME_SEGMENT_RESOLVER = (context, value) -> value;
-        private static final BiFunction<PathAddress, String, String> CHILD_REQUIREMENT_PATTERN_SEGMENT_RESOLVER = (address, name) -> name;
+        private static final RequirementNameSegmentResolver CHILD_REQUIREMENT_NAME_SEGMENT_RESOLVER = (context, resource, value) -> value;
+        private static final UnaryOperator<String> CHILD_REQUIREMENT_PATTERN_SEGMENT_RESOLVER = UnaryOperator.identity();
 
         private final RuntimeCapability<Void> capability;
         private final ServiceDescriptor<T> requirement;
-        private final List<BiFunction<OperationContext, String, String>> requirementNameSegmentResolvers = new ArrayList<>(4);
-        private final List<BiFunction<PathAddress, String, String>> requirementPatternSegmentResolvers= new ArrayList<>(4);
+        private final List<RequirementNameSegmentResolver> requirementNameSegmentResolvers = new ArrayList<>(4);
+        private final List<UnaryOperator<String>> requirementPatternSegmentResolvers= new ArrayList<>(4);
 
         DefaultBuilder(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement) {
             this.capability = capability;
@@ -248,13 +247,12 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
             this.requirementPatternSegmentResolvers.add(createRequirementPatternSegmentResolver(path));
         }
 
-        private static BiFunction<OperationContext, String, String> createRequirementNameSegmentResolver(AttributeDefinition attribute) {
-            return new BiFunction<>() {
+        private static RequirementNameSegmentResolver createRequirementNameSegmentResolver(AttributeDefinition attribute) {
+            return new RequirementNameSegmentResolver() {
                 @Override
-                public String apply(OperationContext context, String value) {
-                    ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS, false).getModel();
+                public String resolve(OperationContext context, Resource resource, String value) {
                     try {
-                        return attribute.resolveModelAttribute(context, model).asString();
+                        return attribute.resolveModelAttribute(context, resource.getModel()).asString();
                     } catch (OperationFailedException e) {
                         throw new IllegalArgumentException(e);
                     }
@@ -262,28 +260,28 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
             };
         }
 
-        private static BiFunction<OperationContext, String, String> createRequirementNameSegmentResolver(Function<PathAddress, PathElement> resolver) {
-            return new BiFunction<>() {
+        private static RequirementNameSegmentResolver createRequirementNameSegmentResolver(Function<PathAddress, PathElement> resolver) {
+            return new RequirementNameSegmentResolver() {
                 @Override
-                public String apply(OperationContext context, String value) {
+                public String resolve(OperationContext context, Resource resource, String value) {
                     return resolver.apply(context.getCurrentAddress()).getValue();
                 }
             };
         }
 
-        private static BiFunction<PathAddress, String, String> createRequirementPatternSegmentResolver(AttributeDefinition attribute) {
-            return new BiFunction<>() {
+        private static UnaryOperator<String> createRequirementPatternSegmentResolver(AttributeDefinition attribute) {
+            return new UnaryOperator<>() {
                 @Override
-                public String apply(PathAddress address, String name) {
+                public String apply(String name) {
                     return attribute.getName();
                 }
             };
         }
 
-        private static BiFunction<PathAddress, String, String> createRequirementPatternSegmentResolver(PathElement path) {
-            return new BiFunction<>() {
+        private static UnaryOperator<String> createRequirementPatternSegmentResolver(PathElement path) {
+            return new UnaryOperator<>() {
                 @Override
-                public String apply(PathAddress address, String name) {
+                public String apply(String name) {
                     return path.getKey();
                 }
             };
@@ -334,10 +332,10 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
 
     class CapabilityServiceDescriptorReferenceRecorder<T> extends AbstractCapabilityServiceDescriptorReferenceRecorder<T> {
 
-        private final List<BiFunction<OperationContext, String, String>> requirementNameSegmentResolvers;
-        private final List<BiFunction<PathAddress, String, String>> requirementPatternSegmentResolvers;
+        private final List<RequirementNameSegmentResolver> requirementNameSegmentResolvers;
+        private final List<UnaryOperator<String>> requirementPatternSegmentResolvers;
 
-        CapabilityServiceDescriptorReferenceRecorder(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement, List<BiFunction<OperationContext, String, String>> requirementNameSegmentResolvers, List<BiFunction<PathAddress, String, String>> requirementPatternSegmentResolvers) {
+        CapabilityServiceDescriptorReferenceRecorder(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement, List<RequirementNameSegmentResolver> requirementNameSegmentResolvers, List<UnaryOperator<String>> requirementPatternSegmentResolvers) {
             super(capability, requirement);
             this.requirementNameSegmentResolvers = List.copyOf(requirementNameSegmentResolvers);
             this.requirementPatternSegmentResolvers = List.copyOf(requirementPatternSegmentResolvers);
@@ -349,7 +347,7 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
             for (String value : values) {
                 // Do not register requirement if undefined
                 if (value != null) {
-                    context.registerAdditionalCapabilityRequirement(this.resolveRequirementName(context, value), dependentName, attributeName);
+                    context.registerAdditionalCapabilityRequirement(this.resolveRequirementName(context, resource, value), dependentName, attributeName);
                 }
             }
         }
@@ -360,16 +358,16 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
             for (String value : values) {
                 // We did not register a requirement if undefined
                 if (value != null) {
-                    context.deregisterCapabilityRequirement(this.resolveRequirementName(context, value), dependentName, attributeName);
+                    context.deregisterCapabilityRequirement(this.resolveRequirementName(context, resource, value), dependentName, attributeName);
                 }
             }
         }
 
-        private String resolveRequirementName(OperationContext context, String value) {
+        private String resolveRequirementName(OperationContext context, Resource resource, String value) {
             String[] segments = new String[this.requirementNameSegmentResolvers.size()];
-            ListIterator<BiFunction<OperationContext, String, String>> resolvers = this.requirementNameSegmentResolvers.listIterator();
+            ListIterator<RequirementNameSegmentResolver> resolvers = this.requirementNameSegmentResolvers.listIterator();
             while (resolvers.hasNext()) {
-                segments[resolvers.nextIndex()] = resolvers.next().apply(context, value);
+                segments[resolvers.nextIndex()] = resolvers.next().resolve(context, resource, value);
             }
             return RuntimeCapability.buildDynamicCapabilityName(this.getBaseRequirementName(), segments);
         }
@@ -377,11 +375,15 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
         @Override
         public String[] getRequirementPatternSegments(String name, PathAddress address) {
             String[] segments = new String[this.requirementPatternSegmentResolvers.size()];
-            ListIterator<BiFunction<PathAddress, String, String>> resolvers = this.requirementPatternSegmentResolvers.listIterator();
+            ListIterator<UnaryOperator<String>> resolvers = this.requirementPatternSegmentResolvers.listIterator();
             while (resolvers.hasNext()) {
-                segments[resolvers.nextIndex()] = resolvers.next().apply(address, name);
+                segments[resolvers.nextIndex()] = resolvers.next().apply(name);
             }
             return segments;
         }
+    }
+
+    interface RequirementNameSegmentResolver {
+        String resolve(OperationContext context, Resource resource, String value);
     }
 }
