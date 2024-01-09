@@ -221,7 +221,7 @@ public class CapabilityReferenceRecorderTestCase {
         NullaryServiceDescriptor<Object> descriptor = NullaryServiceDescriptor.of("capability", Object.class);
         RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(descriptor).build();
         BinaryServiceDescriptor<Object> requirement = BinaryServiceDescriptor.of("requirement", Object.class);
-        CapabilityReferenceRecorder<Object> recorder = CapabilityReferenceRecorder.builder(capability, requirement).build();
+        CapabilityReferenceRecorder<Object> recorder = CapabilityReferenceRecorder.builder(capability, requirement).withParentPath(PathElement.pathElement("component")).build();
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
@@ -283,7 +283,7 @@ public class CapabilityReferenceRecorderTestCase {
         NullaryServiceDescriptor<Object> descriptor = NullaryServiceDescriptor.of("capability", Object.class);
         RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(descriptor).build();
         TernaryServiceDescriptor<Object> requirement = TernaryServiceDescriptor.of("requirement", Object.class);
-        CapabilityReferenceRecorder<Object> recorder = CapabilityReferenceRecorder.builder(capability, requirement).withGrandparentPathResolver(PathAddress::getLastElement).withParentAttribute(parentAttribute).build();
+        CapabilityReferenceRecorder<Object> recorder = CapabilityReferenceRecorder.builder(capability, requirement).withGrandparentPath(PathElement.pathElement("component"), PathAddress::getLastElement).withParentAttribute(parentAttribute).build();
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
