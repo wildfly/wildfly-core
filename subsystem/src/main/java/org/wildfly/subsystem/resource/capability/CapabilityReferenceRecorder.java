@@ -12,6 +12,7 @@ import java.util.function.Function;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -252,7 +253,11 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
                 @Override
                 public String apply(OperationContext context, String value) {
                     ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS, false).getModel();
-                    return model.get(attribute.getName()).asString();
+                    try {
+                        return attribute.resolveModelAttribute(context, model).asString();
+                    } catch (OperationFailedException e) {
+                        throw new IllegalArgumentException(e);
+                    }
                 }
             };
         }
