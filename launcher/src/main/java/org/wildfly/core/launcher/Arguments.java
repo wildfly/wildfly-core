@@ -191,11 +191,7 @@ class Arguments {
     void add(final Argument argument) {
         if (argument != null) {
             if (argument.multipleValuesAllowed()) {
-                Collection<Argument> arguments = map.get(argument.getKey());
-                if (arguments == null) {
-                    arguments = new ArrayList<>();
-                    map.put(argument.getKey(), arguments);
-                }
+                final Collection<Argument> arguments = map.computeIfAbsent(argument.getKey(), k -> new ArrayList<>());
                 arguments.add(argument);
             } else {
                 set(argument);

@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import static org.wildfly.core.launcher.AbstractCommandBuilder.DEFAULT_VM_ARGUMENTS;
+import static org.wildfly.core.launcher.JBossModulesCommandBuilder.DEFAULT_VM_ARGUMENTS;
 
 import org.wildfly.core.launcher.Arguments.Argument;
 import static org.wildfly.core.launcher.StandaloneCommandBuilder.DEBUG_FORMAT;
@@ -23,7 +23,7 @@ import org.wildfly.core.launcher.logger.LauncherMessages;
  *
  * @author <a href="mailto:jfdenise@redhat.com">JF Denise</a>
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class BootableJarCommandBuilder implements CommandBuilder {
 
     private final Arguments javaOpts;
@@ -430,10 +430,9 @@ public class BootableJarCommandBuilder implements CommandBuilder {
 
     @Override
     public List<String> buildArguments() {
-        final List<String> cmd = new ArrayList<>();
-        cmd.addAll(getJavaOptions());
+        final List<String> cmd = new ArrayList<>(getJavaOptions());
         if (jvm.enhancedSecurityManagerAvailable()) {
-            cmd.add(AbstractCommandBuilder.SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE);
+            cmd.add(JBossModulesCommandBuilder.SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE);
         }
         if (modulesLocklessArg != null) {
             cmd.add(modulesLocklessArg);

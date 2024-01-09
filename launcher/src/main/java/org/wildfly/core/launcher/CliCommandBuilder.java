@@ -27,10 +27,10 @@ import org.wildfly.core.launcher.logger.LauncherMessages;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class CliCommandBuilder implements CommandBuilder {
 
-    private static Path cliClientJar = Paths.get("bin").resolve("client").resolve("jboss-cli-client.jar");
+    private static final Path cliClientJar = Paths.get("bin").resolve("client").resolve("jboss-cli-client.jar");
 
     enum CliArgument {
         CONNECT("--connect", "-c"),
@@ -652,20 +652,19 @@ public class CliCommandBuilder implements CommandBuilder {
 
     @Override
     public List<String> buildArguments() {
-        final List<String> cmd = new ArrayList<>();
-        cmd.addAll(getJavaOptions());
+        final List<String> cmd = new ArrayList<>(getJavaOptions());
         if (modularLauncher) {
             if (environment.getJvm().isModular()) {
-                cmd.addAll(AbstractCommandBuilder.DEFAULT_MODULAR_VM_ARGUMENTS);
-                for (final String optionalModularArgument : AbstractCommandBuilder.OPTIONAL_DEFAULT_MODULAR_VM_ARGUMENTS) {
-                    if (environment.getJvm().isPackageAvailable(environment.getJvm().getPath(), optionalModularArgument)) {
+                cmd.addAll(JBossModulesCommandBuilder.DEFAULT_MODULAR_VM_ARGUMENTS);
+                for (final String optionalModularArgument : JBossModulesCommandBuilder.OPTIONAL_DEFAULT_MODULAR_VM_ARGUMENTS) {
+                    if (Jvm.isPackageAvailable(environment.getJvm().getPath(), optionalModularArgument)) {
                         cmd.add(optionalModularArgument);
                     }
                 }
             }
         }
         if (environment.getJvm().enhancedSecurityManagerAvailable()) {
-            cmd.add(AbstractCommandBuilder.SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE);
+            cmd.add(JBossModulesCommandBuilder.SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE);
         }
         cmd.add("-jar");
 

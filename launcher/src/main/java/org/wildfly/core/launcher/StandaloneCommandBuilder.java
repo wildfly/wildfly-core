@@ -24,12 +24,13 @@ import org.wildfly.core.launcher.Arguments.Argument;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings({"unused", "MagicNumber", "UnusedReturnValue"})
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneCommandBuilder> implements CommandBuilder {
 
     // JPDA remote socket debugging
     static final String DEBUG_FORMAT = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=%s,address=%d";
 
+    private static final String MODULE_NAME = "org.jboss.as.standalone";
     private static final String SERVER_BASE_DIR = "jboss.server.base.dir";
     private static final String SERVER_CONFIG_DIR = "jboss.server.config.dir";
     private static final String SERVER_LOG_DIR = "jboss.server.log.dir";
@@ -52,7 +53,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      * @param wildflyHome the path to WildFly
      */
     private StandaloneCommandBuilder(final Path wildflyHome) {
-        super(wildflyHome);
+        super(wildflyHome, MODULE_NAME);
         javaOpts = new Arguments();
         javaOpts.addAll(DEFAULT_VM_ARGUMENTS);
         securityProperties = new LinkedHashMap<>();
@@ -334,7 +335,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      * @return the builder
      */
     public StandaloneCommandBuilder setBaseDirectory(final String baseDir) {
-        this.baseDir = validateAndNormalizeDir(baseDir, true);
+        this.baseDir = Environment.validateAndNormalizeDir(baseDir, true);
         return this;
     }
 
@@ -348,7 +349,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      * @return the builder
      */
     public StandaloneCommandBuilder setBaseDirectory(final Path baseDir) {
-        this.baseDir = validateAndNormalizeDir(baseDir, true);
+        this.baseDir = Environment.validateAndNormalizeDir(baseDir, true);
         return this;
     }
 
@@ -574,7 +575,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         if (environment.getJvm().isModular()) {
             cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
             for (final String optionalModularArgument : OPTIONAL_DEFAULT_MODULAR_VM_ARGUMENTS) {
-                if (environment.getJvm().isPackageAvailable(environment.getJvm().getPath(), optionalModularArgument)) {
+                if (Jvm.isPackageAvailable(environment.getJvm().getPath(), optionalModularArgument)) {
                     cmd.add(optionalModularArgument);
                 }
             }
@@ -607,7 +608,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         cmd.addAll(moduleOpts);
         cmd.add("-mp");
         cmd.add(getModulePaths());
-        cmd.add("org.jboss.as.standalone");
+        cmd.add(MODULE_NAME);
 
         // Add the security properties
         StringBuilder sb = new StringBuilder(64);
@@ -621,14 +622,6 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         }
 
         cmd.addAll(getServerArguments());
-        return cmd;
-    }
-
-    @Override
-    public List<String> build() {
-        final List<String> cmd = new ArrayList<>();
-        cmd.add(environment.getJvm().getCommand());
-        cmd.addAll(buildArguments());
         return cmd;
     }
 
