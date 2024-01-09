@@ -72,6 +72,8 @@ public interface CapabilityReferenceRecorder extends Feature {
      *
      * @param name the name of the attribute.
      * @param address the registration address of the resource definition that has the capability and its requirement.
+     *                N.B. This parameter is only specified in association with a ResourcDefinition.
+     *                When associated with an AttributeDefinition, address will always be {@link PathAddress#EMPTY_ADDRESS}.
      * @return the elements to be added to the baseRequirementName to build the capability name pattern.
      */
     default String[] getRequirementPatternSegments(String name, PathAddress address) {
