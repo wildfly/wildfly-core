@@ -6,6 +6,7 @@ package org.wildfly.subsystem.service;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller.RequirementServiceBuilder;
@@ -22,6 +23,21 @@ import org.wildfly.service.descriptor.UnaryServiceDescriptor;
  * @author Paul Ferraro
  */
 public interface ServiceDependency<V> extends Dependency<RequirementServiceBuilder<?>, V> {
+
+    @Override
+    default <R> ServiceDependency<R> map(Function<V, R> mapper) {
+        return new ServiceDependency<>() {
+            @Override
+            public void accept(RequirementServiceBuilder<?> builder) {
+                ServiceDependency.this.accept(builder);
+            }
+
+            @Override
+            public R get() {
+                return mapper.apply(ServiceDependency.this.get());
+            }
+        };
+    }
 
     /**
      * Returns a dependency on the service with the specified name.

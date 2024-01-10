@@ -4,6 +4,8 @@
  */
 package org.wildfly.service;
 
+import java.util.function.Function;
+
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 
@@ -12,6 +14,21 @@ import org.jboss.msc.service.ServiceName;
  * @author Paul Ferraro
  */
 public interface ServiceDependency<V> extends Dependency<ServiceBuilder<?>, V> {
+
+    @Override
+    default <R> ServiceDependency<R> map(Function<V, R> mapper) {
+        return new ServiceDependency<>() {
+            @Override
+            public void accept(ServiceBuilder<?> builder) {
+                ServiceDependency.this.accept(builder);
+            }
+
+            @Override
+            public R get() {
+                return mapper.apply(ServiceDependency.this.get());
+            }
+        };
+    }
 
     /**
      * Returns a pseudo-dependency supplying a fixed value.

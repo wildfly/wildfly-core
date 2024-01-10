@@ -18,6 +18,20 @@ import org.wildfly.common.function.Functions;
  */
 public interface Dependency<B extends ServiceBuilder<?>, V> extends Consumer<B>, Supplier<V> {
 
+    default <R> Dependency<B, R> map(Function<V, R> mapper) {
+        return new Dependency<>() {
+            @Override
+            public void accept(B builder) {
+                Dependency.this.accept(builder);
+            }
+
+            @Override
+            public R get() {
+                return mapper.apply(Dependency.this.get());
+            }
+        };
+    }
+
     class SimpleDependency<B extends ServiceBuilder<?>, V> implements Dependency<B, V> {
 
         private final V value;
