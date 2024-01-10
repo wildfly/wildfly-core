@@ -19,7 +19,7 @@ import org.jboss.modules.ModuleLoader;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
 
 /**
- * Represents a configuration for the embedded server.
+ * Represents a configuration for creating an {@link EmbeddedManagedProcess}.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
