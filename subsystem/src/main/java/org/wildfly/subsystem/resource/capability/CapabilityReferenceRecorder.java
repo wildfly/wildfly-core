@@ -7,16 +7,16 @@ package org.wildfly.subsystem.resource.capability;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.dmr.ModelNode;
 import org.wildfly.service.descriptor.BinaryServiceDescriptor;
 import org.wildfly.service.descriptor.QuaternaryServiceDescriptor;
 import org.wildfly.service.descriptor.ServiceDescriptor;
@@ -57,7 +57,7 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
      * @param requirement the requirement of the specified capability
      */
     static <T> Builder<T> builder(RuntimeCapability<Void> capability, UnaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, List.of());
+        return new DefaultBuilder<>(capability, requirement);
     }
 
     /**
@@ -66,8 +66,8 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
      * @param capability the capability referencing the specified requirement
      * @param requirement the requirement of the specified capability
      */
-    static <T> BinaryBuilder<T> builder(RuntimeCapability<Void> capability, BinaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, List.of(DefaultBuilder.CHILD_PATH));
+    static <T> ParentPathProvider<T> builder(RuntimeCapability<Void> capability, BinaryServiceDescriptor<T> requirement) {
+        return new DefaultBuilder<>(capability, requirement);
     }
 
     /**
@@ -76,8 +76,8 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
      * @param capability the capability referencing the specified requirement
      * @param requirement the requirement of the specified capability
      */
-    static <T> TernaryBuilder<T> builder(RuntimeCapability<Void> capability, TernaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, List.of(DefaultBuilder.PARENT_PATH, DefaultBuilder.CHILD_PATH));
+    static <T> GrandparentPathProvider<T> builder(RuntimeCapability<Void> capability, TernaryServiceDescriptor<T> requirement) {
+        return new DefaultBuilder<>(capability, requirement);
     }
 
     /**
@@ -86,8 +86,8 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
      * @param capability the capability referencing the specified requirement
      * @param requirement the requirement of the specified capability
      */
-    static <T> QuaternaryBuilder<T> builder(RuntimeCapability<Void> capability, QuaternaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, List.of(DefaultBuilder.GRANDPARENT_PATH, DefaultBuilder.PARENT_PATH, DefaultBuilder.CHILD_PATH));
+    static <T> GreatGrandparentPathProvider<T> builder(RuntimeCapability<Void> capability, QuaternaryServiceDescriptor<T> requirement) {
+        return new DefaultBuilder<>(capability, requirement);
     }
 
     interface Builder<T> {
@@ -107,13 +107,24 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
         Builder<T> withParentAttribute(AttributeDefinition attribute);
     }
 
-    interface BinaryBuilder<T> extends ParentAttributeProvider<T>, Builder<T> {
+    interface ParentPathProvider<T> extends ParentAttributeProvider<T> {
         /**
-         * Overrides the default path resolver for the parent segment of the requirement.
-         * @param a path resolver
+         * Specifies the path for the parent segment of the requirement.
+         * @param path a path element used to construct the capability name pattern for this reference
+         * @param resolver a path resolver
          * @return a reference to this builder
          */
-        Builder<T> withParentPathResolver(Function<PathAddress, PathElement> resolver);
+        default Builder<T> withParentPath(PathElement path) {
+            return this.withParentPath(path, DefaultBuilder.CHILD_PATH);
+        }
+
+        /**
+         * Specifies the path and resolver for the parent segment of the requirement.
+         * @param path a path element used to construct the capability name pattern for this reference
+         * @param resolver a path resolver
+         * @return a reference to this builder
+         */
+        Builder<T> withParentPath(PathElement path, Function<PathAddress, PathElement> resolver);
     }
 
     interface GrandparentAttributeProvider<T> {
@@ -125,13 +136,24 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
         ParentAttributeProvider<T> withGrandparentAttribute(AttributeDefinition attribute);
     }
 
-    interface TernaryBuilder<T> extends BinaryBuilder<T>, GrandparentAttributeProvider<T> {
+    interface GrandparentPathProvider<T> extends GrandparentAttributeProvider<T> {
         /**
-         * Overrides the default path resolver for the grandparent segment of the requirement.
-         * @param a path resolver
+         * Specifies the path for the grandparent segment of the requirement.
+         * @param path a path element used to construct the capability name pattern for this reference
+         * @param resolver a path resolver
          * @return a reference to this builder
          */
-        BinaryBuilder<T> withGrandparentPathResolver(Function<PathAddress, PathElement> resolver);
+        default ParentPathProvider<T> withGrandparentPath(PathElement path) {
+            return this.withGrandparentPath(path, DefaultBuilder.PARENT_PATH);
+        }
+
+        /**
+         * Specifies the path and resolver for the grandparent segment of the requirement.
+         * @param path a path element used to construct the capability name pattern for this reference
+         * @param resolver a path resolver
+         * @return a reference to this builder
+         */
+        ParentPathProvider<T> withGrandparentPath(PathElement path, Function<PathAddress, PathElement> resolver);
     }
 
     interface GreatGrandparentAttributeProvider<T> {
@@ -143,131 +165,132 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
         GrandparentAttributeProvider<T> withGreatGrandparentAttribute(AttributeDefinition attribute);
     }
 
-    interface QuaternaryBuilder<T> extends TernaryBuilder<T>, GreatGrandparentAttributeProvider<T> {
+    interface GreatGrandparentPathProvider<T> extends GreatGrandparentAttributeProvider<T> {
         /**
-         * Overrides the default path resolver for the great-grandparent segment of the requirement.
-         * @param a path resolver
+         * Specifies the path for the great-grandparent segment of the requirement.
+         * @param path a path element used to construct the capability name pattern for this reference
          * @return a reference to this builder
          */
-        TernaryBuilder<T> withGreatGrandparentPathResolver(Function<PathAddress, PathElement> resolver);
+        default GrandparentPathProvider<T> withGreatGrandparentPath(PathElement path) {
+            return this.withGreatGrandparentPath(path, DefaultBuilder.GRANDPARENT_PATH);
+        }
+
+        /**
+         * Specifies the path and resolver for the great-grandparent segment of the requirement.
+         * @param path a path element used to construct the capability name pattern for this reference
+         * @param resolver a path resolver
+         * @return a reference to this builder
+         */
+        GrandparentPathProvider<T> withGreatGrandparentPath(PathElement path, Function<PathAddress, PathElement> resolver);
     }
 
-    class DefaultBuilder<T> implements QuaternaryBuilder<T> {
+    class DefaultBuilder<T> implements GreatGrandparentPathProvider<T>, GrandparentPathProvider<T>, ParentPathProvider<T>, Builder<T> {
         private static final Function<PathAddress, PathElement> CHILD_PATH = PathAddress::getLastElement;
         private static final Function<PathAddress, PathElement> PARENT_PATH = CHILD_PATH.compose(PathAddress::getParent);
         private static final Function<PathAddress, PathElement> GRANDPARENT_PATH = PARENT_PATH.compose(PathAddress::getParent);
-        private static final BiFunction<OperationContext, String, String> CHILD_REQUIREMENT_NAME_SEGMENT_RESOLVER = (context, value) -> value;
-        private static final BiFunction<PathAddress, String, String> CHILD_REQUIREMENT_PATTERN_SEGMENT_RESOLVER = (address, name) -> name;
+        private static final RequirementNameSegmentResolver CHILD_REQUIREMENT_NAME_SEGMENT_RESOLVER = (context, resource, value) -> value;
+        private static final UnaryOperator<String> CHILD_REQUIREMENT_PATTERN_SEGMENT_RESOLVER = UnaryOperator.identity();
 
         private final RuntimeCapability<Void> capability;
         private final ServiceDescriptor<T> requirement;
-        private final List<BiFunction<OperationContext, String, String>> requirementNameSegmentResolvers;
-        private final List<BiFunction<PathAddress, String, String>> requirementPatternSegmentResolvers;
-        private final int greatGrandparentIndex;
-        private final int grandparentIndex;
-        private final int parentIndex;
+        private final List<RequirementNameSegmentResolver> requirementNameSegmentResolvers = new ArrayList<>(4);
+        private final List<UnaryOperator<String>> requirementPatternSegmentResolvers= new ArrayList<>(4);
 
-        DefaultBuilder(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement, List<Function<PathAddress, PathElement>> defaultResolvers) {
+        DefaultBuilder(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement) {
             this.capability = capability;
             this.requirement = requirement;
-            this.parentIndex = defaultResolvers.size() - 1;
-            this.grandparentIndex = this.parentIndex - 1;
-            this.greatGrandparentIndex = this.grandparentIndex - 1;
-            this.requirementNameSegmentResolvers = new ArrayList<>(defaultResolvers.size() + 1);
-            this.requirementPatternSegmentResolvers = new ArrayList<>(defaultResolvers.size() + 1);
-            for (Function<PathAddress, PathElement> resolver : defaultResolvers) {
-                this.requirementNameSegmentResolvers.add(createRequirementNameSegmentResolver(resolver));
-                this.requirementPatternSegmentResolvers.add(createRequirementPatternSegmentResolver(resolver));
-            }
-            this.requirementNameSegmentResolvers.add(CHILD_REQUIREMENT_NAME_SEGMENT_RESOLVER);
-            this.requirementPatternSegmentResolvers.add(CHILD_REQUIREMENT_PATTERN_SEGMENT_RESOLVER);
         }
 
         @Override
         public GrandparentAttributeProvider<T> withGreatGrandparentAttribute(AttributeDefinition attribute) {
-            this.setAttribute(this.greatGrandparentIndex, attribute);
+            this.setAttribute(attribute);
             return this;
         }
 
         @Override
         public ParentAttributeProvider<T> withGrandparentAttribute(AttributeDefinition attribute) {
-            this.setAttribute(this.grandparentIndex, attribute);
+            this.setAttribute(attribute);
             return this;
         }
 
         @Override
         public Builder<T> withParentAttribute(AttributeDefinition attribute) {
-            this.setAttribute(this.parentIndex, attribute);
+            this.setAttribute(attribute);
             return this;
         }
 
         @Override
-        public TernaryBuilder<T> withGreatGrandparentPathResolver(Function<PathAddress, PathElement> resolver) {
-            this.setPathResolver(this.greatGrandparentIndex, resolver);
+        public GrandparentPathProvider<T> withGreatGrandparentPath(PathElement path, Function<PathAddress, PathElement> resolver) {
+            this.setPath(path, resolver);
             return this;
         }
 
         @Override
-        public BinaryBuilder<T> withGrandparentPathResolver(Function<PathAddress, PathElement> resolver) {
-            this.setPathResolver(this.grandparentIndex, resolver);
+        public ParentPathProvider<T> withGrandparentPath(PathElement path, Function<PathAddress, PathElement> resolver) {
+            this.setPath(path, resolver);
             return this;
         }
 
         @Override
-        public Builder<T> withParentPathResolver(Function<PathAddress, PathElement> resolver) {
-            this.setPathResolver(this.parentIndex, resolver);
+        public Builder<T> withParentPath(PathElement path, Function<PathAddress, PathElement> resolver) {
+            this.setPath(path, resolver);
             return this;
         }
 
-        private void setAttribute(int index, AttributeDefinition attribute) {
-            this.requirementNameSegmentResolvers.set(index, createRequirementNameSegmentResolver(attribute));
-            this.requirementPatternSegmentResolvers.set(index, createRequirementPatternSegmentResolver(attribute));
+        private void setAttribute(AttributeDefinition attribute) {
+            this.requirementNameSegmentResolvers.add(createRequirementNameSegmentResolver(attribute));
+            this.requirementPatternSegmentResolvers.add(createRequirementPatternSegmentResolver(attribute));
         }
 
-        private void setPathResolver(int index, Function<PathAddress, PathElement> resolver) {
-            this.requirementNameSegmentResolvers.set(index, createRequirementNameSegmentResolver(resolver));
-            this.requirementPatternSegmentResolvers.set(index, createRequirementPatternSegmentResolver(resolver));
+        private void setPath(PathElement path, Function<PathAddress, PathElement> resolver) {
+            this.requirementNameSegmentResolvers.add(createRequirementNameSegmentResolver(resolver));
+            this.requirementPatternSegmentResolvers.add(createRequirementPatternSegmentResolver(path));
         }
 
-        private static BiFunction<OperationContext, String, String> createRequirementNameSegmentResolver(AttributeDefinition attribute) {
-            return new BiFunction<>() {
+        private static RequirementNameSegmentResolver createRequirementNameSegmentResolver(AttributeDefinition attribute) {
+            return new RequirementNameSegmentResolver() {
                 @Override
-                public String apply(OperationContext context, String value) {
-                    ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS, false).getModel();
-                    return model.get(attribute.getName()).asString();
+                public String resolve(OperationContext context, Resource resource, String value) {
+                    try {
+                        return attribute.resolveModelAttribute(context, resource.getModel()).asString();
+                    } catch (OperationFailedException e) {
+                        throw new IllegalArgumentException(e);
+                    }
                 }
             };
         }
 
-        private static BiFunction<OperationContext, String, String> createRequirementNameSegmentResolver(Function<PathAddress, PathElement> pathResolver) {
-            return new BiFunction<>() {
+        private static RequirementNameSegmentResolver createRequirementNameSegmentResolver(Function<PathAddress, PathElement> resolver) {
+            return new RequirementNameSegmentResolver() {
                 @Override
-                public String apply(OperationContext context, String value) {
-                    return pathResolver.apply(context.getCurrentAddress()).getValue();
+                public String resolve(OperationContext context, Resource resource, String value) {
+                    return resolver.apply(context.getCurrentAddress()).getValue();
                 }
             };
         }
 
-        private static BiFunction<PathAddress, String, String> createRequirementPatternSegmentResolver(AttributeDefinition attribute) {
-            return new BiFunction<>() {
+        private static UnaryOperator<String> createRequirementPatternSegmentResolver(AttributeDefinition attribute) {
+            return new UnaryOperator<>() {
                 @Override
-                public String apply(PathAddress address, String name) {
+                public String apply(String name) {
                     return attribute.getName();
                 }
             };
         }
 
-        private static BiFunction<PathAddress, String, String> createRequirementPatternSegmentResolver(Function<PathAddress, PathElement> pathResolver) {
-            return new BiFunction<>() {
+        private static UnaryOperator<String> createRequirementPatternSegmentResolver(PathElement path) {
+            return new UnaryOperator<>() {
                 @Override
-                public String apply(PathAddress address, String name) {
-                    return pathResolver.apply(address).getKey();
+                public String apply(String name) {
+                    return path.getKey();
                 }
             };
         }
 
         @Override
         public CapabilityReferenceRecorder<T> build() {
+            this.requirementNameSegmentResolvers.add(CHILD_REQUIREMENT_NAME_SEGMENT_RESOLVER);
+            this.requirementPatternSegmentResolvers.add(CHILD_REQUIREMENT_PATTERN_SEGMENT_RESOLVER);
             return new CapabilityServiceDescriptorReferenceRecorder<>(this.capability, this.requirement, this.requirementNameSegmentResolvers, this.requirementPatternSegmentResolvers);
         }
     }
@@ -309,10 +332,10 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
 
     class CapabilityServiceDescriptorReferenceRecorder<T> extends AbstractCapabilityServiceDescriptorReferenceRecorder<T> {
 
-        private final List<BiFunction<OperationContext, String, String>> requirementNameSegmentResolvers;
-        private final List<BiFunction<PathAddress, String, String>> requirementPatternSegmentResolvers;
+        private final List<RequirementNameSegmentResolver> requirementNameSegmentResolvers;
+        private final List<UnaryOperator<String>> requirementPatternSegmentResolvers;
 
-        CapabilityServiceDescriptorReferenceRecorder(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement, List<BiFunction<OperationContext, String, String>> requirementNameSegmentResolvers, List<BiFunction<PathAddress, String, String>> requirementPatternSegmentResolvers) {
+        CapabilityServiceDescriptorReferenceRecorder(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement, List<RequirementNameSegmentResolver> requirementNameSegmentResolvers, List<UnaryOperator<String>> requirementPatternSegmentResolvers) {
             super(capability, requirement);
             this.requirementNameSegmentResolvers = List.copyOf(requirementNameSegmentResolvers);
             this.requirementPatternSegmentResolvers = List.copyOf(requirementPatternSegmentResolvers);
@@ -324,7 +347,7 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
             for (String value : values) {
                 // Do not register requirement if undefined
                 if (value != null) {
-                    context.registerAdditionalCapabilityRequirement(this.resolveRequirementName(context, value), dependentName, attributeName);
+                    context.registerAdditionalCapabilityRequirement(this.resolveRequirementName(context, resource, value), dependentName, attributeName);
                 }
             }
         }
@@ -335,16 +358,16 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
             for (String value : values) {
                 // We did not register a requirement if undefined
                 if (value != null) {
-                    context.deregisterCapabilityRequirement(this.resolveRequirementName(context, value), dependentName, attributeName);
+                    context.deregisterCapabilityRequirement(this.resolveRequirementName(context, resource, value), dependentName, attributeName);
                 }
             }
         }
 
-        private String resolveRequirementName(OperationContext context, String value) {
+        private String resolveRequirementName(OperationContext context, Resource resource, String value) {
             String[] segments = new String[this.requirementNameSegmentResolvers.size()];
-            ListIterator<BiFunction<OperationContext, String, String>> resolvers = this.requirementNameSegmentResolvers.listIterator();
+            ListIterator<RequirementNameSegmentResolver> resolvers = this.requirementNameSegmentResolvers.listIterator();
             while (resolvers.hasNext()) {
-                segments[resolvers.nextIndex()] = resolvers.next().apply(context, value);
+                segments[resolvers.nextIndex()] = resolvers.next().resolve(context, resource, value);
             }
             return RuntimeCapability.buildDynamicCapabilityName(this.getBaseRequirementName(), segments);
         }
@@ -352,11 +375,15 @@ public interface CapabilityReferenceRecorder<T> extends org.jboss.as.controller.
         @Override
         public String[] getRequirementPatternSegments(String name, PathAddress address) {
             String[] segments = new String[this.requirementPatternSegmentResolvers.size()];
-            ListIterator<BiFunction<PathAddress, String, String>> resolvers = this.requirementPatternSegmentResolvers.listIterator();
+            ListIterator<UnaryOperator<String>> resolvers = this.requirementPatternSegmentResolvers.listIterator();
             while (resolvers.hasNext()) {
-                segments[resolvers.nextIndex()] = resolvers.next().apply(address, name);
+                segments[resolvers.nextIndex()] = resolvers.next().apply(name);
             }
             return segments;
         }
+    }
+
+    interface RequirementNameSegmentResolver {
+        String resolve(OperationContext context, Resource resource, String value);
     }
 }

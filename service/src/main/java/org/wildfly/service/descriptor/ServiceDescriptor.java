@@ -26,6 +26,14 @@ public interface ServiceDescriptor<T> {
     Class<T> getType();
 
     /**
+     * Returns a sub-class view of this service descriptor.
+     * @param <U> the subclass type
+     * @param type a sub-class of this descriptor's type
+     * @return a sub-class view of this service descriptor.
+     */
+    <U extends T> ServiceDescriptor<U> asType(Class<U> type);
+
+    /**
      * Provides a service descriptor.
      * Typically implemented by enumerations providing service descriptors of the same type.
      * @param <T> the service value type

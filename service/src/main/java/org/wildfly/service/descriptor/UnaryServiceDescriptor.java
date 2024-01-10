@@ -26,6 +26,26 @@ public interface UnaryServiceDescriptor<T> extends ServiceDescriptor<T> {
         });
     }
 
+    @Override
+    default <U extends T> UnaryServiceDescriptor<U> asType(Class<U> type) {
+        return new UnaryServiceDescriptor<>() {
+            @Override
+            public String getName() {
+                return UnaryServiceDescriptor.this.getName();
+            }
+
+            @Override
+            public Class<U> getType() {
+                return type;
+            }
+
+            @Override
+            public Map.Entry<String, String[]> resolve(String name) {
+                return UnaryServiceDescriptor.this.resolve(name);
+            }
+        };
+    }
+
     /**
      * Provides a one segment service descriptor.
      * Typically implemented by enumerations providing service descriptors of the same type.

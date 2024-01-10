@@ -28,6 +28,26 @@ public interface BinaryServiceDescriptor<T> extends ServiceDescriptor<T> {
         });
     }
 
+    @Override
+    default <U extends T> BinaryServiceDescriptor<U> asType(Class<U> type) {
+        return new BinaryServiceDescriptor<>() {
+            @Override
+            public String getName() {
+                return BinaryServiceDescriptor.this.getName();
+            }
+
+            @Override
+            public Class<U> getType() {
+                return type;
+            }
+
+            @Override
+            public Map.Entry<String, String[]> resolve(String parent, String child) {
+                return BinaryServiceDescriptor.this.resolve(parent, child);
+            }
+        };
+    }
+
     /**
      * Provides a two segment service descriptor.
      * Typically implemented by enumerations providing service descriptors of the same type.

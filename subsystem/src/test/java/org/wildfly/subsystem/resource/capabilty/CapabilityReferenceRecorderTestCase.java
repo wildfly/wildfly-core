@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -105,7 +106,7 @@ public class CapabilityReferenceRecorderTestCase {
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
         ModelNode model = new ModelNode();
-        model.set(attributeName, "bar");
+        model.get(attributeName).set("bar");
         OperationContext context = mock(OperationContext.class);
         Resource resource = mock(Resource.class);
 
@@ -151,7 +152,7 @@ public class CapabilityReferenceRecorderTestCase {
     }
 
     @Test
-    public void testBinaryWithParentAttribute() {
+    public void testBinaryWithParentAttribute() throws OperationFailedException {
         String parentAttributeName = "parent-attribute";
         AttributeDefinition parentAttribute = SimpleAttributeDefinitionBuilder.create(parentAttributeName, ModelType.STRING).build();
         String attributeName = "attribute";
@@ -167,14 +168,14 @@ public class CapabilityReferenceRecorderTestCase {
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
         ModelNode model = new ModelNode();
-        model.set(attributeName, "bar");
-        model.set(parentAttributeName, "baz");
+        model.get(attributeName).set("bar");
+        model.get(parentAttributeName).set("baz");
         OperationContext context = mock(OperationContext.class);
         Resource resource = mock(Resource.class);
 
         doReturn(address).when(context).getCurrentAddress();
-        doReturn(resource).when(context).readResource(PathAddress.EMPTY_ADDRESS, false);
         doReturn(model).when(resource).getModel();
+        doAnswer(invocation -> invocation.getArgument(0)).when(context).resolveExpressions(any());
 
         Assert.assertArrayEquals(new String[] { parentAttributeName, attributeName }, recorder.getRequirementPatternSegments(attributeName, address));
 
@@ -221,7 +222,7 @@ public class CapabilityReferenceRecorderTestCase {
         NullaryServiceDescriptor<Object> descriptor = NullaryServiceDescriptor.of("capability", Object.class);
         RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(descriptor).build();
         BinaryServiceDescriptor<Object> requirement = BinaryServiceDescriptor.of("requirement", Object.class);
-        CapabilityReferenceRecorder<Object> recorder = CapabilityReferenceRecorder.builder(capability, requirement).build();
+        CapabilityReferenceRecorder<Object> recorder = CapabilityReferenceRecorder.builder(capability, requirement).withParentPath(PathElement.pathElement("component")).build();
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
@@ -230,7 +231,7 @@ public class CapabilityReferenceRecorderTestCase {
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
         ModelNode model = new ModelNode();
-        model.set(attributeName, "bar");
+        model.get(attributeName).set("bar");
         OperationContext context = mock(OperationContext.class);
         Resource resource = mock(Resource.class);
 
@@ -276,14 +277,14 @@ public class CapabilityReferenceRecorderTestCase {
     }
 
     @Test
-    public void testTernary() {
+    public void testTernary() throws OperationFailedException {
         String parentAttributeName = "parent-attribute";
         AttributeDefinition parentAttribute = SimpleAttributeDefinitionBuilder.create(parentAttributeName, ModelType.STRING).build();
         String attributeName = "attribute";
         NullaryServiceDescriptor<Object> descriptor = NullaryServiceDescriptor.of("capability", Object.class);
         RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(descriptor).build();
         TernaryServiceDescriptor<Object> requirement = TernaryServiceDescriptor.of("requirement", Object.class);
-        CapabilityReferenceRecorder<Object> recorder = CapabilityReferenceRecorder.builder(capability, requirement).withGrandparentPathResolver(PathAddress::getLastElement).withParentAttribute(parentAttribute).build();
+        CapabilityReferenceRecorder<Object> recorder = CapabilityReferenceRecorder.builder(capability, requirement).withGrandparentPath(PathElement.pathElement("component"), PathAddress::getLastElement).withParentAttribute(parentAttribute).build();
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
@@ -292,13 +293,13 @@ public class CapabilityReferenceRecorderTestCase {
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
         ModelNode model = new ModelNode();
-        model.set(attributeName, "bar");
-        model.set(parentAttributeName, "baz");
+        model.get(attributeName).set("bar");
+        model.get(parentAttributeName).set("baz");
         OperationContext context = mock(OperationContext.class);
         Resource resource = mock(Resource.class);
 
         doReturn(address).when(context).getCurrentAddress();
-        doReturn(resource).when(context).readResource(PathAddress.EMPTY_ADDRESS, false);
+        doAnswer(invocation -> invocation.getArgument(0)).when(context).resolveExpressions(any());
         doReturn(model).when(resource).getModel();
 
         Assert.assertArrayEquals(new String[] { "component", parentAttributeName, attributeName }, recorder.getRequirementPatternSegments(attributeName, address));

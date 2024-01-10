@@ -32,6 +32,26 @@ public interface QuaternaryServiceDescriptor<T> extends ServiceDescriptor<T> {
         });
     }
 
+    @Override
+    default <U extends T> QuaternaryServiceDescriptor<U> asType(Class<U> type) {
+        return new QuaternaryServiceDescriptor<>() {
+            @Override
+            public String getName() {
+                return QuaternaryServiceDescriptor.this.getName();
+            }
+
+            @Override
+            public Class<U> getType() {
+                return type;
+            }
+
+            @Override
+            public Map.Entry<String, String[]> resolve(String greatGrandparent, String grandparent, String parent, String child) {
+                return QuaternaryServiceDescriptor.this.resolve(greatGrandparent, grandparent, parent, child);
+            }
+        };
+    }
+
     /**
      * Provides a four segment service descriptor.
      * Typically implemented by enumerations providing service descriptors of the same type.
