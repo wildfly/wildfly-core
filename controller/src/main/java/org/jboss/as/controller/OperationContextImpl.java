@@ -1683,7 +1683,8 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public ServiceName getCapabilityServiceName(String capabilityBaseName, Class<?> serviceType, String ... dynamicParts) {
-        return getCapabilityServiceName(capabilityBaseName, serviceType).append(dynamicParts);
+        ServiceName name = getCapabilityServiceName(capabilityBaseName, serviceType);
+        return (dynamicParts.length > 0) ? name.append(dynamicParts) : name;
     }
 
     ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType, final PathAddress address) {
@@ -2664,7 +2665,8 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         @Override
         public ServiceName getCapabilityServiceName(String capabilityBaseName, String ... dynamicPart) {
-            return getCapabilityServiceName(capabilityBaseName).append(dynamicPart);
+            ServiceName name = getCapabilityServiceName(capabilityBaseName);
+            return (dynamicPart.length > 0) ? name.append(dynamicPart) : name;
         }
     }
 
