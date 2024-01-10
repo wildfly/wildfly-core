@@ -58,26 +58,30 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
     private final SuspendController suspendController;
     private final boolean standalone;
     private final boolean selfContained;
+    private final ElapsedTime elapsedTime;
     private volatile FutureServiceContainer futureContainer;
-    private volatile long startTime;
+    private volatile boolean beenStopped;
 
     ApplicationServerService(final List<ServiceActivator> extraServices, final Bootstrap.Configuration configuration,
-                             final ControlledProcessState processState, final SuspendController suspendController) {
+                             final ControlledProcessState processState, final SuspendController suspendController,
+                             final ElapsedTime elapsedTime) {
         this.extraServices = extraServices;
         this.configuration = configuration;
         runningModeControl = configuration.getRunningModeControl();
-        startTime = configuration.getStartTime();
         standalone = configuration.getServerEnvironment().isStandalone();
         selfContained = configuration.getServerEnvironment().isSelfContained();
         this.processState = processState;
         this.suspendController = suspendController;
+        this.elapsedTime = elapsedTime;
     }
 
     @Override
     public synchronized void start(final StartContext context) throws StartException {
 
-        //Moved to AbstractControllerService.start()
-        //processState.setStarting();
+        if (beenStopped) {
+            elapsedTime.resetStartToNow();
+        }
+
         final Bootstrap.Configuration configuration = this.configuration;
         final ServerEnvironment serverEnvironment = configuration.getServerEnvironment();
         final ProductConfig config = serverEnvironment.getProductConfig();
@@ -127,15 +131,9 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         final ServiceContainer container = myController.getServiceContainer();
         futureContainer = new FutureServiceContainer();
 
-        long startTime = this.startTime;
-        if (startTime == -1) {
-            startTime = System.currentTimeMillis();
-        } else {
-            this.startTime = -1;
-        }
         CurrentServiceContainer.setServiceContainer(context.getController().getServiceContainer());
 
-        final BootstrapListener bootstrapListener = new BootstrapListener(container, startTime, serviceTarget, futureContainer, prettyVersion, serverEnvironment.getServerTempDir());
+        final BootstrapListener bootstrapListener = new BootstrapListener(container, elapsedTime, serviceTarget, futureContainer, prettyVersion, serverEnvironment.getServerTempDir());
         bootstrapListener.getStabilityMonitor().addController(myController);
         // Install either a local or remote content repository
         if(standalone) {
@@ -206,6 +204,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         String prettyVersion = configuration.getServerEnvironment().getProductConfig().getPrettyVersionString();
         ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, (int) (context.getElapsedTime() / 1000000L));
         BootstrapListener.deleteStartupMarker(configuration.getServerEnvironment().getServerTempDir());
+        beenStopped = true;
     }
 
     @Override

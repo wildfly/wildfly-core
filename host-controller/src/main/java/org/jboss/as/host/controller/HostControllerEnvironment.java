@@ -6,6 +6,7 @@
 package org.jboss.as.host.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.server.ElapsedTime.startingFromNow;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +24,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.server.ElapsedTime;
 import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
@@ -243,7 +245,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     private final HostRunningModeControl runningModeControl;
     private final boolean securityManagerEnabled;
     private final UUID hostControllerUUID;
-    private final long startTime;
+    private final ElapsedTime elapsedTime;
     private final ProcessType processType;
 
     /** Only for test cases */
@@ -253,14 +255,14 @@ public class HostControllerEnvironment extends ProcessEnvironment {
                                      String initialHostConfig, RunningMode initialRunningMode, boolean backupDomainFiles, boolean useCachedDc, ProductConfig productConfig) {
         this(hostSystemProperties, isRestart, modulePath, processControllerAddress, processControllerPort, hostControllerAddress, hostControllerPort, defaultJVM,
                 domainConfig, initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles, useCachedDc, productConfig, false,
-                System.currentTimeMillis(), ProcessType.HOST_CONTROLLER, ConfigurationFile.InteractionPolicy.STANDARD, ConfigurationFile.InteractionPolicy.STANDARD);
+                startingFromNow(), ProcessType.HOST_CONTROLLER, ConfigurationFile.InteractionPolicy.STANDARD, ConfigurationFile.InteractionPolicy.STANDARD);
     }
 
     public HostControllerEnvironment(Map<String, String> hostSystemProperties, boolean isRestart, String modulePath,
                                      InetAddress processControllerAddress, Integer processControllerPort, InetAddress hostControllerAddress,
                                      Integer hostControllerPort, String defaultJVM, String domainConfig, String initialDomainConfig, String hostConfig,
                                      String initialHostConfig, RunningMode initialRunningMode, boolean backupDomainFiles, boolean useCachedDc,
-                                     ProductConfig productConfig, boolean securityManagerEnabled, long startTime, ProcessType processType,
+                                     ProductConfig productConfig, boolean securityManagerEnabled, ElapsedTime elapsedTime, ProcessType processType,
                                      ConfigurationFile.InteractionPolicy hostConfigInteractionPolicy, ConfigurationFile.InteractionPolicy domainConfigInteractionPolicy) {
 
         this.hostSystemProperties = Collections.unmodifiableMap(Assert.checkNotNullParam("hostSystemProperties", hostSystemProperties));
@@ -275,7 +277,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         this.hostControllerPort = hostControllerPort;
         this.isRestart = isRestart;
         this.modulePath = modulePath;
-        this.startTime = startTime;
+        this.elapsedTime = elapsedTime;
         this.initialRunningMode = initialRunningMode;
         this.runningModeControl = new HostRunningModeControl(initialRunningMode, RestartMode.SERVERS);
         this.domainConfigInteractionPolicy = domainConfigInteractionPolicy;
@@ -778,7 +780,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      * @return the time, in ms since the epoch
      */
     public long getStartTime() {
-        return startTime;
+        return elapsedTime.getApproximateStartTimeMs();
     }
 
     @Override
@@ -857,6 +859,17 @@ public class HostControllerEnvironment extends ProcessEnvironment {
 
     boolean isSecurityManagerEnabled() {
         return securityManagerEnabled;
+    }
+
+    /**
+     * Gets a copy of this object's internal {@link ElapsedTime} tracker.
+     * The returned value can be safely {@link ElapsedTime#resetStartToNow() reset}
+     * (e.g. in a process reload) without affecting this object's internal state.
+     *
+     * @return the elapsed time tracker.
+     */
+    ElapsedTime getMutableElapsedTime() {
+        return ElapsedTime.from(elapsedTime);
     }
 
     /**

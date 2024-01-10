@@ -32,6 +32,7 @@ import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
+import org.jboss.as.server.ElapsedTime;
 import org.jboss.as.host.controller.DomainModelControllerService;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.Main;
@@ -235,12 +236,12 @@ public class EmbeddedHostControllerFactory {
 
         @Override
         public void start() throws EmbeddedProcessStartException {
+            ElapsedTime elapsedTime = ElapsedTime.startingFromNow();
             ClassLoader tccl = SecurityActions.getTccl();
             try {
                 SecurityActions.setTccl(embeddedModuleCL);
                 EmbeddedHostControllerBootstrap hostControllerBootstrap = null;
                 try {
-                    final long startTime = System.currentTimeMillis();
                     // Take control of server use of System.exit
                     SystemExiter.initialize(new SystemExiter.Exiter() {
                         @Override
@@ -250,7 +251,7 @@ public class EmbeddedHostControllerFactory {
                     });
 
                     // Determine the HostControllerEnvironment
-                    HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, startTime);
+                    HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, elapsedTime);
 
                     FutureServiceContainer futureContainer = new FutureServiceContainer();
                     final byte[] authBytes = new byte[16];
@@ -402,7 +403,8 @@ public class EmbeddedHostControllerFactory {
             SystemExiter.initialize(SystemExiter.Exiter.DEFAULT);
         }
 
-        private static HostControllerEnvironment createHostControllerEnvironment(File jbossHome, String[] cmdargs, long startTime) {
+        private static HostControllerEnvironment createHostControllerEnvironment(File jbossHome, String[] cmdargs,
+                                                                                 ElapsedTime elapsedTime) {
             SecurityActions.setPropertyPrivileged(HostControllerEnvironment.HOME_DIR, jbossHome.getAbsolutePath());
 
             List<String> cmds = new ArrayList<String>(Arrays.asList(cmdargs));
@@ -429,7 +431,7 @@ public class EmbeddedHostControllerFactory {
                 if (value != null)
                     cmds.add("-D" + prop + "=" + value);
             }
-            return Main.determineEnvironment(cmds.toArray(new String[cmds.size()]), startTime, ProcessType.EMBEDDED_HOST_CONTROLLER).getHostControllerEnvironment();
+            return Main.determineEnvironment(cmds.toArray(new String[cmds.size()]), elapsedTime, ProcessType.EMBEDDED_HOST_CONTROLLER).getHostControllerEnvironment();
         }
 
 

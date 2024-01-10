@@ -299,22 +299,23 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final ProductConfig productConfig;
     private final RunningModeControl runningModeControl;
     private final UUID serverUUID;
-    private final long startTime;
+    private final ElapsedTime elapsedTime;
     private final boolean startSuspended;
     private final boolean startGracefully;
     private final GitRepository repository;
     private final Stability stability;
 
+    /** Only for test cases */
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
             final RunningMode initialRunningMode, ProductConfig productConfig, boolean startSuspended) {
         this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode, productConfig,
-                System.currentTimeMillis(), startSuspended, false, null, null, null, null);
+                ElapsedTime.startingFromNow(), startSuspended, false, null, null, null, null);
     }
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
             final ConfigurationFile.InteractionPolicy configurationInteractionPolicy, final LaunchType launchType,
-            final RunningMode initialRunningMode, ProductConfig productConfig, long startTime, boolean startSuspended,
+            final RunningMode initialRunningMode, ProductConfig productConfig, ElapsedTime elapsedTime, boolean startSuspended,
             final boolean startGracefully, final String gitRepository, final String gitBranch, final String gitAuthConfiguration,
             final String supplementalConfiguration) {
         assert props != null;
@@ -327,7 +328,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
 
         this.initialRunningMode = initialRunningMode == null ? RunningMode.NORMAL : initialRunningMode;
         this.runningModeControl = new RunningModeControl(this.initialRunningMode);
-        this.startTime = startTime;
+        this.elapsedTime = elapsedTime;
 
         this.hostControllerName = hostControllerName;
         if (standalone && hostControllerName != null) {
@@ -1079,7 +1080,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      * @return the time, in ms since the epoch
      */
     public long getStartTime() {
-        return startTime;
+        return elapsedTime.getApproximateStartTimeMs();
     }
 
     public boolean useGit() {
@@ -1241,5 +1242,19 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
 
     ManagedAuditLogger createAuditLogger() {
         return new ManagedAuditLoggerImpl(getProductConfig().resolveVersion(), true);
+    }
+
+    /**
+     * Gets this {@link ElapsedTime} tracker.
+     * <p>
+     * <strong>Note:</strong> This is <strong>not</strong> a copy of the
+     * internal tracker, so it must be {@link ElapsedTime#from(ElapsedTime) copied}
+     * before being handed over to any code that may {@link ElapsedTime#resetStartToNow() reset} it.
+     * </p>
+     *
+     * @return the elapsed time tracker.
+     */
+    ElapsedTime getElapsedTime() {
+        return elapsedTime;
     }
 }

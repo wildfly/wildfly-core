@@ -24,6 +24,7 @@ import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
 import org.jboss.as.server.Bootstrap;
+import org.jboss.as.server.ElapsedTime;
 import org.jboss.as.server.Main;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.ServerService;
@@ -140,7 +141,8 @@ final class Server {
             });
 
             // Determine the ServerEnvironment
-            ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.STANDALONE, startTime).getServerEnvironment();
+            ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv,
+                    ServerEnvironment.LaunchType.STANDALONE, ElapsedTime.startingFromJvmStart()).getServerEnvironment();
             if (serverEnvironment == null) {
                 // Nothing to do
                 return;

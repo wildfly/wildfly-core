@@ -79,7 +79,7 @@ public final class Main {
             Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule("org.jboss.vfs"));
             ServerEnvironmentWrapper serverEnvironmentWrapper = determineEnvironment(args, WildFlySecurityManager.getSystemPropertiesPrivileged(),
                     WildFlySecurityManager.getSystemEnvironmentPrivileged(), ServerEnvironment.LaunchType.STANDALONE,
-                    Module.getStartTime());
+                    ElapsedTime.startingFromJvmStart());
             if (serverEnvironmentWrapper.getServerEnvironment() == null) {
                 if (serverEnvironmentWrapper.getServerEnvironmentStatus() == ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR) {
                     abort(null);
@@ -113,11 +113,11 @@ public final class Main {
      * @param systemProperties system properties
      * @param systemEnvironment environment variables
      * @param launchType how the process was launched
-     * @param startTime time in ms since the epoch when the process was considered to be started
+     * @param elapsedTime tracker for elapsed time since the process was considered to be started
      * @return the ServerEnvironment object
      */
     public static ServerEnvironmentWrapper determineEnvironment(String[] args, Properties systemProperties, Map<String, String> systemEnvironment,
-                                                         ServerEnvironment.LaunchType launchType, long startTime) {
+                                                         ServerEnvironment.LaunchType launchType, ElapsedTime elapsedTime) {
         final int argsLength = args.length;
         String serverConfig = null;
         String gitRepository = null;
@@ -404,7 +404,7 @@ public final class Main {
         // Re-create using updated properties
         productConfig = ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.HOME_DIR, null), systemProperties);
         return new ServerEnvironmentWrapper(new ServerEnvironment(hostControllerName, systemProperties, systemEnvironment,
-                serverConfig, configInteractionPolicy, launchType, runningMode, productConfig, startTime, startSuspended,
+                serverConfig, configInteractionPolicy, launchType, runningMode, productConfig, elapsedTime, startSuspended,
                 startGracefully, gitRepository, gitBranch, gitAuthConfiguration, supplementalConfiguration));
     }
 

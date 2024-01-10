@@ -32,16 +32,16 @@ public final class BootstrapListener {
     private final StabilityMonitor monitor = new StabilityMonitor();
     private final ServiceContainer serviceContainer;
     private final ServiceTarget serviceTarget;
-    private final long startTime;
+    private final ElapsedTime elapsedTime;
     private final String prettyVersion;
     private final FutureServiceContainer futureContainer;
     private final File tempDir;
     private  String startedCleanMessage;
     private  String startedWitErrorsMessage;
 
-    public BootstrapListener(final ServiceContainer serviceContainer, final long startTime, final ServiceTarget serviceTarget, final FutureServiceContainer futureContainer, final String prettyVersion, final File tempDir) {
+    public BootstrapListener(final ServiceContainer serviceContainer, final ElapsedTime elapsedTime, final ServiceTarget serviceTarget, final FutureServiceContainer futureContainer, final String prettyVersion, final File tempDir) {
         this.serviceContainer = serviceContainer;
-        this.startTime = startTime;
+        this.elapsedTime = elapsedTime;
         this.serviceTarget = serviceTarget;
         this.prettyVersion = prettyVersion;
         this.futureContainer = futureContainer;
@@ -62,7 +62,7 @@ public final class BootstrapListener {
             return;
         } finally {
             serviceTarget.removeMonitor(monitor);
-            final long bootstrapTime = System.currentTimeMillis() - startTime;
+            final long bootstrapTime = elapsedTime.getElapsedTimeMs();
             done(bootstrapTime, statistics, message);
             monitor.clear();
         }
@@ -100,10 +100,10 @@ public final class BootstrapListener {
         final int started = statistics.getStartedCount();
         if (failed == 0 && problem == 0) {
             startedCleanMessage = ServerLogger.AS_ROOT_LOGGER.startedCleanMessage(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, onDemand + passive + lazy, message);
-            createStartupMarker("success", startTime);
+            createStartupMarker("success", elapsedTime.getApproximateStartTimeMs());
         } else {
             startedWitErrorsMessage = ServerLogger.AS_ROOT_LOGGER.startedWitErrorsMessage(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, failed + problem, onDemand + passive + lazy, message);
-            createStartupMarker("error", startTime);
+            createStartupMarker("error", elapsedTime.getApproximateStartTimeMs());
         }
     }
 
@@ -113,7 +113,7 @@ public final class BootstrapListener {
             Files.deleteIfExists(file.toPath());
             if (file.createNewFile()) {
                 try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8, StandardOpenOption.WRITE)) {
-                    writer.append(result + ":" + String.valueOf(startTime));
+                    writer.write(result + ":" + startTime);
                     writer.flush();
                 } catch (IOException e) {
                     // ignore

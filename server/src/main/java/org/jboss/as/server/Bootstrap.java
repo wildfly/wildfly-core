@@ -80,7 +80,6 @@ public interface Bootstrap {
         private final ManagementSecurityIdentitySupplier securityIdentitySupplier;
         private ModuleLoader moduleLoader = Module.getBootModuleLoader();
         private ConfigurationPersisterFactory configurationPersisterFactory;
-        private long startTime;
 
         public Configuration(final ServerEnvironment serverEnvironment) {
             assert serverEnvironment != null : "serverEnvironment is null";
@@ -97,7 +96,6 @@ public interface Bootstrap {
                     .withSecurityIdentitySupplier(this.securityIdentitySupplier)
                     .build();
             this.capabilityRegistry = new CapabilityRegistry(true);
-            this.startTime = serverEnvironment.getStartTime();
         }
 
         /**
@@ -231,9 +229,12 @@ public interface Bootstrap {
          * Get the server start time to report in the logs.
          *
          * @return the server start time
+         *
+         * @deprecated Use {@link #getServerEnvironment()}.{@link ServerEnvironment#getStartTime() getStartTime()}
          */
+        @Deprecated(forRemoval = true)
         public long getStartTime() {
-            return startTime;
+            return serverEnvironment.getStartTime();
         }
     }
 
