@@ -106,7 +106,8 @@ final class BootstrapImpl implements Bootstrap {
                 processStateNotifier, suspendController,
                 configuration.getRunningModeControl(),
                 configuration.getServerEnvironment().getLaunchType() != ServerEnvironment.LaunchType.APPCLIENT);
-        final Service<?> applicationServerService = new ApplicationServerService(extraServices, configuration, processState, suspendController);
+        final Service<?> applicationServerService = new ApplicationServerService(extraServices, configuration, processState,
+                suspendController, configuration.getServerEnvironment().getElapsedTime());
         tracker.addService(Services.JBOSS_AS, applicationServerService)
             .install();
         final ServiceController<?> rootService = container.getRequiredService(Services.JBOSS_AS);
