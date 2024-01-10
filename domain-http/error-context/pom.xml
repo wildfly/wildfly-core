@@ -12,7 +12,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-domain-http</artifactId>
-        <version>23.0.0.Final-SNAPSHOT</version>
+        <version>23.0.0.Beta5-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-domain-http-error-context</artifactId>
