@@ -729,19 +729,11 @@
             </exclusions>
         </dependency>
 
+        <!-- Dependency needed by the CLI fat jar (client classifier) to support JBoss Log Manager JSON Formatter 
+             that still depends on EE8 javax.json API -->
         <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.parsson</groupId>
-            <artifactId>parsson</artifactId>
+            <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.json</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
