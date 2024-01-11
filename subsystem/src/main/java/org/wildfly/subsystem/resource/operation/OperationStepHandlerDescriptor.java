@@ -5,10 +5,11 @@
 package org.wildfly.subsystem.resource.operation;
 
 import java.util.Optional;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.dmr.ModelNode;
+import org.jboss.as.controller.registry.Resource;
 
 /**
  * Describes common properties of all operation handlers of a resource.
@@ -29,7 +30,7 @@ public interface OperationStepHandlerDescriptor {
      * @param capability a runtime capability
      * @return a resource model predicate
      */
-    default Predicate<ModelNode> getCapabilityFilter(RuntimeCapability<?> capability) {
-        return ModelNode::isDefined;
+    default BiPredicate<OperationContext, Resource> getCapabilityFilter(RuntimeCapability<?> capability) {
+        return (context, resource) -> resource.getModel().isDefined();
     }
 }

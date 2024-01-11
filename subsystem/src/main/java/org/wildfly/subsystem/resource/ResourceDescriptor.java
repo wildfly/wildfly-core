@@ -12,14 +12,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -29,7 +30,6 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.DeploymentProcessorTarget;
-import org.jboss.dmr.ModelNode;
 import org.wildfly.common.iteration.CompositeIterable;
 import org.wildfly.subsystem.resource.capability.ResourceCapabilityReferenceRecorder;
 import org.wildfly.subsystem.resource.operation.AddResourceOperationStepHandlerDescriptor;
@@ -139,9 +139,11 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
      * Default {@link ResourceDescriptor} implementation.
      */
     class DefaultResourceDescriptor implements ResourceDescriptor {
+        static final BiPredicate<OperationContext, Resource> DISABLED_CAPABILITY = (context, resource) -> false;
+
         private final ResourceDescriptionResolver descriptionResolver;
         private final Optional<ResourceOperationRuntimeHandler> runtimeHandler;
-        private final Map<RuntimeCapability<?>, Predicate<ModelNode>> capabilities;
+        private final Map<RuntimeCapability<?>, BiPredicate<OperationContext, Resource>> capabilities;
         private final Map<AttributeDefinition, OperationStepHandler> readWriteAttributes = new HashMap<>();
         private final Iterable<? extends AttributeDefinition> readOnlyAttributes;
         private final Set<PathElement> requiredChildren;
@@ -170,7 +172,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
             if (!modelOnlyAttributes.isEmpty()) {
                 OperationStepHandlerDescriptor descriptor = new OperationStepHandlerDescriptor() {
                     @Override
-                    public Predicate<ModelNode> getCapabilityFilter(RuntimeCapability<?> capability) {
+                    public BiPredicate<OperationContext, Resource> getCapabilityFilter(RuntimeCapability<?> capability) {
                         return DefaultResourceDescriptor.this.getCapabilityFilter(capability);
                     }
                 };
@@ -209,8 +211,8 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         }
 
         @Override
-        public Predicate<ModelNode> getCapabilityFilter(RuntimeCapability<?> capability) {
-            return this.capabilities.getOrDefault(capability, model -> false);
+        public BiPredicate<OperationContext, Resource> getCapabilityFilter(RuntimeCapability<?> capability) {
+            return this.capabilities.getOrDefault(capability, DISABLED_CAPABILITY);
         }
 
         @Override
@@ -353,7 +355,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          */
         default C addCapability(RuntimeCapability<?> capability) {
-            return this.addCapability(capability, ModelNode::isDefined);
+            return this.addCapability(capability, AbstractConfigurator.DEFAULT_CAPABILITY_FILTER);
         }
 
         /**
@@ -362,7 +364,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @param filter a predicate used to determine when the specified capability should be registered
          * @return a reference to this configurator
          */
-        C addCapability(RuntimeCapability<?> capability, Predicate<ModelNode> filter);
+        C addCapability(RuntimeCapability<?> capability, BiPredicate<OperationContext, Resource> filter);
 
         /**
          * Adds the specified runtime capabilities to this resource.
@@ -370,7 +372,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          */
         default C addCapabilities(Collection<RuntimeCapability<?>> capabilities) {
-            return this.addCapabilities(capabilities, ModelNode::isDefined);
+            return this.addCapabilities(capabilities, AbstractConfigurator.DEFAULT_CAPABILITY_FILTER);
         }
 
         /**
@@ -379,7 +381,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @param filter a predicate used to determine when the specified capability should be registered
          * @return a reference to this configurator
          */
-        C addCapabilities(Collection<RuntimeCapability<?>> capabilities, Predicate<ModelNode> filter);
+        C addCapabilities(Collection<RuntimeCapability<?>> capabilities, BiPredicate<OperationContext, Resource> filter);
 
         /**
          * Defines a required child of this resource.  Required children will be automatically added, if no child resource exists with the specified path.
@@ -484,7 +486,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          */
         default <P extends Supplier<RuntimeCapability<?>>> C provideCapabilities(Collection<P> providers) {
-            return this.provideCapabilities(providers, ModelNode::isDefined);
+            return this.provideCapabilities(providers, AbstractConfigurator.DEFAULT_CAPABILITY_FILTER);
         }
 
         /**
@@ -493,7 +495,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @param filter a predicate used to determine when the specified capability should be registered
          * @return a reference to this configurator
          */
-        <P extends Supplier<RuntimeCapability<?>>> C provideCapabilities(Collection<P> providers, Predicate<ModelNode> filter);
+        <P extends Supplier<RuntimeCapability<?>>> C provideCapabilities(Collection<P> providers, BiPredicate<OperationContext, Resource> filter);
 
         /**
          * Defines a set of required children of this resource.  Required children will be automatically added, if no child resource exists with the specified path.
@@ -525,7 +527,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
      * An abstract {@link ResourceDescriptor} configurator.
      */
     abstract static class AbstractConfigurator<C extends Configurator<C>> implements Configurator<C> {
-        static final Predicate<ModelNode> DEFAULT_CAPABILITY_PREDICATE = ModelNode::isDefined;
+        static final BiPredicate<OperationContext, Resource> DEFAULT_CAPABILITY_FILTER = (context, resource) -> resource.getModel().isDefined();
 
         private static final Set<OperationEntry.Flag> RESTART_FLAGS = EnumSet.of(OperationEntry.Flag.RESTART_ALL_SERVICES, OperationEntry.Flag.RESTART_JVM, OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
 
@@ -533,7 +535,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         private Optional<ResourceOperationRuntimeHandler> runtimeHandler = Optional.empty();
         private OperationEntry.Flag addOperationRestartFlag = OperationEntry.Flag.RESTART_NONE;
         private OperationEntry.Flag removeOperationRestartFlag = OperationEntry.Flag.RESTART_NONE;
-        private Map<RuntimeCapability<?>, Predicate<ModelNode>> capabilities = Map.of();
+        private Map<RuntimeCapability<?>, BiPredicate<OperationContext, Resource>> capabilities = Map.of();
         private Collection<AttributeDefinition> attributes = List.of();
         private Collection<AttributeDefinition> modelOnlyAttributes = List.of();
         private Collection<AttributeDefinition> readOnlyAttributes = List.of();
@@ -612,13 +614,13 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         }
 
         @Override
-        public C addCapability(RuntimeCapability<?> capability, Predicate<ModelNode> filter) {
+        public C addCapability(RuntimeCapability<?> capability, BiPredicate<OperationContext, Resource> filter) {
             this.capabilities = concat(this.capabilities, capability, filter);
             return this.self();
         }
 
         @Override
-        public C addCapabilities(Collection<RuntimeCapability<?>> capabilities, Predicate<ModelNode> filter) {
+        public C addCapabilities(Collection<RuntimeCapability<?>> capabilities, BiPredicate<OperationContext, Resource> filter) {
             this.capabilities = concat(this.capabilities, capabilities.stream(), filter);
             return this.self();
         }
@@ -687,7 +689,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         }
 
         @Override
-        public <P extends Supplier<RuntimeCapability<?>>> C provideCapabilities(Collection<P> providers, Predicate<ModelNode> filter) {
+        public <P extends Supplier<RuntimeCapability<?>>> C provideCapabilities(Collection<P> providers, BiPredicate<OperationContext, Resource> filter) {
             this.capabilities = concat(this.capabilities, stream(providers), filter);
             return this.self();
         }
