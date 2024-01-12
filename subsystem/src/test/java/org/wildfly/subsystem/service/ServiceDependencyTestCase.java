@@ -6,7 +6,9 @@ package org.wildfly.subsystem.service;
 
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller.RequirementServiceBuilder;
@@ -24,27 +26,66 @@ public class ServiceDependencyTestCase {
     @Test
     public void simple() {
         RequirementServiceBuilder<?> builder = mock(RequirementServiceBuilder.class);
-        Object value = new Object();
+        String value = "foo";
 
         ServiceDependency<Object> dependency = ServiceDependency.of(value);
 
         dependency.accept(builder);
 
+        verifyNoInteractions(builder);
+
         Assert.assertSame(value, dependency.get());
+
+        ServiceDependency<Object> mapped = dependency.map(Functions.cast(Function.identity()));
+
+        mapped.accept(builder);
+
+        verifyNoInteractions(builder);
+
+        Assert.assertSame(value, mapped.get());
+
+        ServiceDependency<String> cast = mapped.map(String.class::cast);
+
+        cast.accept(builder);
+
+        verifyNoInteractions(builder);
+
+        Assert.assertSame(value, cast.get());
     }
 
     @Test
     public void service() {
         RequirementServiceBuilder<?> builder = mock(RequirementServiceBuilder.class);
         ServiceName name = ServiceName.JBOSS;
-        Supplier<Object> injection = Functions.constantSupplier(new Object());
+        Supplier<String> injection1 = Functions.constantSupplier("foo");
+        Supplier<String> injection2 = Functions.constantSupplier("bar");
+        Supplier<String> injection3 = Functions.constantSupplier("qux");
 
         ServiceDependency<Object> dependency = ServiceDependency.on(name);
 
-        doReturn(injection).when(builder).requires(name);
+        doReturn(injection1, injection2, injection3).when(builder).requires(name);
 
         dependency.accept(builder);
 
-        Assert.assertSame(injection.get(), dependency.get());
+        Assert.assertSame(injection1.get(), dependency.get());
+
+        ServiceDependency<Object> mapped = dependency.map(Functions.cast(Function.identity()));
+
+        Assert.assertSame(injection1.get(), mapped.get());
+
+        mapped.accept(builder);
+
+        Assert.assertSame(injection2.get(), mapped.get());
+        Assert.assertSame(injection2.get(), dependency.get());
+
+        ServiceDependency<String> cast = mapped.map(String.class::cast);
+
+        Assert.assertSame(injection2.get(), cast.get());
+
+        cast.accept(builder);
+
+        Assert.assertSame(injection3.get(), cast.get());
+        Assert.assertSame(injection3.get(), mapped.get());
+        Assert.assertSame(injection3.get(), dependency.get());
     }
 }
