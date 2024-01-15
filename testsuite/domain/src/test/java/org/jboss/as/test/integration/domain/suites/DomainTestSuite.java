@@ -25,6 +25,7 @@ import org.junit.runners.Suite;
         ManagementReadXmlTestCase.class,
         HostReloadProxyTestCase.class,
         AuditLogTestCase.class,
+        ReloadWithConfigTestCase.class,
         IgnoredResourcesProfileCloneTestCase.class,
         CapabilityReloadRequiredUnitTestCase.class,
         CompositeOperationTestCase.class,
