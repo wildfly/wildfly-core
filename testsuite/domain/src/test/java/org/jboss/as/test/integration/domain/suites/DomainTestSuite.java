@@ -22,6 +22,7 @@ import org.junit.runners.Suite;
         DomainSuspendResumeTestCase.class,
         HostSuspendResumeTestCase.class,
         SyncModelOperationTestCase.class,
+        ManagementReadXmlTestCase.class,
         AuditLogTestCase.class,
         IgnoredResourcesProfileCloneTestCase.class,
         CapabilityReloadRequiredUnitTestCase.class,
