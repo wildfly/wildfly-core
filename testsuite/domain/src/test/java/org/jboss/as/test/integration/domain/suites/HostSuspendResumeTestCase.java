@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.jboss.as.test.integration.domain.suspendresume;
+package org.jboss.as.test.integration.domain.suites;
 
 import static org.jboss.as.controller.client.helpers.ClientConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
@@ -26,7 +26,6 @@ import org.jboss.as.test.integration.common.HttpRequest;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
-import org.jboss.as.test.integration.domain.suites.DomainTestSuite;
 import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;

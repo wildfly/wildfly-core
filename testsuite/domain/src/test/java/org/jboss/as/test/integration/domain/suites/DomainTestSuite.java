@@ -19,6 +19,8 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses ({
+        DomainSuspendResumeTestCase.class,
+        HostSuspendResumeTestCase.class,
         SyncModelOperationTestCase.class,
         AuditLogTestCase.class,
         IgnoredResourcesProfileCloneTestCase.class,
@@ -52,7 +54,7 @@ import org.junit.runners.Suite;
         ValidateAddressOperationTestCase.class,
         ValidateOperationOperationTestCase.class,
         WildcardOperationsTestCase.class,
-        ServerAuthenticationTestCase.class
+        ServerAuthenticationTestCase.class,
 })
 public class DomainTestSuite {
 
