@@ -42,10 +42,9 @@ import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a>  (c) 2014 Red Hat, inc.
  */
-//@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
-public class DefaultInterfaceOveridingDomainTestCase {
+public class DefaultInterfaceOverridingDomainTestCase {
 
-    private static final Logger log = Logger.getLogger(DefaultInterfaceOveridingDomainTestCase.class.getName());
+    private static final Logger log = Logger.getLogger(DefaultInterfaceOverridingDomainTestCase.class.getName());
 
     private static final String[] SERVERS = new String[] {"main-one", "other-two"};
     private static final String PrimaryAddress = System.getProperty("jboss.test.host.primary.address");
@@ -76,7 +75,7 @@ public class DefaultInterfaceOveridingDomainTestCase {
 
     private static WildFlyManagedConfiguration getHostConfiguration() throws Exception {
 
-        final String testName = DefaultInterfaceOveridingDomainTestCase.class.getSimpleName();
+        final String testName = DefaultInterfaceOverridingDomainTestCase.class.getSimpleName();
         File domains = new File("target" + File.separator + "domains" + File.separator + testName);
         final File hostDir = new File(domains, "default-interface");
         final File hostConfigDir = new File(hostDir, "configuration");
