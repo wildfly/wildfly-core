@@ -342,37 +342,19 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
         if (message == null) {
             message = "The failure of :whoami operation execution was expected, but the call passed";
         }
-
-        // Work around a known issue with SSLEngine that intermittently results
-        // in a ClosedChannelException instead of the expected exception.
-        // When this happens, execute the whoAmI operation again because the
-        // probability of hitting a ClosedChannelException a second time
-        // is very small. In the event that a ClosedChannelException is
-        // erroneously occurring multiple times, it will fail in the second
-        // run as well. See WFCORE-6538 for more details.
-        for (int i = 0; i < 2; i++) {
-            final long startTime = System.currentTimeMillis();
-            try {
-                executeWhoAmI(withTls);
-                fail(message);
-            } catch (IOException | GeneralSecurityException e) {
-                assertTrue("Connection reached its timeout (hang).",
-                        startTime + CONNECTION_TIMEOUT_IN_MS > System.currentTimeMillis());
-                Throwable cause = e.getCause();
-                assertThat("ConnectionException was expected as a cause when authentication fails", cause,
-                        is(instanceOf(ConnectException.class)));
-
-                // if execution ends with ClosedChannelException during first run, run once again
-                if (i == 0 && cause.getCause() instanceof ClosedChannelException) {
-                    LOGGER.warn("ClosedChannelException detected, probably because of the bug in SSLEngine. Because this happens very rarely, attempt to execute the op again");
-                    continue;
-                }
-                assertThat("Unexpected type of inherited exception for authentication failure", cause.getCause(),
-                        anyOf(is(instanceOf(SSLException.class)), is(instanceOf(SaslException.class)),
-                                is(instanceOf(RedirectException.class))));
-            }
-            // if execution succeeds, there is no need to run again
-            break;
+        final long startTime = System.currentTimeMillis();
+        try {
+            executeWhoAmI(withTls);
+            fail(message);
+        } catch (IOException | GeneralSecurityException e) {
+            assertTrue("Connection reached its timeout (hang).",
+                    startTime + CONNECTION_TIMEOUT_IN_MS > System.currentTimeMillis());
+            Throwable cause = e.getCause();
+            assertThat("ConnectionException was expected as a cause when authentication fails", cause,
+                    is(instanceOf(ConnectException.class)));
+            assertThat("Unexpected type of inherited exception for authentication failure", cause.getCause(),
+                    anyOf(is(instanceOf(SSLException.class)), is(instanceOf(SaslException.class)),
+                            is(instanceOf(RedirectException.class)), is(instanceOf(ClosedChannelException.class))));
         }
     }
 
