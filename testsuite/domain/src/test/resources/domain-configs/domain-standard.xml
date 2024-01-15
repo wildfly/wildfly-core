@@ -182,7 +182,7 @@
                 <remoting-connector/>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:remoting:6.0">
-                <http-connector name="http-remoting-connector" connector-ref="default" sasl-authentication-factory="application-sasl-authentication"/>
+                <connector name="remoting-connector" socket-binding="remoting" sasl-authentication-factory="application-sasl-authentication"/>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:request-controller:1.0"/>
             <subsystem xmlns="urn:jboss:domain:security-manager:1.0">
@@ -323,7 +323,7 @@
                 <remoting-connector/>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:remoting:6.0">
-                <http-connector name="http-remoting-connector" connector-ref="default" sasl-authentication-factory="application-sasl-authentication"/>
+                <connector name="remoting-connector" socket-binding="remoting" sasl-authentication-factory="application-sasl-authentication"/>
             </subsystem>
 
             <subsystem xmlns="urn:jboss:domain:request-controller:1.0"/>
