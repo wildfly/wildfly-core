@@ -65,7 +65,7 @@ public class DomainTestSuite {
     private static volatile DomainTestSupport support;
 
     // This can only be called from tests as part of this suite
-    public static synchronized DomainTestSupport createSupport(final String testName) {
+    static synchronized DomainTestSupport createSupport(final String testName) {
         if(support == null) {
             start(testName);
         }
@@ -73,7 +73,7 @@ public class DomainTestSuite {
     }
 
     // This can only be called from tests as part of this suite
-    public static synchronized void stopSupport() {
+    static synchronized void stopSupport() {
         if(! initializedLocally) {
             stop();
         }
