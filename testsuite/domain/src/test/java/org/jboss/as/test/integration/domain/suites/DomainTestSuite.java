@@ -23,6 +23,7 @@ import org.junit.runners.Suite;
         HostSuspendResumeTestCase.class,
         SyncModelOperationTestCase.class,
         ManagementReadXmlTestCase.class,
+        HostReloadProxyTestCase.class,
         AuditLogTestCase.class,
         IgnoredResourcesProfileCloneTestCase.class,
         CapabilityReloadRequiredUnitTestCase.class,

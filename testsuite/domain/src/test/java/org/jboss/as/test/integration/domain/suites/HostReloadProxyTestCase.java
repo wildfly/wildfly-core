@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.jboss.as.test.integration.domain;
+package org.jboss.as.test.integration.domain.suites;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADMIN_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
@@ -17,6 +17,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.test.integration.domain.AdminOnlyModeTestCase;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
@@ -39,20 +40,17 @@ public class HostReloadProxyTestCase {
 
     @BeforeClass
     public static void setupDomain() throws Exception {
-        testSupport = DomainTestSupport.createAndStartDefaultSupport(AdminOnlyModeTestCase.class.getSimpleName());
+        testSupport = DomainTestSuite.createSupport(AdminOnlyModeTestCase.class.getSimpleName());
         domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
         domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        try {
-            testSupport.close();
-        } finally {
-            domainPrimaryLifecycleUtil = null;
-            domainSecondaryLifecycleUtil = null;
-            testSupport = null;
-        }
+        DomainTestSuite.stopSupport();
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
+        testSupport = null;
     }
 
     @Test
@@ -71,6 +69,9 @@ public class HostReloadProxyTestCase {
 
         Assert.assertTrue("WFLYCTL0016 error has been found in the primary controller log file " + primaryHostControllerLog,
                 Files.readAllLines(primaryHostControllerLog).stream().noneMatch(l -> l.contains("WFLYCTL0016")));
+
+        // Wait for servers to start, so it won't affect top other tests
+        domainSecondaryLifecycleUtil.awaitServers(System.currentTimeMillis());
     }
 
     @Test
@@ -92,6 +93,9 @@ public class HostReloadProxyTestCase {
                     Files.readAllLines(primaryHostControllerLog).stream().noneMatch(l -> l.contains("WFLYCTL0016")));
         } finally {
             domainSecondaryLifecycleUtil.reload("secondary");
+            domainSecondaryLifecycleUtil.awaitHostController(System.currentTimeMillis());
+            // Wait for servers to start, so it won't affect top other tests
+            domainSecondaryLifecycleUtil.awaitServers(System.currentTimeMillis());
         }
     }
 
@@ -112,5 +116,7 @@ public class HostReloadProxyTestCase {
 
         Assert.assertTrue("WFLYCTL0016 error has been found in the primary controller log file " + primaryHostControllerLog,
                 Files.readAllLines(primaryHostControllerLog).stream().noneMatch(l -> l.contains("WFLYCTL0016")));
+        // Wait for servers to start, so it won't affect top other tests
+        domainSecondaryLifecycleUtil.awaitServers(System.currentTimeMillis());
     }
 }
