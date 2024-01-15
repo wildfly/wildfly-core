@@ -10,7 +10,7 @@ import static java.lang.System.getProperties;
 import static java.lang.System.getenv;
 import static java.security.AccessController.doPrivileged;
 import java.security.PrivilegedAction;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -40,6 +40,7 @@ import org.jboss.msc.service.ServiceActivatorContext;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StopContext;
 import org.wildfly.core.jar.runtime._private.BootableJarLogger;
@@ -69,6 +70,8 @@ final class Server {
     private ProcessStateNotifier processStateNotifier;
     private final ShutdownHandler shutdownHandler;
 
+    private final AtomicReference<ModelControllerClientFactory> clientFactorySvcCaptureRef;
+
     private Server(String[] cmdargs, Properties systemProps,
             Map<String, String> systemEnv, ModuleLoader moduleLoader,
             ShutdownHandler shutdownHandler) {
@@ -77,6 +80,7 @@ final class Server {
         this.systemEnv = systemEnv;
         this.moduleLoader = moduleLoader;
         this.shutdownHandler = shutdownHandler;
+        this.clientFactorySvcCaptureRef = new AtomicReference<>(null);
 
         processStateListener = new PropertyChangeListener() {
             @Override
@@ -160,9 +164,10 @@ final class Server {
 
             // As part of bootstrap install a service to capture the ProcessStateNotifier
             AtomicReference<ProcessStateNotifier> notifierRef = new AtomicReference<>();
-            ServiceActivator notifierCapture = ctx -> captureNotifier(ctx, notifierRef);
+            ServiceActivator notifierCapture = ctx -> captureNotifier(ctx, notifierRef, ControlledProcessStateService.INTERNAL_SERVICE_NAME);
+            ServiceActivator clientFactorySvcCapture = ctx -> captureNotifier(ctx, clientFactorySvcCaptureRef, ServerService.JBOSS_SERVER_CLIENT_FACTORY);
 
-            Future<ServiceContainer> future = bootstrap.startup(configuration, Collections.singletonList(notifierCapture));
+            Future<ServiceContainer> future = bootstrap.startup(configuration, List.of(notifierCapture, clientFactorySvcCapture));
 
             serviceContainer = future.get();
 
@@ -226,24 +231,11 @@ final class Server {
     }
 
     private synchronized void establishModelControllerClient(ControlledProcessState.State state, boolean storeState) {
-        ModelControllerClient newClient = null;
-        if (state != ControlledProcessState.State.STOPPING && state != ControlledProcessState.State.STOPPED && serviceContainer != null) {
-            ModelControllerClientFactory clientFactory;
-            try {
-                // TODO replace this in start() with the ServiceActivator approach we used to capture the ProcessStateNotifier
-                @SuppressWarnings("unchecked")
-                final ServiceController clientFactorySvc
-                        = serviceContainer.getService(ServerService.JBOSS_SERVER_CLIENT_FACTORY);
-                clientFactory = (ModelControllerClientFactory) clientFactorySvc.getValue();
-            } catch (RuntimeException e) {
-                // Either NPE because clientFactorySvc was not installed, or ISE from getValue because not UP
-                clientFactory = null;
-            }
-            if (clientFactory != null) {
-                newClient = clientFactory.createSuperUserClient(executorService, true);
-            }
+        modelControllerClient = null;
+        if (state != ControlledProcessState.State.STOPPING && state != ControlledProcessState.State.STOPPED
+                && serviceContainer != null && clientFactorySvcCaptureRef.get() != null) {
+            modelControllerClient = clientFactorySvcCaptureRef.get().createSuperUserClient(executorService, true);
         }
-        modelControllerClient = newClient;
         if (storeState || currentProcessState == null) {
             currentProcessState = state;
         }
@@ -275,9 +267,9 @@ final class Server {
         }
     }
 
-    private static void captureNotifier(ServiceActivatorContext ctx, AtomicReference<ProcessStateNotifier> notifierRef) {
+    private static<T> void captureNotifier(ServiceActivatorContext ctx, AtomicReference<T> notifierRef, ServiceName requiredService) {
         ServiceBuilder<?> sb = ctx.getServiceTarget().addService();
-        final Supplier<ProcessStateNotifier> result = sb.requires(ControlledProcessStateService.INTERNAL_SERVICE_NAME);
+        final Supplier<T> result = sb.requires(requiredService);
         sb.setInstance(new Service() {
             @Override
             public void start(StartContext context) {
