@@ -34,13 +34,11 @@ import org.jboss.as.test.integration.management.rbac.UserRolesMappingServerSetup
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-//import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * @author Ladislav Thon <lthon@redhat.com>
  */
-//@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class ListRoleNamesTestCase extends AbstractRbacTestCase {
     private static final String NEW_HOST_SCOPED_ROLE = "NewHostScopedTestRole";
     private static final String NEW_SERVER_GROUP_SCOPED_ROLE = "NewServerGroupScopedTestRole";

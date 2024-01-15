@@ -48,7 +48,6 @@ import org.jboss.dmr.ModelType;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-//import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -56,7 +55,6 @@ import org.junit.Test;
  *
  * @author Brian Stansberry (c) 2015 Red Hat Inc.
  */
-//@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class WildcardReadsTestCase extends AbstractRbacTestCase {
 
     @BeforeClass

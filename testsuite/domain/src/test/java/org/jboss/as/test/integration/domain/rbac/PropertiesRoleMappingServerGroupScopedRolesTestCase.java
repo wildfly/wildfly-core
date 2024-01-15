@@ -16,14 +16,12 @@ import org.jboss.as.test.integration.management.rbac.GroupRolesMappingServerSetu
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-//import org.junit.Ignore;
 
 /**
  * Tests of server group scoped roles authorized against .properties file using the "rbac" access control provider.
  *
  * @author Ladislav Thon <lthon@redhat.com>
  */
-//@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class PropertiesRoleMappingServerGroupScopedRolesTestCase extends AbstractServerGroupScopedRolesTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
