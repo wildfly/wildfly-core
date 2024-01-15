@@ -9,8 +9,6 @@ import org.jboss.as.controller.ExpressionResolver;
 
 /**
  * Registry for {@link ExpressionResolverExtension extensions} to a server or host controller's {@link ExpressionResolver}.
- * The registry will be available using the {@code org.wildfly.management.expression-resolver-extension-registry}
- * capability.
  */
 public interface ResolverExtensionRegistry {
 
