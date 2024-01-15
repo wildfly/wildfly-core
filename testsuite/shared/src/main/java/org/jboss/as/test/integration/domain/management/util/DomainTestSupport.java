@@ -41,12 +41,7 @@ public class DomainTestSupport implements AutoCloseable {
 
     public static final String primaryAddress = System.getProperty("jboss.test.host.primary.address", "127.0.0.1");
     public static final String secondaryAddress = System.getProperty("jboss.test.host.secondary.address", "127.0.0.1");
-    /** @deprecated unused */
-    @Deprecated()
-    public static final long domainBootTimeout = Long.valueOf(System.getProperty("jboss.test.domain.boot.timeout", "60000"));
-    /** @deprecated unused */
-    @Deprecated
-    public static final long domainShutdownTimeout = Long.valueOf(System.getProperty("jboss.test.domain.shutdown.timeout", "20000"));
+
     @SuppressWarnings("WeakerAccess")
     public static final String primaryJvmHome = System.getProperty("jboss.test.host.primary.jvmhome");
     @SuppressWarnings("WeakerAccess")
@@ -504,17 +499,6 @@ public class DomainTestSupport implements AutoCloseable {
         } finally {
             StreamUtils.safeClose(sharedClientConfig);
         }
-    }
-
-    /**
-     * Calls {@link #close()}. This object cannot be used for controlling or interacting with hosts after
-     * this is called.
-     *
-     * @deprecated Use {@link #close()}
-     */
-    @Deprecated
-    public void stop() {
-        close();
     }
 
     /**
