@@ -31,8 +31,7 @@ public class ElytronToolScriptTestCase extends ScriptTestCase {
 
             // Get the output and test the masked password
             for (String line : script.getStdout()) {
-                // Skip lines like: "Picked up _JAVA_OPTIONS: ..."
-                if (line.startsWith("Picked up _JAVA_")) {
+                if (line.contains("Picked up JDK_JAVA_OPTIONS:") || line.contains("Picked up JAVA_TOOL_OPTIONS:")) {
                     continue;
                 }
                 Assert.assertEquals("MASK-8VzWsSNwBaR676g8ujiIDdFKwSjOBHCHgnKf17nun3v;12345678;123", line);
