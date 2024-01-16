@@ -71,6 +71,7 @@ final class Server {
     private final ShutdownHandler shutdownHandler;
 
     private final AtomicReference<ModelControllerClientFactory> clientFactorySvcCaptureRef;
+    private final AtomicReference<ProcessStateNotifier> notifierRef;
 
     private Server(String[] cmdargs, Properties systemProps,
             Map<String, String> systemEnv, ModuleLoader moduleLoader,
@@ -80,7 +81,8 @@ final class Server {
         this.systemEnv = systemEnv;
         this.moduleLoader = moduleLoader;
         this.shutdownHandler = shutdownHandler;
-        this.clientFactorySvcCaptureRef = new AtomicReference<>(null);
+        this.clientFactorySvcCaptureRef = new AtomicReference<>();
+        this.notifierRef = new AtomicReference<>();
 
         processStateListener = new PropertyChangeListener() {
             @Override
@@ -163,7 +165,6 @@ final class Server {
             configuration.setModuleLoader(moduleLoader);
 
             // As part of bootstrap install a service to capture the ProcessStateNotifier
-            AtomicReference<ProcessStateNotifier> notifierRef = new AtomicReference<>();
             ServiceActivator notifierCapture = ctx -> captureNotifier(ctx, notifierRef, ControlledProcessStateService.INTERNAL_SERVICE_NAME);
             ServiceActivator clientFactorySvcCapture = ctx -> captureNotifier(ctx, clientFactorySvcCaptureRef, ServerService.JBOSS_SERVER_CLIENT_FACTORY);
 
@@ -234,7 +235,7 @@ final class Server {
         modelControllerClient = null;
         if (state != ControlledProcessState.State.STOPPING && state != ControlledProcessState.State.STOPPED
                 && serviceContainer != null && clientFactorySvcCaptureRef.get() != null) {
-            modelControllerClient = clientFactorySvcCaptureRef.get().createSuperUserClient(executorService, true);
+                modelControllerClient = clientFactorySvcCaptureRef.get().createSuperUserClient(executorService, true);
         }
         if (storeState || currentProcessState == null) {
             currentProcessState = state;
@@ -274,13 +275,15 @@ final class Server {
             @Override
             public void start(StartContext context) {
                 notifierRef.set(result.get());
-                context.getController().setMode(ServiceController.Mode.REMOVE);
             }
 
             @Override
             public void stop(StopContext context) {
+                notifierRef.set(null);
             }
         });
-        sb.install();
+
+        sb.setInitialMode(ServiceController.Mode.PASSIVE)
+                .install();
     }
 }

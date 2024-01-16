@@ -210,6 +210,7 @@ public class EmbeddedStandaloneServerFactory {
         private ExecutorService executorService;
         private ProcessStateNotifier processStateNotifier;
         private final AtomicReference<ModelControllerClientFactory> clientFactorySvcCaptureRef;
+        private final AtomicReference<ProcessStateNotifier> notifierRef;
 
         public StandaloneServerImpl(String[] cmdargs, Properties systemProps, Map<String, String> systemEnv, ModuleLoader moduleLoader, ClassLoader embeddedModuleCL) {
             this.cmdargs = cmdargs;
@@ -217,7 +218,8 @@ public class EmbeddedStandaloneServerFactory {
             this.systemEnv = systemEnv;
             this.moduleLoader = moduleLoader;
             this.embeddedModuleCL = embeddedModuleCL;
-            this.clientFactorySvcCaptureRef = new AtomicReference<>(null);
+            this.clientFactorySvcCaptureRef = new AtomicReference<>();
+            this.notifierRef = new AtomicReference<>();
 
             processStateListener = new PropertyChangeListener() {
                 @Override
@@ -270,7 +272,6 @@ public class EmbeddedStandaloneServerFactory {
                     configuration.setModuleLoader(moduleLoader);
 
                     // As part of bootstrap install a service to capture the ProcessStateNotifier
-                    AtomicReference<ProcessStateNotifier> notifierRef = new AtomicReference<>();
                     ServiceActivator notifierCapture = ctx -> captureNotifier(ctx, notifierRef, ControlledProcessStateService.INTERNAL_SERVICE_NAME);
                     ServiceActivator clientFactorySvcCapture = ctx -> captureNotifier(ctx, clientFactorySvcCaptureRef, ServerService.JBOSS_SERVER_CLIENT_FACTORY);
 
@@ -307,14 +308,16 @@ public class EmbeddedStandaloneServerFactory {
                 @Override
                 public void start(StartContext context) {
                     notifierRef.set(result.get());
-                    context.getController().setMode(ServiceController.Mode.REMOVE);
                 }
 
                 @Override
                 public void stop(StopContext context) {
+                    notifierRef.set(null);
                 }
             });
-            sb.install();
+
+            sb.setInitialMode(ServiceController.Mode.PASSIVE)
+                    .install();
         }
 
         @Override
