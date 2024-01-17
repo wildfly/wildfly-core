@@ -37,9 +37,9 @@ public class SimpleOperationDefinition extends OperationDefinition {
         if (descriptionProvider !=null) {
             return descriptionProvider;
         }
-        return new DefaultOperationDescriptionProvider(getName(), resolver, attributeResolver, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, accessConstraints);
+        return new DefaultOperationDescriptionProvider(this, this.resolver, this.attributeResolver);
     }
 
-    private static DescriptionProvider PRIVATE_PROVIDER = locale -> new ModelNode();
+    private static final DescriptionProvider PRIVATE_PROVIDER = locale -> new ModelNode();
 
 }

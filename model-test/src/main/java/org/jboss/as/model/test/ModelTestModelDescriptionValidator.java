@@ -20,6 +20,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DYNAMIC;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXPRESSIONS_ALLOWED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEATURE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEATURE_REFERENCE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HEAD_COMMENT_ALLOWED;
@@ -36,6 +37,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NILLABLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NIL_SIGNIFICANT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATIONS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATION_DATA_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATION_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NO_SERVICES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_NAME;
@@ -50,6 +53,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SINCE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STORAGE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TAIL_COMMENT_ALLOWED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
@@ -105,7 +109,8 @@ public class ModelTestModelDescriptionValidator {
         validResourceKeys.put(DEPRECATED, DeprecatedDescriptorValidator.INSTANCE);
         validResourceKeys.put(ACCESS_CONSTRAINTS, AccessConstraintValidator.INSTANCE);
         validResourceKeys.put(STORAGE, NullDescriptorValidator.INSTANCE);
-        validResourceKeys.put("feature", NullDescriptorValidator.INSTANCE);
+        validResourceKeys.put(FEATURE, NullDescriptorValidator.INSTANCE);
+        validResourceKeys.put(STABILITY, NullDescriptorValidator.INSTANCE);
         VALID_RESOURCE_KEYS = Collections.unmodifiableMap(validResourceKeys);
 
         Map<String, ArbitraryDescriptorValidator> validChildTypeKeys = new HashMap<String, ModelTestModelDescriptionValidator.ArbitraryDescriptorValidator>();
@@ -127,6 +132,7 @@ public class ModelTestModelDescriptionValidator {
         paramAndAttributeKeys.put(NILLABLE, BooleanDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(VALUE_TYPE, NullDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(TYPE, NullDescriptorValidator.INSTANCE);
+        paramAndAttributeKeys.put(STABILITY, NullDescriptorValidator.INSTANCE);
         //Arbitrary
         paramAndAttributeKeys.put(ALTERNATIVES, StringListValidator.INSTANCE);
         paramAndAttributeKeys.put(ATTRIBUTE_GROUP, NullDescriptorValidator.INSTANCE);
@@ -170,6 +176,7 @@ public class ModelTestModelDescriptionValidator {
         validOperationKeys.put(READ_ONLY, BooleanDescriptorValidator.INSTANCE);
         validOperationKeys.put(RUNTIME_ONLY, BooleanDescriptorValidator.INSTANCE);
         validOperationKeys.put(RESTART_REQUIRED, RestartRequiredDescriptorValidator.INSTANCE);
+        validOperationKeys.put(STABILITY, NullDescriptorValidator.INSTANCE);
         VALID_OPERATION_KEYS = Collections.unmodifiableMap(validOperationKeys);
 
         Map<String, AttributeOrParameterArbitraryDescriptorValidator> validParameterKeys = new HashMap<String, AttributeOrParameterArbitraryDescriptorValidator>();
@@ -177,9 +184,10 @@ public class ModelTestModelDescriptionValidator {
         VALID_PARAMETER_KEYS = Collections.unmodifiableMap(validParameterKeys);
 
         Map<String, ArbitraryDescriptorValidator> validNotificationKeys = new HashMap<String, ArbitraryDescriptorValidator>();
-        validNotificationKeys.put("notification-type", NullDescriptorValidator.INSTANCE);
+        validNotificationKeys.put(NOTIFICATION_TYPE, NullDescriptorValidator.INSTANCE);
         validNotificationKeys.put(DESCRIPTION, NullDescriptorValidator.INSTANCE);
-        validNotificationKeys.put("data-type", NullDescriptorValidator.INSTANCE);
+        validNotificationKeys.put(NOTIFICATION_DATA_TYPE, NullDescriptorValidator.INSTANCE);
+        validNotificationKeys.put(STABILITY, NullDescriptorValidator.INSTANCE);
         VALID_NOTIFICATION_KEYS = Collections.unmodifiableMap(validNotificationKeys);
     }
 
