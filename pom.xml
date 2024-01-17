@@ -1533,6 +1533,11 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-io-spi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-jmx</artifactId>
                 <version>${project.version}</version>
             </dependency>

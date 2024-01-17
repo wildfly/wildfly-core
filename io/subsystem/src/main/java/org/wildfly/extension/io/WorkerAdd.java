@@ -33,6 +33,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.cpu.ProcessorInfo;
 import org.wildfly.extension.io.logging.IOLogger;
+import org.wildfly.io.OptionAttributeDefinition;
 import org.xnio.Option;
 import org.xnio.OptionMap;
 import org.xnio.Xnio;
