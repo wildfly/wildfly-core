@@ -22,9 +22,10 @@ import org.jboss.staxmapper.IntVersion;
 public enum IOSubsystemSchema implements PersistentSubsystemSchema<IOSubsystemSchema> {
     VERSION_1_1(1, 1), // WildFly 8.1 - 10.1
     VERSION_2_0(2, 0), // WildFly 11 - 12
-    VERSION_3_0(3, 0), // WildFly 13 - present
+    VERSION_3_0(3, 0), // WildFly 13 - 31
+    VERSION_4_0(4, 0), // WildFly 32-present
     ;
-    static final IOSubsystemSchema CURRENT = VERSION_3_0;
+    static final IOSubsystemSchema CURRENT = VERSION_4_0;
 
     private final VersionedNamespace<IntVersion, IOSubsystemSchema> namespace;
 
