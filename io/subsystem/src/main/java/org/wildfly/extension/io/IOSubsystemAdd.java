@@ -23,11 +23,6 @@ import org.jboss.msc.service.ServiceName;
  */
 class IOSubsystemAdd extends AbstractAddStepHandler {
 
-    static final IOSubsystemAdd INSTANCE = new IOSubsystemAdd();
-
-    private IOSubsystemAdd() {
-    }
-
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         ModelNode workers = Resource.Tools.readModel(resource).get(IOExtension.WORKER_PATH.getKey());

@@ -51,7 +51,7 @@ public class IOExtension implements Extension {
     @Override
     public void initialize(ExtensionContext context) {
         final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, IOSubsystemModel.CURRENT.getVersion());
-        final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(IORootDefinition.INSTANCE);
+        final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(new IORootDefinition());
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE, false);
         subsystem.registerXMLElementWriter(this.persistence.getWriter());
     }

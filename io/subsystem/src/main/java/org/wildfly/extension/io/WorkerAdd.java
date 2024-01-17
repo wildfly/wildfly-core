@@ -7,8 +7,6 @@ package org.wildfly.extension.io;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
-import static org.wildfly.extension.io.WorkerResourceDefinition.ATTRIBUTES;
-import static org.wildfly.extension.io.WorkerResourceDefinition.IO_WORKER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_IO_THREADS;
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_CORE_THREADS;
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_MAX_THREADS;
@@ -45,11 +43,6 @@ import org.xnio.XnioWorker;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 class WorkerAdd extends AbstractAddStepHandler {
-    static final WorkerAdd INSTANCE = new WorkerAdd();
-
-    private WorkerAdd() {
-        super(ATTRIBUTES);
-    }
 
     private static int getMaxDescriptorCount() {
         try {
@@ -205,8 +198,8 @@ class WorkerAdd extends AbstractAddStepHandler {
 
         registerMax(context, name, workerThreads);
 
-        final CapabilityServiceBuilder<?> capBuilder = context.getCapabilityServiceTarget().addCapability(IO_WORKER_RUNTIME_CAPABILITY);
-        final Consumer<XnioWorker> workerConsumer = capBuilder.provides(IO_WORKER_RUNTIME_CAPABILITY);
+        final CapabilityServiceBuilder<?> capBuilder = context.getCapabilityServiceTarget().addCapability(WorkerResourceDefinition.CAPABILITY);
+        final Consumer<XnioWorker> workerConsumer = capBuilder.provides(WorkerResourceDefinition.CAPABILITY);
         final Supplier<ExecutorService> executorSupplier = capBuilder.requiresCapability("org.wildfly.management.executor", ExecutorService.class);
         capBuilder.setInstance(new WorkerService(workerConsumer, executorSupplier, builder));
         capBuilder.setInitialMode(ServiceController.Mode.ON_DEMAND);
