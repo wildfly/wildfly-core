@@ -10,6 +10,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NIL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REPLY_PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE_TYPE;
 
@@ -20,8 +21,10 @@ import java.util.ResourceBundle;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.DeprecationData;
+import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDescriptionProviderUtil;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -43,6 +46,7 @@ public class DefaultOperationDescriptionProvider implements DescriptionProvider 
     private final AttributeDefinition[] replyParameters;
     private final AttributeDefinition[] parameters;
     final List<AccessConstraintDefinition> accessConstraints;
+    private final Stability stability;
 
     public DefaultOperationDescriptionProvider(final String operationName,
                                                final ResourceDescriptionResolver descriptionResolver,
@@ -126,9 +130,22 @@ public class DefaultOperationDescriptionProvider implements DescriptionProvider 
         this.deprecationData = deprecationData;
         this.replyParameters = replyParameters;
         this.accessConstraints = accessConstraints != null ? accessConstraints : Collections.<AccessConstraintDefinition>emptyList();
+        this.stability = Stability.DEFAULT;
     }
 
-
+    public DefaultOperationDescriptionProvider(OperationDefinition definition, ResourceDescriptionResolver resolver, ResourceDescriptionResolver attributeResolver) {
+        this.operationName = definition.getName();
+        this.descriptionResolver = resolver;
+        this.attributeDescriptionResolver = attributeResolver;
+        this.parameters = definition.getParameters();
+        this.replyType = definition.getReplyType();
+        this.replyValueType = definition.getReplyValueType();
+        this.replyAllowNull = definition.isReplyAllowNull();
+        this.replyParameters = definition.getReplyParameters();
+        this.deprecationData = definition.getDeprecationData();
+        this.accessConstraints = definition.getAccessConstraints();
+        this.stability = definition.getStability();
+    }
 
     @Override
     public ModelNode getModelDescription(Locale locale) {
@@ -199,6 +216,7 @@ public class DefaultOperationDescriptionProvider implements DescriptionProvider 
         if (isAddAccessConstraints()) {
             AccessConstraintDescriptionProviderUtil.addAccessConstraints(result, accessConstraints, locale);
         }
+        result.get(STABILITY).set(this.stability.toString());
         return result;
     }
 

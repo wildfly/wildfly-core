@@ -17,6 +17,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
 import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.ArrayList;
@@ -89,6 +90,7 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
                 result.get(MAX_OCCURS).set(maxOccurs);
             }
         }
+        result.get(STABILITY).set(this.registration.getStability().toString());
 
         Set<? extends Capability> capabilities = registration.getCapabilities();
         if (capabilities !=null && !capabilities.isEmpty()){
@@ -108,6 +110,7 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
                         }
                     }
                 }
+                cap.get(STABILITY).set(capability.getStability().toString());
             }
         }
 

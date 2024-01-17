@@ -44,7 +44,7 @@ public class NotificationDefinition implements Feature {
     }
 
     public DescriptionProvider getDescriptionProvider() {
-        return new DefaultNotificationDescriptionProvider(type, resolver, dataValueDescriptor);
+        return new DefaultNotificationDescriptionProvider(this, resolver, dataValueDescriptor);
     }
 
     public static class Builder {
