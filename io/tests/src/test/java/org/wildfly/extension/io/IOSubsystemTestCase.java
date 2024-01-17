@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.wildfly.common.cpu.ProcessorInfo;
+import org.wildfly.io.OptionAttributeDefinition;
 import org.xnio.OptionMap;
 import org.xnio.Options;
 import org.xnio.Sequence;

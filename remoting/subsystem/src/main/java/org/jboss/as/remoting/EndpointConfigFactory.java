@@ -8,7 +8,7 @@ package org.jboss.as.remoting;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
-import org.wildfly.extension.io.OptionList;
+import org.wildfly.io.OptionList;
 import org.xnio.OptionMap;
 import org.xnio.Options;
 

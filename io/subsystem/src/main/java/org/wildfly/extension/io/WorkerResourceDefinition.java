@@ -41,6 +41,8 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.wildfly.extension.io.logging.IOLogger;
+import org.wildfly.io.IOServiceDescriptor;
+import org.wildfly.io.OptionAttributeDefinition;
 import org.xnio.Option;
 import org.xnio.Options;
 import org.xnio.XnioWorker;
@@ -52,7 +54,7 @@ import org.xnio.management.XnioWorkerMXBean;
  */
 class WorkerResourceDefinition extends PersistentResourceDefinition {
 
-    static final RuntimeCapability<Void> CAPABILITY = RuntimeCapability.Builder.of(IOServices.IO_WORKER_CAPABILITY_NAME, true, XnioWorker.class).build();
+    static final RuntimeCapability<Void> CAPABILITY = RuntimeCapability.Builder.of(IOServiceDescriptor.WORKER).build();
 
     static final OptionAttributeDefinition WORKER_TASK_CORE_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_CORE_THREADS, Options.WORKER_TASK_CORE_THREADS)
             .setDefaultValue(new ModelNode(2))

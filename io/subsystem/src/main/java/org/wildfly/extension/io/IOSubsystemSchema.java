@@ -15,6 +15,7 @@ import org.jboss.as.controller.PersistentSubsystemSchema;
 import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.controller.xml.VersionedNamespace;
 import org.jboss.staxmapper.IntVersion;
+import org.wildfly.io.OptionAttributeDefinition;
 
 /**
  * Enumerates the supported schemas of the IO subsystem.

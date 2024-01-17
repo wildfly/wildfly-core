@@ -700,6 +700,11 @@
 
         <dependency>
             <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-io-spi</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-logging</artifactId>
             <!-- To avoid ban-transitive-dependencies issues exclude deps brought into feature packs via ee-8-api -->
             <exclusions>

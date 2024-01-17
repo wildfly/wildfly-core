@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.wildfly.extension.io;
+package org.wildfly.io;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -17,10 +17,7 @@ import org.xnio.OptionMap;
 
 /**
  * @author Tomaz Cerar (c) 2013 Red Hat Inc.
- * @deprecated Replaced by org.wildfly.io.OptionAttributeDefinition
-*/
-//TODO Remove this once references are removed in WildFly full
-@Deprecated(forRemoval = true)
+ */
 public class OptionList {
     private OptionList() {
 

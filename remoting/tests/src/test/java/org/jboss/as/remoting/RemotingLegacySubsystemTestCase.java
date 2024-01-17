@@ -19,7 +19,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
-import static org.jboss.as.remoting.Capabilities.IO_WORKER_CAPABILITY_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -51,8 +50,8 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceTarget;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.wildfly.extension.io.IOServices;
 import org.wildfly.extension.io.WorkerService;
+import org.wildfly.io.IOServiceDescriptor;
 import org.xnio.Xnio;
 import org.xnio.XnioWorker;
 
@@ -230,10 +229,11 @@ public class RemotingLegacySubsystemTestCase extends AbstractRemotingSubsystemBa
                 //Needed for initialization of the RealmAuthenticationProviderService
                 AbsolutePathService.addService(ServerEnvironment.CONTROLLER_TEMP_DIR, new File("target/temp" + System.currentTimeMillis()).getAbsolutePath(), target);
                 if (!legacyParser) {
-                    ServiceBuilder<?> builder = target.addService(IOServices.WORKER.append("default"));
-                    Consumer<XnioWorker> workerConsumer = builder.provides(IOServices.WORKER.append("default"));
+                    ServiceBuilder<?> builder = target.addService(ServiceName.parse(IOServiceDescriptor.WORKER.getName()).append("default"));
+                    Consumer<XnioWorker> workerConsumer = builder.provides(ServiceName.parse(IOServiceDescriptor.WORKER.getName()).append("default"), ServiceName.parse(IOServiceDescriptor.DEFAULT_WORKER.getName()));
                     builder.setInstance(new WorkerService(workerConsumer, () -> Executors.newFixedThreadPool(1), Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2)));
-                    builder.install();                }
+                    builder.install();
+                }
             }
 
             @Override
@@ -241,14 +241,13 @@ public class RemotingLegacySubsystemTestCase extends AbstractRemotingSubsystemBa
                 super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
 
                 Map<String, Class> capabilities = new HashMap<>();
-                capabilities.put(buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME,
-                        "default-remoting"), XnioWorker.class);
+                capabilities.put(buildDynamicCapabilityName(IOServiceDescriptor.WORKER.getName(), "default-remoting"), XnioWorker.class);
 
                 if (legacyParser) {
                     // Deal with the fact that legacy parsers will add the io extension/subsystem
                     RemotingSubsystemTestUtil.registerIOExtension(extensionRegistry, rootRegistration);
                 } else {
-                    capabilities.put(buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME, "default"), XnioWorker.class);
+                    capabilities.put(buildDynamicCapabilityName(IOServiceDescriptor.WORKER.getName(), "default"), XnioWorker.class);
                 }
 
                 AdditionalInitialization.registerServiceCapabilities(capabilityRegistry, capabilities);

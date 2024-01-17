@@ -29,6 +29,8 @@
         <module name="org.jboss.xnio"/>
         <module name="org.jboss.xnio.nio" services="import"/>
         <module name="org.wildfly.common"/>
+        <!-- Temporarily export this dependency, until dependents modules in wildfly are updated -->
+        <module name="org.wildfly.io.spi" export="true"/>
         <module name="org.wildfly.service"/>
         <module name="org.wildfly.subsystem"/>
         <module name="io.undertow.core"/>

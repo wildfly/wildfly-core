@@ -8,7 +8,6 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.remoting.Capabilities.IO_WORKER_CAPABILITY_NAME;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -44,8 +43,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.wildfly.extension.io.IOServices;
 import org.wildfly.extension.io.WorkerService;
+import org.wildfly.io.IOServiceDescriptor;
 import org.xnio.Xnio;
 import org.xnio.XnioWorker;
 
@@ -133,14 +132,14 @@ public class RemotingSubsystemTestCase extends AbstractRemotingSubsystemBaseTest
             protected void addExtraServices(ServiceTarget target) {
                 //Needed for initialization of the RealmAuthenticationProviderService
                 AbsolutePathService.addService(ServerEnvironment.CONTROLLER_TEMP_DIR, new File("target/temp" + System.currentTimeMillis()).getAbsolutePath(), target);
-                ServiceBuilder<?> builder = target.addService(IOServices.WORKER.append("default"));
-                Consumer<XnioWorker> workerConsumer = builder.provides(IOServices.WORKER.append("default"));
+                ServiceBuilder<?> builder = target.addService(ServiceName.parse(IOServiceDescriptor.WORKER.getName()).append("default"));
+                Consumer<XnioWorker> workerConsumer = builder.provides(ServiceName.parse(IOServiceDescriptor.WORKER.getName()).append("default"), ServiceName.parse(IOServiceDescriptor.DEFAULT_WORKER.getName()));
                 builder.setInstance(new WorkerService(workerConsumer, () -> Executors.newFixedThreadPool(1), Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2)));
                 builder.setInitialMode(ServiceController.Mode.ON_DEMAND);
                 builder.install();
 
-                builder = target.addService(IOServices.WORKER.append("default-remoting"));
-                workerConsumer = builder.provides(IOServices.WORKER.append("default-remoting"));
+                builder = target.addService(ServiceName.parse(IOServiceDescriptor.WORKER.getName()).append("default-remoting"));
+                workerConsumer = builder.provides(ServiceName.parse(IOServiceDescriptor.WORKER.getName()).append("default-remoting"));
                 builder.setInstance(new WorkerService(workerConsumer, () -> Executors.newFixedThreadPool(1), Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2)));
                 builder.setInitialMode(ServiceController.Mode.ON_DEMAND);
                 builder.install();            }
@@ -149,9 +148,8 @@ public class RemotingSubsystemTestCase extends AbstractRemotingSubsystemBaseTest
             protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
                 super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
                 Map<String, Class> capabilities = new HashMap<>();
-                capabilities.put(buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME, "default"), XnioWorker.class);
-                capabilities.put(buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME,
-                        "default-remoting"), XnioWorker.class);
+                capabilities.put(buildDynamicCapabilityName(IOServiceDescriptor.WORKER.getName(), "default"), XnioWorker.class);
+                capabilities.put(buildDynamicCapabilityName(IOServiceDescriptor.WORKER.getName(), "default-remoting"), XnioWorker.class);
                 AdditionalInitialization.registerServiceCapabilities(capabilityRegistry, capabilities);
             }
         };
