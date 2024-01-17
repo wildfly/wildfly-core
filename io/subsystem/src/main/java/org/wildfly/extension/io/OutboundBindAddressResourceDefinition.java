@@ -50,11 +50,11 @@ public class OutboundBindAddressResourceDefinition extends PersistentResourceDef
     static final Collection<AttributeDefinition> ATTRIBUTES = Collections.unmodifiableList(Arrays.asList( MATCH, BIND_ADDRESS, BIND_PORT));
 
     static final String RESOURCE_NAME = "outbound-bind-address";
-
+    static final PathElement PATH = PathElement.pathElement(RESOURCE_NAME);
     static final OutboundBindAddressResourceDefinition INSTANCE = new OutboundBindAddressResourceDefinition();
 
     private OutboundBindAddressResourceDefinition() {
-        super(new SimpleResourceDefinition.Parameters(PathElement.pathElement(RESOURCE_NAME), IOExtension.getResolver(RESOURCE_NAME))
+        super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.getResolver(RESOURCE_NAME))
             .setAddHandler(new OutboundBindAddressAddHandler())
             .setRemoveHandler(new OutboundBindAddressRemoveHandler())
         );

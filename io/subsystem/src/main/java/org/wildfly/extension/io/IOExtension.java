@@ -18,6 +18,7 @@ import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.extension.io.logging.IOLogger;
+import org.wildfly.subsystem.SubsystemPersistence;
 
 
 /**
@@ -42,12 +43,11 @@ public class IOExtension implements Extension {
         return new StandardResourceDescriptionResolver(prefix.toString(), RESOURCE_NAME, IOExtension.class.getClassLoader(), true, false);
     }
 
+    private final SubsystemPersistence<IOSubsystemSchema> persistence = SubsystemPersistence.of(IOSubsystemSchema.CURRENT);
+
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.IO_1_0.getUriString(), IOSubsystemParser_1_0::new);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.IO_1_1.getUriString(), IOSubsystemParser_1_1::new);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.IO_2_0.getUriString(), IOSubsystemParser_2_0::new);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.IO_3_0.getUriString(), new IOSubsystemParser_3_0());
+        context.setSubsystemXmlMappings(SUBSYSTEM_NAME, this.persistence.getSchemas());
     }
 
     @Override
@@ -55,8 +55,6 @@ public class IOExtension implements Extension {
         final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, CURRENT_MODEL_VERSION);
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(IORootDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE, false);
-        subsystem.registerXMLElementWriter(new IOSubsystemParser_3_0());
+        subsystem.registerXMLElementWriter(this.persistence.getWriter());
     }
-
-
 }
