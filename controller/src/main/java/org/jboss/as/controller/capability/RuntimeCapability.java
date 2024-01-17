@@ -12,7 +12,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
-import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceNameFactory;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -32,7 +31,7 @@ import org.wildfly.service.descriptor.UnaryServiceDescriptor;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-public class RuntimeCapability<T> implements Capability, Feature {
+public class RuntimeCapability<T> implements Capability {
 
     //todo remove, here only for binary compatibility of elytron subsystem, drop once it is in.
     public static String buildDynamicCapabilityName(String baseName, String dynamicNameElement) {
