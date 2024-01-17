@@ -19,7 +19,6 @@ import io.undertow.server.XnioByteBufferPool;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityServiceBuilder;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -101,18 +100,14 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
             DIRECT_BUFFERS
     );
 
-
-    public static final BufferPoolResourceDefinition INSTANCE = new BufferPoolResourceDefinition();
-
-
-    private BufferPoolResourceDefinition() {
+    BufferPoolResourceDefinition() {
         super(new SimpleResourceDefinition.Parameters(IOExtension.BUFFER_POOL_PATH,
                 IOExtension.getResolver(Constants.BUFFER_POOL))
                 .setAddHandler(new BufferPoolAdd())
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addCapabilities(IO_POOL_RUNTIME_CAPABILITY,
                         IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY)
-                .setDeprecatedSince(ModelVersion.create(4))
+                .setDeprecatedSince(IOSubsystemModel.VERSION_4_0_0.getVersion())
         );
     }
 
