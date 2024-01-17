@@ -1,0 +1,14 @@
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<subsystem xmlns="urn:jboss:domain:io:4.0">
+    <worker name="default" task-keepalive="100" stack-size="5000"/>
+    <worker name="second-worker" io-threads="${some.property:5}" stack-size="${property.stack:300}" task-keepalive="${property.keepalive:100}" task-max-threads="${prop.max-threads:200}"/>
+    <worker name="third-worker" task-max-threads="50"/>
+    <worker name="fourth-worker">
+        <outbound-bind-address name="outbound" match="192.168.10.0/32" bind-address="192.168.10.1" bind-port="55555"/>
+    </worker>
+    <buffer-pool name="default" buffer-size="2048" buffers-per-slice="2048"/>
+</subsystem>
