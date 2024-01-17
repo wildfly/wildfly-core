@@ -29,6 +29,8 @@
         <module name="org.jboss.xnio"/>
         <module name="org.jboss.xnio.nio" services="import"/>
         <module name="org.wildfly.common"/>
+        <module name="org.wildfly.service"/>
+        <module name="org.wildfly.subsystem"/>
         <module name="io.undertow.core"/>
     </dependencies>
 </module>

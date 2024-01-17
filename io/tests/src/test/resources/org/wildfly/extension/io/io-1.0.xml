@@ -1,9 +1,0 @@
-<!--
-  ~ Copyright The WildFly Authors
-  ~ SPDX-License-Identifier: Apache-2.0
-  -->
-
-<subsystem xmlns="urn:jboss:domain:io:1.0">
-    <worker name="default" io-threads="3"/>
-    <buffer-pool name="default" buffer-size="16384" buffers-per-slice="128"/>
-</subsystem>
