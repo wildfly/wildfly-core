@@ -37,6 +37,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REFS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE_TYPE;
@@ -397,6 +398,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 packages.add(pkgNode);
             }
         }
+        feature.get(STABILITY).set(registration.getStability().toString());
         return result;
     }
 
@@ -638,6 +640,9 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 } catch (IllegalArgumentException ex) {
                     //value_type is an object
                 }
+            }
+            if (attDescription.hasDefined(STABILITY)) {
+                param.get(STABILITY).set(attDescription.get(STABILITY).asString());
             }
             params.add(param);
         }
