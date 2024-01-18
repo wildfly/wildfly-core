@@ -103,7 +103,7 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
     );
 
     BufferPoolResourceDefinition() {
-        super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.RESOLVER.createChildResolver(PATH))
+        super(new SimpleResourceDefinition.Parameters(PATH, IOSubsystemRegistrar.RESOLVER.createChildResolver(PATH))
                 .setAddHandler(new BufferPoolAdd())
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addCapabilities(IO_POOL_RUNTIME_CAPABILITY,

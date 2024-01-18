@@ -101,7 +101,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     private static final AttributeDefinition BUSY_WORKER_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("busy-task-thread-count", ModelType.INT).build();
 
     WorkerResourceDefinition(AtomicInteger maxThreads) {
-        super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.RESOLVER.createChildResolver(PATH))
+        super(new SimpleResourceDefinition.Parameters(PATH, IOSubsystemRegistrar.RESOLVER.createChildResolver(PATH))
                 .setAddHandler(new WorkerAdd(maxThreads))
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addCapabilities(CAPABILITY));
