@@ -23,8 +23,10 @@ import java.security.PrivilegedExceptionAction;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -51,12 +53,14 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
+import org.wildfly.security.http.HttpServerRequest;
 import org.wildfly.security.http.util.AggregateServerMechanismFactory;
 import org.wildfly.security.http.util.FilterServerMechanismFactory;
 import org.wildfly.security.http.util.PropertiesServerMechanismFactory;
 import org.wildfly.security.http.util.SecurityProviderServerMechanismFactory;
 import org.wildfly.security.http.util.ServiceLoaderServerMechanismFactory;
 import org.wildfly.security.http.util.SetMechanismInformationMechanismFactory;
+import org.wildfly.security.http.util.SetRequestInformationCallbackMechanismFactory;
 import org.wildfly.security.http.util.SocketAddressCallbackServerMechanismFactory;
 
 /**
@@ -102,6 +106,11 @@ class HttpServerDefinitions {
     private static final AggregateComponentDefinition<HttpServerAuthenticationMechanismFactory> AGGREGATE_HTTP_SERVER_FACTORY = AggregateComponentDefinition.create(HttpServerAuthenticationMechanismFactory.class,
             ElytronDescriptionConstants.AGGREGATE_HTTP_SERVER_MECHANISM_FACTORY, ElytronDescriptionConstants.HTTP_SERVER_MECHANISM_FACTORIES, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY,
             AggregateServerMechanismFactory::new);
+
+    /**
+     * URI of the HTTP authentication request
+     */
+    private static final String REQUEST_URI = "Request-URI";
 
     static AggregateComponentDefinition<HttpServerAuthenticationMechanismFactory> getRawAggregateHttpServerFactoryDefinition() {
         return AGGREGATE_HTTP_SERVER_FACTORY;
@@ -150,6 +159,7 @@ class HttpServerDefinitions {
                 final Map<String, String> propertiesMap = PROPERTIES.unwrap(context, model);
                 return () -> {
                     HttpServerAuthenticationMechanismFactory factory = factoryInjector.getValue();
+                    factory = new SetRequestInformationCallbackMechanismFactory(factory, getRequestInformationHashMap());
                     factory = new SocketAddressCallbackServerMechanismFactory(factory);
                     factory = new SetMechanismInformationMechanismFactory(factory);
                     factory = finalFilter != null ? new FilterServerMechanismFactory(factory, finalFilter) : factory;
@@ -192,7 +202,7 @@ class HttpServerDefinitions {
                     if ( findProviderService(actualProviders, serviceFilter) == null ) {
                         throw ROOT_LOGGER.noSuitableProvider(HttpServerAuthenticationMechanismFactory.class.getSimpleName());
                     }
-                    return new SocketAddressCallbackServerMechanismFactory(new SetMechanismInformationMechanismFactory(new SecurityProviderServerMechanismFactory(actualProviders)));
+                    return new SetRequestInformationCallbackMechanismFactory(new SocketAddressCallbackServerMechanismFactory(new SetMechanismInformationMechanismFactory(new SecurityProviderServerMechanismFactory(actualProviders))), getRequestInformationHashMap());
                 };
             }
 
@@ -216,7 +226,7 @@ class HttpServerDefinitions {
                     try {
                         ClassLoader classLoader = doPrivileged((PrivilegedExceptionAction<ClassLoader>) () -> resolveClassLoader(module));
 
-                        return new SocketAddressCallbackServerMechanismFactory(new SetMechanismInformationMechanismFactory(new ServiceLoaderServerMechanismFactory(classLoader)));
+                        return new SetRequestInformationCallbackMechanismFactory(new SocketAddressCallbackServerMechanismFactory(new SetMechanismInformationMechanismFactory(new ServiceLoaderServerMechanismFactory(classLoader))), getRequestInformationHashMap());
                     } catch (Exception e) {
                         throw new StartException(e);
                     }
@@ -227,6 +237,12 @@ class HttpServerDefinitions {
 
         return wrapFactory(new TrivialResourceDefinition(ElytronDescriptionConstants.SERVICE_LOADER_HTTP_SERVER_MECHANISM_FACTORY,
                 add, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY));
+    }
+
+    private static HashMap<String, Function<HttpServerRequest, String>> getRequestInformationHashMap() {
+        HashMap<String, Function<HttpServerRequest, String>> requestInformation = new HashMap<>();
+        requestInformation.put(REQUEST_URI, (HttpServerRequest httpServerRequest) -> httpServerRequest.getRequestURI().toString());
+        return requestInformation;
     }
 
     private static ResourceDefinition wrapFactory(ResourceDefinition resourceDefinition) {
