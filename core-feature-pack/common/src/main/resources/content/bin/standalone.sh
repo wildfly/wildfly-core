@@ -212,8 +212,8 @@ fi
 # clean server opts
 for var in $SERVER_OPTS
 do
-   if [ "${var#"-Djboss.server.base.dir"}" != "$var" ]; then
-      SERVER_OPTS=${SERVER_OPTS#"$var"}
+   if [ "${var//"-Djboss.server.base.dir"/}" != "${var}" ]; then
+     SERVER_OPTS="${SERVER_OPTS//$var/}"
    fi
 done
 
