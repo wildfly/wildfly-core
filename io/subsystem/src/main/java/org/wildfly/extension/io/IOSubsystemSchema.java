@@ -7,13 +7,16 @@ package org.wildfly.extension.io;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.as.controller.PersistentSubsystemSchema;
 import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.controller.xml.VersionedNamespace;
+import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.IntVersion;
 import org.wildfly.io.OptionAttributeDefinition;
 
@@ -41,8 +44,19 @@ public enum IOSubsystemSchema implements PersistentSubsystemSchema<IOSubsystemSc
 
     @Override
     public PersistentResourceXMLDescription getXMLDescription() {
-        return builder(IOSubsystemRegistrar.PATH, this.namespace)
-                .addChild(this.workerBuilder())
+        PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder = builder(IOSubsystemRegistrar.PATH, this.namespace);
+        if (this.since(VERSION_4_0)) {
+            builder.addAttribute(IOSubsystemRegistrar.DEFAULT_WORKER);
+        } else {
+            builder.setAdditionalOperationsGenerator(new PersistentResourceXMLDescription.AdditionalOperationsGenerator() {
+                @Override
+                public void additionalOperations(PathAddress address, ModelNode addOperation, List<ModelNode> operations) {
+                    // Apply "magic" default worker referenced by other subsystems
+                    addOperation.get(IOSubsystemRegistrar.DEFAULT_WORKER.getName()).set(IOSubsystemRegistrar.LEGACY_DEFAULT_WORKER);
+                }
+            });
+        }
+        return builder.addChild(this.workerBuilder())
                 .addChild(builder(BufferPoolResourceDefinition.PATH).addAttributes(BufferPoolResourceDefinition.ATTRIBUTES.stream()))
                 .build();
     }

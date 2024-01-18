@@ -25,6 +25,11 @@
             <xs:element name="worker" type="workerType"/>
             <xs:element name="buffer-pool" type="bufferPoolType"/>
         </xs:choice>
+        <xs:attribute name="default-worker" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>Specifies the default I/O worker.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="workerType">
         <xs:choice minOccurs="0" maxOccurs="unbounded">
