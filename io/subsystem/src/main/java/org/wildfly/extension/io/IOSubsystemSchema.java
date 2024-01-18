@@ -31,7 +31,7 @@ public enum IOSubsystemSchema implements PersistentSubsystemSchema<IOSubsystemSc
     private final VersionedNamespace<IntVersion, IOSubsystemSchema> namespace;
 
     IOSubsystemSchema(int major, int minor) {
-        this.namespace = SubsystemSchema.createLegacySubsystemURN(IOExtension.SUBSYSTEM_NAME, new IntVersion(major, minor));
+        this.namespace = SubsystemSchema.createLegacySubsystemURN(IOSubsystemRegistrar.NAME, new IntVersion(major, minor));
     }
 
     @Override
@@ -41,7 +41,7 @@ public enum IOSubsystemSchema implements PersistentSubsystemSchema<IOSubsystemSc
 
     @Override
     public PersistentResourceXMLDescription getXMLDescription() {
-        return builder(IORootDefinition.PATH, this.namespace)
+        return builder(IOSubsystemRegistrar.PATH, this.namespace)
                 .addChild(this.workerBuilder())
                 .addChild(builder(BufferPoolResourceDefinition.PATH).addAttributes(BufferPoolResourceDefinition.ATTRIBUTES.stream()))
                 .build();

@@ -45,7 +45,7 @@ public class IOSubsystemTestCase extends AbstractSubsystemSchemaTest<IOSubsystem
     }
 
     public IOSubsystemTestCase(IOSubsystemSchema schema) {
-        super(IOExtension.SUBSYSTEM_NAME, new IOExtension(), schema, IOSubsystemSchema.CURRENT);
+        super(IOSubsystemRegistrar.NAME, new IOExtension(), schema, IOSubsystemSchema.CURRENT);
     }
 
     @Test

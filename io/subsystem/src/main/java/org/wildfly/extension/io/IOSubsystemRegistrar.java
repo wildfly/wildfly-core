@@ -1,0 +1,54 @@
+/*
+ * Copyright The WildFly Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package org.wildfly.extension.io;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.ResourceRegistration;
+import org.jboss.as.controller.SubsystemRegistration;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.descriptions.ParentResourceDescriptionResolver;
+import org.jboss.as.controller.descriptions.SubsystemResourceDescriptionResolver;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.wildfly.io.IOServiceDescriptor;
+import org.wildfly.subsystem.resource.ManagementResourceRegistrar;
+import org.wildfly.subsystem.resource.ManagementResourceRegistrationContext;
+import org.wildfly.subsystem.resource.ResourceDescriptor;
+import org.wildfly.subsystem.resource.SubsystemResourceDefinitionRegistrar;
+import org.wildfly.subsystem.resource.operation.ResourceOperationRuntimeHandler;
+
+/**
+ * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
+ */
+class IOSubsystemRegistrar implements SubsystemResourceDefinitionRegistrar {
+
+    static final String NAME = "io";
+    static final PathElement PATH = SubsystemResourceDefinitionRegistrar.pathElement(NAME);
+    static final ParentResourceDescriptionResolver RESOLVER = new SubsystemResourceDescriptionResolver(NAME, IOSubsystemRegistrar.class);
+
+    static final RuntimeCapability<Void> MAX_THREADS_CAPABILITY = RuntimeCapability.Builder.of(IOServiceDescriptor.MAX_THREADS).build();
+
+    @Override
+    public ManagementResourceRegistration register(SubsystemRegistration parent, ManagementResourceRegistrationContext context) {
+        ManagementResourceRegistration registration = parent.registerSubsystemModel(ResourceDefinition.builder(ResourceRegistration.of(PATH), RESOLVER).build());
+
+        // Tracks max-threads for all workers
+        AtomicInteger maxThreads = new AtomicInteger();
+
+        ResourceDescriptor descriptor = ResourceDescriptor.builder(RESOLVER)
+                .addCapability(MAX_THREADS_CAPABILITY)
+                .withRuntimeHandler(ResourceOperationRuntimeHandler.configureService(new IOSubsystemServiceConfigurator(maxThreads)))
+                .build();
+        ManagementResourceRegistrar.of(descriptor).register(registration);
+
+        registration.registerSubModel(new WorkerResourceDefinition(maxThreads));
+        registration.registerSubModel(new BufferPoolResourceDefinition());
+
+        return registration;
+    }
+}
