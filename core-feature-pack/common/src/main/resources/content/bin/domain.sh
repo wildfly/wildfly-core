@@ -24,7 +24,7 @@ do
           exit 1
           ;;
       *)
-          SERVER_OPTS="$SERVER_OPTS '$1'"
+          SERVER_OPTS="$SERVER_OPTS \"$1\""
           ;;
     esac
     shift
@@ -112,7 +112,7 @@ if $linux; then
     for var in $HOST_CONTROLLER_OPTS
     do
        # Remove quotes
-      p=`echo $var | tr -d "'"`
+      p=`echo $var | tr -d "'" | tr -d "\""`
       case $p in
         -Djboss.domain.base.dir=*)
              JBOSS_BASE_DIR=`readlink -m ${p#*=}`
@@ -134,7 +134,7 @@ if $solaris; then
     for var in $HOST_CONTROLLER_OPTS
     do
        # Remove quotes
-      p=`echo $var | tr -d "'"`
+      p=`echo $var | tr -d "'" | tr -d "\""`
       case $p in
         -Djboss.domain.base.dir=*)
              JBOSS_BASE_DIR=`echo $p | awk -F= '{print $2}'`
@@ -157,7 +157,7 @@ if $darwin || $other ; then
     for var in $HOST_CONTROLLER_OPTS
     do
        # Remove quotes
-       p=`echo $var | tr -d "'"`
+       p=`echo $var | tr -d "'" | tr -d "\""`
        case $p in
         -Djboss.domain.base.dir=*)
              JBOSS_BASE_DIR=`cd ${p#*=} ; pwd -P`
