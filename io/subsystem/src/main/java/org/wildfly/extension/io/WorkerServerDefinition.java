@@ -28,6 +28,7 @@ import org.xnio.management.XnioWorkerMXBean;
  * @author Tomaz Cerar (c) 2016 Red Hat Inc.
  */
 public class WorkerServerDefinition extends SimpleResourceDefinition {
+    private static final PathElement PATH = PathElement.pathElement("server");
     private static final SimpleAttributeDefinition CONNECTION_COUNT = new SimpleAttributeDefinitionBuilder("connection-count", ModelType.INT)
             .setStorageRuntime()
             .build();
@@ -42,7 +43,7 @@ public class WorkerServerDefinition extends SimpleResourceDefinition {
     static final ModelNode NO_METRICS = new ModelNode(IOLogger.ROOT_LOGGER.noMetrics());
 
     WorkerServerDefinition() {
-        super(new Parameters(PathElement.pathElement("server"), IOExtension.getResolver("worker","server"))
+        super(new Parameters(PATH, IOExtension.RESOLVER.createChildResolver(PathElement.pathElement(WorkerResourceDefinition.PATH.getKey(), PATH.getKey())))
                 .setRuntime());
     }
 

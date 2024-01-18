@@ -8,7 +8,8 @@ package org.wildfly.extension.io;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.SubsystemRegistration;
-import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
+import org.jboss.as.controller.descriptions.ParentResourceDescriptionResolver;
+import org.jboss.as.controller.descriptions.SubsystemResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -21,15 +22,8 @@ import org.wildfly.subsystem.SubsystemPersistence;
 public class IOExtension implements Extension {
 
     public static final String SUBSYSTEM_NAME = "io";
-    private static final String RESOURCE_NAME = IOExtension.class.getPackage().getName() + ".LocalDescriptions";
 
-    public static StandardResourceDescriptionResolver getResolver(final String... keyPrefix) {
-        StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
-        for (String kp : keyPrefix) {
-            prefix.append('.').append(kp);
-        }
-        return new StandardResourceDescriptionResolver(prefix.toString(), RESOURCE_NAME, IOExtension.class.getClassLoader(), true, false);
-    }
+    static final ParentResourceDescriptionResolver RESOLVER = new SubsystemResourceDescriptionResolver(SUBSYSTEM_NAME, IOExtension.class);
 
     private final SubsystemPersistence<IOSubsystemSchema> persistence = SubsystemPersistence.of(IOSubsystemSchema.CURRENT);
 

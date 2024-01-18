@@ -24,7 +24,7 @@ class IORootDefinition extends SimpleResourceDefinition {
     static final RuntimeCapability<Void> IO_MAX_THREADS_RUNTIME_CAPABILITY = RuntimeCapability.Builder.of(IOServiceDescriptor.MAX_THREADS).build();
 
     IORootDefinition() {
-        super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.getResolver())
+        super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.RESOLVER.createChildResolver(PATH))
                 .setAddHandler(new IOSubsystemAdd())
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
