@@ -4,7 +4,7 @@
  */
 package org.wildfly.subsystem.resource.operation;
 
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -39,15 +39,15 @@ public class WriteAttributeOperationStepHandler extends ReloadRequiredWriteAttri
         PathAddress address = context.getCurrentAddress();
         Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
         // newValue is already applied to the model
-        ModelNode newModel = resource.getModel();
-        ModelNode oldModel = newModel.clone();
-        oldModel.get(attribute.getName()).set(oldValue);
+        // Clone resource and fabricate old state
+        Resource oldResource = resource.clone();
+        oldResource.getModel().get(attribute.getName()).set(oldValue);
 
         ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
         for (RuntimeCapability<?> capability : registration.getCapabilities()) {
-            Predicate<ModelNode> predicate = this.descriptor.getCapabilityFilter(capability);
-            boolean registered = predicate.test(oldModel);
-            boolean shouldRegister = predicate.test(newModel);
+            BiPredicate<OperationContext, Resource> predicate = this.descriptor.getCapabilityFilter(capability);
+            boolean registered = predicate.test(context, oldResource);
+            boolean shouldRegister = predicate.test(context, resource);
 
             if (!registered && shouldRegister) {
                 // Attribute change enables capability registration

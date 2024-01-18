@@ -46,7 +46,7 @@ public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandle
 
             for (RuntimeCapability<?> capability : registration.getCapabilities()) {
                 // Only register capabilities when allowed by the associated predicate
-                if (this.descriptor.getCapabilityFilter(capability).test(model)) {
+                if (this.descriptor.getCapabilityFilter(capability).test(context, resource)) {
                     context.deregisterCapability((capability.isDynamicallyNamed() ? capability.fromBaseCapability(address) : capability).getName());
                 }
             }

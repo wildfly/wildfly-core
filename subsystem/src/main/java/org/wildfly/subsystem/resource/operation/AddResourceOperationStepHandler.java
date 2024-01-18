@@ -268,7 +268,7 @@ public class AddResourceOperationStepHandler extends AbstractAddStepHandler impl
 
         for (RuntimeCapability<?> capability : registration.getCapabilities()) {
             // Only register capabilities when allowed by the associated predicate
-            if (this.descriptor.getCapabilityFilter(capability).test(model)) {
+            if (this.descriptor.getCapabilityFilter(capability).test(context, resource)) {
                 context.registerCapability(capability.isDynamicallyNamed() ? capability.fromBaseCapability(address) : capability);
             }
         }
