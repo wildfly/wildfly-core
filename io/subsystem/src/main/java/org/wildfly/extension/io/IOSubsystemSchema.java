@@ -41,9 +41,9 @@ public enum IOSubsystemSchema implements PersistentSubsystemSchema<IOSubsystemSc
 
     @Override
     public PersistentResourceXMLDescription getXMLDescription() {
-        return builder(IOExtension.SUBSYSTEM_PATH, this.namespace)
+        return builder(IORootDefinition.PATH, this.namespace)
                 .addChild(this.workerBuilder())
-                .addChild(builder(IOExtension.BUFFER_POOL_PATH).addAttributes(BufferPoolResourceDefinition.ATTRIBUTES.stream()))
+                .addChild(builder(BufferPoolResourceDefinition.PATH).addAttributes(BufferPoolResourceDefinition.ATTRIBUTES.stream()))
                 .build();
     }
 
@@ -52,7 +52,7 @@ public enum IOSubsystemSchema implements PersistentSubsystemSchema<IOSubsystemSc
         if (!this.since(VERSION_3_0)) {
             workerAttributes = workerAttributes.filter(Predicate.not(WorkerResourceDefinition.WORKER_TASK_CORE_THREADS::equals));
         }
-        PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder = builder(IOExtension.WORKER_PATH).addAttributes(workerAttributes);
+        PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder = builder(WorkerResourceDefinition.PATH).addAttributes(workerAttributes);
         if (this.since(VERSION_2_0)) {
             builder.addChild(builder(OutboundBindAddressResourceDefinition.PATH).addAttributes(OutboundBindAddressResourceDefinition.ATTRIBUTES.stream()));
         }

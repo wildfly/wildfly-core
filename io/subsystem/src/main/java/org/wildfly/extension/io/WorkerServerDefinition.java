@@ -19,6 +19,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.extension.io.logging.IOLogger;
 import org.xnio.XnioWorker;
 import org.xnio.management.XnioServerMXBean;
 import org.xnio.management.XnioWorkerMXBean;
@@ -38,6 +39,7 @@ public class WorkerServerDefinition extends SimpleResourceDefinition {
             .setStorageRuntime()
             .build();
 
+    static final ModelNode NO_METRICS = new ModelNode(IOLogger.ROOT_LOGGER.noMetrics());
 
     WorkerServerDefinition() {
         super(new Parameters(PathElement.pathElement("server"), IOExtension.getResolver("worker","server"))
@@ -74,7 +76,7 @@ public class WorkerServerDefinition extends SimpleResourceDefinition {
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             XnioWorker worker = getXnioWorker(context);
             if (worker == null || worker.getMXBean() == null) {
-                context.getResult().set(IOExtension.NO_METRICS);
+                context.getResult().set(NO_METRICS);
                 return;
             }
             XnioWorkerMXBean metrics = worker.getMXBean();
@@ -88,10 +90,8 @@ public class WorkerServerDefinition extends SimpleResourceDefinition {
             if (serverMetrics.isPresent()) {
                 context.getResult().set(getMetricValue(serverMetrics.get()));
             } else {
-                context.getResult().set(IOExtension.NO_METRICS);
+                context.getResult().set(NO_METRICS);
             }
         }
     }
-
-
 }
