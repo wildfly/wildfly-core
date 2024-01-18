@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
-
+import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -89,6 +89,12 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public Stability getStability() {
         return this.stability;
+    }
+
+    @Override
+    public <F extends Feature> boolean enables(F feature) {
+        ImmutableManagementResourceRegistration parent = this.getParent();
+        return ManagementResourceRegistration.super.enables(feature) && ((parent == null) || parent.enables(feature));
     }
 
     /** {@inheritDoc} */
