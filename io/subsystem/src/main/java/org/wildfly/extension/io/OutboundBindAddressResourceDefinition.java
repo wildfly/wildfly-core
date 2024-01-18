@@ -54,7 +54,7 @@ public class OutboundBindAddressResourceDefinition extends PersistentResourceDef
     static final OutboundBindAddressResourceDefinition INSTANCE = new OutboundBindAddressResourceDefinition();
 
     private OutboundBindAddressResourceDefinition() {
-        super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.getResolver(RESOURCE_NAME))
+        super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.RESOLVER.createChildResolver(PATH))
             .setAddHandler(new OutboundBindAddressAddHandler())
             .setRemoveHandler(new OutboundBindAddressRemoveHandler())
         );

@@ -100,7 +100,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     private static final AttributeDefinition BUSY_WORKER_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("busy-task-thread-count", ModelType.INT).build();
 
     WorkerResourceDefinition() {
-        super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.getResolver(Constants.WORKER))
+        super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.RESOLVER.createChildResolver(PATH))
                 .setAddHandler(new WorkerAdd())
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addCapabilities(CAPABILITY));
