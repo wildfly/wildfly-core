@@ -5,6 +5,9 @@
 
 package org.wildfly.extension.io;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -17,10 +20,11 @@ import org.wildfly.io.IOServiceDescriptor;
  */
 class IORootDefinition extends SimpleResourceDefinition {
 
+    static final PathElement PATH = PathElement.pathElement(SUBSYSTEM, IOExtension.SUBSYSTEM_NAME);
     static final RuntimeCapability<Void> IO_MAX_THREADS_RUNTIME_CAPABILITY = RuntimeCapability.Builder.of(IOServiceDescriptor.MAX_THREADS).build();
 
     IORootDefinition() {
-        super(new SimpleResourceDefinition.Parameters(IOExtension.SUBSYSTEM_PATH, IOExtension.getResolver())
+        super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.getResolver())
                 .setAddHandler(new IOSubsystemAdd())
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)

@@ -22,6 +22,7 @@ import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -44,6 +45,7 @@ import org.xnio.Pool;
  */
 class BufferPoolResourceDefinition extends PersistentResourceDefinition {
 
+    static final PathElement PATH = PathElement.pathElement(Constants.BUFFER_POOL);
     static final RuntimeCapability<Void> IO_POOL_RUNTIME_CAPABILITY =
             RuntimeCapability.Builder.of(IOServices.BUFFER_POOL_CAPABILITY_NAME, true, Pool.class).build();
     static final RuntimeCapability<Void> IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY =
@@ -101,8 +103,7 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
     );
 
     BufferPoolResourceDefinition() {
-        super(new SimpleResourceDefinition.Parameters(IOExtension.BUFFER_POOL_PATH,
-                IOExtension.getResolver(Constants.BUFFER_POOL))
+        super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.getResolver(Constants.BUFFER_POOL))
                 .setAddHandler(new BufferPoolAdd())
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addCapabilities(IO_POOL_RUNTIME_CAPABILITY,

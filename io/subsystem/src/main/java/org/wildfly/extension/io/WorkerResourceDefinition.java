@@ -54,6 +54,7 @@ import org.xnio.management.XnioWorkerMXBean;
  */
 class WorkerResourceDefinition extends PersistentResourceDefinition {
 
+    static final PathElement PATH = PathElement.pathElement(Constants.WORKER);
     static final RuntimeCapability<Void> CAPABILITY = RuntimeCapability.Builder.of(IOServiceDescriptor.WORKER).build();
 
     static final OptionAttributeDefinition WORKER_TASK_CORE_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_CORE_THREADS, Options.WORKER_TASK_CORE_THREADS)
@@ -99,7 +100,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     private static final AttributeDefinition BUSY_WORKER_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("busy-task-thread-count", ModelType.INT).build();
 
     WorkerResourceDefinition() {
-        super(new SimpleResourceDefinition.Parameters(IOExtension.WORKER_PATH, IOExtension.getResolver(Constants.WORKER))
+        super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.getResolver(Constants.WORKER))
                 .setAddHandler(new WorkerAdd())
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addCapabilities(CAPABILITY));
@@ -270,9 +271,9 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
 
     static XnioWorker getXnioWorker(OperationContext context) {
         String name = context.getCurrentAddressValue();
-        if (!context.getCurrentAddress().getLastElement().getKey().equals(IOExtension.WORKER_PATH.getKey())) { //we are somewhere deeper, lets find worker name
+        if (!context.getCurrentAddress().getLastElement().getKey().equals(PATH.getKey())) { //we are somewhere deeper, lets find worker name
             for (PathElement pe : context.getCurrentAddress()) {
-                if (pe.getKey().equals(IOExtension.WORKER_PATH.getKey())) {
+                if (pe.getKey().equals(PATH.getKey())) {
                     name = pe.getValue();
                     break;
                 }

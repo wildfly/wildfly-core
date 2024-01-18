@@ -25,7 +25,7 @@ class IOSubsystemAdd extends AbstractAddStepHandler {
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        ModelNode workers = Resource.Tools.readModel(resource).get(IOExtension.WORKER_PATH.getKey());
+        ModelNode workers = Resource.Tools.readModel(resource).get(WorkerResourceDefinition.PATH.getKey());
         WorkerAdd.checkWorkerConfiguration(context, workers);
 
         MaxThreadTrackerService service = new MaxThreadTrackerService();
