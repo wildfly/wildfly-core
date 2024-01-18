@@ -5,21 +5,28 @@
 
 package org.wildfly.extension.io;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.ResourceRegistration;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ParentResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.SubsystemResourceDescriptionResolver;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.wildfly.io.IOServiceDescriptor;
 import org.wildfly.subsystem.resource.ManagementResourceRegistrar;
 import org.wildfly.subsystem.resource.ManagementResourceRegistrationContext;
 import org.wildfly.subsystem.resource.ResourceDescriptor;
 import org.wildfly.subsystem.resource.SubsystemResourceDefinitionRegistrar;
+import org.wildfly.subsystem.resource.capability.CapabilityReferenceRecorder;
 import org.wildfly.subsystem.resource.operation.ResourceOperationRuntimeHandler;
 
 /**
@@ -33,6 +40,16 @@ class IOSubsystemRegistrar implements SubsystemResourceDefinitionRegistrar {
 
     static final RuntimeCapability<Void> MAX_THREADS_CAPABILITY = RuntimeCapability.Builder.of(IOServiceDescriptor.MAX_THREADS).build();
 
+    static final RuntimeCapability<Void> DEFAULT_WORKER_CAPABILITY = RuntimeCapability.Builder.of(IOServiceDescriptor.DEFAULT_WORKER).build();
+
+    static final ModelNode LEGACY_DEFAULT_WORKER = new ModelNode("default");
+
+    static final AttributeDefinition DEFAULT_WORKER = new SimpleAttributeDefinitionBuilder("default-worker", ModelType.STRING)
+            .setRequired(false)
+            .setCapabilityReference(CapabilityReferenceRecorder.builder(DEFAULT_WORKER_CAPABILITY, IOServiceDescriptor.WORKER).build())
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
     @Override
     public ManagementResourceRegistration register(SubsystemRegistration parent, ManagementResourceRegistrationContext context) {
         ManagementResourceRegistration registration = parent.registerSubsystemModel(ResourceDefinition.builder(ResourceRegistration.of(PATH), RESOLVER).build());
@@ -41,7 +58,8 @@ class IOSubsystemRegistrar implements SubsystemResourceDefinitionRegistrar {
         AtomicInteger maxThreads = new AtomicInteger();
 
         ResourceDescriptor descriptor = ResourceDescriptor.builder(RESOLVER)
-                .addCapability(MAX_THREADS_CAPABILITY)
+                .addAttributes(List.of(DEFAULT_WORKER))
+                .addCapabilities(List.of(DEFAULT_WORKER_CAPABILITY, MAX_THREADS_CAPABILITY))
                 .withRuntimeHandler(ResourceOperationRuntimeHandler.configureService(new IOSubsystemServiceConfigurator(maxThreads)))
                 .build();
         ManagementResourceRegistrar.of(descriptor).register(registration);

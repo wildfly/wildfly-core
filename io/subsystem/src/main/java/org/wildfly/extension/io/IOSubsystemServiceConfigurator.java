@@ -13,8 +13,10 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.function.Functions;
+import org.wildfly.io.IOServiceDescriptor;
 import org.wildfly.subsystem.service.ResourceServiceConfigurator;
 import org.wildfly.subsystem.service.ResourceServiceInstaller;
+import org.wildfly.subsystem.service.ServiceDependency;
 import org.wildfly.subsystem.service.capability.CapabilityServiceInstaller;
 
 /**
@@ -34,6 +36,11 @@ class IOSubsystemServiceConfigurator implements ResourceServiceConfigurator {
         ModelNode workers = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS)).get(WorkerResourceDefinition.PATH.getKey());
         WorkerAdd.checkWorkerConfiguration(context, workers);
 
-        return CapabilityServiceInstaller.builder(IOSubsystemRegistrar.MAX_THREADS_CAPABILITY, AtomicInteger::intValue, Functions.constantSupplier(this.maxThreads)).build();
+        ResourceServiceInstaller maxThreadsInstaller = CapabilityServiceInstaller.builder(IOSubsystemRegistrar.MAX_THREADS_CAPABILITY, AtomicInteger::intValue, Functions.constantSupplier(this.maxThreads)).build();
+
+        String defaultWorker = IOSubsystemRegistrar.DEFAULT_WORKER.resolveModelAttribute(context, model).asStringOrNull();
+        ResourceServiceInstaller defaultWorkerInstaller = (defaultWorker != null) ? CapabilityServiceInstaller.builder(IOSubsystemRegistrar.DEFAULT_WORKER_CAPABILITY, ServiceDependency.on(IOServiceDescriptor.WORKER, defaultWorker)).build() : null;
+
+        return (defaultWorkerInstaller != null) ? ResourceServiceInstaller.combine(maxThreadsInstaller, defaultWorkerInstaller) : maxThreadsInstaller;
     }
 }
