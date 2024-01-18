@@ -317,7 +317,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         final ModelControllerImpl controller = new ModelControllerImpl(container, target,
                 rootResourceRegistration,
                 new ContainerStateMonitor(container),
-                configurationPersister, processType, runningModeControl, prepareStep,
+                configurationPersister, processType, stability, runningModeControl, prepareStep,
                 processState, executorService, expressionResolver, authorizer, securityIdentitySupplier, auditLogger, notificationSupport,
                 bootErrorCollector, createExtraValidationStepHandler(), capabilityRegistry, getPartialModelIndicator(),
                 instabilityListener != null ? instabilityListener.get() : null);

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
-
+import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -53,6 +53,11 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     @Override
     public Stability getStability() {
         return this.delegate.getStability();
+    }
+
+    @Override
+    public <F extends Feature> boolean enables(F feature) {
+        return this.delegate.enables(feature);
     }
 
     @Override

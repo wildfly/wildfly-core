@@ -1015,5 +1015,8 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         }
     }
 
+    @Override
+    public Stability getStability() {
+        return this.resourceDefinition.getStability();
+    }
 }
-

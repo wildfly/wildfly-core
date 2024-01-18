@@ -82,6 +82,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.as.protocol.StreamUtils;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceController;
@@ -115,6 +116,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
     final OperationHeaders operationHeaders;
     private final boolean booting;
     private final ProcessType processType;
+    private final Stability stability;
     private final RunningMode runningMode;
     private final Environment callEnvironment;
     private final ConfigurationChangesCollector configurationChangesCollector = ConfigurationChangesCollector.INSTANCE;
@@ -179,6 +181,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
     }
 
     AbstractOperationContext(final ProcessType processType,
+                             final Stability stability,
                              final RunningMode runningMode,
                              final ModelController.OperationTransactionControl transactionControl,
                              final ControlledProcessState processState,
@@ -191,6 +194,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
                              final OperationHeaders operationHeaders,
                              final Supplier<SecurityIdentity> securityIdentitySupplier) {
         this.processType = processType;
+        this.stability = stability;
         this.runningMode = runningMode;
         this.transactionControl = transactionControl;
         this.processState = processState;
@@ -216,6 +220,11 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
         this.extraValidationStepHandler = extraValidationStepHandler;
         this.operationHeaders = operationHeaders == null ? OperationHeaders.forInternalCall() : operationHeaders;
         this.securityIdentitySupplier = securityIdentitySupplier;
+    }
+
+    @Override
+    public Stability getStability() {
+        return this.stability;
     }
 
     /**

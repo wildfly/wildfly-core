@@ -27,6 +27,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.NotificationDefinition;
@@ -372,7 +373,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
         // Hack to restrict extra data to specified extension(s)
         boolean allowSupplement = legallySupplemented.contains(moduleName);
         ManagedAuditLogger al = allowSupplement ? auditLogger : null;
-        return new ExtensionContextImpl(moduleName, profileRegistration, deploymentsRegistration, pathManager, extensionRegistryType, al);
+        return new ExtensionContextImpl(moduleName, profileRegistration, deploymentsRegistration, pathManager, extensionRegistryType, al, this.stability);
     }
 
     public Set<ProfileParsingCompletionHandler> getProfileParsingCompletionHandlers() {
@@ -555,6 +556,11 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         @Override
+        public <F extends Feature> boolean enables(F feature) {
+            return ExtensionRegistry.this.enables(feature);
+        }
+
+        @Override
         public void setSubsystemXmlMapping(String subsystemName, String namespaceUri, XMLElementReader<List<ModelNode>> reader) {
             assert subsystemName != null : "subsystemName is null";
             assert namespaceUri != null : "namespaceUri is null";
@@ -632,10 +638,11 @@ public final class ExtensionRegistry implements FeatureRegistry {
         private final ManagementResourceRegistration profileRegistration;
         private final ManagementResourceRegistration deploymentsRegistration;
         private final ExtensionRegistryType extensionRegistryType;
+        private final Stability stability;
 
         private ExtensionContextImpl(String extensionName, ManagementResourceRegistration profileResourceRegistration,
                                      ManagementResourceRegistration deploymentsResourceRegistration, PathManager pathManager,
-                                     ExtensionRegistryType extensionRegistryType, ManagedAuditLogger auditLogger) {
+                                     ExtensionRegistryType extensionRegistryType, ManagedAuditLogger auditLogger, Stability stability) {
             assert pathManager != null || !processType.isServer() : "pathManager is null";
             this.pathManager = pathManager;
             this.extension = getExtensionInfo(extensionName);
@@ -653,6 +660,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
                 this.deploymentsRegistration = null;
             }
             this.extensionRegistryType = extensionRegistryType;
+            this.stability = stability;
         }
 
         @Override
@@ -707,7 +715,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
 
         @Override
         public Stability getStability() {
-            return this.profileRegistration.getStability();
+            return this.stability;
         }
 
         @Override
@@ -952,6 +960,11 @@ public final class ExtensionRegistry implements FeatureRegistry {
         @Override
         public Stability getStability() {
             return this.deployments.getStability();
+        }
+
+        @Override
+        public <F extends Feature> boolean enables(F feature) {
+            return this.deployments.enables(feature);
         }
 
         @Override
