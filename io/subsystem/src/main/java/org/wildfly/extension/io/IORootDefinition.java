@@ -7,6 +7,8 @@ package org.wildfly.extension.io;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -23,18 +25,25 @@ class IORootDefinition extends SimpleResourceDefinition {
     static final PathElement PATH = PathElement.pathElement(SUBSYSTEM, IOExtension.SUBSYSTEM_NAME);
     static final RuntimeCapability<Void> IO_MAX_THREADS_RUNTIME_CAPABILITY = RuntimeCapability.Builder.of(IOServiceDescriptor.MAX_THREADS).build();
 
+    private final AtomicInteger maxThreads;
+
     IORootDefinition() {
+        this(new AtomicInteger());
+    }
+
+    private IORootDefinition(AtomicInteger maxThreads) {
         super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.RESOLVER.createChildResolver(PATH))
-                .setAddHandler(new IOSubsystemAdd())
+                .setAddHandler(new IOSubsystemAdd(maxThreads))
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
                 .addCapabilities(IO_MAX_THREADS_RUNTIME_CAPABILITY));
+        this.maxThreads = maxThreads;
     }
 
     @Override
     public void registerChildren(ManagementResourceRegistration registration) {
-        registration.registerSubModel(new WorkerResourceDefinition());
+        registration.registerSubModel(new WorkerResourceDefinition(this.maxThreads));
         registration.registerSubModel(new BufferPoolResourceDefinition());
     }
 }

@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -99,9 +100,9 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     private static final AttributeDefinition QUEUE_SIZE = new SimpleAttributeDefinitionBuilder("queue-size", ModelType.INT).build();
     private static final AttributeDefinition BUSY_WORKER_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("busy-task-thread-count", ModelType.INT).build();
 
-    WorkerResourceDefinition() {
+    WorkerResourceDefinition(AtomicInteger maxThreads) {
         super(new SimpleResourceDefinition.Parameters(PATH, IOExtension.RESOLVER.createChildResolver(PATH))
-                .setAddHandler(new WorkerAdd())
+                .setAddHandler(new WorkerAdd(maxThreads))
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addCapabilities(CAPABILITY));
     }
