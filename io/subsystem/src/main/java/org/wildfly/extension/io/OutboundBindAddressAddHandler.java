@@ -25,10 +25,8 @@ import org.wildfly.extension.io.logging.IOLogger;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 final class OutboundBindAddressAddHandler extends AbstractAddStepHandler {
-    OutboundBindAddressAddHandler() {
-        super(OutboundBindAddressResourceDefinition.ATTRIBUTES);
-    }
 
+    @Override
     protected void performRuntime(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
         final CidrAddressTable<InetSocketAddress> bindingsTable = getWorkerService(context).getBindingsTable();
         if (bindingsTable != null) {
@@ -41,6 +39,7 @@ final class OutboundBindAddressAddHandler extends AbstractAddStepHandler {
         }
     }
 
+    @Override
     protected void rollbackRuntime(final OperationContext context, final ModelNode operation, final Resource resource) {
         getWorkerService(context).getBindingsTable().removeExact(
             Inet.parseCidrAddress(operation.require("match").asString()),

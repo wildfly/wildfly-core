@@ -96,7 +96,7 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
 
     /*<buffer-pool name="default" buffer-size="1024" buffers-per-slice="1024"/>*/
 
-    static List<SimpleAttributeDefinition> ATTRIBUTES = Arrays.asList(
+    static final List<AttributeDefinition> ATTRIBUTES = Arrays.asList(
             BUFFER_SIZE,
             BUFFER_PER_SLICE,
             DIRECT_BUFFERS
@@ -112,17 +112,12 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
         );
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Collection<AttributeDefinition> getAttributes() {
-        return (Collection) ATTRIBUTES;
+        return ATTRIBUTES;
     }
 
     private static class BufferPoolAdd extends AbstractAddStepHandler {
-
-        private BufferPoolAdd() {
-            super(BufferPoolResourceDefinition.ATTRIBUTES);
-        }
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
