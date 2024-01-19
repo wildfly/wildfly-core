@@ -124,8 +124,7 @@ public class ColorOutputTestCase {
         String printableChars = Parser.stripAwayAnsiCodes(cli.getOutput());
         try (BufferedReader reader = new BufferedReader(new StringReader(printableChars))) {
             String line = reader.readLine();
-            // Skip lines like: "Picked up _JAVA_OPTIONS: ..."
-            while (line.startsWith("Picked up _JAVA_")) {
+            while (line.contains("Picked up JDK_JAVA_OPTIONS:") || line.contains("Picked up JAVA_TOOL_OPTIONS:")) {
                 line = reader.readLine();
             }
             // Issue in WFCORE-3849 was that carriage return character was printed on wrong position.

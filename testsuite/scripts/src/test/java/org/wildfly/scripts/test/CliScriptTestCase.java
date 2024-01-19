@@ -50,8 +50,7 @@ public class CliScriptTestCase extends ScriptTestCase {
         StringBuilder builder = new StringBuilder();
         // Read the output lines which should be valid DMR
         for (String line : script.getStdout()) {
-            // Skip lines like: "Picked up _JAVA_OPTIONS: ..."
-            if (line.startsWith("Picked up _JAVA_") || line.startsWith("WARNING")) {
+            if (line.contains("Picked up JDK_JAVA_OPTIONS:") || line.contains("Picked up JAVA_TOOL_OPTIONS:") || line.startsWith("WARNING")) {
                 continue;
             }
             builder.append(line);

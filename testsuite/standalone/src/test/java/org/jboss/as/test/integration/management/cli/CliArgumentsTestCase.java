@@ -132,8 +132,7 @@ public class CliArgumentsTestCase {
         String output = cli.getOutput();
         try (BufferedReader reader = new BufferedReader(new StringReader(output))) {
             String line = reader.readLine();
-            // Skip lines like: "Picked up _JAVA_OPTIONS: ..."
-            while (line.startsWith("Picked up _JAVA_")) {
+            while (line.contains("Picked up JDK_JAVA_OPTIONS:") || line.contains("Picked up JAVA_TOOL_OPTIONS:")) {
                 line = reader.readLine();
             }
             assertEquals("Unknown argument: --controler=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort() - 1), line);
