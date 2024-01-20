@@ -20,6 +20,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ParsedBootOp;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
@@ -81,7 +82,7 @@ public class ParallelExtensionAddHandler implements OperationStepHandler {
                 for (ParsedBootOp op : extensionAdds) {
                     String module = op.address.getLastElement().getValue();
                     ExtensionAddHandler addHandler = ExtensionAddHandler.class.cast(op.handler);
-                    Future<OperationFailedRuntimeException> future = executor.submit(new ExtensionInitializeTask(module, addHandler, rootResourceRegistration));
+                    Future<OperationFailedRuntimeException> future = executor.submit(new ExtensionInitializeTask(module, addHandler, rootResourceRegistration, op.getAddress()));
                     futures.put(module, future);
                 }
 
@@ -112,19 +113,21 @@ public class ParallelExtensionAddHandler implements OperationStepHandler {
         private final String module;
         private final ExtensionAddHandler addHandler;
         private final ManagementResourceRegistration rootResourceRegistration;
+        private final PathAddress address;
 
         public ExtensionInitializeTask(String module, ExtensionAddHandler addHandler,
-                                       ManagementResourceRegistration rootResourceRegistration) {
+                                       ManagementResourceRegistration rootResourceRegistration, PathAddress address) {
             this.module = module;
             this.addHandler = addHandler;
             this.rootResourceRegistration = rootResourceRegistration;
+            this.address = address;
         }
 
         @Override
         public OperationFailedRuntimeException call() {
             OperationFailedRuntimeException failure = null;
             try {
-                addHandler.initializeExtension(module, rootResourceRegistration);
+                addHandler.initializeExtension(module, rootResourceRegistration, this.address);
             } catch (OperationFailedRuntimeException e) {
                 failure = e;
             }
