@@ -22,8 +22,9 @@ import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
+import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.RunningModeControl;
-import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
@@ -65,7 +66,8 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
                                             final ModelTestOperationValidatorFilter validateOpsFilter, final boolean registerTransformers,
                                             final ExpressionResolver expressionResolver, final CapabilityRegistry capabilityRegistry) {
            super(additionalInit.getProcessType(), additionalInit.getStability(), runningModeControl, extensionRegistry.getTransformerRegistry(), persister, validateOpsFilter,
-                   new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE) , expressionResolver, new ControlledProcessState(true),capabilityRegistry);
+                   ResourceDefinition.builder(ResourceRegistration.of(null, additionalInit.getStability()), NonResolvingResourceDescriptionResolver.INSTANCE).build(),
+                   expressionResolver, new ControlledProcessState(true),capabilityRegistry);
            this.mainExtension = mainExtension;
            this.additionalInit = additionalInit;
            this.controllerInitializer = controllerInitializer;
