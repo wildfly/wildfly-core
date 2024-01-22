@@ -97,6 +97,11 @@ class RemotingSubsystem20Parser extends RemotingSubsystem11Parser {
                 }
             }
         }
+
+        // Apply magic default worker specified by legacy schema versions
+        if (!subsystem.hasDefined(RemotingSubsystemRootResource.WORKER.getName())) {
+            subsystem.get(RemotingSubsystemRootResource.WORKER.getName()).set(RemotingSubsystemRootResource.LEGACY_DEFAULT_WORKER);
+        }
     }
 
     private static XMLStreamException workerThreadPoolEndpointChoiceRequired(XMLExtendedStreamReader reader) {

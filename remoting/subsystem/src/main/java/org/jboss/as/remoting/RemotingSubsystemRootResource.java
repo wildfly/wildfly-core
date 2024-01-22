@@ -50,13 +50,12 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
     static final RuntimeCapability<Void> HTTP_LISTENER_REGISTRY_CAPABILITY =
             RuntimeCapability.Builder.of(HTTP_LISTENER_REGISTRY_CAPABILITY_NAME, ListenerRegistry.class).build();
 
+    static final ModelNode LEGACY_DEFAULT_WORKER = new ModelNode("default");
     static final SimpleAttributeDefinition WORKER = new SimpleAttributeDefinitionBuilder(CommonAttributes.WORKER, ModelType.STRING)
             .setRequired(false)
             .setAttributeGroup(Element.ENDPOINT.getLocalName())
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setValidator(new StringLengthValidator(1))
-            // TODO WFCORE-6490 Attributes that reference capabilities should never have a default value.
-            .setDefaultValue(new ModelNode("default"))
             .setCapabilityReference(IOServiceDescriptor.WORKER.getName(), REMOTING_ENDPOINT_CAPABILITY)
             .build();
 
