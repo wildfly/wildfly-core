@@ -71,6 +71,11 @@ class RemotingSubsystem10Parser implements XMLStreamConstants, XMLElementReader<
             }
             break;
         }
+
+        // Apply magic default worker specified by legacy schema versions
+        if (!subsystem.hasDefined(RemotingSubsystemRootResource.WORKER.getName())) {
+            subsystem.get(RemotingSubsystemRootResource.WORKER.getName()).set(RemotingSubsystemRootResource.LEGACY_DEFAULT_WORKER);
+        }
     }
 
     /**

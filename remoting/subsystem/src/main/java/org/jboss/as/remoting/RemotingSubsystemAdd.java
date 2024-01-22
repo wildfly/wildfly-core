@@ -33,6 +33,17 @@ import org.xnio.XnioWorker;
 class RemotingSubsystemAdd extends AbstractAddStepHandler {
 
     @Override
+    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        super.recordCapabilitiesAndRequirements(context, operation, resource);
+        // TODO Replace this logic with a proper conditional resource capability reference once wildfly-server no longer depends on this module
+        if (context.getProcessType().isServer()) {
+            if (!operation.hasDefined(WORKER.getName())) {
+                context.registerAdditionalCapabilityRequirement(IOServiceDescriptor.DEFAULT_WORKER.getName(), RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY.getName(), WORKER.getName());
+            }
+        }
+    }
+
+    @Override
     protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         // DomainServerCommunicationServices will already have created this service if the server group has {@link org.jboss.as.controller.descriptions.ModelDescriptionConstants#MANAGEMENT_SUBSYSTEM_ENDPOINT} enabled.
         if (context.getProcessType().isServer()) {
