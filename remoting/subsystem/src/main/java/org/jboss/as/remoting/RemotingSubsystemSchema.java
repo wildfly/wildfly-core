@@ -64,9 +64,10 @@ public enum RemotingSubsystemSchema implements PersistentSubsystemSchema<Remotin
             new RemotingSubsystem40Parser().readElement(reader, value);
         }
     },
-    VERSION_6_0(6, 0), // WildFly 30 - present
+    VERSION_6_0(6, 0), // WildFly 30 - 31
+    VERSION_7_0(7, 0), // WildFly 32 - present
     ;
-    static final RemotingSubsystemSchema CURRENT = VERSION_6_0;
+    static final RemotingSubsystemSchema CURRENT = VERSION_7_0;
 
     private VersionedNamespace<IntVersion, RemotingSubsystemSchema> namespace;
 
