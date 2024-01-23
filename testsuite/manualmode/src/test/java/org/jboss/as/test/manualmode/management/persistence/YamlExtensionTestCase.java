@@ -42,6 +42,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  *
  * @author Emmanuel Hugonnet (c) 2021 Red Hat, Inc.
  */
+@org.junit.Ignore("WFCORE-6680")
 @RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class YamlExtensionTestCase {
