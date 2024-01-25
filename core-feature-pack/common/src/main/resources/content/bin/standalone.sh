@@ -212,8 +212,9 @@ fi
 # clean server opts
 for var in $SERVER_OPTS
 do
-   if [ "${var//"-Djboss.server.base.dir"/}" != "${var}" ]; then
-     SERVER_OPTS="${SERVER_OPTS//$var/}"
+   v=`echo "${var}" | sed 's/-Djboss.server.base.dir//g'`
+   if [ "${v}" != "${var}" ]; then
+     SERVER_OPTS=`echo "${SERVER_OPTS}" | sed "s|${var}||g"`
    fi
 done
 
