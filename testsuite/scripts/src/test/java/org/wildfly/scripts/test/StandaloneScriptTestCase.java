@@ -8,12 +8,16 @@ package org.wildfly.scripts.test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import jakarta.json.JsonObject;
 
@@ -88,10 +92,46 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         // seem to work when a directory has a space. An error indicating the trailing quote cannot be found. Removing
         // the `\ parts and just keeping quotes ends in the error shown in JDK-8215398.
         Assume.assumeFalse(TestSuiteEnvironment.isWindows() && env.containsKey("GC_LOG") && script.getScript().toString().contains(" "));
-        script.start(STANDALONE_CHECK, env, ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
+
+        // Test WFCORE-5917 by adding the jboss.server.base.dir argument
+        // Due to WFCORE-6684, skip this verification if there are whitespaces in the home directory
+        if (!script.getContainerHome().toString().contains(" ")) {
+            List<String> args = new ArrayList<>(Arrays.asList(ServerHelper.DEFAULT_SERVER_JAVA_OPTS));
+            Path sbdPath = script.getContainerHome().resolve("standalone");
+            args.add("-Djboss.server.base.dir=" + sbdPath);
+            script.start(STANDALONE_CHECK, env, args.toArray(String[]::new));
+        } else {
+            script.start(STANDALONE_CHECK, env, ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
+        }
 
         Assert.assertNotNull("The process is null and may have failed to start.", script);
         Assert.assertTrue("The process is not running and should be", script.isAlive());
+
+        // test WFCORE-5917
+        if (!script.getContainerHome().toString().contains(" ")) {
+            ProcessHandle handle = script.toHandle();
+            List<ProcessHandle> children = handle.children().collect(Collectors.toList());
+            Assert.assertEquals("The standalone process should have started one single process.", 1, children.size());
+            ProcessHandle serverProcess = children.get(0);
+            Optional<String> commandLine = serverProcess.info().commandLine();
+            Assert.assertFalse("Server process launch command is not available", commandLine.isEmpty());
+            String[] serverArgs = commandLine.get().split("\\s+");
+            int occurrences = 0;
+            outer:
+            for (int i = 0; i < serverArgs.length; i++) {
+                if ( !serverArgs[i].contains("-Djboss.server.base.dir=") ) {
+                    continue;
+                }
+                occurrences++;
+                for (int j = i+1; j <serverArgs.length; j++) {
+                    if (serverArgs[i].equals(serverArgs[j])){
+                        occurrences++;
+                        break outer;
+                    }
+                }
+            }
+            Assert.assertEquals("Found duplicate server jboss.server.base.dir argument in the server launch command. Launch command is " + commandLine.get(), 1, occurrences);
+        }
 
         if (env.containsKey("MODULE_OPTS")) {
             final List<JsonObject> lines = ServerHelper.readLogFileFromModel("json.log");

@@ -235,6 +235,12 @@ public class ScriptProcess extends Process implements AutoCloseable {
     }
 
     @Override
+    public ProcessHandle toHandle() {
+        checkStatus();
+        return delegate.toHandle();
+    }
+
+    @Override
     public String toString() {
         return getCommandString(Collections.emptyList());
     }
