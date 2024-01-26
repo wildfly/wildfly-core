@@ -125,7 +125,7 @@
         <version.org.wildfly.galleon-plugins>6.5.4.Final</version.org.wildfly.galleon-plugins>
         <version.org.eclipse.m2e.lifecycle-mapping>1.0.0</version.org.eclipse.m2e.lifecycle-mapping>
         <!-- wildfly-maven-plugin-->
-        <version.wildfly.plugin>4.2.1.Final</version.wildfly.plugin>
+        <version.wildfly.plugin>4.2.2.Final</version.wildfly.plugin>
         <version.org.wildfly.jar.plugin>8.1.0.Final</version.org.wildfly.jar.plugin>
         <!-- plugins related to wildfly build and tooling -->
         <version.org.wildfly.component-matrix-plugin>1.0.3.Final</version.org.wildfly.component-matrix-plugin>
