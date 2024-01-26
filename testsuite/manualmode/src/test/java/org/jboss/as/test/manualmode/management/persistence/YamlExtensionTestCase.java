@@ -4,15 +4,15 @@
  */
 package org.jboss.as.test.manualmode.management.persistence;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_MODE;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import jakarta.inject.Inject;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 import org.jboss.as.controller.PathAddress;
@@ -20,6 +20,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
@@ -60,17 +61,43 @@ public class YamlExtensionTestCase {
     @BeforeClass
     public static void setup() throws Exception {
         Assume.assumeTrue("Layer testing provides a different XML file than the standard one which results in failures", System.getProperty("ts.layers") == null);
+        Path configurationDir = new File(WildFlySecurityManager.getPropertyPrivileged("jboss.home", "toto")).toPath().resolve("standalone").resolve("configuration");
+        Path referenceConfiguration = configurationDir.resolve("reference-standalone.xml");
+        Files.copy(configurationDir.resolve("standalone.xml"), referenceConfiguration, REPLACE_EXISTING);
+        try (CLIWrapper cli = new CLIWrapper(false)) {
+            cli.sendLine("embed-server --admin-only --server-config=reference-standalone.xml");
+            cli.sendLine("/socket-binding-group=standard-sockets/socket-binding=http:add(interface=public)");
+            cli.sendLine("/socket-binding-group=standard-sockets/socket-binding=https:add()");
+            cli.sendLine("/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=mail-snmt:add(host=foo, port=8081)");
+            cli.sendLine("/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=foo2:add(host=foo2, port=8082)");
+            cli.quit();
+        }
+        Path referenceCliConfiguration = configurationDir.resolve("reference-cli-standalone.xml");
+        Files.copy(configurationDir.resolve("standalone.xml"), referenceCliConfiguration, REPLACE_EXISTING);
+        Files.copy(new File(YamlExtensionTestCase.class.getResource("bootable-groups.properties").toURI()).toPath(),configurationDir.resolve("bootable-groups.properties"), REPLACE_EXISTING);
+        Files.copy(new File(YamlExtensionTestCase.class.getResource("bootable-users.properties").toURI()).toPath(),configurationDir.resolve("bootable-users.properties"), REPLACE_EXISTING);
+        try (CLIWrapper cli = new CLIWrapper(false)) {
+            cli.sendLine("embed-server --admin-only --server-config=reference-cli-standalone.xml");
+            cli.sendLine("/system-property=foo:add(value=bar)");
+            cli.sendLine("/subsystem=elytron/properties-realm=bootable-realm:add(users-properties={path=bootable-users.properties, plain-text=true, relative-to=jboss.server.config.dir}, groups-properties={path=bootable-groups.properties, relative-to=jboss.server.config.dir})");
+            cli.sendLine("/subsystem=elytron/security-domain=BootableDomain:add(default-realm=bootable-realm, permission-mapper=default-permission-mapper, realms=[{realm=bootable-realm, role-decoder=groups-to-roles}])");
+            cli.sendLine("/socket-binding-group=standard-sockets/socket-binding=http:add(interface=public)");
+            cli.sendLine("/socket-binding-group=standard-sockets/socket-binding=https:add()");
+            cli.sendLine("/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=mail-snmt:add(host=foo, port=8081)");
+            cli.sendLine("/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=foo2:add(host=foo2, port=8082)");
+            cli.quit();
+        }
         testYaml = new File(YamlExtensionTestCase.class.getResource("test.yml").toURI()).toPath().toAbsolutePath();
         cliScript = new File(YamlExtensionTestCase.class.getResource("test.cli").toURI()).toPath().toAbsolutePath();
-        expectedXml = loadFile(new File(YamlExtensionTestCase.class.getResource("test.xml").toURI()).toPath());
-        expectedBootCLiXml = loadFile(new File(YamlExtensionTestCase.class.getResource("testWithCli.xml").toURI()).toPath());
+        expectedXml = loadFile(referenceConfiguration).replace("\"", "'");
+        expectedBootCLiXml = loadFile(referenceCliConfiguration).replace("\"", "'");
         originalJvmArgs = WildFlySecurityManager.getPropertyPrivileged("jvm.args", null);
         Path target = new File("target").toPath();
         markerDirectory = Files.createDirectories(target.resolve("yaml").resolve("cli-boot-ops"));
         Files.copy(new File(YamlExtensionTestCase.class.getResource("bootable-groups.properties").toURI()).toPath(),
-                target.resolve(WildFlySecurityManager.getPropertyPrivileged("jboss.home", "toto")).resolve("standalone").resolve("configuration").resolve("bootable-groups.properties"), StandardCopyOption.REPLACE_EXISTING);
+                target.resolve(WildFlySecurityManager.getPropertyPrivileged("jboss.home", "toto")).resolve("standalone").resolve("configuration").resolve("bootable-groups.properties"), REPLACE_EXISTING);
         Files.copy(new File(YamlExtensionTestCase.class.getResource("bootable-users.properties").toURI()).toPath(),
-                target.resolve(WildFlySecurityManager.getPropertyPrivileged("jboss.home", "toto")).resolve("standalone").resolve("configuration").resolve("bootable-users.properties"), StandardCopyOption.REPLACE_EXISTING);
+                target.resolve(WildFlySecurityManager.getPropertyPrivileged("jboss.home", "toto")).resolve("standalone").resolve("configuration").resolve("bootable-users.properties"), REPLACE_EXISTING);
     }
 
     private static String loadFile(Path file) throws IOException {
@@ -189,6 +216,6 @@ public class YamlExtensionTestCase {
     }
 
     private static String removeWhiteSpaces(String line) {
-        return Pattern.compile ("(^\\s*$\\r?\\n)+", Pattern.MULTILINE).matcher(line.stripTrailing()).replaceAll("");
+        return Pattern.compile("(^\\s*$\\r?\\n)+", Pattern.MULTILINE).matcher(line.stripTrailing()).replaceAll("");
     }
 }
