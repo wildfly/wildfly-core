@@ -53,7 +53,7 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
                                      final Supplier<DeploymentMountProvider> serverDeploymentRepositorySupplier,
                                      final Supplier<PathManager> pathManagerSupplier,
                                      final Supplier<VirtualFile> contentsSupplier,
-                                     final String name, final String managementName, final DeploymentUnit parent, Stability stability,
+                                     final String name, final String managementName, final DeploymentUnit parent, final Stability stability,
                                      final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration,
                                      final Resource resource, final CapabilityServiceSupport capabilityServiceSupport,
                                      final DeploymentOverlayIndex deploymentOverlays,
