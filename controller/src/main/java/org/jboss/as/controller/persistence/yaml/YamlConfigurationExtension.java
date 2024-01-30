@@ -6,10 +6,16 @@ package org.jboss.as.controller.persistence.yaml;
 
 import static org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker.CLI_SCRIPT_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BYTES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EMPTY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INPUT_STREAM_INDEX;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
@@ -27,6 +33,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -74,7 +81,9 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
     private boolean needReload;
     private Path[] files;
     private final List<Map<String, Object>> configs = new ArrayList<>();
-    private static final String[] EXCLUDED_ELEMENTS = {" deployment", "extension", "deployment-overlay"};
+    private final Map<String, Object> deployments = new LinkedHashMap<>();
+    private static final String[] EXCLUDED_ELEMENTS = {"deployment", "extension", "deployment-overlay"};
+    public static final Set<String> MANAGED_CONTENT_ATTRIBUTES = Set.of(INPUT_STREAM_INDEX, HASH, BYTES, URL, EMPTY);
 
     @SuppressWarnings("unchecked")
     public YamlConfigurationExtension() {
@@ -103,7 +112,10 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                 if (yamlConfig.containsKey(CONFIGURATION_ROOT_KEY)) {
                     Map<String, Object> config = (Map<String, Object>) yamlConfig.get(CONFIGURATION_ROOT_KEY);
                     for (String excluded : EXCLUDED_ELEMENTS) {
-                        config.remove(excluded);
+                        Object value = config.remove(excluded);
+                        if(value != null && value instanceof Map && DEPLOYMENT.equals(excluded)) {
+                           deployments.putAll((Map<String, Object>) value);
+                        }
                     }
                     parsedFiles.add(file.toAbsolutePath().toString());
                     this.configs.add(config);
@@ -141,6 +153,9 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
         }
         for (Map<String, Object> config : configs) {
             processResource(PathAddress.EMPTY_ADDRESS, new HashMap<>(config), rootRegistration, rootRegistration, xmlOperations, postExtensionOps, false);
+        }
+        for(Map.Entry<String, Object> deployment : deployments.entrySet()) {
+            processUnmanagedDeployments(rootRegistration, deployment, xmlOperations, postExtensionOps);
         }
         this.configs.clear();
         needReload = true;
@@ -466,6 +481,22 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
     @Override
     public String getCommandLineInstructions() {
         return MGMT_OP_LOGGER.argYaml();
+    }
+
+    private void processUnmanagedDeployments(ImmutableManagementResourceRegistration rootRegistration, Map.Entry<String, Object> deployment, Map<PathAddress, ParsedBootOp> xmlOperations, List<ParsedBootOp> postExtensionOps) {
+        String name = deployment.getKey();
+        OperationEntry operationEntry = rootRegistration.getOperationEntry(PathAddress.pathAddress("deployment", name), ADD);
+        if (deployment.getValue() != null && deployment.getValue() instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> attributes = (Map<String, Object>) deployment.getValue();
+            Map<String, Object> content = (Map<String, Object>) (((Iterable<? extends Object>)attributes.get("content")).iterator().next());
+            Set<String> result = content.keySet().stream().distinct().filter(MANAGED_CONTENT_ATTRIBUTES::contains).collect(Collectors.toSet());
+            if (!result.isEmpty()) {
+                throw MGMT_OP_LOGGER.unsupportedDeployment(name, result);
+            }
+            PathAddress address = PathAddress.pathAddress(DEPLOYMENT, name);
+            processAttributes(address, rootRegistration, operationEntry, attributes, postExtensionOps);
+        }
     }
 
     private interface Operation {

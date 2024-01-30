@@ -5,14 +5,24 @@
 package org.jboss.as.test.manualmode.management.persistence;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ARCHIVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_MODE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_NAME;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import jakarta.inject.Inject;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.StandardOpenOption;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 import org.jboss.as.controller.PathAddress;
@@ -23,6 +33,10 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -51,8 +65,11 @@ public class YamlExtensionTestCase {
     @Inject
     private ServerController container;
 
+    private static final Path basedir = new File(WildFlySecurityManager.getPropertyPrivileged("jboss.home", "toto")).toPath().resolve("standalone");
     private static Path markerDirectory;
     private static Path testYaml;
+    private static Path testDeploymentYaml;
+    private static Path testManagedDeploymentYaml;
     private static Path cliScript;
     private static String expectedXml;
     private static String expectedBootCLiXml;
@@ -61,7 +78,7 @@ public class YamlExtensionTestCase {
     @BeforeClass
     public static void setup() throws Exception {
         Assume.assumeTrue("Layer testing provides a different XML file than the standard one which results in failures", System.getProperty("ts.layers") == null);
-        Path configurationDir = new File(WildFlySecurityManager.getPropertyPrivileged("jboss.home", "toto")).toPath().resolve("standalone").resolve("configuration");
+        Path configurationDir = basedir.resolve("configuration");
         Path referenceConfiguration = configurationDir.resolve("reference-standalone.xml");
         Files.copy(configurationDir.resolve("standalone.xml"), referenceConfiguration, REPLACE_EXISTING);
         try (CLIWrapper cli = new CLIWrapper(false)) {
@@ -74,8 +91,8 @@ public class YamlExtensionTestCase {
         }
         Path referenceCliConfiguration = configurationDir.resolve("reference-cli-standalone.xml");
         Files.copy(configurationDir.resolve("standalone.xml"), referenceCliConfiguration, REPLACE_EXISTING);
-        Files.copy(new File(YamlExtensionTestCase.class.getResource("bootable-groups.properties").toURI()).toPath(),configurationDir.resolve("bootable-groups.properties"), REPLACE_EXISTING);
-        Files.copy(new File(YamlExtensionTestCase.class.getResource("bootable-users.properties").toURI()).toPath(),configurationDir.resolve("bootable-users.properties"), REPLACE_EXISTING);
+        Files.copy(new File(YamlExtensionTestCase.class.getResource("bootable-groups.properties").toURI()).toPath(), configurationDir.resolve("bootable-groups.properties"), REPLACE_EXISTING);
+        Files.copy(new File(YamlExtensionTestCase.class.getResource("bootable-users.properties").toURI()).toPath(), configurationDir.resolve("bootable-users.properties"), REPLACE_EXISTING);
         try (CLIWrapper cli = new CLIWrapper(false)) {
             cli.sendLine("embed-server --admin-only --server-config=reference-cli-standalone.xml");
             cli.sendLine("/system-property=foo:add(value=bar)");
@@ -88,6 +105,9 @@ public class YamlExtensionTestCase {
             cli.quit();
         }
         testYaml = new File(YamlExtensionTestCase.class.getResource("test.yml").toURI()).toPath().toAbsolutePath();
+        testDeploymentYaml = new File(YamlExtensionTestCase.class.getResource("test-deployment.yml").toURI()).toPath().toAbsolutePath();
+        testManagedDeploymentYaml = new File(YamlExtensionTestCase.class.getResource("test-managed-deployment.yml").toURI()).toPath().toAbsolutePath();
+        createDeployment(configurationDir.getParent().resolve("test.jar"));
         cliScript = new File(YamlExtensionTestCase.class.getResource("test.cli").toURI()).toPath().toAbsolutePath();
         expectedXml = loadFile(referenceConfiguration).replace("\"", "'");
         expectedBootCLiXml = loadFile(referenceCliConfiguration).replace("\"", "'");
@@ -135,6 +155,60 @@ public class YamlExtensionTestCase {
             Assert.assertEquals(expectedXml, xml);
         } finally {
             container.stop();
+        }
+    }
+
+    @Test
+    public void testDeploymentYaml() throws URISyntaxException, Exception {
+        try {
+            container.startYamlExtension(new Path[]{testDeploymentYaml});
+            try (ModelControllerClient client = container.getClient().getControllerClient()) {
+                ModelNode deployment = readDeployment(client, "test.jar");
+                Assert.assertEquals("test.jar", deployment.get(NAME).asString());
+                Assert.assertEquals("test.jar", deployment.get(RUNTIME_NAME).asString());
+                ModelNode contentItemNode = deployment.get(CONTENT).get(0);
+                Assert.assertEquals("test.jar", contentItemNode.get(PATH).asString());
+                Assert.assertEquals("jboss.server.base.dir", contentItemNode.get(RELATIVE_TO).asString());
+                Assert.assertEquals(true, contentItemNode.get(ARCHIVE).asBoolean());
+                deployment = readDeployment(client, "hello.jar");
+                Assert.assertEquals("hello.jar", deployment.get(NAME).asString());
+                Assert.assertEquals("hello.jar", deployment.get(RUNTIME_NAME).asString());
+                contentItemNode = deployment.get(CONTENT).get(0);
+                Assert.assertEquals("test.jar", contentItemNode.get(PATH).asString());
+                Assert.assertEquals("jboss.server.base.dir", contentItemNode.get(RELATIVE_TO).asString());
+                Assert.assertEquals(true, contentItemNode.get(ARCHIVE).asBoolean());
+            }
+        } finally {
+            container.stop();
+        }
+    }
+
+    /**
+     * Managed deployments are not supported. We should fail
+     *
+     * @throws URISyntaxException
+     * @throws Exception
+     */
+    @Test
+    public void testFailedDeploymentYaml() throws URISyntaxException, Exception {
+        try {
+            container.startYamlExtension(new Path[]{testManagedDeploymentYaml});
+            Assert.assertFalse(container.isStarted());
+        } catch (RuntimeException ex) {
+            Assert.assertFalse(container.isStarted());
+            try (final BufferedReader reader = Files.newBufferedReader(basedir.resolve("log").resolve("server.log"), StandardCharsets.UTF_8)) {
+                Assert.assertTrue(reader.lines().anyMatch(line -> line.contains("WFLYCTL0505: Unsuported deployment yaml file hello.jar with attributes [empty]")));
+            }
+        } finally {
+            container.stop();
+        }
+    }
+
+    private static void createDeployment(Path deployment) throws IOException {
+        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
+        archive.add(new StringAsset("Dependencies: =org.jboss.modules"), "META-INF/MANIFEST.MF");
+        try (OutputStream out = Files.newOutputStream(deployment, StandardOpenOption.CREATE_NEW)) {
+            archive.as(ZipExporter.class).exportTo(out);
         }
     }
 
@@ -206,7 +280,10 @@ public class YamlExtensionTestCase {
                 Assert.fail("Missing line " + expectedLines[i] + " in " + System.lineSeparator() + result);
             }
         }
+    }
 
+    private ModelNode readDeployment(ModelControllerClient client, String deploymentName) throws IOException {
+        return Operations.readResult(client.execute(Operations.createReadResourceOperation(PathAddress.pathAddress("deployment", deploymentName).toModelNode())));
     }
 
     private String readXmlConfig() throws IOException {
@@ -218,4 +295,5 @@ public class YamlExtensionTestCase {
     private static String removeWhiteSpaces(String line) {
         return Pattern.compile("(^\\s*$\\r?\\n)+", Pattern.MULTILINE).matcher(line.stripTrailing()).replaceAll("");
     }
+
 }
