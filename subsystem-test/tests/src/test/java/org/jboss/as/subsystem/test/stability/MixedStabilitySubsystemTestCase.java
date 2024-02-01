@@ -16,7 +16,7 @@ import org.junit.runners.Parameterized.Parameters;
  */
 @RunWith(Parameterized.class)
 public class MixedStabilitySubsystemTestCase extends AbstractSubsystemSchemaTest<FooSubsystemSchema> {
-    @Parameters
+    @Parameters(name = "{0}")
     public static Iterable<FooSubsystemSchema> getParameters() {
         return EnumSet.allOf(FooSubsystemSchema.class);
     }
