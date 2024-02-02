@@ -26,7 +26,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Tests an secondary is able to be registered in a domain meanwhile the Domain Controller is starting its servers.
+ * Tests a secondary is able to get registered in a domain meanwhile the Domain Controller is starting its servers.
  *
  * @author <a href="mailto:yborgess@redhat.com">Yeray Borges</a>
  */

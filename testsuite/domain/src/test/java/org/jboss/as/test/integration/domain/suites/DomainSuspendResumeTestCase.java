@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.jboss.as.test.integration.domain.suspendresume;
+package org.jboss.as.test.integration.domain.suites;
 
-import java.io.IOException;
+
 import java.lang.reflect.ReflectPermission;
 import java.net.HttpURLConnection;
 import java.net.SocketPermission;
@@ -15,18 +15,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.domain.DeploymentPlan;
-import org.jboss.as.controller.client.helpers.domain.DeploymentPlanResult;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.client.helpers.domain.DomainDeploymentManager;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.integration.common.HttpRequest;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
-import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
-import org.jboss.as.test.integration.domain.suites.DomainTestSuite;
-import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
@@ -55,7 +50,6 @@ public class DomainSuspendResumeTestCase {
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
-    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
 
@@ -63,14 +57,12 @@ public class DomainSuspendResumeTestCase {
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(DomainSuspendResumeTestCase.class.getSimpleName());
         domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
-        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
         domainPrimaryLifecycleUtil = null;
-        domainSecondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
@@ -83,7 +75,7 @@ public class DomainSuspendResumeTestCase {
         DeploymentPlan plan = deploymentManager.newDeploymentPlan().add(WEB_SUSPEND_JAR, createDeployment().as(ZipExporter.class).exportAsInputStream())
                 .andDeploy().toServerGroup(MAIN_SERVER_GROUP)
                 .build();
-        DeploymentPlanResult res = deploymentManager.execute(plan).get();
+       deploymentManager.execute(plan).get();
 
 
         final String address = "http://" + TestSuiteEnvironment.getServerAddress() + ":8080/web-suspend";
@@ -121,47 +113,20 @@ public class DomainSuspendResumeTestCase {
             Assert.assertEquals(SuspendResumeHandler.TEXT, HttpRequest.get(address, 60, TimeUnit.SECONDS));
         } finally {
             try {
-                try {
-                    HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL, 10, TimeUnit.SECONDS);
-                    executorService.shutdown();
+                HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", 10, TimeUnit.SECONDS);
+                executorService.shutdown();
 
-                    ModelNode op = new ModelNode();
-                    op.get(ModelDescriptionConstants.OP).set("resume");
-                    client.execute(op);
-                } finally {
-                    plan = deploymentManager.newDeploymentPlan().undeploy(WEB_SUSPEND_JAR)
-                            .andRemoveUndeployed()
-                            .toServerGroup(MAIN_SERVER_GROUP)
-                            .build();
-                    res = deploymentManager.execute(plan).get();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+                ModelNode op = new ModelNode();
+                op.get(ModelDescriptionConstants.OP).set("resume-servers");
+                client.execute(op);
+            } finally {
+                plan = deploymentManager.newDeploymentPlan().undeploy(WEB_SUSPEND_JAR)
+                        .andRemoveUndeployed()
+                        .toServerGroup(MAIN_SERVER_GROUP)
+                        .build();
+                deploymentManager.execute(plan).get();
             }
         }
-
-
-
-    }
-
-    private static ModelNode createOpNode(String address, String operation) {
-        ModelNode op = new ModelNode();
-
-        // set address
-        ModelNode list = op.get("address").setEmptyList();
-        if (address != null) {
-            String[] pathSegments = address.split("/");
-            for (String segment : pathSegments) {
-                String[] elements = segment.split("=");
-                list.add(elements[0], elements[1]);
-            }
-        }
-        op.get("operation").set(operation);
-        return op;
-    }
-
-    private ModelNode executeOperation(final ModelNode op, final ModelControllerClient modelControllerClient) throws IOException, MgmtOperationException {
-        return DomainTestUtils.executeForResult(op, modelControllerClient);
     }
 
     public static JavaArchive createDeployment() throws Exception {

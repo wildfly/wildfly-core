@@ -19,8 +19,13 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses ({
+        DomainSuspendResumeTestCase.class,
+        HostSuspendResumeTestCase.class,
         SyncModelOperationTestCase.class,
+        ManagementReadXmlTestCase.class,
+        HostReloadProxyTestCase.class,
         AuditLogTestCase.class,
+        ReloadWithConfigTestCase.class,
         IgnoredResourcesProfileCloneTestCase.class,
         CapabilityReloadRequiredUnitTestCase.class,
         CompositeOperationTestCase.class,
@@ -52,7 +57,7 @@ import org.junit.runners.Suite;
         ValidateAddressOperationTestCase.class,
         ValidateOperationOperationTestCase.class,
         WildcardOperationsTestCase.class,
-        ServerAuthenticationTestCase.class
+        ServerAuthenticationTestCase.class,
 })
 public class DomainTestSuite {
 
@@ -60,7 +65,7 @@ public class DomainTestSuite {
     private static volatile DomainTestSupport support;
 
     // This can only be called from tests as part of this suite
-    public static synchronized DomainTestSupport createSupport(final String testName) {
+    static synchronized DomainTestSupport createSupport(final String testName) {
         if(support == null) {
             start(testName);
         }
@@ -68,7 +73,7 @@ public class DomainTestSuite {
     }
 
     // This can only be called from tests as part of this suite
-    public static synchronized void stopSupport() {
+    static synchronized void stopSupport() {
         if(! initializedLocally) {
             stop();
         }

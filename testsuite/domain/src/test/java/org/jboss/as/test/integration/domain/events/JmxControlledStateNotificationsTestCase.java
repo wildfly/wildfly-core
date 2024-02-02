@@ -28,7 +28,6 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
-import org.jboss.as.test.integration.domain.suites.DomainTestSuite;
 
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
@@ -78,11 +77,12 @@ public class JmxControlledStateNotificationsTestCase {
             task.tearDown(domainPrimaryLifecycleUtil.getDomainClient(), "main-server-group");
 
             Assert.assertNotNull(testSupport);
-            testSupport.close();
         } finally {
+            if (testSupport != null) {
+                testSupport.close();
+                testSupport = null;
+            }
             domainPrimaryLifecycleUtil = null;
-            testSupport = null;
-            DomainTestSuite.stopSupport();
         }
     }
 

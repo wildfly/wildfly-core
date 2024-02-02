@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.jboss.as.test.integration.domain.suspendresume;
+package org.jboss.as.test.integration.domain;
 
 import static org.jboss.as.controller.client.helpers.ClientConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
@@ -17,7 +17,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND_STATE;
-import static org.jboss.as.test.integration.domain.suspendresume.HostSuspendResumeTestCase.SUSPENDING;
+import static org.jboss.as.test.integration.domain.suites.HostSuspendResumeTestCase.SUSPENDING;
 
 import java.lang.reflect.ReflectPermission;
 import java.net.HttpURLConnection;
@@ -38,7 +38,6 @@ import org.jboss.as.test.integration.common.HttpRequest;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
-import org.jboss.as.test.integration.domain.suites.DomainTestSuite;
 import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
@@ -75,15 +74,17 @@ public class DomainGracefulShutdownTestCase {
 
     @BeforeClass
     public static void setupDomain() throws Exception {
-        testSupport = DomainTestSuite.createSupport(DomainGracefulShutdownTestCase.class.getSimpleName());
+        testSupport = DomainTestSupport.createAndStartDefaultSupport(DomainGracefulShutdownTestCase.class.getSimpleName());
         domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        testSupport = null;
+        if (testSupport != null) {
+            testSupport.close();
+            testSupport = null;
+        }
         domainPrimaryLifecycleUtil = null;
-        DomainTestSuite.stopSupport();
     }
 
     @Before

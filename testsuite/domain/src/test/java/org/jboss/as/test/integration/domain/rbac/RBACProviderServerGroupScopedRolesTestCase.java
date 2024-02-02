@@ -16,14 +16,12 @@ import org.jboss.as.test.integration.management.rbac.UserRolesMappingServerSetup
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-//import org.junit.Ignore;
 
 /**
  * Tests of server group scoped roles using the "rbac" access control provider.
  *
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
-//@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class RBACProviderServerGroupScopedRolesTestCase extends AbstractServerGroupScopedRolesTestCase {
 
     @BeforeClass

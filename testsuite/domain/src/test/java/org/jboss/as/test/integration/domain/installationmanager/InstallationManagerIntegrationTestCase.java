@@ -32,7 +32,6 @@ import java.util.zip.ZipOutputStream;
 
 import org.jboss.as.cli.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
-import org.jboss.as.test.integration.domain.suites.DomainTestSuite;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.module.util.TestModule;
 import org.junit.After;
@@ -75,7 +74,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     @BeforeClass
     public static void setupDomain() throws Exception {
         createTestModule();
-        testSupport = DomainTestSuite.createSupport(InstallationManagerIntegrationTestCase.class.getSimpleName());
+        testSupport = DomainTestSupport.createAndStartDefaultSupport(InstallationManagerIntegrationTestCase.class.getSimpleName());
         AbstractCliTestBase.initCLI(DomainTestSupport.primaryAddress);
 
         primaryPrepareServerDir = Paths.get(testSupport.getDomainPrimaryConfiguration().getDomainDirectory()).resolve("tmp")
@@ -93,7 +92,9 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     public static void tearDownDomain() throws Exception {
         try {
             AbstractCliTestBase.closeCLI();
-            DomainTestSuite.stopSupport();
+            if (testSupport != null) {
+                testSupport.close();
+            }
             testSupport = null;
         } finally {
             testModule.remove();

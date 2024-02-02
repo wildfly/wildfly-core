@@ -13,7 +13,6 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
-import org.jboss.as.test.integration.domain.suites.DomainTestSuite;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -37,7 +36,7 @@ public class RenameHostControllerTestCase {
 
     @BeforeClass
     public static void setupDomain() {
-        testSupport = DomainTestSuite.createSupport(RenameHostControllerTestCase.class.getSimpleName());
+        testSupport = DomainTestSupport.createAndStartDefaultSupport(RenameHostControllerTestCase.class.getSimpleName());
         domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
         domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
 
@@ -45,10 +44,11 @@ public class RenameHostControllerTestCase {
 
     @AfterClass
     public static void tearDownDomain() {
-        testSupport = null;
+        if (testSupport != null) {
+            testSupport.close();
+        }
         domainPrimaryLifecycleUtil = null;
         domainSecondaryLifecycleUtil = null;
-        DomainTestSuite.stopSupport();
     }
 
     @Test

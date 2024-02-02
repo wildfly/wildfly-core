@@ -37,7 +37,6 @@ import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-//import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 
@@ -46,7 +45,6 @@ import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
  *
  * @author <a href="dpospisi@redhat.com">Dominik Pospisil</a>
  */
-//@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class DomainControllerMigrationTestCase {
 
     private static final Logger log = Logger.getLogger(DomainControllerMigrationTestCase.class.getName());

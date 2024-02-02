@@ -77,7 +77,6 @@ import org.junit.Test;
 /**
  * @author Emanuel Muckenhuber
  */
-//@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class ServerManagementTestCase {
 
     private static DomainTestSupport testSupport;

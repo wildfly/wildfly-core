@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.jboss.as.test.integration.domain;
+package org.jboss.as.test.integration.domain.suites;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIRECTORY;
@@ -29,7 +29,6 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
-import org.jboss.as.test.integration.domain.suites.DomainTestSuite;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -103,6 +102,10 @@ public class ReloadWithConfigTestCase {
             assertSystemPropertyOneButNotTwo(primaryClient, null);
             assertSystemPropertyOneButNotTwo(primaryClient, PRIMARY);
             assertSystemPropertyOneButNotTwo(secondaryClient, SECONDARY);
+
+            // Wait for servers until they are started to avoid affecting other tests
+            domainPrimaryLifecycleUtil.awaitServers(System.currentTimeMillis());
+            domainSecondaryLifecycleUtil.awaitServers(System.currentTimeMillis());
         } finally {
             removeSystemProperty(primaryClient, null, RELOAD_TEST_CASE_ONE);
             removeSystemProperty(primaryClient, null, RELOAD_TEST_CASE_TWO);

@@ -39,7 +39,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-//import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -47,7 +46,6 @@ import org.junit.Test;
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2015 Red Hat, inc.
  */
-//@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class ProductInfoUnitTestCase {
 
     private static DomainTestSupport testSupport;
