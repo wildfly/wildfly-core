@@ -3,9 +3,9 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<host xmlns="urn:jboss:domain:20.0"
+<host xmlns="urn:jboss:domain:21.0"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="urn:jboss:domain:20.0 wildfly-config_20_0.xsd"
+      xsi:schemaLocation="urn:jboss:domain:21.0 wildfly-config_20_0.xsd"
       name="secondary">
 
     <extensions>
