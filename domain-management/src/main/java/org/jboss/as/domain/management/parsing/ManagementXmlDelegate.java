@@ -60,6 +60,10 @@ public interface ManagementXmlDelegate {
         return false;
     }
 
+    default boolean parseUnsupportedAPIAnnotations(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> operations) throws XMLStreamException {
+        return false;
+    }
+
 
     /*
      * Write Methods

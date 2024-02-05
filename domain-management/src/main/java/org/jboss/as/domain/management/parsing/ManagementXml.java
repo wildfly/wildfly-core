@@ -46,8 +46,11 @@ public interface ManagementXml {
             case 17:
                 return new ManagementXml_5(namespace, delegate, domainConfiguration);
             case 18:
-            default:
+            case 19:
+            case 20:
                 return new ManagementXml_18(namespace, delegate, domainConfiguration);
+            default:
+                return new ManagementXml_21(namespace, delegate, domainConfiguration);
         }
     }
 

@@ -6,27 +6,45 @@
 package org.jboss.as.domain.management.parsing;
 
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.domain.management.LegacyConfigurationChangeResourceDefinition;
+import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.access.AccessIdentityResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 import javax.xml.stream.XMLStreamException;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUDIT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHORIZATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_SCOPED_ROLE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_SCOPED_ROLES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IDENTITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_REMOTING_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLE_MAPPING;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP_SCOPED_ROLE;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequiredElement;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
 
 /**
  * Bits of parsing and marshaling logic that are related to {@code <management>} elements in domain.xml, host.xml and
@@ -37,14 +55,14 @@ import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-final class ManagementXml_18 implements ManagementXml {
+final class ManagementXml_21 implements ManagementXml {
 
     private final Namespace namespace;
     private final ManagementXmlDelegate delegate;
     private final boolean domainConfiguration;
 
 
-    ManagementXml_18(final Namespace namespace, final ManagementXmlDelegate delegate, final boolean domainConfiguration) {
+    ManagementXml_21(final Namespace namespace, final ManagementXmlDelegate delegate, final boolean domainConfiguration) {
         this.namespace = namespace;
         this.delegate = delegate;
         this.domainConfiguration = domainConfiguration;
@@ -170,4 +188,97 @@ final class ManagementXml_18 implements ManagementXml {
             throw unexpectedElement(reader);
        }
     }
+
+    @Override
+    public void writeManagement(final XMLExtendedStreamWriter writer, final ModelNode management, boolean allowInterfaces)
+            throws XMLStreamException {
+        boolean hasInterface = allowInterfaces && management.hasDefined(MANAGEMENT_INTERFACE);
+
+        // TODO - These checks are going to become a source of bugs in certain cases - what we really need is a way to allow writing to continue and
+        // if an element is empty by the time it is closed then undo the write of that element.
+
+        ModelNode accessAuthorization = management.hasDefined(ACCESS) ? management.get(ACCESS, AUTHORIZATION) : null;
+        boolean accessAuthorizationDefined = accessAuthorization != null && accessAuthorization.isDefined();
+        boolean hasServerGroupRoles = accessAuthorizationDefined && accessAuthorization.hasDefined(SERVER_GROUP_SCOPED_ROLE);
+        boolean hasConfigurationChanges = management.hasDefined(ModelDescriptionConstants.SERVICE, ModelDescriptionConstants.CONFIGURATION_CHANGES);
+        boolean hasHostRoles = accessAuthorizationDefined && (accessAuthorization.hasDefined(HOST_SCOPED_ROLE) || accessAuthorization.hasDefined(HOST_SCOPED_ROLES));
+        boolean hasRoleMapping = accessAuthorizationDefined && accessAuthorization.hasDefined(ROLE_MAPPING);
+        Map<String, Map<String, Set<String>>> configuredAccessConstraints = AccessControlXml.getConfiguredAccessConstraints(accessAuthorization);
+        boolean hasProvider = accessAuthorizationDefined && accessAuthorization.hasDefined(AccessAuthorizationResourceDefinition.PROVIDER.getName());
+        boolean hasCombinationPolicy = accessAuthorizationDefined && accessAuthorization.hasDefined(AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName());
+        ModelNode auditLog = management.hasDefined(ACCESS) ? management.get(ACCESS, AUDIT) : new ModelNode();
+        ModelNode identity = management.hasDefined(ACCESS) ? management.get(ACCESS, IDENTITY) : new ModelNode();
+
+        if (!hasInterface && !hasServerGroupRoles
+              && !hasHostRoles && !hasRoleMapping && configuredAccessConstraints.size() == 0
+                && !hasProvider && !hasCombinationPolicy && !auditLog.isDefined() && !identity.isDefined()) {
+            return;
+        }
+
+        writer.writeStartElement(Element.MANAGEMENT.getLocalName());
+
+
+
+        if(hasConfigurationChanges) {
+            writeConfigurationChanges(writer, management.get(ModelDescriptionConstants.SERVICE, ModelDescriptionConstants.CONFIGURATION_CHANGES));
+        }
+
+        if (identity.isDefined()) {
+            writeIdentity(writer, identity);
+        }
+
+        if (auditLog.isDefined()) {
+            if (delegate.writeAuditLog(writer, auditLog) == false) {
+                throw ROOT_LOGGER.unsupportedResource(AUDIT);
+            }
+        }
+
+        if (allowInterfaces && hasInterface) {
+            writeManagementInterfaces(writer, management);
+        }
+
+        if (accessAuthorizationDefined) {
+            if (delegate.writeAccessControl(writer, accessAuthorization) == false) {
+                throw ROOT_LOGGER.unsupportedResource(AUTHORIZATION);
+            }
+        }
+
+        writer.writeEndElement();
+    }
+
+    private void writeIdentity(XMLExtendedStreamWriter writer, ModelNode identity) throws XMLStreamException {
+        writer.writeStartElement(Element.IDENTITY.getLocalName());
+        AccessIdentityResourceDefinition.SECURITY_DOMAIN.marshallAsAttribute(identity, writer);
+        writer.writeEndElement();
+    }
+
+    private void writeManagementInterfaces(XMLExtendedStreamWriter writer, ModelNode management) throws XMLStreamException {
+        writer.writeStartElement(Element.MANAGEMENT_INTERFACES.getLocalName());
+        ModelNode managementInterfaces = management.get(MANAGEMENT_INTERFACE);
+
+        if (managementInterfaces.hasDefined(NATIVE_REMOTING_INTERFACE)) {
+            writer.writeEmptyElement(Element.NATIVE_REMOTING_INTERFACE.getLocalName());
+        }
+
+        if (managementInterfaces.hasDefined(NATIVE_INTERFACE)) {
+            if (delegate.writeNativeManagementProtocol(writer, managementInterfaces.get(NATIVE_INTERFACE)) == false) {
+                throw ROOT_LOGGER.unsupportedResource(NATIVE_INTERFACE);
+            }
+        }
+
+        if (managementInterfaces.hasDefined(HTTP_INTERFACE)) {
+            if (delegate.writeHttpManagementProtocol(writer, managementInterfaces.get(HTTP_INTERFACE)) == false) {
+                throw ROOT_LOGGER.unsupportedResource(HTTP_INTERFACE);
+            }
+        }
+
+        writer.writeEndElement();
+    }
+
+    private void writeConfigurationChanges(XMLExtendedStreamWriter writer, ModelNode configurationChanges) throws XMLStreamException {
+        writer.writeStartElement(Element.CONFIGURATION_CHANGES.getLocalName());
+        LegacyConfigurationChangeResourceDefinition.MAX_HISTORY.marshallAsAttribute(configurationChanges, writer);
+        writer.writeEndElement();
+    }
+
 }
