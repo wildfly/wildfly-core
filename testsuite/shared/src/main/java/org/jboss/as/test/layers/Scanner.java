@@ -41,7 +41,7 @@ public class Scanner {
         Map<String, Set<String>> optionalDependencies = new TreeMap<>();
         List<Long> size = new ArrayList<>();
         size.add((long) 0);
-        Files.walkFileTree(homePath, new SimpleFileVisitor<Path>() {
+        Files.walkFileTree(homePath, new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 size.set(0, size.get(0) + attrs.size());
@@ -50,84 +50,76 @@ public class Scanner {
         });
         Map<String, Set<String>> modulesReference = new HashMap<>();
         Set<String> modules = new HashSet<>();
-        Files.walkFileTree(modulePath, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
+        Set<String> aliases = new HashSet<>();
+        Files.walkFileTree(modulePath, new SimpleFileVisitor<>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                            throws IOException {
 
-                if (file.getFileName().toString().equals("module.xml")) {
-                    try {
-                        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory
-                                .newInstance();
-                        DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-                        Document document = documentBuilder.parse(file.toFile());
-                        Element elemAlias = (Element) document.getElementsByTagName("module-alias").item(0);
-                        if (elemAlias != null) {
-                            String moduleName = elemAlias.getAttribute("name");
-                            String target = elemAlias.getAttribute("target-name");
-                            Set<String> referencing = modulesReference.get(target);
-                            if (referencing == null) {
-                                referencing = new HashSet<>();
-                                modulesReference.put(target, referencing);
-                            }
-                            referencing.add(moduleName);
-                            return FileVisitResult.CONTINUE;
-                        }
-                        Element elem = (Element) document.getElementsByTagName("module").item(0);
-                        if (elem == null) {
-                            return FileVisitResult.CONTINUE;
-                        }
-                        String moduleName = elem.getAttribute("name");
-                        modules.add(moduleName);
-                        Node n = document.getElementsByTagName("dependencies").item(0);
-                        Set<String> optionals = new TreeSet<>();
-                        if (n != null) {
-                            NodeList deps = n.getChildNodes();
-                            for (int i = 0; i < deps.getLength(); i++) {
-                                if (deps.item(i).getNodeType() == Node.ELEMENT_NODE) {
-                                    Element element = (Element) deps.item(i);
-                                    if (element.getNodeName().equals("module")) {
-                                        String mod = element.getAttribute("name");
-                                        if (element.hasAttribute("optional")) {
-                                            if (element.getAttribute("optional").equals("true")) {
-                                                optionals.add(mod);
+                        if (file.getFileName().toString().equals("module.xml")) {
+                            try {
+                                DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory
+                                        .newInstance();
+                                DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+                                Document document = documentBuilder.parse(file.toFile());
+                                Element elemAlias = (Element) document.getElementsByTagName("module-alias").item(0);
+                                if (elemAlias != null) {
+                                    // Track both the alias and the target, with the alias treated as a ref to target
+                                    String moduleName = elemAlias.getAttribute("name");
+                                    aliases.add(moduleName);
+                                    modules.add(moduleName);
+                                    modulesReference.computeIfAbsent(moduleName, k -> new HashSet<>());
+                                    String target = elemAlias.getAttribute("target-name");
+                                    Set<String> referencing = modulesReference.computeIfAbsent(target, k -> new HashSet<>());
+                                    referencing.add(moduleName);
+                                    return FileVisitResult.CONTINUE;
+                                }
+                                Element elem = (Element) document.getElementsByTagName("module").item(0);
+                                if (elem == null) {
+                                    return FileVisitResult.CONTINUE;
+                                }
+                                String moduleName = elem.getAttribute("name");
+                                modules.add(moduleName);
+                                Node n = document.getElementsByTagName("dependencies").item(0);
+                                Set<String> optionals = new TreeSet<>();
+                                if (n != null) {
+                                    NodeList deps = n.getChildNodes();
+                                    for (int i = 0; i < deps.getLength(); i++) {
+                                        if (deps.item(i).getNodeType() == Node.ELEMENT_NODE) {
+                                            Element element = (Element) deps.item(i);
+                                            if (element.getNodeName().equals("module")) {
+                                                String mod = element.getAttribute("name");
+                                                if (element.hasAttribute("optional")) {
+                                                    if (element.getAttribute("optional").equals("true")) {
+                                                        optionals.add(mod);
+                                                    }
+                                                }
+                                                Set<String> referencing = modulesReference.computeIfAbsent(mod, k -> new HashSet<>());
+                                                referencing.add(moduleName);
                                             }
                                         }
-                                        Set<String> referencing = modulesReference.get(mod);
-                                        if (referencing == null) {
-                                            referencing = new HashSet<>();
-                                            modulesReference.put(mod, referencing);
-                                        }
-                                        referencing.add(moduleName);
                                     }
                                 }
+                                optionalDependencies.put(moduleName, optionals);
+                            } catch (Exception ex) {
+                                throw new IOException(ex);
                             }
                         }
-                        optionalDependencies.put(moduleName, optionals);
-                    } catch (Exception ex) {
-                        throw new IOException(ex);
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException e) {
+                        return FileVisitResult.CONTINUE;
                     }
                 }
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException e)
-                    throws IOException {
-                return FileVisitResult.CONTINUE;
-            }
-        }
         );
         Map<String, Set<String>> missing = new TreeMap<>();
         // Retrieve all optional dependencies that have not been provisioned.
         for (Map.Entry<String, Set<String>> entry : optionalDependencies.entrySet()) {
             for (String opt : entry.getValue()) {
                 if (!modules.contains(opt)) {
-                    Set<String> roots = missing.get(opt);
-                    if (roots == null) {
-                        roots = new TreeSet<>();
-                        missing.put(opt, roots);
-                    }
+                    Set<String> roots = missing.computeIfAbsent(opt, k -> new TreeSet<>());
                     roots.add(entry.getKey());
                 }
             }
@@ -137,8 +129,7 @@ public class Scanner {
         // eg: modA is unreferenced but references modB. modB must be marked as unreferenced too
         // because its referent is not referenced.
         Set<String> allNotReferenced = new TreeSet<>();
-        Set<String> mods = new HashSet<>();
-        mods.addAll(modules);
+        Set<String> mods = new HashSet<>(modules);
         // remove all the extension modules
         Set<String> extensions = retrieveExtensionModules(configFile);
         mods.removeAll(extensions);
@@ -150,6 +141,17 @@ public class Scanner {
                 if (referencers == null || referencers.isEmpty()) {
                     notReferenced.add(m);
                     allNotReferenced.add(m);
+                } else if (referencers.size() == 1) {
+                    // See if the only remaining referencer to 'm' is itself
+                    // only retained by a circular reference from 'm'
+                    String referencer = referencers.iterator().next();
+                    Set<String> reverse = modulesReference.get(referencer);
+                    if (reverse != null && reverse.size() == 1 && reverse.contains(m)) {
+                        notReferenced.add(m);
+                        allNotReferenced.add(m);
+                        notReferenced.add(referencer);
+                        allNotReferenced.add(referencer);
+                    }
                 }
             }
             // No more unreferenced, break.
@@ -162,12 +164,10 @@ public class Scanner {
             // and in turn will be marked as un-referenced.
             for (Map.Entry<String, Set<String>> entry : modulesReference.entrySet()) {
                 for (String orphan : notReferenced) {
-                    if (entry.getValue().contains(orphan)) {
-                        entry.getValue().remove(orphan);
-                    }
+                    entry.getValue().remove(orphan);
                 }
             }
-            // the un-referenced modules are removed before iterating ungain all modules.
+            // the un-referenced modules are removed before iterating again all modules.
             mods.removeAll(notReferenced);
         }
         // Compute all modules (size and names) reachable from each extension
@@ -190,7 +190,7 @@ public class Scanner {
             extensionResults.add(new Result.ExtensionResult(ex, extSize.get(0) / 1024, deps, unresolved));
         }
 
-        return new Result(size.get(0) / 1024, modules, missing, allNotReferenced, extensionResults);
+        return new Result(size.get(0) / 1024, modules, missing, allNotReferenced, aliases, extensionResults);
     }
 
     private static Set<String> retrieveExtensionModules(Path conf) throws Exception {
@@ -218,7 +218,7 @@ public class Scanner {
     }
 
     private static void getDependencies(Path modulePath, String module, Set<String> dependencies,
-            Set<String> seen, List<Long> size) throws Exception {
+                                        Set<String> seen, List<Long> size) throws Exception {
         if (seen.contains(module)) {
             return;
         }
@@ -232,7 +232,7 @@ public class Scanner {
             return;
         }
         // Add content size.
-        Files.walkFileTree(path.getParent(), new SimpleFileVisitor<Path>() {
+        Files.walkFileTree(path.getParent(), new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 size.set(0, size.get(0) + attrs.size());

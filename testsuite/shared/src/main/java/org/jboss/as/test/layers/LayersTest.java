@@ -4,6 +4,9 @@
  */
 package org.jboss.as.test.layers;
 
+import static org.junit.Assert.fail;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -14,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,6 +28,10 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -40,9 +48,15 @@ import org.xml.sax.SAXException;
  */
 public class LayersTest {
 
+    private static final boolean VALIDATE_INPUTS = Boolean.parseBoolean(System.getProperty("org.wildfly.layers.test.validate-inputs", "true"));
+
     private static final String MAVEN_REPO_LOCAL = "maven.repo.local";
-    private static final String REFERENCE = "test-standalone-reference";
-    private static final String ALL_LAYERS = "test-all-layers";
+    /** The name of the directory that contains the installation that was provisioned to
+     *  to provide the feature pack's OOTB standalone.xml and its requirements.*/
+    public static final String REFERENCE = "test-standalone-reference";
+    /** The name of the directory that contains the installation that was provisioned to
+     *  include 'all' layers. (It may not be 'all' as some are alternatives to others.) */
+    public static final String ALL_LAYERS = "test-all-layers";
     private static final String END_LOG_SUCCESS = "WFLYSRV0025";
     private static final String END_LOG_FAILURE = "WFLYSRV0026";
 
@@ -60,58 +74,51 @@ public class LayersTest {
      * If more modules than this set are not provisioned, it means that we are missing some modules and
      * an error occurs.
      * @throws Exception on failure
+     *
+     * @see #testLayersBoot(String)
+     * @see #testLayersModuleUse(Set, ScanContext)
+     * @see #testUnreferencedModules(Set, ScanContext)
+     *
+     * @deprecated the method aggregates the other public test methods, which should be used directly
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public static void test(String root, Set<String> unreferenced, Set<String> unused) throws Exception {
-        testExecution(root);
-        testDeployedModules(root, unreferenced, unused);
+        testLayersBoot(root);
+        ScanContext context = new ScanContext(root);
+        testLayersModuleUse(unused, context);
+        testUnreferencedModules(unreferenced, context);
     }
 
     /**
-     * Checks only allowed modules were loaded with the installation
-     * @param root Path to installation
-     * @param unreferenced The set of modules that are present in a default installation (with all modules
-     * installed) but are not referenced from the module graph. They are not referenced because they are not used,
-     * or they are only injected at runtime into deployment unit or are part of extension not present in the
-     * default configuration (eg: deployment-scanner in core standalone.xml configuration). We are checking that
-     * the default configuration (that contains all modules) doesn't have more unreferenced modules than this set. If
-     * there are more it means that some new modules have been introduced and we must understand why (eg: a subsystem inject
-     * a new module into a Deployment Unit, the subsystem must advertise it and the test must be updated with this new unreferenced module).
+     * Checks that all modules that were provisioned in the @{code test-standalone-reference} installation
+     * are also provisioned in @{test-all-layers}, except those included in the {@code unused} parameter's set.
+     * The goal of this test is to check for new modules that should be provided by layers but are not
+     * and to encourage inclusion of existing modules not used in a layer to have an associated layer.
+     *
      * @param unused The set of modules that are OK to not be provisioned when all layers are provisioned.
-     * If more modules than this set are not provisioned, it means that we are missing some modules and
-     * an error occurs.
+     *               If more modules than this set are not provisioned, it means that we are missing some modules and
+     *               an error occurs. If any of these modules are not present in the reference installation it means
+     *               the value of this param is invalid and an error occurs.
+     * @param scanContext contextual object that can and should be reused across invocations of methods in this class.
+     *                    Creating a single context for a given root and reusing it for different tests saves
+     *                    overhead involved in analyzing the installations in that root.
      * @throws Exception on failure
      */
-    public static void testDeployedModules(String root, Set<String> unreferenced, Set<String> unused) throws Exception {
-        File[] installations = new File(root).listFiles(File::isDirectory);
-        Result reference = null;
-        Result allLayers = null;
-        Map<String, Result> layers = new TreeMap<>();
-        for (File f : installations) {
-            Path installation = f.toPath();
-            Result res = Scanner.scan(installation, getConf(installation));
-            if (f.getName().equals(REFERENCE)) {
-                reference = res;
-            } else if (f.getName().equals(ALL_LAYERS)) {
-                allLayers = res;
-            } else {
-                layers.put(f.getName(), res);
-            }
-        }
+    public static void testLayersModuleUse(Set<String> unused, ScanContext scanContext) throws Exception {
 
-        // Check that the reference has no more un-referenced modules than the expected ones.
-        Set<String> invalidUnref = new HashSet<>();
-        Set<String> allUnReferenced = new HashSet<>();
-        allUnReferenced.addAll(unused);
-        allUnReferenced.addAll(unreferenced);
-        for (String unref : reference.getNotReferenced()) {
-            if (!allUnReferenced.contains(unref)) {
-                invalidUnref.add(unref);
-            }
-        }
-        if (!invalidUnref.isEmpty()) {
-            throw new Exception("Some unreferenced modules are un-expected " + invalidUnref);
-        }
+        scanContext.initialize();
+
+        String root = scanContext.installationRoot;
+        Result reference = scanContext.reference;
+        Result allLayers = scanContext.allLayers;
+        Map<String, Result> layers = scanContext.layers;
+
+        assertNotNull("No " + REFERENCE + " installation found in " + root, reference);
+        assertNotNull("No " + ALL_LAYERS + " installation found in " + root, allLayers);
+
+        StringBuilder exceptionBuilder = new StringBuilder();
+        AtomicBoolean empty = new AtomicBoolean(true);
+
         StringBuilder builder = new StringBuilder();
         appendResult("REFERENCE", reference, builder, null);
         // Format "all layers" result and compute the set of modules that have not been provisioned
@@ -121,34 +128,143 @@ public class LayersTest {
         for (String k : layers.keySet()) {
             appendResult(k, layers.get(k), builder, reference);
         }
-        Exception exception = null;
+
+
         // The only modules that are expected to be not provisioned are the un-used ones.
         // If more are not provisioned, then we are missing some modules.
-        if (!unused.containsAll(deltaModules)) {
-            builder.append("#!!!!!ERROR, some required modules have not been provisioned\n");
-            StringBuilder b = new StringBuilder();
-            for (String m : deltaModules) {
-                if (!unused.contains(m)) {
-                    b.append(m).append(",");
-                }
-            }
-            builder.append("error_missing_modules=" + b).append("\n");
-            exception = new Exception("ERROR, some modules have not been provisioned: " + b);
+        final Set<String> referenceAliases = reference.getAliases();  // don't require callers to include alias modules in 'unused'
+        String missingRequired = listModules(deltaModules, m -> !unused.contains(m) && !referenceAliases.contains(m));
+        if (!missingRequired.isEmpty()) {
+            String error = "Some expected modules have not been provisioned in " + ALL_LAYERS;
+            builder.append("#!!!!!ERROR ").append(error).append("\n");
+            builder.append("error_missing_modules=").append(missingRequired).append("\n");
+            appendExceptionMsg(exceptionBuilder, error + ": " + missingRequired, empty);
         }
+
+        if (VALIDATE_INPUTS) {
+
+            // Confirm that 'unused' modules actually exist in the reference installation
+            final Set<String> allRefModules = reference.getModules();
+            String missingDeclared = listModules(unused, m -> !allRefModules.contains(m));
+            if (!missingDeclared.isEmpty()) {
+                String error = "Some expected modules have not been provisioned in " + REFERENCE;
+                builder.append("#!!!!!ERROR ").append(error).append("\n");
+                builder.append("error_missing_modules=").append(missingDeclared).append("\n");
+                appendExceptionMsg(exceptionBuilder, error + ": " + missingDeclared, empty);
+            }
+
+            // Confirm that 'unused' modules do not exist in the all-layers installation
+            final Set<String> allLayersModules = allLayers.getModules();
+            String wrongUnused = listModules(unused, allLayersModules::contains);
+            if (!wrongUnused.isEmpty()) {
+                String error = "Some expected to be unused modules have been provisioned in " + ALL_LAYERS;
+                builder.append("#!!!!!ERROR ").append(error).append("\n");
+                builder.append("error_missing_modules=").append(wrongUnused).append("\n");
+                appendExceptionMsg(exceptionBuilder, error + ": " + wrongUnused, empty);
+            }
+        }
+
         File resFile = new File(root, "results.properties");
         Files.write(resFile.toPath(), builder.toString().getBytes());
-        if (exception != null) {
-            throw exception;
+
+        String exception = exceptionBuilder.toString();
+        if (!exception.isEmpty()) {
+            fail(exception);
         }
     }
 
     /**
-     * Checks the expected modules were provisioned with the @{code test-standalone-reference} and @{test-all-layers} installations in the root.
-     * @param root Installations root directory
-     * @throws Exception
+     * Checks that all modules in the @{code test-standalone-reference} installation are referenced from
+     * the installation root module or extension modules configured in standalone.xml, except those
+     * included in the {@code unreferenced} parameter's set. The goal of this test is to prevent the
+     * accumulation of 'orphaned' modules that are not usable.
+     *
+     * @param unreferenced The set of modules that are present in a default installation (with all modules
+     * installed) but are not referenced from the module graph. They are not referenced because they are not used,
+     * or they are only injected at runtime into deployment unit or are part of extension not present in the
+     * default configuration (eg: deployment-scanner in core standalone.xml configuration). We are checking that
+     * the default configuration (that contains all modules) doesn't have more unreferenced modules than this set. If
+     * there are more it means that some new modules have been introduced, and we must understand why (eg: a subsystem injects
+     * a new module into a Deployment Unit, the subsystem must advertise it and the test must be updated with this new unreferenced module).
+     * @param scanContext contextual object that can and should be reused across invocations of methods in this class.
+     *                    Creating a single context for a given root and reusing it for different tests saves
+     *                    overhead involved in analyzing the installations in that root.
+     * @throws Exception on failure
      */
+    public static void testUnreferencedModules(Set<String> unreferenced, ScanContext scanContext) throws Exception {
+
+        scanContext.initialize();
+
+        String root = scanContext.installationRoot;
+        Result reference = scanContext.reference;
+
+        assertNotNull("No " + REFERENCE + " installation found in " + root, reference);
+
+        StringBuilder exceptionBuilder = new StringBuilder();
+        AtomicBoolean empty = new AtomicBoolean(true);
+
+        // Check that the reference has no more un-referenced modules than the expected ones.
+        Set<String> allUnReferenced = new HashSet<>(unreferenced);
+        final Set<String> refUnreferenced = reference.getNotReferenced();
+        final Set<String> referenceAliases = reference.getAliases(); // don't require callers to include alias modules in 'unreferenced'
+        String invalidUnref = listModules(refUnreferenced, m -> !allUnReferenced.contains(m) && !referenceAliases.contains(m));
+        if (!invalidUnref.isEmpty()) {
+            appendExceptionMsg(exceptionBuilder, "Some unreferenced modules are unexpected " + invalidUnref, empty);
+        }
+
+        // Check that alias modules are not referenced
+        String referencedAlias = listModules(referenceAliases, m -> !refUnreferenced.contains(m));
+        if (!referencedAlias.isEmpty()) {
+            appendExceptionMsg(exceptionBuilder, "Some alias modules are referenced " + referencedAlias, empty);
+        }
+
+        if (VALIDATE_INPUTS) {
+
+            // Confirm that 'unreferenced' modules actually exist in the reference installation
+            final Set<String> allRefModules = reference.getModules();
+            String missingDeclared = listModules(allUnReferenced, m -> !allRefModules.contains(m));
+            if (!missingDeclared.isEmpty()) {
+                String error = "Some expected modules have not been provisioned in " + REFERENCE;
+                appendExceptionMsg(exceptionBuilder, error + ": " + missingDeclared, empty);
+            }
+
+            // Confirm that 'unreferenced' modules are not referenced in the reference installation
+            String wrongUnreferenced = listModules(unreferenced, m -> !refUnreferenced.contains(m));
+            if (!wrongUnreferenced.isEmpty()) {
+                String error = "Some expected to be unreferenced modules are referenced in " + REFERENCE;
+                appendExceptionMsg(exceptionBuilder, error + ": " + wrongUnreferenced, empty);
+            }
+        }
+
+        String exception = exceptionBuilder.toString();
+        if (!exception.isEmpty()) {
+            fail(exception);
+        }
+
+    }
+
+    /**
+     * @deprecated use {@link #testLayersBoot(String)}; this method just calls that one.
+     */
+    @Deprecated(forRemoval = true)
     public static void testExecution(String root) throws Exception {
+        testLayersBoot(root);
+    }
+
+
+    /**
+     * Checks that the installations found in the given {@code root} directory can all be started without errors, i.e.
+     * with the {@code WFLYSRV0025} log message in the server's stdout stream.
+     *
+     * The @{code test-standalone-reference} installation is not tested as that kind of installation is heavily
+     * tested elsewhere.
+     *
+     * @param root Installations root directory
+     * @throws Exception on failure
+     */
+    public static void testLayersBoot(String root) throws Exception {
         File[] installations = new File(root).listFiles(File::isDirectory);
+        assertNotNull("No installations found in " + root, installations);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             for (File f : installations) {
@@ -159,6 +275,26 @@ public class LayersTest {
             }
         } finally {
             executor.shutdownNow();
+        }
+    }
+
+    /**
+     * Utility method to combine various module name arrays into sets for use
+     * as parameters to this class' methods.
+     *
+     * @param first the first array to combine. Cannot be {@code null}
+     * @param others other arrays to combine. Can be {@code null}
+     * @return a set containing all of the elements in the arrays
+     */
+    public static Set<String> concatArrays(String[] first, String[]... others) {
+        if (others == null || others.length == 0) {
+            return Set.of(first);
+        } else {
+            Stream<String> stream = Arrays.stream(first);
+            for (String[] array : others) {
+                stream = Stream.concat(stream, Arrays.stream(array));
+            }
+            return stream.collect(Collectors.toSet());
         }
     }
 
@@ -215,7 +351,7 @@ public class LayersTest {
             executor.submit(r).get(TimeoutUtil.adjust(1), TimeUnit.MINUTES);
         } catch (Exception ex) {
             throw new Exception("Exception checking " + installation.getFileName().toString()
-                    + "\n Server log \n" + str.toString(), ex);
+                    + "\n Server log \n" + str, ex);
         }
     }
 
@@ -224,13 +360,13 @@ public class LayersTest {
             return;
         }
         try {
-            Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(root, new SimpleFileVisitor<>() {
                 @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException {
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     try {
                         Files.delete(file);
                     } catch (IOException ex) {
+                        // ignore
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -242,6 +378,7 @@ public class LayersTest {
                         try {
                             Files.delete(dir);
                         } catch (IOException ex) {
+                            // ignore
                         }
                         return FileVisitResult.CONTINUE;
                     } else {
@@ -251,6 +388,47 @@ public class LayersTest {
                 }
             });
         } catch (IOException e) {
+            // ignore
+        }
+    }
+
+    /**
+     * Data holder used by methods in this class to hold information about scanned installations
+     * located in a particular directory. Purpose is to avoid re-creating that information in
+     * different methods.
+     */
+    public static final class ScanContext {
+        private final String installationRoot;
+        private Result reference;
+        private Result allLayers;
+        private Map<String, Result> layers;
+
+        /**
+         * Creates a new ScanContext
+         * @param installationRoot path to the root directory containing installations to scan
+         * */
+        public ScanContext(String installationRoot) {
+            this.installationRoot = installationRoot;
+        }
+
+        /** Performs a scan of the installation root, if one hasn't already been done. */
+        private synchronized void initialize() throws Exception {
+            if (layers == null) {
+                File[] installations = new File(installationRoot).listFiles(File::isDirectory);
+                assertNotNull("No installations found in " + installationRoot, installations);
+                layers = new TreeMap<>();
+                for (File f : installations) {
+                    Path installation = f.toPath();
+                    Result res = Scanner.scan(installation, getConf(installation));
+                    if (f.getName().equals(REFERENCE)) {
+                        reference = res;
+                    } else if (f.getName().equals(ALL_LAYERS)) {
+                        allLayers = res;
+                    } else {
+                        layers.put(f.getName(), res);
+                    }
+                }
+            }
         }
     }
 
@@ -259,15 +437,15 @@ public class LayersTest {
     }
 
     private static Set<String> appendResult(String title, Result result, StringBuilder builder, Result reference) {
-        long sizeDelta = -1;
-        int numModulesdelta = -1;
+        long sizeDelta;
+        int numModulesdelta;
         Map<String, Set<String>> optionals = new TreeMap<>();
-        builder.append("# " + title).append("\n");
+        builder.append("# ").append(title).append("\n");
         StringBuilder extensions = new StringBuilder();
         for (Result.ExtensionResult r : result.getExtensions()) {
-            extensions.append(r.getModule() + ",");
+            extensions.append(r.getModule()).append(",");
         }
-        builder.append("extensions=" + extensions + "\n");
+        builder.append("extensions=").append(extensions).append("\n");
         Set<String> deltaModules = new TreeSet<>();
         if (reference != null) { // Compare against reference.
             sizeDelta = result.getSize() - reference.getSize();
@@ -285,43 +463,61 @@ public class LayersTest {
                     deltaModules.add(m);
                 }
             }
-            builder.append("size=" + result.getSize()).append("\n");
-            builder.append("size_delta=" + sizeDelta).append("\n");
-            builder.append("num_modules=" + result.getModules().size()).append("\n");
-            builder.append("num_modules_delta=" + numModulesdelta).append("\n");
-            builder.append("num_new_unresolved=" + optionals.size()).append("\n");
+            builder.append("size=").append(result.getSize()).append("\n");
+            builder.append("size_delta=").append(sizeDelta).append("\n");
+            builder.append("num_modules=").append(result.getModules().size()).append("\n");
+            builder.append("num_modules_delta=").append(numModulesdelta).append("\n");
+            builder.append("num_new_unresolved=").append(optionals.size()).append("\n");
         } else {
             optionals = result.getUnresolvedOptional();
-            builder.append("size=" + result.getSize()).append("\n");
-            builder.append("num_modules=" + result.getModules().size()).append("\n");
-            builder.append("num_modules_not_referenced=" + result.getNotReferenced().size()).append("\n");
+            builder.append("size=").append(result.getSize()).append("\n");
+            builder.append("num_modules=").append(result.getModules().size()).append("\n");
+            builder.append("num_modules_not_referenced=").append(result.getNotReferenced().size()).append("\n");
             StringBuilder notReferenced = new StringBuilder();
             for (String s : result.getNotReferenced()) {
                 notReferenced.append(s).append(",");
             }
-            builder.append("unreferenced_modules=" + notReferenced + "\n");
-            builder.append("num_unresolved=" + optionals.size()).append("\n");
+            builder.append("unreferenced_modules=").append(notReferenced).append("\n");
+            StringBuilder aliases = new StringBuilder();
+            for (String s : result.getAliases()) {
+                aliases.append(s).append(",");
+            }
+            builder.append("alias_modules=").append(aliases).append("\n");
+            builder.append("num_unresolved=").append(optionals.size()).append("\n");
         }
         for (Map.Entry<String, Set<String>> entry : optionals.entrySet()) {
             StringBuilder roots = new StringBuilder();
             for (String s : entry.getValue()) {
                 roots.append(s).append(",");
             }
-            builder.append(entry.getKey() + "=" + roots.toString() + "\n");
+            builder.append(entry.getKey()).append("=").append(roots).append("\n");
         }
 
-        builder.append("num_not_provisioned_modules=" + deltaModules.size()).append("\n");
+        builder.append("num_not_provisioned_modules=").append(deltaModules.size()).append("\n");
 
         if (!deltaModules.isEmpty()) {
             StringBuilder mods = new StringBuilder();
             for (String s : deltaModules) {
                 mods.append(s).append(",");
             }
-            builder.append("not_provisioned_modules=" + mods.toString()).append("\n");
+            builder.append("not_provisioned_modules=").append(mods).append("\n");
         }
 
         builder.append("\n");
         return deltaModules;
+    }
+
+    private static void appendExceptionMsg(StringBuilder existing, String toAppend, AtomicBoolean empty) {
+        if (!empty.getAndSet(false)) {
+            existing.append('\n');
+        }
+        existing.append(toAppend);
+    }
+
+    private static String listModules(Set<String> set, Predicate<String> predicate) {
+        return set.stream()
+                .filter(predicate)
+                .collect(Collectors.joining(","));
     }
 
     /**
@@ -342,8 +538,9 @@ public class LayersTest {
 
         HashMap<String, String> results = new HashMap<>();
         File[] installations = new File(root).listFiles(File::isDirectory);
+        assertNotNull("No installations found in " + root, installations);
         for (File installation : installations) {
-            Files.walkFileTree(installation.toPath().resolve("modules"), new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(installation.toPath().resolve("modules"), new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     if (file.getFileName().toString().equals("module.xml")) {
