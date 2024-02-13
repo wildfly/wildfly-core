@@ -87,7 +87,7 @@ public class ExtensionAddHandler implements OperationStepHandler {
         });
     }
 
-    void initializeExtension(String module, ManagementResourceRegistration rootRegistration) {
+    void initializeExtension(String module, ManagementResourceRegistration rootRegistration, PathAddress address) {
         initializeExtension(extensionRegistry, module, rootRegistration, extensionRegistryType);
     }
 
@@ -110,7 +110,7 @@ public class ExtensionAddHandler implements OperationStepHandler {
             }
             while (extensions.hasNext()) {
                 Extension extension = extensions.next();
-                if (rootRegistration.enables(extension)) {
+                if (extensionRegistry.enables(extension)) {
                     ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(extension.getClass());
                     try {
                         if (unknownModule || !extensionRegistry.getExtensionModuleNames().contains(module)) {
@@ -121,7 +121,7 @@ public class ExtensionAddHandler implements OperationStepHandler {
                             // now that we know the registry was unaware of the module
                             unknownModule = true;
                         }
-                        extension.initialize(extensionRegistry.getExtensionContext(module, rootRegistration, extensionRegistryType));
+                        extension.initialize(extensionRegistry.getExtensionContext(module, extension.getStability(), rootRegistration, extensionRegistryType));
                     } finally {
                         WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
                     }

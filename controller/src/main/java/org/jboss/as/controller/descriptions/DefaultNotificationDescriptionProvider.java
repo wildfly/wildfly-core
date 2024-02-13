@@ -9,10 +9,13 @@ import static org.jboss.as.controller.NotificationDefinition.DataValueDescriptor
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATION_DATA_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATION_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
 
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import org.jboss.as.controller.NotificationDefinition;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -23,13 +26,15 @@ import org.jboss.dmr.ModelNode;
 public class DefaultNotificationDescriptionProvider implements DescriptionProvider {
 
     private final String notificationType;
+    private final Stability stability;
     private final ResourceDescriptionResolver descriptionResolver;
     private final DataValueDescriptor dataValueDescriptor;
 
-    public DefaultNotificationDescriptionProvider(final String notificationType,
+    public DefaultNotificationDescriptionProvider(final NotificationDefinition definition,
                                                   final ResourceDescriptionResolver descriptionResolver,
                                                   final DataValueDescriptor dataValueDescriptor) {
-        this.notificationType = notificationType;
+        this.notificationType = definition.getType();
+        this.stability = definition.getStability();
         this.descriptionResolver = descriptionResolver;
         this.dataValueDescriptor = dataValueDescriptor;
     }
@@ -47,7 +52,7 @@ public class DefaultNotificationDescriptionProvider implements DescriptionProvid
                 result.get(NOTIFICATION_DATA_TYPE).set(dataDescription);
             }
         }
-
+        result.get(STABILITY).set(this.stability.toString());
         return result;
     }
 }

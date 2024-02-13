@@ -22,6 +22,7 @@ import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -54,8 +55,15 @@ public class ExtensionSubsystemResourceDefinition extends SimpleResourceDefiniti
             .setRuntimeServiceNotRequired()
             .build();
 
+    private final Stability stability;
+
     ExtensionSubsystemResourceDefinition() {
+        this(Stability.DEFAULT);
+    }
+
+    ExtensionSubsystemResourceDefinition(Stability stability) {
         super(new Parameters(PathElement.pathElement(SUBSYSTEM), ControllerResolver.getResolver(EXTENSION, SUBSYSTEM)).setRuntime());
+        this.stability = stability;
     }
 
     @Override
@@ -64,5 +72,10 @@ public class ExtensionSubsystemResourceDefinition extends SimpleResourceDefiniti
         resourceRegistration.registerReadOnlyAttribute(MINOR_VERSION, null);
         resourceRegistration.registerReadOnlyAttribute(MICRO_VERSION, null);
         resourceRegistration.registerReadOnlyAttribute(XML_NAMESPACES, null);
+    }
+
+    @Override
+    public Stability getStability() {
+        return this.stability;
     }
 }

@@ -30,6 +30,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.ProvidedResourceDefinition;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
@@ -212,7 +213,15 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getPathAddress().toCLIStyleString());
         }
         final NodeSubregistry child = getOrCreateSubregistry(address.getKey());
-        return child.registerChild(address.getValue(), resourceDefinition);
+        Stability childStability = resourceDefinition.getStability();
+        Stability parentStability = this.resourceDefinition.getStability();
+        // Propagate parent stability-level to child, if necessary
+        return child.registerChild(address.getValue(), (childStability != parentStability) && !childStability.enables(parentStability) ? new ProvidedResourceDefinition(resourceDefinition) {
+            @Override
+            public Stability getStability() {
+                return parentStability;
+            }
+        } : resourceDefinition);
     }
 
     @Override
@@ -1015,5 +1024,8 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         }
     }
 
+    @Override
+    public Stability getStability() {
+        return this.resourceDefinition.getStability();
+    }
 }
-

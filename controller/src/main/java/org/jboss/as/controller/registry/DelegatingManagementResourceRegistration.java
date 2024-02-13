@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
+import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
@@ -88,6 +89,11 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     @Override
     public Stability getStability() {
         return this.getDelegate().getStability();
+    }
+
+    @Override
+    public <F extends Feature> boolean enables(F feature) {
+        return this.getDelegate().enables(feature);
     }
 
     @Override

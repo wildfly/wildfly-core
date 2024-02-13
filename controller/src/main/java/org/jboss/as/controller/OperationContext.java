@@ -1066,7 +1066,7 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
 
     @Override
     default Stability getStability() {
-        return this.getResourceRegistration().getStability();
+        return Stability.DEFAULT;
     }
 
     @Override

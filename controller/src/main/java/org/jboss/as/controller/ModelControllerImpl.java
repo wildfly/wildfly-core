@@ -78,6 +78,7 @@ import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.as.core.security.AccessMechanism;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
@@ -108,6 +109,7 @@ class ModelControllerImpl implements ModelController {
     private final AtomicReference<ManagementModelImpl> managementModel = new AtomicReference<>();
     private final ConfigurationPersister persister;
     private final ProcessType processType;
+    private final Stability stability;
     private final RunningModeControl runningModeControl;
     private final AtomicBoolean bootingFlag = new AtomicBoolean(true);
     private final AtomicBoolean bootingReadOnlyFlag = new AtomicBoolean(false);
@@ -140,7 +142,7 @@ class ModelControllerImpl implements ModelController {
     ModelControllerImpl(final ServiceRegistry serviceRegistry, final ServiceTarget serviceTarget,
                         final ManagementResourceRegistration rootRegistration,
                         final ContainerStateMonitor stateMonitor, final ConfigurationPersister persister,
-                        final ProcessType processType, final RunningModeControl runningModeControl,
+                        final ProcessType processType, Stability stability, final RunningModeControl runningModeControl,
                         final OperationStepHandler prepareStep, final ControlledProcessState processState, final ExecutorService executorService,
                         final ExpressionResolver expressionResolver, final Authorizer authorizer, final Supplier<SecurityIdentity> securityIdentitySupplier,
                         final ManagedAuditLogger auditLogger, NotificationSupport notificationSupport,
@@ -166,6 +168,8 @@ class ModelControllerImpl implements ModelController {
         this.persister = persister;
         assert processType != null;
         this.processType = processType;
+        assert stability != null;
+        this.stability = stability;
         assert runningModeControl != null;
         this.runningModeControl = runningModeControl;
         assert notificationSupport != null;
@@ -305,7 +309,7 @@ class ModelControllerImpl implements ModelController {
         };
 
         // Use a read-only context
-        try (ReadOnlyContext context = new ReadOnlyContext(processType, runningModeControl.getRunningMode(), txControl, processState, false, model, delegateContext, this, operationId, securityIdentitySupplier)) {
+        try (ReadOnlyContext context = new ReadOnlyContext(processType, this.stability, runningModeControl.getRunningMode(), txControl, processState, false, model, delegateContext, this, operationId, securityIdentitySupplier)) {
             context.addStep(response, operation, prepareStep, OperationContext.Stage.MODEL);
             context.executeOperation();
         }
@@ -408,7 +412,7 @@ class ModelControllerImpl implements ModelController {
             // Create a random operation-id
             final Integer operationID = random.nextInt();
             final OperationContextImpl context = new OperationContextImpl(operationID, operation.get(OP).asString(),
-                    operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
+                    operation.get(OP_ADDR), this, processType, this.stability, runningModeControl.getRunningMode(),
                     headers, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
                     bootingFlag.get(), forBoot, hostServerGroupTracker, accessContext, notificationSupport,
                     false, extraValidationStepHandler, partialModel, securityIdentitySupplier);
@@ -488,7 +492,7 @@ class ModelControllerImpl implements ModelController {
 
         //For the initial operations the model will not be complete, so defer the validation
         final AbstractOperationContext context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
-                this, processType, runningModeControl.getRunningMode(),
+                this, processType, this.stability, runningModeControl.getRunningMode(),
                 headers, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(), true,
                 hostServerGroupTracker, null, notificationSupport, true, extraValidationStepHandler, true, securityIdentitySupplier);
 
@@ -510,7 +514,7 @@ class ModelControllerImpl implements ModelController {
         if (resultAction == OperationContext.ResultAction.KEEP && bootOperations.postExtensionOps != null) {
             // Success. Now any extension handlers are registered. Continue with remaining ops
             final AbstractOperationContext postExtContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
-                    EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
+                    EMPTY_ADDRESS, this, processType, this.stability, runningModeControl.getRunningMode(),
                     headers, handler, null, managementModel.get(), control, processState, auditLogger,
                             bootingFlag.get(), true, hostServerGroupTracker, null, notificationSupport, true,
                             extraValidationStepHandler, partialModel, securityIdentitySupplier);
@@ -552,7 +556,7 @@ class ModelControllerImpl implements ModelController {
                 addAllAddresses(managementModel.get().getRootResourceRegistration(), PathAddress.EMPTY_ADDRESS, root, validateAddresses);
 
                 try (AbstractOperationContext validateContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
-                        EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
+                        EMPTY_ADDRESS, this, processType, this.stability, runningModeControl.getRunningMode(),
                         headers, handler, null, managementModel.get(), control, processState, auditLogger,
                                 bootingFlag.get(), true, hostServerGroupTracker, null, notificationSupport, false,
                                 extraValidationStepHandler, partialModel, securityIdentitySupplier)) {

@@ -92,6 +92,7 @@ import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.ContextAttachments;
 import org.jboss.as.core.security.AccessMechanism;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.LifecycleEvent;
 import org.jboss.msc.service.LifecycleListener;
@@ -189,7 +190,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     OperationContextImpl(final Integer operationId,
                          final String operationName, final ModelNode operationAddress,
                          final ModelControllerImpl modelController, final ProcessType processType,
-                         final RunningMode runningMode,
+                         final Stability stability, final RunningMode runningMode,
                          final OperationHeaders operationHeaders,
                          final OperationMessageHandler messageHandler, final OperationAttachments attachments,
                          final ModelControllerImpl.ManagementModelImpl managementModel, final ModelController.OperationTransactionControl transactionControl,
@@ -204,7 +205,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                          final OperationStepHandler extraValidationStepHandler,
                          final boolean partialModel,
                          final Supplier<SecurityIdentity> securityIdentitySupplier) {
-        super(processType, runningMode, transactionControl, processState, booting, auditLogger, notificationSupport,
+        super(processType, stability, runningMode, transactionControl, processState, booting, auditLogger, notificationSupport,
                 modelController, skipModelValidation, extraValidationStepHandler, operationHeaders, securityIdentitySupplier);
         this.operationId = operationId;
         this.operationName = operationName;

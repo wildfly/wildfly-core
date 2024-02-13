@@ -39,6 +39,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_REMOVED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALIDATE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
@@ -469,10 +470,11 @@ public abstract class AbstractProxyControllerTest {
 
     private void checkHostSubModelDescription(ModelNode result, boolean operations, boolean notifications) {
 
-        assertEquals(result.toString(), 6, result.keys().size());
+        assertEquals(result.toString(), 7, result.keys().size());
         assertEquals("description", result.get(DESCRIPTION).asString());
         assertEquals("serverchild", result.get(CHILDREN, "serverchild", DESCRIPTION).asString());
         assertEquals(1, result.get(CHILDREN, "serverchild", MODEL_DESCRIPTION).keys().size());
+        assertTrue(result.hasDefined(STABILITY));
 
         if (operations) {
             Set<String> ops = result.require(OPERATIONS).keys();
@@ -503,12 +505,13 @@ public abstract class AbstractProxyControllerTest {
     }
 
     private void checkHostChildSubModelDescription(ModelNode result, boolean operations, boolean notifications) {
-        assertEquals(5, result.keys().size());
+        assertEquals(6, result.keys().size());
         assertEquals(1, result.get(ATTRIBUTES).keys().size());
         assertEquals(ModelType.STRING, result.get(ATTRIBUTES, "name", TYPE).asType());
         assertEquals("name", result.get(ATTRIBUTES, "name", DESCRIPTION).asString());
         assertFalse(result.get(ATTRIBUTES, "name", NILLABLE).asBoolean());
         assertEquals(1, result.get(ATTRIBUTES, "name", MIN_LENGTH).asInt());
+        assertTrue(result.hasDefined(STABILITY));
 
         assertEquals(1, result.get(CHILDREN).keys().size());
         assertEquals("child", result.get(CHILDREN, "child", DESCRIPTION).asString());
@@ -545,7 +548,7 @@ public abstract class AbstractProxyControllerTest {
     }
 
     private void checkHostChildChildSubModelDescription(ModelNode result, boolean operations, boolean notifications) {
-        assertEquals(5, result.keys().size());
+        assertEquals(6, result.keys().size());
         assertEquals(3, result.get(ATTRIBUTES).keys().size());
         assertEquals(ModelType.STRING, result.get(ATTRIBUTES, "name", TYPE).asType());
         assertEquals("name", result.get(ATTRIBUTES, "name", DESCRIPTION).asString());
@@ -555,6 +558,7 @@ public abstract class AbstractProxyControllerTest {
         assertEquals("value", result.get(ATTRIBUTES, "value", DESCRIPTION).asString());
         assertFalse(result.get(ATTRIBUTES, "value", NILLABLE).asBoolean());
         assertEquals(1, result.get(ATTRIBUTES, "value", MIN_LENGTH).asInt());
+        assertTrue(result.hasDefined(STABILITY));
 
         if (!operations) {
             assertFalse(result.hasDefined(OPERATIONS));

@@ -7,6 +7,7 @@ package org.jboss.as.controller.capability;
 
 import java.util.Set;
 
+import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.PathAddress;
 
 /**
@@ -14,7 +15,7 @@ import org.jboss.as.controller.PathAddress;
  *
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
  */
-public interface Capability {
+public interface Capability extends Feature {
 
     /**
      * Gets the basic name of the capability. If {@link #isDynamicallyNamed()} returns {@code true}

@@ -35,7 +35,6 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-@SuppressWarnings("deprecation")
 class ParallelBootOperationContext extends AbstractOperationContext {
 
     private final OperationContextImpl primaryContext;
@@ -49,7 +48,7 @@ class ParallelBootOperationContext extends AbstractOperationContext {
                                  final List<ParsedBootOp> runtimeOps,
                                  final ModelControllerImpl controller, final int operationId, final AuditLogger auditLogger,
                                  final OperationStepHandler extraValidationStepHandler, final Supplier<SecurityIdentity> securityIdentitySupplier) {
-        super(primaryContext.getProcessType(), primaryContext.getRunningMode(), transactionControl, processState, true, auditLogger,
+        super(primaryContext.getProcessType(), primaryContext.getStability(), primaryContext.getRunningMode(), transactionControl, processState, true, auditLogger,
                 controller.getNotificationSupport(), controller, true, extraValidationStepHandler, null, securityIdentitySupplier);
         this.primaryContext = primaryContext;
         this.runtimeOps = runtimeOps;

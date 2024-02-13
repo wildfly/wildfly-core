@@ -9,6 +9,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -451,6 +452,11 @@ public abstract class ModelTestModelControllerService extends AbstractController
         @Override
         public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
             delegate.registerCapabilities(resourceRegistration);
+        }
+
+        @Override
+        public Stability getStability() {
+            return Optional.ofNullable(this.delegate).map(ResourceDefinition::getStability).orElse(Stability.DEFAULT);
         }
     }
 

@@ -27,6 +27,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.NotificationDefinition;
@@ -38,11 +39,12 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLParser;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.ProvidedResourceDefinition;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
-import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
@@ -80,6 +82,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLMapper;
+import org.wildfly.common.Assert;
 import org.wildfly.common.function.Functions;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
@@ -360,7 +363,23 @@ public final class ExtensionRegistry implements FeatureRegistry {
      *
      * @return  the {@link ExtensionContext}.  Will not return {@code null}
      */
+    @Deprecated(forRemoval = true)
     public ExtensionContext getExtensionContext(final String moduleName, ManagementResourceRegistration rootRegistration, ExtensionRegistryType extensionRegistryType) {
+        return this.getExtensionContext(moduleName, Stability.DEFAULT, rootRegistration, extensionRegistryType);
+    }
+
+    /**
+     * Gets an {@link ExtensionContext} for use when handling an {@code add} operation for
+     * a resource representing an {@link org.jboss.as.controller.Extension}.
+     *
+     * @param moduleName the name of the extension's module. Cannot be {@code null}
+     * @param stability the stability of the extension
+     * @param rootRegistration the root management resource registration
+     * @param extensionRegistryType the type of registry we are working on, which has an effect on things like whether extensions get registered etc.
+     *
+     * @return  the {@link ExtensionContext}.  Will not return {@code null}
+     */
+    public ExtensionContext getExtensionContext(final String moduleName, Stability stability, ManagementResourceRegistration rootRegistration, ExtensionRegistryType extensionRegistryType) {
         // Can't use processType.isServer() to determine where to look for profile reg because a lot of test infrastructure
         // doesn't add the profile mrr even in HC-based tests
         ManagementResourceRegistration profileRegistration = rootRegistration.getSubModel(PathAddress.pathAddress(PathElement.pathElement(PROFILE)));
@@ -372,7 +391,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
         // Hack to restrict extra data to specified extension(s)
         boolean allowSupplement = legallySupplemented.contains(moduleName);
         ManagedAuditLogger al = allowSupplement ? auditLogger : null;
-        return new ExtensionContextImpl(moduleName, profileRegistration, deploymentsRegistration, pathManager, extensionRegistryType, al);
+        return new ExtensionContextImpl(moduleName, stability, profileRegistration, deploymentsRegistration, pathManager, extensionRegistryType, al);
     }
 
     public Set<ProfileParsingCompletionHandler> getProfileParsingCompletionHandlers() {
@@ -555,6 +574,11 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         @Override
+        public <F extends Feature> boolean enables(F feature) {
+            return ExtensionRegistry.this.enables(feature);
+        }
+
+        @Override
         public void setSubsystemXmlMapping(String subsystemName, String namespaceUri, XMLElementReader<List<ModelNode>> reader) {
             assert subsystemName != null : "subsystemName is null";
             assert namespaceUri != null : "namespaceUri is null";
@@ -632,8 +656,9 @@ public final class ExtensionRegistry implements FeatureRegistry {
         private final ManagementResourceRegistration profileRegistration;
         private final ManagementResourceRegistration deploymentsRegistration;
         private final ExtensionRegistryType extensionRegistryType;
+        private final Stability stability; // stability of extension
 
-        private ExtensionContextImpl(String extensionName, ManagementResourceRegistration profileResourceRegistration,
+        private ExtensionContextImpl(String extensionName, Stability stability, ManagementResourceRegistration profileResourceRegistration,
                                      ManagementResourceRegistration deploymentsResourceRegistration, PathManager pathManager,
                                      ExtensionRegistryType extensionRegistryType, ManagedAuditLogger auditLogger) {
             assert pathManager != null || !processType.isServer() : "pathManager is null";
@@ -653,6 +678,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
                 this.deploymentsRegistration = null;
             }
             this.extensionRegistryType = extensionRegistryType;
+            this.stability = stability;
         }
 
         @Override
@@ -670,8 +696,8 @@ public final class ExtensionRegistry implements FeatureRegistry {
             if (deprecated){
                 ControllerLogger.DEPRECATED_LOGGER.extensionDeprecated(name);
             }
-            SubsystemRegistrationImpl result =  new SubsystemRegistrationImpl(name, version,
-                                profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName, processType, stability);
+            SubsystemRegistrationImpl result =  new SubsystemRegistrationImpl(name, version, this.stability,
+                                profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName, processType);
             if (registerTransformers){
                 transformerRegistry.loadAndRegisterTransformers(name, version, extension.extensionModuleName);
             }
@@ -827,17 +853,17 @@ public final class ExtensionRegistry implements FeatureRegistry {
         private final String extensionModuleName;
         private volatile boolean hostCapable;
 
-        private SubsystemRegistrationImpl(String name, ModelVersion version,
+        private SubsystemRegistrationImpl(String name, ModelVersion version, Stability stability,
                                           ManagementResourceRegistration profileRegistration,
                                           ManagementResourceRegistration deploymentsRegistration,
                                           ExtensionRegistryType extensionRegistryType,
                                           String extensionModuleName,
-                                          ProcessType processType, Stability stability) {
+                                          ProcessType processType) {
             assert profileRegistration != null;
             this.name = name;
             this.profileRegistration = profileRegistration;
             if (deploymentsRegistration == null){
-                this.deploymentsRegistration = ManagementResourceRegistration.Factory.forProcessType(processType, stability).createRegistration(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
+                this.deploymentsRegistration = ManagementResourceRegistration.Factory.forProcessType(processType, this.profileRegistration.getStability()).createRegistration(ResourceDefinition.builder(ResourceRegistration.of(null, this.profileRegistration.getStability()), NonResolvingResourceDescriptionResolver.INSTANCE).build());
             }else {
                 this.deploymentsRegistration = deploymentsRegistration;
             }
@@ -853,21 +879,36 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         @Override
+        public <F extends Feature> boolean enables(F feature) {
+            return this.profileRegistration.enables(feature);
+        }
+
+        @Override
         public void setHostCapable() {
             hostCapable = true;
         }
 
         @Override
         public ManagementResourceRegistration registerSubsystemModel(ResourceDefinition resourceDefinition) {
-            assert resourceDefinition != null : "resourceDefinition is null";
             checkHostCapable();
-            return profileRegistration.registerSubModel(resourceDefinition);
+            return this.register(this.profileRegistration, resourceDefinition);
         }
 
         @Override
         public ManagementResourceRegistration registerDeploymentModel(ResourceDefinition resourceDefinition) {
-            assert resourceDefinition != null : "resourceDefinition is null";
-            return deploymentsRegistration.registerSubModel(resourceDefinition);
+            return this.register(this.deploymentsRegistration, resourceDefinition);
+        }
+
+        private ManagementResourceRegistration register(ManagementResourceRegistration parent, ResourceDefinition definition) {
+            Assert.checkNotNullParam("definition", definition);
+            Stability childStability = definition.getStability();
+            // Propagate parent stability-level to child, if necessary
+            return parent.registerSubModel((childStability != this.stability) && !childStability.enables(this.stability) ? new ProvidedResourceDefinition(definition) {
+                @Override
+                public Stability getStability() {
+                    return SubsystemRegistrationImpl.this.stability;
+                }
+            } : definition);
         }
 
         @Override
@@ -952,6 +993,11 @@ public final class ExtensionRegistry implements FeatureRegistry {
         @Override
         public Stability getStability() {
             return this.deployments.getStability();
+        }
+
+        @Override
+        public <F extends Feature> boolean enables(F feature) {
+            return this.deployments.enables(feature);
         }
 
         @Override

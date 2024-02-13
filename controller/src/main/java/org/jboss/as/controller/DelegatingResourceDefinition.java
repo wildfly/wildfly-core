@@ -5,102 +5,52 @@
 
 package org.jboss.as.controller;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.version.Stability;
 
 /**
 * @author Tomaz Cerar (c) 2015 Red Hat Inc.
 */
-public class DelegatingResourceDefinition implements ResourceDefinition {
-    protected volatile ResourceDefinition delegate;
+public class DelegatingResourceDefinition extends ProvidedResourceDefinition {
+    private final AtomicReference<ResourceDefinition> reference;
+
+    public DelegatingResourceDefinition() {
+        this(new AtomicReference<>());
+    }
+
+    private DelegatingResourceDefinition(AtomicReference<ResourceDefinition> reference) {
+        super(reference::get);
+        this.reference = reference;
+    }
 
     protected void setDelegate(ResourceDefinition delegate) {
-        this.delegate = delegate;
-    }
-
-    @Override
-    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
-        delegate.registerOperations(resourceRegistration);
-    }
-
-    @Override
-    public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-        delegate.registerChildren(resourceRegistration);
-    }
-
-    @Override
-    public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        delegate.registerAttributes(resourceRegistration);
-    }
-
-    @Override
-    public void registerNotifications(ManagementResourceRegistration resourceRegistration) {
-        delegate.registerNotifications(resourceRegistration);
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        delegate.registerCapabilities(resourceRegistration);
-    }
-
-    @Override
-    public void registerAdditionalRuntimePackages(ManagementResourceRegistration resourceRegistration) {
-        delegate.registerAdditionalRuntimePackages(resourceRegistration);
-    }
-
-    @Override
-    public boolean isFeature() {
-        return delegate.isFeature();
-    }
-
-    @Override
-    public int getMinOccurs() {
-        return delegate.getMinOccurs();
-    }
-
-    @Override
-    public int getMaxOccurs() {
-        return delegate.getMaxOccurs();
-    }
-
-    @Override
-    public PathElement getPathElement() {
-        return delegate.getPathElement();
-    }
-
-    @Override
-    public DescriptionProvider getDescriptionProvider(ImmutableManagementResourceRegistration resourceRegistration) {
-        return delegate.getDescriptionProvider(resourceRegistration);
+        this.reference.set(delegate);
     }
 
     @Override
     public List<AccessConstraintDefinition> getAccessConstraints() {
-        if (delegate == null) {
-            return Collections.emptyList();
-        }
-        return delegate.getAccessConstraints();
+        ResourceDefinition delegate = this.reference.get();
+        return (delegate != null) ? delegate.getAccessConstraints() : List.of();
     }
 
     @Override
     public boolean isRuntime() {
-        if (delegate!=null) {
-            return delegate.isRuntime();
-        }
-        return false;
+        ResourceDefinition delegate = this.reference.get();
+        return (delegate != null) ? delegate.isRuntime() : false;
     }
 
     @Override
     public boolean isOrderedChild() {
-        if (delegate != null) {
-            return delegate.isOrderedChild();
-        }
-        return false;
+        ResourceDefinition delegate = this.reference.get();
+        return (delegate != null) ? delegate.isOrderedChild() : false;
+    }
+
+    @Override
+    public Stability getStability() {
+        ResourceDefinition delegate = this.reference.get();
+        return (delegate != null) ? delegate.getStability() : Stability.DEFAULT;
     }
 }
-
-

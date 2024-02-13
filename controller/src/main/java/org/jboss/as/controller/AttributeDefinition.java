@@ -938,6 +938,7 @@ public abstract class AttributeDefinition implements Feature {
             assert !result.hasDefined(key); //You can't override an arbitrary descriptor set through other properties.
             result.get(key).set(value);
         });
+        result.get(ModelDescriptionConstants.STABILITY).set(this.stability.toString());
         return result;
     }
 

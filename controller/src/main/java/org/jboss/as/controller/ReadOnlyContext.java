@@ -24,6 +24,7 @@ import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -48,10 +49,10 @@ class ReadOnlyContext extends AbstractOperationContext {
 
     private final ConcurrentMap<AttachmentKey<?>, Object> valueAttachments = new ConcurrentHashMap<AttachmentKey<?>, Object>();
 
-    ReadOnlyContext(final ProcessType processType, final RunningMode runningMode, final ModelController.OperationTransactionControl transactionControl,
+    ReadOnlyContext(final ProcessType processType, Stability stability, final RunningMode runningMode, final ModelController.OperationTransactionControl transactionControl,
                     final ControlledProcessState processState, final boolean booting, final ModelControllerImpl.ManagementModelImpl managementModel,
                     final AbstractOperationContext primaryContext, final ModelControllerImpl controller, final int operationId, final Supplier<SecurityIdentity> securityIdentitySupplier) {
-        super(processType, runningMode, transactionControl, processState,
+        super(processType, stability, runningMode, transactionControl, processState,
                 booting, controller.getAuditLogger(), controller.getNotificationSupport(),
                 controller, true, null, null, securityIdentitySupplier);
         this.primaryContext = primaryContext;
