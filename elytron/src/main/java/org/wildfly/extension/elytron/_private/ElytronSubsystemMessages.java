@@ -653,6 +653,10 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1088, value = "Missing certificate authority challenge")
     AcmeException missingCertificateAuthorityChallenge();
 
+    @Message(id = 1090, value = "Allowed jku values haven't been specified for token realm '%s'. Token validation will fail if the token contains a 'jku' header parameter. The allowed jku values can be specified as a space separated string using the '%s' system property.")
+    @LogMessage(level = WARN)
+    void noAllowedJkuValuesSpecifiedForTokenRealm(String realmName, String systemPropertyName);
+
     /*
      * Expression Resolver Section
      */
