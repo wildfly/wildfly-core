@@ -88,6 +88,8 @@ import org.wildfly.security.pem.PemEntry;
  */
 class TokenRealmDefinition extends SimpleResourceDefinition {
 
+    private static final String ALLOWED_JKU_VALUES_PROPERTY_PREFIX = "wildfly.elytron.jwt.allowed.jku.values.";
+
     static final SimpleAttributeDefinition PRINCIPAL_CLAIM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRINCIPAL_CLAIM, ModelType.STRING, true)
             .setDefaultValue(new ModelNode("username"))
             .setAllowExpression(true)
@@ -332,6 +334,13 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                             } catch (KeyStoreException cause) {
                                 throw ROOT_LOGGER.unableToStartService(cause);
                             }
+                        }
+
+                        String allowedJkuValuesForTokenRealm = System.getProperty(ALLOWED_JKU_VALUES_PROPERTY_PREFIX + address);
+                        if (allowedJkuValuesForTokenRealm == null || allowedJkuValuesForTokenRealm.isEmpty()) {
+                            ROOT_LOGGER.noAllowedJkuValuesSpecifiedForTokenRealm(address, ALLOWED_JKU_VALUES_PROPERTY_PREFIX + address);
+                        } else {
+                            jwtValidatorBuilder.setAllowedJkuValues(allowedJkuValuesForTokenRealm.split("\\s+"));
                         }
 
                         return TokenSecurityRealm.builder().principalClaimName(principalClaimNode.asString())
