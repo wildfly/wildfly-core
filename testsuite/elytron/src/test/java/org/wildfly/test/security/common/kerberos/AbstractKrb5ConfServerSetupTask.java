@@ -20,7 +20,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.directory.server.kerberos.shared.crypto.encryption.KerberosKeyFactory;
-import org.apache.directory.server.kerberos.shared.keytab.Keytab;
 import org.apache.directory.shared.kerberos.KerberosTime;
 import org.apache.directory.shared.kerberos.codec.types.EncryptionType;
 import org.apache.directory.shared.kerberos.components.EncryptionKey;
@@ -58,6 +57,10 @@ public abstract class AbstractKrb5ConfServerSetupTask implements ServerSetupTask
     private static final File KRB5_CONF_FILE = new File(WORK_DIR, KRB5_CONF);
 
     public static final File HTTP_KEYTAB_FILE = new File(WORK_DIR, "http.keytab");
+
+    private static final byte[] VERSION_0X502_BYTES = new byte[]
+            { ( byte ) 0x05, ( byte ) 0x02 };
+
 
     private String origKrb5Conf;
     private String origKrbDebug;
@@ -187,12 +190,13 @@ public abstract class AbstractKrb5ConfServerSetupTask implements ServerSetupTask
      */
     protected void createKeytab(final String principalName, final String passPhrase, final File keytabFile) throws IOException {
         LOGGER.trace("Principal name: " + principalName);
-        final KerberosTime timeStamp = new KerberosTime();
+        long currentTime = System.currentTimeMillis();
+        final KerberosTime timeStamp = new KerberosTime(currentTime);
 
         DataOutputStream dos = null;
         try {
             dos = new DataOutputStream(new FileOutputStream(keytabFile));
-            dos.write(Keytab.VERSION_0X502_BYTES);
+            dos.write(VERSION_0X502_BYTES);
 
             for (Map.Entry<EncryptionType, EncryptionKey> keyEntry : KerberosKeyFactory.getKerberosKeys(principalName,
                     passPhrase).entrySet()) {
@@ -218,7 +222,7 @@ public abstract class AbstractKrb5ConfServerSetupTask implements ServerSetupTask
                     }
 
                     entryDos.writeInt(1); // principal type: KRB5_NT_PRINCIPAL
-                    entryDos.writeInt((int) (timeStamp.getTime() / 1000));
+                    entryDos.writeInt((int) (currentTime / 1000));
                     entryDos.write(keyVersion);
 
                     entryDos.writeShort((short) key.getKeyType().getValue());

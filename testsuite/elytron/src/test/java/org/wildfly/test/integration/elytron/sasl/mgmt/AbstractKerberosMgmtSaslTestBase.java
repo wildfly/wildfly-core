@@ -50,7 +50,6 @@ import org.apache.directory.api.ldap.model.entry.DefaultEntry;
 import org.apache.directory.api.ldap.model.ldif.LdifEntry;
 import org.apache.directory.api.ldap.model.ldif.LdifReader;
 import org.apache.directory.api.ldap.model.schema.SchemaManager;
-import org.apache.directory.server.annotations.CreateKdcServer;
 import org.apache.directory.server.annotations.CreateLdapServer;
 import org.apache.directory.server.annotations.CreateTransport;
 import org.apache.directory.server.annotations.SaslMechanism;
@@ -61,13 +60,14 @@ import org.apache.directory.server.core.api.DirectoryService;
 import org.apache.directory.server.core.factory.DSAnnotationProcessor;
 import org.apache.directory.server.core.kerberos.KeyDerivationInterceptor;
 import org.apache.directory.server.factory.ServerAnnotationProcessor;
-import org.apache.directory.server.kerberos.kdc.KdcServer;
 import org.apache.directory.server.ldap.LdapServer;
 import org.apache.directory.server.ldap.handlers.sasl.cramMD5.CramMd5MechanismHandler;
 import org.apache.directory.server.ldap.handlers.sasl.digestMD5.DigestMd5MechanismHandler;
 import org.apache.directory.server.ldap.handlers.sasl.gssapi.GssapiMechanismHandler;
 import org.apache.directory.server.ldap.handlers.sasl.ntlm.NtlmMechanismHandler;
 import org.apache.directory.server.ldap.handlers.sasl.plain.PlainMechanismHandler;
+import org.apache.kerby.kerberos.kerb.server.SimpleKdcServer;
+import org.apache.kerby.kerberos.kerb.server.impl.DefaultInternalKdcServerImpl;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSManager;
@@ -90,12 +90,9 @@ import org.wildfly.security.auth.client.MatchRule;
 import org.wildfly.security.sasl.SaslMechanismSelector;
 import org.wildfly.security.ssl.SSLContextBuilder;
 import org.wildfly.test.security.common.kerberos.AbstractKrb5ConfServerSetupTask;
-import org.wildfly.test.security.common.kerberos.InMemoryDirectoryServiceFactory;
-import org.wildfly.test.security.common.kerberos.KDCServerAnnotationProcessor;
 import org.wildfly.test.security.common.kerberos.KerberosTestUtils;
 import org.wildfly.test.security.common.kerberos.Krb5LoginConfiguration;
 import org.wildfly.test.security.common.kerberos.ManagedCreateLdapServer;
-import org.wildfly.test.security.common.kerberos.ManagedCreateTransport;
 import org.xnio.http.RedirectException;
 
 /**
@@ -412,10 +409,8 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
     }
 
     // @formatter:off
-    @CreateDS(name = "WildFlyDS", factory = InMemoryDirectoryServiceFactory.class, partitions = @CreatePartition(name = "wildfly", suffix = "dc=wildfly,dc=org"), additionalInterceptors = {
+    @CreateDS(name = "WildFlyDS", partitions = @CreatePartition(name = "wildfly", suffix = "dc=wildfly,dc=org"), additionalInterceptors = {
             KeyDerivationInterceptor.class }, allowAnonAccess = true)
-    @CreateKdcServer(primaryRealm = "JBOSS.ORG", kdcPrincipal = "krbtgt/JBOSS.ORG@JBOSS.ORG", searchBaseDn = "dc=wildfly,dc=org", transports = {
-            @CreateTransport(protocol = "UDP", port = 6088) })
     @CreateLdapServer(transports = {
             @CreateTransport(protocol = "LDAP", port = LDAP_PORT) }, saslHost = "localhost", saslPrincipal = "ldap/localhost@JBOSS.ORG", saslMechanisms = {
                     @SaslMechanism(name = SupportedSaslMechanisms.PLAIN, implClass = PlainMechanismHandler.class),
@@ -428,7 +423,7 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
     static class DirectoryServerSetupTask implements ServerSetupTask {
 
         private DirectoryService directoryService;
-        private KdcServer kdcServer;
+        private SimpleKdcServer kdcServer;
         private LdapServer ldapServer;
         private boolean removeBouncyCastle = false;
 
@@ -436,10 +431,8 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
          * Creates directory services, starts LDAP server and KDCServer
          *
          * @param managementClient
-         * @param containerId
          * @throws Exception
-         * @see org.jboss.as.arquillian.api.ServerSetupTask#setup(org.jboss.as.arquillian.container.ManagementClient,
-         *      java.lang.String)
+         * @see org.wildfly.core.testrunner.ServerSetupTask#setup(org.wildfly.core.testrunner.ManagementClient)
          */
         @Override
         public void setup(ManagementClient managementClient) throws Exception {
@@ -452,9 +445,9 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
                 LOGGER.warn("Cannot register BouncyCastleProvider", ex);
             }
             directoryService = DSAnnotationProcessor.getDirectoryService();
-            final String hostname = CoreUtils.getCannonicalHost(TestSuiteEnvironment.getHttpAddress());
+            final String hostname = NetworkUtils.formatPossibleIpv6Address(CoreUtils.getCannonicalHost(TestSuiteEnvironment.getHttpAddress()));
             final Map<String, String> map = new HashMap<String, String>();
-            map.put("hostname", NetworkUtils.formatPossibleIpv6Address(hostname));
+            map.put("hostname", hostname);
             final String secondaryTestAddress = NetworkUtils
                     .canonize(CoreUtils.getCannonicalHost(TestSuiteEnvironment.getSecondaryTestAddress(false)));
             map.put("ldaphost", secondaryTestAddress);
@@ -470,7 +463,24 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
                 LOGGER.warn("Importing LDIF to a directoryService failed.", e);
                 throw e;
             }
-            kdcServer = KDCServerAnnotationProcessor.getKdcServer(directoryService, 1024, hostname);
+
+            // KDC server
+            kdcServer = new SimpleKdcServer();
+            kdcServer.setKdcRealm("JBOSS.ORG");
+            kdcServer.setKdcHost(hostname);
+            kdcServer.setInnerKdcImpl(new DefaultInternalKdcServerImpl(kdcServer.getKdcSetting()));
+            kdcServer.setAllowUdp(true);
+            kdcServer.setKdcUdpPort(6088);
+
+            kdcServer.init();
+
+            kdcServer.createPrincipal("ldap/" + secondaryTestAddress + "@JBOSS.ORG","randall");
+            kdcServer.createPrincipal("remote/" + hostname + "@JBOSS.ORG","zelvicka");
+            kdcServer.createPrincipal("hnelson@JBOSS.ORG","secret");
+            kdcServer.createPrincipal("jduke@JBOSS.ORG","theduke");
+
+            kdcServer.start();
+
             final ManagedCreateLdapServer createLdapServer = new ManagedCreateLdapServer(
                     (CreateLdapServer) AnnotationUtils.getInstance(CreateLdapServer.class));
             createLdapServer.setSaslHost(secondaryTestAddress);
@@ -484,17 +494,14 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
             KRB5_CONFIGURATION = new Krb5LoginConfiguration(CoreUtils.getLoginConfiguration());
             // Use our custom configuration to avoid reliance on external config
             Configuration.setConfiguration(KRB5_CONFIGURATION);
-
         }
 
         /**
          * Stops LDAP server and KDCServer and shuts down the directory service.
          *
          * @param managementClient
-         * @param containerId
          * @throws Exception
-         * @see org.jboss.as.arquillian.api.ServerSetupTask#tearDown(org.jboss.as.arquillian.container.ManagementClient,
-         *      java.lang.String)
+         * @see org.wildfly.core.testrunner.ServerSetupTask#tearDown(org.wildfly.core.testrunner.ManagementClient)
          */
         @Override
         public void tearDown(ManagementClient managementClient) throws Exception {
@@ -512,22 +519,5 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
             }
 
         }
-
-        /**
-         * Fixes/replaces LDAP bind address in the CreateTransport annotation of ApacheDS.
-         *
-         * @param createLdapServer
-         * @param address
-         */
-        public static void fixApacheDSTransportAddress(ManagedCreateLdapServer createLdapServer, String address) {
-            final CreateTransport[] createTransports = createLdapServer.transports();
-            for (int i = 0; i < createTransports.length; i++) {
-                final ManagedCreateTransport mgCreateTransport = new ManagedCreateTransport(createTransports[i]);
-                // localhost is a default used in original CreateTransport annotation. We use it as a fallback.
-                mgCreateTransport.setAddress(address != null ? address : "localhost");
-                createTransports[i] = mgCreateTransport;
-            }
-        }
     }
-
 }

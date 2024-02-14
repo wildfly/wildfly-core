@@ -77,7 +77,6 @@ class TestEnvironment extends AdditionalInitialization {
         KeyStore localhostKeyStore = loadKeyStore();
 
         X509Certificate issuerCertificate = issuerSelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate();
-        localhostKeyStore.setCertificateEntry("ca", issuerCertificate);
 
         X509Certificate localhostCertificate = new X509CertificateBuilder()
                 .setIssuerDn(ISSUER_DN)

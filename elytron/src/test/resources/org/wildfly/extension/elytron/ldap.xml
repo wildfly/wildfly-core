@@ -26,9 +26,9 @@
                <attribute from="cn" to="firstName"/>
                <attribute from="sn"/>
                <attribute from="telephoneNumber" to="phones"/>
-               <attribute filter="(&amp;(objectClass=groupOfNames)(member={1}))" filter-base-dn="dc=elytron,dc=wildfly,dc=org" to="rolesDn"/>
+               <attribute filter="(&amp;(objectClass=groupOfNames)(member={1}))" filter-base-dn="ou=Finance,dc=groups,dc=elytron,dc=wildfly,dc=org" to="rolesDn"/>
                <attribute filter="(&amp;(objectClass=groupOfNames)(member={1}))" filter-base-dn="dc=elytron,dc=wildfly,dc=org" to="rolesRecRdnCn" role-recursion="2" extract-rdn="CN"/>
-               <attribute filter="(&amp;(objectClass=groupOfNames)(member={1}))" filter-base-dn="dc=elytron,dc=wildfly,dc=org" to="rolesCn" extract-rdn="CN"/>
+               <attribute filter="(&amp;(objectClass=groupOfNames)(member={1}))" filter-base-dn="ou=Finance,dc=groups,dc=elytron,dc=wildfly,dc=org" to="rolesCn" extract-rdn="CN"/>
                <attribute filter="(&amp;(objectClass=groupOfNames)(member={1}))" filter-base-dn="dc=elytron,dc=wildfly,dc=org" from="description" to="rolesDescription" role-recursion="2"/>
                <attribute filter="(&amp;(objectClass=organizationalRole)(description={0}))" filter-base-dn="dc=elytron,dc=wildfly,dc=org" from="street" to="rolesByName" role-recursion="2" role-recursion-name="postalCode"/>
                <attribute reference="memberOf" from="description" to="memberOfDescription" role-recursion="5"/>
@@ -87,7 +87,7 @@
                <attribute name="objectClass" value="top inetOrgPerson"/>
                <attribute name="sn" value="NewKeyStoreItem"/>
             </new-item-template>
-            <search path="dc=elytron,dc=wildfly,dc=org" recursive="true" time-limit="1000" filter-alias="(&amp;(objectClass=inetOrgPerson)(sn={0}))"
+            <search path="ou=keystore,dc=elytron,dc=wildfly,dc=org" recursive="true" time-limit="1000" filter-alias="(&amp;(objectClass=inetOrgPerson)(sn={0}))"
                     filter-certificate="(&amp;(objectClass=inetOrgPerson)(usercertificate={0}))" filter-iterate="(sn=serenity*)"/>
             <attribute-mapping alias-attribute="sn" certificate-attribute="usercertificate" certificate-chain-attribute="userSMIMECertificate" certificate-chain-encoding="PKCS7" certificate-type="X.509"/>
          </ldap-key-store>
