@@ -40,7 +40,6 @@
     <dependencies>
         <module name="java.logging"/>
         <module name="java.xml"/>
-        <module name="javax.xml.stream.api"/>
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.as.server"/>
         <module name="org.jboss.modules"/>
