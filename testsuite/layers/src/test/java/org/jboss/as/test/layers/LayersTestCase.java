@@ -56,6 +56,7 @@ public class LayersTestCase {
         // wildfly-elytron-tool
         "org.apache.commons.cli",
         "org.apache.commons.lang3",
+        "org.wildfly.extension.elytron.jaas-realm",
         "org.wildfly.security.elytron-tool",
     };
 

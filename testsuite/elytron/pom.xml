@@ -369,7 +369,12 @@
                         <executions>
                             <execution>
                                 <id>prepare-elytron-config-file</id>
-                                <phase>none</phase>
+                                <phase>none</phase><configuration>
+                                <system-properties>
+                                    <maven.repo.local>${settings.localRepository}</maven.repo.local>
+                                    <module.path>${wildfly.home}/modules</module.path>
+                                </system-properties>
+                            </configuration>
                             </execution>
                         </executions>
                     </plugin>

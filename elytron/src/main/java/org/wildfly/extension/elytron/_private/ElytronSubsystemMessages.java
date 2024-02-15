@@ -337,6 +337,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 48, value = "A string representation of an X.500 distinguished name is required: %s")
     IllegalArgumentException representationOfX500IsRequired(String causeMessage);
 
+    @Message(id = 49, value = "Entry is not defined.")
+    StartException jaasEntryNotDefined();
+
     /*
      * Credential Store Section.
      */
