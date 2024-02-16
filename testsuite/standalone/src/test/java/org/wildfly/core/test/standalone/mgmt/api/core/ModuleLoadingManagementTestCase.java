@@ -65,7 +65,7 @@ public class ModuleLoadingManagementTestCase extends ContainerResourceMgmtTestBa
     public void testListResourceLoaderPaths() throws Exception {
 
         ModelNode op = Util.createEmptyOperation("list-resource-loader-paths", RESOURCE);
-        op.get(MODULE).set("org.jboss.dmr");
+        op.get(MODULE).set("org.bouncycastle.bcprov");
 
         ModelNode response = getModelControllerClient().execute(op);
         List<ModelNode> hostResult = validateResponse(response).asList();
