@@ -211,8 +211,9 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
 
         List<String> result = new LinkedList<>();
         for (ResourceLoaderInfo rl : loader.getResourceLoaders(moduleName)){
-            if (rl.getLocation() != null) {
-                URL url = new URL(rl.getLocation());
+            final String location = rl.getLocation();
+            if (location != null && !location.equals("null")) {
+                URL url = new URL(location);
 
                 switch (url.getProtocol()){
 
