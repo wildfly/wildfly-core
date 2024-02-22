@@ -5,6 +5,7 @@
 package org.jboss.as.cli.impl.aesh;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.aesh.command.Executor;
@@ -99,6 +100,11 @@ class CLICommandInvocationImpl implements CLICommandInvocation {
     @Override
     public KeyAction input() throws InterruptedException {
         return shell.read();
+    }
+
+    @Override
+    public KeyAction input(long timeout, TimeUnit unit) throws InterruptedException {
+        return shell.read(timeout, unit);
     }
 
     @Override

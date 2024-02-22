@@ -5,6 +5,8 @@
 package org.jboss.as.cli.impl.aesh;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
 import org.aesh.command.CommandRuntime;
 import org.aesh.command.container.CommandContainer;
 import org.aesh.command.shell.Shell;
@@ -85,6 +87,12 @@ public class CLICommandInvocationBuilder implements
             } catch (CommandLineException | IOException ex) {
                 throw new RuntimeException(ex);
             }
+        }
+
+        @Override
+        public Key read(long timeout, TimeUnit unit) throws InterruptedException {
+            //TODO
+            return null;
         }
 
         @Override
