@@ -31,7 +31,7 @@ import org.wildfly.core.embedded.EmbeddedProcessStartException;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 @SuppressWarnings("Convert2Lambda")
-class AbstractTestCase {
+public class AbstractTestCase {
 
     static final ModelNode EMPTY_ADDRESS = new ModelNode().addEmptyList();
 
@@ -51,12 +51,12 @@ class AbstractTestCase {
         service.shutdownNow();
     }
 
-    void startAndWaitFor(final EmbeddedManagedProcess server, final Function<EmbeddedManagedProcess, Boolean> check) throws TimeoutException, InterruptedException, EmbeddedProcessStartException {
+    protected void startAndWaitFor(final EmbeddedManagedProcess server, final Function<EmbeddedManagedProcess, Boolean> check) throws TimeoutException, InterruptedException, EmbeddedProcessStartException {
         server.start();
         waitFor(server, check);
     }
 
-    void waitFor(final EmbeddedManagedProcess server, final Function<EmbeddedManagedProcess, Boolean> check) throws TimeoutException, InterruptedException {
+    protected void waitFor(final EmbeddedManagedProcess server, final Function<EmbeddedManagedProcess, Boolean> check) throws TimeoutException, InterruptedException {
         final Callable<Boolean> callable = new Callable<Boolean>() {
             @Override
             public Boolean call() throws InterruptedException {
@@ -84,7 +84,7 @@ class AbstractTestCase {
         }
     }
 
-    static final Function<EmbeddedManagedProcess, Boolean> STANDALONE_CHECK = new Function<EmbeddedManagedProcess, Boolean>() {
+    protected static final Function<EmbeddedManagedProcess, Boolean> STANDALONE_CHECK = new Function<EmbeddedManagedProcess, Boolean>() {
         private final ModelNode op = Operations.createReadAttributeOperation(EMPTY_ADDRESS, "server-state");
 
         @Override
@@ -103,7 +103,7 @@ class AbstractTestCase {
         }
     };
 
-    static final Function<EmbeddedManagedProcess, Boolean> HOST_CONTROLLER_CHECK = new Function<EmbeddedManagedProcess, Boolean>() {
+    protected static final Function<EmbeddedManagedProcess, Boolean> HOST_CONTROLLER_CHECK = new Function<EmbeddedManagedProcess, Boolean>() {
         @Override
         public Boolean apply(final EmbeddedManagedProcess server) {
 
@@ -122,7 +122,7 @@ class AbstractTestCase {
         }
     };
 
-    static ModelNode executeOperation(final ModelControllerClient client, final ModelNode op) throws IOException {
+    protected static ModelNode executeOperation(final ModelControllerClient client, final ModelNode op) throws IOException {
         return executeOperation(client, OperationBuilder.create(op).build());
     }
 

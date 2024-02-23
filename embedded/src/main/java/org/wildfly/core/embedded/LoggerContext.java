@@ -5,9 +5,12 @@
 
 package org.wildfly.core.embedded;
 
+import static java.security.AccessController.doPrivileged;
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -17,6 +20,7 @@ import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
+import org.jboss.modules.ModuleLoggerFinder;
 import org.jboss.modules.log.ModuleLogger;
 import org.jboss.modules.log.NoopModuleLogger;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
@@ -57,6 +61,8 @@ class LoggerContext implements Context {
             setTccl(logModuleClassLoader);
             loggerToRestore = Module.getModuleLogger();
             Module.setModuleLogger(new JBossLoggingModuleLogger());
+            // Activate the ModuleLoggerFinder using the current threads context class loader
+            configureModuleFinder(tccl);
         } finally {
             // Reset TCCL
             setTccl(tccl);
@@ -85,6 +91,39 @@ class LoggerContext implements Context {
         } finally {
             // Reset TCCL
             setTccl(tccl);
+        }
+    }
+
+    /**
+     * This is a temporary workaround for WFCORE-6712 until MODULES-447 is resolved
+     *
+     * @param classLoader the class loader to pass to the activation of the {@link ModuleLoggerFinder}
+     */
+    private static void configureModuleFinder(final ClassLoader classLoader) {
+        // Please note, once MODULES-447 is resolved, this method can be removed and replaced with the public call.
+        final Method method;
+        if (System.getSecurityManager() == null) {
+            try {
+                method = ModuleLoggerFinder.class.getDeclaredMethod("activate", ClassLoader.class);
+                method.trySetAccessible();
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            method = doPrivileged((PrivilegedAction<Method>) () -> {
+                try {
+                    final Method result = ModuleLoggerFinder.class.getDeclaredMethod("activate", ClassLoader.class);
+                    result.trySetAccessible();
+                    return result;
+                } catch (NoSuchMethodException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+        try {
+            method.invoke(null, classLoader);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
         }
     }
 
