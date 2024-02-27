@@ -16,6 +16,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.server.deployment.annotation.AnnotationIndexSupport;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
+import org.jboss.as.version.Stability;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.vfs.VirtualFile;
 
@@ -34,6 +35,7 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
     private final DeploymentOverlayIndex deploymentOverlays;
     private final WeakReference<AnnotationIndexSupport> annotationIndexSupport;
     private final boolean isExplodedContent;
+    private final Stability stability;
 
     /**
      * Construct a new instance.
@@ -51,7 +53,7 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
                                      final Supplier<DeploymentMountProvider> serverDeploymentRepositorySupplier,
                                      final Supplier<PathManager> pathManagerSupplier,
                                      final Supplier<VirtualFile> contentsSupplier,
-                                     final String name, final String managementName, final DeploymentUnit parent,
+                                     final String name, final String managementName, final DeploymentUnit parent, final Stability stability,
                                      final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration,
                                      final Resource resource, final CapabilityServiceSupport capabilityServiceSupport,
                                      final DeploymentOverlayIndex deploymentOverlays,
@@ -71,10 +73,11 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
         // of the related deployment operations.
         this.annotationIndexSupport = new WeakReference<>(annotationIndexSupport);
         this.isExplodedContent = exploded;
+        this.stability = stability;
     }
 
     protected DeploymentUnit createAndInitializeDeploymentUnit(final ServiceRegistry registry) {
-        final DeploymentUnit deploymentUnit = new DeploymentUnitImpl(parent, name, registry);
+        final DeploymentUnit deploymentUnit = new DeploymentUnitImpl(parent, name, registry, this.stability);
         deploymentUnit.putAttachment(Attachments.MANAGEMENT_NAME, managementName);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_CONTENTS, contentsSupplier.get());
         deploymentUnit.putAttachment(DeploymentResourceSupport.REGISTRATION_ATTACHMENT, registration);
