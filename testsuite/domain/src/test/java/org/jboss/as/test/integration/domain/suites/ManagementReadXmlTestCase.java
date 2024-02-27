@@ -45,6 +45,7 @@ import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -56,6 +57,7 @@ import org.junit.Test;
  * @author Emmanuel Hugonnet (c) 2022 Red Hat, Inc.
  */
 public class ManagementReadXmlTestCase {
+    private static final Logger log = Logger.getLogger("org.jboss.as.test.integration.domain");
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
@@ -69,6 +71,7 @@ public class ManagementReadXmlTestCase {
         Path referenceConfiguration = configurationDir.resolve(serverConfigFileName);
         Files.copy(new File("target").toPath().resolve("test-classes").resolve("base-server-config.xml"), referenceConfiguration, REPLACE_EXISTING);
         try (CLIWrapper cli = new CLIWrapper(false)) {
+            log.info("Executing the following command on cli: embed-server --admin-only --server-config=" + serverConfigFileName + " --jboss-home=" + serverHome.toAbsolutePath());
             cli.sendLine("embed-server --admin-only --server-config=" + serverConfigFileName + " --jboss-home=" + serverHome.toAbsolutePath());
             if(!propertyOne) {
                 cli.sendLine("/system-property=jboss.domain.test.property.one:remove()");
