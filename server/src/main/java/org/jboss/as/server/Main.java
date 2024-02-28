@@ -323,45 +323,48 @@ public final class Main {
                     // do nothing, just need to filter out as Windows batch scripts cannot filter it out
                 } else if(arg.startsWith(CommandLineConstants.GIT_REPO)) {
                     int idx = arg.indexOf("=");
+                    if (idx == arg.length() - 1) {
+                        return requireValue(arg, productConfig);
+                    }
                     if (idx == -1) {
                         final int next = i + 1;
                         if (next < argsLength) {
                             gitRepository = args[next];
                             i++;
                         } else {
-                            STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
-                            usage(productConfig);
-                            return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                            return requireValue(arg, productConfig);
                         }
                     } else {
                         gitRepository = arg.substring(idx + 1);
                     }
                 } else if(arg.startsWith(CommandLineConstants.GIT_AUTH)) {
                     int idx = arg.indexOf("=");
+                    if (idx == arg.length() - 1) {
+                        return requireValue(arg, productConfig);
+                    }
                     if (idx == -1) {
                        final int next = i + 1;
                         if (next < argsLength) {
                             gitAuthConfiguration = args[next];
                             i++;
                         } else {
-                            STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
-                            usage(productConfig);
-                            return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                            return requireValue(arg, productConfig);
                         }
                     } else {
                         gitAuthConfiguration = arg.substring(idx + 1);
                     }
                 } else if(arg.startsWith(CommandLineConstants.GIT_BRANCH)) {
                     int idx = arg.indexOf("=");
+                    if (idx == arg.length() - 1) {
+                        return requireValue(arg, productConfig);
+                    }
                     if (idx == -1) {
                        final int next = i + 1;
                         if (next < argsLength) {
                             gitBranch = args[next];
                             i++;
                         } else {
-                            STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
-                            usage(productConfig);
-                            return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                            return requireValue(arg, productConfig);
                         }
                     } else {
                         gitBranch = arg.substring(idx + 1);
@@ -375,15 +378,16 @@ public final class Main {
                 } else if(ConfigurationExtensionFactory.isConfigurationExtensionSupported()
                         && ConfigurationExtensionFactory.commandLineContainsArgument(arg)) {
                     int idx = arg.indexOf("=");
+                    if (idx == arg.length() - 1) {
+                        return requireValue(arg, productConfig);
+                    }
                     if (idx == -1) {
                        final int next = i + 1;
                         if (next < argsLength) {
                             supplementalConfiguration = args[next];
                             i++;
                         } else {
-                            STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
-                            usage(productConfig);
-                            return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                            return requireValue(arg, productConfig);
                         }
                     } else {
                         supplementalConfiguration = arg.substring(idx + 1);
@@ -394,9 +398,7 @@ public final class Main {
                     return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                 }
             } catch (IndexOutOfBoundsException e) {
-                STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
-                usage(productConfig);
-                return new ServerEnvironmentWrapper(ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                return requireValue(arg, productConfig);
             }
         }
 
@@ -406,6 +408,12 @@ public final class Main {
         return new ServerEnvironmentWrapper(new ServerEnvironment(hostControllerName, systemProperties, systemEnvironment,
                 serverConfig, configInteractionPolicy, launchType, runningMode, productConfig, startTime, startSuspended,
                 startGracefully, gitRepository, gitBranch, gitAuthConfiguration, supplementalConfiguration));
+    }
+
+    private static ServerEnvironmentWrapper requireValue(String arg, ProductConfig productConfig) {
+        STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
+        usage(productConfig);
+        return new ServerEnvironmentWrapper(ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
     }
 
     private static void assertSingleConfig(String serverConfig) {
