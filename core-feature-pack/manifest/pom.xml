@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-feature-pack-parent</artifactId>
-        <version>24.0.0.Beta2</version>
+        <version>24.0.0.Beta3-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-manifest</artifactId>
