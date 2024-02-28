@@ -326,6 +326,33 @@ public class YamlConfigurationExtensionTest {
         assertEquals("test", postExtensionOps.get(1).operation.get("value").asString());
     }
 
+     /**
+     * Verify that resource creation will be updated with the YAML definition.
+     *
+     * @throws URISyntaxException
+     */
+    @Test
+    public void testAddResourceOverride() throws URISyntaxException {
+        List<ParsedBootOp> postExtensionOps = new ArrayList<>();
+        ConfigurationExtension instance = new YamlConfigurationExtension();
+        instance.load(Paths.get(this.getClass().getResource("simple_overwrite.yml").toURI()), Paths.get(this.getClass().getResource("simple_override.yml").toURI()));
+        instance.processOperations(rootRegistration, postExtensionOps);
+        assertFalse(postExtensionOps.isEmpty());
+        assertEquals(3, postExtensionOps.size());
+        assertEquals(ADD, postExtensionOps.get(0).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(0).address);
+        assertTrue(postExtensionOps.get(0).operation.hasDefined("value"));
+        assertEquals("foo", postExtensionOps.get(0).operation.get("value").asString());
+        assertEquals(ADD, postExtensionOps.get(1).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "bbb"), postExtensionOps.get(1).address);
+        assertTrue(postExtensionOps.get(1).operation.hasDefined("value"));
+        assertEquals("test", postExtensionOps.get(1).operation.get("value").asString());
+        assertEquals(WRITE_ATTRIBUTE_OPERATION, postExtensionOps.get(2).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "bbb"), postExtensionOps.get(2).address);
+        assertTrue(postExtensionOps.get(2).operation.hasDefined("value"));
+        assertEquals("test-override", postExtensionOps.get(2).operation.get("value").asString());
+    }
+
     /**
      * Verify removing a resource and adding it again.
      *

@@ -175,7 +175,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                     if (value == null && !isExistingResource(xmlOperations, address)) { //empty resource
                         OperationEntry operationEntry = rootRegistration.getOperationEntry(address, ADD);
                         if(operationEntry != null) {
-                            processAttributes(address, rootRegistration, operationEntry, Collections.emptyMap(), postExtensionOps);
+                            processAttributes(address, rootRegistration, operationEntry, Collections.emptyMap(), postExtensionOps, xmlOperations);
                         } else {
                             throw MGMT_OP_LOGGER.missingOperationForResource("ADD", address.toCLIStyleString());
                         }
@@ -236,7 +236,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                                     if (! address.equals(op.getAddress())) { // else already processed
                                         Map<String, Object> map = value instanceof Map ? new HashMap<>((Map)value) : new HashMap<>(yaml);
                                         //need to process attributes for adding
-                                        processAttributes(address, rootRegistration, operationEntry, map, postExtensionOps);
+                                        processAttributes(address, rootRegistration, operationEntry, map, postExtensionOps, xmlOperations);
                                         processResource(address, map, rootRegistration, resourceRegistration, xmlOperations, postExtensionOps, false);
                                     }
                                 }
@@ -262,13 +262,13 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                                 if (value instanceof Map) {
                                     Map<String, Object> map = (Map<String, Object>) value;
                                     //need to process attributes for adding
-                                    processAttributes(address, rootRegistration, operationEntry, map, postExtensionOps);
+                                    processAttributes(address, rootRegistration, operationEntry, map, postExtensionOps, xmlOperations);
                                     processResource(address, map, rootRegistration, childResourceRegistration, xmlOperations, postExtensionOps, false);
                                 } else {
                                     if (value != null) {
                                         MGMT_OP_LOGGER.unexpectedValueForResource(value, address.toCLIStyleString(), name);
                                     } else {// ADD operation without parameters
-                                        processAttributes(address, rootRegistration, operationEntry, null, postExtensionOps);
+                                        processAttributes(address, rootRegistration, operationEntry, null, postExtensionOps, xmlOperations);
                                     }
                                 }
                             } else {
@@ -344,7 +344,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
     }
 
     @SuppressWarnings("unchecked")
-    private void processAttributes(PathAddress address, ImmutableManagementResourceRegistration rootRegistration, OperationEntry operationEntry, Map<String, Object> map, List<ParsedBootOp> postExtensionOps) {
+    private void processAttributes(PathAddress address, ImmutableManagementResourceRegistration rootRegistration, OperationEntry operationEntry, Map<String, Object> map, List<ParsedBootOp> postExtensionOps, Map<PathAddress, ParsedBootOp> xmlOperations) {
         Set<AttributeDefinition> attributes = new HashSet<>();
         for (AttributeAccess attributeAccess : rootRegistration.getAttributes(address).values()) {
             if (attributeAccess.getStorageType() == AttributeAccess.Storage.CONFIGURATION) {
@@ -385,6 +385,9 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
         ParsedBootOp operation = new ParsedBootOp(op, operationEntry.getOperationHandler());
         MGMT_OP_LOGGER.debugf("Adding resource with operation %s", op);
         postExtensionOps.add(operation);
+        if(ADD.equals(operationEntry.getOperationDefinition().getName())) {
+            xmlOperations.put(address, operation);
+        }
     }
 
     private ModelNode createOperation(PathAddress address, OperationEntry operationEntry) {
