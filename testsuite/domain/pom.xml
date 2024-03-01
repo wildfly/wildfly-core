@@ -188,7 +188,7 @@
                     <failIfNoTests>false</failIfNoTests>
 
                     <!-- System properties to forked surefire JVM which runs clients. -->
-                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args} -Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
+                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args} -Dmaven.repo.local=${settings.localRepository} -Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
 
                     <systemPropertyVariables>
                         <jboss.options>-ea</jboss.options>

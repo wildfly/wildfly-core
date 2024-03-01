@@ -1,0 +1,11 @@
+wildfly-configuration:
+    extension:
+      org.jboss.as.failure:
+        module: org.jboss.as.failure
+    system-property:
+      bbb:
+        value: test-override
+#User defined elements, must be ignored.
+org:
+    foo:
+        bar: true
