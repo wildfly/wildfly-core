@@ -45,7 +45,7 @@ public class Environment {
         TIMEOUT = TimeoutUtil.adjust(Integer.parseInt(timeoutString));
     }
 
-    static Configuration.Builder createConfigBuilder() {
+    public static Configuration.Builder createConfigBuilder() {
         return Configuration.Builder.of(JBOSS_HOME)
                 .setModulePath(MODULE_PATH.toString());
     }
