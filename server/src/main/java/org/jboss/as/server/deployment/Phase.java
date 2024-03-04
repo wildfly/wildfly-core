@@ -248,6 +248,8 @@ public enum Phase {
     public static final int PARSE_COMPOSITE_ANNOTATION_INDEX            = 0x0301;
     public static final int PARSE_EXTENSION_LIST                        = 0x0700;
     public static final int PARSE_EXTENSION_NAME                        = 0x0800;
+    public static final int PARSE_SCAN_EXPERIMENTAL_ANNOTATIONS         = 0x0840;
+    public static final int PARSE_REPORT_EXPERIMENTAL_ANNOTATIONS       = 0x0850;
 
     public static final int PARSE_WEB_DEPLOYMENT                        = 0x0B00;
     public static final int PARSE_WEB_DEPLOYMENT_FRAGMENT               = 0x0C00;
