@@ -17,14 +17,19 @@
     <dependencies>
         <!-- for java.beans -->
         <module name="java.desktop"/>
+        <module name="io.smallrye.jandex"/>
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.as.server" />
+        <module name="org.jboss.as.version" />
         <module name="org.jboss.logging"/>
         <module name="org.jboss.modules"/>
         <module name="org.jboss.msc"/>
         <module name="org.jboss.staxmapper"/>
+        <module name="org.jboss.vfs" services="import"/>
         <module name="org.wildfly.extension.core-management-client"/>
         <module name="org.wildfly.security.elytron-private"/>
         <module name="org.wildfly.service"/>
+        <module name="org.wildfly.unstable.annotation.api.indexer"/>
+        <module name="org.wildfly._internal.unstable-api-annotation-index"/>
     </dependencies>
 </module>

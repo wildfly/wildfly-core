@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<config xmlns="urn:jboss:galleon:config:1.0" model="domain">
+    <props>
+        <prop name="config.branch-is-batch" value="true"/>
+        <prop name="config.merge-independent-branches" value="true"/>
+        <prop name="--empty-domain-config" value=""/>
+        <prop name="--remove-existing-domain-config" value=""/>
+        <prop name="--empty-host-config" value=""/>
+        <prop name="--remove-existing-host-config" value=""/>
+    </props>
+    <packages>
+        <package name="product.conf" optional="true"/>
+        <package name="misc.domain"/>
+        <package name="org.jboss.as.domain-management"/>
+        <package name="unstable-api-annotation-index.wildfly-core-testsuite-unstable-api-annotation-feature-pack"/>
+    </packages>
+</config>

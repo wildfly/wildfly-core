@@ -5,10 +5,6 @@
 
 package org.jboss.as.subsystem.test;
 
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-
 import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
@@ -29,6 +25,10 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceTarget;
 
+import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Allows you to additionally initialize the service container and the model controller
  * beyond the subsystem being tested. Override this class to add behaviour.
@@ -38,12 +38,7 @@ import org.jboss.msc.service.ServiceTarget;
 public class AdditionalInitialization extends AdditionalParsers implements FeatureRegistry {
     public static final AdditionalInitialization MANAGEMENT = new ManagementAdditionalInitialization();
 
-    public static final AdditionalInitialization ADMIN_ONLY_HC = new ManagementAdditionalInitialization() {
-        @Override
-        protected ProcessType getProcessType() {
-            return ProcessType.HOST_CONTROLLER;
-        }
-    };
+    public static final AdditionalInitialization ADMIN_ONLY_HC = new AdminOnlyHostControllerAdditionalInitialization();
 
     public static class HostControllerAdditionalInitialization extends AdditionalInitialization implements Serializable {
         private static final long serialVersionUID = -509444465514822866L;
@@ -95,6 +90,26 @@ public class AdditionalInitialization extends AdditionalParsers implements Featu
             return RunningMode.ADMIN_ONLY;
         }
     }
+
+    public static class AdminOnlyHostControllerAdditionalInitialization extends ManagementAdditionalInitialization implements Serializable {
+        public AdminOnlyHostControllerAdditionalInitialization() {
+            super();
+        }
+
+        public <S extends SubsystemSchema<S>> AdminOnlyHostControllerAdditionalInitialization(S schema) {
+            super(schema);
+        }
+
+        public AdminOnlyHostControllerAdditionalInitialization(Stability stability) {
+            super(stability);
+        }
+
+        @Override
+        protected ProcessType getProcessType() {
+            return ProcessType.HOST_CONTROLLER;
+        }
+    }
+
 
     /**
      * Creates a {@link org.jboss.as.subsystem.test.AdditionalInitialization.ManagementAdditionalInitialization} with
