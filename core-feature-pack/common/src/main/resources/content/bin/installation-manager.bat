@@ -15,7 +15,6 @@ set INST_MGR_LOG_PROPERTIES=%~2
 rem For security, reset the environment variables first
 set INST_MGR_COMMAND=
 set INST_MGR_STATUS=
-set INST_MGR_PREPARED_SERVER_DIR=
 
 set PROPS_FILE=%INSTALLATION_HOME%\bin\installation-manager.properties
 if not exist "%PROPS_FILE%" (
@@ -27,12 +26,6 @@ if not exist "%PROPS_FILE%" (
 rem Read Script variable configuration
 for /F "usebackq tokens=1* eol=# delims==" %%G IN ("%PROPS_FILE%") do (set %%G=%%H)
 
-rem remove escape characters necessary to store values in a property file
-setlocal EnableDelayedExpansion
-set "INST_MGR_PREPARED_SERVER_DIR=!INST_MGR_PREPARED_SERVER_DIR:\:=:!"
-set "INST_MGR_PREPARED_SERVER_DIR=!INST_MGR_PREPARED_SERVER_DIR:\\=\!"
-setlocal DisableDelayedExpansion
-
 rem Check the status is the expected
 IF NOT DEFINED INST_MGR_STATUS (
     echo ERROR: Cannot read the Installation Manager status.
@@ -42,26 +35,6 @@ IF NOT DEFINED INST_MGR_STATUS (
 
 if "%INST_MGR_STATUS%" neq "PREPARED" (
     echo ERROR: The Candidate Server installation is not in the PREPARED status. The current status is %INST_MGR_STATUS%
-
-    goto EOF
-)
-
-rem Check we have a server prepared
-if NOT DEFINED INST_MGR_PREPARED_SERVER_DIR (
-    echo ERROR: Installation Manager prepared server directory was not set.
-
-    goto EOF
-)
-
-if "%INST_MGR_PREPARED_SERVER_DIR%"=="" (
-    echo ERROR: Installation Manager prepared server directory was not set.
-
-    goto EOF
-)
-
-dir /b/a "%INST_MGR_PREPARED_SERVER_DIR%" | findstr "^" >nul
-if %errorlevel% equ 1 (
-    echo ERROR: There is no a Candidate Server prepared.
 
     goto EOF
 )
@@ -84,7 +57,6 @@ set INST_MGR_RESULT=%errorlevel%
 
 if %INST_MGR_RESULT% equ 0 (
     echo INFO: The Candidate Server was successfully applied.
-    rmdir /S /Q "%INST_MGR_PREPARED_SERVER_DIR%"
     echo|set /p"=INST_MGR_STATUS=CLEAN" > "%PROPS_FILE%"
     goto EOF
 )

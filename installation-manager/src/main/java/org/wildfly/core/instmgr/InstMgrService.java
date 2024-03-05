@@ -73,7 +73,7 @@ class InstMgrService implements Service {
         // Properties file used to send information to the launch scripts
         Path propertiesPath = homeDir.resolve("bin").resolve("installation-manager.properties");
 
-        this.candidateStatus.initialize(propertiesPath, prepareServerPath);
+        this.candidateStatus.initialize(propertiesPath);
         try {
             if (candidateStatus.getStatus() == InstMgrCandidateStatus.Status.PREPARING) {
                 candidateStatus.setFailed();
