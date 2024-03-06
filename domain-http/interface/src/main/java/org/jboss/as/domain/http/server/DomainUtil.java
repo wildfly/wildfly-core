@@ -202,7 +202,7 @@ public class DomainUtil {
                 .setCachable(not(suffixes(NOCACHE_JS, APP_HTML, INDEX_HTML)));
 
         // avoid clickjacking attacks: console must not be included in (i)frames
-        SetHeaderHandler frameHandler = new SetHeaderHandler(handler, "X-Frame-Options", "SAMEORIGIN");
+        SetHeaderHandler frameHandler = new SetHeaderHandler (new SetHeaderHandler(handler, "X-Frame-Options", "SAMEORIGIN"), "X-Content-Type-Options", "nosniff");
         // we also need to setup the default resource redirect
         PredicateHandler predicateHandler = new PredicateHandler(path("/"), new RedirectHandler(ExchangeAttributes.constant(context + DEFAULT_RESOURCE)), frameHandler);
         return new ResourceHandlerDefinition(context, DEFAULT_RESOURCE, predicateHandler);
