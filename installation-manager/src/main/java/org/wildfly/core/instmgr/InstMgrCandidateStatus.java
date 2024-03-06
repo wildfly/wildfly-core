@@ -19,18 +19,14 @@ import org.wildfly.core.instmgr.logging.InstMgrLogger;
  */
 class InstMgrCandidateStatus {
     private Path properties;
-    private Path prepareServerPath;
 
     public static final String INST_MGR_STATUS_KEY = "INST_MGR_STATUS";
     public static final String INST_MGR_COMMAND_KEY = "INST_MGR_COMMAND";
 
-    public static final String INST_MGR_PREPARED_SERVER_DIR_KEY = "INST_MGR_PREPARED_SERVER_DIR";
-
     public enum Status {ERROR, CLEAN, PREPARING, PREPARED}
 
-    void initialize(Path properties, Path prepareServerPath) {
+    void initialize(Path properties) {
         this.properties = properties.normalize().toAbsolutePath();
-        this.prepareServerPath = prepareServerPath;
     }
 
     Status getStatus() throws IOException {
@@ -76,7 +72,6 @@ class InstMgrCandidateStatus {
         try (FileOutputStream out = new FileOutputStream(properties.toString())) {
             prop.setProperty(INST_MGR_COMMAND_KEY, command);
             prop.setProperty(INST_MGR_STATUS_KEY, status.name());
-            prop.setProperty(INST_MGR_PREPARED_SERVER_DIR_KEY, this.prepareServerPath.toFile().getAbsolutePath());
             prop.store(out, null);
         }
     }

@@ -12,7 +12,6 @@ INST_MGR_LOG_PROPERTIES="${2}"
 # For security, reset the environment variables first
 unset INST_MGR_COMMAND
 unset INST_MGR_STATUS
-unset INST_MGR_PREPARED_SERVER_DIR
 
 PROPS_FILE="${INSTALLATION_HOME}/bin/installation-manager.properties"
 if ! [ -e "${PROPS_FILE}" ]; then
@@ -35,16 +34,6 @@ if ! [ "${INST_MGR_STATUS}" == "PREPARED" ]; then
   exit
 fi
 
-if [ x"${INST_MGR_PREPARED_SERVER_DIR}" == "x" ]; then
- echo "ERROR: Installation Manager prepared server directory was not set."
- exit
-fi
-
-if ! [ -d "${INST_MGR_PREPARED_SERVER_DIR}" ] || ! [ -n "$(ls -A "${INST_MGR_PREPARED_SERVER_DIR}")" ]; then
-  echo "ERROR: There is no a Candidate Server prepared."
-  exit
-fi
-
 if [ x"${INST_MGR_COMMAND}" == "x" ]; then
  echo "ERROR: Installation Manager command was not set."
  exit
@@ -58,7 +47,6 @@ case $INST_MGR_RESULT in
 
   0) #  0   Successful program execution.
     echo "INFO: The Candidate Server was successfully applied."
-    rm -rf "${INST_MGR_PREPARED_SERVER_DIR}"
     echo "INST_MGR_STATUS=CLEAN" > "${PROPS_FILE}"
     ;;
 
