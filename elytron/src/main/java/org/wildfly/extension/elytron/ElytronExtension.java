@@ -7,9 +7,11 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.SSLContext;
 
+import org.jboss.as.controller.PersistentResourceXMLDescriptionWriter;
 import org.jboss.as.controller.extension.ExpressionResolverExtension;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
@@ -37,28 +39,8 @@ import org.wildfly.security.auth.client.AuthenticationContext;
 public class ElytronExtension implements Extension {
 
     /**
-     * The name spaces used for the {@code subsystem} element
+     * The current name space used for the {@code subsystem} element
      */
-    static final String NAMESPACE_1_0 = "urn:wildfly:elytron:1.0";
-    static final String NAMESPACE_1_1 = "urn:wildfly:elytron:1.1";
-    static final String NAMESPACE_1_2 = "urn:wildfly:elytron:1.2";
-    static final String NAMESPACE_2_0 = "urn:wildfly:elytron:2.0";
-    static final String NAMESPACE_3_0 = "urn:wildfly:elytron:3.0";
-    static final String NAMESPACE_4_0 = "urn:wildfly:elytron:4.0";
-    static final String NAMESPACE_5_0 = "urn:wildfly:elytron:5.0";
-    static final String NAMESPACE_6_0 = "urn:wildfly:elytron:6.0";
-    static final String NAMESPACE_7_0 = "urn:wildfly:elytron:7.0";
-    static final String NAMESPACE_8_0 = "urn:wildfly:elytron:8.0";
-    static final String NAMESPACE_9_0 = "urn:wildfly:elytron:9.0";
-    static final String NAMESPACE_10_0 = "urn:wildfly:elytron:10.0";
-    static final String NAMESPACE_11_0 = "urn:wildfly:elytron:11.0";
-    static final String NAMESPACE_12_0 = "urn:wildfly:elytron:12.0";
-    static final String NAMESPACE_13_0 = "urn:wildfly:elytron:13.0";
-    static final String NAMESPACE_14_0 = "urn:wildfly:elytron:14.0";
-    static final String NAMESPACE_15_0 = "urn:wildfly:elytron:15.0";
-    static final String NAMESPACE_15_1 = "urn:wildfly:elytron:15.1";
-    static final String NAMESPACE_16_0 = "urn:wildfly:elytron:16.0";
-    static final String NAMESPACE_17_0 = "urn:wildfly:elytron:17.0";
     static final String NAMESPACE_18_0 = "urn:wildfly:elytron:18.0";
 
     static final String CURRENT_NAMESPACE = NAMESPACE_18_0;
@@ -124,27 +106,7 @@ public class ElytronExtension implements Extension {
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_0, () -> new ElytronSubsystemParser1_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_1, () -> new ElytronSubsystemParser1_1());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_2, () -> new ElytronSubsystemParser1_2());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_2_0, () -> new ElytronSubsystemParser2_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_3_0, () -> new ElytronSubsystemParser3_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_4_0, () -> new ElytronSubsystemParser4_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_5_0, () -> new ElytronSubsystemParser5_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_6_0, () -> new ElytronSubsystemParser6_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_7_0, () -> new ElytronSubsystemParser7_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_8_0, () -> new ElytronSubsystemParser8_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_9_0, () -> new ElytronSubsystemParser9_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_10_0, () -> new ElytronSubsystemParser10_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_11_0, () -> new ElytronSubsystemParser11_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_12_0, () -> new ElytronSubsystemParser12_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_13_0, () -> new ElytronSubsystemParser13_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_14_0, () -> new ElytronSubsystemParser14_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_15_0, () -> new ElytronSubsystemParser15_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_15_1, () -> new ElytronSubsystemParser15_1());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_16_0, () -> new ElytronSubsystemParser16_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_17_0, () -> new ElytronSubsystemParser17_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_18_0, () -> new ElytronSubsystemParser18_0());
+        context.setSubsystemXmlMappings(SUBSYSTEM_NAME, EnumSet.allOf(ElytronSubsystemSchema.class));
     }
 
     @Override
@@ -157,7 +119,7 @@ public class ElytronExtension implements Extension {
         AtomicReference<ExpressionResolverExtension> resolverRef = new AtomicReference<>();
         final ManagementResourceRegistration registration = subsystemRegistration.registerSubsystemModel(new ElytronDefinition(resolverRef));
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
-        subsystemRegistration.registerXMLElementWriter(() -> new ElytronSubsystemParser18_0());
+        subsystemRegistration.registerXMLElementWriter(new PersistentResourceXMLDescriptionWriter(ElytronSubsystemSchema.CURRENT.get(context.getStability())));
 
         context.registerExpressionResolverExtension(resolverRef::get, ExpressionResolverResourceDefinition.INITIAL_PATTERN, false);
     }

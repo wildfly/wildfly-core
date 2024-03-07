@@ -250,7 +250,7 @@ class TlsParser {
             });
 
     // 1_0 to 3_0
-    final PersistentResourceXMLDescription tlsParser = decorator(TLS)
+    final PersistentResourceXMLDescription tlsParser_1_0 = decorator(TLS)
             .addChild(decorator(KEY_STORES)
                     .addChild(keyStoreParser)
                     .addChild(ldapKeyStoreParser)

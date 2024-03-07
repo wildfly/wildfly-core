@@ -281,6 +281,12 @@
                 <version>${version.org.mockito}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.jmockit</groupId>
+                <artifactId>jmockit</artifactId>
+                <version>${version.org.jmockit}</version>
+                <scope>test</scope>
+            </dependency>
 
             <dependency>
                 <groupId>org.syslog4j</groupId>

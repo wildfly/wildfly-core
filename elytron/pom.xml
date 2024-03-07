@@ -344,6 +344,13 @@
             <artifactId>wildfly-openssl-windows-x86_64</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.jmockit</groupId>
+            <artifactId>jmockit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -390,7 +397,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <reuseForks>false</reuseForks>
-                    <argLine>${surefire.jacoco.args} ${modular.jdk.args} -Dorg.wildfly.extension.elytron.restore-default-ssl-context=true -Dauthconfigprovider.factory=org.wildfly.security.auth.jaspi.ElytronAuthConfigFactory</argLine>
+                    <argLine>-javaagent:${settings.localRepository}/org/jmockit/jmockit/${version.org.jmockit}/jmockit-${version.org.jmockit}.jar ${surefire.jacoco.args} ${modular.jdk.args} -Dorg.wildfly.extension.elytron.restore-default-ssl-context=true -Dauthconfigprovider.factory=org.wildfly.security.auth.jaspi.ElytronAuthConfigFactory</argLine>
                 </configuration>
             </plugin>
         </plugins>
