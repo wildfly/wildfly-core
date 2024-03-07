@@ -10,11 +10,13 @@ import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredAddStepHandler;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -31,6 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNS
  */
 public class UnstableApiAnnotationResourceDefinition extends PersistentResourceDefinition {
 
+    private static final Stability STABILITY = Stability.PREVIEW;
     public static final SimpleAttributeDefinition LEVEL = SimpleAttributeDefinitionBuilder.create(
             ModelDescriptionConstants.LEVEL, ModelType.STRING, true)
             .setValidator(EnumValidator.create(UnstableApiAnnotationLevel.class))
@@ -40,9 +43,12 @@ public class UnstableApiAnnotationResourceDefinition extends PersistentResourceD
     static final UnstableApiAnnotationResourceDefinition INSTANCE = new UnstableApiAnnotationResourceDefinition();
 
     private UnstableApiAnnotationResourceDefinition() {
-        super(new Parameters(PATH, CoreManagementExtension.getResourceDescriptionResolver(UNSTABLE_API_ANNOTATIONS))
-                .setAddHandler(ReloadRequiredAddStepHandler.INSTANCE)
-                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE));
+        super(
+                new Parameters(
+                            ResourceRegistration.of(PATH, STABILITY),
+                            CoreManagementExtension.getResourceDescriptionResolver(UNSTABLE_API_ANNOTATIONS))
+                        .setAddHandler(ReloadRequiredAddStepHandler.INSTANCE)
+                        .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE));
     }
 
 

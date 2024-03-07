@@ -5,32 +5,31 @@
 
 package org.wildfly.extension.core.management;
 
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
+import org.jboss.as.subsystem.test.AbstractSubsystemSchemaTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import java.io.IOException;
+import java.util.EnumSet;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2016 Red Hat Inc.
  */
-public class CoreManagementSubsystem_1_0_TestCase extends AbstractSubsystemBaseTest {
+@RunWith(Parameterized.class)
+public class CoreManagementSubsystem_1_0_TestCase extends AbstractSubsystemSchemaTest<CoreManagementSubsystemSchema_1_0> {
 
-    public CoreManagementSubsystem_1_0_TestCase() {
-        super(CoreManagementExtension.SUBSYSTEM_NAME, new CoreManagementExtension());
+    @Parameterized.Parameters(name = "{0}")
+    public static Iterable<CoreManagementSubsystemSchema_1_0> getParameters() {
+        return EnumSet.allOf(CoreManagementSubsystemSchema_1_0.class);
     }
 
-    @Override
-    protected String getSubsystemXml() throws IOException {
-        return readResource("core-management-subsystem-1_0.xml");
-    }
-
-    @Override
-    public void testSubsystem() throws Exception {
-        standardSubsystemTest(null, false);
+    public CoreManagementSubsystem_1_0_TestCase(CoreManagementSubsystemSchema_1_0 schema) {
+        super(CoreManagementExtension.SUBSYSTEM_NAME, new CoreManagementExtension(), schema, CoreManagementSubsystemSchema_1_0.ALL.get(schema.getStability()));
     }
 
     @Override
     protected AdditionalInitialization createAdditionalInitialization() {
-        return AdditionalInitialization.ADMIN_ONLY_HC;
+        return new AdditionalInitialization.AdminOnlyHostControllerAdditionalInitialization(getSubsystemSchema());
     }
+
 }
