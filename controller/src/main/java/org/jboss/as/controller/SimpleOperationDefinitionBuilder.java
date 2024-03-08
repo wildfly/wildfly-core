@@ -8,6 +8,7 @@ package org.jboss.as.controller;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Set;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -23,17 +24,60 @@ import org.jboss.dmr.ModelType;
  */
 public class SimpleOperationDefinitionBuilder {
 
-    private static AttributeDefinition[] NO_ATTRIBUTES = new AttributeDefinition[0];
+    private static final AttributeDefinition[] NO_ATTRIBUTES = new AttributeDefinition[0];
 
     public static SimpleOperationDefinitionBuilder of(String name, ResourceDescriptionResolver resolver) {
         return new SimpleOperationDefinitionBuilder(name, resolver);
+    }
+
+    /**
+     * Convenience method that delegates to {@link #of(String, SimpleOperationDefinition)}.
+     * @param name the operation name
+     * @param basis an operation used to configure a new operation
+     * @return a new operation definition builder
+     * @throws IllegalArgumentException if the specified basis is not a {@link SimpleOperationDefinition}.
+     */
+    public static SimpleOperationDefinitionBuilder of(String name, OperationDefinition basis) {
+        if (!(basis instanceof SimpleOperationDefinition)) {
+            throw new IllegalArgumentException();
+        }
+        return of(name, (SimpleOperationDefinition) basis);
+    }
+
+    /**
+     * Creates an operation definition builder with the specified name, based on the configuration of the specified operation definition.
+     * @param name the operation name
+     * @param basis an operation used to configure a new operation
+     * @return a new operation definition builder
+     */
+    public static SimpleOperationDefinitionBuilder of(String name, SimpleOperationDefinition basis) {
+        SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(name, basis.getResolver())
+                .setAccessConstraints(basis.getAccessConstraints().toArray(AccessConstraintDefinition[]::new))
+                .setAttributeResolver(basis.getAttributeResolver())
+                .setDescriptionProvider(basis.getDescriptionProvider())
+                .setEntryType(basis.getEntryType())
+                .setParameters(basis.getParameters())
+                .setReplyParameters(basis.getReplyParameters())
+                .setReplyType(basis.getReplyType())
+                .setReplyValueType(basis.getReplyValueType())
+                .setStability(basis.getStability())
+                .withFlags(basis.getFlags())
+                ;
+        if (basis.isReplyAllowNull()) {
+            builder.allowReturnNull();
+        }
+        DeprecationData deprecation = basis.getDeprecationData();
+        if (deprecation != null) {
+            builder.setDeprecated(deprecation.getSince(), deprecation.isNotificationUseful());
+        }
+        return builder;
     }
 
     ResourceDescriptionResolver resolver;
     ResourceDescriptionResolver attributeResolver;
     protected String name;
     protected OperationEntry.EntryType entryType = OperationEntry.EntryType.PUBLIC;
-    protected EnumSet<OperationEntry.Flag> flags = EnumSet.noneOf(OperationEntry.Flag.class);
+    protected Set<OperationEntry.Flag> flags = EnumSet.noneOf(OperationEntry.Flag.class);
     protected AttributeDefinition[] parameters = NO_ATTRIBUTES;
     protected ModelType replyType;
     protected ModelType replyValueType;
@@ -48,7 +92,6 @@ public class SimpleOperationDefinitionBuilder {
         this.name = name;
         this.resolver = resolver;
     }
-
 
     public SimpleOperationDefinition build() {
         if (attributeResolver == null) {
@@ -79,7 +122,7 @@ public class SimpleOperationDefinitionBuilder {
         return this;
     }
 
-    public SimpleOperationDefinitionBuilder withFlags(EnumSet<OperationEntry.Flag> flags) {
+    public SimpleOperationDefinitionBuilder withFlags(Set<OperationEntry.Flag> flags) {
         this.flags.addAll(flags);
         return this;
     }
@@ -102,12 +145,12 @@ public class SimpleOperationDefinitionBuilder {
         return withFlag(OperationEntry.Flag.READ_ONLY);
     }
 
-    public SimpleOperationDefinitionBuilder setParameters(AttributeDefinition... parameters) {//todo add validation for same param name
+    public SimpleOperationDefinitionBuilder setParameters(AttributeDefinition... parameters) {
         this.parameters = parameters;
         return this;
     }
 
-    public SimpleOperationDefinitionBuilder addParameter(AttributeDefinition parameter) {
+    public SimpleOperationDefinitionBuilder addParameter(AttributeDefinition parameter) {//todo add validation for same param name
         int i = parameters.length;
         parameters = Arrays.copyOf(parameters, i + 1);
         parameters[i] = parameter;

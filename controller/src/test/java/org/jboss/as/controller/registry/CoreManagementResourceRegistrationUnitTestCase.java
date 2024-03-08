@@ -7,6 +7,7 @@ package org.jboss.as.controller.registry;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -14,6 +15,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 import java.util.Set;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -23,6 +25,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.ResourceRegistration;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition.Parameters;
@@ -30,7 +33,9 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -337,6 +342,35 @@ public class CoreManagementResourceRegistrationUnitTestCase {
         assertTrue(acds.contains(SensitiveTargetAccessConstraintDefinition.EXTENSIONS));
         assertTrue(acds.contains(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN));
         assertTrue(acds.contains(ApplicationTypeAccessConstraintDefinition.DEPLOYMENT));
+    }
+
+    @Test
+    public void testFilteredOperationParameters() {
+        OperationDefinition unstableOperation = SimpleOperationDefinitionBuilder.of("unstable-operation", NonResolvingResourceDescriptionResolver.INSTANCE).setStability(Stability.PREVIEW).build();
+        OperationStepHandler handler = (context, model) -> {};
+        this.rootRegistration.registerOperationHandler(unstableOperation, handler);
+        assertNull(this.rootRegistration.getOperationEntry(PathAddress.EMPTY_ADDRESS, "unstable-operation"));
+
+        AttributeDefinition stableParameter = new SimpleAttributeDefinitionBuilder("stable", ModelType.STRING).build();
+        AttributeDefinition unstableParameter = new SimpleAttributeDefinitionBuilder("unstable", ModelType.STRING).setStability(Stability.EXPERIMENTAL).build();
+        AttributeDefinition stableReplyParameter = new SimpleAttributeDefinitionBuilder("stable-reply", ModelType.STRING).build();
+        AttributeDefinition unstableReplyParameter = new SimpleAttributeDefinitionBuilder("unstable-reply", ModelType.STRING).setStability(Stability.EXPERIMENTAL).build();
+        OperationDefinition stableOperation = SimpleOperationDefinitionBuilder.of("stable-operation", NonResolvingResourceDescriptionResolver.INSTANCE)
+                .setParameters(stableParameter, unstableParameter)
+                .setReplyParameters(stableReplyParameter, unstableReplyParameter)
+                .build();
+        this.rootRegistration.registerOperationHandler(stableOperation, handler);
+
+        OperationEntry entry = this.rootRegistration.getOperationEntry(PathAddress.EMPTY_ADDRESS, "stable-operation");
+        assertNotNull(entry);
+        assertSame(handler, entry.getOperationHandler());
+
+        OperationDefinition registeredOperation = entry.getOperationDefinition();
+        assertNotSame(stableOperation, registeredOperation);
+        assertEquals(1, registeredOperation.getParameters().length);
+        assertSame(stableParameter, registeredOperation.getParameters()[0]);
+        assertEquals(1, registeredOperation.getReplyParameters().length);
+        assertSame(stableReplyParameter, registeredOperation.getReplyParameters()[0]);
     }
 
     private static class TestHandler implements OperationStepHandler {
