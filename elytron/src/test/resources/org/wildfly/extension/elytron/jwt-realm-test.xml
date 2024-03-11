@@ -1,0 +1,44 @@
+<!-- for JwtSecurityRealmTestCase -->
+<subsystem xmlns="urn:wildfly:elytron:15.1" initial-providers="elytron">
+    <providers>
+        <provider-loader name="elytron" class-names="org.wildfly.security.WildFlyElytronProvider" />
+    </providers>
+
+    <security-realms>
+        <token-realm name="JwtRealm" principal-claim="sub">
+            <jwt issuer="elytron-oauth2-realm" audience="my-app-valid" client-ssl-context="ClientCaSslContext" />
+        </token-realm>
+        <token-realm name="JwtRealmWithoutAllowedJkuValues" principal-claim="sub">
+            <jwt issuer="elytron-oauth2-realm" audience="my-app-valid" client-ssl-context="ClientCaSslContext" />
+        </token-realm>
+    </security-realms>
+
+    <tls>
+        <key-stores>
+            <key-store name="ElytronCaTruststore" >
+                <credential-reference clear-text="Elytron"/>
+                <implementation type="JKS" />
+                <file path="target/test-classes/org/wildfly/extension/elytron/ca.truststore"/>
+            </key-store>
+            <key-store name="keystore">
+                <credential-reference clear-text="Elytron"/>
+                <implementation type="JKS"/>
+                <file path="target/test-classes/org/wildfly/extension/elytron/localhost.keystore"/>
+            </key-store>
+        </key-stores>
+        <key-managers>
+            <key-manager name="KeyManager" key-store="keystore">
+                <credential-reference clear-text="Elytron"/>
+            </key-manager>
+        </key-managers>
+        <trust-managers>
+            <trust-manager name="CaTrustManager" key-store="ElytronCaTruststore"/>
+        </trust-managers>
+        <server-ssl-contexts>
+            <server-ssl-context name="SslContext" key-manager="KeyManager" />
+        </server-ssl-contexts>
+        <client-ssl-contexts>
+            <client-ssl-context name="ClientCaSslContext" trust-manager="CaTrustManager" />
+        </client-ssl-contexts>
+    </tls>
+</subsystem>

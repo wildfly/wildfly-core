@@ -30,6 +30,11 @@
 
     <name>WildFly: Elytron Subsystem</name>
 
+    <properties>
+        <version.com.nimbus.jose-jwt>9.37.3</version.com.nimbus.jose-jwt>
+        <version.com.squareup.okhttp3.mockwebserver>3.8.1</version.com.squareup.okhttp3.mockwebserver>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -56,7 +61,7 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-server</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jboss-dmr</artifactId>
@@ -134,12 +139,12 @@
             <groupId>org.glassfish</groupId>
             <artifactId>jakarta.json</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-audit</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-auth</artifactId>
@@ -169,12 +174,12 @@
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-jaspi</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-realm</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-realm-jdbc</artifactId>
@@ -209,7 +214,7 @@
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-sasl-scram</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-security-manager</artifactId>
@@ -219,7 +224,7 @@
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-x500-cert</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-x500-cert-acme</artifactId>
@@ -229,7 +234,7 @@
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-x500-principal</artifactId>
         </dependency>
-        
+
         <!-- TEST Dependencies -->
         <dependency>
             <groupId>org.wildfly.core</groupId>
@@ -252,6 +257,32 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>${version.com.nimbus.jose-jwt}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <version>${version.com.squareup.okhttp3.mockwebserver}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -362,6 +393,14 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-tests-common</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.wildfly.openssl</groupId>
             <artifactId>wildfly-openssl-java</artifactId>
