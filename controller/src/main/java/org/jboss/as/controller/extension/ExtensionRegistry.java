@@ -348,9 +348,9 @@ public final class ExtensionRegistry implements FeatureRegistry {
      *                   be any actual parsing (e.g. in a slave Host Controller or in a server in a managed domain)
      */
     public void initializeParsers(final Extension extension, final String moduleName, final XMLMapper xmlMapper) {
-        ExtensionParsingContextImpl parsingContext = new ExtensionParsingContextImpl(moduleName, xmlMapper);
-        extension.initializeParsers(parsingContext);
-        parsingContext.attemptCurrentParserInitialization();
+        try (AbstractExtensionParsingContext context = this.enables(extension) ? new ExtensionParsingContextImpl(moduleName, xmlMapper) : new UnstableExtensionParsingContext(moduleName, xmlMapper)) {
+            extension.initializeParsers(context);
+        }
     }
 
     /**
@@ -542,30 +542,25 @@ public final class ExtensionRegistry implements FeatureRegistry {
         return this.stability;
     }
 
-    private class ExtensionParsingContextImpl implements ExtensionParsingContext {
+    private abstract class AbstractExtensionParsingContext implements ExtensionParsingContext, AutoCloseable {
+        final ExtensionInfo extension;
 
-        private final ExtensionInfo extension;
-        private boolean hasNonSupplierParser;
-        private String latestNamespace;
-        private Supplier<XMLElementReader<List<ModelNode>>> latestSupplier;
-
-        private ExtensionParsingContextImpl(String extensionName, XMLMapper xmlMapper) {
-            extension = getExtensionInfo(extensionName);
+        AbstractExtensionParsingContext(String extensionName, XMLMapper xmlMapper) {
+            this.extension = ExtensionRegistry.this.getExtensionInfo(extensionName);
             if (xmlMapper != null) {
-                synchronized (extension) {
-                    extension.xmlMapper = xmlMapper;
+                synchronized (this.extension) {
+                    this.extension.xmlMapper = xmlMapper;
                 }
             }
         }
-
         @Override
         public ProcessType getProcessType() {
-            return processType;
+            return ExtensionRegistry.this.processType;
         }
 
         @Override
         public RunningMode getRunningMode() {
-            return runningModeControl.getRunningMode();
+            return ExtensionRegistry.this.runningModeControl.getRunningMode();
         }
 
         @Override
@@ -576,6 +571,22 @@ public final class ExtensionRegistry implements FeatureRegistry {
         @Override
         public <F extends Feature> boolean enables(F feature) {
             return ExtensionRegistry.this.enables(feature);
+        }
+
+        @Override
+        public void close() {
+            // Do nothing
+        }
+    }
+
+    private class ExtensionParsingContextImpl extends AbstractExtensionParsingContext {
+
+        private boolean hasNonSupplierParser;
+        private String latestNamespace;
+        private Supplier<XMLElementReader<List<ModelNode>>> latestSupplier;
+
+        ExtensionParsingContextImpl(String extensionName, XMLMapper xmlMapper) {
+            super(extensionName, xmlMapper);
         }
 
         @Override
@@ -618,7 +629,8 @@ public final class ExtensionRegistry implements FeatureRegistry {
             }
         }
 
-        private void attemptCurrentParserInitialization() {
+        @Override
+        public void close() {
             if (ExtensionRegistry.this.processType != ProcessType.DOMAIN_SERVER
                     && !hasNonSupplierParser && latestSupplier != null) {
                 // We've only been passed suppliers for parsers, which means the model
@@ -642,6 +654,37 @@ public final class ExtensionRegistry implements FeatureRegistry {
                 //noinspection deprecation
                 ((PersistentResourceXMLParser) reader).cacheXMLDescription();
             }
+        }
+    }
+
+    private class UnstableExtensionParsingContext extends AbstractExtensionParsingContext {
+
+        UnstableExtensionParsingContext(String extensionName, XMLMapper xmlMapper) {
+            super(extensionName, xmlMapper);
+        }
+
+        @Override
+        public void setSubsystemXmlMapping(String subsystemName, String namespaceUri, XMLElementReader<List<ModelNode>> reader) {
+            this.setSubsystemXMLMapping(subsystemName, namespaceUri);
+        }
+
+        @Override
+        public void setSubsystemXmlMapping(String subsystemName, String namespaceUri, Supplier<XMLElementReader<List<ModelNode>>> supplier) {
+            this.setSubsystemXMLMapping(subsystemName, namespaceUri);
+        }
+
+        private void setSubsystemXMLMapping(String subsystemName, String namespaceUri) {
+            synchronized (this.extension) {
+                this.extension.getSubsystemInfo(subsystemName).addParsingNamespace(namespaceUri);
+                if (this.extension.xmlMapper != null) {
+                    this.extension.xmlMapper.registerRootElement(new QName(namespaceUri, SUBSYSTEM), new UnstableSubsystemNamespaceParser(subsystemName));
+                }
+            }
+        }
+
+        @Override
+        public void setProfileParsingCompletionHandler(ProfileParsingCompletionHandler handler) {
+            // Ignore
         }
     }
 

@@ -13,6 +13,7 @@ import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SubsystemSchema;
+import org.jboss.as.controller.extension.UnstableSubsystemNamespaceParser;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 
@@ -81,9 +82,8 @@ public interface ExtensionParsingContext extends FeatureRegistry {
      */
     default <S extends SubsystemSchema<S>> void setSubsystemXmlMappings(String subsystemName, Set<S> schemas) {
         for (S schema : schemas) {
-            if (this.enables(schema)) {
-                this.setSubsystemXmlMapping(subsystemName, schema.getNamespace().getUri(), schema);
-            }
+            XMLElementReader<List<ModelNode>> reader = this.enables(schema) ? schema : new UnstableSubsystemNamespaceParser(subsystemName);
+            this.setSubsystemXmlMapping(subsystemName, schema.getNamespace().getUri(), reader);
         }
     }
 
