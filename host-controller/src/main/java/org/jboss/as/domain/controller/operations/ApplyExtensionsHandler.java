@@ -35,6 +35,7 @@ import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.extension.ExtensionResource;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
@@ -203,6 +204,8 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
                     } finally {
                         SecurityActions.setThreadContextClassLoader(oldTccl);
                     }
+                } else {
+                    ControllerLogger.ROOT_LOGGER.unstableExtension(extension.getClass().getName(), module);
                 }
             }
         } catch (ModuleLoadException e) {

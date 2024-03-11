@@ -123,6 +123,8 @@ public class ExtensionAddHandler implements OperationStepHandler {
                     // If extension is not enabled by stability level of process, skip model registration
                     if (extensionRegistry.enables(extension)) {
                         extension.initialize(extensionRegistry.getExtensionContext(module, extension.getStability(), rootRegistration, extensionRegistryType));
+                    } else {
+                        ControllerLogger.ROOT_LOGGER.unstableExtension(extension.getClass().getName(), module);
                     }
                 } finally {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
