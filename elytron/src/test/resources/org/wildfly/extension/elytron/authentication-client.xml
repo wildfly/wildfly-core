@@ -44,6 +44,10 @@
         <authentication-context name="child" extends="base">
             <match-rule match-no-user="true" authentication-configuration="base" />
         </authentication-context>
+        <authentication-context name="ac">
+            <match-rule match-port="1000" ssl-context="ssl1"/>
+            <match-rule match-port="2000" ssl-context="ssl2"/>
+        </authentication-context>
     </authentication-client>
     <security-domains>
         <security-domain name="TestDomain" default-realm="identity">
@@ -53,4 +57,22 @@
     <security-realms>
         <identity-realm name="identity" identity="identity" />
     </security-realms>
+    <tls>
+        <key-stores>
+            <key-store name="accounts.keystore">
+                <credential-reference clear-text="elytron"/>
+                <implementation type="JKS"/>
+                <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
+            </key-store>
+        </key-stores>
+        <key-managers>
+            <key-manager name="serverKey" algorithm="SunX509" key-store="accounts.keystore">
+                <credential-reference clear-text="elytron"/>
+            </key-manager>
+        </key-managers>
+        <server-ssl-contexts>
+            <server-ssl-context name="ssl1" key-manager="serverKey"/>
+            <server-ssl-context name="ssl2" key-manager="serverKey"/>
+        </server-ssl-contexts>
+    </tls>
 </subsystem>

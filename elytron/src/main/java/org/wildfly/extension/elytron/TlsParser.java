@@ -13,6 +13,8 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFIC
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CLIENT_SSL_CONTEXT;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CLIENT_SSL_CONTEXTS;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXT;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTERING_KEY_STORE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HOST;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SNI_MAPPING;
@@ -195,6 +197,10 @@ class TlsParser {
             .addAttribute(SSLDefinitions.PROVIDERS)
             .addAttribute(SSLDefinitions.PROVIDER_NAME);
 
+    private PersistentResourceXMLBuilder dynamicClientSslContextParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(DYNAMIC_CLIENT_SSL_CONTEXT))
+            .setXmlWrapperElement(DYNAMIC_CLIENT_SSL_CONTEXTS)
+            .addAttribute(SSLDefinitions.AUTHENTICATION_CONTEXT_ATTRIBUTE);
+
     private PersistentResourceXMLBuilder certificateAuthorityParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(CERTIFICATE_AUTHORITY))
             .setXmlWrapperElement(CERTIFICATE_AUTHORITIES)
             .addAttribute(CertificateAuthorityDefinition.URL)
@@ -348,5 +354,21 @@ class TlsParser {
             .addChild(certificateAuthorityParser)
             .addChild(certificateAuthorityAccountParser)
             .addChild(serverSslSniContextParser)
+            .build();
+
+    final PersistentResourceXMLDescription tlsParserCommunity_18_0 = decorator(TLS)
+            .addChild(decorator(KEY_STORES)
+                    .addChild(keyStoreParser)
+                    .addChild(ldapKeyStoreParser)
+                    .addChild(filteringKeyStoreParser)
+            )
+            .addChild(keyManagerParser_12_0)
+            .addChild(trustManagerParser_14_0)
+            .addChild(serverSslContextParser_9_0)
+            .addChild(clientSslContextParser_9_0)
+            .addChild(certificateAuthorityParser)
+            .addChild(certificateAuthorityAccountParser)
+            .addChild(serverSslSniContextParser)
+            .addChild(dynamicClientSslContextParser) // new
             .build();
 }

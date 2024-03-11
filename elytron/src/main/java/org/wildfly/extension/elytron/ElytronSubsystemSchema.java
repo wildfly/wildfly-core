@@ -26,6 +26,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.EXPRESSI
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERMISSION_SETS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_PROPERTY;
 import static org.wildfly.extension.elytron.PermissionMapperDefinitions.PERMISSIONS;
+import static org.wildfly.extension.elytron.SSLDefinitions.getDynamicClientSSLContextDefinition;
 
 /**
  * Enumeration of elytron subsystem schema versions.
@@ -191,7 +192,9 @@ public enum ElytronSubsystemSchema implements PersistentSubsystemSchema<ElytronS
 
     private void addTlsParser(PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder) {
         TlsParser tlsParser = new TlsParser();
-        if (this.since(ElytronSubsystemSchema.VERSION_14_0)) {
+        if (this.since(ElytronSubsystemSchema.VERSION_18_0_COMMUNITY) && this.enables(getDynamicClientSSLContextDefinition())) {
+            builder.addChild(tlsParser.tlsParserCommunity_18_0);
+        } else if (this.since(ElytronSubsystemSchema.VERSION_14_0)) {
             builder.addChild(tlsParser.tlsParser_14_0);
         } else if (this.since(ElytronSubsystemSchema.VERSION_12_0)) {
             builder.addChild(tlsParser.tlsParser_12_0);
