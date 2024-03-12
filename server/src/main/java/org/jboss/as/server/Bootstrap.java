@@ -100,6 +100,19 @@ public interface Bootstrap {
             this.startTime = serverEnvironment.getStartTime();
         }
 
+        private Configuration(final Configuration original, ServerEnvironment serverEnvironment) {
+            this.serverEnvironment = serverEnvironment;
+            this.runningModeControl = original.runningModeControl;
+            this.extensionRegistry = original.extensionRegistry;
+            this.capabilityRegistry = original.capabilityRegistry;
+            this.auditLogger = original.auditLogger;
+            this.authorizer = original.authorizer;
+            this.securityIdentitySupplier = original.securityIdentitySupplier;
+            this.moduleLoader = original.moduleLoader;
+            this.configurationPersisterFactory = original.configurationPersisterFactory;
+            this.startTime = original.startTime;
+        }
+
         /**
          * Get the server environment.
          *
@@ -234,6 +247,16 @@ public interface Bootstrap {
          */
         public long getStartTime() {
             return startTime;
+        }
+
+        Configuration recalculateForReload(RunningModeControl runningModeControl) {
+            if (runningModeControl.isReloaded()) {
+                ServerEnvironment recalculatedServerEnvironment = serverEnvironment.recalculateForReload(runningModeControl);
+                if (recalculatedServerEnvironment != serverEnvironment) {
+                    return new Configuration(this, recalculatedServerEnvironment);
+                }
+            }
+            return this;
         }
     }
 

@@ -4,7 +4,10 @@
  */
 package org.jboss.as.server.operations;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessState;
@@ -17,12 +20,16 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.ProcessReloadHandler;
 import org.jboss.as.controller.operations.validation.EnumValidator;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.server.ServerEnvironment;
+import org.jboss.as.server.Services;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceName;
@@ -51,18 +58,59 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
             .setValidator(EnumValidator.create(StartMode.class))
             .setAlternatives(ModelDescriptionConstants.ADMIN_ONLY)
             .setDefaultValue(new ModelNode(StartMode.NORMAL.toString())).build();
-    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, USE_CURRENT_SERVER_CONFIG, SERVER_CONFIG, START_MODE};
 
-    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, ServerDescriptions.getResourceDescriptionResolver("server"))
-                                                                .setParameters(ATTRIBUTES)
+    private static final AttributeDefinition[] STANDARD_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, USE_CURRENT_SERVER_CONFIG, SERVER_CONFIG, START_MODE};
+
+
+    private static final OperationDefinition STANDARD_DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, ServerDescriptions.getResourceDescriptionResolver("server"))
+                                                                .setParameters(STANDARD_ATTRIBUTES)
                                                                 .setRuntimeOnly()
                                                                 .build();
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Parameters only allowed in the 'enhanced' operation
+
+    private static final String ENHANCED_OPERATION_NAME = ModelDescriptionConstants.RELOAD_ENHANCED;
+
+    protected static final AttributeDefinition STABILITY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.STABILITY, ModelType.STRING, true)
+            .setValidator(EnumValidator.create(Stability.class)).build();
+    private static final AttributeDefinition[] ENHANCED_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, USE_CURRENT_SERVER_CONFIG, SERVER_CONFIG, START_MODE, STABILITY};
+    private static final OperationDefinition ENHANCED_DEFINITION = new SimpleOperationDefinitionBuilder(ENHANCED_OPERATION_NAME, ServerDescriptions.getResourceDescriptionResolver("server"))
+                                                                .setStability(Stability.COMMUNITY)
+                                                                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.RELOAD_ENHANCED)
+                                                                .setParameters(ENHANCED_ATTRIBUTES)
+                                                                .setRuntimeOnly()
+                                                                .build();
+
+    private final Set<String> additionalAttributes;
     private final ServerEnvironment environment;
-    public ServerProcessReloadHandler(ServiceName rootService, RunningModeControl runningModeControl,
-            ControlledProcessState processState, ServerEnvironment environment) {
+
+    protected ServerProcessReloadHandler(ServiceName rootService, RunningModeControl runningModeControl, ControlledProcessState processState, ServerEnvironment environment) {
+        this(rootService, runningModeControl, processState, environment, null);
+    }
+
+    private ServerProcessReloadHandler(ServiceName rootService, RunningModeControl runningModeControl, ControlledProcessState processState, ServerEnvironment environment, Set<String> additionalAttributes) {
         super(rootService, runningModeControl, processState);
+        this.additionalAttributes = additionalAttributes == null ? Collections.emptySet() : additionalAttributes;
         this.environment = environment;
+    }
+
+    public static void registerStandardReloadOperation(ManagementResourceRegistration resourceRegistration, RunningModeControl runningModeControl, ControlledProcessState processState, ServerEnvironment serverEnvironment) {
+        ServerProcessReloadHandler reloadHandler = new ServerProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, serverEnvironment);
+        resourceRegistration.registerOperationHandler(ServerProcessReloadHandler.STANDARD_DEFINITION, reloadHandler, false);
+    }
+
+    public static void registerEnhancedReloadOperation(ManagementResourceRegistration resourceRegistration, RunningModeControl runningModeControl, ControlledProcessState processState, ServerEnvironment serverEnvironment) {
+        ServerProcessReloadHandler reloadHandler = new ServerProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, serverEnvironment, getAttributeNames(ENHANCED_ATTRIBUTES));
+        resourceRegistration.registerOperationHandler(ServerProcessReloadHandler.ENHANCED_DEFINITION, reloadHandler, false);
+    }
+
+    private static Set<String> getAttributeNames(AttributeDefinition[] attributes) {
+        Set<String> names = new HashSet<>();
+        for (AttributeDefinition attr : attributes) {
+            names.add(attr.getName());
+        }
+        return names;
     }
 
     @Override
@@ -71,6 +119,14 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
         boolean adminOnly = unmanaged && ADMIN_ONLY.resolveModelAttribute(context, operation).asBoolean(false);
         final boolean useCurrentConfig = unmanaged && USE_CURRENT_SERVER_CONFIG.resolveModelAttribute(context, operation).asBoolean(true);
         final String startMode = START_MODE.resolveModelAttribute(context, operation).asString();
+
+        final Stability stability;
+        if (additionalAttributes.contains(ModelDescriptionConstants.STABILITY) && operation.hasDefined(ModelDescriptionConstants.STABILITY)) {
+            String val = STABILITY.resolveModelAttribute(context, operation).asString();
+            stability = Stability.fromString(val);
+        } else {
+            stability = null;
+        }
 
         if(operation.get(ModelDescriptionConstants.ADMIN_ONLY).isDefined() && operation.get(ModelDescriptionConstants.START_MODE).isDefined()) {
             throw ServerLogger.ROOT_LOGGER.cannotSpecifyBothAdminOnlyAndStartMode();
@@ -108,8 +164,12 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
 
             @Override
             public void doReload(RunningModeControl runningModeControl) {
+                // If no stability is specified, use the current stability
+                Stability reloadedStability = stability == null ? environment.getStability() : stability;
+
                 runningModeControl.setRunningMode(finalAdminOnly ? RunningMode.ADMIN_ONLY : RunningMode.NORMAL);
                 runningModeControl.setReloaded();
+                runningModeControl.setReloadedStability(reloadedStability);
                 runningModeControl.setUseCurrentConfig(useCurrentConfig);
                 runningModeControl.setNewBootFileName(serverConfig);
                 runningModeControl.setSuspend(finalSuspend);

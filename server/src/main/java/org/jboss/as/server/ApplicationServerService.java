@@ -52,7 +52,7 @@ import org.jboss.threads.AsyncFuture;
 final class ApplicationServerService implements Service<AsyncFuture<ServiceContainer>> {
 
     private final List<ServiceActivator> extraServices;
-    private final Bootstrap.Configuration configuration;
+    private volatile Bootstrap.Configuration configuration;
     private final RunningModeControl runningModeControl;
     private final ControlledProcessState processState;
     private final SuspendController suspendController;
@@ -78,8 +78,15 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
 
         //Moved to AbstractControllerService.start()
         //processState.setStarting();
-        final Bootstrap.Configuration configuration = this.configuration;
-        final ServerEnvironment serverEnvironment = configuration.getServerEnvironment();
+        final Bootstrap.Configuration configuration;
+        Bootstrap.Configuration recalculatedConfiguration = this.configuration.recalculateForReload(runningModeControl);
+        if (recalculatedConfiguration != this.configuration) {
+            this.configuration = recalculatedConfiguration;
+            configuration = recalculatedConfiguration;
+        } else {
+            configuration = this.configuration;
+        }
+        final ServerEnvironment serverEnvironment = configuration.getServerEnvironment().recalculateForReload(runningModeControl);
         final ProductConfig config = serverEnvironment.getProductConfig();
         final String prettyVersion = config.getPrettyVersionString();
         ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion);
