@@ -18,7 +18,6 @@ import org.jboss.as.controller.client.ModelControllerClientConfiguration;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.test.integration.security.common.CoreUtils;
-import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildFlyRunner;
@@ -81,12 +80,15 @@ public class KerberosHttpMgmtSaslTestCase extends AbstractKerberosMgmtSaslTestBa
         final HttpMgmtConfigurator httpMgmtConfig = httpMgmtConfigBuilder.build();
         httpMgmtConfig.create(client, null);
 
-        ServerReload.executeReloadAndWaitForCompletion(client, 30 * 1000, false, "remote",
-                TestSuiteEnvironment.getServerAddress(), PORT_NATIVE);
+        ServerReload.Parameters serverReloadParams = new ServerReload.Parameters()
+                .setTimeout(30 * 1000)
+                .setProtocol("remote")
+                .setServerPort(PORT_NATIVE);
+
+        ServerReload.executeReloadAndWaitForCompletion(client, serverReloadParams);
         return () -> {
             httpMgmtConfig.remove(client, null);
-            ServerReload.executeReloadAndWaitForCompletion(client, 30 * 1000, false, "remote",
-                    TestSuiteEnvironment.getServerAddress(), PORT_NATIVE);
+            ServerReload.executeReloadAndWaitForCompletion(client, serverReloadParams);
         };
     }
 

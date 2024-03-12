@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutionException;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -61,7 +62,9 @@ public class ServerReload {
      * @throws AssertionError if the reload does not complete within the timeout
      */
     public static void executeReloadAndWaitForCompletion(ModelControllerClient client, boolean adminOnly) {
-        executeReloadAndWaitForCompletion(client, TIMEOUT, adminOnly, null, -1);
+        Parameters parameters = new Parameters()
+                .setAdminOnly(adminOnly);
+        executeReloadAndWaitForCompletion(client, parameters);
     }
 
     /**
@@ -72,57 +75,33 @@ public class ServerReload {
      *
      * @throws AssertionError if the reload does not complete within the specified timeout
      */
-    public static void executeReloadAndWaitForCompletion(ModelControllerClient client, int timeout) {
-        executeReloadAndWaitForCompletion(client, timeout, false, null, -1);
+    private static void executeReloadAndWaitForCompletion(ModelControllerClient client, int timeout) {
+        Parameters parameters = new Parameters()
+                .setTimeout(timeout);
+        executeReloadAndWaitForCompletion(client, parameters);
     }
 
-    public static void executeReloadAndWaitForCompletion(ModelControllerClient client, ModelNode reloadOp) {
-        executeReloadAndWaitForCompletion(client, reloadOp, TIMEOUT, null, -1);
+    public static void executeReloadAndWaitForCompletion(ModelControllerClient client, Parameters parameters) {
+        executeReload(client, parameters);
+        waitForLiveServerToReload(parameters);
     }
 
-    public static void executeReloadAndWaitForCompletion(ModelControllerClient client, ModelNode reloadOp, int timeout, String serverAddress, int serverPort) {
-        executeReload(client, reloadOp);
-        waitForLiveServerToReload(timeout, "remote+http",
-                serverAddress != null ? serverAddress : TestSuiteEnvironment.getServerAddress(),
-                serverPort != -1 ? serverPort : TestSuiteEnvironment.getServerPort());
-    }
-
-    /**
-     * Executes a {@code reload} operation, optionally putting the server into {@code admin-only}
-     * running mode, and waits a configurable maximum time for the reload to complete.
-     *
-     * @param client the client to use for the request. Cannot be {@code null}
-     * @param timeout maximum time to wait for the reload to complete, in milliseconds
-     * @param adminOnly     if {@code true}, the server will be reloaded in admin-only mode
-     * @param serverAddress if {@code null}, use {@code TestSuiteEnvironment.getServerAddress()} to create the ModelControllerClient
-     * @param serverPort    if {@code -1}, use {@code TestSuiteEnvironment.getServerPort()} to create the ModelControllerClient
-     *
-     * @throws AssertionError if the reload does not complete within the specified timeout
-     */
-    public static void executeReloadAndWaitForCompletion(ModelControllerClient client, int timeout, boolean adminOnly, String serverAddress, int serverPort) {
-        executeReload(client, adminOnly);
-        waitForLiveServerToReload(timeout, "remote+http",
-                serverAddress != null ? serverAddress : TestSuiteEnvironment.getServerAddress(),
-                serverPort != -1 ? serverPort : TestSuiteEnvironment.getServerPort());
-    }
-
-    public static void executeReloadAndWaitForCompletion(ModelControllerClient client, int timeout, boolean adminOnly, String protocol, String serverAddress, int serverPort) {
-        executeReload(client, adminOnly);
-        waitForLiveServerToReload(timeout, protocol,
-                serverAddress != null ? serverAddress : TestSuiteEnvironment.getServerAddress(),
-                serverPort != -1 ? serverPort : TestSuiteEnvironment.getServerPort());
-    }
-
-    public static void executeReload(ModelControllerClient client, boolean adminOnly) {
+    private static void executeReload(ModelControllerClient client, Parameters parameters) {
         ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).setEmptyList();
-        operation.get(OP).set("reload");
-        operation.get("admin-only").set(adminOnly);
+        operation.get("admin-only").set(parameters.adminOnly);
+        if (parameters.stability != null) {
+            operation.get(OP).set("reload-enhanced");
+            operation.get("stability").set(parameters.stability.toString());
+        } else {
+            operation.get(OP).set("reload");
+        }
 
         executeReload(client, operation);
     }
 
-    public static void executeReload(ModelControllerClient client, ModelNode reloadOp) {
+
+    private static void executeReload(ModelControllerClient client, ModelNode reloadOp) {
         try {
             ModelNode result = client.execute(reloadOp);
             Assert.assertEquals(SUCCESS, result.get(ClientConstants.OUTCOME).asString());
@@ -157,13 +136,13 @@ public class ServerReload {
         }
     }
 
-    private static void waitForLiveServerToReload(int timeout, String protocol, String serverAddress, int serverPort) {
+    private static void waitForLiveServerToReload(Parameters parameters) {
         long start = System.currentTimeMillis();
         ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).setEmptyList();
         operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
         operation.get(NAME).set("server-state");
-        while (System.currentTimeMillis() - start < timeout) {
+        while (System.currentTimeMillis() - start < parameters.timeout) {
             //do the sleep before we check, as the attribute state may not change instantly
             //also reload generally takes longer than 100ms anyway
             try {
@@ -171,8 +150,8 @@ public class ServerReload {
             } catch (InterruptedException e) {
             }
             try {
-                ModelControllerClient liveClient = ModelControllerClient.Factory.create(protocol,
-                        serverAddress, serverPort);
+                ModelControllerClient liveClient = ModelControllerClient.Factory.create(
+                        parameters.protocol, parameters.serverAddress, parameters.serverPort);
                 try {
                     ModelNode result = liveClient.execute(operation);
                     if ("running".equals(result.get(RESULT).asString())) {
@@ -217,5 +196,46 @@ public class ServerReload {
             executeReloadAndWaitForCompletion(managementClient.getControllerClient());
         }
     }
+
+    public static class Parameters {
+        private int timeout = TIMEOUT;
+        boolean adminOnly = false;
+        String protocol = "remote+http";
+        String serverAddress = TestSuiteEnvironment.getServerAddress();
+        int serverPort = TestSuiteEnvironment.getServerPort();
+
+        Stability stability = null;
+
+        public Parameters setTimeout(int timeout) {
+            this.timeout = timeout;
+            return this;
+        }
+
+        public Parameters setAdminOnly(boolean adminOnly) {
+            this.adminOnly = adminOnly;
+            return this;
+        }
+
+        public Parameters setProtocol(String protocol) {
+            this.protocol = protocol;
+            return this;
+        }
+
+        public Parameters setServerAddress(String serverAddress) {
+            this.serverAddress = serverAddress;
+            return this;
+        }
+
+        public Parameters setServerPort(int serverPort) {
+            this.serverPort = serverPort;
+            return this;
+        }
+
+        public Parameters setStability(Stability stability) {
+            this.stability = stability;
+            return this;
+        }
+    }
+
 }
 
