@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
+import org.junit.AssumptionViolatedException;
 import org.junit.runner.Result;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
@@ -63,6 +64,14 @@ public class WildFlyRunner extends BlockJUnit4ClassRunner {
     private final AtomicBoolean doOnce = new AtomicBoolean(false);
 
     private final ParameterDescriptions parameterDescriptions = new ParameterDescriptions();
+
+    // If a ServerSetupTask.setup() method fails, record the error here
+    private org.junit.internal.AssumptionViolatedException assumptionFailedInServerSetup;
+
+    //Keeps track of the number of setup tasks that have been run, which is needed when tearing them down again
+    private int runSetupTasks = 0;
+
+
 
     /**
      * Creates a BlockJUnit4ClassRunner to run {@code klass}
@@ -154,6 +163,8 @@ public class WildFlyRunner extends BlockJUnit4ClassRunner {
 
     @Override
     public void run(final RunNotifier notifier) {
+        assumptionFailedInServerSetup = null;
+        int setupTasks = 0;
         notifier.addListener(new RunListener() {
             @Override
             public void testRunFinished(Result result) throws Exception {
@@ -173,10 +184,15 @@ public class WildFlyRunner extends BlockJUnit4ClassRunner {
             Security.insertProviderAt(ELYTRON_PROVIDER, 0);
             providerInstalled = true;
         }
-        if (automaticServerControl) {
-            runSetupTasks();
+        try {
+            if (automaticServerControl) {
+                runSetupTasks();
+            }
+        } catch (AssumptionViolatedException e) {
+            assumptionFailedInServerSetup = e;
         }
         super.run(notifier);
+
         if (automaticServerControl) {
             runTearDownTasks();
         }
@@ -189,6 +205,9 @@ public class WildFlyRunner extends BlockJUnit4ClassRunner {
         for (ServerSetupTask task : serverSetupTasks) {
             try {
                 task.setup(controller.getClient());
+                runSetupTasks++;
+            } catch (AssumptionViolatedException e) {
+                throw e;
             } catch (Exception e) {
                 throw new RuntimeException(String.format("Could not run setup task '%s'", task), e);
             }
@@ -196,7 +215,7 @@ public class WildFlyRunner extends BlockJUnit4ClassRunner {
     }
 
     private void runTearDownTasks() {
-        List<ServerSetupTask> reverseServerSetupTasks = new LinkedList<>(serverSetupTasks);
+        List<ServerSetupTask> reverseServerSetupTasks = new LinkedList<>(serverSetupTasks.subList(0, runSetupTasks));
         Collections.reverse(reverseServerSetupTasks);
         for (ServerSetupTask task : reverseServerSetupTasks) {
             try {
@@ -300,4 +319,25 @@ public class WildFlyRunner extends BlockJUnit4ClassRunner {
         return INJECT_CLASSES;
     }
 
+    @Override
+    protected Statement classBlock(RunNotifier notifier) {
+        Statement statement = super.classBlock(notifier);
+        return new WrappedStatement(statement);
+    }
+
+    private class WrappedStatement extends Statement {
+
+        private final Statement delegate;
+        public WrappedStatement(Statement delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void evaluate() throws Throwable {
+            if (assumptionFailedInServerSetup != null) {
+                throw assumptionFailedInServerSetup;
+            }
+            delegate.evaluate();
+        }
+    }
 }
