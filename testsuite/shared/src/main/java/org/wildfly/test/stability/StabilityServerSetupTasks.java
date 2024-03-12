@@ -35,6 +35,8 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD_ENHANCED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
@@ -57,15 +59,23 @@ public abstract class StabilityServerSetupTasks implements ServerSetupTask {
 
     @Override
     public void setup(ManagementClient managementClient) throws Exception {
+        // Make sure the desired stability level is one of the ones supported by the server
         Set<Stability> supportedStabilityLevels = getSupportedStabilityLevels();
         Assume.assumeTrue(
                 String.format("%s is not a supported stability level", desiredStability, supportedStabilityLevels),
                 supportedStabilityLevels.contains(desiredStability));
 
+        // Check the reload-enhanced operation exists in the current stability level
         Assume.assumeTrue(
                 "The reload-enhanced operation is not registered at this stability level",
                 checkReloadEnhancedOperationIsAvailable(managementClient));
 
+        // Check the reload-enhanced operation exists in the stability level we want to load to so that
+        // we can reload back to the current one
+        Stability reloadOpStability = getReloadEnhancedOperationStabilityLevel(managementClient);
+        Assume.assumeTrue(desiredStability.enables(reloadOpStability));
+
+        // All good, let's do it!
         reloadToDesiredStability(managementClient.getControllerClient(), desiredStability);
     }
 
@@ -85,6 +95,15 @@ public abstract class StabilityServerSetupTasks implements ServerSetupTask {
         return false;
     }
 
+    private Stability getReloadEnhancedOperationStabilityLevel(ManagementClient managementClient) throws Exception {
+        ModelNode op = Util.createOperation(READ_OPERATION_DESCRIPTION_OPERATION, PathAddress.EMPTY_ADDRESS);
+        op.get(NAME).set(RELOAD_ENHANCED);
+
+        ModelNode result = ManagementOperations.executeOperation(managementClient.getControllerClient(), op);
+        String stability = result.get(STABILITY).asString();
+        return Stability.fromString(stability);
+
+    }
     private Set<Stability> getSupportedStabilityLevels() {
         // TODO WFCORE-6731 - see https://github.com/wildfly/wildfly-core/pull/5895#discussion_r1520489808
         // This information will be available in a management operation, For now just return a hardcoded set
@@ -98,8 +117,6 @@ public abstract class StabilityServerSetupTasks implements ServerSetupTask {
             originalStability = currentStability;
         }
 
-        // The stability parameter for the reload opration is only registered below the default level
-        Assume.assumeFalse("Can't reload to a different stability when server stability level is default", currentStability == Stability.DEFAULT && stability != Stability.DEFAULT);
 
         if (currentStability == stability) {
             return originalStability;
