@@ -78,7 +78,7 @@ public class PreparedResponseTestCase {
         try (ManagementClient managementClient = getManagementClient()) {
             block(managementClient);
             long timeout = SHUTDOWN_WAITING_TIME + System.currentTimeMillis();
-            ServerReload.executeReload(managementClient.getControllerClient(), false);
+            ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient(), false);
             while (System.currentTimeMillis() < timeout) {
                 Thread.sleep(FREQUENCY);
                 try {
