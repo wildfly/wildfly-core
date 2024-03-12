@@ -201,7 +201,7 @@ public final class ServerService extends AbstractControllerService {
             : ProcessType.EMBEDDED_SERVER;
     }
 
-    static Stability getStability(ServerEnvironment serverEnvironment) {
+    private static Stability getStability(ServerEnvironment serverEnvironment) {
         return serverEnvironment != null ? serverEnvironment.getStability() : Stability.DEFAULT;
     }
 

@@ -589,6 +589,41 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         }
     }
 
+    private ServerEnvironment(ServerEnvironment original, Stability stability) {
+        this.primordialProperties = original.primordialProperties;
+        this.providedProperties = original.providedProperties;
+        this.processNameSet = original.processNameSet;
+        this.launchType = original.launchType;
+        this.hostControllerName = original.hostControllerName;
+        this.qualifiedHostName = original.qualifiedHostName;
+        this.hostName = original.hostName;
+        this.serverName = original.serverName;
+        this.nodeName = original.nodeName;
+        this.javaExtDirs = original.javaExtDirs;
+        this.homeDir = original.homeDir;
+        this.serverBaseDir = original.serverBaseDir;
+        this.serverConfigurationDir = original.serverConfigurationDir;
+        this.serverConfigurationFile = original.serverConfigurationFile;
+        this.serverLogDir = original.serverLogDir;
+        this.controllerTempDir = original.controllerTempDir;
+        this.serverDataDir = original.serverDataDir;
+        this.serverContentDir = original.serverContentDir;
+        this.serverTempDir = original.serverTempDir;
+        this.domainBaseDir = original.domainBaseDir;
+        this.domainConfigurationDir = original.domainConfigurationDir;
+        this.standalone = original.standalone;
+        this.allowModelControllerExecutor = original.allowModelControllerExecutor;
+        this.initialRunningMode = original.initialRunningMode;
+        this.productConfig = original.productConfig;
+        this.runningModeControl = original.runningModeControl;
+        this.serverUUID = original.serverUUID;
+        this.startTime = original.startTime;
+        this.startSuspended = original.startSuspended;
+        this.startGracefully = original.startGracefully;
+        this.repository = original.repository;
+        this.stability = stability;
+    }
+
     private Set<String> listIgnoredFiles(String defaultServerConfig) {
         Set<String> ignored = new LinkedHashSet<>();
         setIgnored(ignored, serverDataDir.toPath(), true, false);
@@ -1241,5 +1276,17 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
 
     ManagedAuditLogger createAuditLogger() {
         return new ManagedAuditLoggerImpl(getProductConfig().resolveVersion(), true);
+    }
+
+    ServerEnvironment recalculateForReload(RunningModeControl runningModeControl) {
+        if (runningModeControl.isReloaded()) {
+            Stability stability = runningModeControl.getReloadedStability() != null ? runningModeControl.getReloadedStability() : productConfig.getDefaultStability();
+            if (stability != this.stability) {
+                System.setProperty(ProcessEnvironment.STABILITY, stability.toString());
+
+                return new ServerEnvironment(this, stability);
+            }
+        }
+        return this;
     }
 }

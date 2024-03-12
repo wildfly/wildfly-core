@@ -34,7 +34,7 @@ public abstract class ProcessReloadHandler<T extends RunningModeControl> impleme
     /**
      * The operation name.
      */
-    protected static final String OPERATION_NAME = "reload";
+    protected static final String OPERATION_NAME = ModelDescriptionConstants.RELOAD;
 
     protected static final AttributeDefinition ADMIN_ONLY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ADMIN_ONLY, ModelType.BOOLEAN, true)
                                                                     .setDefaultValue(ModelNode.FALSE).build();

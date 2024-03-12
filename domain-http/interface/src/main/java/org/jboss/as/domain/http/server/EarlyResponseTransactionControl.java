@@ -7,13 +7,13 @@ package org.jboss.as.domain.http.server;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.remote.EarlyResponseSendListener;
 import org.jboss.dmr.ModelNode;
 
@@ -29,7 +29,7 @@ final class EarlyResponseTransactionControl implements ModelController.Operation
 
     EarlyResponseTransactionControl(ResponseCallback callback, ModelNode operation) {
         this.callback = callback;
-        this.reload = RELOAD.equals(operation.get(OP).asString());
+        this.reload = ModelDescriptionConstants.RELOAD_OPERATIONS.contains(operation.get(OP).asString());
     }
 
     @Override
