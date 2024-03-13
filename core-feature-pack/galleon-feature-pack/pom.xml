@@ -232,6 +232,7 @@
                             <release-name>WildFly Core</release-name>
                             <fork-embedded>${galleon.fork.embedded}</fork-embedded>
                             <generate-channel-manifest>true</generate-channel-manifest>
+                            <minimum-stability>experimental</minimum-stability>
                         </configuration>
                     </execution>
                 </executions>
