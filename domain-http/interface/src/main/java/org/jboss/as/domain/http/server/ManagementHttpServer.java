@@ -260,7 +260,7 @@ public class ManagementHttpServer {
     }
 
     private static HttpHandler addDmrRedinessHandler(PathHandler pathHandler, HttpHandler domainApiHandler, Function<HttpServerExchange, Boolean> readinessFunction) {
-        HttpHandler readinessHandler = wrapXFrameOptions(new DmrFailureReadinessHandler(readinessFunction, domainApiHandler, ErrorContextHandler.ERROR_CONTEXT));
+        HttpHandler readinessHandler = wrapHttpHeader(wrapHttpHeader(new DmrFailureReadinessHandler(readinessFunction, domainApiHandler, ErrorContextHandler.ERROR_CONTEXT), "X-Frame-Options", "SAMEORIGIN"), "X-Content-Type-Options", "nosniff");
         pathHandler.addPrefixPath(DomainApiCheckHandler.PATH, readinessHandler);
         pathHandler.addExactPath(DomainApiCheckHandler.GENERIC_CONTENT_REQUEST, readinessHandler);
 
@@ -268,12 +268,12 @@ public class ManagementHttpServer {
     }
 
     private static void addLogoutHandler(PathHandler pathHandler, Builder builder) {
-        pathHandler.addPrefixPath(LogoutHandler.PATH, wrapXFrameOptions(
-                new LogoutHandler(DEFAULT_SECURITY_REALM)));
+        pathHandler.addPrefixPath(LogoutHandler.PATH, wrapHttpHeader(wrapHttpHeader(
+                new LogoutHandler(DEFAULT_SECURITY_REALM), "X-Frame-Options", "SAMEORIGIN"), "X-Content-Type-Options", "nosniff"));
     }
 
     private static void addErrorContextHandler(PathHandler pathHandler, Builder builder) throws ModuleLoadException {
-        HttpHandler errorContextHandler = wrapXFrameOptions(ErrorContextHandler.createErrorContext(builder.consoleSlot));
+        HttpHandler errorContextHandler = (wrapHttpHeader(wrapHttpHeader(ErrorContextHandler.createErrorContext(builder.consoleSlot), "X-Frame-Options", "SAMEORIGIN"), "X-Content-Type-Options", "nosniff"));
         pathHandler.addPrefixPath(ErrorContextHandler.ERROR_CONTEXT, errorContextHandler);
     }
 
@@ -421,8 +421,8 @@ public class ManagementHttpServer {
         return domainHandler;
     }
 
-    private static HttpHandler wrapXFrameOptions(final HttpHandler toWrap) {
-        return new SetHeaderHandler(toWrap, "X-Frame-Options", "SAMEORIGIN");
+    private static HttpHandler wrapHttpHeader(final HttpHandler toWrap, final String header, final String value) {
+        return new SetHeaderHandler(toWrap, header, value);
     }
 
     private static Function<HttpServerExchange, Boolean> ALWAYS_READY = new Function<HttpServerExchange, Boolean>() {
