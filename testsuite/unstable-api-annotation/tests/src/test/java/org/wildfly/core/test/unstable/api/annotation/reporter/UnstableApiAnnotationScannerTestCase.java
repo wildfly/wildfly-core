@@ -51,6 +51,7 @@ import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.extension.core.management.CoreManagementExtension;
 import org.wildfly.extension.core.management.UnstableApiAnnotationResourceDefinition;
+import org.wildfly.test.stability.StabilityServerSetupSnapshotRestoreTasks;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -68,7 +69,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 
 @RunWith(WildFlyRunner.class)
-@ServerSetup({UnstableApiAnnotationScannerTestCase.SystemPropertyServerSetupTask.class})
+@ServerSetup({UnstableApiAnnotationScannerTestCase.AddUnstableApiAnnotationResourceSetupTask.class, UnstableApiAnnotationScannerTestCase.SystemPropertyServerSetupTask.class})
 public class UnstableApiAnnotationScannerTestCase {
 
     @Inject
@@ -151,10 +152,11 @@ public class UnstableApiAnnotationScannerTestCase {
 
         PathAddress address = PathAddress.pathAddress(CoreManagementExtension.SUBSYSTEM_PATH)
                 .append(UnstableApiAnnotationResourceDefinition.PATH);
-        ModelNode addOp = Util.createAddOperation(address, Collections.singletonMap("fail-on-error", new ModelNode(true)));
-        addOp.get(UnstableApiAnnotationResourceDefinition.LEVEL.getName()).set("ERROR");
+        ModelNode writeAttributeOp = Util.getWriteAttributeOperation(address,
+                UnstableApiAnnotationResourceDefinition.LEVEL.getName(),
+                UnstableApiAnnotationResourceDefinition.UnstableApiAnnotationLevel.ERROR.toString());
         try {
-            ManagementOperations.executeOperation(mcc, addOp);
+            ManagementOperations.executeOperation(mcc, writeAttributeOp);
             ServerReload.executeReloadAndWaitForCompletion(mcc, false);
 
             boolean deployed = false;
@@ -176,11 +178,9 @@ public class UnstableApiAnnotationScannerTestCase {
 
 
         } finally {
-            ManagementOperations.executeOperation(mcc, Util.createRemoveOperation(address));
+            ManagementOperations.executeOperation(mcc, Util.getUndefineAttributeOperation(address, UnstableApiAnnotationResourceDefinition.LEVEL.getName()));
             ServerReload.executeReloadAndWaitForCompletion(mcc, false);
         }
-
-
 
         LogDiffer logDiffer = new LogDiffer();
         logDiffer.takeSnapshot();
@@ -279,6 +279,18 @@ public class UnstableApiAnnotationScannerTestCase {
             }
         }
 
+    }
+
+
+    public static class AddUnstableApiAnnotationResourceSetupTask extends StabilityServerSetupSnapshotRestoreTasks.Preview {
+        @Override
+        public void doSetup(ManagementClient managementClient) throws Exception {
+            PathAddress address = PathAddress.pathAddress(CoreManagementExtension.SUBSYSTEM_PATH)
+                    .append(UnstableApiAnnotationResourceDefinition.PATH);
+            ModelNode addOp = Util.createAddOperation(address);
+            ManagementOperations.executeOperation(managementClient.getControllerClient(), addOp);
+            ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient());
+        }
     }
 
 
