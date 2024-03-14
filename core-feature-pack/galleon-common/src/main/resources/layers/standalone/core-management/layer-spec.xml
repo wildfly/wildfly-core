@@ -9,5 +9,5 @@
      <dependencies>
         <layer name="base-server"/>
     </dependencies>
-    <feature-group name="server-core-management"/>
+    <feature spec="subsystem.core-management"/>
 </layer-spec>
