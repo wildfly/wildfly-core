@@ -776,7 +776,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
 
         @Override
         public Stability getStability() {
-            return this.profileRegistration.getStability();
+            return ExtensionRegistry.this.getStability();
         }
 
         @Override
