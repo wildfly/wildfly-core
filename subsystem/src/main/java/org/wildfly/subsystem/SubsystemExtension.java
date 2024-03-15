@@ -45,7 +45,7 @@ public class SubsystemExtension<S extends SubsystemSchema<S>> implements Extensi
         };
         // Auto-register subsystem describe handler
         this.configuration.getRegistrar().register(registration, registrationContext).registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
-        registration.registerXMLElementWriter(this.persistence.getWriter());
+        registration.registerXMLElementWriter(this.persistence.getWriter(context.getStability()));
     }
 
     @Override
