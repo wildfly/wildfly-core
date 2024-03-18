@@ -31,6 +31,8 @@ import org.wildfly.core.testrunner.ManagementClient;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.server.controller.descriptions.ServerDescriptionConstants.SERVER_ENVIRONMENT;
 
 public abstract class AbstractStabilityServerSetupTaskTest {
@@ -49,5 +51,19 @@ public abstract class AbstractStabilityServerSetupTaskTest {
         ModelNode result = ManagementOperations.executeOperation(managementClient.getControllerClient(), op);
         Stability stability = Stability.fromString(result.asString());
         Assert.assertEquals(desiredStability, stability);
+    }
+
+    @Test
+    public void testSystemPropertyWasSetByDoSetupCalls() throws Exception {
+        ModelNode read = Util.getReadAttributeOperation(PathAddress.pathAddress(SYSTEM_PROPERTY, AbstractStabilityServerSetupTaskTest.class.getName()), VALUE);
+        ModelNode result = ManagementOperations.executeOperation(managementClient.getControllerClient(), read);
+        Assert.assertEquals(this.getClass().getName(), result.asString());
+    }
+
+
+    protected static <T extends AbstractStabilityServerSetupTaskTest> void addSystemProperty(ManagementClient client, Class<T> clazz) throws Exception {
+        ModelNode add = Util.createAddOperation(PathAddress.pathAddress(SYSTEM_PROPERTY, AbstractStabilityServerSetupTaskTest.class.getName()));
+        add.get(VALUE).set(clazz.getName());
+        ManagementOperations.executeOperation(client.getControllerClient(), add);
     }
 }

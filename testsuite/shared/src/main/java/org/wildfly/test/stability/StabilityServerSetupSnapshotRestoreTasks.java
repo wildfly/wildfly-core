@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetupTask;
+import org.wildfly.test.snapshot.ServerSnapshot;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -46,19 +47,24 @@ import static org.jboss.as.server.controller.descriptions.ServerDescriptionConst
  * For tests that need to run under a specific server stability level,
  * the server setup tasks from the inner classes can be used to change the stability level of the server to the desired level.
  * Once the test is done, the original stability level is restored.
+ *
+ * In order to not pollute the configuration with XML from a different stability level following the run of the test,
+ * it takes a snapshot of the server configuration in the setup() method, and
  */
-public abstract class StabilityServerSetupTasks implements ServerSetupTask {
+public abstract class StabilityServerSetupSnapshotRestoreTasks implements ServerSetupTask {
 
     private final Stability desiredStability;
     private volatile Stability originalStability;
 
+    private AutoCloseable snapshot;
 
-    public StabilityServerSetupTasks(Stability desiredStability) {
+
+    public StabilityServerSetupSnapshotRestoreTasks(Stability desiredStability) {
         this.desiredStability = desiredStability;
     }
 
     @Override
-    public void setup(ManagementClient managementClient) throws Exception {
+    public final void setup(ManagementClient managementClient) throws Exception {
         // Make sure the desired stability level is one of the ones supported by the server
         Set<Stability> supportedStabilityLevels = getSupportedStabilityLevels();
         Assume.assumeTrue(
@@ -75,13 +81,27 @@ public abstract class StabilityServerSetupTasks implements ServerSetupTask {
         Stability reloadOpStability = getReloadEnhancedOperationStabilityLevel(managementClient);
         Assume.assumeTrue(desiredStability.enables(reloadOpStability));
 
+
+
+        originalStability = readCurrentStability(managementClient.getControllerClient());
+
+        // Take a snapshot, indicating that when reloading we want to go back to the original stability
+        snapshot = ServerSnapshot.takeSnapshot(managementClient, originalStability);
+
         // All good, let's do it!
         reloadToDesiredStability(managementClient.getControllerClient(), desiredStability);
+
+        // Do any additional setup from the sub-classes
+        doSetup(managementClient);
+    }
+
+    protected void doSetup(ManagementClient managementClient) throws Exception {
+
     }
 
     @Override
     public void tearDown(ManagementClient managementClient) throws Exception {
-        reloadToDesiredStability(managementClient.getControllerClient(), originalStability);
+        snapshot.close();
     }
 
     private boolean checkReloadEnhancedOperationIsAvailable(ManagementClient managementClient) throws Exception {
@@ -113,11 +133,6 @@ public abstract class StabilityServerSetupTasks implements ServerSetupTask {
     private Stability reloadToDesiredStability(ModelControllerClient client, Stability stability) throws Exception {
         // Check the stability
         Stability currentStability = readCurrentStability(client);
-        if (originalStability == null) {
-            originalStability = currentStability;
-        }
-
-
         if (currentStability == stability) {
             return originalStability;
         }
@@ -142,7 +157,7 @@ public abstract class StabilityServerSetupTasks implements ServerSetupTask {
     /**
      * A server setup task that sets the server stability to the default level.
      */
-    public static class Default extends StabilityServerSetupTasks {
+    public static class Default extends StabilityServerSetupSnapshotRestoreTasks {
         public Default() {
             super(Stability.DEFAULT);
         }
@@ -151,7 +166,7 @@ public abstract class StabilityServerSetupTasks implements ServerSetupTask {
     /**
      * A server setup task that sets the server stability to the community level.
      */
-    public static class Community extends StabilityServerSetupTasks {
+    public static class Community extends StabilityServerSetupSnapshotRestoreTasks {
         public Community() {
             super(Stability.COMMUNITY);
         }
@@ -160,7 +175,7 @@ public abstract class StabilityServerSetupTasks implements ServerSetupTask {
     /**
      * A server setup task that sets the server stability to the preview level.
      */
-    public static class Preview extends StabilityServerSetupTasks {
+    public static class Preview extends StabilityServerSetupSnapshotRestoreTasks {
         public Preview() {
             super(Stability.PREVIEW);
         }
@@ -169,7 +184,7 @@ public abstract class StabilityServerSetupTasks implements ServerSetupTask {
     /**
      * A server setup task that sets the server stability to the experimental level.
      */
-    public static class Experimental extends StabilityServerSetupTasks {
+    public static class Experimental extends StabilityServerSetupSnapshotRestoreTasks {
         public Experimental() {
             super(Stability.EXPERIMENTAL);
         }

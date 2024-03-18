@@ -96,6 +96,9 @@ public class ServerReload {
         } else {
             operation.get(OP).set("reload");
         }
+        if (parameters.serverConfig != null) {
+            operation.get("server-config").set(parameters.serverConfig);
+        }
 
         executeReload(client, operation);
     }
@@ -204,6 +207,8 @@ public class ServerReload {
         String serverAddress = TestSuiteEnvironment.getServerAddress();
         int serverPort = TestSuiteEnvironment.getServerPort();
 
+        String serverConfig = null;
+
         Stability stability = null;
 
         public Parameters setTimeout(int timeout) {
@@ -233,6 +238,11 @@ public class ServerReload {
 
         public Parameters setStability(Stability stability) {
             this.stability = stability;
+            return this;
+        }
+
+        public Parameters setServerConfig(String serverConfig) {
+            this.serverConfig = serverConfig;
             return this;
         }
     }
