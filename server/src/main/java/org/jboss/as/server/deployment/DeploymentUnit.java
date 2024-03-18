@@ -6,7 +6,6 @@
 package org.jboss.as.server.deployment;
 
 import org.jboss.as.controller.FeatureRegistry;
-import org.jboss.as.version.Stability;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 
@@ -43,10 +42,4 @@ public interface DeploymentUnit extends Attachable, FeatureRegistry {
      * @return the service registry
      */
     ServiceRegistry getServiceRegistry();
-
-    // TODO Remove this once integrated into WF-full
-    @Override
-    default Stability getStability() {
-        return Stability.DEFAULT;
-    }
 }
