@@ -3752,4 +3752,11 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 504, value = "The operation %s is not defined for resource %s.")
     UnsupportedOperationException missingOperationForResource(String op, String address);
+
+    @Message(id = 505, value = "%s subsystem namespace %s is not enabled by the current stability level")
+    XMLStreamException unstableSubsystemNamespace(String subsystemName, String namespaceURI);
+
+    @LogMessage(level = WARN)
+    @Message(id = 506, value = "Extension %s from module %s is not enabled by the current stability level")
+    void unstableExtension(String extensionName, String moduleName);
 }
