@@ -86,7 +86,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         } else {
             configuration = this.configuration;
         }
-        final ServerEnvironment serverEnvironment = configuration.getServerEnvironment().recalculateForReload(runningModeControl);
+        final ServerEnvironment serverEnvironment = configuration.getServerEnvironment();
         final ProductConfig config = serverEnvironment.getProductConfig();
         final String prettyVersion = config.getPrettyVersionString();
         ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion);
