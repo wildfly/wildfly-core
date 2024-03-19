@@ -12,8 +12,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -23,6 +25,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.jar.Manifest;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
@@ -103,15 +107,25 @@ public class ProductConfig implements Serializable {
     }
 
     private void getBannerFile(Module module) throws IOException {
-        try (final InputStream inputStream = module.getClassLoader().getResourceAsStream("banner.txt");
-             final ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            int nRead;
-            byte[] data = new byte[4096];
-            while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
-                outputStream.write(data, 0, nRead);
+        try {
+            Path bannerFilePath = new File(module.getClassLoader().getResource("banner.txt").toURI()).toPath().toAbsolutePath();
+            String bannerName = "banner.txt";
+            if(bannerFilePath.toString().contains("egg") && Files.exists(bannerFilePath.resolveSibling("egg.txt"))) {
+                bannerName = "egg.txt";
             }
-            banner = System.lineSeparator() + outputStream.toString(StandardCharsets.UTF_8);
-        } catch (Exception e) {
+            try (final InputStream inputStream = module.getClassLoader().getResourceAsStream(bannerName);
+                    final ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                int nRead;
+                byte[] data = new byte[4096];
+                while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+                    outputStream.write(data, 0, nRead);
+                }
+                banner = System.lineSeparator() + outputStream.toString(StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                // Don't care
+            }
+        } catch (URISyntaxException ex) {
+            Logger.getLogger(ProductConfig.class.getName()).log(Level.SEVERE, null, ex);
             // Don't care
         }
     }
