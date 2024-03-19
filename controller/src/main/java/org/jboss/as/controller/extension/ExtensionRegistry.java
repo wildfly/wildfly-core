@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -117,7 +118,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
         private JmxAuthorizer authorizer = NO_OP_AUTHORIZER;
         private Supplier<SecurityIdentity> securityIdentitySupplier = Functions.constantSupplier(null);
         private RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = RuntimeHostControllerInfoAccessor.SERVER;
-        private Stability stability = Stability.DEFAULT;
+        private AtomicReference<Stability> stabilityReference = new AtomicReference<>(Stability.DEFAULT);
 
         private Builder(ProcessType processType) {
             this.processType = processType;
@@ -183,12 +184,22 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         /**
-         * Overrides the default stability level of the extension registry.
-         * @param stability a stability level
+         * Overrides the default stability level of the extension registry. This is a convenience method for
+         * {@link #withStabilityReference(AtomicReference)}.
+         * @param stability the stability level to use
          * @return a reference to this builder
          */
         public Builder withStability(Stability stability) {
-            this.stability = stability;
+            return withStabilityReference(new AtomicReference<>(stability));
+        }
+
+        /**
+         * Overrides the default stability level of the extension registry.
+         * @param stabilityReference an AtomicReference containing the stability level
+         * @return a reference to this builder
+         */
+        public Builder withStabilityReference(AtomicReference<Stability> stabilityReference) {
+            this.stabilityReference = stabilityReference;
             return this;
         }
 
@@ -209,7 +220,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
     }
 
     private final ProcessType processType;
-    private final Stability stability;
+    private final AtomicReference<Stability> stability;
 
     private SubsystemXmlWriterRegistry writerRegistry;
     private volatile PathManager pathManager;
@@ -233,7 +244,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
         this.authorizer = builder.authorizer;
         this.securityIdentitySupplier = builder.securityIdentitySupplier;
         this.hostControllerInfoAccessor = builder.hostControllerInfoAccessor;
-        this.stability = builder.stability;
+        this.stability = builder.stabilityReference;
     }
 
     /**
@@ -539,7 +550,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
 
     @Override
     public Stability getStability() {
-        return this.stability;
+        return this.stability.get();
     }
 
     private abstract class AbstractExtensionParsingContext implements ExtensionParsingContext, AutoCloseable {
