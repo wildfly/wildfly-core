@@ -1280,7 +1280,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
 
     ServerEnvironment recalculateForReload(RunningModeControl runningModeControl) {
         if (runningModeControl.isReloaded()) {
-            Stability stability = runningModeControl.getReloadedStability() != null ? runningModeControl.getReloadedStability() : productConfig.getDefaultStability();
+            Stability stability = runningModeControl.getReloadedStability() != null ? runningModeControl.getReloadedStability() : this.stability;
             if (stability != this.stability) {
                 System.setProperty(ProcessEnvironment.STABILITY, stability.toString());
 
