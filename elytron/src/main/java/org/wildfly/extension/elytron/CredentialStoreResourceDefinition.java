@@ -363,7 +363,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
     private static class CredentialStoreAddHandler extends DoohickeyAddHandler<CredentialStore> {
 
         private CredentialStoreAddHandler() {
-            super(CREDENTIAL_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES, CREDENTIAL_STORE_API_CAPABILITY);
+            super(CREDENTIAL_STORE_RUNTIME_CAPABILITY, CREDENTIAL_STORE_API_CAPABILITY);
         }
 
         @Override

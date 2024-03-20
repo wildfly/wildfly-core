@@ -77,7 +77,7 @@ class RealmMapperDefinitions {
     static final AttributeDefinition[] CONSTANT_REALM_MAPPER_ATTRIBUTES = new AttributeDefinition[] { REALM_NAME };
 
     static ResourceDefinition getConstantRealmMapper() {
-        AbstractAddStepHandler add = new TrivialAddHandler<RealmMapper>(RealmMapper.class, CONSTANT_REALM_MAPPER_ATTRIBUTES, REALM_MAPPER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<RealmMapper>(RealmMapper.class, REALM_MAPPER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<RealmMapper> getValueSupplier(ServiceBuilder<RealmMapper> serviceBuilder,
@@ -99,7 +99,7 @@ class RealmMapperDefinitions {
 
         private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { PATTERN_CAPTURE_GROUP, DELEGATE_REALM_MAPPER };
 
-        private static final AbstractAddStepHandler ADD = new SimpleRegexRealmMapperAddHandler(ATTRIBUTES);
+        private static final AbstractAddStepHandler ADD = new SimpleRegexRealmMapperAddHandler();
         private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, REALM_MAPPER_RUNTIME_CAPABILITY);
 
         private SimpleRegexRealmMapperDefinition() {
@@ -123,8 +123,8 @@ class RealmMapperDefinitions {
 
     private static class SimpleRegexRealmMapperAddHandler extends BaseAddHandler {
 
-        private SimpleRegexRealmMapperAddHandler(final AttributeDefinition[] attributes) {
-            super(REALM_MAPPER_RUNTIME_CAPABILITY, attributes);
+        private SimpleRegexRealmMapperAddHandler() {
+            super(REALM_MAPPER_RUNTIME_CAPABILITY);
         }
 
         @Override
@@ -169,7 +169,7 @@ class RealmMapperDefinitions {
 
         private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { PATTERN_CAPTURE_GROUP, REALM_REALM_MAP, DELEGATE_REALM_MAPPER };
 
-        private static final AbstractAddStepHandler ADD = new MappedRegexRealmMapperAddHandler(ATTRIBUTES);
+        private static final AbstractAddStepHandler ADD = new MappedRegexRealmMapperAddHandler();
         private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, REALM_MAPPER_RUNTIME_CAPABILITY);
 
         private MappedRegexRealmMapperDefinition() {
@@ -193,8 +193,8 @@ class RealmMapperDefinitions {
 
     private static class MappedRegexRealmMapperAddHandler extends BaseAddHandler {
 
-        private MappedRegexRealmMapperAddHandler(final AttributeDefinition[] attributes) {
-            super(REALM_MAPPER_RUNTIME_CAPABILITY, attributes);
+        private MappedRegexRealmMapperAddHandler() {
+            super(REALM_MAPPER_RUNTIME_CAPABILITY);
         }
 
         @Override

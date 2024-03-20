@@ -13,7 +13,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -120,7 +119,7 @@ class AggregateComponentDefinition<T> extends SimpleResourceDefinition {
         private AggregateComponentAddHandler(Class<T> aggregationType, Function<T[], T> aggregator,
                 StringListAttributeDefinition aggregateReferences, RuntimeCapability<?> runtimeCapability,
                 boolean dependOnProviderRegistration) {
-            super(runtimeCapability, aggregateReferences);
+            super(runtimeCapability);
             this.aggregationType = aggregationType;
             this.aggregator = aggregator;
             this.aggregateReferences = aggregateReferences;
@@ -168,7 +167,7 @@ class AggregateComponentDefinition<T> extends SimpleResourceDefinition {
         private AggregateApiComponentAddHandler(Class<T> aggregationType, Function<T[], T> aggregator,
                 StringListAttributeDefinition aggregateReferences, RuntimeCapability<?> runtimeCapability, String apiCapabilityName,
                 boolean dependOnProviderRegistration) {
-            super(runtimeCapability, new AttributeDefinition[] { aggregateReferences }, apiCapabilityName);
+            super(runtimeCapability, apiCapabilityName);
 
             this.aggregationType = aggregationType;
             this.aggregator = aggregator;

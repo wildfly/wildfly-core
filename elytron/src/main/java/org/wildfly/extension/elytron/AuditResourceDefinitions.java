@@ -201,7 +201,7 @@ class AuditResourceDefinitions {
 
     static ResourceDefinition getFileAuditLogResourceDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { PATH, RELATIVE_TO, AUTOFLUSH, SYNCHRONIZED, FORMAT, ENCODING };
-        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SecurityEventListener> getValueSupplier(
@@ -260,7 +260,7 @@ class AuditResourceDefinitions {
 
     static ResourceDefinition getPeriodicRotatingFileAuditLogResourceDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] {PATH, RELATIVE_TO, AUTOFLUSH, SYNCHRONIZED, FORMAT, ENCODING, PERIODIC_SUFFIX };
-        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SecurityEventListener> getValueSupplier(
@@ -324,7 +324,7 @@ class AuditResourceDefinitions {
 
     static ResourceDefinition getSizeRotatingFileAuditLogResourceDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { PATH, RELATIVE_TO, AUTOFLUSH, SYNCHRONIZED, FORMAT, ENCODING, MAX_BACKUP_INDEX, ROTATE_ON_BOOT, ROTATE_SIZE, SIZE_SUFFIX };
-        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SecurityEventListener> getValueSupplier(
@@ -396,7 +396,7 @@ class AuditResourceDefinitions {
 
     static ResourceDefinition getSyslogAuditLogResourceDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { SERVER_ADDRESS, PORT, TRANSPORT, HOST_NAME, FORMAT, SSL_CONTEXT, SYSLOG_FORMAT, RECONNECT_ATTEMPTS };
-        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SecurityEventListener> getValueSupplier(

@@ -160,7 +160,7 @@ class RoleMapperDefinitions {
             (RoleMapper[] r) -> RoleMapper.aggregate(r));
 
     static ResourceDefinition getMappedRoleMapperDefinition() {
-        AbstractAddStepHandler add = new RoleMapperAddHandler(ROLE_MAPPING_MAP, KEEP_MAPPED, KEEP_NON_MAPPED) {
+        AbstractAddStepHandler add = new RoleMapperAddHandler() {
 
             @Override
             protected ValueSupplier<RoleMapper> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
@@ -205,7 +205,7 @@ class RoleMapperDefinitions {
     }
 
     static ResourceDefinition getRegexRoleMapperDefinition() {
-        AbstractAddStepHandler add = new RoleMapperAddHandler(PATTERN, REPLACEMENT, KEEP_NON_MAPPED, REPLACE_ALL) {
+        AbstractAddStepHandler add = new RoleMapperAddHandler() {
 
             @Override
             protected ValueSupplier<RoleMapper> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
@@ -234,7 +234,7 @@ class RoleMapperDefinitions {
     }
 
     static ResourceDefinition getAddSuffixRoleMapperDefinition() {
-        AbstractAddStepHandler add = new RoleMapperAddHandler(SUFFIX) {
+        AbstractAddStepHandler add = new RoleMapperAddHandler() {
 
             @Override
             protected ValueSupplier<RoleMapper> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
@@ -249,7 +249,7 @@ class RoleMapperDefinitions {
     }
 
     static ResourceDefinition getAddPrefixRoleMapperDefinition() {
-        AbstractAddStepHandler add = new RoleMapperAddHandler(PREFIX) {
+        AbstractAddStepHandler add = new RoleMapperAddHandler() {
 
             @Override
             protected ValueSupplier<RoleMapper> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
@@ -265,7 +265,7 @@ class RoleMapperDefinitions {
 
     static ResourceDefinition getLogicalRoleMapperDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { LOGICAL_OPERATION, LEFT, RIGHT };
-        AbstractAddStepHandler add = new RoleMapperAddHandler(attributes) {
+        AbstractAddStepHandler add = new RoleMapperAddHandler() {
 
             /* (non-Javadoc)
              * @see org.wildfly.extension.elytron.RoleMapperDefinitions.RoleMapperAddHandler#installService(org.jboss.as.controller.OperationContext, org.jboss.msc.service.ServiceName, org.jboss.dmr.ModelNode)
@@ -311,7 +311,7 @@ class RoleMapperDefinitions {
     }
 
     static ResourceDefinition getConstantRoleMapperDefinition() {
-        AbstractAddStepHandler add = new RoleMapperAddHandler(ROLES) {
+        AbstractAddStepHandler add = new RoleMapperAddHandler() {
 
             @Override
             protected ValueSupplier<RoleMapper> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
@@ -357,8 +357,8 @@ class RoleMapperDefinitions {
     private static class RoleMapperAddHandler extends BaseAddHandler {
 
 
-        private RoleMapperAddHandler(AttributeDefinition ... attributes) {
-            super(ROLE_MAPPER_RUNTIME_CAPABILITY, attributes);
+        private RoleMapperAddHandler() {
+            super(ROLE_MAPPER_RUNTIME_CAPABILITY);
         }
 
         @Override
