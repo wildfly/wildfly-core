@@ -8,7 +8,6 @@ package org.wildfly.core.embedded;
 import static java.security.AccessController.doPrivileged;
 import static org.jboss.logging.Logger.Level.WARN;
 
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
@@ -258,27 +257,6 @@ class LoggerContext implements Context {
         public void classDefined(final String name, final Module module) {
             if (defineLogger.isTraceEnabled()) {
                 defineLogger.tracef("Defined class %s in %s", name, module);
-            }
-        }
-
-        @Override
-        public void overlaysDirectoryNotReadable(final File file) {
-            if (logger.isEnabled(WARN)) {
-                logger.warnf("Overlays directory exists but is not readable: %s", file.getPath());
-            }
-        }
-
-        @Override
-        public void overlaysMetadataNotReadable(final File file) {
-            if (logger.isEnabled(WARN)) {
-                logger.warnf("Overlays metadata file exists but is not readable: %s", file.getPath());
-            }
-        }
-
-        @Override
-        public void overlayRootNotReadable(final File file) {
-            if (logger.isEnabled(WARN)) {
-                logger.warnf("Overlay root directory doesn't exists or is not readable: %s", file.getPath());
             }
         }
     }
