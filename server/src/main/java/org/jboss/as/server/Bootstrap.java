@@ -81,6 +81,7 @@ public interface Bootstrap {
         private final DelegatingConfigurableAuthorizer authorizer;
         private final ManagementSecurityIdentitySupplier securityIdentitySupplier;
 
+        // Used to update the stability in the supplier cached by the ExtensionRegistry
         private final AtomicReference<Stability> stabilityReference;
         private ModuleLoader moduleLoader = Module.getBootModuleLoader();
         private ConfigurationPersisterFactory configurationPersisterFactory;
@@ -96,7 +97,7 @@ public interface Bootstrap {
             this.stabilityReference = new AtomicReference<>(serverEnvironment.getStability());
             this.extensionRegistry = ExtensionRegistry.builder(serverEnvironment.getLaunchType().getProcessType())
                     .withRunningModeControl(this.runningModeControl)
-                    .withStabilityReference(this.stabilityReference)
+                    .withStabilitySupplier(stabilityReference::get)
                     .withAuditLogger(this.auditLogger)
                     .withAuthorizer(this.authorizer)
                     .withSecurityIdentitySupplier(this.securityIdentitySupplier)
