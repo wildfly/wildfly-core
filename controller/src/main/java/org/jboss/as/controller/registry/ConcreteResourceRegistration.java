@@ -20,6 +20,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
@@ -33,6 +34,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProvidedResourceDefinition;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -230,6 +232,18 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (this.enables(definition)) {
             String opName = definition.getName();
             OperationEntry entry = new OperationEntry(definition, handler, inherited);
+            boolean filterParameters = !Stream.of(definition.getParameters()).allMatch(this::enables);
+            boolean filterReplyParameters = !Stream.of(definition.getReplyParameters()).allMatch(this::enables);
+            if (filterParameters || filterReplyParameters) {
+                SimpleOperationDefinitionBuilder builder = SimpleOperationDefinitionBuilder.of(opName, definition);
+                if (filterParameters) {
+                    builder.setParameters(Stream.of(definition.getParameters()).filter(this::enables).toArray(AttributeDefinition[]::new));
+                }
+                if (filterReplyParameters) {
+                    builder.setReplyParameters(Stream.of(definition.getReplyParameters()).filter(this::enables).toArray(AttributeDefinition[]::new));
+                }
+                entry = new OperationEntry(builder.build(), handler, inherited);
+            }
             writeLock.lock();
             try {
                 if (operations == null) {

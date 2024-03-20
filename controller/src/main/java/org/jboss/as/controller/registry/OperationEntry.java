@@ -6,7 +6,6 @@
 package org.jboss.as.controller.registry;
 
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,8 +61,8 @@ public class OperationEntry {
          *  use of {@link EntryType#PRIVATE} not workable. */
         HIDDEN;
 
-        private static final Map<EnumSet<Flag>, Set<Flag>> flagSets = new ConcurrentHashMap<>(16);
-        public static Set<OperationEntry.Flag> immutableSetOf(EnumSet<OperationEntry.Flag> flags) {
+        private static final Map<Set<Flag>, Set<Flag>> flagSets = new ConcurrentHashMap<>(16);
+        public static Set<OperationEntry.Flag> immutableSetOf(Set<OperationEntry.Flag> flags) {
             if (flags == null || flags.isEmpty()) {
                 return Collections.emptySet();
             }

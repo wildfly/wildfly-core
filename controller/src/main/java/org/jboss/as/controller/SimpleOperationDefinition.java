@@ -42,4 +42,11 @@ public class SimpleOperationDefinition extends OperationDefinition {
 
     private static final DescriptionProvider PRIVATE_PROVIDER = locale -> new ModelNode();
 
+    ResourceDescriptionResolver getResolver() {
+        return this.resolver;
+    }
+
+    ResourceDescriptionResolver getAttributeResolver() {
+        return this.attributeResolver;
+    }
 }
