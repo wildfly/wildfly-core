@@ -69,7 +69,7 @@ class CoreManagementRootResourceDefinition extends PersistentResourceDefinition 
                     @Override
                     protected void execute(DeploymentProcessorTarget processorTarget) {
                         processorTarget.addDeploymentProcessor(SUBSYSTEM_NAME, PARSE, PARSE_SCAN_EXPERIMENTAL_ANNOTATIONS,
-                                new ScanUnstableApiAnnotationsProcessor(context.getRunningMode(), context.getStability()));
+                                new ScanUnstableApiAnnotationsProcessor(context.getRunningMode(), context.getStability(), UnstableApiAnnotationService.LEVEL_SUPPLIER));
                         processorTarget.addDeploymentProcessor(SUBSYSTEM_NAME, PARSE, PARSE_REPORT_EXPERIMENTAL_ANNOTATIONS,
                                 new ReportUnstableApiAnnotationsProcessor(UnstableApiAnnotationService.LEVEL_SUPPLIER));
                     }
@@ -77,16 +77,16 @@ class CoreManagementRootResourceDefinition extends PersistentResourceDefinition 
             }
 
             Resource unstableApiResource = resource.getChild(UnstableApiAnnotationResourceDefinition.PATH);
-            String level = UnstableApiAnnotationResourceDefinition.LEVEL.getDefaultValue().asString();
+            UnstableApiAnnotationLevel level = null;
             if (unstableApiResource != null) {
                 ModelNode model = unstableApiResource.getModel();
-                level = UnstableApiAnnotationResourceDefinition.LEVEL.resolveModelAttribute(context, model).asString();
+                String levelValue = UnstableApiAnnotationResourceDefinition.LEVEL.resolveModelAttribute(context, model).asString();
+                level = UnstableApiAnnotationLevel.valueOf(levelValue);
             }
-            UnstableApiAnnotationLevel levelEnum = UnstableApiAnnotationLevel.valueOf(level);
 
             ServiceBuilder<?> sb = context.getCapabilityServiceTarget().addService();
             Consumer<UnstableApiAnnotationService> serviceConsumer = sb.provides(UnstableApiAnnotationService.SERVICE_NAME);
-            sb.setInstance(new UnstableApiAnnotationService(serviceConsumer, levelEnum));
+            sb.setInstance(new UnstableApiAnnotationService(serviceConsumer, level));
             sb.install();
         }
     }

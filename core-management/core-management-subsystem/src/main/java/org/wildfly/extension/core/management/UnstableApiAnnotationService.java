@@ -61,9 +61,6 @@ public class UnstableApiAnnotationService implements Service {
         private volatile UnstableApiAnnotationLevel level;
         @Override
         public UnstableApiAnnotationLevel get() {
-            if (level == null) {
-                throw new IllegalStateException();
-            }
             return level;
         }
     }

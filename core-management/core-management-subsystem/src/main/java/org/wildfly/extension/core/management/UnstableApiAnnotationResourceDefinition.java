@@ -33,7 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNS
  */
 public class UnstableApiAnnotationResourceDefinition extends PersistentResourceDefinition {
 
-    private static final Stability STABILITY = Stability.PREVIEW;
+    public static final Stability STABILITY = Stability.PREVIEW;
     public static final SimpleAttributeDefinition LEVEL = SimpleAttributeDefinitionBuilder.create(
             ModelDescriptionConstants.LEVEL, ModelType.STRING, true)
             .setValidator(EnumValidator.create(UnstableApiAnnotationLevel.class))

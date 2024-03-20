@@ -36,6 +36,7 @@ import org.jboss.modules.ModuleLoader;
 import org.jboss.vfs.VirtualFile;
 import org.jboss.vfs.VisitorAttributes;
 import org.jboss.vfs.util.SuffixMatchFilter;
+import org.wildfly.extension.core.management.UnstableApiAnnotationResourceDefinition;
 import org.wildfly.extension.core.management.logging.CoreManagementLogger;
 import org.wildfly.unstable.api.annotation.classpath.index.RuntimeIndex;
 import org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.ClassInfoScanner;
@@ -47,25 +48,40 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class ScanUnstableApiAnnotationsProcessor implements DeploymentUnitProcessor {
 
     private final RuntimeIndex runtimeIndex;
 
-    // If set we will output some extra information to the logs during testing
+    // If set we will output some extra information to the logs during testing, so we can verify the number of classes scanned
+    // This is important for WildFly to make sure that the scanning of nested archives (especially wars and ears) is
+    // working as expected and to guard against scanning classes multiple times (which happened during the development of this feature)
     private final String EXTRA_TEST_OUTPUT_PROPERTY = "org.wildfly.test.unstable-api-annotation.extra-output";
 
     private static final String BASE_MODULE_NAME = "org.wildfly._internal.unstable-api-annotation-index";
     private static final String INDEX_FILE = "index.txt";
     private final Stability stability;
+    private final Supplier<UnstableApiAnnotationResourceDefinition.UnstableApiAnnotationLevel> levelSupplier;
 
     private boolean extraTestOutput;
 
-    public ScanUnstableApiAnnotationsProcessor(RunningMode runningMode, Stability stability) {
+    public ScanUnstableApiAnnotationsProcessor(RunningMode runningMode, Stability stability, Supplier<UnstableApiAnnotationResourceDefinition.UnstableApiAnnotationLevel> levelSupplier) {
         this.stability = stability;
-        RuntimeIndex runtimeIndex = null;
+        this.levelSupplier = levelSupplier;
         extraTestOutput = System.getProperties().containsKey(EXTRA_TEST_OUTPUT_PROPERTY);
-        if (runningMode != RunningMode.ADMIN_ONLY) {
+
+        boolean enableScanning = true;
+        if (runningMode == RunningMode.ADMIN_ONLY) {
+            enableScanning = false;
+        } else if (stability.enables(Stability.EXPERIMENTAL) || !stability.enables(UnstableApiAnnotationResourceDefinition.STABILITY)) {
+            // We don't care about scanning at the experimental level.
+            // Also, we need to be at the level where the feature is enabled or lower
+            enableScanning = false;
+        }
+
+        RuntimeIndex runtimeIndex = null;
+        if (enableScanning) {
             ModuleLoader moduleLoader = ((ModuleClassLoader) this.getClass().getClassLoader()).getModule().getModuleLoader();
             Module module = null;
             try {
@@ -108,11 +124,9 @@ public class ScanUnstableApiAnnotationsProcessor implements DeploymentUnitProces
         if (runtimeIndex == null) {
             return;
         }
-        if (stability.enables(Stability.EXPERIMENTAL)) {
-            // If running with Stability.EXPERIMENTAL we don't care if the user is using experimental annotations
+        if (levelSupplier.get() == null) {
             return;
         }
-
         final DeploymentUnit du = phaseContext.getDeploymentUnit();
         DeploymentUnit top = DeploymentUtils.getTopDeploymentUnit(du);
 

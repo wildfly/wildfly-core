@@ -140,7 +140,6 @@ public class UnstableApiAnnotationScannerTestCase {
             checkLogOrErrorLines(newLogEntries);
         } finally {
             ManagementOperations.executeOperation(mcc, Util.createRemoveOperation(PathAddress.pathAddress("deployment", deployment.getName())));
-            //ServerReload.executeReloadAndWaitForCompletion(mcc);
         }
 
     }
@@ -186,6 +185,39 @@ public class UnstableApiAnnotationScannerTestCase {
         logDiffer.takeSnapshot();
         // Deploy a deployment with unstable annotations
         // Check that the log contains the expected warning
+    }
+
+    @Test
+    public void testNoWarmingIfUnstableApiAnnotationResourceIsNotDefined() throws Exception {
+
+
+        PathAddress address = PathAddress.pathAddress(CoreManagementExtension.SUBSYSTEM_PATH)
+                .append(UnstableApiAnnotationResourceDefinition.PATH);
+        ModelNode removeOp = Util.createRemoveOperation(address);
+        ManagementOperations.executeOperation(managementClient.getControllerClient(), removeOp);
+        try {
+            ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient());
+
+            LogDiffer logDiffer = new LogDiffer();
+            logDiffer.takeSnapshot();
+
+            JavaArchive deployment = createDeploymentWithUnstableAnnotations();
+            ModelControllerClient mcc = managementClient.getControllerClient();
+            Operation deploymentOp = createDeploymentOp(deployment);
+
+            try {
+                ManagementOperations.executeOperation(mcc, deploymentOp);
+                List<String> newLogEntries = logDiffer.getNewLogEntries();
+                Assert.assertTrue(newLogEntries.isEmpty());
+            } finally {
+                ManagementOperations.executeOperation(mcc, Util.createRemoveOperation(PathAddress.pathAddress("deployment", deployment.getName())));
+            }
+
+        } finally {
+            ModelNode addOp = Util.createAddOperation(address);
+            ManagementOperations.executeOperation(managementClient.getControllerClient(), addOp);
+            ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient());
+        }
     }
 
     private void checkLogOrErrorLines(List<String> lines) {
