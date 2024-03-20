@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -30,6 +31,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.interfaces.InetAddressUtil;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -53,6 +55,13 @@ public abstract class ProcessEnvironment implements FeatureRegistry {
             .setAllowExpression(true).build();
 
     public static final String STABILITY = "jboss.stability";
+
+    /**
+     * Returns an unmodifiable set of all the permissible stability levels.
+     *
+     * @return a set of stability levels
+     */
+    public abstract Set<Stability> getStabilities();
 
     /**
      * Gets an {@link OperationStepHandler} that can read the {@code name} attribute for a processes root resource

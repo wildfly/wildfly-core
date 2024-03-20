@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.jboss.as.controller.OperationContext;
@@ -234,6 +235,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
 
     private final RunningMode initialRunningMode;
     private final Stability stability;
+    private final Set<Stability> stabilities;
     private final ProductConfig productConfig;
     private final String qualifiedHostName;
     private final String hostName;
@@ -485,6 +487,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         this.processType = processType;
 
         this.stability = getEnumProperty(hostSystemProperties, STABILITY, this.productConfig.getDefaultStability());
+        this.stabilities = productConfig.getStabilitySet();
         if (!this.productConfig.getStabilitySet().contains(this.stability)) {
             throw HostControllerLogger.ROOT_LOGGER.unsupportedStability(this.stability, this.productConfig.getProductName());
         }
@@ -806,6 +809,11 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     @Override
     public Stability getStability() {
         return this.stability;
+    }
+
+    @Override
+    public Set<Stability> getStabilities() {
+        return this.stabilities;
     }
 
     @Override

@@ -304,6 +304,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final boolean startGracefully;
     private final GitRepository repository;
     private final Stability stability;
+    private final Set<Stability> stabilities;
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
@@ -367,6 +368,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             domainConfigurationDir = null;
             repository = null;
             this.stability = productConfig.getDefaultStability();
+            this.stabilities = productConfig.getStabilitySet();
             WildFlySecurityManager.setPropertyPrivileged(ServerEnvironment.JBOSS_PERSIST_SERVER_CONFIG, "false");
         } else {
 
@@ -523,7 +525,8 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             }
 
             this.stability = getEnumProperty(props, ProcessEnvironment.STABILITY, productConfig.getDefaultStability());
-            if (!productConfig.getStabilitySet().contains(this.stability)) {
+            this.stabilities = productConfig.getStabilitySet();
+            if (!stabilities.contains(this.stability)) {
                 throw ServerLogger.ROOT_LOGGER.unsupportedStability(this.stability, productConfig.getProductName());
             }
         }
@@ -1015,6 +1018,11 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     @Override
     public Stability getStability() {
         return this.stability;
+    }
+
+    @Override
+    public Set<Stability> getStabilities() {
+        return this.stabilities;
     }
 
     /**
