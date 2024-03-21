@@ -5,6 +5,9 @@
 
 <!-- for needs of DomainTestCase -->
 <subsystem xmlns="urn:wildfly:elytron:community:18.0" register-jaspi-factory="false" default-ssl-context="client">
+    <authentication-client>
+        <authentication-context name="myAC" />
+    </authentication-client>
     <security-domains>
         <security-domain name="MyDomain" default-realm="FileRealm" realm-mapper="MyRealmMapper" permission-mapper="MyPermissionMapper"
                          pre-realm-principal-transformer="NameRewriterXY" post-realm-principal-transformer="NameRewriterYU" trusted-security-domains="AnotherDomain">
@@ -349,6 +352,9 @@
                 <sni-mapping host=".*\.server" ssl-context="server2" />
             </server-ssl-sni-context>
         </server-ssl-sni-contexts>
+        <dynamic-client-ssl-contexts>
+            <dynamic-client-ssl-context name="dynamicClientSSLContext" authentication-context="myAC"/>
+        </dynamic-client-ssl-contexts>
     </tls>
     <credential-stores>
         <credential-store name="test1" relative-to="jboss.server.data.dir" location="test1.store" create="true">
