@@ -2003,7 +2003,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         // if the connection loss was triggered by an instruction to restart/reload
         // then we don't disconnect yet
         if(parsedCmd.getFormat() != null) {
-            if(Util.RELOAD.equals(parsedCmd.getOperationName()) || Util.RELOAD_ENHANCED.equals(parsedCmd.getOperationName())) {
+            if(Util.RELOAD.equals(parsedCmd.getOperationName())) {
                 // do nothing
             } else if(Util.SHUTDOWN.equals(parsedCmd.getOperationName())) {
                 if(CommandFormat.INSTANCE.equals(parsedCmd.getFormat())
