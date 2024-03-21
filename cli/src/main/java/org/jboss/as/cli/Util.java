@@ -230,7 +230,6 @@ public class Util {
     public static final String RELEASE_CODENAME = "release-codename";
     public static final String RELEASE_VERSION = "release-version";
     public static final String RELOAD = "reload";
-    public static final String RELOAD_ENHANCED = "reload-enhanced";
     public static final String REMOVE = "remove";
     public static final String REPLY_PROPERTIES = "reply-properties";
     public static final String REQUEST_PROPERTIES = "request-properties";

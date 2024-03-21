@@ -7,7 +7,6 @@ package org.jboss.as.server;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.xml.namespace.QName;
 
@@ -24,7 +23,6 @@ import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.server.controller.git.GitConfigurationPersister;
 import org.jboss.as.controller.persistence.XmlConfigurationPersister;
 import org.jboss.as.server.parsing.StandaloneXml;
-import org.jboss.as.version.Stability;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.ServiceActivator;
@@ -81,11 +79,10 @@ public interface Bootstrap {
         private final DelegatingConfigurableAuthorizer authorizer;
         private final ManagementSecurityIdentitySupplier securityIdentitySupplier;
 
-        // Used to update the stability in the supplier cached by the ExtensionRegistry
-        private final AtomicReference<Stability> stabilityReference;
         private ModuleLoader moduleLoader = Module.getBootModuleLoader();
         private ConfigurationPersisterFactory configurationPersisterFactory;
         private long startTime;
+
 
         public Configuration(final ServerEnvironment serverEnvironment) {
             assert serverEnvironment != null : "serverEnvironment is null";
@@ -94,35 +91,15 @@ public interface Bootstrap {
             this.auditLogger = serverEnvironment.createAuditLogger();
             this.authorizer = new DelegatingConfigurableAuthorizer();
             this.securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
-            this.stabilityReference = new AtomicReference<>(serverEnvironment.getStability());
             this.extensionRegistry = ExtensionRegistry.builder(serverEnvironment.getLaunchType().getProcessType())
                     .withRunningModeControl(this.runningModeControl)
-                    .withStabilitySupplier(stabilityReference::get)
+                    .withStabilitySupplier(serverEnvironment::getStability)
                     .withAuditLogger(this.auditLogger)
                     .withAuthorizer(this.authorizer)
                     .withSecurityIdentitySupplier(this.securityIdentitySupplier)
                     .build();
             this.capabilityRegistry = new CapabilityRegistry(true);
             this.startTime = serverEnvironment.getStartTime();
-        }
-
-        private Configuration(final Configuration original, ServerEnvironment serverEnvironment) {
-            // Updating the server environment here, will update the value
-            this.serverEnvironment = serverEnvironment;
-            this.extensionRegistry = original.extensionRegistry;
-            this.runningModeControl = original.runningModeControl;
-            this.capabilityRegistry = original.capabilityRegistry;
-            this.auditLogger = original.auditLogger;
-            this.authorizer = original.authorizer;
-            this.securityIdentitySupplier = original.securityIdentitySupplier;
-
-            // The extension registry caches the stability supplier so update its value here
-            this.stabilityReference = original.stabilityReference;
-            this.stabilityReference.set(this.serverEnvironment.getStability());
-
-            this.moduleLoader = original.moduleLoader;
-            this.configurationPersisterFactory = original.configurationPersisterFactory;
-            this.startTime = original.startTime;
         }
 
         /**
@@ -259,16 +236,6 @@ public interface Bootstrap {
          */
         public long getStartTime() {
             return startTime;
-        }
-
-        Configuration recalculateForReload(RunningModeControl runningModeControl) {
-            if (runningModeControl.isReloaded()) {
-                ServerEnvironment recalculatedServerEnvironment = serverEnvironment.recalculateForReload(runningModeControl);
-                if (recalculatedServerEnvironment != serverEnvironment) {
-                    return new Configuration(this, recalculatedServerEnvironment);
-                }
-            }
-            return this;
         }
     }
 

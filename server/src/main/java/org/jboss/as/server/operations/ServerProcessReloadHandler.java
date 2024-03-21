@@ -124,6 +124,7 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
         if (additionalAttributes.contains(ModelDescriptionConstants.STABILITY) && operation.hasDefined(ModelDescriptionConstants.STABILITY)) {
             String val = STABILITY.resolveModelAttribute(context, operation).asString();
             stability = Stability.fromString(val);
+            environment.checkStabilityIsValidForInstallation(stability);
         } else {
             stability = null;
         }
@@ -164,15 +165,15 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
 
             @Override
             public void doReload(RunningModeControl runningModeControl) {
-                // If no stability is specified, use the current stability
-                Stability reloadedStability = stability == null ? environment.getStability() : stability;
-
                 runningModeControl.setRunningMode(finalAdminOnly ? RunningMode.ADMIN_ONLY : RunningMode.NORMAL);
                 runningModeControl.setReloaded();
-                runningModeControl.setReloadedStability(reloadedStability);
                 runningModeControl.setUseCurrentConfig(useCurrentConfig);
                 runningModeControl.setNewBootFileName(serverConfig);
                 runningModeControl.setSuspend(finalSuspend);
+
+                if (stability != null) {
+                    environment.setStability(stability);
+                }
             }
         };
     }

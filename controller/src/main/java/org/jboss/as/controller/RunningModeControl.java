@@ -5,8 +5,6 @@
 
 package org.jboss.as.controller;
 
-import org.jboss.as.version.Stability;
-
 /**
  * Provides control over the server's current {@link RunningMode}.
  *
@@ -19,11 +17,6 @@ public class RunningModeControl {
     private volatile boolean useCurrentConfig;
     private volatile String newBootFileName;
     private volatile Boolean suspend;
-
-
-    // Temporary experiment for the testsuite
-    @Deprecated
-    private volatile Stability reloadedStability;
 
     public RunningModeControl(final RunningMode initialMode) {
         this.runningMode = initialMode;
@@ -89,21 +82,4 @@ public class RunningModeControl {
         this.newBootFileName = newBootFileName;
     }
 
-    /**
-     * Gets the stability of the reloaded server.
-     *
-     * @return the stability of the reloaded server
-     */
-    public Stability getReloadedStability() {
-        return reloadedStability;
-    }
-
-    /**
-     * Sets the stability of the reloaded server.
-     *
-     * @param reloadedStability the stability of the reloaded server
-     */
-    public void setReloadedStability(Stability reloadedStability) {
-        this.reloadedStability = reloadedStability;
-    }
 }

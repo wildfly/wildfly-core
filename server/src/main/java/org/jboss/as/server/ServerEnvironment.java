@@ -303,7 +303,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final boolean startSuspended;
     private final boolean startGracefully;
     private final GitRepository repository;
-    private final Stability stability;
+    private volatile Stability stability;
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
@@ -523,9 +523,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             }
 
             this.stability = getEnumProperty(props, ProcessEnvironment.STABILITY, productConfig.getDefaultStability());
-            if (!productConfig.getStabilitySet().contains(this.stability)) {
-                throw ServerLogger.ROOT_LOGGER.unsupportedStability(this.stability, productConfig.getProductName());
-            }
+            checkStabilityIsValidForInstallation(productConfig, this.stability);
         }
         boolean allowExecutor = true;
         String maxThreads = WildFlySecurityManager.getPropertyPrivileged(BOOTSTRAP_MAX_THREADS, null);
@@ -587,41 +585,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         } catch (Exception ex) {
             ServerLogger.ROOT_LOGGER.cannotAddURLStreamHandlerFactory(ex, VFS_MODULE_IDENTIFIER);
         }
-    }
-
-    private ServerEnvironment(ServerEnvironment original, Stability stability) {
-        this.primordialProperties = original.primordialProperties;
-        this.providedProperties = original.providedProperties;
-        this.processNameSet = original.processNameSet;
-        this.launchType = original.launchType;
-        this.hostControllerName = original.hostControllerName;
-        this.qualifiedHostName = original.qualifiedHostName;
-        this.hostName = original.hostName;
-        this.serverName = original.serverName;
-        this.nodeName = original.nodeName;
-        this.javaExtDirs = original.javaExtDirs;
-        this.homeDir = original.homeDir;
-        this.serverBaseDir = original.serverBaseDir;
-        this.serverConfigurationDir = original.serverConfigurationDir;
-        this.serverConfigurationFile = original.serverConfigurationFile;
-        this.serverLogDir = original.serverLogDir;
-        this.controllerTempDir = original.controllerTempDir;
-        this.serverDataDir = original.serverDataDir;
-        this.serverContentDir = original.serverContentDir;
-        this.serverTempDir = original.serverTempDir;
-        this.domainBaseDir = original.domainBaseDir;
-        this.domainConfigurationDir = original.domainConfigurationDir;
-        this.standalone = original.standalone;
-        this.allowModelControllerExecutor = original.allowModelControllerExecutor;
-        this.initialRunningMode = original.initialRunningMode;
-        this.productConfig = original.productConfig;
-        this.runningModeControl = original.runningModeControl;
-        this.serverUUID = original.serverUUID;
-        this.startTime = original.startTime;
-        this.startSuspended = original.startSuspended;
-        this.startGracefully = original.startGracefully;
-        this.repository = original.repository;
-        this.stability = stability;
     }
 
     private Set<String> listIgnoredFiles(String defaultServerConfig) {
@@ -1205,6 +1168,23 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         }
     }
 
+
+    public void checkStabilityIsValidForInstallation(Stability stability) {
+        checkStabilityIsValidForInstallation(productConfig, stability);
+    }
+
+    private void checkStabilityIsValidForInstallation(ProductConfig productConfig, Stability stability) {
+        if (!productConfig.getStabilitySet().contains(stability)) {
+            throw ServerLogger.ROOT_LOGGER.unsupportedStability(this.stability, productConfig.getProductName());
+        }
+    }
+
+    // TODO Figure out how to make this package protected
+    public void setStability(Stability stability) {
+        WildFlySecurityManager.setPropertyPrivileged(ProcessEnvironment.STABILITY, stability.toString());
+        this.stability = stability;
+    }
+
     /**
      * Get a File from configuration.
      *
@@ -1276,17 +1256,5 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
 
     ManagedAuditLogger createAuditLogger() {
         return new ManagedAuditLoggerImpl(getProductConfig().resolveVersion(), true);
-    }
-
-    ServerEnvironment recalculateForReload(RunningModeControl runningModeControl) {
-        if (runningModeControl.isReloaded()) {
-            Stability stability = runningModeControl.getReloadedStability() != null ? runningModeControl.getReloadedStability() : this.stability;
-            if (stability != this.stability) {
-                System.setProperty(ProcessEnvironment.STABILITY, stability.toString());
-
-                return new ServerEnvironment(this, stability);
-            }
-        }
-        return this;
     }
 }
