@@ -15,6 +15,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
@@ -41,7 +42,6 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.impl.ModelControllerProtocol;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.remote.IdentityAddressProtocolUtil.PropagatedIdentity;
 import org.jboss.as.protocol.StreamUtils;
@@ -69,7 +69,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class TransactionalProtocolOperationHandler implements ManagementRequestHandlerFactory {
-    private static final Set<String> PREPARED_RESPONSE_OPERATIONS = ModelDescriptionConstants.RELOAD_OPERATIONS;
+    private static final Set<String> PREPARED_RESPONSE_OPERATIONS = Set.of(RELOAD);
 
     private final ModelController controller;
     private final ManagementChannelAssociation channelAssociation;
