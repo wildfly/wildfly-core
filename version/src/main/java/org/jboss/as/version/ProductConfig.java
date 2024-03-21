@@ -187,7 +187,7 @@ public class ProductConfig implements Serializable {
     }
 
     /**
-     * The product ASCII banner defined in $JBOSS_HOME\bin\banner.txt using \n as line ending.
+     * The product ASCII banner defined in the 'banner.txt' resource, using \n as line ending.
      * @return the ASCII banner.
      */
     public String getBanner() {
