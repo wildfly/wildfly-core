@@ -81,6 +81,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.wildfly.unstable.api.annotation</groupId>
+            <artifactId>unstable-api-annotation-classpath-indexer</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.jboss.logmanager</groupId>
             <artifactId>jboss-logmanager</artifactId>
             <scope>test</scope>

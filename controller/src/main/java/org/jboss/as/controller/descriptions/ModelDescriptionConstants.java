@@ -4,6 +4,8 @@
  */
 package org.jboss.as.controller.descriptions;
 
+import java.util.Set;
+
 /**
  * String constants frequently used in model descriptions.
  *
@@ -419,6 +421,7 @@ public class ModelDescriptionConstants {
     public static final String RELEASE_CODENAME = "release-codename";
     public static final String RELEASE_VERSION = "release-version";
     public static final String RELOAD = "reload";
+    public static final String RELOAD_ENHANCED = "reload-enhanced";
     public static final String RELOAD_REQUIRED = "reload-required";
     public static final String REMOVE = "remove";
     public static final String REMOTE = "remote";
@@ -568,6 +571,7 @@ public class ModelDescriptionConstants {
     public static final String TYPE = "type";
     public static final String UDP = "udp";
     public static final String UNDEFINE_ATTRIBUTE_OPERATION = "undefine-attribute";
+    public static final String UNSTABLE_API_ANNOTATIONS = "unstable-api-annotations";
     public static final String UNDEPLOY = "undeploy";
     public static final String UNREADABLE_CHILDREN = "unreadable-children";
     public static final String UPLOAD_DEPLOYMENT_BYTES = "upload-deployment-bytes";
@@ -613,6 +617,8 @@ public class ModelDescriptionConstants {
     public static final String GIT_MASTER_BRANCH = "master";
     public static final String PRIMARY = "primary";
     public static final String PERFORM_INSTALLATION = "perform-installation";
+
+    public static final Set<String> RELOAD_OPERATIONS = Set.of(RELOAD, RELOAD_ENHANCED);
 
     private ModelDescriptionConstants() {
     }

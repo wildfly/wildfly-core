@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="urn:jboss:domain:core-management:preview:1.0"
+           xmlns="urn:jboss:domain:core-management:preview:1.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+
+    <!-- The core-management subsystem root element -->
+    <xs:element name="subsystem">
+        <xs:complexType>
+            <xs:all minOccurs="0" maxOccurs="1">
+                <xs:element name="configuration-changes" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Configuration for the history of configuration changes.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="max-history" type="xs:integer" use="optional" default="10">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Number of configuration changes that are available in history.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="unstable-api-annotations" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Configuration of the handling of finding unstable api annotations in the
+                            user's code
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="level" default="LOG">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Whether to log or throw an error if use of unstable api annotations are found
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:token">
+                                    <xs:enumeration value="LOG"/>
+                                    <xs:enumeration value="ERROR"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="process-state-listener" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Configuration for a process state listener.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="properties" minOccurs="0" type="properties">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Configuration properties for the process state listener.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:attribute name="name" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Name of the process state listener.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="class" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    ControlledProcessStateListener class implementation.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="module" type="xs:string" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Module where the ControlledProcessStateListener implementation class may be found.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="timeout" type="xs:int" use="optional" default="30">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Timeout used in seconds, for listener operations.
+                                    If an individual listener operation takes longer than this timeout it will be canceled.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="properties">
+        <xs:sequence>
+            <xs:element name="property" type="propertyType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="propertyType">
+        <xs:attribute name="name" use="required"/>
+        <xs:attribute name="value" use="optional"/>
+    </xs:complexType>
+
+</xs:schema>

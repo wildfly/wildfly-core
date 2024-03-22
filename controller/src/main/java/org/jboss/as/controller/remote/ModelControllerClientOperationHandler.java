@@ -16,7 +16,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
@@ -32,6 +32,7 @@ import java.net.InetSocketAddress;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -68,7 +69,12 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  */
 public class ModelControllerClientOperationHandler implements ManagementRequestHandlerFactory {
 
-    private static final Set<String> PREPARED_RESPONSE_OPERATIONS = Set.of(RELOAD, SHUTDOWN);
+    private static final Set<String> PREPARED_RESPONSE_OPERATIONS;
+    static {
+        Set<String> ops = new HashSet<>(RELOAD_OPERATIONS);
+        ops.add(SHUTDOWN);
+        PREPARED_RESPONSE_OPERATIONS = Collections.unmodifiableSet(ops);
+    }
     private final ModelController controller;
 
     private final ManagementChannelAssociation channelAssociation;
@@ -193,7 +199,7 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
                 @Override
                 public void operationPrepared(ModelController.OperationTransaction transaction, final ModelNode preparedResult, OperationContext context) {
                     transaction.commit();
-                    if (context == null || !RELOAD.equals(operation.get(OP).asString())) { // TODO deal with shutdown as well,
+                    if (context == null || !RELOAD_OPERATIONS.contains(operation.get(OP).asString())) { // TODO deal with shutdown as well,
                                                                                            // the handlers for which have some
                                                                                            // subtleties that need thought
                         sendResponse(preparedResult);

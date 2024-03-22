@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.Set;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -40,6 +41,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
 import org.xnio.IoUtils;
@@ -61,8 +63,11 @@ class DomainApiGenericOperationHandler implements HttpHandler {
 
     private static final String CLIENT_NAME = "X-Management-Client-Name";
 
+    private static final Set<String> PREPARED_RESPONSE_OPERATIONS = ModelDescriptionConstants.RELOAD_OPERATIONS;
+
     private final ModelController modelController;
     private final FormParserFactory formParserFactory;
+
 
     public DomainApiGenericOperationHandler(ModelController modelController) {
         this.modelController = modelController;
@@ -203,8 +208,6 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         return contentType;
     }
 
-    static final String RELOAD = "reload";
-
     /**
      * Determine whether the prepared response should be sent, before the operation completed. This is needed in order
      * that operations like :reload() can be executed without causing communication failures.
@@ -217,7 +220,7 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         final String op = operation.get(OP).asString();
         final int size = address.size();
         if (size == 0) {
-            if (op.equals(RELOAD)) {
+            if (PREPARED_RESPONSE_OPERATIONS.contains(op)) {
                 return true;
             } else if (op.equals(COMPOSITE)) {
                 // TODO
@@ -227,7 +230,7 @@ class DomainApiGenericOperationHandler implements HttpHandler {
             }
         } else if (size == 1) {
             if (address.getLastElement().getKey().equals(HOST)) {
-                return op.equals(RELOAD);
+                return PREPARED_RESPONSE_OPERATIONS.contains(op);
             }
         }
         return false;
