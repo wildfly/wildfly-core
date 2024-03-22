@@ -50,6 +50,8 @@ public class SubsystemExtension<S extends SubsystemSchema<S>> implements Extensi
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMappings(this.configuration.getName(), this.persistence.getSchemas());
+        for (S schema : this.persistence.getSchemas()) {
+            context.setSubsystemXmlMapping(this.configuration.getName(), schema.getNamespace().getUri(), this.persistence.getReader(schema));
+        }
     }
 }
