@@ -82,7 +82,8 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         final ServerEnvironment serverEnvironment = configuration.getServerEnvironment();
         final ProductConfig config = serverEnvironment.getProductConfig();
         final String prettyVersion = config.getPrettyVersionString();
-        ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion);
+        final String banner = serverEnvironment.getStability() == org.jboss.as.version.Stability.EXPERIMENTAL ? config.getBanner() : "";
+        ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion, banner);
         if (System.getSecurityManager() != null) {
             ServerLogger.AS_ROOT_LOGGER.securityManagerEnabled();
         }

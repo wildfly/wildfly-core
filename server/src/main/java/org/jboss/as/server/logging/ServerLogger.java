@@ -317,10 +317,11 @@ public interface ServerLogger extends BasicLogger {
      * Logs an informational message indicating the server is starting.
      *
      * @param prettyVersion  the server version.
+     * @param banner the server ACII banner.
      */
     @LogMessage(level = INFO)
-    @Message(id = 49, value = "%s starting")
-    void serverStarting(String prettyVersion);
+    @Message(id = 49, value = "%s starting%s")
+    void serverStarting(String prettyVersion, String banner);
 
     /**
      * Logs an informational message indicating the server is stopped.
