@@ -4,6 +4,7 @@
  */
 package org.jboss.as.server.operations;
 
+
 import java.util.Locale;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -20,6 +21,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.ProcessReloadHandler;
 import org.jboss.as.controller.operations.validation.EnumValidator;
+import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.logging.ServerLogger;
@@ -59,10 +61,12 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
                                                                 .build();
 
     private final ServerEnvironment environment;
+    private ExtensibleConfigurationPersister extensibleConfigurationPersister;
     public ServerProcessReloadHandler(ServiceName rootService, RunningModeControl runningModeControl,
-            ControlledProcessState processState, ServerEnvironment environment) {
+            ControlledProcessState processState, ServerEnvironment environment, ExtensibleConfigurationPersister extensibleConfigurationPersister) {
         super(rootService, runningModeControl, processState);
         this.environment = environment;
+        this.extensibleConfigurationPersister = extensibleConfigurationPersister;
     }
 
     @Override
@@ -91,6 +95,8 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
         }
         final boolean finalSuspend = suspend;
         final boolean finalAdminOnly = adminOnly;
+        final boolean applyConfigurationExtension = !(context.isNormalServer() || finalAdminOnly) ||
+                (extensibleConfigurationPersister != null && !extensibleConfigurationPersister.hasStored());
 
         final String serverConfig = unmanaged && operation.hasDefined(SERVER_CONFIG.getName()) ? SERVER_CONFIG.resolveModelAttribute(context, operation).asString() : null;
 
@@ -113,6 +119,7 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
                 runningModeControl.setUseCurrentConfig(useCurrentConfig);
                 runningModeControl.setNewBootFileName(serverConfig);
                 runningModeControl.setSuspend(finalSuspend);
+                runningModeControl.setApplyConfigurationExtension(applyConfigurationExtension);
             }
         };
     }

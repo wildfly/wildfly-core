@@ -51,6 +51,17 @@ public interface ConfigurationPersister {
     }
 
     /**
+     * Gets whether a call persist to persistent storage has been successfully completed.
+     * <p>
+     * The default implementation always returns {@code false}
+     *
+     * @return {@code true} if a call to {@link #store(ModelNode, Set)} will return an object that actually writes
+     */
+    default boolean hasStored() {
+        return false;
+    }
+
+    /**
      * Persist the given configuration model if {@link #isPersisting()} would return {@code true}, otherwise
      * return a no-op {@link PersistenceResource}.
      *

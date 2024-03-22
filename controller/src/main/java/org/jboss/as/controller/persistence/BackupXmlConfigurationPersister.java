@@ -68,6 +68,7 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
         return initialEmpty && !reload;
     }
 
+    @Override
     public void registerAdditionalRootElement(final QName anotherRoot, final XMLElementReader<List<ModelNode>> parser){
         super.registerAdditionalRootElement(anotherRoot, parser);
     }
@@ -93,13 +94,16 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
     public PersistenceResource store(final ModelNode model, Set<PathAddress> affectedAddresses) throws ConfigurationPersistenceException {
         if(!successfulBoot.get()) {
             return new PersistenceResource() {
+                @Override
                 public void commit() {
                 }
 
+                @Override
                 public void rollback() {
                 }
             };
         }
+        this.stored = true;
         return new ConfigurationFilePersistenceResource(model, configurationFile, this);
     }
 

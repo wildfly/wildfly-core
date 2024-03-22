@@ -27,6 +27,7 @@ public class StringConfigurationPersister extends AbstractConfigurationPersister
     private final List<ModelNode> bootOperations;
     private final boolean persistXml;
     volatile String marshalled;
+    private volatile boolean stored = false;
 
     public StringConfigurationPersister(List<ModelNode> bootOperations, XMLElementWriter<ModelMarshallingContext> rootDeparser, boolean persistXml) {
         super(rootDeparser);
@@ -40,6 +41,7 @@ public class StringConfigurationPersister extends AbstractConfigurationPersister
         if (!persistXml) {
             return new NullConfigurationPersister().store(model, affectedAddresses);
         }
+        stored = true;
         return new StringPersistenceResource(model, this);
     }
 
@@ -54,6 +56,11 @@ public class StringConfigurationPersister extends AbstractConfigurationPersister
 
     public String getMarshalled() {
         return marshalled;
+    }
+
+    @Override
+    public boolean hasStored() {
+        return isPersisting() && stored;
     }
 
     private class StringPersistenceResource implements PersistenceResource {
