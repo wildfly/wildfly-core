@@ -303,7 +303,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final boolean startSuspended;
     private final boolean startGracefully;
     private final GitRepository repository;
-    private final Stability stability;
+    private volatile Stability stability;
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
@@ -523,9 +523,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             }
 
             this.stability = getEnumProperty(props, ProcessEnvironment.STABILITY, productConfig.getDefaultStability());
-            if (!productConfig.getStabilitySet().contains(this.stability)) {
-                throw ServerLogger.ROOT_LOGGER.unsupportedStability(this.stability, productConfig.getProductName());
-            }
+            checkStabilityIsValidForInstallation(productConfig, this.stability);
         }
         boolean allowExecutor = true;
         String maxThreads = WildFlySecurityManager.getPropertyPrivileged(BOOTSTRAP_MAX_THREADS, null);
@@ -1168,6 +1166,23 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                 configureNodeName(propertyValue, providedProperties);
             }
         }
+    }
+
+
+    public void checkStabilityIsValidForInstallation(Stability stability) {
+        checkStabilityIsValidForInstallation(productConfig, stability);
+    }
+
+    private void checkStabilityIsValidForInstallation(ProductConfig productConfig, Stability stability) {
+        if (!productConfig.getStabilitySet().contains(stability)) {
+            throw ServerLogger.ROOT_LOGGER.unsupportedStability(this.stability, productConfig.getProductName());
+        }
+    }
+
+    // TODO Figure out how to make this package protected
+    public void setStability(Stability stability) {
+        WildFlySecurityManager.setPropertyPrivileged(ProcessEnvironment.STABILITY, stability.toString());
+        this.stability = stability;
     }
 
     /**

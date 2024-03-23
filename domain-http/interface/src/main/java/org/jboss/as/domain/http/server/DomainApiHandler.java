@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -66,7 +67,7 @@ import org.xnio.streams.ChannelInputStream;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 class DomainApiHandler implements HttpHandler {
-
+    private static final Set<String> PREPARED_RESPONSE_OPERATIONS = ModelDescriptionConstants.RELOAD_OPERATIONS;
     private static final String JSON_PRETTY = "json.pretty";
 
     /**
@@ -309,6 +310,7 @@ class DomainApiHandler implements HttpHandler {
         }
     }
 
+
     /**
      * Determine whether the prepared response should be sent, before the operation completed. This is needed in order
      * that operations like :reload() can be executed without causing communication failures.
@@ -321,7 +323,7 @@ class DomainApiHandler implements HttpHandler {
         final String op = operation.get(OP).asString();
         final int size = address.size();
         if (size == 0) {
-            if (op.equals("reload")) {
+            if (PREPARED_RESPONSE_OPERATIONS.contains(op)) {
                 return true;
             } else if (op.equals(COMPOSITE)) {
                 // TODO
@@ -331,7 +333,7 @@ class DomainApiHandler implements HttpHandler {
             }
         } else if (size == 1) {
             if (address.getLastElement().getKey().equals(HOST)) {
-                return op.equals("reload");
+                return PREPARED_RESPONSE_OPERATIONS.contains(op);
             }
         }
         return false;

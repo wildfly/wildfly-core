@@ -62,7 +62,11 @@ class DisableLocalAuthServerSetupTask implements ServerSetupTask {
         executeForSuccess(client, compositeOp.build());
 
         // Use the current client to execute the reload, but the native client to ensure the reload is complete
-        ServerReload.executeReloadAndWaitForCompletion(client, ServerReload.TIMEOUT, false, protocol, host, port);
+        ServerReload.executeReloadAndWaitForCompletion(client, new ServerReload.Parameters()
+                .setProtocol(protocol)
+                .setServerAddress(host)
+                .setServerPort(port)
+        );
     }
 
     @Override
