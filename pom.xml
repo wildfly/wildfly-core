@@ -172,8 +172,8 @@
         <version.commons-daemon>1.3.4</version.commons-daemon>
         <version.commons-lang3>3.14.0</version.commons-lang3>
         <version.commons-io>2.10.0</version.commons-io>
-        <version.io.netty>4.1.107.Final</version.io.netty>
-        <version.io.smallrye.jandex>3.1.6</version.io.smallrye.jandex>
+        <version.io.netty>4.1.108.Final</version.io.netty>
+        <version.io.smallrye.jandex>3.1.7</version.io.smallrye.jandex>
         <version.io.undertow>2.3.12.Final</version.io.undertow>
         <version.jakarta.json.jakarta-json-api>2.1.3</version.jakarta.json.jakarta-json-api>
         <version.jakarta.interceptor.jakarta-interceptors-api>2.1.0</version.jakarta.interceptor.jakarta-interceptors-api>
@@ -242,7 +242,7 @@
         <version.org.wildfly.openssl.wildfly-openssl-linux-s390x>2.2.2.SP01</version.org.wildfly.openssl.wildfly-openssl-linux-s390x>
         <version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>2.3.1.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>2.4.0.CR1</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>4.1.0.Final</version.org.wildfly.security.elytron-web>
         <version.org.wildfly.security.jakarta.elytron-ee>3.0.3.Final</version.org.wildfly.security.jakarta.elytron-ee>
         <version.org.yaml.snakeyaml>2.2</version.org.yaml.snakeyaml>

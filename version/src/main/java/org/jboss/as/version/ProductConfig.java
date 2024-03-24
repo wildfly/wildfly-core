@@ -6,8 +6,10 @@
 package org.jboss.as.version;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +37,7 @@ public class ProductConfig implements Serializable {
 
     private final String name;
     private final String version;
+    private String banner;
     private final String consoleSlot;
     private final Stability defaultStability;
     private final Set<Stability> stabilities;
@@ -82,6 +85,7 @@ public class ProductConfig implements Serializable {
                         minStability = Stability.fromString(minStabilityValue);
                     }
                 }
+                getBannerFile(module);
             }
 
             setSystemProperties(productConfProps.miscProperties, providedProperties);
@@ -96,6 +100,20 @@ public class ProductConfig implements Serializable {
         this.consoleSlot = consoleSlot;
         this.defaultStability = defaultStability;
         this.stabilities = Collections.unmodifiableSet(EnumSet.range(maxStability, minStability));
+    }
+
+    private void getBannerFile(Module module) throws IOException {
+        try (final InputStream inputStream = module.getClassLoader().getResourceAsStream("banner.txt");
+             final ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            int nRead;
+            byte[] data = new byte[4096];
+            while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+                outputStream.write(data, 0, nRead);
+            }
+            banner = System.lineSeparator() + outputStream.toString(StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            // Don't care
+        }
     }
 
     private static String getProductConf(String home) {
@@ -134,6 +152,7 @@ public class ProductConfig implements Serializable {
         this.consoleSlot = consoleSlot;
         this.defaultStability = Stability.DEFAULT;
         this.stabilities = EnumSet.of(this.defaultStability);
+        this.banner = null;
     }
 
     public String getProductName() {
@@ -166,6 +185,14 @@ public class ProductConfig implements Serializable {
      */
     public Set<Stability> getStabilitySet() {
         return this.stabilities;
+    }
+
+    /**
+     * The product ASCII banner defined in the 'banner.txt' resource, using \n as line ending.
+     * @return the ASCII banner.
+     */
+    public String getBanner() {
+        return banner;
     }
 
     public String getPrettyVersionString() {

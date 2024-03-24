@@ -117,7 +117,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
         private JmxAuthorizer authorizer = NO_OP_AUTHORIZER;
         private Supplier<SecurityIdentity> securityIdentitySupplier = Functions.constantSupplier(null);
         private RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = RuntimeHostControllerInfoAccessor.SERVER;
-        private Stability stability = Stability.DEFAULT;
+        private Supplier<Stability> stabilitySupplier = Functions.constantSupplier(Stability.DEFAULT);
 
         private Builder(ProcessType processType) {
             this.processType = processType;
@@ -183,12 +183,22 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         /**
-         * Overrides the default stability level of the extension registry.
-         * @param stability a stability level
+         * Overrides the default stability level of the extension registry. This is a convenience method for
+         * {@link #withStabilitySupplier(Supplier)}.
+         * @param stability the stability level to use
          * @return a reference to this builder
          */
         public Builder withStability(Stability stability) {
-            this.stability = stability;
+            return withStabilitySupplier(Functions.constantSupplier(stability));
+        }
+
+        /**
+         * Overrides the default stability level of the extension registry.
+         * @param stabilitySupplier a Supplier returning the stability level
+         * @return a reference to this builder
+         */
+        public Builder withStabilitySupplier(Supplier<Stability> stabilitySupplier) {
+            this.stabilitySupplier = stabilitySupplier;
             return this;
         }
 
@@ -209,7 +219,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
     }
 
     private final ProcessType processType;
-    private final Stability stability;
+    private final Supplier<Stability> stability;
 
     private SubsystemXmlWriterRegistry writerRegistry;
     private volatile PathManager pathManager;
@@ -233,7 +243,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
         this.authorizer = builder.authorizer;
         this.securityIdentitySupplier = builder.securityIdentitySupplier;
         this.hostControllerInfoAccessor = builder.hostControllerInfoAccessor;
-        this.stability = builder.stability;
+        this.stability = builder.stabilitySupplier;
     }
 
     /**
@@ -539,7 +549,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
 
     @Override
     public Stability getStability() {
-        return this.stability;
+        return this.stability.get();
     }
 
     private abstract class AbstractExtensionParsingContext implements ExtensionParsingContext, AutoCloseable {

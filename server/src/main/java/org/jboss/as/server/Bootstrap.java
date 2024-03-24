@@ -78,9 +78,11 @@ public interface Bootstrap {
         private final ManagedAuditLogger auditLogger;
         private final DelegatingConfigurableAuthorizer authorizer;
         private final ManagementSecurityIdentitySupplier securityIdentitySupplier;
+
         private ModuleLoader moduleLoader = Module.getBootModuleLoader();
         private ConfigurationPersisterFactory configurationPersisterFactory;
         private long startTime;
+
 
         public Configuration(final ServerEnvironment serverEnvironment) {
             assert serverEnvironment != null : "serverEnvironment is null";
@@ -91,7 +93,7 @@ public interface Bootstrap {
             this.securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
             this.extensionRegistry = ExtensionRegistry.builder(serverEnvironment.getLaunchType().getProcessType())
                     .withRunningModeControl(this.runningModeControl)
-                    .withStability(serverEnvironment.getStability())
+                    .withStabilitySupplier(serverEnvironment::getStability)
                     .withAuditLogger(this.auditLogger)
                     .withAuthorizer(this.authorizer)
                     .withSecurityIdentitySupplier(this.securityIdentitySupplier)

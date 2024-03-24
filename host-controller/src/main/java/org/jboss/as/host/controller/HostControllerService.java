@@ -103,7 +103,8 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         // processState.setStarting();
         final ProductConfig config = environment.getProductConfig();
         final String prettyVersion = config.getPrettyVersionString();
-        ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion);
+        final String banner = environment.getStability() == org.jboss.as.version.Stability.EXPERIMENTAL ? config.getBanner() : "";
+        ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion, banner);
         if (System.getSecurityManager() != null) {
             ServerLogger.AS_ROOT_LOGGER.securityManagerEnabled();
         }

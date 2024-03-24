@@ -81,4 +81,5 @@ public class RunningModeControl {
     public void setNewBootFileName(String newBootFileName) {
         this.newBootFileName = newBootFileName;
     }
+
 }

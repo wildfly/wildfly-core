@@ -413,8 +413,9 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerOperationHandler(ServerDomainProcessShutdownHandler.DOMAIN_DEFINITION, new ServerDomainProcessShutdownHandler());
 
         } else {
-            final ServerProcessReloadHandler reloadHandler = new ServerProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, serverEnvironment);
-            resourceRegistration.registerOperationHandler(ServerProcessReloadHandler.DEFINITION, reloadHandler, false);
+
+            ServerProcessReloadHandler.registerStandardReloadOperation(resourceRegistration, runningModeControl, processState, serverEnvironment);
+            ServerProcessReloadHandler.registerEnhancedReloadOperation(resourceRegistration, runningModeControl, processState, serverEnvironment);
 
             resourceRegistration.registerOperationHandler(ServerSuspendHandler.DEFINITION, ServerSuspendHandler.INSTANCE);
             resourceRegistration.registerOperationHandler(ServerResumeHandler.DEFINITION, ServerResumeHandler.INSTANCE);
