@@ -18,6 +18,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
@@ -25,6 +26,7 @@ import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.services.path.PathInfoHandler;
 import org.jboss.as.host.controller.HostControllerEnvironment;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -63,6 +65,11 @@ public class HostEnvironmentResourceDefinition extends SimpleResourceDefinition 
     private static final AttributeDefinition INITIAL_RUNNING_MODE = createAttributeDefinition("initial-running-mode");
     private static final AttributeDefinition QUALIFIED_HOST_NAME = createAttributeDefinition("qualified-host-name");
     private static final AttributeDefinition HOST_NAME = createAttributeDefinition("host-name");
+    private static final AttributeDefinition STABILITY = createAttributeDefinition("stability");
+    private static final AttributeDefinition PERMISSIBLE_STABILITY_LEVELS = new SimpleListAttributeDefinition.Builder("permissible-stability-levels", STABILITY)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .build();
 
     private static final AttributeDefinition[] HOST_ENV_ATTRIBUTES = {
         PROCESS_CONTROLLER_ADDRESS,
@@ -86,7 +93,9 @@ public class HostEnvironmentResourceDefinition extends SimpleResourceDefinition 
         USE_CACHED_DC,
         INITIAL_RUNNING_MODE,
         QUALIFIED_HOST_NAME,
-        HOST_NAME
+        HOST_NAME,
+        STABILITY,
+        PERMISSIBLE_STABILITY_LEVELS
     };
 
     private final HostEnvironmentReadHandler osh;
@@ -217,6 +226,12 @@ public class HostEnvironmentResourceDefinition extends SimpleResourceDefinition 
                 set(result, environment.getQualifiedHostName());
             } else if (equals(name, HOST_NAME)) {
                 set(result, environment.getHostName());
+            } else if (equals(name, STABILITY)) {
+                result.set(environment.getStability().toString());
+            } else if (equals(name, PERMISSIBLE_STABILITY_LEVELS)) {
+                for (Stability s : environment.getStabilities()) {
+                    result.add(s.toString());
+                }
             }
         }
 

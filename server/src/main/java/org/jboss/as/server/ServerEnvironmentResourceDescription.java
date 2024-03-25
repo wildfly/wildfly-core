@@ -16,6 +16,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.persistence.ConfigurationFile;
@@ -23,6 +24,7 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.services.path.PathInfoHandler;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -55,10 +57,13 @@ public class ServerEnvironmentResourceDescription extends SimpleResourceDefiniti
     public static final AttributeDefinition START_SUSPENDED = SimpleAttributeDefinitionBuilder.create("start-suspended", ModelType.BOOLEAN).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
     public static final AttributeDefinition GRACEFUL_STARTUP = SimpleAttributeDefinitionBuilder.create("start-gracefully", ModelType.BOOLEAN).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
     static final AttributeDefinition STABILITY = SimpleAttributeDefinitionBuilder.create("stability", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    static final AttributeDefinition PERMISSIBLE_STABILITY_LEVELS = new SimpleListAttributeDefinition.Builder("permissible-stability-levels", STABILITY)
+            .setFlags(AttributeAccess.Flag.STORAGE_RUNTIME)
+            .build();
 
     private static final AttributeDefinition[] SERVER_ENV_ATTRIBUTES = { BASE_DIR, CONFIG_DIR, CONFIG_FILE, CONTENT_DIR, DATA_DIR,
             DEPLOY_DIR, EXT_DIRS, HOME_DIR, HOST_NAME, INITIAL_RUNNING_MODE, LAUNCH_TYPE, LOG_DIR, NODE_NAME,
-            QUALIFIED_HOST_NAME, SERVER_NAME, TEMP_DIR, START_SUSPENDED, GRACEFUL_STARTUP, STABILITY };
+            QUALIFIED_HOST_NAME, SERVER_NAME, TEMP_DIR, START_SUSPENDED, GRACEFUL_STARTUP, STABILITY, PERMISSIBLE_STABILITY_LEVELS };
 
     private final ServerEnvironmentReadHandler osh;
 
@@ -175,6 +180,10 @@ public class ServerEnvironmentResourceDescription extends SimpleResourceDefiniti
                 result.set(environment.isStartGracefully());
             } else if (equals(name, STABILITY)) {
                 result.set(environment.getStability().toString());
+            } else if (equals(name, PERMISSIBLE_STABILITY_LEVELS)) {
+                for (Stability s : environment.getStabilities()) {
+                    result.add(s.toString());
+                }
             }
         }
 

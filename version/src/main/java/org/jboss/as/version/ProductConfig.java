@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Properties;
@@ -98,7 +99,7 @@ public class ProductConfig implements Serializable {
         version = productVersion;
         this.consoleSlot = consoleSlot;
         this.defaultStability = defaultStability;
-        this.stabilities = EnumSet.range(maxStability, minStability);
+        this.stabilities = Collections.unmodifiableSet(EnumSet.range(maxStability, minStability));
     }
 
     private void getBannerFile(Module module) throws IOException {
