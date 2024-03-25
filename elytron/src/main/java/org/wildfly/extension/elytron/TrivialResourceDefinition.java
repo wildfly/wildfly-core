@@ -18,11 +18,13 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.version.Stability;
 
 /**
  * A trivial {@link ResourceDefinition}
@@ -38,8 +40,8 @@ final class TrivialResourceDefinition extends SimpleResourceDefinition {
 
     private TrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AbstractRemoveStepHandler remove, AttributeDefinition[] attributes,
             Map<AttributeDefinition, OperationStepHandler> readOnlyAttributes, Map<OperationDefinition, OperationStepHandler> operations, List<ResourceDefinition> children,
-            RuntimeCapability<?>[] runtimeCapabilities) {
-        super(new Parameters(PathElement.pathElement(pathKey),
+            RuntimeCapability<?>[] runtimeCapabilities, Stability stability) {
+        super(new Parameters(ResourceRegistration.of(PathElement.pathElement(pathKey), stability),
                 resourceDescriptionResolver)
             .setAddHandler(add)
             .setRemoveHandler(remove)
@@ -54,11 +56,11 @@ final class TrivialResourceDefinition extends SimpleResourceDefinition {
     }
 
     TrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
-        this(pathKey, resourceDescriptionResolver, add, new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities);
+        this(pathKey, resourceDescriptionResolver, add, new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities, Stability.DEFAULT);
     }
 
     TrivialResourceDefinition(String pathKey, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
-        this(pathKey, ElytronExtension.getResourceDescriptionResolver(pathKey), add, new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities);
+        this(pathKey, ElytronExtension.getResourceDescriptionResolver(pathKey), add, new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities, Stability.DEFAULT);
     }
 
     @Override
@@ -116,6 +118,7 @@ final class TrivialResourceDefinition extends SimpleResourceDefinition {
         private Map<OperationDefinition, OperationStepHandler> operations;
         private RuntimeCapability<?>[] runtimeCapabilities;
         private List<ResourceDefinition> children;
+        private Stability stability = Stability.DEFAULT;
 
         Builder() {}
 
@@ -173,6 +176,11 @@ final class TrivialResourceDefinition extends SimpleResourceDefinition {
             return this;
         }
 
+        Builder setStability(Stability stability) {
+            this.stability = stability;
+            return this;
+        }
+
         Builder addChild(ResourceDefinition child) {
             if (children == null) {
                 children = new ArrayList<>();
@@ -187,7 +195,7 @@ final class TrivialResourceDefinition extends SimpleResourceDefinition {
             ResourceDescriptionResolver resourceDescriptionResolver = this.resourceDescriptionResolver != null ? this.resourceDescriptionResolver : ElytronExtension.getResourceDescriptionResolver(pathKey);
             return new TrivialResourceDefinition(pathKey, resourceDescriptionResolver, addHandler,
                     removeHandler != null ? removeHandler : new TrivialCapabilityServiceRemoveHandler(addHandler, runtimeCapabilities),
-                    attributes, readOnlyAttributes, operations, children, runtimeCapabilities);
+                    attributes, readOnlyAttributes, operations, children, runtimeCapabilities, stability);
         }
 
     }

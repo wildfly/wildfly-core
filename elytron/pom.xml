@@ -66,6 +66,11 @@
 
         <dependency>
             <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-dynamic-ssl</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-realm-jdbc</artifactId>
         </dependency>
 
@@ -344,6 +349,13 @@
             <artifactId>wildfly-openssl-windows-x86_64</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.jmockit</groupId>
+            <artifactId>jmockit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -366,6 +378,7 @@
                                 <exclude>custom-policies.xml</exclude>
                                 <exclude>jacc-with-providers.xml</exclude>
                                 <exclude>legacy*.xml</exclude>
+                                <exclude>elytron-subsystem-community*.xml</exclude>
                             </excludes>
                             <systemId>src/main/resources/schema/wildfly-elytron_18_0.xsd</systemId>
                         </validationSet>
@@ -390,7 +403,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <reuseForks>false</reuseForks>
-                    <argLine>${surefire.jacoco.args} ${modular.jdk.args} -Dorg.wildfly.extension.elytron.restore-default-ssl-context=true -Dauthconfigprovider.factory=org.wildfly.security.auth.jaspi.ElytronAuthConfigFactory</argLine>
+                    <argLine>-javaagent:${settings.localRepository}/org/jmockit/jmockit/${version.org.jmockit}/jmockit-${version.org.jmockit}.jar ${surefire.jacoco.args} ${modular.jdk.args} -Dorg.wildfly.extension.elytron.restore-default-ssl-context=true -Dauthconfigprovider.factory=org.wildfly.security.auth.jaspi.ElytronAuthConfigFactory</argLine>
                 </configuration>
             </plugin>
         </plugins>

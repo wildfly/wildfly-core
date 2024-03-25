@@ -34,6 +34,7 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-credential-source-impl}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-credential-store}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-digest}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-dynamic-ssl}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-encryption}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http-basic}"/>

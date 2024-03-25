@@ -8,6 +8,7 @@ package org.wildfly.extension.elytron;
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
 import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
+import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
@@ -56,6 +57,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -98,6 +100,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceBuilder;
@@ -112,12 +115,16 @@ import org.wildfly.extension.elytron.TrivialResourceDefinition.Builder;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
+import org.wildfly.security.auth.client.AuthenticationContext;
+import org.wildfly.security.dynamic.ssl.DynamicSSLContextImpl;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.MechanismConfigurationSelector;
 import org.wildfly.security.auth.server.RealmMapper;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.source.CredentialSource;
+import org.wildfly.security.dynamic.ssl.DynamicSSLContext;
+import org.wildfly.security.dynamic.ssl.DynamicSSLContextException;
 import org.wildfly.security.keystore.AliasFilter;
 import org.wildfly.security.keystore.FilteringKeyStore;
 import org.wildfly.security.password.interfaces.ClearPassword;
@@ -144,6 +151,13 @@ class SSLDefinitions {
     static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING, true)
             .setAllowExpression(true)
             .setMinSize(1)
+            .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition AUTHENTICATION_CONTEXT_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHENTICATION_CONTEXT, ModelType.STRING, false)
+            .setMinSize(1)
+            .setRequired(true)
+            .setCapabilityReference(AUTHENTICATION_CONTEXT_CAPABILITY, SSL_CONTEXT_CAPABILITY)
             .setRestartAllServices()
             .build();
 
@@ -1208,11 +1222,17 @@ class SSLDefinitions {
     }
 
     private static ResourceDefinition createSSLContextDefinition(String pathKey, boolean server, AbstractAddStepHandler addHandler, AttributeDefinition[] attributes, boolean serverOrHostController) {
+        return createSSLContextDefinition(pathKey, server, addHandler, attributes, serverOrHostController, Stability.DEFAULT);
+    }
+
+    private static ResourceDefinition createSSLContextDefinition(String pathKey, boolean server, AbstractAddStepHandler addHandler, AttributeDefinition[] attributes, boolean serverOrHostController, Stability stability) {
+
         Builder builder = TrivialResourceDefinition.builder()
                 .setPathKey(pathKey)
                 .setAddHandler(addHandler)
                 .setAttributes(attributes)
-                .setRuntimeCapabilities(SSL_CONTEXT_RUNTIME_CAPABILITY);
+                .setRuntimeCapabilities(SSL_CONTEXT_RUNTIME_CAPABILITY)
+                .setStability(stability);
 
         if (serverOrHostController) {
             builder.addReadOnlyAttribute(ACTIVE_SESSION_COUNT, new SSLContextRuntimeHandler() {
@@ -1509,6 +1529,42 @@ class SSLDefinitions {
         };
 
         return createSSLContextDefinition(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, false, add, attributes, serverOrHostController);
+    }
+
+    static ResourceDefinition getDynamicClientSSLContextDefinition() {
+
+        AttributeDefinition[] attributes = new AttributeDefinition[]{AUTHENTICATION_CONTEXT_ATTRIBUTE};
+        AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
+            @Override
+            protected ValueSupplier<SSLContext> getValueSupplier(ServiceBuilder<SSLContext> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
+                final String authenticationContextName = AUTHENTICATION_CONTEXT_ATTRIBUTE.resolveModelAttribute(context, model).asString();
+                String authenticationContextCapability = buildDynamicCapabilityName(AUTHENTICATION_CONTEXT_CAPABILITY, authenticationContextName);
+                ServiceName acServiceName = context.getCapabilityServiceName(authenticationContextCapability, AuthenticationContext.class);
+                Supplier<AuthenticationContext> authenticationContextSupplier = serviceBuilder.requires(acServiceName);
+
+                return () -> {
+                    try {
+                        return new DynamicSSLContext(new DynamicSSLContextImpl(authenticationContextSupplier.get()));
+                    } catch (DynamicSSLContextException | GeneralSecurityException e) {
+                        throw new RuntimeException(e);
+                    }
+                };
+            }
+
+            @Override
+            protected Resource createResource(OperationContext context) {
+                SSLContextResource resource = new SSLContextResource(Resource.Factory.create(), false);
+                context.addResource(PathAddress.EMPTY_ADDRESS, resource);
+                return resource;
+            }
+
+            @Override
+            protected void installedForResource(ServiceController<SSLContext> serviceController, Resource resource) {
+                ((SSLContextResource) resource).setSSLContextServiceController(serviceController);
+            }
+        };
+
+        return createSSLContextDefinition(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXT, false, add, attributes, false, Stability.COMMUNITY);
     }
 
     private static Provider[] filterProviders(Provider[] all, String provider) {

@@ -499,7 +499,10 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             } else {
                 repository = null;
             }
-            serverConfigurationFile = standalone ? new ConfigurationFile(serverConfigurationDir, defaultServerConfig, serverConfig, configInteractionPolicy, repository != null, serverTempDir, configurationExtension) : null;
+
+            this.stability = getEnumProperty(props, ProcessEnvironment.STABILITY, productConfig.getDefaultStability());
+            final String translatedConfig = translateFileAlias(serverConfig, stability);
+            serverConfigurationFile = standalone ? new ConfigurationFile(serverConfigurationDir, defaultServerConfig, translatedConfig, configInteractionPolicy, repository != null, serverTempDir, configurationExtension) : null;
             // Adds a system property to indicate whether or not the server configuration should be persisted
             @SuppressWarnings("deprecation")
             final String propertyKey = JBOSS_PERSIST_SERVER_CONFIG;
@@ -525,7 +528,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                 this.domainConfigurationDir = null;
             }
 
-            this.stability = getEnumProperty(props, ProcessEnvironment.STABILITY, productConfig.getDefaultStability());
             if (!productConfig.getStabilitySet().contains(this.stability)) {
                 throw ServerLogger.ROOT_LOGGER.unsupportedStability(this.stability, productConfig.getProductName());
             }
@@ -1265,5 +1267,26 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
 
     ManagedAuditLogger createAuditLogger() {
         return new ManagedAuditLoggerImpl(getProductConfig().resolveVersion(), true);
+    }
+
+    public static String translateFileAlias(String alias, Stability stability) {
+        if (!stability.enables(Stability.COMMUNITY) || alias == null) {
+            return alias;
+        }
+        switch (alias) {
+            case "full":
+            case "ha":
+            case "full-ha":
+            case "load-balancer":
+            case "microprofile":
+            case "microprofile-ha":
+                break;
+            case "fha":   alias = "full-ha"; break;
+            case "lb":    alias = "load-balancer"; break;
+            case "mp":    alias = "microprofile"; break;
+            case "mpha":  alias = "microprofile-ha"; break;
+            default:      return alias;
+        }
+        return "standalone-" + alias + ".xml";
     }
 }

@@ -173,6 +173,8 @@ interface ElytronDescriptionConstants {
     String DISTINGUISHED_NAME = "distinguished-name";
     String DISTRIBUTED_REALM = "distributed-realm";
     String DOMAIN_NAMES = "domain-names";
+    String DYNAMIC_CLIENT_SSL_CONTEXT = "dynamic-client-ssl-context";
+    String DYNAMIC_CLIENT_SSL_CONTEXTS = "dynamic-client-ssl-contexts";
 
     String ELYTRON_SECURITY = "elytron-security";
     String ENABLE_CONNECTION_POOLING = "enable-connection-pooling";
