@@ -91,4 +91,42 @@ public class ServerEnvironmentTestCase {
         assertThat(uuids.get(0), is(not(uuid)));
         Files.delete(uuidPath);
     }
+
+    @Test
+    public void testAliasFunctionality() throws IOException {
+        Properties props = new Properties();
+        Path standaloneDir = homeDir.resolve("standalone");
+        Files.createDirectories(standaloneDir.resolve("configuration"));
+        Files.createFile(standaloneDir.resolve("configuration").resolve("standalone.xml"));
+        Files.createFile(standaloneDir.resolve("configuration").resolve("standalone-load-balancer.xml"));
+        Files.createFile(standaloneDir.resolve("configuration").resolve("custom.xml"));
+        props.put(HOME_DIR, homeDir.toAbsolutePath().toString());
+
+        // default stability = COMMUNITY
+        ProductConfig productConfig = ProductConfig.fromFilesystemSlot(null, "", props);
+
+        ServerEnvironment serverEnvironment = createServerEnvironment(props, null, productConfig);
+        assertThat(serverEnvironment.getServerConfigurationFile().getBootFile().getName(), is("standalone.xml"));
+
+        serverEnvironment = createServerEnvironment(props, "lb", productConfig);
+        assertThat(serverEnvironment.getServerConfigurationFile().getBootFile().getName(), is("standalone-load-balancer.xml"));
+
+        serverEnvironment = createServerEnvironment(props, "custom.xml", productConfig);
+        assertThat(serverEnvironment.getServerConfigurationFile().getBootFile().getName(), is("custom.xml"));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAliasNotWorkingInDefaultStability() {
+        Properties props = new Properties();
+        props.put(HOME_DIR, homeDir.toAbsolutePath().toString());
+
+        // default stability = DEFAULT
+        ProductConfig productConfig = new ProductConfig(null, null, null);
+        createServerEnvironment(props, "lb", productConfig);
+    }
+
+    private ServerEnvironment createServerEnvironment(Properties props, String serverConfig, ProductConfig productConfig) {
+        return new ServerEnvironment(null, props, System.getenv(), serverConfig,
+                ConfigurationFile.InteractionPolicy.READ_ONLY, ServerEnvironment.LaunchType.STANDALONE, RunningMode.NORMAL, productConfig, false);
+    }
 }
