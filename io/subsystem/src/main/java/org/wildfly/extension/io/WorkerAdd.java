@@ -7,8 +7,6 @@ package org.wildfly.extension.io;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
-import static org.wildfly.extension.io.WorkerResourceDefinition.ATTRIBUTES;
-import static org.wildfly.extension.io.WorkerResourceDefinition.IO_WORKER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_IO_THREADS;
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_CORE_THREADS;
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_MAX_THREADS;
@@ -16,6 +14,7 @@ import static org.wildfly.extension.io.WorkerResourceDefinition.STACK_SIZE;
 
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -32,9 +31,9 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.cpu.ProcessorInfo;
 import org.wildfly.extension.io.logging.IOLogger;
+import org.wildfly.io.OptionAttributeDefinition;
 import org.xnio.Option;
 import org.xnio.OptionMap;
 import org.xnio.Xnio;
@@ -45,11 +44,6 @@ import org.xnio.XnioWorker;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 class WorkerAdd extends AbstractAddStepHandler {
-    static final WorkerAdd INSTANCE = new WorkerAdd();
-
-    private WorkerAdd() {
-        super(ATTRIBUTES);
-    }
 
     private static int getMaxDescriptorCount() {
         try {
@@ -134,6 +128,12 @@ class WorkerAdd extends AbstractAddStepHandler {
         }
     }
 
+    private final AtomicInteger maxThreads;
+
+    WorkerAdd(AtomicInteger maxThreads) {
+        this.maxThreads = maxThreads;
+    }
+
     @Override
     protected Resource createResource(OperationContext context) {
         if (PROFILE.equals(context.getCurrentAddress().getElement(0).getKey())) {
@@ -150,7 +150,7 @@ class WorkerAdd extends AbstractAddStepHandler {
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         Resource resource = context.readResourceFromRoot(address.subAddress(0, address.size() - 1));
-        ModelNode workers = Resource.Tools.readModel(resource).get(IOExtension.WORKER_PATH.getKey());
+        ModelNode workers = Resource.Tools.readModel(resource).get(WorkerResourceDefinition.PATH.getKey());
         int allWorkerCount = workers.asList().size();
         final String name = context.getCurrentAddressValue();
         final XnioWorker.Builder builder = Xnio.getInstance().createWorkerBuilder();
@@ -203,19 +203,15 @@ class WorkerAdd extends AbstractAddStepHandler {
             }
         }
 
-        registerMax(context, name, workerThreads);
+        int workerMaxThreads = workerThreads;
+        // Add to max threads on start, subtract from max threads on stop
+        Consumer<XnioWorker> maxThreadsRecorder = worker -> this.maxThreads.addAndGet((worker != null) ? workerMaxThreads : (0 - workerMaxThreads));
 
-        final CapabilityServiceBuilder<?> capBuilder = context.getCapabilityServiceTarget().addCapability(IO_WORKER_RUNTIME_CAPABILITY);
-        final Consumer<XnioWorker> workerConsumer = capBuilder.provides(IO_WORKER_RUNTIME_CAPABILITY);
+        final CapabilityServiceBuilder<?> capBuilder = context.getCapabilityServiceTarget().addCapability(WorkerResourceDefinition.CAPABILITY);
+        final Consumer<XnioWorker> workerConsumer = capBuilder.provides(WorkerResourceDefinition.CAPABILITY);
         final Supplier<ExecutorService> executorSupplier = capBuilder.requiresCapability("org.wildfly.management.executor", ExecutorService.class);
-        capBuilder.setInstance(new WorkerService(workerConsumer, executorSupplier, builder));
+        capBuilder.setInstance(new WorkerService(workerConsumer.andThen(maxThreadsRecorder), executorSupplier, builder));
         capBuilder.setInitialMode(ServiceController.Mode.ON_DEMAND);
         capBuilder.install();
-    }
-
-    private void registerMax(OperationContext context, String name, int workerThreads) {
-        ServiceName serviceName = IORootDefinition.IO_MAX_THREADS_RUNTIME_CAPABILITY.getCapabilityServiceName();
-        MaxThreadTrackerService service = (MaxThreadTrackerService) context.getServiceRegistry(false).getRequiredService(serviceName).getService();
-        service.registerWorkerMax(name, workerThreads);
     }
 }

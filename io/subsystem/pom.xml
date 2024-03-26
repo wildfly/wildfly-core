@@ -20,8 +20,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-controller</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>wildfly-io-spi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>wildfly-subsystem</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly.common</groupId>

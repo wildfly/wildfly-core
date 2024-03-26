@@ -10,6 +10,7 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.as.controller.PersistentSubsystemSchema;
 import org.jboss.as.controller.SubsystemSchema;
@@ -64,9 +65,10 @@ public enum RemotingSubsystemSchema implements PersistentSubsystemSchema<Remotin
             new RemotingSubsystem40Parser().readElement(reader, value);
         }
     },
-    VERSION_6_0(6, 0), // WildFly 30 - present
+    VERSION_6_0(6, 0), // WildFly 30 - 31
+    VERSION_7_0(7, 0), // WildFly 32 - present
     ;
-    static final RemotingSubsystemSchema CURRENT = VERSION_6_0;
+    static final RemotingSubsystemSchema CURRENT = VERSION_7_0;
 
     private VersionedNamespace<IntVersion, RemotingSubsystemSchema> namespace;
 
@@ -83,7 +85,19 @@ public enum RemotingSubsystemSchema implements PersistentSubsystemSchema<Remotin
     public PersistentResourceXMLDescription getXMLDescription() {
         PersistentResourceXMLDescription.PersistentResourceXMLBuilder propertiesBuilder = builder(PropertyResource.PATH).setXmlWrapperElement(CommonAttributes.PROPERTIES).addAttributes(PropertyResource.ATTRIBUTES.stream());
 
-        return builder(RemotingSubsystemRootResource.PATH, this.namespace).addAttributes(RemotingSubsystemRootResource.ATTRIBUTES.stream())
+        PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder = builder(RemotingSubsystemRootResource.PATH, this.namespace).addAttributes(RemotingSubsystemRootResource.ATTRIBUTES.stream());
+        if (!this.since(VERSION_7_0)) {
+            builder.setAdditionalOperationsGenerator(new PersistentResourceXMLDescription.AdditionalOperationsGenerator() {
+                @Override
+                public void additionalOperations(PathAddress address, ModelNode addOperation, List<ModelNode> operations) {
+                    // Apply magic default value specified by legacy schema versions
+                    if (!addOperation.hasDefined(RemotingSubsystemRootResource.WORKER.getName())) {
+                        addOperation.get(RemotingSubsystemRootResource.WORKER.getName()).set(RemotingSubsystemRootResource.LEGACY_DEFAULT_WORKER);
+                    }
+                }
+            });
+        }
+        return builder
             .addChild(builder(ConnectorResource.PATH).addAttributes(ConnectorResource.ATTRIBUTES.stream())
                     .addChild(propertiesBuilder)
                     .addChild(builder(SaslResource.SASL_CONFIG_PATH).addAttributes(SaslResource.ATTRIBUTES.stream())

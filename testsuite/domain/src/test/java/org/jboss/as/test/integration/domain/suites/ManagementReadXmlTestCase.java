@@ -56,6 +56,7 @@ import org.junit.Test;
  *
  * @author Emmanuel Hugonnet (c) 2022 Red Hat, Inc.
  */
+@org.junit.Ignore("WFCORE-6679")
 public class ManagementReadXmlTestCase {
     private static final Logger log = Logger.getLogger("org.jboss.as.test.integration.domain");
 

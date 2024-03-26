@@ -10,10 +10,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -42,6 +42,8 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.wildfly.extension.io.logging.IOLogger;
+import org.wildfly.io.IOServiceDescriptor;
+import org.wildfly.io.OptionAttributeDefinition;
 import org.xnio.Option;
 import org.xnio.Options;
 import org.xnio.XnioWorker;
@@ -53,8 +55,8 @@ import org.xnio.management.XnioWorkerMXBean;
  */
 class WorkerResourceDefinition extends PersistentResourceDefinition {
 
-    static final RuntimeCapability<Void> IO_WORKER_RUNTIME_CAPABILITY =
-            RuntimeCapability.Builder.of(IOServices.IO_WORKER_CAPABILITY_NAME, true, XnioWorker.class).build();
+    static final PathElement PATH = PathElement.pathElement(Constants.WORKER);
+    static final RuntimeCapability<Void> CAPABILITY = RuntimeCapability.Builder.of(IOServiceDescriptor.WORKER).build();
 
     static final OptionAttributeDefinition WORKER_TASK_CORE_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_CORE_THREADS, Options.WORKER_TASK_CORE_THREADS)
             .setDefaultValue(new ModelNode(2))
@@ -83,7 +85,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
             .setAllowExpression(true)
             .build();
 
-    static final OptionAttributeDefinition[] ATTRIBUTES = new OptionAttributeDefinition[]{
+    static final OptionAttributeDefinition[] ATTRIBUTES = new OptionAttributeDefinition[] {
             WORKER_IO_THREADS,
             WORKER_TASK_CORE_THREADS,
             WORKER_TASK_KEEPALIVE,
@@ -98,31 +100,16 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     private static final AttributeDefinition QUEUE_SIZE = new SimpleAttributeDefinitionBuilder("queue-size", ModelType.INT).build();
     private static final AttributeDefinition BUSY_WORKER_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("busy-task-thread-count", ModelType.INT).build();
 
-    static final Map<String, OptionAttributeDefinition> ATTRIBUTES_BY_XMLNAME;
-
-    static {
-        Map<String, OptionAttributeDefinition> attrs = new HashMap<>();
-        for (AttributeDefinition attr : ATTRIBUTES) {
-            attrs.put(attr.getXmlName(), (OptionAttributeDefinition) attr);
-        }
-        ATTRIBUTES_BY_XMLNAME = Collections.unmodifiableMap(attrs);
-    }
-
-
-    static final WorkerResourceDefinition INSTANCE = new WorkerResourceDefinition();
-
-
-    private WorkerResourceDefinition() {
-        super(new SimpleResourceDefinition.Parameters(IOExtension.WORKER_PATH, IOExtension.getResolver(Constants.WORKER))
-                .setAddHandler(WorkerAdd.INSTANCE)
+    WorkerResourceDefinition(AtomicInteger maxThreads) {
+        super(new SimpleResourceDefinition.Parameters(PATH, IOSubsystemRegistrar.RESOLVER.createChildResolver(PATH))
+                .setAddHandler(new WorkerAdd(maxThreads))
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
-                .addCapabilities(IO_WORKER_RUNTIME_CAPABILITY));
+                .addCapabilities(CAPABILITY));
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Collection<AttributeDefinition> getAttributes() {
-        return (Collection) ATTRIBUTES_BY_XMLNAME.values();
+        return List.of(ATTRIBUTES);
     }
 
     @Override
@@ -285,9 +272,9 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
 
     static XnioWorker getXnioWorker(OperationContext context) {
         String name = context.getCurrentAddressValue();
-        if (!context.getCurrentAddress().getLastElement().getKey().equals(IOExtension.WORKER_PATH.getKey())) { //we are somewhere deeper, lets find worker name
+        if (!context.getCurrentAddress().getLastElement().getKey().equals(PATH.getKey())) { //we are somewhere deeper, lets find worker name
             for (PathElement pe : context.getCurrentAddress()) {
-                if (pe.getKey().equals(IOExtension.WORKER_PATH.getKey())) {
+                if (pe.getKey().equals(PATH.getKey())) {
                     name = pe.getValue();
                     break;
                 }
@@ -297,7 +284,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     }
 
     static XnioWorker getXnioWorker(ServiceRegistry serviceRegistry, String name) {
-        ServiceName serviceName = IO_WORKER_RUNTIME_CAPABILITY.getCapabilityServiceName(name, XnioWorker.class);
+        ServiceName serviceName = CAPABILITY.getCapabilityServiceName(name, XnioWorker.class);
         ServiceController<XnioWorker> controller = (ServiceController<XnioWorker>) serviceRegistry.getService(serviceName);
         if (controller == null || controller.getState() != ServiceController.State.UP) {
             return null;

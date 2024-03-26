@@ -1161,6 +1161,23 @@ public abstract class AttributeDefinition implements Feature {
         return undefinedMetricValue;
     }
 
+    @Override
+    public int hashCode() {
+        return this.name.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (!(object instanceof AttributeDefinition)) return false;
+        AttributeDefinition attribute = (AttributeDefinition) object;
+        return this.name.equals(attribute.name);
+    }
+
+    @Override
+    public String toString() {
+        return this.name;
+    }
+
     /**
      * Simple {@code Comparable} that encapsulates the name of an attribute and any attribute group,
      * ordering first one group (null group first) and then one attribute name.

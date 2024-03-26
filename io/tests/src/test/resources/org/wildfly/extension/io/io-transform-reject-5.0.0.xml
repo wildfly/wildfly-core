@@ -1,0 +1,3 @@
+<subsystem xmlns="urn:jboss:domain:io:4.0" default-worker="foo">
+    <worker name="foo" task-keepalive="100" stack-size="5000"/>
+</subsystem>

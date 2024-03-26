@@ -20,9 +20,9 @@
     <name>WildFly: IO aggregator</name>
 
     <modules>
+        <module>spi</module>
         <module>subsystem</module>
         <module>tests</module>
     </modules>
-
 
 </project>

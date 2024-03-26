@@ -15,7 +15,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.wildfly.common.net.CidrAddress;
 import org.wildfly.common.net.Inet;
-import org.xnio.XnioWorker;
+import org.wildfly.io.IOServiceDescriptor;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -38,7 +38,7 @@ final class OutboundBindAddressUtils {
     static WorkerService getWorkerService(final OperationContext context) {
         final ServiceRegistry serviceRegistry = context.getServiceRegistry(false);
         final String workerName = context.getCurrentAddress().getParent().getLastElement().getValue();
-        final ServiceName workerServiceName = WorkerResourceDefinition.IO_WORKER_RUNTIME_CAPABILITY.getCapabilityServiceName(workerName, XnioWorker.class);
+        final ServiceName workerServiceName = context.getCapabilityServiceName(IOServiceDescriptor.WORKER, workerName);
         final ServiceController<?> workerServiceController = serviceRegistry.getRequiredService(workerServiceName);
         return (WorkerService) workerServiceController.getService();
     }

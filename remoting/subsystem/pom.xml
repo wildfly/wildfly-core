@@ -33,13 +33,7 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-io</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-subsystem-test</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>wildfly-io-spi</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>

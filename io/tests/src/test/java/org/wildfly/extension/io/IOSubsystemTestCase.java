@@ -7,15 +7,15 @@ package org.wildfly.extension.io;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.EnumSet;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.AttributeAccess;
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
+import org.jboss.as.subsystem.test.AbstractSubsystemSchemaTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
@@ -23,7 +23,11 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.wildfly.common.cpu.ProcessorInfo;
+import org.wildfly.io.OptionAttributeDefinition;
 import org.xnio.OptionMap;
 import org.xnio.Options;
 import org.xnio.Sequence;
@@ -32,16 +36,16 @@ import org.xnio.XnioWorker;
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
-public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
+@RunWith(Parameterized.class)
+public class IOSubsystemTestCase extends AbstractSubsystemSchemaTest<IOSubsystemSchema> {
 
-    public IOSubsystemTestCase() {
-        super(IOExtension.SUBSYSTEM_NAME, new IOExtension());
+    @Parameters
+    public static Iterable<IOSubsystemSchema> parameters() {
+        return EnumSet.allOf(IOSubsystemSchema.class);
     }
 
-
-    @Override
-    protected String getSubsystemXml() throws IOException {
-        return readResource("io-3.0.xml");
+    public IOSubsystemTestCase(IOSubsystemSchema schema) {
+        super(IOSubsystemRegistrar.NAME, new IOExtension(), schema, IOSubsystemSchema.CURRENT);
     }
 
     @Test
