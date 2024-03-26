@@ -81,7 +81,7 @@ public final class ManagementRemotingServices extends RemotingServices {
                                                       final OptionMap options,
                                                       final ServiceName saslAuthenticationFactory,
                                                       final ServiceName sslContext) {
-        ServiceName sbmName = context.hasOptionalCapability(SocketBindingManager.SERVICE_DESCRIPTOR.getName(), NATIVE_MANAGEMENT_RUNTIME_CAPABILITY.getName(), null)
+        ServiceName sbmName = context.hasOptionalCapability(SocketBindingManager.SERVICE_DESCRIPTOR, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY, null)
                 ? context.getCapabilityServiceName(SocketBindingManager.SERVICE_DESCRIPTOR) : null;
         installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName, MANAGEMENT_CONNECTOR,
                 networkInterfaceBinding, port, options, saslAuthenticationFactory, sslContext, sbmName);
