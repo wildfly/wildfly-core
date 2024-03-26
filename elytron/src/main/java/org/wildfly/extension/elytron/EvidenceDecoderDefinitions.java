@@ -103,7 +103,7 @@ class EvidenceDecoderDefinitions {
 
     static ResourceDefinition getX500SubjectEvidenceDecoderDefinition() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] {};
-        AbstractAddStepHandler add = new TrivialAddHandler<EvidenceDecoder>(EvidenceDecoder.class, attributes, EVIDENCE_DECODER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<EvidenceDecoder>(EvidenceDecoder.class, EVIDENCE_DECODER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<EvidenceDecoder> getValueSupplier(ServiceBuilder<EvidenceDecoder> serviceBuilder,
@@ -116,7 +116,7 @@ class EvidenceDecoderDefinitions {
 
     static ResourceDefinition getX509SubjectAltNameEvidenceDecoderDefinition() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] { ALT_NAME_TYPE, SEGMENT };
-        AbstractAddStepHandler add = new TrivialAddHandler<EvidenceDecoder>(EvidenceDecoder.class, attributes, EVIDENCE_DECODER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<EvidenceDecoder>(EvidenceDecoder.class, EVIDENCE_DECODER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<EvidenceDecoder> getValueSupplier(ServiceBuilder<EvidenceDecoder> serviceBuilder,

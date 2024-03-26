@@ -148,7 +148,7 @@ class VirtualDomainDefinition extends SimpleResourceDefinition {
     private static class VirtualDomainAddHandler extends BaseAddHandler {
 
         private VirtualDomainAddHandler() {
-            super(VIRTUAL_SECURITY_DOMAIN_RUNTIME_CAPABILITY, ATTRIBUTES);
+            super(VIRTUAL_SECURITY_DOMAIN_RUNTIME_CAPABILITY);
         }
 
         @Override

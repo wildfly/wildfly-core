@@ -217,7 +217,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
         };
     }
 
-    private static final AbstractAddStepHandler ADD = new BaseAddHandler(DIR_CONTEXT_RUNTIME_CAPABILITY, ATTRIBUTES) {
+    private static final AbstractAddStepHandler ADD = new BaseAddHandler(DIR_CONTEXT_RUNTIME_CAPABILITY) {
         protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws  OperationFailedException {
             super.populateModel(context, operation, resource);
             handleCredentialReferenceUpdate(context, resource.getModel());

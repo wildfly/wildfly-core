@@ -194,7 +194,7 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
 
         ExpressionResolverAddHandler(RuntimeCapability<ExpressionResolverExtension> expressionResolverRuntimeCapability,
                                      AtomicReference<ExpressionResolverExtension> resolverRef) {
-            super(expressionResolverRuntimeCapability, ATTRIBUTES);
+            super(expressionResolverRuntimeCapability);
             this.expressionResolver = (ElytronExpressionResolver) expressionResolverRuntimeCapability.getRuntimeAPI();
             this.resolverRef = resolverRef;
         }

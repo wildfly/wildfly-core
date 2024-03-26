@@ -246,7 +246,7 @@ class PermissionMapperDefinitions {
 
     static ResourceDefinition getLogicalPermissionMapper() {
         AttributeDefinition[] attributes = new AttributeDefinition[] {LOGICAL_OPERATION, LEFT, RIGHT};
-        TrivialAddHandler<PermissionMapper> add = new TrivialAddHandler<PermissionMapper>(PermissionMapper.class, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY) {
+        TrivialAddHandler<PermissionMapper> add = new TrivialAddHandler<PermissionMapper>(PermissionMapper.class, PERMISSION_MAPPER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<PermissionMapper> getValueSupplier(ServiceBuilder<PermissionMapper> serviceBuilder,
@@ -272,7 +272,7 @@ class PermissionMapperDefinitions {
 
     static ResourceDefinition getSimplePermissionMapper() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] { MAPPING_MODE, PERMISSION_MAPPINGS };
-        TrivialAddHandler<PermissionMapper>  add = new TrivialAddHandler<PermissionMapper>(PermissionMapper.class, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY) {
+        TrivialAddHandler<PermissionMapper>  add = new TrivialAddHandler<PermissionMapper>(PermissionMapper.class, PERMISSION_MAPPER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<PermissionMapper> getValueSupplier(ServiceBuilder<PermissionMapper> serviceBuilder,
@@ -340,7 +340,7 @@ class PermissionMapperDefinitions {
 
     static ResourceDefinition getConstantPermissionMapper() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] { PERMISSIONS, PERMISSION_SETS };
-        TrivialAddHandler<PermissionMapper>  add = new TrivialAddHandler<PermissionMapper>(PermissionMapper.class, attributes, PERMISSION_MAPPER_RUNTIME_CAPABILITY) {
+        TrivialAddHandler<PermissionMapper>  add = new TrivialAddHandler<PermissionMapper>(PermissionMapper.class, PERMISSION_MAPPER_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<PermissionMapper> getValueSupplier(ServiceBuilder<PermissionMapper> serviceBuilder,

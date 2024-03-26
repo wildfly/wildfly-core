@@ -134,7 +134,7 @@ class PrincipalDecoderDefinitions {
 
     static ResourceDefinition getConstantPrincipalDecoder() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { CONSTANT };
-        AbstractAddStepHandler add = new PrincipalDecoderAddHandler(attributes) {
+        AbstractAddStepHandler add = new PrincipalDecoderAddHandler() {
 
             @Override
             protected ValueSupplier<PrincipalDecoder> getValueSupplier(ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
@@ -149,7 +149,7 @@ class PrincipalDecoderDefinitions {
 
     static ResourceDefinition getX500AttributePrincipalDecoder() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { OID, ATTRIBUTE_NAME, JOINER, START_SEGMENT, MAXIMUM_SEGMENTS, REVERSE, CONVERT, REQUIRED_OIDS, REQUIRED_ATTRIBUTES };
-        AbstractAddStepHandler add = new PrincipalDecoderAddHandler(attributes) {
+        AbstractAddStepHandler add = new PrincipalDecoderAddHandler() {
 
             @Override
             protected ValueSupplier<PrincipalDecoder> getValueSupplier(ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
@@ -192,7 +192,7 @@ class PrincipalDecoderDefinitions {
     static ResourceDefinition getConcatenatingPrincipalDecoder() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { JOINER, PRINCIPAL_DECODERS };
 
-        AbstractAddStepHandler add = new PrincipalDecoderAddHandler(attributes) {
+        AbstractAddStepHandler add = new PrincipalDecoderAddHandler() {
 
             @Override
             protected ValueSupplier<PrincipalDecoder> getValueSupplier(ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
@@ -262,8 +262,8 @@ class PrincipalDecoderDefinitions {
             CAPABILITIES = capabilities;
         }
 
-        private PrincipalDecoderAddHandler(AttributeDefinition ... attributes) {
-            super(CAPABILITIES, attributes);
+        private PrincipalDecoderAddHandler() {
+            super(CAPABILITIES);
         }
 
         @Override

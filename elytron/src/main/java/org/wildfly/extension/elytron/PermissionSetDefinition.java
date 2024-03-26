@@ -44,7 +44,7 @@ class PermissionSetDefinition {
 
     static ResourceDefinition getPermissionSet() {
         final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { PERMISSIONS };
-        TrivialAddHandler<Permissions>  add = new TrivialAddHandler<Permissions>(Permissions.class, ATTRIBUTES, PERMISSION_SET_RUNTIME_CAPABILITY) {
+        TrivialAddHandler<Permissions>  add = new TrivialAddHandler<Permissions>(Permissions.class, PERMISSION_SET_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<Permissions> getValueSupplier(ServiceBuilder<Permissions> serviceBuilder,
