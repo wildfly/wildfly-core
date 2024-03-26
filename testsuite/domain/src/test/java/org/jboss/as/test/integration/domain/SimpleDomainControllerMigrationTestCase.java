@@ -194,6 +194,7 @@ public class SimpleDomainControllerMigrationTestCase {
         changePrimaryOp.get(ModelDescriptionConstants.OP).set(RemoteDomainControllerAddHandler.OPERATION_NAME);
         changePrimaryOp.get(ModelDescriptionConstants.HOST).set("${jboss.test.host.secondary.address}");
         changePrimaryOp.get(ModelDescriptionConstants.PORT).set(MGMT_PORTS[1]);
+        changePrimaryOp.get(ModelDescriptionConstants.PROTOCOL).set("remote");
         changePrimaryOp.get(ModelDescriptionConstants.SECURITY_REALM).set("ManagementRealm");
 
         hostUtils[2].executeForResult(changePrimaryOp);

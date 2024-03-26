@@ -30,7 +30,7 @@
 
     <domain-controller>
         <!-- Remote domain controller configuration with a host and port -->
-        <remote host="${jboss.test.host.primary.address}" port="9999" authentication-context="secondaryHostAContext" ignore-unused-configuration="false">
+        <remote protocol="remote" host="${jboss.test.host.primary.address}" port="9999" authentication-context="secondaryHostAContext" ignore-unused-configuration="false">
         </remote>
     </domain-controller>
 

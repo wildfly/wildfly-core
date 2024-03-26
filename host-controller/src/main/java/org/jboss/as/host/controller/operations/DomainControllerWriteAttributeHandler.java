@@ -32,7 +32,6 @@ import org.jboss.as.host.controller.HostControllerConfigurationPersister;
 import org.jboss.as.host.controller.discovery.StaticDiscovery;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
-import org.jboss.as.remoting.Protocol;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.dmr.ModelNode;
@@ -92,8 +91,6 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PROTOCOL, ModelType.STRING)
                     .setRequired(false)
                     .setAllowExpression(true)
-                    .setValidator(EnumValidator.create(Protocol.class))
-                    .setDefaultValue(org.jboss.as.remoting.Protocol.REMOTE.toModelNode())
                     .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                     .setRequires(ModelDescriptionConstants.HOST, ModelDescriptionConstants.PORT)
                     .build();

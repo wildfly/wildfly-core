@@ -745,9 +745,7 @@ public abstract class ElytronUtil {
             mn.get(Util.RELATIVE_TO).set(config.getRelativeTo());
         }
         mn.get(Util.DIGEST_REALM_NAME).set(config.getExposedRealmName());
-        if (config.getPlainText()) {
-            mn.get(Util.PLAIN_TEXT).set(config.getPlainText());
-        }
+        mn.get(Util.PLAIN_TEXT).set(config.getPlainText());
         return mn;
     }
 

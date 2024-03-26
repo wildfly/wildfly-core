@@ -131,7 +131,6 @@ class SaslServerDefinitions {
     static final SimpleAttributeDefinition VERSION_COMPARISON = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VERSION_COMPARISON, ModelType.STRING, false)
         .setRequired(false)
         .setAllowExpression(true)
-        .setDefaultValue(new ModelNode(ElytronDescriptionConstants.LESS_THAN))
         .setRequires(ElytronDescriptionConstants.PROVIDER_VERSION)
         .setAllowedValues(ElytronDescriptionConstants.LESS_THAN, ElytronDescriptionConstants.GREATER_THAN)
         .setValidator(EnumValidator.create(Comparison.class))
