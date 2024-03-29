@@ -5,7 +5,6 @@
 package org.jboss.as.controller.xml;
 
 import org.jboss.as.version.Stability;
-import org.jboss.staxmapper.Versioned;
 
 /**
  * Simple {@link VersionedNamespace} implementation.
@@ -13,7 +12,7 @@ import org.jboss.staxmapper.Versioned;
  * @param <V> the namespace version
  * @param <N> the namespace type
  */
-public class SimpleVersionedNamespace<V extends Comparable<V>, N extends Versioned<V, N>> extends SimpleNamespace implements VersionedNamespace<V, N> {
+public class SimpleVersionedNamespace<V extends Comparable<V>, N extends VersionedFeature<V, N>> extends SimpleNamespace implements VersionedNamespace<V, N> {
 
     private final V version;
     private final Stability stability;
