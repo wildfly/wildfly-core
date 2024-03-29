@@ -602,6 +602,11 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
                         }
 
                         @Override
+                        public Builder addAttributes(Stream<? extends AttributeDefinition> attributes, AttributeParser attributeParser, AttributeMarshaller attributeMarshaller) {
+                            return this;
+                        }
+
+                        @Override
                         public Builder setXmlWrapperElement(String xmlWrapperElement) {
                             return this;
                         }
@@ -679,6 +684,12 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
                     @Override
                     public Builder addAttributes(Stream<? extends AttributeDefinition> attributes) {
                         builder.addAttributes(attributes.filter(schema::enables));
+                        return this;
+                    }
+
+                    @Override
+                    public Builder addAttributes(Stream<? extends AttributeDefinition> attributes, AttributeParser attributeParser, AttributeMarshaller attributeMarshaller) {
+                        builder.addAttributes(attributes.filter(schema::enables), attributeParser, attributeMarshaller);
                         return this;
                     }
 
@@ -761,6 +772,8 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         Builder addAttributes(AttributeDefinition... attributes);
 
         Builder addAttributes(Stream<? extends AttributeDefinition> attributes);
+
+        Builder addAttributes(Stream<? extends AttributeDefinition> attributes, AttributeParser attributeParser, AttributeMarshaller attributeMarshaller);
 
         Builder setXmlWrapperElement(String xmlWrapperElement);
 
@@ -866,6 +879,12 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         @Override
         public PersistentResourceXMLBuilder addAttributes(Stream<? extends AttributeDefinition> attributes) {
             attributes.forEach(this::addAttribute);
+            return this;
+        }
+
+        @Override
+        public PersistentResourceXMLBuilder addAttributes(Stream<? extends AttributeDefinition> attributes, AttributeParser parser, AttributeMarshaller attributeMarshaller) {
+            attributes.forEach(attribute -> this.addAttribute(attribute, parser, attributeMarshaller));
             return this;
         }
 
