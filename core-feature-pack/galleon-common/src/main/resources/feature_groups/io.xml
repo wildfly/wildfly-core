@@ -10,7 +10,7 @@
         <param name="subsystem" value="io"/>
         <param name="default-worker" value="default"/>
         <feature spec="subsystem.io.worker">
-	    <param name="worker" value="default"/>
+            <param name="worker" value="default"/>
         </feature>
     </feature>
 </feature-group-spec>
