@@ -456,12 +456,14 @@ public final class Main {
                 } else if (arg.equals(CommandLineConstants.SECMGR)) {
                     // Enable the security manager
                     securityManagerEnabled = true;
-                } else if ((productConfig.getStabilitySet().size() > 1) && arg.startsWith(CommandLineConstants.STABILITY)) {
-                    String stabilityName = (arg.length() == CommandLineConstants.STABILITY.length()) ? args[++i] : parseValue(arg, CommandLineConstants.STABILITY);
-                    if (stabilityName == null) {
-                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR, productConfig);
+                } else if (arg.startsWith(CommandLineConstants.STABILITY)) {
+                    if (productConfig.getStabilitySet().size() > 1) {
+                        String stabilityName = (arg.length() == CommandLineConstants.STABILITY.length()) ? args[++i] : parseValue(arg, CommandLineConstants.STABILITY);
+                        if (stabilityName == null) {
+                            return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR, productConfig);
+                        }
+                        hostSystemProperties.put(ProcessEnvironment.STABILITY, stabilityName);
                     }
-                    hostSystemProperties.put(ProcessEnvironment.STABILITY, stabilityName);
                 } else {
                     STDERR.println(HostControllerLogger.ROOT_LOGGER.invalidOption(arg, usageNote()));
                     return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR, productConfig);
