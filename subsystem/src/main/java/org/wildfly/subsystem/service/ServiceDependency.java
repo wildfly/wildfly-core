@@ -15,6 +15,7 @@ import org.jboss.msc.service.ServiceName;
 import org.wildfly.service.Dependency;
 import org.wildfly.service.descriptor.BinaryServiceDescriptor;
 import org.wildfly.service.descriptor.NullaryServiceDescriptor;
+import org.wildfly.service.descriptor.QuaternaryServiceDescriptor;
 import org.wildfly.service.descriptor.TernaryServiceDescriptor;
 import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 
@@ -42,7 +43,7 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
     /**
      * Returns a dependency on the service with the specified name.
      * @param <T> the dependency type
-     * @return a dependency supplier
+     * @return a service dependency
      */
     @SuppressWarnings("unchecked")
     static <T> ServiceDependency<T> of(T value) {
@@ -52,7 +53,7 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
     /**
      * Returns a dependency on the service with the specified name.
      * @param <T> the dependency type
-     * @return a dependency supplier
+     * @return a service dependency
      */
     static <T> ServiceDependency<T> on(ServiceName name) {
         return (name != null) ? new DefaultServiceDependency<>(name) : of(null);
@@ -64,7 +65,7 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
      * @param capabilityName the name of the referenced capability
      * @param type the service type of the referenced capability
      * @param referenceNames the reference names
-     * @return a dependency supplier
+     * @return a service dependency
      */
     static <T> ServiceDependency<T> on(String capabilityName, Class<T> type, String... referenceNames) {
         return new AbstractServiceDependency<>(Map.entry(capabilityName, referenceNames)) {
@@ -79,7 +80,7 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
      * Returns a dependency on the specified capability.
      * @param <T> the dependency type
      * @param descriptor the descriptor for the required service
-     * @return a dependency supplier
+     * @return a service dependency
      */
     static <T> ServiceDependency<T> on(NullaryServiceDescriptor<T> descriptor) {
         return new AbstractServiceDependency<>(descriptor.resolve()) {
@@ -95,7 +96,7 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
      * @param <T> the dependency type
      * @param descriptor the descriptor for the required service
      * @param name the reference name
-     * @return a dependency supplier
+     * @return a service dependency
      */
     static <T> ServiceDependency<T> on(UnaryServiceDescriptor<T> descriptor, String name) {
         return new AbstractServiceDependency<>(descriptor.resolve(name)) {
@@ -112,7 +113,7 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
      * @param descriptor the descriptor for the required service
      * @param parentName the parent reference name
      * @param childName the child reference name
-     * @return a dependency supplier
+     * @return a service dependency
      */
     static <T> ServiceDependency<T> on(BinaryServiceDescriptor<T> descriptor, String parentName, String childName) {
         return new AbstractServiceDependency<>(descriptor.resolve(parentName, childName)) {
@@ -127,16 +128,35 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
      * Returns a dependency on the specified ternary capability, resolved against the specified reference names.
      * @param <T> the dependency type
      * @param descriptor the descriptor for the required service
-     * @param ancestorName the ancestor reference name
+     * @param grandparentName the grandparentName reference name
      * @param parentName the parent reference name
      * @param childName the child reference name
-     * @return a dependency supplier
+     * @return a service dependency
      */
-    static <T> ServiceDependency<T> on(TernaryServiceDescriptor<T> descriptor, String ancestorName, String parentName, String childName) {
-        return new AbstractServiceDependency<>(descriptor.resolve(ancestorName, parentName, childName)) {
+    static <T> ServiceDependency<T> on(TernaryServiceDescriptor<T> descriptor, String grandparentName, String parentName, String childName) {
+        return new AbstractServiceDependency<>(descriptor.resolve(grandparentName, parentName, childName)) {
             @Override
             public Supplier<T> apply(RequirementServiceBuilder<?> builder) {
-                return builder.requires(descriptor, ancestorName, parentName, childName);
+                return builder.requires(descriptor, grandparentName, parentName, childName);
+            }
+        };
+    }
+
+    /**
+     * Returns a dependency on the specified quaternary capability, resolved against the specified reference names.
+     * @param <T> the dependency type
+     * @param descriptor the descriptor for the required service
+     * @param ancestorName the ancestor reference name
+     * @param grandparentName the grandparent reference name
+     * @param parentName the parent reference name
+     * @param childName the child reference name
+     * @return a service dependency
+     */
+    static <T> ServiceDependency<T> on(QuaternaryServiceDescriptor<T> descriptor, String ancestorName, String grandparentName, String parentName, String childName) {
+        return new AbstractServiceDependency<>(descriptor.resolve(ancestorName, grandparentName, parentName, childName)) {
+            @Override
+            public Supplier<T> apply(RequirementServiceBuilder<?> builder) {
+                return builder.requires(descriptor, ancestorName, grandparentName, parentName, childName);
             }
         };
     }
