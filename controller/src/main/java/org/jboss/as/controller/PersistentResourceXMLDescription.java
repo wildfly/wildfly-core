@@ -525,7 +525,9 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
      * Creates builder for passed path element
      * @param pathElement for which we are creating builder
      * @return PersistentResourceXMLBuilder
+     * @deprecated Use {@link Factory#builder(PathElement)} from {@link #factory(PersistentSubsystemSchema)} instead.
      */
+    @Deprecated
     public static PersistentResourceXMLBuilder builder(final PathElement pathElement) {
         return new PersistentResourceXMLBuilder(pathElement);
     }
@@ -536,7 +538,9 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
      * @param pathElement for which we are creating builder
      * @param namespaceURI xml namespace to use for this resource, usually used for top level elements such as subsystems
      * @return PersistentResourceXMLBuilder
+     * @deprecated Use {@link Factory#builder(PathElement)} from {@link #factory(PersistentSubsystemSchema)} instead.
      */
+    @Deprecated
     public static PersistentResourceXMLBuilder builder(final PathElement pathElement, final String namespaceURI) {
         return new PersistentResourceXMLBuilder(pathElement, namespaceURI);
     }
@@ -547,7 +551,9 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
      * @param path a subsystem path element
      * @param namespace the subsystem namespace
      * @return a builder for creating a {@link PersistentResourceXMLDescription}.
+     * @deprecated Use {@link Factory#builder(PathElement)} from {@link #factory(PersistentSubsystemSchema)} instead.
      */
+    @Deprecated
     public static PersistentResourceXMLBuilder builder(PathElement path, Namespace namespace) {
         return new PersistentResourceXMLBuilder(path, namespace.getUri());
     }
