@@ -369,12 +369,14 @@ public final class Main {
                     } else {
                         gitBranch = arg.substring(idx + 1);
                     }
-                } else if ((productConfig.getStabilitySet().size() > 1) && arg.startsWith(CommandLineConstants.STABILITY)) {
-                    String stability = (arg.length() == CommandLineConstants.STABILITY.length()) ? args[++i] : parseValue(productConfig, arg, CommandLineConstants.STABILITY);
-                    if (stability == null) {
-                        return new ServerEnvironmentWrapper(ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                } else if (arg.startsWith(CommandLineConstants.STABILITY)) {
+                    if (productConfig.getStabilitySet().size() > 1) {
+                        String stability = (arg.length() == CommandLineConstants.STABILITY.length()) ? args[++i] : parseValue(productConfig, arg, CommandLineConstants.STABILITY);
+                        if (stability == null) {
+                            return new ServerEnvironmentWrapper(ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                        }
+                        systemProperties.setProperty(ProcessEnvironment.STABILITY, stability);
                     }
-                    systemProperties.setProperty(ProcessEnvironment.STABILITY, stability);
                 } else if(ConfigurationExtensionFactory.isConfigurationExtensionSupported()
                         && ConfigurationExtensionFactory.commandLineContainsArgument(arg)) {
                     int idx = arg.indexOf("=");
