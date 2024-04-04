@@ -21,11 +21,11 @@ import org.wildfly.subsystem.resource.AttributeTranslation;
  * A {@value ModelDescriptionConstants#WRITE_ATTRIBUTE_OPERATION} operation handler that translates a value from another attribute
  * @author Paul Ferraro
  */
-public class WriteAttributeTranslationOperationStepHandlerHandler implements OperationStepHandler {
+public class WriteAttributeTranslationOperationStepHandler implements OperationStepHandler {
 
     private final AttributeTranslation translation;
 
-    public WriteAttributeTranslationOperationStepHandlerHandler(AttributeTranslation translation) {
+    public WriteAttributeTranslationOperationStepHandler(AttributeTranslation translation) {
         this.translation = translation;
     }
 

@@ -37,7 +37,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.wildfly.subsystem.resource.operation.AddResourceOperationStepHandler;
 import org.wildfly.subsystem.resource.operation.ReadAttributeTranslationOperationStepHandler;
 import org.wildfly.subsystem.resource.operation.RemoveResourceOperationStepHandler;
-import org.wildfly.subsystem.resource.operation.WriteAttributeTranslationOperationStepHandlerHandler;
+import org.wildfly.subsystem.resource.operation.WriteAttributeTranslationOperationStepHandler;
 
 /**
  * Registers add, remove, and write-attribute operation handlers and capabilities.
@@ -108,7 +108,7 @@ public class ResourceDescriptorRegistrar implements ManagementResourceRegistrar 
         for (AttributeDefinition attribute : this.descriptor.getAttributes()) {
             AttributeTranslation translation = this.descriptor.getAttributeTranslation(attribute);
             if (translation != null) {
-                registration.registerReadWriteAttribute(attribute, new ReadAttributeTranslationOperationStepHandler(translation), new WriteAttributeTranslationOperationStepHandlerHandler(translation));
+                registration.registerReadWriteAttribute(attribute, new ReadAttributeTranslationOperationStepHandler(translation), new WriteAttributeTranslationOperationStepHandler(translation));
             } else {
                 OperationStepHandler handler = this.descriptor.getWriteAttributeOperationStepHandler(attribute);
                 if (handler != null) {
