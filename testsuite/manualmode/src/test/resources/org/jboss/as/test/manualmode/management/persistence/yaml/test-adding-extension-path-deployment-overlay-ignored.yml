@@ -1,0 +1,11 @@
+---
+wildfly-configuration:
+  extension:
+    org.jboss.as.failure:
+      module: org.jboss.as.failure
+  deployment-overlay:
+    dummy-overlay:
+  path:
+    test.path:
+      relative-to: 'jboss.home.dir'
+      path: bin

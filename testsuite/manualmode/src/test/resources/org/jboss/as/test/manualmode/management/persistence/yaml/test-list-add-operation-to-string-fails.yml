@@ -1,0 +1,8 @@
+---
+wildfly-configuration:
+  subsystem:
+    logging:
+      root-logger:
+        ROOT:
+          level: !list-add
+            - TRACE

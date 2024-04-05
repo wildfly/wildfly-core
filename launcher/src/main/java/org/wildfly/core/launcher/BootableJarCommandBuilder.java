@@ -5,11 +5,15 @@
 
 package org.wildfly.core.launcher;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
+
 import static org.wildfly.core.launcher.JBossModulesCommandBuilder.DEFAULT_VM_ARGUMENTS;
 
 import org.wildfly.core.launcher.Arguments.Argument;
@@ -227,6 +231,39 @@ public class BootableJarCommandBuilder implements CommandBuilder {
             final Argument argument = Arguments.parse(jvmArg);
             javaOpts.add(argument);
         }
+        return this;
+    }
+
+    /**
+     * Adds the YAML configuration file argument with the given YAML configuration files.
+     *
+     * @param yamlFiles the files to add
+     *
+     * @return the builder
+     */
+    public BootableJarCommandBuilder setYamlFiles(final Path... yamlFiles) {
+        if (yamlFiles == null || yamlFiles.length == 0) {
+            return this;
+        }
+        return setYamlFiles(List.of(yamlFiles));
+    }
+
+    /**
+     * Adds the YAML configuration file argument with the given YAML configuration files.
+     *
+     * @param yamlFiles the files to add
+     *
+     * @return the builder
+     */
+    public BootableJarCommandBuilder setYamlFiles(final Collection<Path> yamlFiles) {
+        if (yamlFiles == null || yamlFiles.isEmpty()) {
+            return this;
+        }
+        StringJoiner joiner = new StringJoiner(File.pathSeparator);
+        for (Path yamlFile : yamlFiles) {
+            joiner.add(yamlFile.toAbsolutePath().toString());
+        }
+        setSingleServerArg("--yaml", joiner.toString());
         return this;
     }
 

@@ -350,7 +350,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             Path[] supplementalConfigurationFiles = findSupplementalConfigurationFiles(null, supplementalConfiguration);
             ConfigurationExtension configurationExtension = ConfigurationExtensionFactory.createConfigurationExtension(supplementalConfigurationFiles);
             if (configurationExtension != null) {
-                configInteractionPolicy = configurationExtension.shouldProcessOperations(initialRunningMode) ? ConfigurationFile.InteractionPolicy.READ_ONLY : configInteractionPolicy;
+                configInteractionPolicy = configurationExtension.shouldProcessOperations(runningModeControl) ? ConfigurationFile.InteractionPolicy.READ_ONLY : configInteractionPolicy;
             }
             homeDir = new File(WildFlySecurityManager.getPropertyPrivileged("user.dir", "."));
             serverBaseDir = new File(WildFlySecurityManager.getPropertyPrivileged("user.dir", "."));
@@ -415,7 +415,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             Path[] supplementalConfigurationFiles = findSupplementalConfigurationFiles(serverConfigurationDir.toPath(), supplementalConfiguration);
             ConfigurationExtension configurationExtension = ConfigurationExtensionFactory.createConfigurationExtension(supplementalConfigurationFiles);
             if (configurationExtension != null) {
-                configInteractionPolicy = configurationExtension.shouldProcessOperations(initialRunningMode) ? ConfigurationFile.InteractionPolicy.READ_ONLY : configInteractionPolicy;
+                configInteractionPolicy = configurationExtension.shouldProcessOperations(runningModeControl) ? ConfigurationFile.InteractionPolicy.READ_ONLY : configInteractionPolicy;
             }
 
             tmp = getFileFromProperty(SERVER_DATA_DIR, props);

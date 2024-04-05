@@ -1,0 +1,7 @@
+---
+wildfly-configuration:
+  subsystem:
+    logging:
+      root-logger:
+        NON-EXISTENT: !list-add
+          - level

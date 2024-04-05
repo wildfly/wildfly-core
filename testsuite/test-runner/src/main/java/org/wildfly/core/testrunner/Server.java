@@ -207,6 +207,12 @@ public class Server {
                 commandBuilder.addJavaOption("-ea")
                         .setBindAddressHint("management", managementAddress);
 
+                commandBuilder.setYamlFiles(yamlFiles);
+                //Forcing this to be able to test failure when no yaml file is provided
+                if(yamlFiles != null && yamlFiles.length == 0) {
+                    commandBuilder.addServerArgument("--yaml=");
+                }
+
                 if (jbossArgs != null) {
                     String[] args = jbossArgs.split("\\s+");
                     for (String a : args) {
@@ -255,6 +261,10 @@ public class Server {
                 }
 
                 commandBuilder.setYamlFiles(yamlFiles);
+                //Forcing this to be able to test failure when no yaml file is provided
+                if(yamlFiles != null && yamlFiles.length == 0) {
+                    commandBuilder.addServerArgument("--yaml=");
+                }
 
                 if (configDir != null) {
                     commandBuilder.addJavaOption("-Djboss.server.config.dir="+configDir.toString());
@@ -570,6 +580,8 @@ public class Server {
                     target.write(buf, 0, num);
                 }
             } catch (IOException ignore) {
+                System.out.println("***************************************************************");
+                ignore.printStackTrace();
             }
         }
     }

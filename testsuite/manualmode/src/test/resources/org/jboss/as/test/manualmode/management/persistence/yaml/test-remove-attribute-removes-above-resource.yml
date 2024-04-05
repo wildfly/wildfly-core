@@ -1,0 +1,7 @@
+---
+wildfly-configuration:
+  socket-binding-group:
+    standard-sockets:
+      socket-binding:
+        management-https:
+          port: !remove

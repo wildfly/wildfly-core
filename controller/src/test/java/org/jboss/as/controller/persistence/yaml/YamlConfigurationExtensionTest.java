@@ -264,7 +264,7 @@ public class YamlConfigurationExtensionTest {
             instance.processOperations(rootRegistration, postExtensionOps);
             fail("Unknown resource should make the yaml extension fail");
         } catch (java.lang.IllegalArgumentException ex) {
-            assertEquals("WFLYCTL0502: No child resource called system-propety could be found at address /'.", ex.getMessage());
+            assertEquals("WFLYCTL0502: No child resource called 'system-propety' could be found at address '/'.", ex.getMessage());
         }
     }
 
@@ -299,7 +299,7 @@ public class YamlConfigurationExtensionTest {
         try {
         instance.processOperations(rootRegistration, postExtensionOps);fail("Unknown resource should make the yaml extension fail");
         } catch (java.lang.IllegalArgumentException ex) {
-            assertEquals("WFLYCTL0502: No child resource called children could be found at address /parent=homer'.", ex.getMessage());
+            assertEquals("WFLYCTL0502: No child resource called 'children' could be found at address '/parent=homer'.", ex.getMessage());
         }
     }
 

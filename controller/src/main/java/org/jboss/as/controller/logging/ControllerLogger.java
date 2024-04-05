@@ -3682,7 +3682,7 @@ public interface ControllerLogger extends BasicLogger {
     IllegalArgumentException noResourceForUndefiningAttribute(String attribute, String address);
 
     @LogMessage(level = WARN)
-    @Message(id = 490, value = "You have defined a resource for address %s without any attributes, doing nothing")
+    @Message(id = 490, value = "A YAML resource has been defined for the address %s without any attribute. No actions will be taken.")
     void noAttributeSetForAddress(String address);
 
     @LogMessage(level = WARN)
@@ -3744,7 +3744,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 501, value = "An invalid UUID string '%s' was found at '%s'. A new value will be generated.")
     void uuidNotValid(String corruptedUuid, String path);
 
-    @Message(id = 502, value = "No child resource called %s could be found at address %s'.")
+    @Message(id = 502, value = "No child resource called '%s' could be found at address '%s'.")
     IllegalArgumentException noChildResource(String name, String address);
 
     @Message(id = 503, value = "Failed to publish configuration, because the remote name %s is not valid.")
@@ -3759,4 +3759,27 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 506, value = "Extension %s from module %s is not enabled by the current stability level")
     void unstableExtension(String extensionName, String moduleName);
+
+    @Message(id = 507, value = "Unsuported deployment yaml file %s with attributes %s")
+    IllegalArgumentException unsupportedDeployment(String deployment, Set<String> attributes);
+
+    @Message(id = 508, value = "The yaml element '%s' and its sub-elements are ignored.")
+    String ignoreYamlElement(String element);
+
+    @Message(id = NONE, value = " Thus ignoring element '%s'.")
+    String ignoreYamlSubElement(String element);
+
+    @Message(id = 509, value = "No attribute called '%s' is defined at address '%s'.")
+    IllegalArgumentException noAttributeDefined(String name, String address);
+
+    @Message(id = 510, value = "No operation %s can be executed for attribute called '%s' is defined at address '%s'.")
+    IllegalArgumentException illegalOperationForAttribute(String operationName, String attribute, String address);
+
+    @LogMessage(level = WARN)
+    @Message(id = 511, value = "No value is defined for attribute '%s'  at address '%s'.")
+    void noAttributeValueDefined(String name, String address);
+
+    @LogMessage(level = WARN)
+    @Message(id = 512, value = "No resource exists at address '%s'. Ignoring the remove opreation.")
+    void removingUnexistingResource(String address);
 }

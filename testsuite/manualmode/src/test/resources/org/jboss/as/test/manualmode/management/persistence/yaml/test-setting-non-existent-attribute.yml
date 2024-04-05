@@ -1,0 +1,6 @@
+---
+wildfly-configuration:
+  socket-binding-group:
+    standard-sockets:
+      default-interface: public
+      non-existent-attribute: blabla

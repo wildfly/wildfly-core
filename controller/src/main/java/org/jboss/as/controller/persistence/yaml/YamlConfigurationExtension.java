@@ -9,6 +9,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
@@ -40,6 +41,7 @@ import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.ParsedBootOp;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.persistence.ConfigurationExtension;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
@@ -67,6 +69,7 @@ import org.yaml.snakeyaml.nodes.Tag;
 public class YamlConfigurationExtension implements ConfigurationExtension {
 
     private static final String CONFIGURATION_ROOT_KEY = "wildfly-configuration";
+    private static final String YAML_CODEPOINT_LIMIT = "org.wildfly.configuration.extension.yaml.codepoint.limit";
 
     private static final String YAML_CONFIG = "--yaml";
     private static final String SHORT_YAML_CONFIG = "-y";
@@ -74,7 +77,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
     private boolean needReload;
     private Path[] files;
     private final List<Map<String, Object>> configs = new ArrayList<>();
-    private static final String[] EXCLUDED_ELEMENTS = {" deployment", "extension", "deployment-overlay"};
+    private static final String[] EXCLUDED_ELEMENTS = {"deployment", "extension", "deployment-overlay", "path"};
 
     @SuppressWarnings("unchecked")
     public YamlConfigurationExtension() {
@@ -94,8 +97,13 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
         for (Path file : files) {
             if (file != null && Files.exists(file) && Files.isRegularFile(file)) {
                 Map<String, Object> yamlConfig = Collections.emptyMap();
+                LoaderOptions loadingConfig = new LoaderOptions();
+                //Default to 3MB
+                loadingConfig.setCodePointLimit(
+                        Integer.parseInt(
+                                WildFlySecurityManager.getPropertyPrivileged(YAML_CODEPOINT_LIMIT, "3145728")));
+                Yaml yaml = new Yaml(new OperationConstructor(loadingConfig));
                 try (InputStream inputStream = Files.newInputStream(file)) {
-                    Yaml yaml = new Yaml(new OperationConstructor(new LoaderOptions()));
                     yamlConfig = yaml.load(inputStream);
                 } catch (IOException ioex) {
                     throw MGMT_OP_LOGGER.failedToParseYamlConfigurationFile(file.toAbsolutePath().toString(), ioex);
@@ -103,7 +111,15 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                 if (yamlConfig.containsKey(CONFIGURATION_ROOT_KEY)) {
                     Map<String, Object> config = (Map<String, Object>) yamlConfig.get(CONFIGURATION_ROOT_KEY);
                     for (String excluded : EXCLUDED_ELEMENTS) {
-                        config.remove(excluded);
+                        boolean isPresent = config.containsKey(excluded);
+                        if (isPresent) {
+                            Object value = config.remove(excluded);
+                            String message = MGMT_OP_LOGGER.ignoreYamlElement(excluded);
+                            if (value != null) {
+                                message = message + MGMT_OP_LOGGER.ignoreYamlSubElement(yaml.dump(value).trim());
+                            }
+                            MGMT_OP_LOGGER.warn(message);
+                        }
                     }
                     parsedFiles.add(file.toAbsolutePath().toString());
                     this.configs.add(config);
@@ -117,8 +133,10 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
     }
 
     @Override
-    public boolean shouldProcessOperations(RunningMode mode) {
-        return (!this.configs.isEmpty() || (needReload && this.files.length > 0)) && (RunningMode.ADMIN_ONLY != mode || null == WildFlySecurityManager.getPropertyPrivileged(CLI_SCRIPT_PROPERTY, null));
+    public boolean shouldProcessOperations(RunningModeControl runningModeControl) {
+        return (!this.configs.isEmpty() || (needReload && this.files.length > 0))
+                && (RunningMode.ADMIN_ONLY != runningModeControl.getRunningMode() || null == WildFlySecurityManager.getPropertyPrivileged(CLI_SCRIPT_PROPERTY, null))
+                && (!runningModeControl.isReloaded() || runningModeControl.isApplyConfigurationExtension());
     }
 
     @SuppressWarnings("unchecked")
@@ -174,7 +192,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                 } else {
                     if (value == null && !isExistingResource(xmlOperations, address)) { //empty resource
                         OperationEntry operationEntry = rootRegistration.getOperationEntry(address, ADD);
-                        if(operationEntry != null) {
+                        if (operationEntry != null) {
                             processAttributes(address, rootRegistration, operationEntry, Collections.emptyMap(), postExtensionOps, xmlOperations);
                         } else {
                             throw MGMT_OP_LOGGER.missingOperationForResource("ADD", address.toCLIStyleString());
@@ -184,13 +202,20 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                         if (isExistingResource(xmlOperations, address)) {
                             yamlOperation.processOperation(rootRegistration, xmlOperations, postExtensionOps, address, name);
                         } else if (yamlOperation instanceof RemoveOperation) {
-                            //ignore
+                            MGMT_OP_LOGGER.removingUnexistingResource(address.toCLIStyleString());
                         } else {
-                            throw MGMT_OP_LOGGER.noResourceForUndefiningAttribute(name, address.toCLIStyleString());
+                            if (yamlOperation instanceof UndefineOperation) {
+                                throw MGMT_OP_LOGGER.noResourceForUndefiningAttribute(name, address.toCLIStyleString());
+                            }
+                            throw MGMT_OP_LOGGER.illegalOperationForAttribute(yamlOperation.getOperationName(), name, address.toCLIStyleString());
                         }
                     } else {
                         if (!isExistingResource(xmlOperations, address)) {
-                            MGMT_OP_LOGGER.noAttributeSetForAddress(address.toCLIStyleString());
+                            if (resourceRegistration.getAttributeNames(PathAddress.EMPTY_ADDRESS).contains(name)) {
+                                MGMT_OP_LOGGER.noAttributeValueDefined(name, address.toCLIStyleString());
+                            } else {
+                                MGMT_OP_LOGGER.noAttributeSetForAddress(address.toCLIStyleString());
+                            }
                         }
                     }
                 }
@@ -203,13 +228,13 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                     Object value = yaml.get(name);
                     if (value instanceof Map) {
                         Map<String, Object> map = (Map<String, Object>) value;
-                        if (resourceRegistration.getAttributeNames(PathAddress.EMPTY_ADDRESS).contains(name) &&
-                                resourceRegistration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, name).getAttributeDefinition().getType() == OBJECT) {
+                        if (resourceRegistration.getAttributeNames(PathAddress.EMPTY_ADDRESS).contains(name)
+                                && resourceRegistration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, name).getAttributeDefinition().getType() == OBJECT) {
                             processAttribute(address, rootRegistration, name, value, postExtensionOps, xmlOperations);
-                        } else if( !address.equals(parentAddress)) {
+                        } else if (!address.equals(parentAddress)) {
                             processResource(address, map, rootRegistration, rootRegistration.getSubModel(address), xmlOperations, postExtensionOps, false);
                         } else {
-                            throw MGMT_OP_LOGGER.noChildResource(name , address.toCLIStyleString());
+                            throw MGMT_OP_LOGGER.noChildResource(name, address.toCLIStyleString());
                         }
                     } else if (value instanceof Operation) {
                         Operation yamlOperation = Operation.class.cast(value);
@@ -217,8 +242,16 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                     } else {
                         if (value != null && resourceRegistration.getAttributeNames(PathAddress.EMPTY_ADDRESS).contains(name)) {
                             //we are processing an attribute:
-                            MGMT_OP_LOGGER.debugf("We are processing the attribute %s for address %s", name, address.getParent().toCLIStyleString());
+                            MGMT_OP_LOGGER.debugf("We are processing the attribute %s for address %s", name, parentAddress.toCLIStyleString());
                             processAttribute(parentAddress, rootRegistration, name, value, postExtensionOps, xmlOperations);
+                        } else if (value == null) {
+                            if (resourceRegistration.getAttributeNames(PathAddress.EMPTY_ADDRESS).contains(name)) {
+                                MGMT_OP_LOGGER.noAttributeValueDefined(name, address.toCLIStyleString());
+                            } else {
+                                MGMT_OP_LOGGER.noAttributeSetForAddress(address.toCLIStyleString());
+                            }
+                        } else {
+                            throw MGMT_OP_LOGGER.noAttributeDefined(name, address.toCLIStyleString());
                         }
                     }
                 } else {
@@ -233,8 +266,8 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                             } else {
                                 if (!postExtensionOps.isEmpty()) {
                                     ParsedBootOp op = postExtensionOps.get(postExtensionOps.size() - 1);
-                                    if (! address.equals(op.getAddress())) { // else already processed
-                                        Map<String, Object> map = value instanceof Map ? new HashMap<>((Map)value) : new HashMap<>(yaml);
+                                    if (!address.equals(op.getAddress())) { // else already processed
+                                        Map<String, Object> map = value instanceof Map ? new HashMap<>((Map) value) : new HashMap<>(yaml);
                                         //need to process attributes for adding
                                         processAttributes(address, rootRegistration, operationEntry, map, postExtensionOps, xmlOperations);
                                         processResource(address, map, rootRegistration, resourceRegistration, xmlOperations, postExtensionOps, false);
@@ -254,7 +287,15 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                                     processResource(address, map, rootRegistration, childResourceRegistration, xmlOperations, postExtensionOps, false);
                                 } else {
                                     if (value != null) {
-                                        MGMT_OP_LOGGER.unexpectedValueForResource(value, address.toCLIStyleString(), name);
+                                        if (value instanceof Operation) {
+                                            if (value instanceof RemoveOperation) {
+                                                MGMT_OP_LOGGER.removingUnexistingResource(address.toCLIStyleString());
+                                            } else {
+                                                MGMT_OP_LOGGER.illegalOperationForAttribute(((Operation) value).getOperationName(), name, address.toCLIStyleString());
+                                            }
+                                        } else {
+                                            MGMT_OP_LOGGER.unexpectedValueForResource(value, address.toCLIStyleString(), name);
+                                        }
                                     }
                                 }
                             } else if (name.equals(address.getLastElement().getValue())) {
@@ -266,7 +307,15 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                                     processResource(address, map, rootRegistration, childResourceRegistration, xmlOperations, postExtensionOps, false);
                                 } else {
                                     if (value != null) {
-                                        MGMT_OP_LOGGER.unexpectedValueForResource(value, address.toCLIStyleString(), name);
+                                        if (value instanceof Operation) {
+                                            if (value instanceof RemoveOperation) {
+                                                MGMT_OP_LOGGER.removingUnexistingResource(address.toCLIStyleString());
+                                            } else {
+                                                MGMT_OP_LOGGER.illegalOperationForAttribute(((Operation) value).getOperationName(), name, address.toCLIStyleString());
+                                            }
+                                        } else {
+                                            MGMT_OP_LOGGER.unexpectedValueForResource(value, address.toCLIStyleString(), name);
+                                        }
                                     } else {// ADD operation without parameters
                                         processAttributes(address, rootRegistration, operationEntry, null, postExtensionOps, xmlOperations);
                                     }
@@ -376,7 +425,11 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                             processListAttribute((ListAttributeDefinition) att, list, value);
                             break;
                         default:
-                            op.get(att.getName()).set(value.toString());
+                            if (value != null) {
+                                op.get(att.getName()).set(value.toString());
+                            } else {
+                                op.get(att.getName());
+                            }
                             break;
                     }
                 }
@@ -385,7 +438,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
         ParsedBootOp operation = new ParsedBootOp(op, operationEntry.getOperationHandler());
         MGMT_OP_LOGGER.debugf("Adding resource with operation %s", op);
         postExtensionOps.add(operation);
-        if(ADD.equals(operationEntry.getOperationDefinition().getName())) {
+        if (ADD.equals(operationEntry.getOperationDefinition().getName())) {
             xmlOperations.put(address, operation);
         }
     }
@@ -405,8 +458,8 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                 Object value = map.get(child.getName());
                 switch (child.getType()) {
                     case OBJECT:
-                        if(child instanceof MapAttributeDefinition) {
-                            processMapAttribute((MapAttributeDefinition)child, objectNode, (Map<String, Object>)value);
+                        if (child instanceof MapAttributeDefinition) {
+                            processMapAttribute((MapAttributeDefinition) child, objectNode, (Map<String, Object>) value);
                         } else {
                             objectNode.get(child.getName()).set(processObjectAttribute((ObjectTypeAttributeDefinition) child, (Map<String, Object>) value));
                         }
@@ -442,11 +495,11 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
 
     @SuppressWarnings("unchecked")
     private void processMapAttribute(MapAttributeDefinition att, ModelNode map, Map<String, Object> yaml) {
-        if(att instanceof ObjectMapAttributeDefinition) {
+        if (att instanceof ObjectMapAttributeDefinition) {
             ObjectMapAttributeDefinition objectMapAtt = (ObjectMapAttributeDefinition) att;
             ModelNode objectMapNode = map.get(att.getName()).setEmptyObject();
             for (Map.Entry<String, Object> entry : yaml.entrySet()) {
-                ModelNode objectValue= processObjectAttribute(objectMapAtt.getValueType(), ( Map<String, Object>) entry.getValue());
+                ModelNode objectValue = processObjectAttribute(objectMapAtt.getValueType(), (Map<String, Object>) entry.getValue());
                 objectMapNode.get(entry.getKey()).set(objectValue);
             }
         } else {
@@ -472,6 +525,9 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
     }
 
     private interface Operation {
+
+        String getOperationName();
+
         void processOperation(ImmutableManagementResourceRegistration rootRegistration, Map<PathAddress, ParsedBootOp> xmlOperations, List<ParsedBootOp> postExtensionOps, PathAddress address, String name);
     }
 
@@ -509,6 +565,11 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
             }
         }
 
+        @Override
+        public String getOperationName() {
+            return REMOVE;
+        }
+
     }
 
     private class UndefineOperation implements Operation {
@@ -525,7 +586,14 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                 op.get(OP_ADDR).set(address.toModelNode());
                 op.get(NAME).set(name);
                 postExtensionOps.add(new ParsedBootOp(op, operationEntry.getOperationHandler()));
+            } else {
+                throw MGMT_OP_LOGGER.illegalOperationForAttribute(getOperationName(), name, address.toCLIStyleString());
             }
+        }
+
+        @Override
+        public String getOperationName() {
+            return UNDEFINE_ATTRIBUTE_OPERATION;
         }
 
     }
@@ -541,9 +609,12 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
         @Override
         @SuppressWarnings("unchecked")
         public void processOperation(ImmutableManagementResourceRegistration rootRegistration, Map<PathAddress, ParsedBootOp> xmlOperations, List<ParsedBootOp> postExtensionOps, PathAddress address, String name) {
-            OperationEntry operationEntry = rootRegistration.getOperationEntry(address, "list-add");
+            OperationEntry operationEntry = rootRegistration.getOperationEntry(address, getOperationName());
             if (operationEntry != null) {
                 AttributeAccess access = rootRegistration.getAttributeAccess(address, name);
+                if (!(access.getAttributeDefinition() instanceof ListAttributeDefinition)) {
+                    throw MGMT_OP_LOGGER.illegalOperationForAttribute(getOperationName(), name, address.toCLIStyleString());
+                }
                 ListAttributeDefinition att = (ListAttributeDefinition) access.getAttributeDefinition();
                 AttributeDefinition type = att.getValueAttributeDefinition();
                 if (type == null) {
@@ -611,6 +682,11 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                     postExtensionOps.add(operation);
                 }
             }
+        }
+
+        @Override
+        public String getOperationName() {
+            return "list-add";
         }
 
     }

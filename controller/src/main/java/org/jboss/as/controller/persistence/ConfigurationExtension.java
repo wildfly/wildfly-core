@@ -8,7 +8,7 @@ package org.jboss.as.controller.persistence;
 import java.nio.file.Path;
 import java.util.List;
 import org.jboss.as.controller.ParsedBootOp;
-import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 
 /**
@@ -44,10 +44,10 @@ public interface ConfigurationExtension {
 
     /**
      * Checks if the configuration extension should process the supplemental configurations.
-     * @param mode: the running mode of the server.
+     * @param runningModeControl: the running mode control of the server.
      * @return true if the configuration extension should process operations - false otherwise.
      */
-    boolean shouldProcessOperations(RunningMode mode);
+    boolean shouldProcessOperations(RunningModeControl runningModeControl);
 
     /**
      * Process the already defined boot operations to update them with the supplemnetal configurations.

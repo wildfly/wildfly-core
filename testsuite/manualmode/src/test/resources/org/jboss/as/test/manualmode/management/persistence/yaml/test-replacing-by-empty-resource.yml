@@ -1,0 +1,6 @@
+---
+wildfly-configuration:
+  subsystem:
+    logging:
+      periodic-rotating-file-handler:
+        FILE:
