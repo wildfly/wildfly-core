@@ -11,6 +11,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.server.DomainServerCommunicationServices;
 import org.jboss.as.server.ServerEnvironment;
+import org.jboss.as.server.ServerProcessReloadHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 

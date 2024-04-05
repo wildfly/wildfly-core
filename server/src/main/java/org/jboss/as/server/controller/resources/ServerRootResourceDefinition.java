@@ -102,7 +102,7 @@ import org.jboss.as.server.operations.ProcessTypeHandler;
 import org.jboss.as.server.operations.RunningModeReadHandler;
 import org.jboss.as.server.operations.ServerDomainProcessReloadHandler;
 import org.jboss.as.server.operations.ServerDomainProcessShutdownHandler;
-import org.jboss.as.server.operations.ServerProcessReloadHandler;
+import org.jboss.as.server.ServerProcessReloadHandler;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
 import org.jboss.as.server.operations.ServerResumeHandler;
 import org.jboss.as.server.operations.ServerShutdownHandler;
