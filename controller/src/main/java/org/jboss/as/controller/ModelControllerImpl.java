@@ -518,7 +518,7 @@ class ModelControllerImpl implements ModelController {
                     headers, handler, null, managementModel.get(), control, processState, auditLogger,
                             bootingFlag.get(), true, hostServerGroupTracker, null, notificationSupport, true,
                             extraValidationStepHandler, partialModel, securityIdentitySupplier);
-            if (configExtension != null && configExtension.shouldProcessOperations(runningModeControl.getRunningMode())) {
+            if (configExtension != null && configExtension.shouldProcessOperations(runningModeControl)) {
                 configExtension.processOperations(managementModel.get().getRootResourceRegistration(), bootOperations.postExtensionOps);
             }
             for (ParsedBootOp parsedOp : bootOperations.postExtensionOps) {

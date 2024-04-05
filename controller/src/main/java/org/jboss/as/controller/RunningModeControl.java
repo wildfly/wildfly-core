@@ -17,6 +17,7 @@ public class RunningModeControl {
     private volatile boolean useCurrentConfig;
     private volatile String newBootFileName;
     private volatile Boolean suspend;
+    private volatile boolean applyConfigurationExtension;
 
     public RunningModeControl(final RunningMode initialMode) {
         this.runningMode = initialMode;
@@ -56,6 +57,20 @@ public class RunningModeControl {
 
     public void setSuspend(Boolean suspend) {
         this.suspend = suspend;
+    }
+
+    /**
+     * Indicates if the configuration extension should be applied after reloading.
+     * This should occur on a reload if no changes were applied (thus stored) or after the changes made
+     * by a boot cli script.
+     * @return true if we should apply the configuration extension - false otherwise.
+     */
+    public boolean isApplyConfigurationExtension() {
+        return applyConfigurationExtension;
+    }
+
+    public void setApplyConfigurationExtension(boolean applyConfigurationExtension) {
+        this.applyConfigurationExtension = applyConfigurationExtension;
     }
 
     /**

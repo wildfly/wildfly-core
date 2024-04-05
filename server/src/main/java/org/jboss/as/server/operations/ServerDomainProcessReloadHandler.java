@@ -26,7 +26,7 @@ public class ServerDomainProcessReloadHandler extends ServerProcessReloadHandler
     public ServerDomainProcessReloadHandler(ServiceName rootService, RunningModeControl runningModeControl, ControlledProcessState processState,
                                             final DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater,
                                             final ServerEnvironment serverEnvironment) {
-        super(rootService, runningModeControl, processState, serverEnvironment);
+        super(rootService, runningModeControl, processState, serverEnvironment, null, null);
         this.operationIDUpdater = operationIDUpdater;
     }
 

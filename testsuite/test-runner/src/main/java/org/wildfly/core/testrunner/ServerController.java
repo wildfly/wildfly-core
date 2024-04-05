@@ -176,7 +176,11 @@ public class ServerController {
     }
 
     public void startYamlExtension(final Path[] yamlFiles) {
-        start(null, null, Server.StartMode.NORMAL, System.out, false, null, null, null, null, yamlFiles);
+        startYamlExtension(System.out, yamlFiles);
+    }
+
+    public void startYamlExtension(final PrintStream out, final Path[] yamlFiles) {
+        start(null, null, Server.StartMode.NORMAL, out, false, null, null, null, null, yamlFiles);
     }
 
     public void stop() {

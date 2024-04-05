@@ -1,0 +1,11 @@
+---
+wildfly-configuration:
+  socket-binding-group:
+    standard-sockets:
+      remote-destination-outbound-socket-binding:
+        mail-snmt:
+          host: foo-override
+          port: 8083
+        foo2:
+          host: foo2-override
+          port: 8084

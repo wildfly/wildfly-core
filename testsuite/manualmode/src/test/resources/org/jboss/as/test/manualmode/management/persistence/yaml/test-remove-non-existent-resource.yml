@@ -1,0 +1,6 @@
+---
+wildfly-configuration:
+  socket-binding-group:
+    standard-sockets:
+      remote-destination-outbound-socket-binding:
+        non-existent-binding: !remove

@@ -25,6 +25,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.ProcessReloadHandler;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.Services;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
@@ -84,24 +85,23 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
 
     private final Set<String> additionalAttributes;
     private final ServerEnvironment environment;
+    private ExtensibleConfigurationPersister extensibleConfigurationPersister;
 
-    protected ServerProcessReloadHandler(ServiceName rootService, RunningModeControl runningModeControl, ControlledProcessState processState, ServerEnvironment environment) {
-        this(rootService, runningModeControl, processState, environment, null);
-    }
-
-    private ServerProcessReloadHandler(ServiceName rootService, RunningModeControl runningModeControl, ControlledProcessState processState, ServerEnvironment environment, Set<String> additionalAttributes) {
+    public ServerProcessReloadHandler(ServiceName rootService, RunningModeControl runningModeControl,
+            ControlledProcessState processState, ServerEnvironment environment, Set<String> additionalAttributes, ExtensibleConfigurationPersister extensibleConfigurationPersister) {
         super(rootService, runningModeControl, processState);
         this.additionalAttributes = additionalAttributes == null ? Collections.emptySet() : additionalAttributes;
         this.environment = environment;
+        this.extensibleConfigurationPersister = extensibleConfigurationPersister;
     }
 
-    public static void registerStandardReloadOperation(ManagementResourceRegistration resourceRegistration, RunningModeControl runningModeControl, ControlledProcessState processState, ServerEnvironment serverEnvironment) {
-        ServerProcessReloadHandler reloadHandler = new ServerProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, serverEnvironment);
+    public static void registerStandardReloadOperation(ManagementResourceRegistration resourceRegistration, RunningModeControl runningModeControl, ControlledProcessState processState, ServerEnvironment serverEnvironment, ExtensibleConfigurationPersister extensibleConfigurationPersister) {
+        ServerProcessReloadHandler reloadHandler = new ServerProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, serverEnvironment, null, extensibleConfigurationPersister);
         resourceRegistration.registerOperationHandler(ServerProcessReloadHandler.STANDARD_DEFINITION, reloadHandler, false);
     }
 
-    public static void registerEnhancedReloadOperation(ManagementResourceRegistration resourceRegistration, RunningModeControl runningModeControl, ControlledProcessState processState, ServerEnvironment serverEnvironment) {
-        ServerProcessReloadHandler reloadHandler = new ServerProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, serverEnvironment, getAttributeNames(ENHANCED_ATTRIBUTES));
+    public static void registerEnhancedReloadOperation(ManagementResourceRegistration resourceRegistration, RunningModeControl runningModeControl, ControlledProcessState processState, ServerEnvironment serverEnvironment, ExtensibleConfigurationPersister extensibleConfigurationPersister) {
+        ServerProcessReloadHandler reloadHandler = new ServerProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, serverEnvironment, getAttributeNames(ENHANCED_ATTRIBUTES), extensibleConfigurationPersister);
         resourceRegistration.registerOperationHandler(ServerProcessReloadHandler.ENHANCED_DEFINITION, reloadHandler, false);
     }
 
@@ -149,6 +149,13 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
         final boolean finalSuspend = suspend;
         final boolean finalAdminOnly = adminOnly;
 
+        //We need to know if some changes were applied because then the resulting standalone-boot.xml would contain
+        //the configuration extension changes thus we must not re-apply them. But if there are changes due to
+        // a boot cli script tor if there has been no changes persisted then we must apply the configuration
+        // extension changes.
+        final boolean applyConfigurationExtension = !(context.isNormalServer() || finalAdminOnly) ||
+                (extensibleConfigurationPersister != null && !extensibleConfigurationPersister.hasStored());
+
         final String serverConfig = unmanaged && operation.hasDefined(SERVER_CONFIG.getName()) ? SERVER_CONFIG.resolveModelAttribute(context, operation).asString() : null;
 
         if (operation.hasDefined(USE_CURRENT_SERVER_CONFIG.getName()) && serverConfig != null) {
@@ -170,10 +177,10 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
                 runningModeControl.setUseCurrentConfig(useCurrentConfig);
                 runningModeControl.setNewBootFileName(serverConfig);
                 runningModeControl.setSuspend(finalSuspend);
-
                 if (stability != null) {
                     environment.setStability(stability);
                 }
+                runningModeControl.setApplyConfigurationExtension(applyConfigurationExtension);
             }
         };
     }

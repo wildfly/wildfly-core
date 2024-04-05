@@ -40,6 +40,11 @@ public final class NullConfigurationPersister extends AbstractConfigurationPersi
         return Collections.emptyList();
     }
 
+    @Override
+    public boolean hasStored() {
+        return false;
+    }
+
     private static class NullPersistenceResource implements ConfigurationPersister.PersistenceResource {
 
         private static final NullPersistenceResource INSTANCE = new NullPersistenceResource();

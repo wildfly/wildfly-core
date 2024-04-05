@@ -1,0 +1,17 @@
+---
+wildfly-configuration:
+  socket-binding-group:
+    standard-sockets:
+      socket-binding:
+        management-https: !remove
+
+  subsystem:
+    elytron:
+      disallowed-providers: !undefine
+      permission-set:
+        default-permissions:
+          permissions: !list-add
+            - class-name: org.wildfly.security.auth.permission.LoginPermission
+              module: org.wildfly.security.elytron-base
+              target-name: "*"
+              index: 0

@@ -1,3 +1,4 @@
+---
 wildfly-configuration:
     extension:
       org.jboss.as.failure:

@@ -1,0 +1,6 @@
+---
+wildfly-configuration:
+  socket-binding-group:
+    standard-sockets:
+      default-interface: public
+         port-offset: ${jboss.socket.binding.port-offset:0}
