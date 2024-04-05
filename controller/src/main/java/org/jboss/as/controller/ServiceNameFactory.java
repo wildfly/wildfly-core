@@ -9,6 +9,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.service.descriptor.BinaryServiceDescriptor;
+import org.wildfly.service.descriptor.NullaryServiceDescriptor;
+import org.wildfly.service.descriptor.QuaternaryServiceDescriptor;
+import org.wildfly.service.descriptor.TernaryServiceDescriptor;
+import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 
 /**
  * Provides a factory for creating {@link ServiceName} instances from dot-separated strings while trying to
@@ -90,6 +95,65 @@ public final class ServiceNameFactory {
             }
         }
         return ancestry[length - 1];
+    }
+
+    /**
+     * Resolves the specified service descriptor to a {@link ServiceName}.
+     * @param descriptor a service descriptor
+     * @return a service name
+     */
+    public static ServiceName resolveServiceName(NullaryServiceDescriptor<?> descriptor) {
+        return parseServiceName(descriptor.getName());
+    }
+
+    /**
+     * Resolves the specified service descriptor and dynamic name component to a {@link ServiceName}.
+     * @param descriptor a service descriptor
+     * @param name the dynamic name component
+     * @return a service name
+     */
+    public static ServiceName resolveServiceName(UnaryServiceDescriptor<?> descriptor, String name) {
+        return parseServiceName(descriptor.resolve(name));
+    }
+
+    /**
+     * Resolves the specified service descriptor and dynamic name components to a {@link ServiceName}.
+     * @param descriptor a service descriptor
+     * @param parent the 1st dynamic name component
+     * @param child the 2nd dynamic name component
+     * @return a service name
+     */
+    public static ServiceName resolveServiceName(BinaryServiceDescriptor<?> descriptor, String parent, String child) {
+        return parseServiceName(descriptor.resolve(parent, child));
+    }
+
+    /**
+     * Resolves the specified service descriptor and dynamic name components to a {@link ServiceName}.
+     * @param descriptor a service descriptor
+     * @param grandparent the 1st dynamic name component
+     * @param parent the 2nd dynamic name component
+     * @param child the 3rd dynamic name component
+     * @return a service name
+     */
+    public static ServiceName resolveServiceName(TernaryServiceDescriptor<?> descriptor, String grandparent, String parent, String child) {
+        return parseServiceName(descriptor.resolve(grandparent, parent, child));
+    }
+
+    /**
+     * Resolves the specified service descriptor and dynamic name components to a {@link ServiceName}.
+     * @param descriptor a service descriptor
+     * @param ancestor the 1st dynamic name component
+     * @param grandparent the 2nd dynamic name component
+     * @param parent the 3rd dynamic name component
+     * @param child the 4th dynamic name component
+     * @return a service name
+     */
+    public static ServiceName resolveServiceName(QuaternaryServiceDescriptor<?> descriptor, String ancestor, String grandparent, String parent, String child) {
+        return parseServiceName(descriptor.resolve(ancestor, grandparent, parent, child));
+    }
+
+    private static ServiceName parseServiceName(Map.Entry<String, String[]> resolved) {
+        return parseServiceName(resolved.getKey()).append(resolved.getValue());
     }
 
     static void clearCache() {
