@@ -2,7 +2,7 @@
 # This script is only for internal usage and should not be invoked directly by the users from the command line.
 # This script launches the operation to apply a candidate server installation to update or revert.
 # The server JVM writes the required values into the installation-manager.properties file by using InstMgrCandidateStatus.java
-if [ x"${INST_MGR_SCRIPT_DEBUG}" == "xtrue" ]; then
+if [ "x${INST_MGR_SCRIPT_DEBUG}" = "xtrue" ]; then
   set -x
 fi
 
@@ -20,21 +20,23 @@ if ! [ -e "${PROPS_FILE}" ]; then
 fi
 
 while IFS='=' read -r key value; do
-   [ "${key:0:1}" = "#" ] && continue
-   export "${key}=${value}"
+   case "${key}" in
+      "#"*)  continue ;;
+       *)    export "${key}=${value}" ;;
+   esac
 done < "$PROPS_FILE"
 
-if [ x"${INST_MGR_STATUS}" == "x" ]; then
+if [ "x${INST_MGR_STATUS}" = "x" ]; then
  echo "ERROR: Cannot read the Installation Manager status."
  exit
 fi
 
-if ! [ "${INST_MGR_STATUS}" == "PREPARED" ]; then
+if ! [ "${INST_MGR_STATUS}" = "PREPARED" ]; then
   echo "ERROR: The Candidate Server installation is not in the PREPARED status. The current status is ${INST_MGR_STATUS}"
   exit
 fi
 
-if [ x"${INST_MGR_COMMAND}" == "x" ]; then
+if [ "x${INST_MGR_COMMAND}" = "x" ]; then
  echo "ERROR: Installation Manager command was not set."
  exit
 fi
