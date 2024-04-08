@@ -44,7 +44,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
@@ -500,10 +499,9 @@ class AuthenticationClientDefinitions {
             }
 
             ServiceBuilder<AuthenticationContext> installService(OperationContext context, ModelNode model)  throws OperationFailedException {
-                ServiceTarget serviceTarget = context.getCapabilityServiceTarget();
-                ServiceBuilder<?> serviceBuilder = context.getCapabilityServiceTarget().addCapability(AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY);
-                TrivialService<AuthenticationContext> authenticationContextTrivialService = new TrivialService<AuthenticationContext>(getValueSupplier((ServiceBuilder<AuthenticationContext>) serviceBuilder, context, model));
-                return serviceTarget.addService(AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(context.getCurrentAddressValue()), authenticationContextTrivialService);
+                ServiceBuilder<AuthenticationContext> serviceBuilder = (ServiceBuilder<AuthenticationContext>) context.getCapabilityServiceTarget().addCapability(AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY);
+                TrivialService<AuthenticationContext> authenticationContextTrivialService = new TrivialService<>(getValueSupplier(serviceBuilder, context, model));
+                return serviceBuilder.setInstance(authenticationContextTrivialService);
             }
         };
 
