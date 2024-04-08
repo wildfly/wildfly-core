@@ -9,6 +9,7 @@ import org.jboss.as.controller.persistence.ConfigurationExtensionFactory;
 
 import org.jboss.as.process.CommandLineArgumentUsage;
 import org.jboss.as.process.CommandLineConstants;
+import org.jboss.as.version.ProductConfig;
 import org.wildfly.core.jar.runtime._private.BootableJarLogger;
 
 /**
@@ -16,7 +17,7 @@ import org.wildfly.core.jar.runtime._private.BootableJarLogger;
  * @author jdenise
  */
 final class CmdUsage extends CommandLineArgumentUsage {
-    public static void init() {
+    public static void init(ProductConfig productConfig) {
 
         addArguments(Constants.DEPLOYMENT_ARG + "=<value>");
         instructions.add(BootableJarLogger.ROOT_LOGGER.argDeployment());
@@ -48,6 +49,11 @@ final class CmdUsage extends CommandLineArgumentUsage {
         addArguments(CommandLineConstants.SECMGR);
         instructions.add(BootableJarLogger.ROOT_LOGGER.argSecurityManager());
 
+        if (productConfig.getStabilitySet().size() > 1) {
+            addArguments(CommandLineConstants.STABILITY + "=<value>");
+            instructions.add(BootableJarLogger.ROOT_LOGGER.argStability(productConfig.getStabilitySet(), productConfig.getDefaultStability()));
+        }
+
         addArguments(CommandLineConstants.SECURITY_PROP + "<name>[=<value>]");
         instructions.add(BootableJarLogger.ROOT_LOGGER.argSecurityProperty());
 
@@ -63,8 +69,8 @@ final class CmdUsage extends CommandLineArgumentUsage {
         }
     }
 
-    public static void printUsage(final PrintStream out) {
-        init();
+    public static void printUsage(ProductConfig config, final PrintStream out) {
+        init(config);
         out.print(customUsage("java -jar <bootable jar>"));
     }
 }

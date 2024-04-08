@@ -53,6 +53,7 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.RESULT;
 import static org.jboss.as.controller.client.helpers.ClientConstants.RUNTIME_NAME;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.process.ExitCodes;
+import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.LogContext;
@@ -313,16 +314,17 @@ public final class BootableJar implements ShutdownHandler {
         setTccl(moduleClassLoader);
         // Initialize the environment
         final BootableEnvironment environment = BootableEnvironment.of(jbossHome);
+        ProductConfig productConfig = ProductConfig.fromFilesystemSlot(moduleLoader, jbossHome.toString(), null);
         Arguments arguments;
         try {
             arguments = Arguments.parseArguments(args, environment);
         } catch (Throwable ex) {
             System.err.println(ex);
-            CmdUsage.printUsage(System.out);
+            CmdUsage.printUsage(productConfig, System.out);
             return;
         }
         if (arguments.isHelp()) {
-            CmdUsage.printUsage(System.out);
+            CmdUsage.printUsage(productConfig, System.out);
             return;
         }
 
