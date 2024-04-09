@@ -18,7 +18,7 @@ import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.test.snapshot.ServerSnapshot;
 
-import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
@@ -52,7 +52,7 @@ public abstract class StabilityServerSetupSnapshotRestoreTasks implements Server
     @Override
     public final void setup(ManagementClient managementClient) throws Exception {
         // Make sure the desired stability level is one of the ones supported by the server
-        Set<Stability> supportedStabilityLevels = getSupportedStabilityLevels();
+        Set<Stability> supportedStabilityLevels = getSupportedStabilityLevels(managementClient);
         Assume.assumeTrue(
                 String.format("%s is not a supported stability level", desiredStability, supportedStabilityLevels),
                 supportedStabilityLevels.contains(desiredStability));
@@ -110,10 +110,14 @@ public abstract class StabilityServerSetupSnapshotRestoreTasks implements Server
         return Stability.fromString(stability);
 
     }
-    private Set<Stability> getSupportedStabilityLevels() {
-        // TODO WFCORE-6731 - see https://github.com/wildfly/wildfly-core/pull/5895#discussion_r1520489808
-        // This information will be available in a management operation, For now just return a hardcoded set
-        return EnumSet.allOf(Stability.class);
+    private Set<Stability> getSupportedStabilityLevels(ManagementClient managementClient) throws Exception {
+        ModelNode op = Util.getReadAttributeOperation(PathAddress.pathAddress(CORE_SERVICE, SERVER_ENVIRONMENT), "permissible-stability-levels");
+        ModelNode result = ManagementOperations.executeOperation(managementClient.getControllerClient(), op);
+        Set<Stability> set = new HashSet<>();
+        for (ModelNode mn : result.asList()) {
+            set.add(Stability.fromString(mn.asString()));
+        }
+        return set;
     }
 
     private Stability reloadToDesiredStability(ModelControllerClient client, Stability stability) throws Exception {
