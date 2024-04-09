@@ -212,6 +212,10 @@ public final class Main {
                         value = arg.substring(idx + 1);
                     }
                     systemProperties.setProperty(name, value);
+                    if (ServerEnvironment.HOME_DIR.equals(name)) {
+                        // Re-create using updated properties
+                        productConfig = ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), value, systemProperties);
+                    }
                 } else if (arg.startsWith(CommandLineConstants.PUBLIC_BIND_ADDRESS)) {
 
                     int idx = arg.indexOf('=');
@@ -450,6 +454,10 @@ public final class Main {
          try {
              url = makeURL(urlSpec);
              systemProperties.load(url.openConnection().getInputStream());
+             if (systemProperties.getProperty(ServerEnvironment.HOME_DIR) != null) {
+                 // Re-create using updated properties
+                 productConfig = ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), systemProperties.getProperty(ServerEnvironment.HOME_DIR), systemProperties);
+             }
              return true;
          } catch (MalformedURLException e) {
              STDERR.println(ServerLogger.ROOT_LOGGER.malformedCommandLineURL(urlSpec, arg));
