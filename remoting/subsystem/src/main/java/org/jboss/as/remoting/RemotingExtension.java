@@ -166,9 +166,8 @@ public class RemotingExtension implements Extension {
                     }
 
                     PathAddress subsystemAddress = PathAddress.pathAddress(SUBSYSTEM, "io");
-                    legacyRemotingOps.add(Util.createAddOperation(subsystemAddress));
+                    legacyRemotingOps.add(Util.createAddOperation(subsystemAddress, Map.of("default-worker", new ModelNode("default"))));
                     legacyRemotingOps.add(Util.createAddOperation(subsystemAddress.append("worker", "default")));
-                    legacyRemotingOps.add(Util.createAddOperation(subsystemAddress.append("buffer-pool", "default")));
 
                     RemotingLogger.ROOT_LOGGER.addingIOSubsystem(legacyNS);
                 }
