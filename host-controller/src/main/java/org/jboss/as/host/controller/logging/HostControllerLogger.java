@@ -1464,6 +1464,9 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 222, value = "%s stability level is not supported in %s")
     IllegalArgumentException unsupportedStability(Stability stability, String name);
 
+    @Message(id = 223, value = "%s stability level is only supported on Host Controllers with the same management major and minor version than the Domain Controller. Domain Controller version is %d.%d. Remote Host Controller version is %d.%d")
+    OperationFailedException mixedDomainUnsupportedStability(Stability domainStability, int dcMajor, int dcMinor, int hcMajor, int hcMinor);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 
