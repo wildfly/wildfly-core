@@ -117,9 +117,10 @@ public class ManagementReadXmlTestCase {
             cli.sendLine("/subsystem=elytron/server-ssl-context=applicationSSC:add(key-manager=applicationKM)");
             cli.sendLine("run-batch");
 
-            cli.sendLine("/subsystem=io:add()");
+            cli.sendLine("batch");
+            cli.sendLine("/subsystem=io:add(default-worker=default)");
             cli.sendLine("/subsystem=io/worker=default:add()");
-            cli.sendLine("/subsystem=io/buffer-pool=default:add()");
+            cli.sendLine("run-batch");
 
             cli.sendLine("/subsystem=jmx:add()");
             cli.sendLine("/subsystem=jmx/expose-model=resolved:add()");
