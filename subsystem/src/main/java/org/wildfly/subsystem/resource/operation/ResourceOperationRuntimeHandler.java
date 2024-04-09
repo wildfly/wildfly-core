@@ -4,6 +4,7 @@
  */
 package org.wildfly.subsystem.resource.operation;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -62,6 +63,38 @@ public interface ResourceOperationRuntimeHandler {
      */
     static ResourceOperationRuntimeHandler restartAncestor(ResourceOperationRuntimeHandler ancestorRuntimeHandler, UnaryOperator<PathAddress> ancestorAddressResolver) {
         return new RestartAncestorResourceServiceConfiguratorRuntimeHandler(ancestorRuntimeHandler, ancestorAddressResolver);
+    }
+
+    /**
+     * Composes a {@link ResourceOperationRuntimeHandler} from multiple runtime handlers.
+     * @param handlers a number of runtime handlers
+     * @return a composite runtime handler
+     */
+    static ResourceOperationRuntimeHandler combine(ResourceOperationRuntimeHandler... handlers) {
+        return combine(List.of(handlers));
+    }
+
+    /**
+     * Composes a {@link ResourceOperationRuntimeHandler} from multiple runtime handlers.
+     * @param handlers a number of runtime handlers
+     * @return a composite runtime handler
+     */
+    static ResourceOperationRuntimeHandler combine(Iterable<? extends ResourceOperationRuntimeHandler> handlers) {
+        return new ResourceOperationRuntimeHandler() {
+            @Override
+            public void addRuntime(OperationContext context, ModelNode model) throws OperationFailedException {
+                for (ResourceOperationRuntimeHandler handler : handlers) {
+                    handler.addRuntime(context, model);
+                }
+            }
+
+            @Override
+            public void removeRuntime(OperationContext context, ModelNode model) throws OperationFailedException {
+                for (ResourceOperationRuntimeHandler handler : handlers) {
+                    handler.removeRuntime(context, model);
+                }
+            }
+        };
     }
 
     /**
