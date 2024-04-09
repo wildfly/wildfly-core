@@ -5,8 +5,6 @@
 
 package org.wildfly.extension.io;
 
-import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
-
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -44,7 +42,8 @@ public enum IOSubsystemSchema implements PersistentSubsystemSchema<IOSubsystemSc
 
     @Override
     public PersistentResourceXMLDescription getXMLDescription() {
-        PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder = builder(IOSubsystemRegistrar.PATH, this.namespace);
+        PersistentResourceXMLDescription.Factory factory = PersistentResourceXMLDescription.factory(this);
+        PersistentResourceXMLDescription.Builder builder = factory.builder(IOSubsystemRegistrar.PATH);
         if (this.since(VERSION_4_0)) {
             builder.addAttribute(IOSubsystemRegistrar.DEFAULT_WORKER);
         } else {
@@ -56,20 +55,18 @@ public enum IOSubsystemSchema implements PersistentSubsystemSchema<IOSubsystemSc
                 }
             });
         }
-        return builder.addChild(this.workerBuilder())
-                .addChild(builder(BufferPoolResourceDefinition.PATH).addAttributes(BufferPoolResourceDefinition.ATTRIBUTES.stream()))
-                .build();
-    }
 
-    private PersistentResourceXMLDescription.PersistentResourceXMLBuilder workerBuilder() {
         Stream<OptionAttributeDefinition> workerAttributes = Stream.of(WorkerResourceDefinition.ATTRIBUTES);
         if (!this.since(VERSION_3_0)) {
             workerAttributes = workerAttributes.filter(Predicate.not(WorkerResourceDefinition.WORKER_TASK_CORE_THREADS::equals));
         }
-        PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder = builder(WorkerResourceDefinition.PATH).addAttributes(workerAttributes);
+        PersistentResourceXMLDescription.Builder workerBuilder = factory.builder(WorkerResourceDefinition.PATH).addAttributes(workerAttributes);
         if (this.since(VERSION_2_0)) {
-            builder.addChild(builder(OutboundBindAddressResourceDefinition.PATH).addAttributes(OutboundBindAddressResourceDefinition.ATTRIBUTES.stream()));
+            workerBuilder.addChild(factory.builder(OutboundBindAddressResourceDefinition.PATH).addAttributes(OutboundBindAddressResourceDefinition.ATTRIBUTES.stream()).build());
         }
-        return builder;
+
+        return builder.addChild(workerBuilder.build())
+                .addChild(factory.builder(BufferPoolResourceDefinition.PATH).addAttributes(BufferPoolResourceDefinition.ATTRIBUTES.stream()).build())
+                .build();
     }
 }
