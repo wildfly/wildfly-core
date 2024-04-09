@@ -27,6 +27,7 @@ import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.server.ServerEnvironment;
+import org.jboss.as.server.ServerEnvironmentAwareProcessReloadHandler;
 import org.jboss.as.server.Services;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.logging.ServerLogger;
@@ -39,7 +40,7 @@ import org.jboss.msc.service.ServiceName;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningModeControl> {
+public class ServerProcessReloadHandler extends ServerEnvironmentAwareProcessReloadHandler {
 
     private static final AttributeDefinition USE_CURRENT_SERVER_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.USE_CURRENT_SERVER_CONFIG, ModelType.BOOLEAN, true)
             .setAlternatives(ModelDescriptionConstants.SERVER_CONFIG)
@@ -84,14 +85,12 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
                                                                 .build();
 
     private final Set<String> additionalAttributes;
-    private final ServerEnvironment environment;
     private ExtensibleConfigurationPersister extensibleConfigurationPersister;
 
     public ServerProcessReloadHandler(ServiceName rootService, RunningModeControl runningModeControl,
             ControlledProcessState processState, ServerEnvironment environment, Set<String> additionalAttributes, ExtensibleConfigurationPersister extensibleConfigurationPersister) {
-        super(rootService, runningModeControl, processState);
+        super(rootService, runningModeControl, processState, environment);
         this.additionalAttributes = additionalAttributes == null ? Collections.emptySet() : additionalAttributes;
-        this.environment = environment;
         this.extensibleConfigurationPersister = extensibleConfigurationPersister;
     }
 
@@ -178,7 +177,7 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
                 runningModeControl.setNewBootFileName(serverConfig);
                 runningModeControl.setSuspend(finalSuspend);
                 if (stability != null) {
-                    environment.setStability(stability);
+                    updateServerEnvironmentStability(stability);
                 }
                 runningModeControl.setApplyConfigurationExtension(applyConfigurationExtension);
             }
