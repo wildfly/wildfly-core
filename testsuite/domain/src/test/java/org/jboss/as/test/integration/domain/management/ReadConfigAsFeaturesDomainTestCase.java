@@ -90,9 +90,6 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
 
     @Test
     public void domainProfileTest() {
-        ModelNode redefineProfileAttribute = Util.getWriteAttributeOperation(
-                PathAddress.pathAddress(PROFILE, DEFAULT).append(SUBSYSTEM, "io").append("buffer-pool", "default"),
-                "buffer-size", 500);
         ModelNode removeSubsystemFromProfile = Util.createRemoveOperation(PathAddress.pathAddress(PROFILE, DEFAULT).append(SUBSYSTEM, "request-controller"));
 
         ModelNode expectedDomainConfigAsFeatures = defaultDomainConfigAsFeatures.clone();
@@ -104,14 +101,7 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
         int requestControllerSubsystemIndex = getFeatureNodeChildIndex(defaultProfile, "profile.subsystem.request-controller");
         defaultProfile.get(CHILDREN).remove(requestControllerSubsystemIndex);
 
-        // rewrite the buffer-pool attribute
-        ModelNode ioSubsystem = getFeatureNodeChild(defaultProfile, "profile.subsystem.io");
-        ModelNode bufferPool = getFeatureNodeChild(ioSubsystem, "profile.subsystem.io.buffer-pool");
-        ModelNode bufferPoolParams = new ModelNode();
-        bufferPoolParams.get("buffer-size").set(500);
-        bufferPool.get(PARAMS).set(bufferPoolParams);
-
-        doTest(Arrays.asList(redefineProfileAttribute, removeSubsystemFromProfile), expectedDomainConfigAsFeatures, PathAddress.EMPTY_ADDRESS);
+        doTest(Arrays.asList(removeSubsystemFromProfile), expectedDomainConfigAsFeatures, PathAddress.EMPTY_ADDRESS);
     }
 
     @Test

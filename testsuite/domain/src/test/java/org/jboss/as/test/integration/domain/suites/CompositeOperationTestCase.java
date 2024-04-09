@@ -264,7 +264,6 @@ public class CompositeOperationTestCase {
                     break;
                 case 3:
                 case 6:
-                    assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined("buffer-pool"));
                     break;
                 case 4:
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(MANAGEMENT_MAJOR_VERSION));
