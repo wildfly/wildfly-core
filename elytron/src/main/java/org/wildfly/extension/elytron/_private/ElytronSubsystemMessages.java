@@ -728,6 +728,8 @@ public interface ElytronSubsystemMessages extends BasicLogger {
             "use Elytron Tool command `filesystem-realm-encrypt`")
     OperationFailedException addSecretKeyToInitializedFilesystemRealm();
 
+    @Message(id = 1221, value = "Unable to obtain DynamicSSLContext from the provided authentication context")
+    RuntimeException unableToObtainDynamicSSLContext();
     /*
      * Don't just add new errors to the end of the file, there may be an appropriate section above for the resource.
      *
