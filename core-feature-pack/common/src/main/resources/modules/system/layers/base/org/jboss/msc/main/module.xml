@@ -18,12 +18,10 @@
     </resources>
 
     <dependencies>
-        <!-- for java.beans -->
         <module name="java.desktop"/>
-
         <module name="java.management"/>
         <module name="org.jboss.logging"/>
-        <module name="org.jboss.modules"/>
         <module name="org.jboss.threads"/>
     </dependencies>
+
 </module>
