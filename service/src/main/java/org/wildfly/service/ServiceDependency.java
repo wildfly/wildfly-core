@@ -31,8 +31,10 @@ public interface ServiceDependency<V> extends Dependency<ServiceBuilder<?>, V> {
     }
 
     /**
-     * Returns a pseudo-dependency supplying a fixed value.
-     * @return a dependency supplier
+     * Returns a pseudo-dependency whose {@link #get()} returns the specified value.
+     * @param <V> the value type
+     * @param value a service value
+     * @return a service dependency
      */
     @SuppressWarnings("unchecked")
     static <V> ServiceDependency<V> of(V value) {
@@ -41,7 +43,9 @@ public interface ServiceDependency<V> extends Dependency<ServiceBuilder<?>, V> {
 
     /**
      * Returns a dependency on the service with the specified name.
-     * @return a dependency supplier
+     * @param <V> the dependency type
+     * @param name a service name
+     * @return a service dependency
      */
     static <V> ServiceDependency<V> on(ServiceName name) {
         return (name != null) ? new DefaultServiceDependency<>(name) : of(null);
