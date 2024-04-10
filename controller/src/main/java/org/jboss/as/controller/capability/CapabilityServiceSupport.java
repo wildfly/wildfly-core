@@ -40,6 +40,7 @@ public interface CapabilityServiceSupport extends CapabilityServiceDescriptorRes
             super(message);
         }
     }
+
     /**
      * Gets whether a runtime capability with the given name is registered.
      *
@@ -47,6 +48,81 @@ public interface CapabilityServiceSupport extends CapabilityServiceDescriptorRes
      * @return {@code true} if there is a capability with the given name registered
      */
     boolean hasCapability(String capabilityName);
+
+    /**
+     * Indicates whether a runtime capability with the given name and segments is registered.
+     *
+     * @param capabilityName the name of the capability. Cannot be {@code null}
+     * @parem segments the dynamic name segments of the capability. Cannot be {@code null}
+     * @return {@code true} if there is a capability with the given name registered
+     */
+    default boolean hasCapability(String capabilityName, String... segments) {
+        return this.hasCapability(RuntimeCapability.buildDynamicCapabilityName(capabilityName, segments));
+    }
+
+    /**
+     * Indicates whether or not a runtime capability with the given descriptor is registered.
+     *
+     * @param descriptor the service descriptor of the requested capability
+     * @return {@code true} if there is a capability with the resolved name registered
+     */
+    default boolean hasCapability(NullaryServiceDescriptor<?> descriptor) {
+        return this.hasCapability(descriptor.getName());
+    }
+
+    /**
+     * Indicates whether or not a runtime capability with the given descriptor and segment is registered.
+     *
+     * @param descriptor the service descriptor of the requested capability
+     * @param name the dynamic name segment of the requested capability.
+     * @return {@code true} if there is a capability with the resolved name registered
+     */
+    default boolean hasCapability(UnaryServiceDescriptor<?> descriptor, String name) {
+        Map.Entry<String, String[]> segments = descriptor.resolve(name);
+        return this.hasCapability(segments.getKey(), segments.getValue());
+    }
+
+    /**
+     * Indicates whether or not a runtime capability with the given descriptor and segments is registered.
+     *
+     * @param descriptor the service descriptor of the requested capability
+     * @param parent the first dynamic name segment of the requested capability.
+     * @param child the second dynamic name segment of the requested capability.
+     * @return {@code true} if there is a capability with the resolved name registered
+     */
+    default boolean hasCapability(BinaryServiceDescriptor<?> descriptor, String parent, String child) {
+        Map.Entry<String, String[]> segments = descriptor.resolve(parent, child);
+        return this.hasCapability(segments.getKey(), segments.getValue());
+    }
+
+    /**
+     * Indicates whether or not a runtime capability with the given descriptor and segments is registered.
+     *
+     * @param descriptor the service descriptor of the requested capability
+     * @param grandparent the first dynamic name segment of the requested capability.
+     * @param parent the second dynamic name segment of the requested capability.
+     * @param child the third dynamic name segment of the requested capability.
+     * @return {@code true} if there is a capability with the resolved name registered
+     */
+    default boolean hasCapability(TernaryServiceDescriptor<?> descriptor, String grandparent, String parent, String child) {
+        Map.Entry<String, String[]> segments = descriptor.resolve(grandparent, parent, child);
+        return this.hasCapability(segments.getKey(), segments.getValue());
+    }
+
+    /**
+     * Indicates whether or not a runtime capability with the given descriptor and segments is registered.
+     *
+     * @param descriptor the service descriptor of the requested capability
+     * @param greatGrandparent the first dynamic name segment of the requested capability.
+     * @param grandparent the second dynamic name segment of the requested capability.
+     * @param parent the third dynamic name segment of the requested capability.
+     * @param child the fourth dynamic name segment of the requested capability.
+     * @return {@code true} if there is a capability with the resolved name registered
+     */
+    default boolean hasCapability(QuaternaryServiceDescriptor<?> descriptor, String greatGrandparent, String grandparent, String parent, String child) {
+        Map.Entry<String, String[]> segments = descriptor.resolve(greatGrandparent, grandparent, parent, child);
+        return this.hasCapability(segments.getKey(), segments.getValue());
+    }
 
     /**
      * Gets the runtime API associated with a given capability, if there is one.

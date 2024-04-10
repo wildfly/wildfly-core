@@ -107,6 +107,7 @@ import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceRegistryException;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.common.Assert;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
@@ -1564,6 +1565,8 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public boolean hasOptionalCapability(String required, String dependent, String attribute) {
+        Assert.checkNotNullParam("required", required);
+        Assert.checkNotNullParam("dependent", dependent);
         return requestOptionalCapability(required, dependent, true, activeStep, attribute);
     }
 
@@ -1572,12 +1575,6 @@ final class OperationContextImpl extends AbstractOperationContext {
         assertCapabilitiesAvailable(currentStage);
         ensureLocalCapabilityRegistry();
         RuntimeCapabilityRegistry registry = managementModel.getCapabilityRegistry();
-        if (dependent == null) {
-            // WFCORE-900 we're currently forgiving of this, but only for runtime-only requirements
-            assert runtimeOnly;
-            CapabilityScope context = createCapabilityContext(step.address);
-            return registry.hasCapability(required, context);
-        }
         RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, runtimeOnly, step, attribute);
         CapabilityScope context = registration.getDependentContext();
         if (registry.hasCapability(required, context)) {
@@ -1590,6 +1587,8 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public void requireOptionalCapability(String required, String dependent, String attribute) throws OperationFailedException {
+        Assert.checkNotNullParam("required", required);
+        Assert.checkNotNullParam("dependent", dependent);
         requireOptionalCapability(required, dependent, activeStep, attribute);
     }
 
