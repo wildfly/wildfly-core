@@ -7,6 +7,8 @@ package org.wildfly.core.jar.runtime._private;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
+import org.jboss.as.version.Stability;
 
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.annotations.Cause;
@@ -139,6 +141,9 @@ public interface BootableJarLogger extends BasicLogger {
 
     @Message(id = Message.NONE, value = "Activate the SecurityManager")
     String argSecurityManager();
+
+    @Message(id = Message.NONE, value = "Runs the server using a specific stability level. Possible values: %s, Default = %s")
+    String argStability(Set<Stability> levels, Stability defaultLevel);
 
     @Message(id = Message.NONE, value = "Set a security property")
     String argSecurityProperty();

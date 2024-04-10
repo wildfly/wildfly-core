@@ -99,6 +99,8 @@ final class Arguments {
              } else if (ConfigurationExtensionFactory.isConfigurationExtensionSupported()
                     && ConfigurationExtensionFactory.commandLineContainsArgument(a)) {
                 serverArguments.add(a);
+            } else if (a.startsWith(CommandLineConstants.STABILITY)) {
+                serverArguments.add(a);
             } else {
                 throw BootableJarLogger.ROOT_LOGGER.unknownArgument(a);
             }
