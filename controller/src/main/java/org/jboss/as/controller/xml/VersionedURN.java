@@ -7,7 +7,6 @@ package org.jboss.as.controller.xml;
 import java.util.List;
 
 import org.jboss.staxmapper.IntVersion;
-import org.jboss.staxmapper.Versioned;
 import org.wildfly.common.iteration.CompositeIterable;
 
 /**
@@ -16,7 +15,7 @@ import org.wildfly.common.iteration.CompositeIterable;
  * @deprecated Use {@link IntVersionSchema#createURN(List, IntVersion) instead.
  */
 @Deprecated(forRemoval = true)
-public class VersionedURN<N extends Versioned<IntVersion, N>> extends SimpleVersionedNamespace<IntVersion, N> {
+public class VersionedURN<N extends VersionedFeature<IntVersion, N>> extends SimpleVersionedNamespace<IntVersion, N> {
     public static final String JBOSS_IDENTIFIER = IntVersionSchema.JBOSS_IDENTIFIER;
     public static final String WILDFLY_IDENTIFIER = IntVersionSchema.WILDFLY_IDENTIFIER;
 
