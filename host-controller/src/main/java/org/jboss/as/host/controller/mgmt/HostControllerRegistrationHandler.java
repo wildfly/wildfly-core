@@ -61,6 +61,7 @@ import org.jboss.as.protocol.mgmt.ManagementRequestHandler;
 import org.jboss.as.protocol.mgmt.ManagementRequestHandlerFactory;
 import org.jboss.as.protocol.mgmt.ManagementRequestHeader;
 import org.jboss.as.protocol.mgmt.ManagementResponseHeader;
+import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.remoting3.Channel;
@@ -338,6 +339,13 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                     registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
                     throw failure;
                 }
+                // Ensure mixed domains are not allowed for any stability level below the default one.
+                if (!domainInfo.getProductConfig().getDefaultStability().enables(domainInfo.getStability()) && (Version.MANAGEMENT_MAJOR_VERSION != major || Version.MANAGEMENT_MINOR_VERSION != minor)) {
+                    OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.mixedDomainUnsupportedStability(domainInfo.getStability(), Version.MANAGEMENT_MAJOR_VERSION, Version.MANAGEMENT_MINOR_VERSION, major, minor);
+                    registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
+                    throw failure;
+                }
+
                 // Initialize the transformers
                 final TransformationTarget target = TransformationTargetImpl.createForHost(hostInfo.getHostName(), transformerRegistry,
                         hostVersion, Collections.<PathAddress, ModelVersion>emptyMap(), hostInfo);
