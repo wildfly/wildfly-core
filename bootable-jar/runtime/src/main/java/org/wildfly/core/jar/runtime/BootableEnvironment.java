@@ -244,7 +244,7 @@ class BootableEnvironment {
         final Path dataDir = resolvePath(serverBaseDir, "data");
         setSystemProperty(propertyUpdater, "jboss.server.data.dir", dataDir, propertyNames);
         setSystemProperty(propertyUpdater, "jboss.server.config.dir", resolvePath(serverBaseDir, "configuration"), propertyNames);
-        setSystemProperty(propertyUpdater, "jboss.server.deploy.dir", resolvePath(dataDir, "content"), propertyNames);
+        setSystemProperty(propertyUpdater, "jboss.server.content.dir", resolvePath(dataDir, "content"), propertyNames);
         setSystemProperty(propertyUpdater, "jboss.server.temp.dir", resolvePath(serverBaseDir, "tmp"), propertyNames);
         return propertyNames;
     }
