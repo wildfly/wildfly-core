@@ -15,6 +15,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
@@ -53,6 +55,7 @@ import org.wildfly.security.credential.store.CredentialStoreException;
 import org.wildfly.security.password.Password;
 import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.util.PasswordBasedEncryptionUtil;
+import org.wildfly.service.ServiceDependency;
 
 /**
  * Utility class holding attribute definitions for credential-reference attribute in the model.
@@ -300,6 +303,48 @@ public final class CredentialReference {
     }
 
     /**
+     * Returns a service dependency on a {@link CredentialSource} used to obtain a credential referenced by the specified attribute.
+     * @param context operation context
+     * @param attribute an attribute that references a credential
+     * @param model a resource model
+     * @return a {@link CredentialSource} service dependency
+     * @throws OperationFailedException if the attribute could not be resolved
+     */
+    public static ServiceDependency<CredentialSource> getCredentialSourceDependency(OperationContext context, AttributeDefinition attribute, ModelNode model) throws OperationFailedException {
+        return getCredentialSourceDependency(context, attribute, model, null);
+    }
+
+    /**
+     * Returns a service dependency on a {@link CredentialSource} used to obtain a credential referenced by the specified attribute.
+     * @param context operation context
+     * @param attribute an attribute that references a credential
+     * @param model a resource model
+     * @param keySuffix extra path elements
+     * @return a {@link CredentialSource} service dependency
+     * @throws OperationFailedException if the attribute could not be resolved
+     */
+    public static ServiceDependency<CredentialSource> getCredentialSourceDependency(OperationContext context, AttributeDefinition attribute, ModelNode model, String keySuffix) throws OperationFailedException {
+        Stream.Builder<ServiceName> builder = Stream.builder();
+        ExceptionSupplier<CredentialSource, Exception> credentialSource = getCredentialSourceSupplier(context, attribute, model, builder, keySuffix);
+        Stream<ServiceName> dependencies = builder.build();
+        return new ServiceDependency<>() {
+            @Override
+            public void accept(ServiceBuilder<?> builder) {
+                dependencies.forEach(builder::requires);
+            }
+
+            @Override
+            public CredentialSource get() {
+                try {
+                    return credentialSource.get();
+                } catch (Exception e) {
+                    throw new IllegalArgumentException(attribute.getName(), e);
+                }
+            }
+        };
+    }
+
+    /**
      * Get the ExceptionSupplier of {@link CredentialSource} which might throw an Exception while getting it.
      * {@link CredentialSource} is used later to retrieve the credential requested by configuration.
      *
@@ -327,9 +372,13 @@ public final class CredentialReference {
      * @throws OperationFailedException wrapping exception when something goes wrong
      */
     public static ExceptionSupplier<CredentialSource, Exception> getCredentialSourceSupplier(OperationContext context, ObjectTypeAttributeDefinition credentialReferenceAttributeDefinition, ModelNode model, ServiceBuilder<?> serviceBuilder, String keySuffix) throws OperationFailedException {
+        return getCredentialSourceSupplier(context, credentialReferenceAttributeDefinition, model, (serviceBuilder != null) ? serviceBuilder::requires : null, keySuffix);
+    }
+
+    private static ExceptionSupplier<CredentialSource, Exception> getCredentialSourceSupplier(OperationContext context, AttributeDefinition credentialReferenceAttributeDefinition, ModelNode model, Consumer<ServiceName> dependencyConsumer, String keySuffix) throws OperationFailedException {
         ModelNode value = credentialReferenceAttributeDefinition.resolveModelAttribute(context, model);
 
-        if (serviceBuilder == null) {
+        if (dependencyConsumer == null) {
             handleCredentialReferenceUpdate(context, value, credentialReferenceAttributeDefinition.getName());
         }
 
@@ -369,8 +418,8 @@ public final class CredentialReference {
             String credentialStoreCapabilityName = RuntimeCapability.buildDynamicCapabilityName(CREDENTIAL_STORE_CAPABILITY, credentialStoreName);
             credentialStoreServiceName = context.getCapabilityServiceName(credentialStoreCapabilityName, CredentialStore.class);
             serviceRegistry = context.getServiceRegistry(true);
-            if (serviceBuilder != null) {
-                serviceBuilder.requires(credentialStoreServiceName);
+            if (dependencyConsumer != null) {
+                dependencyConsumer.accept(credentialStoreServiceName);
 
                 if (secret != null) {
                     ServiceName credentialStoreUpdateServiceName = CredentialStoreUpdateService.createServiceName(key, credentialStoreName);
@@ -378,7 +427,7 @@ public final class CredentialReference {
                     ServiceBuilder<CredentialStoreUpdateService> credentialStoreUpdateServiceBuilder = context.getServiceTarget().addService(credentialStoreUpdateServiceName, credentialStoreUpdateService).setInitialMode(ServiceController.Mode.ACTIVE);
                     credentialStoreUpdateServiceBuilder.addDependency(context.getCapabilityServiceName(credentialStoreCapabilityName, CredentialStore.class), CredentialStore.class, credentialStoreUpdateService.getCredentialStoreInjector());
                     credentialStoreUpdateServiceBuilder.install();
-                    serviceBuilder.requires(credentialStoreUpdateServiceName);
+                    dependencyConsumer.accept(credentialStoreUpdateServiceName);
                 }
             } else {
                 if (credentialAlias != null && secret != null) {

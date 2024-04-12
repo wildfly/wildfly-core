@@ -41,8 +41,9 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
     }
 
     /**
-     * Returns a dependency on the service with the specified name.
-     * @param <T> the dependency type
+     * Returns a pseudo-dependency whose {@link #get()} returns the specified value.
+     * @param <T> the value type
+     * @param value a service value
      * @return a service dependency
      */
     @SuppressWarnings("unchecked")
@@ -53,6 +54,7 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
     /**
      * Returns a dependency on the service with the specified name.
      * @param <T> the dependency type
+     * @param name a service name
      * @return a service dependency
      */
     static <T> ServiceDependency<T> on(ServiceName name) {
@@ -60,7 +62,28 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
     }
 
     /**
+     * Wraps a {@link org.wildfly.service.ServiceDependency} as a {@link ServiceDependency}.
+     * @param <T> the dependency type
+     * @return a service dependency
+     */
+    static <T> ServiceDependency<T> from(org.wildfly.service.ServiceDependency<T> dependency) {
+        return new ServiceDependency<>() {
+            @Override
+            public void accept(RequirementServiceBuilder<?> builder) {
+                dependency.accept(builder);
+            }
+
+            @Override
+            public T get() {
+                return dependency.get();
+            }
+        };
+    }
+
+    /**
      * Returns a dependency on the capability with the specified name and type, resolved against the specified references names.
+     * This method is provided for migration purposes.
+     * Users should prefer {@link ServiceDescriptor}-based variants of this method whenever possible.
      * @param <T> the dependency type
      * @param capabilityName the name of the referenced capability
      * @param type the service type of the referenced capability
