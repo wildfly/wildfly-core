@@ -91,12 +91,31 @@ public interface Installer<ST extends ServiceTarget> {
      * Implemented by builds with asynchronous service support.
      * @param <B> the builder type
      */
+    @Deprecated(forRemoval = true)
     interface AsyncBuilder<B> {
         /**
          * Indicates that the installed service should start and, if a stop task is configured, stop asynchronously.
          * @return a reference to this builder
          */
         B async();
+    }
+
+    /**
+     * Implemented by builders with blocking service support.
+     * @param <B> the builder type
+     */
+    interface BlockingBuilder<B> extends AsyncBuilder<B> {
+        /**
+         * Indicates that the installed service performs blocking operations on start and/or stop, and should be instrumented accordingly.
+         * @return a reference to this builder
+         */
+        B blocking();
+
+        @Override
+        @Deprecated(forRemoval = true)
+        default B async() {
+            return this.blocking();
+        }
     }
 
     /**
