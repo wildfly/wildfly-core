@@ -15,11 +15,14 @@ import org.wildfly.subsystem.resource.ChildResourceDefinitionRegistrar;
 import org.wildfly.subsystem.resource.ManagementResourceRegistrar;
 import org.wildfly.subsystem.resource.ManagementResourceRegistrationContext;
 import org.wildfly.subsystem.resource.ResourceDescriptor;
+import org.wildfly.subsystem.resource.operation.ResourceOperationRuntimeHandler;
+import org.wildfly.subsystem.service.ResourceServiceConfigurator;
 
 /**
+ * Abstract registrar for a discovery provider resource definition.
  * @author Paul Ferraro
  */
-public class DiscoveryProviderRegistrar implements ChildResourceDefinitionRegistrar {
+public abstract class DiscoveryProviderRegistrar implements ChildResourceDefinitionRegistrar, ResourceServiceConfigurator {
 
     // TODO Move this to an SPI module, when this capability acquires any consumers
     static final UnaryServiceDescriptor<DiscoveryProvider> DISCOVERY_PROVIDER_DESCRIPTOR = UnaryServiceDescriptor.of("org.wildfly.discovery.provider", DiscoveryProvider.class);
@@ -30,7 +33,9 @@ public class DiscoveryProviderRegistrar implements ChildResourceDefinitionRegist
 
     DiscoveryProviderRegistrar(PathElement path, ResourceDescriptor.Builder builder) {
         this.registration = ResourceRegistration.of(path);
-        this.descriptor = builder.addCapability(DISCOVERY_PROVIDER_CAPABILITY).build();
+        this.descriptor = builder.addCapability(DISCOVERY_PROVIDER_CAPABILITY)
+                .withRuntimeHandler(ResourceOperationRuntimeHandler.configureService(this))
+                .build();
     }
 
     @Override
@@ -39,6 +44,7 @@ public class DiscoveryProviderRegistrar implements ChildResourceDefinitionRegist
         ManagementResourceRegistration registration = parent.registerSubModel(definition);
 
         ManagementResourceRegistrar.of(this.descriptor).register(registration);
+
         return registration;
     }
 }
