@@ -5,29 +5,15 @@
 
 package org.wildfly.extension.discovery;
 
-import java.util.EnumSet;
-
-import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
-import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
-import org.jboss.as.controller.transform.description.TransformationDescription;
+import org.jboss.as.controller.transform.SubsystemExtensionTransformerRegistration;
 
 /**
  * Transformer registration for discovery extension.
  * @author Paul Ferraro
  */
-public class DiscoveryExtensionTransformerRegistration implements ExtensionTransformerRegistration {
+public class DiscoveryExtensionTransformerRegistration extends SubsystemExtensionTransformerRegistration {
 
-    @Override
-    public String getSubsystemName() {
-        return DiscoverySubsystemRegistrar.NAME;
-    }
-
-    @Override
-    public void registerTransformers(SubsystemTransformerRegistration registration) {
-        for (DiscoverySubsystemModel model : EnumSet.complementOf(EnumSet.of(DiscoverySubsystemModel.CURRENT))) {
-            ModelVersion version = model.getVersion();
-            TransformationDescription.Tools.register(new DiscoverySubsystemTransformation().apply(version), registration, version);
-        }
+    public DiscoveryExtensionTransformerRegistration() {
+        super(DiscoverySubsystemRegistrar.NAME, DiscoverySubsystemModel.CURRENT, DiscoverySubsystemTransformationDescriptionFactory.INSTANCE);
     }
 }

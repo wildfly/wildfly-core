@@ -15,8 +15,6 @@ final class Capabilities {
 
     static final String REMOTING_ENDPOINT_CAPABILITY_NAME = "org.wildfly.remoting.endpoint";
 
-    static final String IO_WORKER_CAPABILITY_NAME = "org.wildfly.io.worker";
-
     static final String AUTHENTICATION_CONTEXT_CAPABILITY = "org.wildfly.security.authentication-context";
 
     static final String SASL_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.sasl-authentication-factory";

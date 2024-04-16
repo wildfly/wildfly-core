@@ -19,10 +19,10 @@ import io.undertow.server.XnioByteBufferPool;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityServiceBuilder;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -45,6 +45,7 @@ import org.xnio.Pool;
  */
 class BufferPoolResourceDefinition extends PersistentResourceDefinition {
 
+    static final PathElement PATH = PathElement.pathElement(Constants.BUFFER_POOL);
     static final RuntimeCapability<Void> IO_POOL_RUNTIME_CAPABILITY =
             RuntimeCapability.Builder.of(IOServices.BUFFER_POOL_CAPABILITY_NAME, true, Pool.class).build();
     static final RuntimeCapability<Void> IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY =
@@ -95,38 +96,28 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
 
     /*<buffer-pool name="default" buffer-size="1024" buffers-per-slice="1024"/>*/
 
-    static List<SimpleAttributeDefinition> ATTRIBUTES = Arrays.asList(
+    static final List<AttributeDefinition> ATTRIBUTES = Arrays.asList(
             BUFFER_SIZE,
             BUFFER_PER_SLICE,
             DIRECT_BUFFERS
     );
 
-
-    public static final BufferPoolResourceDefinition INSTANCE = new BufferPoolResourceDefinition();
-
-
-    private BufferPoolResourceDefinition() {
-        super(new SimpleResourceDefinition.Parameters(IOExtension.BUFFER_POOL_PATH,
-                IOExtension.getResolver(Constants.BUFFER_POOL))
+    BufferPoolResourceDefinition() {
+        super(new SimpleResourceDefinition.Parameters(PATH, IOSubsystemRegistrar.RESOLVER.createChildResolver(PATH))
                 .setAddHandler(new BufferPoolAdd())
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addCapabilities(IO_POOL_RUNTIME_CAPABILITY,
                         IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY)
-                .setDeprecatedSince(ModelVersion.create(4))
+                .setDeprecatedSince(IOSubsystemModel.VERSION_4_0_0.getVersion())
         );
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Collection<AttributeDefinition> getAttributes() {
-        return (Collection) ATTRIBUTES;
+        return ATTRIBUTES;
     }
 
     private static class BufferPoolAdd extends AbstractAddStepHandler {
-
-        private BufferPoolAdd() {
-            super(BufferPoolResourceDefinition.ATTRIBUTES);
-        }
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {

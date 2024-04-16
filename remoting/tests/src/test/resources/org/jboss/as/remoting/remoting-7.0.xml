@@ -1,0 +1,68 @@
+<subsystem xmlns="urn:jboss:domain:remoting:7.0">
+    <endpoint
+        worker="default-remoting"
+        send-buffer-size="8191"
+        receive-buffer-size="8191"
+        buffer-region-size="10240"
+        transmit-window-size="131071"
+        receive-window-size="131071"
+        max-outbound-channels="41"
+        max-inbound-channels="41"
+        authorize-id="foo"
+        auth-realm="ApplicationRealm"
+        authentication-retries="4"
+        max-outbound-messages="65534"
+        max-inbound-messages="79"
+        heartbeat-interval="20000"
+        max-inbound-message-size="1000000"
+        max-outbound-message-size="1000000"
+        server-name="test"
+        sasl-protocol="bar"
+    />
+    <connector name="remoting-connector" socket-binding="remoting" sasl-protocol="myProto" server-name="myServer" authentication-provider="blah">
+        <properties>
+           <property name="TCP_NODELAY" value="true"/>
+           <property name="KEEP_ALIVE" value="true"/>
+        </properties>
+        <sasl include-mechanisms="one two three" qop="auth auth-int" strength="low high" server-auth="true" reuse-session="true">
+            <policy forward-secrecy="true" no-active="true" no-anonymous="true" no-dictionary="true" no-plain-text="true" pass-credentials="true"/>
+            <properties>
+               <property name="SASL_SERVER_AUTH" value="true"/>
+               <property name="SASL_POLICY_NOACTIVE" value="false"/>
+            </properties>
+        </sasl>
+    </connector>
+    <http-connector name="http-connector" connector-ref="http" sasl-protocol="myProto" server-name="myServer" authentication-provider="blah">
+        <properties>
+            <property name="TCP_NODELAY" value="true"/>
+            <property name="REUSE_ADDRESSES" value="true"/>
+        </properties>
+        <sasl include-mechanisms="one two three" qop="auth auth-int" strength="low high" server-auth="true" reuse-session="true">
+            <policy forward-secrecy="true" no-active="true" no-anonymous="true" no-dictionary="true" no-plain-text="true" pass-credentials="true"/>
+            <properties>
+               <property name="SASL_SERVER_AUTH" value="true"/>
+               <property name="SASL_POLICY_NOACTIVE" value="false"/>
+            </properties>
+        </sasl>
+    </http-connector>
+    <outbound-connections>
+        <local-outbound-connection name="local" outbound-socket-binding-ref="dummy-outbound-socket">
+            <properties>
+                <property name="org.xnio.Options.SASL_POLICY_NOANONYMOUS" value="false"/>
+                <property name="org.xnio.Options.SSL_ENABLED" value="false"/>
+            </properties>
+        </local-outbound-connection>
+        <remote-outbound-connection name="remote" outbound-socket-binding-ref="other-outbound-socket" protocol="remote+http">
+            <properties>
+                <property name="org.xnio.Options.SASL_POLICY_NOANONYMOUS" value="false"/>
+                <property name="org.xnio.Options.SSL_ENABLED" value="false"/>
+            </properties>
+        </remote-outbound-connection>
+        <outbound-connection name="generic" uri="local://-">
+            <properties>
+                <property name="org.xnio.Options.SASL_POLICY_NOANONYMOUS" value="false"/>
+                <property name="org.xnio.Options.SSL_ENABLED" value="false"/>
+            </properties>
+        </outbound-connection>
+    </outbound-connections>
+</subsystem>

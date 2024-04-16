@@ -12,15 +12,15 @@ import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 
 /**
- * Creates the transformation descriptions for the discovery subsystem resource.
+ * Creates transformation descriptions for the discovery subsystem.
  * @author Paul Ferraro
  */
-public class DiscoverySubsystemTransformation implements Function<ModelVersion, TransformationDescription> {
-
-    private final ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createSubsystemInstance();
+public enum DiscoverySubsystemTransformationDescriptionFactory implements Function<ModelVersion, TransformationDescription> {
+    INSTANCE;
 
     @Override
     public TransformationDescription apply(ModelVersion version) {
-        return this.builder.build();
+        ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createSubsystemInstance();
+        return builder.build();
     }
 }

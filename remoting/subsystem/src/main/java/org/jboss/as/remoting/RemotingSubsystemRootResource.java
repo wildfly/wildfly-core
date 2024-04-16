@@ -5,7 +5,6 @@
 package org.jboss.as.remoting;
 
 import static org.jboss.as.remoting.Capabilities.HTTP_LISTENER_REGISTRY_CAPABILITY_NAME;
-import static org.jboss.as.remoting.Capabilities.IO_WORKER_CAPABILITY_NAME;
 import static org.jboss.as.remoting.Capabilities.REMOTING_ENDPOINT_CAPABILITY_NAME;
 
 import java.util.Collection;
@@ -34,7 +33,8 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.RemotingOptions;
-import org.wildfly.extension.io.OptionAttributeDefinition;
+import org.wildfly.io.IOServiceDescriptor;
+import org.wildfly.io.OptionAttributeDefinition;
 import org.xnio.Option;
 
 import io.undertow.server.ListenerRegistry;
@@ -50,14 +50,13 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
     static final RuntimeCapability<Void> HTTP_LISTENER_REGISTRY_CAPABILITY =
             RuntimeCapability.Builder.of(HTTP_LISTENER_REGISTRY_CAPABILITY_NAME, ListenerRegistry.class).build();
 
+    static final ModelNode LEGACY_DEFAULT_WORKER = new ModelNode("default");
     static final SimpleAttributeDefinition WORKER = new SimpleAttributeDefinitionBuilder(CommonAttributes.WORKER, ModelType.STRING)
             .setRequired(false)
             .setAttributeGroup(Element.ENDPOINT.getLocalName())
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setValidator(new StringLengthValidator(1))
-            // TODO WFCORE-6490 Attributes that reference capabilities should never have a default value.
-            .setDefaultValue(new ModelNode("default"))
-            .setCapabilityReference(IO_WORKER_CAPABILITY_NAME, REMOTING_ENDPOINT_CAPABILITY)
+            .setCapabilityReference(IOServiceDescriptor.WORKER.getName(), REMOTING_ENDPOINT_CAPABILITY)
             .build();
 
     private static final OptionAttributeDefinition SEND_BUFFER_SIZE = createOptionAttribute("send-buffer-size", RemotingOptions.SEND_BUFFER_SIZE, new ModelNode(RemotingOptions.DEFAULT_SEND_BUFFER_SIZE));

@@ -17,7 +17,10 @@ import org.xnio.OptionMap;
 
 /**
  * @author Tomaz Cerar (c) 2013 Red Hat Inc.
- */
+ * @deprecated Replaced by org.wildfly.io.OptionAttributeDefinition
+*/
+//TODO Remove this once references are removed in WildFly full
+@Deprecated(forRemoval = true)
 public class OptionList {
     private OptionList() {
 

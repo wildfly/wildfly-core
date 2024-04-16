@@ -20,7 +20,10 @@ import org.xnio.OptionMap;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
+ * @deprecated Replaced by org.wildfly.io.OptionAttributeDefinition
  */
+// TODO Remove this once references are removed in WildFly full
+@Deprecated(forRemoval = true)
 public class OptionAttributeDefinition extends SimpleAttributeDefinition {
     private final Option option;
     private final Class<?> optionType;

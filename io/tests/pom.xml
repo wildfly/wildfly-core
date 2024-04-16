@@ -21,7 +21,7 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.wildfly.core</groupId>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>wildfly-core-testbom</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
@@ -31,24 +31,21 @@
     </dependencyManagement>
 
     <dependencies>
-
-
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.common</groupId>
-            <artifactId>wildfly-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>wildfly-io</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>wildfly-io-spi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>wildfly-subsystem</artifactId>
+        </dependency>
 
         <dependency>
-            <groupId>org.wildfly.core</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>wildfly-subsystem-test</artifactId>
             <type>pom</type>
             <scope>test</scope>
