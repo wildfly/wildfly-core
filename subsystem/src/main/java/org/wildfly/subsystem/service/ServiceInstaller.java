@@ -113,7 +113,7 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
      * @param <T> the source value type
      * @param <V> the service value type
      */
-    interface Builder extends AsyncBuilder<Builder>, Installer.Builder<Builder, ServiceInstaller, RequirementServiceTarget, RequirementServiceBuilder<?>> {
+    interface Builder extends BlockingBuilder<Builder>, Installer.Builder<Builder, ServiceInstaller, RequirementServiceTarget, RequirementServiceBuilder<?>> {
     }
 
     /**
@@ -121,7 +121,7 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
      * @param <T> the source value type
      * @param <V> the service value type
      */
-    interface UnaryBuilder<T, V> extends AsyncBuilder<UnaryBuilder<T, V>>, Installer.UnaryBuilder<UnaryBuilder<T, V>, ServiceInstaller, RequirementServiceTarget, RequirementServiceBuilder<?>, T, V> {
+    interface UnaryBuilder<T, V> extends BlockingBuilder<UnaryBuilder<T, V>>, Installer.UnaryBuilder<UnaryBuilder<T, V>, ServiceInstaller, RequirementServiceTarget, RequirementServiceBuilder<?>, T, V> {
     }
 
     @Override
@@ -148,26 +148,26 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
     }
 
     class DefaultNullaryBuilder extends AbstractNullaryBuilder<Builder, ServiceInstaller, RequirementServiceTarget, RequirementServiceBuilder<?>, RequirementServiceBuilder<?>> implements Builder {
-        private volatile boolean sync = true;
+        private volatile boolean blocking = false;
 
         DefaultNullaryBuilder(Service service) {
             super(service);
         }
 
         @Override
-        public Builder async() {
-            this.sync = false;
+        public Builder blocking() {
+            this.blocking = true;
             return this;
         }
 
         @Override
         public ServiceInstaller build() {
-            boolean sync = this.sync;
+            boolean blocking = this.blocking;
             return new DefaultServiceInstaller(this, new Function<>() {
                 @Override
                 public RequirementServiceBuilder<?> apply(RequirementServiceTarget target) {
                     RequirementServiceBuilder<?> builder = target.addService();
-                    return !sync ? new AsyncServiceBuilder<>(builder, AsyncServiceBuilder.Async.START_AND_STOP) : builder;
+                    return blocking ? new AsyncServiceBuilder<>(builder, AsyncServiceBuilder.Async.START_AND_STOP) : builder;
                 }
             });
         }
@@ -179,28 +179,28 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
     }
 
     class DefaultUnaryBuilder<T, V> extends AbstractUnaryBuilder<UnaryBuilder<T, V>, ServiceInstaller, RequirementServiceTarget, RequirementServiceBuilder<?>, RequirementServiceBuilder<?>, T, V> implements UnaryBuilder<T, V> {
-        private volatile boolean sync = true;
+        private volatile boolean blocking = false;
 
         DefaultUnaryBuilder(Function<T, V> mapper, Supplier<T> factory) {
             super(mapper, factory);
         }
 
         @Override
-        public UnaryBuilder<T, V> async() {
-            this.sync = false;
+        public UnaryBuilder<T, V> blocking() {
+            this.blocking = true;
             return this;
         }
 
         @Override
         public ServiceInstaller build() {
-            boolean sync = this.sync;
+            boolean blocking = this.blocking;
             // If no stop task is specified, we can stop synchronously
             AsyncServiceBuilder.Async async = this.hasStopTask() ? AsyncServiceBuilder.Async.START_AND_STOP : AsyncServiceBuilder.Async.START_ONLY;
             return new DefaultServiceInstaller(this, new Function<>() {
                 @Override
                 public RequirementServiceBuilder<?> apply(RequirementServiceTarget target) {
                     RequirementServiceBuilder<?> builder = target.addService();
-                    return !sync ? new AsyncServiceBuilder<>(builder, async) : builder;
+                    return blocking ? new AsyncServiceBuilder<>(builder, async) : builder;
                 }
             });
         }
