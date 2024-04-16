@@ -30,11 +30,15 @@ class DiscoverySubsystemRegistrar implements SubsystemResourceDefinitionRegistra
     @Override
     public ManagementResourceRegistration register(SubsystemRegistration parent, ManagementResourceRegistrationContext context) {
         parent.setHostCapable();
+
         ManagementResourceRegistration registration = parent.registerSubsystemModel(ResourceDefinition.builder(ResourceRegistration.of(PATH), RESOLVER).build());
         ResourceDescriptor descriptor = ResourceDescriptor.builder(RESOLVER).build();
+
         ManagementResourceRegistrar.of(descriptor).register(registration);
+
         new AggregateDiscoveryProviderRegistrar().register(registration, context);
         new StaticDiscoveryProviderRegistrar().register(registration, context);
+
         return registration;
     }
 }
