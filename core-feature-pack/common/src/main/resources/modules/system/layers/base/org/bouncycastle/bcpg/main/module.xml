@@ -17,5 +17,6 @@
 
     <dependencies>
         <module name="org.bouncycastle.bcprov"/>
+        <module name="org.bouncycastle.bcutil"/>
     </dependencies>
 </module>
