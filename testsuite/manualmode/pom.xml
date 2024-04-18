@@ -633,8 +633,6 @@
                                         <exclude>org.wildfly.core.test.standalone.mgmt.events.*TestCase</exclude>
                                         <!-- Requires modification of the process-uuid file inside the Jar -->
                                         <exclude>org.jboss.as.test.manualmode.logging.ProcessUuidTestCase</exclude>
-                                        <!-- Validates content of traditional unzipped installation. (Works, but is irrelevant to bootable jar testing.) -->
-                                        <exclude>org.jboss.as.test.manualmode.provisioning.ProvisioningConsistencyTestCase</exclude>
                                     </excludes>
                                 </configuration>
                             </execution>
