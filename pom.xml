@@ -57,8 +57,7 @@
         <!-- Keep consistent with README.md and .mvn/wrapper/maven-wrapper.properties -->
         <maven.min.version>3.6.0</maven.min.version>
         <!-- Require Java 11 -->
-        <maven.compiler.target>11</maven.compiler.target>
-        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.release>11</maven.compiler.release>
 
         <!-- Standard client-side JPMS settings identified as meeting
              the needs of WildFly libraries meant for use in clients. -->
