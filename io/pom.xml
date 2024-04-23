@@ -10,7 +10,7 @@
     <parent>
         <artifactId>wildfly-core-parent</artifactId>
         <groupId>org.wildfly.core</groupId>
-        <version>25.0.0.Beta1</version>
+        <version>25.0.0.Beta1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
