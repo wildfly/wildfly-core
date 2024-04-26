@@ -11,7 +11,6 @@ import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies
 import java.util.Collections;
 import java.util.HashSet;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -36,16 +35,16 @@ abstract class TrivialAddHandler<T> extends BaseAddHandler {
     private final Mode initialMode;
     private final Mode adminOnlyInitialMode;
 
-    TrivialAddHandler(Class<T> serviceType, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
-        this(serviceType, Mode.ACTIVE, attributes, runtimeCapability);
+    TrivialAddHandler(Class<T> serviceType, RuntimeCapability<?> runtimeCapability) {
+        this(serviceType, Mode.ACTIVE, runtimeCapability);
     }
 
-    TrivialAddHandler(Class<T> serviceType, Mode initialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
-        this(serviceType, initialMode, initialMode, attributes, runtimeCapability);
+    TrivialAddHandler(Class<T> serviceType, Mode initialMode, RuntimeCapability<?> runtimeCapability) {
+        this(serviceType, initialMode, initialMode, runtimeCapability);
     }
 
-    TrivialAddHandler(Class<T> serviceType, Mode initialMode, Mode adminOnlyInitialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
-        super(new HashSet<>(Collections.singletonList(checkNotNullParam("runtimeCapabilities", runtimeCapability))), attributes);
+    TrivialAddHandler(Class<T> serviceType, Mode initialMode, Mode adminOnlyInitialMode, RuntimeCapability<?> runtimeCapability) {
+        super(new HashSet<>(Collections.singletonList(checkNotNullParam("runtimeCapabilities", runtimeCapability))));
         this.runtimeCapability = runtimeCapability;
         checkNotNullParam("serviceType", serviceType);
         this.initialMode = checkNotNullParam("initialMode", initialMode);

@@ -30,10 +30,8 @@ class BaseAddHandler extends AbstractAddStepHandler implements ElytronOperationS
     /**
      * Constructor of the add handler that takes an array of {@link AttributeDefinition}.
      *
-     * @param attributes  the {@link AttributeDefinition} instances associated with this resource.
      */
-    BaseAddHandler(AttributeDefinition... attributes) {
-        super(attributes);
+    BaseAddHandler() {
         this.runtimeCapabilities = Collections.emptySet();
     }
 
@@ -41,10 +39,8 @@ class BaseAddHandler extends AbstractAddStepHandler implements ElytronOperationS
      * Constructor of the add handler that takes a {@link RuntimeCapability} and array of {@link AttributeDefinition}.
      *
      * @param runtimeCapability the {@link RuntimeCapability} that will be provided at runtime.
-     * @param attributes the {@link AttributeDefinition} instances associated with this resource.
      */
-    BaseAddHandler(RuntimeCapability<?> runtimeCapability, AttributeDefinition... attributes) {
-        super(attributes);
+    BaseAddHandler(RuntimeCapability<?> runtimeCapability) {
         this.runtimeCapabilities = Collections.singleton(runtimeCapability);
     }
 
@@ -54,10 +50,8 @@ class BaseAddHandler extends AbstractAddStepHandler implements ElytronOperationS
      * Constructor of the add handler that takes a {@link Set} of {@link RuntimeCapability} and array of {@link AttributeDefinition}.
      *
      * @param capabilities a {@link Set} of capabilitiies that will be added.
-     * @param attributes the {@link AttributeDefinition} instances associated with this resource.
      */
-    BaseAddHandler(Set<RuntimeCapability> capabilities, AttributeDefinition... attributes) {
-        super(attributes);
+    BaseAddHandler(Set<RuntimeCapability> capabilities) {
         this.runtimeCapabilities = capabilities;
     }
 

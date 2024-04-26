@@ -142,7 +142,7 @@ class KerberosSecurityFactoryDefinition {
 
     static ResourceDefinition getKerberosSecurityFactoryDefinition() {
         final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, FAIL_CACHE, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_NAMES, MECHANISM_OIDS, WRAP_GSS_CREDENTIAL, REQUIRED, OPTIONS };
-        TrivialAddHandler<CredentialSecurityFactory> add = new TrivialAddHandler<CredentialSecurityFactory>(CredentialSecurityFactory.class, attributes, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY) {
+        TrivialAddHandler<CredentialSecurityFactory> add = new TrivialAddHandler<CredentialSecurityFactory>(CredentialSecurityFactory.class, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<CredentialSecurityFactory> getValueSupplier(ServiceBuilder<CredentialSecurityFactory> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {

@@ -92,7 +92,7 @@ class CustomComponentDefinition<C, T> extends SimpleResourceDefinition {
         private final Function<C, T> wrapper;
 
         private ComponentAddHandler(Class<C> serviceType, Function<C, T> wrapper, RuntimeCapability<?> ... runtimeCapabilities) {
-            super(new HashSet<>(Arrays.asList(runtimeCapabilities)), ATTRIBUTES);
+            super(new HashSet<>(Arrays.asList(runtimeCapabilities)));
             this.runtimeCapabilities = runtimeCapabilities;
             this.serviceType = serviceType;
             this.wrapper = wrapper;

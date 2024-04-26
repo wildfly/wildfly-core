@@ -155,7 +155,7 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
     private static class CertificateAuthorityAccountAddHandler extends BaseAddHandler {
 
         private CertificateAuthorityAccountAddHandler() {
-            super(CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY, ATTRIBUTES);
+            super(CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY);
         }
 
         @Override

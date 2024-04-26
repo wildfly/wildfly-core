@@ -269,7 +269,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
     private static class RealmAddHandler extends BaseAddHandler {
 
         private RealmAddHandler() {
-            super(SECURITY_REALM_RUNTIME_CAPABILITY, ALL_ATTRIBUTES);
+            super(SECURITY_REALM_RUNTIME_CAPABILITY);
         }
 
         private static SecretKey getSecretKey(OperationContext context, String credentialStoreReference, String alias) throws OperationFailedException {
