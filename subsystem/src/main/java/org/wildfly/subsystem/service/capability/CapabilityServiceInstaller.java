@@ -81,12 +81,7 @@ public interface CapabilityServiceInstaller extends ResourceServiceInstaller, In
      * @param <T> the source value type
      * @param <V> the service value type
      */
-    interface Builder<T, V> extends UnaryBuilder<Builder<T, V>, CapabilityServiceInstaller, CapabilityServiceTarget, RequirementServiceBuilder<?>, T, V> {
-        /**
-         * Indicates that the installed service should start and, if a stop task is configured, stop asynchronously.
-         * @return a reference to this builder
-         */
-        Builder<T, V> async();
+    interface Builder<T, V> extends BlockingBuilder<Builder<T, V>>, UnaryBuilder<Builder<T, V>, CapabilityServiceInstaller, CapabilityServiceTarget, RequirementServiceBuilder<?>, T, V> {
     }
 
     @Override
@@ -108,7 +103,7 @@ public interface CapabilityServiceInstaller extends ResourceServiceInstaller, In
     }
 
     class DefaultBuilder<T, V> extends AbstractUnaryBuilder<Builder<T, V>, CapabilityServiceInstaller, CapabilityServiceTarget, CapabilityServiceBuilder<?>, RequirementServiceBuilder<?>, T, V> implements Builder<T, V> {
-        private volatile boolean sync = true;
+        private volatile boolean blocking = false;
 
         DefaultBuilder(RuntimeCapability<Void> capability, Function<T, V> mapper, Supplier<T> factory) {
             super(mapper, factory, new BiFunction<>() {
@@ -120,21 +115,21 @@ public interface CapabilityServiceInstaller extends ResourceServiceInstaller, In
         }
 
         @Override
-        public Builder<T, V> async() {
-            this.sync = false;
+        public Builder<T, V> blocking() {
+            this.blocking = true;
             return this;
         }
 
         @Override
         public CapabilityServiceInstaller build() {
-            boolean sync = this.sync;
+            boolean blocking = this.blocking;
             // If no stop task is specified, we can stop synchronously
             AsyncServiceBuilder.Async async = this.hasStopTask() ? AsyncServiceBuilder.Async.START_AND_STOP : AsyncServiceBuilder.Async.START_ONLY;
             return new DefaultCapabilityServiceInstaller(this, new Function<>() {
                 @Override
                 public CapabilityServiceBuilder<?> apply(CapabilityServiceTarget target) {
                     CapabilityServiceBuilder<?> builder = target.addService();
-                    return !sync ? new AsyncCapabilityServiceBuilder<>(builder, async) : builder;
+                    return blocking ? new AsyncCapabilityServiceBuilder<>(builder, async) : builder;
                 }
             });
         }
