@@ -4,6 +4,9 @@
  */
 package org.wildfly.subsystem.service;
 
+import java.util.Collection;
+import java.util.List;
+
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 
 /**
@@ -16,4 +19,29 @@ public interface DeploymentServiceInstaller {
      * @param context a deployment phase context
      */
     void install(DeploymentPhaseContext context);
+
+    /**
+     * Returns a composite {@link DeploymentServiceInstaller} that installs the specified installers.
+     * @param installers a variable number of installers
+     * @return a composite installer
+     */
+    static DeploymentServiceInstaller combine(DeploymentServiceInstaller... installers) {
+        return combine(List.of(installers));
+    }
+
+    /**
+     * Returns a composite {@link DeploymentServiceInstaller} that installs the specified installers.
+     * @param installers a collection of installers
+     * @return a composite installer
+     */
+    static DeploymentServiceInstaller combine(Collection<? extends DeploymentServiceInstaller> installers) {
+        return new DeploymentServiceInstaller() {
+            @Override
+            public void install(DeploymentPhaseContext context) {
+                for (DeploymentServiceInstaller installer : installers) {
+                    installer.install(context);
+                }
+            }
+        };
+    }
 }
