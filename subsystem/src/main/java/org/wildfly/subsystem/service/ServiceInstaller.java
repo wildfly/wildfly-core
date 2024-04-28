@@ -11,9 +11,11 @@ import java.util.function.Supplier;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.RequirementServiceBuilder;
 import org.jboss.as.controller.RequirementServiceTarget;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -86,6 +88,21 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
                 // Services installed into child target are auto-removed after this service stops.
             }
         }).asActive();
+    }
+
+    /**
+     * Returns a {@link ServiceInstaller} builder that installs the specified installer into a child target.
+     * @param installer a service installer
+     * @param support support for capabilities
+     * @return a service installer builder
+     */
+    static Builder builder(ServiceInstaller installer, CapabilityServiceSupport support) {
+        return builder(new org.wildfly.service.ServiceInstaller() {
+            @Override
+            public ServiceController<?> install(ServiceTarget target) {
+                return installer.install(RequirementServiceTarget.forTarget(target, support));
+            }
+        });
     }
 
     /**
