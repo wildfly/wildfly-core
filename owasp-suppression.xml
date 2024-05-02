@@ -286,14 +286,6 @@
         <vulnerabilityName>CVE-2023-51074</vulnerabilityName>
     </suppress>
 
-        <!-- Service pack includes fix for this CVE -->
-    <suppress>
-        <notes><![CDATA[
-        file name: xnio-api-3.8.12.SP2-redhat-00001.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.jboss\.xnio/xnio\-api@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-5685</vulnerabilityName>
-    </suppress>
     <!-- Those CVE's are false positives, but issue was resolved here: https://github.com/undertow-io/undertow/pull/1559 -->
     <suppress>
         <notes><![CDATA[
