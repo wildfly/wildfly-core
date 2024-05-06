@@ -60,9 +60,11 @@ public class ContentRepositoryTest {
     // Exploded content with the 'test.jsp' content replaced by the second version
     private static final String WITH_TEST_JSP_HASH_2 = "75c20ffc143e5154f299f17324a3776ff9ba4669";
     // Hash of a multi-level archive.zip
-    private static final String MULTI_LEVEL_ARCHIVE_HASH = "dedb1d451336fd54e50150e63ee7f71b7735cb34";
+    private static final String MULTI_LEVEL_ARCHIVE_HASH1 = "dedb1d451336fd54e50150e63ee7f71b7735cb34";
+    private static final String MULTI_LEVEL_ARCHIVE_HASH2 = "78f11768313ae0a207b39a6415a9345d0a3dba63";
     // Exploded content hash is different from the unexploded archive.zip as we add the content folder name in the computation
-    private static final String EXPLODED_MULTI_LEVEL_ARCHIVE_HASH = "53ed0a55e747f104e0142965947e980fb9fcc129";
+    private static final String EXPLODED_MULTI_LEVEL_ARCHIVE_HASH1 = "53ed0a55e747f104e0142965947e980fb9fcc129";
+    private static final String EXPLODED_MULTI_LEVEL_ARCHIVE_HASH2 = "8b9d49849d96fcde1281d9f0bd95bfb7d7a8b25c";
     // Exploding the arhive.zip sub-content results in a different content hash
     private static final String FULLY_EXPLODED_MULTI_LEVEL_ARCHIVE_HASH = "598c25116bf6059d452e1bd134b6151dd94749e9";
 
@@ -149,28 +151,32 @@ public class ContentRepositoryTest {
         byte[] archive = createMultiLevelArchive(Collections.singletonList("testfile.xhtml"), "test/archive.zip");
         try (ByteArrayInputStream stream = new ByteArrayInputStream(archive)) {
             byte[] originalHash = repository.addContent(stream);
+            String originalHashString = HashUtil.bytesToHexString(originalHash);
             assertThat(originalHash, is(notNullValue()));
-            assertThat(HashUtil.bytesToHexString(originalHash), is(MULTI_LEVEL_ARCHIVE_HASH));
+            // On Fedora 40 the java.util.zip.Deflater creates different byte array than on Fedora 39 so there is an OR operation
+            assertTrue(MULTI_LEVEL_ARCHIVE_HASH1.equals(originalHashString) || MULTI_LEVEL_ARCHIVE_HASH2.equals(originalHashString));
             try {
                 repository.explodeSubContent(originalHash, "test/archive.zip");
                 fail("Shouldn't be able to explode sub content of unexploded content");
             } catch (ExplodedContentException ex) {
             }
-            byte[] hash = repository.explodeContent(originalHash);
+            byte[] explodedHash = repository.explodeContent(originalHash);
             //hash is different from the simple archive.zip as we add the content folder name in the computation
-            assertThat(hash, is(notNullValue()));
-            assertThat(HashUtil.bytesToHexString(hash), is(EXPLODED_MULTI_LEVEL_ARCHIVE_HASH));
-            Path content = repository.getContent(hash).getPhysicalFile().toPath();
+            assertThat(explodedHash, is(notNullValue()));
+            String explodedHashString = HashUtil.bytesToHexString(explodedHash);
+            // On Fedora 40 the java.util.zip.Deflater creates different byte array than on Fedora 39 so there is an OR operation
+            assertTrue(EXPLODED_MULTI_LEVEL_ARCHIVE_HASH1.equals(explodedHashString) || EXPLODED_MULTI_LEVEL_ARCHIVE_HASH2.equals(explodedHashString));
+            Path content = repository.getContent(explodedHash).getPhysicalFile().toPath();
             String contentHtml = readFileContent(content.resolve("testfile.xhtml"));
             String expectedContentHtml = readFileContent(getResourceAsStream("testfile.xhtml"));
             assertThat(contentHtml, is(expectedContentHtml));
             Path archiveFile = content.resolve("test").resolve("archive.zip");
             assertTrue(Files.exists(archiveFile));
             assertTrue(PathUtil.isArchive(archiveFile));
-            byte[] fullyExplodedHash = repository.explodeSubContent(hash, "test/archive.zip");
+            byte[] fullyExplodedHash = repository.explodeSubContent(explodedHash, "test/archive.zip");
             assertThat(fullyExplodedHash, is(notNullValue()));
             assertThat(HashUtil.bytesToHexString(fullyExplodedHash), is(FULLY_EXPLODED_MULTI_LEVEL_ARCHIVE_HASH));
-            content = repository.getContent(repository.explodeSubContent(hash, "test/archive.zip")).getPhysicalFile().toPath();
+            content = repository.getContent(repository.explodeSubContent(explodedHash, "test/archive.zip")).getPhysicalFile().toPath();
             Path directory = content.resolve("test").resolve("archive.zip");
             assertTrue("Should not be a zip file", Files.isDirectory(directory));
             assertThat(contentHtml, is(expectedContentHtml));
