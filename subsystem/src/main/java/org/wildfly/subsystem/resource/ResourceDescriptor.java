@@ -530,6 +530,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         static final BiPredicate<OperationContext, Resource> DEFAULT_CAPABILITY_FILTER = (context, resource) -> resource.getModel().isDefined();
 
         private static final Set<OperationEntry.Flag> RESTART_FLAGS = EnumSet.of(OperationEntry.Flag.RESTART_ALL_SERVICES, OperationEntry.Flag.RESTART_JVM, OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
+        private static final Set<OperationEntry.Flag> RELOAD_RESTART_FLAGS = EnumSet.of(OperationEntry.Flag.RESTART_ALL_SERVICES, OperationEntry.Flag.RESTART_JVM);
 
         private final ResourceDescriptionResolver descriptionResolver;
         private Optional<ResourceOperationRuntimeHandler> runtimeHandler = Optional.empty();
@@ -664,8 +665,12 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         @Override
         public C withDeploymentChainContributor(Consumer<DeploymentProcessorTarget> contributor) {
             this.deploymentChainContributor = Optional.of(contributor);
-            if (this.addOperationRestartFlag == OperationEntry.Flag.RESTART_NONE) {
+            // If this resource contributes to the deployment chain, adding or removing it requires a reload
+            if (!RELOAD_RESTART_FLAGS.contains(this.addOperationRestartFlag)) {
                 this.addOperationRestartFlag = OperationEntry.Flag.RESTART_ALL_SERVICES;
+            }
+            if (!RELOAD_RESTART_FLAGS.contains(this.removeOperationRestartFlag)) {
+                this.removeOperationRestartFlag = OperationEntry.Flag.RESTART_ALL_SERVICES;
             }
             return this.self();
         }
