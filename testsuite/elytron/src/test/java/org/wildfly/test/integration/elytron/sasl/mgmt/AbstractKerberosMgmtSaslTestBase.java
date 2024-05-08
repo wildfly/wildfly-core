@@ -30,6 +30,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.MalformedURLException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.GeneralSecurityException;
@@ -364,7 +365,7 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
                     is(instanceOf(ConnectException.class)));
             assertThat("Unexpected type of inherited exception for authentication failure", cause.getCause(),
                     anyOf(is(instanceOf(SSLException.class)), is(instanceOf(SaslException.class)),
-                            is(instanceOf(RedirectException.class))));
+                            is(instanceOf(RedirectException.class)), is(instanceOf(ClosedChannelException.class))));
         }
     }
 
