@@ -54,7 +54,7 @@ public class SimpleOperationDefinitionBuilder {
         SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(name, basis.getResolver())
                 .setAccessConstraints(basis.getAccessConstraints().toArray(AccessConstraintDefinition[]::new))
                 .setAttributeResolver(basis.getAttributeResolver())
-                .setDescriptionProvider(basis.getDescriptionProvider())
+                .setDescriptionProvider(basis.descriptionProvider)
                 .setEntryType(basis.getEntryType())
                 .setParameters(basis.getParameters())
                 .setReplyParameters(basis.getReplyParameters())
