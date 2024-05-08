@@ -16,6 +16,7 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -24,10 +25,12 @@ import org.jboss.as.controller.operations.common.ProcessReloadHandler;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.HostControllerEnvironment;
+import org.jboss.as.host.controller.HostEnvironmentAwareProcessReloadHandler;
 import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.HostRunningModeControl;
 import org.jboss.as.host.controller.RestartMode;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceName;
@@ -36,10 +39,10 @@ import org.jboss.msc.service.ServiceName;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningModeControl>{
+public class HostProcessReloadHandler extends HostEnvironmentAwareProcessReloadHandler {
 
     private static final AttributeDefinition RESTART_SERVERS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RESTART_SERVERS, ModelType.BOOLEAN, true)
-    .setDefaultValue(ModelNode.TRUE).build();
+            .setDefaultValue(ModelNode.TRUE).build();
 
     private static final AttributeDefinition USE_CURRENT_DOMAIN_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.USE_CURRENT_DOMAIN_CONFIG, ModelType.BOOLEAN, true)
             .setAlternatives(ModelDescriptionConstants.DOMAIN_CONFIG)
@@ -60,9 +63,13 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
             .build();
 
 
-    private static final AttributeDefinition[] MASTER_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_DOMAIN_CONFIG, USE_CURRENT_HOST_CONFIG, DOMAIN_CONFIG, HOST_CONFIG};
+    private static final AttributeDefinition[] PRIMARY_HC_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_DOMAIN_CONFIG, USE_CURRENT_HOST_CONFIG, DOMAIN_CONFIG, HOST_CONFIG};
 
-    private static final AttributeDefinition[] SLAVE_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_HOST_CONFIG, HOST_CONFIG};
+    private static final AttributeDefinition[] SECONDARY_HC_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_HOST_CONFIG, HOST_CONFIG};
+
+    private static final AttributeDefinition[] ENHANCED_PRIMARY_HC_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_DOMAIN_CONFIG, USE_CURRENT_HOST_CONFIG, DOMAIN_CONFIG, HOST_CONFIG, STABILITY};
+
+    private static final AttributeDefinition[] ENHANCED_SECONDARY_HC_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_HOST_CONFIG, HOST_CONFIG, STABILITY};
 
     private final HostControllerEnvironment environment;
     private final LocalHostControllerInfo hostControllerInfo;
@@ -70,17 +77,26 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
 
     public static OperationDefinition getDefinition(final LocalHostControllerInfo hostControllerInfo) {
         return new DeferredParametersOperationDefinitionBuilder(hostControllerInfo, OPERATION_NAME, HostModelUtil.getResourceDescriptionResolver())
-            .setParameters(hostControllerInfo.isMasterDomainController() ? MASTER_ATTRIBUTES : SLAVE_ATTRIBUTES)
-            .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
-            .setRuntimeOnly()
-            .build();
+                .setParameters(hostControllerInfo.isMasterDomainController() ? PRIMARY_HC_ATTRIBUTES : SECONDARY_HC_ATTRIBUTES)
+                .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
+                .setRuntimeOnly()
+                .build();
     }
 
+    public static OperationDefinition getEnhancedDefinition(final LocalHostControllerInfo hostControllerInfo) {
+        return new DeferredParametersOperationDefinitionBuilder(hostControllerInfo, ENHANCED_OPERATION_NAME, HostModelUtil.getResourceDescriptionResolver(), ENHANCED_PRIMARY_HC_ATTRIBUTES, ENHANCED_SECONDARY_HC_ATTRIBUTES, Stability.COMMUNITY)
+                .setStability(Stability.COMMUNITY)
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.RELOAD_ENHANCED)
+                .setParameters(hostControllerInfo.isMasterDomainController() ? ENHANCED_PRIMARY_HC_ATTRIBUTES : ENHANCED_SECONDARY_HC_ATTRIBUTES)
+                .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
+                .setRuntimeOnly()
+                .build();
+    }
 
     public HostProcessReloadHandler(final ServiceName rootService, final HostRunningModeControl runningModeControl,
                                     final ControlledProcessState processState, final HostControllerEnvironment environment,
                                     final LocalHostControllerInfo hostControllerInfo) {
-        super(rootService, runningModeControl, processState);
+        super(rootService, runningModeControl, processState, environment);
         this.processType = environment.getProcessType();
         this.environment = environment;
         this.hostControllerInfo = hostControllerInfo;
@@ -102,6 +118,14 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
 
     @Override
     protected ProcessReloadHandler.ReloadContext<HostRunningModeControl> initializeReloadContext(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+        final Stability stability;
+        if (operation.hasDefined(STABILITY.getName())) {
+            String val = STABILITY.resolveModelAttribute(context, operation).asString();
+            stability = Stability.fromString(val);
+            environment.checkStabilityIsValidForInstallation(stability);
+        } else {
+            stability = null;
+        }
         final boolean adminOnly = ADMIN_ONLY.resolveModelAttribute(context, operation).asBoolean(false);
         final boolean restartServers = RESTART_SERVERS.resolveModelAttribute(context, operation).asBoolean(true);
         final boolean useCurrentHostConfig = USE_CURRENT_HOST_CONFIG.resolveModelAttribute(context, operation).asBoolean(true);
@@ -124,7 +148,7 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
             throw HostControllerLogger.ROOT_LOGGER.domainConfigForReloadNotFound(hostConfig);
         }
 
-        return new ReloadContext<HostRunningModeControl>() {
+        return new ReloadContext<>() {
 
             @Override
             public void reloadInitiated(HostRunningModeControl runningModeControl) {
@@ -140,24 +164,42 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
                 runningModeControl.setNewDomainBootFileName(domainConfig);
                 runningModeControl.setNewBootFileName(hostConfig);
                 runningModeControl.setReloadHostName(hostName);
+                if (stability != null) {
+                    updateHostEnvironmentStability(stability);
+                }
             }
         };
     }
 
     /**
-     * The host controller info does not know if it is master or not until later in the bootup process
+     * The host controller info does not know if it is master or not until later in the booting process
      */
     private static class DeferredParametersOperationDefinitionBuilder extends SimpleOperationDefinitionBuilder {
         private final LocalHostControllerInfo hostControllerInfo;
+        private final AttributeDefinition[] primaryHcAttr;
+        private final AttributeDefinition[] secondaryHcAttr;
+        private final Stability stability;
 
         public DeferredParametersOperationDefinitionBuilder(LocalHostControllerInfo hostControllerInfo, String name, ResourceDescriptionResolver resolver) {
             super(name, resolver);
             this.hostControllerInfo = hostControllerInfo;
+            this.primaryHcAttr = PRIMARY_HC_ATTRIBUTES;
+            this.secondaryHcAttr = SECONDARY_HC_ATTRIBUTES;
+            this.stability = Stability.DEFAULT;
+        }
+
+        public DeferredParametersOperationDefinitionBuilder(LocalHostControllerInfo hostControllerInfo, String name, ResourceDescriptionResolver resolver, AttributeDefinition[] primaryHcAttr, AttributeDefinition[] secondaryHcAttr, Stability stability) {
+            super(name, resolver);
+            this.hostControllerInfo = hostControllerInfo;
+            this.primaryHcAttr = primaryHcAttr;
+            this.secondaryHcAttr = secondaryHcAttr;
+            this.stability = stability;
         }
 
         @Override
         public SimpleOperationDefinition internalBuild(final ResourceDescriptionResolver resolver, final ResourceDescriptionResolver attributeResolver) {
             return new SimpleOperationDefinition(new SimpleOperationDefinitionBuilder(name, resolver)
+                    .setStability(stability)
                     .setAttributeResolver(attributeResolver)
                     .setParameters(parameters)
                     .withFlags(flags)) {
@@ -166,8 +208,8 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
                     return new DescriptionProvider() {
                         @Override
                         public ModelNode getModelDescription(Locale locale) {
-                            AttributeDefinition[] params = hostControllerInfo.isMasterDomainController() ? MASTER_ATTRIBUTES : SLAVE_ATTRIBUTES;
-                            return new DefaultOperationDescriptionProvider(getName(), resolver, attributeResolver, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, params, accessConstraints).getModelDescription(locale);
+                            AttributeDefinition[] params = hostControllerInfo.isMasterDomainController() ? primaryHcAttr : secondaryHcAttr;
+                            return new DefaultOperationDescriptionProvider(getName(), resolver, attributeResolver, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, params, accessConstraints, stability).getModelDescription(locale);
                         }
                     };
                 }

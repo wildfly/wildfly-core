@@ -111,6 +111,19 @@ public class DefaultOperationDescriptionProvider implements DescriptionProvider 
     }
 
     public DefaultOperationDescriptionProvider(final String operationName,
+                                               final ResourceDescriptionResolver descriptionResolver,
+                                               final ResourceDescriptionResolver attributeDescriptionResolver,
+                                               final ModelType replyType,
+                                               final ModelType replyValueType,
+                                               final boolean replyAllowNull,
+                                               final DeprecationData deprecationData,
+                                               final AttributeDefinition[] replyParameters,
+                                               final AttributeDefinition[] parameters,
+                                               final List<AccessConstraintDefinition> accessConstraints) {
+        this(operationName, descriptionResolver, attributeDescriptionResolver, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, accessConstraints, Stability.DEFAULT);
+    }
+
+    public DefaultOperationDescriptionProvider(final String operationName,
             final ResourceDescriptionResolver descriptionResolver,
             final ResourceDescriptionResolver attributeDescriptionResolver,
             final ModelType replyType,
@@ -119,7 +132,8 @@ public class DefaultOperationDescriptionProvider implements DescriptionProvider 
             final DeprecationData deprecationData,
             final AttributeDefinition[] replyParameters,
             final AttributeDefinition[] parameters,
-            final List<AccessConstraintDefinition> accessConstraints) {
+            final List<AccessConstraintDefinition> accessConstraints,
+            final Stability stability) {
         this.operationName = operationName;
         this.descriptionResolver = descriptionResolver;
         this.attributeDescriptionResolver = attributeDescriptionResolver;
@@ -130,7 +144,7 @@ public class DefaultOperationDescriptionProvider implements DescriptionProvider 
         this.deprecationData = deprecationData;
         this.replyParameters = replyParameters;
         this.accessConstraints = accessConstraints != null ? accessConstraints : Collections.<AccessConstraintDefinition>emptyList();
-        this.stability = Stability.DEFAULT;
+        this.stability = stability;
     }
 
     public DefaultOperationDescriptionProvider(OperationDefinition definition, ResourceDescriptionResolver resolver, ResourceDescriptionResolver attributeResolver) {

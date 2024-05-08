@@ -164,7 +164,6 @@ import org.jboss.as.server.RuntimeExpressionResolver;
 import org.jboss.as.server.controller.resources.VersionModelInitializer;
 import org.jboss.as.server.deployment.ContentCleanerService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
-import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
@@ -262,10 +261,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final ManagementSecurityIdentitySupplier securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
         final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = new DomainHostControllerInfoAccessor(hostControllerInfo);
         final ProcessType processType = environment.getProcessType();
-        final Stability stability = environment.getStability();
         final ExtensionRegistry hostExtensionRegistry = ExtensionRegistry.builder(processType)
                 .withRunningModeControl(runningModeControl)
-                .withStability(stability)
+                .withStabilitySupplier(environment::getStability)
                 .withAuditLogger(auditLogger)
                 .withAuthorizer(authorizer)
                 .withSecurityIdentitySupplier(securityIdentitySupplier)
@@ -273,7 +271,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 .build();
         final ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(processType)
                 .withRunningModeControl(runningModeControl)
-                .withStability(stability)
+                .withStabilitySupplier(environment::getStability)
                 .withAuditLogger(auditLogger)
                 .withAuthorizer(authorizer)
                 .withSecurityIdentitySupplier(securityIdentitySupplier)

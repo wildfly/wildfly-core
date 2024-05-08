@@ -14,6 +14,7 @@ import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -26,13 +27,13 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationFile;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.jvm.JvmType;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.version.Stability;
 import org.jboss.as.version.ProductConfig;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.Assert;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -234,7 +235,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     private final boolean useCachedDc;
 
     private final RunningMode initialRunningMode;
-    private final Stability stability;
+    private volatile Stability stability;
     private final Set<Stability> stabilities;
     private final ProductConfig productConfig;
     private final String qualifiedHostName;
@@ -265,7 +266,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
                                      ProductConfig productConfig, boolean securityManagerEnabled, long startTime, ProcessType processType,
                                      ConfigurationFile.InteractionPolicy hostConfigInteractionPolicy, ConfigurationFile.InteractionPolicy domainConfigInteractionPolicy) {
 
-        this.hostSystemProperties = Collections.unmodifiableMap(Assert.checkNotNullParam("hostSystemProperties", hostSystemProperties));
+        this.hostSystemProperties = new HashMap<>(Assert.checkNotNullParam("hostSystemProperties", hostSystemProperties));
         Assert.checkNotNullParam("modulePath", modulePath);
         Assert.checkNotNullParam("processControllerAddress", processControllerAddress);
         Assert.checkNotNullParam("processControllerPort", processControllerPort);
@@ -736,10 +737,10 @@ public class HostControllerEnvironment extends ProcessEnvironment {
 
     /**
      * Initial set of system properties provided to this Host Controller at boot via the command line.
-     * @return the properties
+     * @return An unmodifiable map with the system properties.
      */
     public Map<String, String> getHostSystemProperties() {
-        return hostSystemProperties;
+        return Collections.unmodifiableMap(hostSystemProperties);
     }
 
     /**
@@ -920,6 +921,22 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      */
     public OperationStepHandler getHostNameWriteHandler(LocalHostControllerInfoImpl hostControllerInfo) {
         return new HostNameWriteAttributeHandler(hostControllerInfo);
+    }
+
+    void setStability(Stability stability) {
+        WildFlySecurityManager.setPropertyPrivileged(ProcessEnvironment.STABILITY, stability.toString());
+        this.hostSystemProperties.put(ProcessEnvironment.STABILITY, stability.toString());
+        this.stability = stability;
+    }
+
+    public void checkStabilityIsValidForInstallation(Stability stability) {
+        checkStabilityIsValidForInstallation(productConfig, stability);
+    }
+
+    private void checkStabilityIsValidForInstallation(ProductConfig productConfig, Stability stability) {
+        if (!productConfig.getStabilitySet().contains(stability)) {
+            throw HostControllerLogger.ROOT_LOGGER.unsupportedStability(this.stability, productConfig.getProductName());
+        }
     }
 
     protected class HostNameWriteAttributeHandler extends ProcessNameWriteAttributeHandler {

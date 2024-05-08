@@ -72,10 +72,6 @@ public class ServerProcessReloadHandler extends ServerEnvironmentAwareProcessRel
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Parameters only allowed in the 'enhanced' operation
 
-    private static final String ENHANCED_OPERATION_NAME = ModelDescriptionConstants.RELOAD_ENHANCED;
-
-    protected static final AttributeDefinition STABILITY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.STABILITY, ModelType.STRING, true)
-            .setValidator(EnumValidator.create(Stability.class)).build();
     private static final AttributeDefinition[] ENHANCED_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, USE_CURRENT_SERVER_CONFIG, SERVER_CONFIG, START_MODE, STABILITY};
     private static final OperationDefinition ENHANCED_DEFINITION = new SimpleOperationDefinitionBuilder(ENHANCED_OPERATION_NAME, ServerDescriptions.getResourceDescriptionResolver("server"))
                                                                 .setStability(Stability.COMMUNITY)
@@ -85,7 +81,7 @@ public class ServerProcessReloadHandler extends ServerEnvironmentAwareProcessRel
                                                                 .build();
 
     private final Set<String> additionalAttributes;
-    private ExtensibleConfigurationPersister extensibleConfigurationPersister;
+    private final ExtensibleConfigurationPersister extensibleConfigurationPersister;
 
     public ServerProcessReloadHandler(ServiceName rootService, RunningModeControl runningModeControl,
             ControlledProcessState processState, ServerEnvironment environment, Set<String> additionalAttributes, ExtensibleConfigurationPersister extensibleConfigurationPersister) {

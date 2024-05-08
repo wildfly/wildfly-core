@@ -14,7 +14,9 @@ import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.UninterruptibleCountDownLatch;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.remote.EarlyResponseSendListener;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.LifecycleEvent;
@@ -35,9 +37,15 @@ public abstract class ProcessReloadHandler<T extends RunningModeControl> impleme
      * The operation name.
      */
     protected static final String OPERATION_NAME = ModelDescriptionConstants.RELOAD;
+    protected static final String ENHANCED_OPERATION_NAME = ModelDescriptionConstants.RELOAD_ENHANCED;
 
     protected static final AttributeDefinition ADMIN_ONLY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ADMIN_ONLY, ModelType.BOOLEAN, true)
-                                                                    .setDefaultValue(ModelNode.FALSE).build();
+            .setDefaultValue(ModelNode.FALSE).build();
+
+    protected static final AttributeDefinition STABILITY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.STABILITY, ModelType.STRING, true)
+            .setStability(Stability.COMMUNITY)
+            .setValidator(EnumValidator.create(Stability.class))
+            .build();
 
     private final T runningModeControl;
     private final ControlledProcessState processState;
