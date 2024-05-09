@@ -58,7 +58,6 @@ import org.junit.runners.Suite;
         ValidateOperationOperationTestCase.class,
         WildcardOperationsTestCase.class,
         ServerAuthenticationTestCase.class,
-        DomainStabilityTestCase.class
 })
 public class DomainTestSuite {
 

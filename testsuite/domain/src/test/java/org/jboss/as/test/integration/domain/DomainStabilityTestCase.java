@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.jboss.as.test.integration.domain.suites;
+package org.jboss.as.test.integration.domain;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
@@ -61,7 +61,7 @@ public class DomainStabilityTestCase {
 
     @BeforeClass
     public static void setupDomain() throws Exception {
-        testSupport = DomainTestSuite.createSupport(DomainStabilityTestCase.class.getSimpleName());
+        testSupport = DomainTestSupport.createAndStartDefaultSupport(DomainStabilityTestCase.class.getSimpleName());
     }
 
     @Before
@@ -77,8 +77,10 @@ public class DomainStabilityTestCase {
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        testSupport = null;
-        DomainTestSuite.stopSupport();
+        if (testSupport != null) {
+            testSupport.close();
+            testSupport = null;
+        }
     }
 
     @Test
