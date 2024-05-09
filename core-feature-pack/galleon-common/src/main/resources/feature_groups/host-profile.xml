@@ -7,6 +7,7 @@
 <feature-group-spec name="host-profile" xmlns="urn:jboss:galleon:feature-group:1.0">
     <feature spec="subsystem.core-management"/>
     <feature spec="subsystem.elytron">
+        <param name="register-jaspi-factory" value="false"/>
         <param name="final-providers" value="combined-providers"/>
         <param name="disallowed-providers" value="[OracleUcrypto]"/>
         <feature-group name="elytron-common">
