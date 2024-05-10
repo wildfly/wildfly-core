@@ -232,6 +232,12 @@ class SSLDefinitions {
             //.setDefaultValue(new ModelNode(CipherSuiteSelector.OPENSSL_DEFAULT_CIPHER_SUITE_NAMES))
             .build();
 
+    static final SimpleAttributeDefinition ACCEPT_OCSP_STAPLING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ACCEPT_OCSP_STAPLING, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setDefaultValue(ModelNode.FALSE)
+            .build();
+
     private static final String[] ALLOWED_PROTOCOLS = { "SSLv2", "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
 
     static final StringListAttributeDefinition PROTOCOLS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.PROTOCOLS)
@@ -396,6 +402,55 @@ class SSLDefinitions {
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition RESPONSE_TIMEOUT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RESPONSE_TIMEOUT, ModelType.INT, true)
+            .setValidator(new IntRangeValidator(1))
+            .setDefaultValue(new ModelNode(5000))
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final SimpleAttributeDefinition CACHE_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CACHE_SIZE, ModelType.INT, true)
+            .setDefaultValue(new ModelNode(256))
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final SimpleAttributeDefinition CACHE_LIFETIME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CACHE_LIFETIME, ModelType.INT, true)
+            .setDefaultValue(new ModelNode(3600))
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final SimpleAttributeDefinition RESPONDER_URI = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RESPONDER_URI, ModelType.STRING, true)
+            .setRequires(ElytronDescriptionConstants.RESPONDER_OVERRIDE)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final SimpleAttributeDefinition RESPONDER_OVERRIDE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RESPONDER_OVERRIDE, ModelType.BOOLEAN, true)
+            .setDefaultValue(ModelNode.FALSE)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final SimpleAttributeDefinition IGNORE_EXTENSIONS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.IGNORE_EXTENSIONS, ModelType.BOOLEAN, true)
+            .setDefaultValue(ModelNode.FALSE)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final ObjectTypeAttributeDefinition OCSP_STAPLING = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.OCSP_STAPLING, RESPONSE_TIMEOUT, CACHE_SIZE, CACHE_LIFETIME, RESPONDER_URI, RESPONDER_OVERRIDE, IGNORE_EXTENSIONS)
+            .setRequired(false)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
             .build();
 
     /*
@@ -1288,7 +1343,7 @@ class SSLDefinitions {
                 SECURITY_DOMAIN, WANT_CLIENT_AUTH, NEED_CLIENT_AUTH, AUTHENTICATION_OPTIONAL,
                 USE_CIPHER_SUITES_ORDER, MAXIMUM_SESSION_CACHE_SIZE, SESSION_TIMEOUT, WRAP, keyManagerDefinition, TRUST_MANAGER,
                 PRE_REALM_PRINCIPAL_TRANSFORMER, POST_REALM_PRINCIPAL_TRANSFORMER, FINAL_PRINCIPAL_TRANSFORMER, REALM_MAPPER,
-                providersDefinition, PROVIDER_NAME};
+                providersDefinition, PROVIDER_NAME, OCSP_STAPLING};
 
         AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.PASSIVE, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
 
@@ -1316,6 +1371,12 @@ class SSLDefinitions {
                 final int maximumSessionCacheSize = MAXIMUM_SESSION_CACHE_SIZE.resolveModelAttribute(context, model).asInt();
                 final int sessionTimeout = SESSION_TIMEOUT.resolveModelAttribute(context, model).asInt();
                 final boolean wrap = WRAP.resolveModelAttribute(context, model).asBoolean();
+                final int responseTimeout = RESPONSE_TIMEOUT.resolveModelAttribute(context, model).asInt();
+                final int cacheSize = CACHE_SIZE.resolveModelAttribute(context, model).asInt();
+                final int cacheLifetime = CACHE_LIFETIME.resolveModelAttribute(context, model).asInt();
+                final String responderURI = RESPONDER_URI.resolveModelAttribute(context, model).asString();
+                final Boolean responderOverride = RESPONDER_OVERRIDE.resolveModelAttribute(context, model).asBoolean();
+                final Boolean ignoreExtensions = IGNORE_EXTENSIONS.resolveModelAttribute(context, model).asBoolean();
 
                 return () -> {
                     SecurityDomain securityDomain = securityDomainInjector.getOptionalValue();
@@ -1364,7 +1425,13 @@ class SSLDefinitions {
                             .setUseCipherSuitesOrder(useCipherSuitesOrder)
                             .setSessionCacheSize(maximumSessionCacheSize)
                             .setSessionTimeout(sessionTimeout)
-                            .setWrap(wrap);
+                            .setWrap(wrap)
+                            .setResponseTimeout(responseTimeout)
+                            .setCacheSize(cacheSize)
+                            .setCacheLifetime(cacheLifetime)
+                            .setResponderURI(responderURI)
+                            .setResponderOverride(responderOverride)
+                            .setIgnoreExtensions(ignoreExtensions);
 
                     if (ROOT_LOGGER.isTraceEnabled()) {
                         ROOT_LOGGER.tracef(
@@ -1461,7 +1528,7 @@ class SSLDefinitions {
                 .build();
 
         AttributeDefinition[] attributes = new AttributeDefinition[]{CIPHER_SUITE_FILTER, CIPHER_SUITE_NAMES, PROTOCOLS,
-                KEY_MANAGER, TRUST_MANAGER, providersDefinition, PROVIDER_NAME};
+                KEY_MANAGER, TRUST_MANAGER, providersDefinition, PROVIDER_NAME, ACCEPT_OCSP_STAPLING};
 
         AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
             @Override
@@ -1475,6 +1542,7 @@ class SSLDefinitions {
                 final List<String> protocols = PROTOCOLS.unwrap(context, model);
                 final String cipherSuiteFilter = CIPHER_SUITE_FILTER.resolveModelAttribute(context, model).asString(); // has default value, can't be null
                 final String cipherSuiteNames = CIPHER_SUITE_NAMES.resolveModelAttribute(context, model).asStringOrNull(); // doesn't have a default value yet since we are disabling TLS 1.3 by default
+                final boolean acceptOCSPStapling = ACCEPT_OCSP_STAPLING.resolveModelAttribute(context, model).asBoolean();
                 return () -> {
                     X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagerInjector.getOptionalValue());
                     X509ExtendedTrustManager trustManager = getX509TrustManager(trustManagerInjector.getOptionalValue());
@@ -1496,7 +1564,8 @@ class SSLDefinitions {
                         ));
                     }
                     builder.setClientMode(true)
-                            .setWrap(false);
+                            .setWrap(false)
+                            .setAcceptOCSPStapling(acceptOCSPStapling);
 
                     if (ROOT_LOGGER.isTraceEnabled()) {
                         ROOT_LOGGER.tracef(
