@@ -153,7 +153,10 @@ public final class ServiceNameFactory {
     }
 
     private static ServiceName parseServiceName(Map.Entry<String, String[]> resolved) {
-        return parseServiceName(resolved.getKey()).append(resolved.getValue());
+        ServiceName result = parseServiceName(resolved.getKey());
+        String[] values = resolved.getValue();
+        // ServiceName.append(...) throws an ISE if called with empty array
+        return (values.length > 0) ? result.append(values) : result;
     }
 
     static void clearCache() {
