@@ -26,6 +26,7 @@ import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfig
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
+import org.junit.Assert;
 
 public class DomainSnapshot {
     /**
@@ -69,6 +70,9 @@ public class DomainSnapshot {
                 public void close() throws Exception {
                     for (Snapshot snapshot : snapShots) {
                         snapshot.lifecycleUtil.reload(snapshot.hostName, snapshot.stability, snapshot.hostConfig, snapshot.domainConfig);
+                        PathAddress hostAddress = PathAddress.pathAddress(HOST, snapshot.hostName);
+                        Stability reloadedStability = getStability(hostAddress, snapshot.lifecycleUtil.getDomainClient());
+                        Assert.assertSame(reloadedStability, snapshot.stability);
                     }
                 }
             };
@@ -84,11 +88,16 @@ public class DomainSnapshot {
         String hostConfig = result.asString();
         Path relHostConfigPath = findSnapShotRelativePath(hostConfig, configuration);
 
-        ModelNode op = Util.getReadAttributeOperation(hostAddress.append(PathAddress.pathAddress(CORE_SERVICE, HOST_ENVIRONMENT)), STABILITY);
-        result = DomainTestUtils.executeForResult(op, client);
-        Stability stability = Stability.fromString(result.asString());
+        Stability stability = getStability(hostAddress, client);
 
         return new Snapshot(relDomainConfigPath, relHostConfigPath.toString(), stability, lifecycleUtil);
+    }
+
+    private static Stability getStability(PathAddress hostAddress, DomainClient client) throws IOException, MgmtOperationException {
+        ModelNode result;
+        ModelNode op = Util.getReadAttributeOperation(hostAddress.append(PathAddress.pathAddress(CORE_SERVICE, HOST_ENVIRONMENT)), STABILITY);
+        result = DomainTestUtils.executeForResult(op, client);
+        return  Stability.fromString(result.asString());
     }
 
     private static Path findSnapShotRelativePath(String absPath, WildFlyManagedConfiguration configuration) {
