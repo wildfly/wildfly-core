@@ -202,7 +202,7 @@ class TlsParser {
             .addAttribute(SSLDefinitions.POST_REALM_PRINCIPAL_TRANSFORMER)
             .addAttribute(SSLDefinitions.FINAL_PRINCIPAL_TRANSFORMER)
             .addAttribute(SSLDefinitions.REALM_MAPPER)
-            .addAttribute(SSLDefinitions.OCSP_STAPLING);    // new
+            .addAttribute(SSLDefinitions.OCSP_STAPLING);    // new OCSP_STAPLING element
 
     private PersistentResourceXMLBuilder clientSslContextParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(CLIENT_SSL_CONTEXT))
             .setXmlWrapperElement(CLIENT_SSL_CONTEXTS)
@@ -248,7 +248,7 @@ class TlsParser {
             .addAttribute(SSLDefinitions.PROVIDERS)
             .addAttribute(SSLDefinitions.PROVIDER_NAME);
 
-    private PersistentResourceXMLBuilder clientSslContextParserCommunity_18_0 = PersistentResourceXMLDescription.builder(PathElement.pathElement(CLIENT_SSL_CONTEXT))
+    private PersistentResourceXMLBuilder clientSslContextParserPreview_18_0 = PersistentResourceXMLDescription.builder(PathElement.pathElement(CLIENT_SSL_CONTEXT))
             .setXmlWrapperElement(CLIENT_SSL_CONTEXTS)
             .addAttribute(SSLDefinitions.SECURITY_DOMAIN)
             .addAttribute(SSLDefinitions.CIPHER_SUITE_FILTER)
@@ -265,7 +265,8 @@ class TlsParser {
             .addAttribute(SSLDefinitions.TRUST_MANAGER)
             .addAttribute(SSLDefinitions.PROVIDERS)
             .addAttribute(SSLDefinitions.PROVIDER_NAME)
-            .addAttribute(SSLDefinitions.ACCEPT_OCSP_STAPLING); //new
+            .addAttribute(SSLDefinitions.ACCEPT_OCSP_STAPLING)      //new
+            .addAttribute(SSLDefinitions.OCSP_STAPLING_SOFT_FAIL); //new
 
     private PersistentResourceXMLBuilder certificateAuthorityAccountParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(CERTIFICATE_AUTHORITY_ACCOUNT))
             .setXmlWrapperElement(CERTIFICATE_AUTHORITY_ACCOUNTS)
@@ -423,8 +424,8 @@ class TlsParser {
             )
             .addChild(keyManagerParser_12_0)
             .addChild(trustManagerParser_14_0)
-            .addChild(serverSslContextPreviewParser_18_0)   // new
-            .addChild(clientSslContextParserCommunity_18_0) // new
+            .addChild(serverSslContextPreviewParser_18_0)   // new parser with ocsp_stapling
+            .addChild(clientSslContextParserPreview_18_0) // new parser with ocsp_stapling
             .addChild(certificateAuthorityParser)
             .addChild(certificateAuthorityAccountParser)
             .addChild(serverSslSniContextParser)

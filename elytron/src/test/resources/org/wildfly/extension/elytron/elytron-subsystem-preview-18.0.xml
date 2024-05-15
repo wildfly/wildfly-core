@@ -4,7 +4,7 @@
   -->
 
 <!-- for needs of DomainTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:community:18.0" register-jaspi-factory="false" default-ssl-context="client">
+<subsystem xmlns="urn:wildfly:elytron:preview:18.0" register-jaspi-factory="false" default-ssl-context="client">
     <authentication-client>
         <authentication-context name="myAC" />
     </authentication-client>
@@ -330,6 +330,8 @@
         <client-ssl-contexts>
             <client-ssl-context name="client" protocols="TLSv1.3 TLSv1.2" key-manager="clientKey" trust-manager="serverTrust" providers="custom-loader"
                                 provider-name="first"/>
+            <client-ssl-context name="client-with-ocsp-stapling" protocols="TLSv1.3 TLSv1.2" key-manager="clientKey" trust-manager="serverTrust" providers="custom-loader"
+                                provider-name="first" accept-ocsp-stapling="true" ocsp-stapling-soft-fail="true"/>
         </client-ssl-contexts>
         <certificate-authorities>
             <certificate-authority name="testCA" url="https://www.test.com"/>

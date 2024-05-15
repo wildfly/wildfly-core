@@ -371,6 +371,7 @@ interface ElytronDescriptionConstants {
     String OBTAIN_KERBEROS_TICKET = "obtain-kerberos-ticket";
     String OCSP = "ocsp";
     String OCSP_STAPLING = "ocsp-stapling";
+    String OCSP_STAPLING_SOFT_FAIL = "ocsp-stapling-soft-fail";
     String OID = "oid";
     String ONLY_LEAF_CERT = "only-leaf-cert";
     String OPERATIONS = "operations";

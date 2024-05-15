@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+//import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
@@ -236,6 +237,12 @@ class SSLDefinitions {
             .setAllowExpression(true)
             .setRestartAllServices()
             .setDefaultValue(ModelNode.FALSE)
+            .build();
+
+    static final SimpleAttributeDefinition OCSP_STAPLING_SOFT_FAIL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.OCSP_STAPLING_SOFT_FAIL, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setDefaultValue(ModelNode.TRUE)
             .build();
 
     private static final String[] ALLOWED_PROTOCOLS = { "SSLv2", "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
@@ -996,31 +1003,6 @@ class SSLDefinitions {
                 }
                 return resolvedPath;
             }
-
-            private TrustManagerFactory createTrustManagerFactory(Provider[] providers, String providerName, String algorithm) throws StartException {
-                TrustManagerFactory trustManagerFactory = null;
-
-                if (providers != null) {
-                    for (Provider current : providers) {
-                        if (providerName == null || providerName.equals(current.getName())) {
-                            try {
-                                // TODO - We could check the Services within each Provider to check there is one of the required type/algorithm
-                                // However the same loop would need to remain as it is still possible a specific provider can't create it.
-                                return TrustManagerFactory.getInstance(algorithm, current);
-                            } catch (NoSuchAlgorithmException ignored) {
-                            }
-                        }
-                    }
-                    if (trustManagerFactory == null)
-                        throw ROOT_LOGGER.unableToCreateManagerFactory(TrustManagerFactory.class.getSimpleName(), algorithm);
-                }
-
-                try {
-                    return TrustManagerFactory.getInstance(algorithm);
-                } catch (NoSuchAlgorithmException e) {
-                    throw new StartException(e);
-                }
-            }
         };
 
         ResourceDescriptionResolver resolver = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.TRUST_MANAGER);
@@ -1528,7 +1510,7 @@ class SSLDefinitions {
                 .build();
 
         AttributeDefinition[] attributes = new AttributeDefinition[]{CIPHER_SUITE_FILTER, CIPHER_SUITE_NAMES, PROTOCOLS,
-                KEY_MANAGER, TRUST_MANAGER, providersDefinition, PROVIDER_NAME, ACCEPT_OCSP_STAPLING};
+                KEY_MANAGER, TRUST_MANAGER, providersDefinition, PROVIDER_NAME, ACCEPT_OCSP_STAPLING, OCSP_STAPLING_SOFT_FAIL};
 
         AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
             @Override
@@ -1543,6 +1525,7 @@ class SSLDefinitions {
                 final String cipherSuiteFilter = CIPHER_SUITE_FILTER.resolveModelAttribute(context, model).asString(); // has default value, can't be null
                 final String cipherSuiteNames = CIPHER_SUITE_NAMES.resolveModelAttribute(context, model).asStringOrNull(); // doesn't have a default value yet since we are disabling TLS 1.3 by default
                 final boolean acceptOCSPStapling = ACCEPT_OCSP_STAPLING.resolveModelAttribute(context, model).asBoolean();
+                final boolean softFail = OCSP_STAPLING_SOFT_FAIL.resolveModelAttribute(context, model).asBoolean();
                 return () -> {
                     X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagerInjector.getOptionalValue());
                     X509ExtendedTrustManager trustManager = getX509TrustManager(trustManagerInjector.getOptionalValue());
@@ -1550,8 +1533,21 @@ class SSLDefinitions {
 
                     SSLContextBuilder builder = new SSLContextBuilder();
                     if (keyManager != null) builder.setKeyManager(keyManager);
+                    if (acceptOCSPStapling) {
+                        TrustManagerFactory trustManagerFactory = createTrustManagerFactory(providersInjector.getOptionalValue(), providerName, TrustManagerFactory.getDefaultAlgorithm());
+                        X509RevocationTrustManager.Builder revocationBuilder = X509RevocationTrustManager.builder();
+                        // TODO: determine if the following approach is valid
+                        revocationBuilder.setTrustManagerFactory(trustManagerFactory);
+                        revocationBuilder.setTrustStore(getKeyStoreFromTrustManager(trustManager));
+
+                        revocationBuilder.setCheckRevocation(true);
+                        revocationBuilder.setSoftFail(softFail);
+                        trustManager = revocationBuilder.build();
+                    }
+
                     if (trustManager != null) builder.setTrustManager(trustManager);
                     if (providers != null) builder.setProviderSupplier(() -> providers);
+
                     builder.setCipherSuiteSelector(CipherSuiteSelector.aggregate(cipherSuiteNames != null ? CipherSuiteSelector.fromNamesString(cipherSuiteNames) : null, CipherSuiteSelector.fromString(cipherSuiteFilter)));
                     if (!protocols.isEmpty()) {
                         List<Protocol> list = new ArrayList<>();
@@ -1756,6 +1752,42 @@ class SSLDefinitions {
         public InjectedValue<PathManager> getPathManagerInjector() {
             return pathManagerInjector;
         }
+    }
+
+    private static TrustManagerFactory createTrustManagerFactory(Provider[] providers, String providerName, String algorithm) throws StartException {
+        TrustManagerFactory trustManagerFactory = null;
+
+        if (providers != null) {
+            for (Provider current : providers) {
+                if (providerName == null || providerName.equals(current.getName())) {
+                    try {
+                        // TODO - We could check the Services within each Provider to check there is one of the required type/algorithm
+                        // However the same loop would need to remain as it is still possible a specific provider can't create it.
+                        return TrustManagerFactory.getInstance(algorithm, current);
+                    } catch (NoSuchAlgorithmException ignored) {
+                    }
+                }
+            }
+            if (trustManagerFactory == null)
+                throw ROOT_LOGGER.unableToCreateManagerFactory(TrustManagerFactory.class.getSimpleName(), algorithm);
+        }
+
+        try {
+            return TrustManagerFactory.getInstance(algorithm);
+        } catch (NoSuchAlgorithmException e) {
+            throw new StartException(e);
+        }
+    }
+
+    public static KeyStore getKeyStoreFromTrustManager(X509ExtendedTrustManager trustManager) throws Exception {
+        // TODO: proporly extract the keystore from the trustmanager
+        KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        trustStore.load(null, null);
+        X509Certificate[] trustedCerts = trustManager.getAcceptedIssuers();
+        for (X509Certificate certificate : trustedCerts) {
+            trustStore.setCertificateEntry(certificate.getSerialNumber().toString(), certificate);
+        }
+        return trustStore;
     }
 
 }
