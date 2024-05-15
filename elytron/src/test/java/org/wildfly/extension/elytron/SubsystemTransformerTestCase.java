@@ -101,7 +101,7 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
     }
 
     /**
-     * Test case testing resources and attributes are appropriately transformed when transforming to EAP 7.4.
+     * Test case testing resources and attributes are appropriately transformed when transforming to EAP 8.0.0.
      */
     @Test
     public void testTransformerEAP800() throws Exception {
