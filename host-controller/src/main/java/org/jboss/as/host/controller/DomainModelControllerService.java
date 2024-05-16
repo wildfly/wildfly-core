@@ -896,25 +896,31 @@ public class DomainModelControllerService extends AbstractControllerService impl
                             PathElement.pathElement(SERVICE, MANAGEMENT_OPERATIONS)), ControllerLogger.MGMT_OP_LOGGER.bootComplete());
                     getNotificationSupport().emit(notification);
 
-                    String message;
+                    List<String> messages = new ArrayList<>();
                     String hostConfig = environment.getHostConfigurationFile().getMainFile().getName();
                     if (environment.getDomainConfigurationFile() != null) { //for slave HC is null
                         String domainConfig = environment.getDomainConfigurationFile().getMainFile().getName();
-                        message = ROOT_LOGGER.configFilesInUse(domainConfig, hostConfig);
+                        messages.add(ROOT_LOGGER.configFilesInUse(domainConfig, hostConfig));
                     } else {
-                        message = ROOT_LOGGER.configFileInUse(hostConfig);
+                        messages.add(ROOT_LOGGER.configFileInUse(hostConfig));
                     }
-                    bootstrapListener.generateBootStatistics(message);
+                    if (stability != Stability.DEFAULT) {
+                        messages.add(ROOT_LOGGER.stabilityInUse(stability));
+                    }
+                    bootstrapListener.generateBootStatistics(messages.toArray(new String[0]));
                 }
             } else {
                 // Die!
-                String message;
+                List<String> messages = new ArrayList<>();
                 if (environment.getDomainConfigurationFile() != null) {
-                    message = ROOT_LOGGER.configFilesInUse(environment.getDomainConfigurationFile().getMainFile().getName(), environment.getHostConfigurationFile().getMainFile().getName());
+                    messages.add(ROOT_LOGGER.configFilesInUse(environment.getDomainConfigurationFile().getMainFile().getName(), environment.getHostConfigurationFile().getMainFile().getName()));
                 } else {
-                    message = ROOT_LOGGER.configFileInUse(environment.getHostConfigurationFile().getMainFile().getName());
+                    messages.add(ROOT_LOGGER.configFileInUse(environment.getHostConfigurationFile().getMainFile().getName()));
                 }
-                String failed = ROOT_LOGGER.unsuccessfulBoot(message);
+                if (stability != Stability.DEFAULT) {
+                    messages.add(ROOT_LOGGER.stabilityInUse(stability));
+                }
+                String failed = ROOT_LOGGER.unsuccessfulBoot(String.join(" ", messages));
                 ROOT_LOGGER.fatal(failed);
                 bootstrapListener.bootFailure(new Exception(failed, cause));
 

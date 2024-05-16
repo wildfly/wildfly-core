@@ -53,17 +53,21 @@ public final class BootstrapListener {
         return monitor;
     }
 
-    public void generateBootStatistics(String message) {
+    /**
+     * Generate the boot statistics messages.
+     *
+     * @param messages additional messages to be appended in the boot statistics messages.
+     */
+    public void generateBootStatistics(String... messages) {
         final StabilityStatistics statistics = new StabilityStatistics();
         try {
             monitor.awaitStability(statistics);
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
-            return;
         } finally {
             serviceTarget.removeMonitor(monitor);
             final long bootstrapTime = System.currentTimeMillis() - startTime;
-            done(bootstrapTime, statistics, message);
+            done(bootstrapTime, statistics, messages);
             monitor.clear();
         }
     }
@@ -82,7 +86,7 @@ public final class BootstrapListener {
         futureContainer.failed(throwable);
     }
 
-    private void done(final long bootstrapTime, final StabilityStatistics statistics, String message) {
+    private void done(final long bootstrapTime, final StabilityStatistics statistics, String... messages) {
         futureContainer.done(serviceContainer);
         if (serviceContainer.isShutdown()) {
             // Do not print boot statistics because server
@@ -98,11 +102,15 @@ public final class BootstrapListener {
         final int passive = statistics.getPassiveCount();
         final int problem = statistics.getProblemsCount();
         final int started = statistics.getStartedCount();
+        String appendMessage = "";
+        if (messages != null) {
+            appendMessage = String.join(" ", messages);
+        }
         if (failed == 0 && problem == 0) {
-            startedCleanMessage = ServerLogger.AS_ROOT_LOGGER.startedCleanMessage(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, onDemand + passive + lazy, message);
+            startedCleanMessage = ServerLogger.AS_ROOT_LOGGER.startedCleanMessage(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, onDemand + passive + lazy, appendMessage);
             createStartupMarker("success", startTime);
         } else {
-            startedWitErrorsMessage = ServerLogger.AS_ROOT_LOGGER.startedWitErrorsMessage(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, failed + problem, onDemand + passive + lazy, message);
+            startedWitErrorsMessage = ServerLogger.AS_ROOT_LOGGER.startedWitErrorsMessage(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, failed + problem, onDemand + passive + lazy, appendMessage);
             createStartupMarker("error", startTime);
         }
     }
@@ -113,7 +121,7 @@ public final class BootstrapListener {
             Files.deleteIfExists(file.toPath());
             if (file.createNewFile()) {
                 try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8, StandardOpenOption.WRITE)) {
-                    writer.append(result + ":" + String.valueOf(startTime));
+                    writer.append(result).append(":").append(String.valueOf(startTime));
                     writer.flush();
                 } catch (IOException e) {
                     // ignore

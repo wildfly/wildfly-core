@@ -411,19 +411,25 @@ public final class ServerService extends AbstractControllerService {
             Notification notification = new Notification(ModelDescriptionConstants.BOOT_COMPLETE_NOTIFICATION, PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, MANAGEMENT),
                     PathElement.pathElement(SERVICE, MANAGEMENT_OPERATIONS)), ServerLogger.AS_ROOT_LOGGER.bootComplete());
             getNotificationSupport().emit(notification);
-            String message = "";
+            List<String> messages = new ArrayList<>();
             if (configuration.getServerEnvironment().getServerConfigurationFile() != null) {
                 String serverConfig = configuration.getServerEnvironment().getServerConfigurationFile().getMainFile().getName();
-                message = ServerLogger.AS_ROOT_LOGGER.serverConfigFileInUse(serverConfig);
+                messages.add(ServerLogger.AS_ROOT_LOGGER.serverConfigFileInUse(serverConfig));
             }
-            bootstrapListener.generateBootStatistics(message);
+            if (stability != Stability.DEFAULT) {
+                messages.add(ServerLogger.AS_ROOT_LOGGER.serverStabilityInUse(stability));
+            }
+            bootstrapListener.generateBootStatistics(messages.toArray(new String[0]));
         } else {
             // Die!
-            String messageToAppend = "";
+            List<String> messages = new ArrayList<>();
             if (configuration.getServerEnvironment().getServerConfigurationFile() != null) {
-                messageToAppend = ServerLogger.ROOT_LOGGER.serverConfigFileInUse(configuration.getServerEnvironment().getServerConfigurationFile().getMainFile().getName());
+                messages.add(ServerLogger.ROOT_LOGGER.serverConfigFileInUse(configuration.getServerEnvironment().getServerConfigurationFile().getMainFile().getName()));
             }
-            String message = ServerLogger.ROOT_LOGGER.unsuccessfulBoot(messageToAppend);
+            if (stability != Stability.DEFAULT) {
+                messages.add(ServerLogger.AS_ROOT_LOGGER.serverStabilityInUse(stability));
+            }
+            String message = ServerLogger.ROOT_LOGGER.unsuccessfulBoot(String.join(" ", messages));
             bootstrapListener.bootFailure(new Exception(message, cause));
             SystemExiter.logAndExit(new SystemExiter.ExitLogger() {
                 @Override
