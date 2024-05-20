@@ -72,6 +72,12 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     public static final String JBOSS_REMOTING = "jboss-remoting";
     public static final String MANAGEMENT_ENDPOINT = "management-endpoint";
 
+    private static final String PROPERTY_BASE = "org.wildfly.management.";
+    private static final String BACKLOG_PROPERTY = PROPERTY_BASE + "backlog";
+    private static final String CONNECTION_HIGH_WATER_PROPERTY = PROPERTY_BASE + "connection-high-water";
+    private static final String CONNECTION_LOW_WATER_PROPERTY = PROPERTY_BASE + "connection-low-water";
+    private static final String NO_REQUEST_TIMEOUT_PROPERTY = PROPERTY_BASE + "no-request-timeout";
+
     private final Consumer<HttpManagement> httpManagementConsumer;
     private final Supplier<ListenerRegistry> listenerRegistrySupplier;
     private final Supplier<ModelController> modelControllerSupplier;
@@ -339,6 +345,11 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
             }
         }
 
+        final Integer backlog = Integer.getInteger(BACKLOG_PROPERTY, 50);
+        final Integer connectionHighWater = Integer.getInteger(CONNECTION_HIGH_WATER_PROPERTY, 100);
+        final Integer connectionLowWater = Integer.getInteger(CONNECTION_LOW_WATER_PROPERTY, 75);
+        final Integer noRequestTimeout = Integer.getInteger(NO_REQUEST_TIMEOUT_PROPERTY, 60000);
+
         try {
             ManagementHttpServer.Builder serverManagementBuilder = ManagementHttpServer.builder()
                     .setBindAddress(bindAddress)
@@ -353,7 +364,12 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     .setWorker(workerSupplier.get())
                     .setExecutor(executorSupplier.get())
                     .setConstantHeaders(constantHeaders)
-                    .setConsoleAvailability(consoleAvailability);
+                    .setConsoleAvailability(consoleAvailability)
+                    .setBacklog(backlog)
+                    .setConnectionHighWater(connectionHighWater)
+                    .setConnectionLowWater(connectionLowWater)
+                    .setNoRequestTimeout(noRequestTimeout)
+                    ;
 
             if (virtualSecurityDomainSupplier != null && virtualMechanismFactorySupplier != null) {
                 // use a virtual http authentication factory instead
