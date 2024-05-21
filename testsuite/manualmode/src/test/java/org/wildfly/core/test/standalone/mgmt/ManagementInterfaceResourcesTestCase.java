@@ -5,6 +5,7 @@
 
 package org.wildfly.core.test.standalone.mgmt;
 
+import static org.jboss.as.test.shared.TimeoutUtil.adjust;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.net.SocketAddress;
 
 import jakarta.inject.Inject;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.common.function.ExceptionRunnable;
@@ -99,7 +101,7 @@ public class ManagementInterfaceResourcesTestCase {
             }
             assertTrue("Opening of one socket was expected to fail.", oneFailed);
 
-            Thread.sleep(5000); // We also had 1000ms on the bad socket so we know we are past the timeout.
+            Thread.sleep(adjust(5000)); // We also had 1000ms on the bad socket so we know we are past the timeout.
 
             Socket goodSocket = new Socket();
             // This needs to be longer than 500ms to give the server time to respond to the closed connections.
@@ -119,7 +121,7 @@ public class ManagementInterfaceResourcesTestCase {
             cli.sendLine(String.format("/system-property=%s:add(value=%d)", BACKLOG_PROPERTY, 2));
             cli.sendLine(String.format("/system-property=%s:add(value=%d)", CONNECTION_HIGH_WATER_PROPERTY, 6));
             cli.sendLine(String.format("/system-property=%s:add(value=%d)", CONNECTION_LOW_WATER_PROPERTY, 3));
-            cli.sendLine(String.format("/system-property=%s:add(value=%d)", NO_REQUEST_TIMEOUT_PROPERTY, 5000));
+            cli.sendLine(String.format("/system-property=%s:add(value=%d)", NO_REQUEST_TIMEOUT_PROPERTY, noRequestTimeout));
         }
 
         try {
