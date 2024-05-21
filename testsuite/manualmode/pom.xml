@@ -22,6 +22,7 @@
 
     <properties>
         <wildfly.home>${project.basedir}/target/wildfly-core</wildfly.home>
+        <wildfly.core.dist.dir.prefix>wildfly-core-dist</wildfly.core.dist.dir.prefix>
 
         <!--
 			Byteman configuration properties to add to the jvm.args system property passed to surefire if byteman is needed.
@@ -155,6 +156,17 @@
     </dependencies>
 
     <profiles>
+        <profile>
+            <id>release</id>
+            <activation>
+                <property>
+                    <name>release</name>
+                </property>
+            </activation>
+            <properties>
+                <wildfly.core.dist.dir.prefix>${server.output.dir.prefix}</wildfly.core.dist.dir.prefix>
+            </properties>
+        </profile>
 
         <profile>
             <id>manualmode.integration.tests.profile</id>
@@ -295,6 +307,7 @@
                                 <javax.net.ssl.trustStorePassword>clientPassword</javax.net.ssl.trustStorePassword>
                                 <javax.net.ssl.keyStorePassword>clientPassword</javax.net.ssl.keyStorePassword>
                                 <standard.dist.version>${project.version}</standard.dist.version>
+                                <dist.dir.prefix>${wildfly.core.dist.dir.prefix}</dist.dir.prefix>
                             </systemPropertyVariables>
                             <environmentVariables>
                                 <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>

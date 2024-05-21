@@ -58,7 +58,7 @@ public class ProvisioningConsistencyTestCase {
     }
 
     private static String getDistDir() {
-        return "wildfly-core-dist-" + System.getProperty("standard.dist.version");
+        return System.getProperty("dist.dir.prefix")+ "-" + System.getProperty("standard.dist.version");
     }
 
     private static File getDistFile(Path channelPath, boolean exists, boolean directory, List<String> errors) {
