@@ -147,5 +147,25 @@ public class RemoteGitPersistenceResourceTestCase extends AbstractGitPersistence
         }
     }
 
+    @Test
+    public void testNonExistingRemoteRepository() throws Exception {
+        createFile(root, "standard.xml", "std");
+        checkFiles("standard", "std");
+        String[] rootFiles = root.toFile().list();
+        Assert.assertNotNull(rootFiles);
+        Assert.assertEquals(1, rootFiles.length);
+        try (GitRepository gitRepository = new GitRepository(GitRepositoryConfiguration.Builder.getInstance()
+                .setBasePath(root)
+                .setRepository("non_existing")
+                .build())) {
+            Assert.assertEquals(root.toFile(), gitRepository.getDirectory());
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("WFLYSRV0269: Failed to initialize the repository non_existing"));
+            rootFiles = root.toFile().list();
+            Assert.assertNotNull(rootFiles);
+            Assert.assertEquals(1, rootFiles.length);
+            checkFiles("standard", "std");
+        }
+    }
 
 }
