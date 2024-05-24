@@ -55,6 +55,7 @@ import org.xnio.conduits.StreamSinkConduit;
 import org.xnio.ssl.SslConnection;
 import org.xnio.ssl.XnioSsl;
 
+import io.undertow.UndertowOptions;
 import io.undertow.protocols.ssl.UndertowXnioSsl;
 import io.undertow.security.handlers.AuthenticationCallHandler;
 import io.undertow.security.handlers.AuthenticationConstraintHandler;
@@ -111,6 +112,9 @@ public class ManagementHttpServer {
     private final HttpAuthenticationFactory httpAuthenticationFactory;
     private final ExtensionHandlers extensionHandlers;
     private final Executor managementExecutor;
+    private final Integer backlog;
+    private final Integer connectionHighWater;
+    private final Integer connectionLowWater;
 
     private ManagementHttpServer(HttpOpenListener openListener, Builder builder, SSLContext sslContext,
                                  SslClientAuthMode sslClientAuthMode, ExtensionHandlers extensionExtensionHandlers) {
@@ -123,6 +127,9 @@ public class ManagementHttpServer {
         this.httpAuthenticationFactory = builder.httpAuthenticationFactory;
         this.extensionHandlers = extensionExtensionHandlers;
         this.managementExecutor = builder.executor;
+        this.backlog = builder.backlog;
+        this.connectionHighWater = builder.connectionHighWater;
+        this.connectionLowWater = builder.connectionLowWater;
     }
 
     public void start() {
@@ -131,6 +138,16 @@ public class ManagementHttpServer {
             OptionMap.Builder serverOptionsBuilder = OptionMap.builder()
                     .set(Options.TCP_NODELAY, true)
                     .set(Options.REUSE_ADDRESSES, true);
+            if (backlog != null) {
+                serverOptionsBuilder.set(Options.BACKLOG, backlog);
+            }
+            if (connectionHighWater != null) {
+                serverOptionsBuilder.set(Options.CONNECTION_HIGH_WATER, connectionHighWater);
+            }
+            if (connectionLowWater != null) {
+                serverOptionsBuilder.set(Options.CONNECTION_LOW_WATER, connectionLowWater);
+            }
+
             ChannelListener acceptListener = ChannelListeners.openListenerAdapter(openListener);
             if (httpAddress != null) {
                 normalServer = worker.createStreamConnectionServer(httpAddress, acceptListener, serverOptionsBuilder.getMap());
@@ -235,7 +252,14 @@ public class ManagementHttpServer {
             }
         }
 
-        HttpOpenListener openListener = new HttpOpenListener(bufferPool);
+        final OptionMap undertowOptions;
+        if (builder.noRequestTimeout != null) {
+            undertowOptions = OptionMap.create(UndertowOptions.NO_REQUEST_TIMEOUT, builder.noRequestTimeout);
+        } else {
+            undertowOptions = OptionMap.EMPTY;
+        }
+
+        HttpOpenListener openListener = new HttpOpenListener(bufferPool, undertowOptions);
 
         int secureRedirectPort = builder.secureBindAddress != null ? builder.secureBindAddress.getPort() : -1;
         // WFLY-2870 -- redirect not supported if bindAddress and secureBindAddress are using different InetAddress
@@ -455,6 +479,10 @@ public class ManagementHttpServer {
         private Executor executor;
         private Map<String, List<Header>> constantHeaders;
         private ConsoleAvailability consoleAvailability;
+        private Integer backlog;
+        private Integer connectionHighWater;
+        private Integer connectionLowWater;
+        private Integer noRequestTimeout;
 
         private Builder() {
         }
@@ -554,6 +582,50 @@ public class ManagementHttpServer {
         public Builder setConstantHeaders(Map<String, List<Header>> constantHeaders) {
             assertNotBuilt();
             this.constantHeaders = constantHeaders;
+
+            return this;
+        }
+
+        /**
+         * Set the TCP backlog for each server socket.
+         */
+        public Builder setBacklog(Integer backlog) {
+            assertNotBuilt();
+            this.backlog = backlog;
+
+            return this;
+        }
+
+        /**
+         * Set the high water mark for the number of connections that can be accepted before the server will stop accepting new connections.
+         *
+         * This is set on each server socket.
+         */
+        public Builder setConnectionHighWater(Integer connectionHighWater) {
+            assertNotBuilt();
+            this.connectionHighWater = connectionHighWater;
+
+            return this;
+        }
+
+        /**
+         * Set the low water mark for the number of connections that can be accepted before the server will start accepting new connections.
+         *
+         * This is set on each server socket.
+         */
+        public Builder setConnectionLowWater(Integer connectionLowWater) {
+            assertNotBuilt();
+            this.connectionLowWater = connectionLowWater;
+
+            return this;
+        }
+
+        /**
+         * Set the no request timeout for open connections.
+         */
+        public Builder setNoRequestTimeout(Integer noRequestTimeout) {
+            assertNotBuilt();
+            this.noRequestTimeout = noRequestTimeout;
 
             return this;
         }
