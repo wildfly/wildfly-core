@@ -9,13 +9,16 @@ import static org.jboss.as.test.shared.TimeoutUtil.adjust;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import jakarta.inject.Inject;
-import org.jboss.as.test.integration.management.util.CLIWrapper;
 
+import org.jboss.as.test.integration.management.util.CLIWrapper;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.common.function.ExceptionRunnable;
@@ -31,6 +34,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 @RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class ManagementInterfaceResourcesTestCase {
+    private static final Logger LOG = Logger.getLogger(ManagementInterfaceResourcesTestCase.class.getName());
 
     private static final String BACKLOG_PROPERTY = "org.wildfly.management.backlog";
     private static final String CONNECTION_HIGH_WATER_PROPERTY = "org.wildfly.management.connection-high-water";
@@ -48,19 +52,22 @@ public class ManagementInterfaceResourcesTestCase {
     @Test
     public void testWatermarks() throws Exception {
         runTest(60000, () -> {
-            String mgmtAddress = controller.getClient().getMgmtAddress();
-            int mgmtPort = controller.getClient().getMgmtPort();
+            String mgmtAddress = TestSuiteEnvironment.getServerAddress();
+            int mgmtPort = TestSuiteEnvironment.getServerPort();
+            LOG.info(mgmtAddress + ":" + mgmtPort);
             SocketAddress targetAddress = new InetSocketAddress(mgmtAddress, mgmtPort);
 
             int socketsOpened = 0;
             boolean oneFailed = false;
             Socket[] sockets = new Socket[9];
             for (int i = 0 ; i < 9 ; i++) {
+                LOG.info("Opening socket " + i + " socketsOpened=" + socketsOpened);
                 try {
                     sockets[i] = new Socket();
-                    sockets[i].connect(targetAddress, 1000);
+                    sockets[i].connect(targetAddress, 5000);
                     socketsOpened++;
                 } catch (IOException e) {
+                    LOG.log(Level.SEVERE, "Probably an expected exception trying to open a new connection", e);
                     assertTrue("Less sockets than low watermark opened.", socketsOpened > 3);
                     oneFailed = true;
                 }
@@ -81,27 +88,32 @@ public class ManagementInterfaceResourcesTestCase {
 
     @Test
     public void testTimeout() throws Exception {
-        runTest(5000, () -> {
-            String mgmtAddress = controller.getClient().getMgmtAddress();
-            int mgmtPort = controller.getClient().getMgmtPort();
+        runTest(10000, () -> {
+            String mgmtAddress = TestSuiteEnvironment.getServerAddress();
+            int mgmtPort = TestSuiteEnvironment.getServerPort();
             SocketAddress targetAddress = new InetSocketAddress(mgmtAddress, mgmtPort);
 
             int socketsOpened = 0;
             boolean oneFailed = false;
             Socket[] sockets = new Socket[9];
             for (int i = 0 ; i < 9 ; i++) {
+                LOG.info("Opening socket " + i + " socketsOpened=" + socketsOpened);
                 try {
                     sockets[i] = new Socket();
-                    sockets[i].connect(targetAddress, 1000);
+                    sockets[i].connect(targetAddress, 5000);
                     socketsOpened++;
                 } catch (IOException e) {
+                    LOG.log(Level.SEVERE, "Probably an expected exception trying to open a new connection", e);
                     assertTrue("Less sockets than low watermark opened.", socketsOpened > 3);
                     oneFailed = true;
                 }
             }
             assertTrue("Opening of one socket was expected to fail.", oneFailed);
 
-            Thread.sleep(adjust(5000)); // We also had 1000ms on the bad socket so we know we are past the timeout.
+            // Notice that the exception received when we tried to open a new socket could have been a timeout (SocketTimeoutException)
+            // or a connection refused (IOException). It depends on the OS and the network configuration.
+            // So, we could also have had 5000ms for each bad socket that triggered a SocketTimeoutException.
+            Thread.sleep(adjust(12000));
 
             Socket goodSocket = new Socket();
             // This needs to be longer than 500ms to give the server time to respond to the closed connections.
