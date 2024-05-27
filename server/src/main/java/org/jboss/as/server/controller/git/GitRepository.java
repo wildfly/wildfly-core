@@ -19,7 +19,6 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
@@ -120,7 +119,7 @@ public class GitRepository implements Closeable {
                 }
             } else {
                 Path atticPath = basePath.getParent().resolve("attic");
-                Files.copy(basePath, atticPath, StandardCopyOption.REPLACE_EXISTING);
+                PathUtil.copyRecursively(basePath, atticPath, true);
                 clearExistingFiles(basePath, gitConfig.getRepository());
                 try (Git git = Git.init().setDirectory(baseDir).setInitialBranch(branch).call()) {
                     String remoteName = DEFAULT_REMOTE_NAME;
@@ -139,7 +138,7 @@ public class GitRepository implements Closeable {
                     try (Stream<Path> names = Files.list(basePath)) {
                         names.filter(p -> ! "log".equals(p.getFileName().toString())).forEach(PathUtil::deleteSilentlyRecursively);
                     }
-                    PathUtil.copyRecursively(atticPath, basePath, true);
+                    PathUtil.copyRecursively(atticPath, basePath, false);
                     throw ServerLogger.ROOT_LOGGER.failedToInitRepository(ex, gitConfig.getRepository());
                 } finally {
                     PathUtil.deleteSilentlyRecursively(atticPath);
