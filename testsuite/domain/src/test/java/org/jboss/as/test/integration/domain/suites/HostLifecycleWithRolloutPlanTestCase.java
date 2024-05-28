@@ -218,7 +218,10 @@ public class HostLifecycleWithRolloutPlanTestCase {
 
     private void reloadPrimary() throws IOException {
         try {
-            domainPrimaryLifecycleUtil.reload("primary", null, true);
+            DomainLifecycleUtil.ReloadParameters parameters = new DomainLifecycleUtil.ReloadParameters()
+                    .setWaitForServers(true);
+
+            domainPrimaryLifecycleUtil.reload("primary", parameters);
         } catch (InterruptedException | TimeoutException e) {
             throw new RuntimeException("Failed waiting for host controller and servers to start.", e);
         }

@@ -272,7 +272,10 @@ public class HttpManagementConstantHeadersTestCase {
    }
 
    private void reload() throws IOException, TimeoutException, InterruptedException {
-      domainPrimaryLifecycleUtil.reload("primary", null, true);
+      DomainLifecycleUtil.ReloadParameters parameters = new DomainLifecycleUtil.ReloadParameters()
+              .setWaitForServers(true);
+
+      domainPrimaryLifecycleUtil.reload("primary", parameters);
       assertNotNull(domainSecondaryLifecycleUtil);
       domainSecondaryLifecycleUtil.awaitServers(System.currentTimeMillis());
       domainSecondaryLifecycleUtil.awaitHostController(System.currentTimeMillis());

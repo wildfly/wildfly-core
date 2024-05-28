@@ -143,8 +143,11 @@ public class SecondaryReconnectTestCase {
                 scenario.testWhilePrimaryInAdminOnly(primaryClient, secondaryClient);
             }
 
+            DomainLifecycleUtil.ReloadParameters parameters = new DomainLifecycleUtil.ReloadParameters()
+                    .setWaitForServers(false);
+
             //Restart the DC as normal
-            domainPrimaryLifecycleUtil.reload("primary", null, false);
+            domainPrimaryLifecycleUtil.reload("primary", parameters);
             primaryClient = domainPrimaryLifecycleUtil.createDomainClient();
 
             //Wait for the secondary to reconnect, look for the secondary in the list of hosts

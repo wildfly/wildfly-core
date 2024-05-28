@@ -77,7 +77,11 @@ public class IgnoredResourcesTestCase {
         }
         DomainTestUtils.executeForResult(writeRemoteDc, domainSecondaryLifecycleUtil.getDomainClient());
 
-        domainSecondaryLifecycleUtil.reload("secondary", false, false);
+        DomainLifecycleUtil.ReloadParameters parameters = new DomainLifecycleUtil.ReloadParameters()
+                .setRestartServers(false)
+                .setWaitForServers(false);
+
+        domainSecondaryLifecycleUtil.reload("secondary", parameters);
         domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
         domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
 
@@ -101,7 +105,11 @@ public class IgnoredResourcesTestCase {
         }
         DomainTestUtils.executeForResult(writeRemoteDc, domainSecondaryLifecycleUtil.getDomainClient());
 
-        domainSecondaryLifecycleUtil.reload("secondary", false, false);
+        DomainLifecycleUtil.ReloadParameters parameters = new DomainLifecycleUtil.ReloadParameters()
+                .setRestartServers(false)
+                .setWaitForServers(false);
+
+        domainSecondaryLifecycleUtil.reload("secondary", parameters);
         domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
         domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
 

@@ -495,7 +495,11 @@ public class HcExtensionAndSubsystemManagementTestCase {
         DomainClient client = util.getDomainClient();
         String state = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(address, HOST_STATE), client).asString();
         if (!state.equals("running")) {
-            util.reload(address.toString(), false, true);
+            DomainLifecycleUtil.ReloadParameters parameters = new DomainLifecycleUtil.ReloadParameters()
+                    .setRestartServers(false)
+                    .setWaitForServers(true);
+
+            util.reload(address.toString(), parameters);
             return true;
         }
         return false;
