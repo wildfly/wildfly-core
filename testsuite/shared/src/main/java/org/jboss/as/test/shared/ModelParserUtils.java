@@ -31,6 +31,8 @@ import org.junit.Assert;
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2014 Red Hat, inc.
  */
 public class ModelParserUtils {
+    // Timeout for the embedded Server / Host Controller to fully start, in seconds.
+    private final static long EMBEDDED_FULLY_STARTED_TIMEOUT = TimeoutUtil.adjust(5*60);
 
     /**
      * Tests the ability to boot an admin-only server using the given config, persist the config,
@@ -51,7 +53,7 @@ public class ModelParserUtils {
         CLIWrapper cli = new CLIWrapper(false);
         try {
 
-            String line = "embed-server --admin-only=true --server-config=" + originalConfig.getName() + " --std-out=echo --jboss-home=" + jbossHome.getCanonicalPath();
+            String line = "embed-server --admin-only=true --server-config=" + originalConfig.getName() + " --std-out=echo --jboss-home=" + jbossHome.getCanonicalPath() + " --timeout=" + EMBEDDED_FULLY_STARTED_TIMEOUT;
             cli.sendLine(line);
             assertProcessState(cli, ControlledProcessState.State.RUNNING.toString(), TimeoutUtil.adjust(30000), false);
             ModelNode firstResult = readResourceTree(cli);
@@ -95,7 +97,7 @@ public class ModelParserUtils {
         CLIWrapper cli = new CLIWrapper(false);
         try {
             String configType = hostXml ? "--host-config=" : "--domain-config=";
-            String line = "embed-host-controller " + configType + originalConfig.getName() + " --std-out=echo --jboss-home=" + target.getCanonicalPath();
+            String line = "embed-host-controller " + configType + originalConfig.getName() + " --std-out=echo --jboss-home=" + target.getCanonicalPath()  + " --timeout=" + EMBEDDED_FULLY_STARTED_TIMEOUT;
             cli.sendLine(line);
             assertProcessState(cli, ControlledProcessState.State.RUNNING.toString(), TimeoutUtil.adjust(30000), true);
             ModelNode firstResult = readResourceTree(cli);
