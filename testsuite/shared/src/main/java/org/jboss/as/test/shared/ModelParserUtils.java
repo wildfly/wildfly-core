@@ -32,7 +32,7 @@ import org.junit.Assert;
  */
 public class ModelParserUtils {
     // Timeout for the embedded Server / Host Controller to fully start, in seconds.
-    private final static long EMBEDDED_FULLY_STARTED_TIMEOUT = TimeoutUtil.adjust(5*60);
+    private static final long EMBEDDED_FULLY_STARTED_TIMEOUT = TimeoutUtil.adjust(5*60);
 
     /**
      * Tests the ability to boot an admin-only server using the given config, persist the config,
@@ -40,9 +40,9 @@ public class ModelParserUtils {
      * from the reload.
      *
      * @param originalConfig the config file to use
-     * @param jbossHome directory to use as $JBOSS_HOME
+     * @param jbossHome      directory to use as $JBOSS_HOME
      * @return the configuration model read after the reload
-     * @throws Exception
+     * @throws Exception if an error occurs
      */
     public static ModelNode standaloneXmlTest(File originalConfig, File jbossHome) throws Exception {
         File serverDir =  new File(jbossHome, "standalone");
@@ -80,9 +80,9 @@ public class ModelParserUtils {
      * from the reload.
      *
      * @param originalConfig the config file to use for the host model
-     * @param jbossHome directory to use as $JBOSS_HOME
+     * @param jbossHome      directory to use as $JBOSS_HOME
      * @return the host subtree from the configuration model read after the reload
-     * @throws Exception
+     * @throws Exception if an error occurs
      */
     public static ModelNode hostXmlTest(final File originalConfig, File jbossHome) throws Exception {
         return hostControllerTest(originalConfig, jbossHome, true);
@@ -140,15 +140,15 @@ public class ModelParserUtils {
      * from the reload.
      *
      * @param originalConfig the config file to use for the domain model
-     * @param jbossHome directory to use as $JBOSS_HOME
+     * @param jbossHome      directory to use as $JBOSS_HOME
      * @return the configuration model read after the reload, excluding the host subtree
-     * @throws Exception
+     * @throws Exception if an error occurs
      */
     public static ModelNode domainXmlTest(File originalConfig, File jbossHome) throws Exception {
         return hostControllerTest(originalConfig, jbossHome, false);
     }
 
-    private static void assertProcessState(CLIWrapper cli, String expected, int timeout, boolean forHost) throws IOException, InterruptedException {
+    private static void assertProcessState(CLIWrapper cli, String expected, int timeout, boolean forHost) throws InterruptedException {
         long done = timeout < 1 ? 0 : System.currentTimeMillis() + timeout;
         StringBuilder historyBuf = new StringBuilder();
         String state = null;
@@ -157,8 +157,7 @@ public class ModelParserUtils {
                 state = forHost ? getHostState(cli) : getServerState(cli);
                 historyBuf.append(state).append("\n");
             } catch (Exception ignored) {
-                //
-                historyBuf.append(ignored.toString()).append("--").append(cli.readOutput()).append("\n");
+                historyBuf.append(ignored).append("--").append(cli.readOutput()).append("\n");
             }
             if (expected.equals(state)) {
                 return;
@@ -193,7 +192,7 @@ public class ModelParserUtils {
     private static ModelNode readResourceTree(CLIWrapper cli) {
         cli.sendLine("/:read-resource(recursive=true)");
         ModelNode response = ModelNode.fromString(cli.readOutput());
-        assertTrue(response.toString(), SUCCESS.equals(response.get(OUTCOME).asString()));
+        assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
         ModelNode firstResult = response.get(RESULT);
         assertTrue(response.toString(), firstResult.isDefined());
         return firstResult;
