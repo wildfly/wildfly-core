@@ -446,13 +446,14 @@ public final class BootableJar implements ShutdownHandler {
             executor.shutdown();
             try {
                 if (!executor.awaitTermination(environment.getTimeout(), TimeUnit.SECONDS)) {
-                    // For some reason we've timed out. The deletion should likely be executing, but let's force it to
-                    // be safe.
-                    cleaner.cleanup();
+                    // For some reason we've timed out. The deletion should likely be executing.
+                    // We can't start a new cleanup to force it. On Windows we would have the side effect to have 2 cleaner processes to
+                    // be executed, with the risk that a new installation has been installed and the new cleaner cleaning the new installation
+                    log.cleanupTimeout(environment.getTimeout(), environment.getJBossHome());
                 }
-            } catch (IOException | InterruptedException e) {
-                // Possibly already logged, but we should log again to be safe
-                log.failedToStartCleanupProcess(e, environment.getJBossHome());
+            } catch (InterruptedException e) {
+                // The task has been interrupted, leaving
+                log.cleanupTimeout(environment.getTimeout(), environment.getJBossHome());
             }
         }
 
