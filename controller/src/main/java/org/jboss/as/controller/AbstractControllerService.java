@@ -129,9 +129,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     protected static final RuntimeCapability<Void> CLIENT_FACTORY_CAPABILITY = RuntimeCapability.Builder.of(ModelControllerClientFactory.SERVICE_DESCRIPTOR).build();
 
     /** Capability in-vm users of the controller use to register notification handlers */
-    protected static final RuntimeCapability<Void> NOTIFICATION_REGISTRY_CAPABILITY =
-            RuntimeCapability.Builder.of("org.wildfly.management.notification-handler-registry", NotificationHandlerRegistry.class)
-                    .build();
+    protected static final RuntimeCapability<Void> NOTIFICATION_REGISTRY_CAPABILITY = RuntimeCapability.Builder.of(NotificationHandlerRegistry.SERVICE_DESCRIPTOR).build();
 
     /**
      * Capability users of the controller use to coordinate changes to paths.

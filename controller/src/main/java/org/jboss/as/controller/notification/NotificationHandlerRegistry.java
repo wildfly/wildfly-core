@@ -6,6 +6,7 @@
 package org.jboss.as.controller.notification;
 
 import org.jboss.as.controller.PathAddress;
+import org.wildfly.service.descriptor.NullaryServiceDescriptor;
 
 /**
  * The NotificationHandlerRegistry is used to register and unregister notification handlers.
@@ -23,6 +24,7 @@ import org.jboss.as.controller.PathAddress;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2014 Red Hat inc.
  */
 public interface NotificationHandlerRegistry {
+    NullaryServiceDescriptor<NotificationHandlerRegistry> SERVICE_DESCRIPTOR = NullaryServiceDescriptor.of("org.wildfly.management.notification-handler-registry", NotificationHandlerRegistry.class);
 
     /**
      * Special path address to register a notification handler for <em>any</em> source.
