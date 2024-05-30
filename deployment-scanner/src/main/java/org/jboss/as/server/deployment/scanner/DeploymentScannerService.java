@@ -121,7 +121,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
         final Supplier<PathManager> pathManager = sb.requires(PathManager.SERVICE_DESCRIPTOR);
         final Supplier<NotificationHandlerRegistry> notificationRegistry = sb.requires(NotificationHandlerRegistry.SERVICE_DESCRIPTOR);
         final Supplier<ModelControllerClientFactory> clientFactory = sb.requires(ModelControllerClientFactory.SERVICE_DESCRIPTOR);
-        final Supplier<ProcessStateNotifier> processStateNotifier = sb.requiresCapability("org.wildfly.management.process-state-notifier", ProcessStateNotifier.class);
+        final Supplier<ProcessStateNotifier> processStateNotifier = sb.requires(ProcessStateNotifier.SERVICE_DESCRIPTOR);
         sb.requires(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_CHAINS);
         final DeploymentScannerService service = new DeploymentScannerService(
                 serviceConsumer, pathManager, notificationRegistry, clientFactory, processStateNotifier, scheduledExecutorService,

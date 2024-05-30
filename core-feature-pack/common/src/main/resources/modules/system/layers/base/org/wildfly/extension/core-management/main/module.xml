@@ -25,5 +25,6 @@
         <module name="org.jboss.staxmapper"/>
         <module name="org.wildfly.extension.core-management-client"/>
         <module name="org.wildfly.security.elytron-private"/>
+        <module name="org.wildfly.service"/>
     </dependencies>
 </module>

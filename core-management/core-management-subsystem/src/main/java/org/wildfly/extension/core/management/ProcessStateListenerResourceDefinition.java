@@ -20,6 +20,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PersistentResourceDefinition;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -43,7 +44,7 @@ public class ProcessStateListenerResourceDefinition extends PersistentResourceDe
     private static final String PROCESS_STATE_LISTENER_CAPABILITY_NAME = "org.wildfly.extension.core-management.process-state";
     static final RuntimeCapability<Void> PROCESS_STATE_LISTENER_CAPABILITY =
             RuntimeCapability.Builder.of(PROCESS_STATE_LISTENER_CAPABILITY_NAME, true, Void.class)
-                    .addRequirements("org.wildfly.management.executor", "org.wildfly.management.process-state-notifier")
+                    .addRequirements("org.wildfly.management.executor", ProcessStateNotifier.SERVICE_DESCRIPTOR.getName())
                     .build();
 
     public static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder("properties", true)

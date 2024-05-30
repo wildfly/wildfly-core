@@ -7,6 +7,8 @@ package org.jboss.as.controller;
 
 import java.beans.PropertyChangeListener;
 
+import org.wildfly.service.descriptor.NullaryServiceDescriptor;
+
 /**
  * Allows callers to check the current {@link ControlledProcessState.State} of the process
  * and to register for notifications of state changes.
@@ -14,6 +16,7 @@ import java.beans.PropertyChangeListener;
  * @author Brian Stansberry (c) 2019 Red Hat Inc.
  */
 public interface ProcessStateNotifier {
+    NullaryServiceDescriptor<ProcessStateNotifier> SERVICE_DESCRIPTOR = NullaryServiceDescriptor.of("org.wildfly.management.process-state-notifier", ProcessStateNotifier.class);
 
     /**
      * Gets the current state of the controlled process.
