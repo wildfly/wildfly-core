@@ -7,6 +7,8 @@ package org.jboss.as.controller;
 
 import java.util.concurrent.Executor;
 
+import org.wildfly.service.descriptor.NullaryServiceDescriptor;
+
 /**
  * Factory for obtaining a {@link org.jboss.as.controller.client.ModelControllerClient}
  * for use in the same VM as the target {@link ModelController}.
@@ -14,6 +16,7 @@ import java.util.concurrent.Executor;
  * @author Brian Stansberry
  */
 public interface ModelControllerClientFactory {
+    NullaryServiceDescriptor<ModelControllerClientFactory> SERVICE_DESCRIPTOR = NullaryServiceDescriptor.of("org.wildfly.management.model-controller-client-factory", ModelControllerClientFactory.class);
 
     /**
      * Create an in-VM client whose operations are executed with authorization checks performed
