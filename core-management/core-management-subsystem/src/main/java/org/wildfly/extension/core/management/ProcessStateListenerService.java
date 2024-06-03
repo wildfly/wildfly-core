@@ -235,7 +235,7 @@ public class ProcessStateListenerService implements Service {
 
     static void install(CapabilityServiceTarget serviceTarget, ProcessType processType, RunningMode runningMode, String listenerName, ProcessStateListener listener, Map<String, String> properties, int timeout) {
         final CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(PROCESS_STATE_LISTENER_CAPABILITY.fromBaseCapability(listenerName));
-        final Supplier<ProcessStateNotifier> psnSupplier = builder.requiresCapability("org.wildfly.management.process-state-notifier", ProcessStateNotifier.class);
+        final Supplier<ProcessStateNotifier> psnSupplier = builder.requires(ProcessStateNotifier.SERVICE_DESCRIPTOR);
         final Supplier<ExecutorService> esSupplier = builder.requiresCapability("org.wildfly.management.executor", ExecutorService.class);
         final Supplier<SuspendController> scSupplier = !processType.isHostController() ? builder.requiresCapability("org.wildfly.server.suspend-controller", SuspendController.class) : null;
         builder.setInstance(new ProcessStateListenerService(processType, runningMode, listenerName, listener, properties, timeout, psnSupplier, scSupplier, esSupplier));

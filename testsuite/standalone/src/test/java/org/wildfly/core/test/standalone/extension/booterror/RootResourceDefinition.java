@@ -41,7 +41,7 @@ import org.jboss.msc.service.StopContext;
 public class RootResourceDefinition extends SimpleResourceDefinition {
 
     static final RuntimeCapability<Void> CAPABILITY = RuntimeCapability.Builder.of("boot.error", Void.class)
-            .addRequirements("org.wildfly.management.model-controller-client-factory", "org.wildfly.management.executor")
+            .addRequirements(ModelControllerClientFactory.SERVICE_DESCRIPTOR.getName(), "org.wildfly.management.executor")
             .build();
 
     static final SimpleAttributeDefinition ATTRIBUTE = new SimpleAttributeDefinitionBuilder("attribute", ModelType.STRING, true).build();
@@ -103,7 +103,7 @@ public class RootResourceDefinition extends SimpleResourceDefinition {
             // Add a service that will invoke an op that produces a failure during start. The service
             // will start during boot so that simulates a non-boot op failing during boot
             CapabilityServiceBuilder<?> builder = context.getCapabilityServiceTarget().addCapability(CAPABILITY);
-            Supplier<ModelControllerClientFactory> mccf = builder.requiresCapability("org.wildfly.management.model-controller-client-factory", ModelControllerClientFactory.class);
+            Supplier<ModelControllerClientFactory> mccf = builder.requires(ModelControllerClientFactory.SERVICE_DESCRIPTOR);
             Supplier<Executor> executor = builder.requiresCapability("org.wildfly.management.executor", Executor.class);
             builder.setInstance(new BootErrorService(mccf, executor)).install();
         }

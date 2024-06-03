@@ -18,5 +18,6 @@
         <module name="org.jboss.as.server" />
         <module name="org.jboss.msc"/>
         <module name="org.jboss.logging"/>
+        <module name="org.wildfly.service"/>
     </dependencies>
 </module>

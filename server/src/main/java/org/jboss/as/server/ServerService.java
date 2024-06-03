@@ -34,6 +34,7 @@ import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -41,6 +42,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningModeControl;
+import org.jboss.as.controller.ServiceNameFactory;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
@@ -136,7 +138,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 public final class ServerService extends AbstractControllerService {
 
     /** Service is not for general use, so the service name is not declared in the more visible {@code Services} */
-    public static final ServiceName JBOSS_SERVER_CLIENT_FACTORY = CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName();
+    public static final ServiceName JBOSS_SERVER_CLIENT_FACTORY = ServiceNameFactory.resolveServiceName(ModelControllerClientFactory.SERVICE_DESCRIPTOR);
     /** Service is not for general use, so the service name is not declared in the more visible {@code Services} */
     public static final ServiceName JBOSS_SERVER_NOTIFICATION_REGISTRY = NOTIFICATION_REGISTRY_CAPABILITY.getCapabilityServiceName();
     /** Service is not for general use, so the service name is not declared in the more visible {@code Services} */

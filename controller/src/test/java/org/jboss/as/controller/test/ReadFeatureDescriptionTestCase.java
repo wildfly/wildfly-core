@@ -41,6 +41,7 @@ import java.util.Set;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
@@ -54,6 +55,7 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PASSIVE;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
+import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.operations.global.ReadFeatureDescriptionHandler;
 import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.jboss.as.controller.registry.AliasEntry;
@@ -83,8 +85,6 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
     private static final String MAIN_RESOURCE_REQUIRED_PACKAGE_NAME = "required-main-resource-package";
     private static final String ROOT_CAPABILITY_NAME = "root-capability";
     private static final String DYNAMIC_CAPABILITY_NAME = "dynamic-capability";
-    private static final String CLIENT_FACTORY_CAPABILITY_NAME = "org.wildfly.management.model-controller-client-factory";
-    private static final String NOTIFICATION_REGISTRY_CAPABILITY_NAME = "org.wildfly.management.notification-handler-registry";
 
     private static final OperationStepHandler WRITE_HANDLER = new ModelOnlyWriteAttributeHandler();
 
@@ -403,8 +403,8 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         }
         Assert.assertTrue(providedCaps.contains(ROOT_CAPABILITY_NAME));
         Assert.assertTrue(providedCaps.contains(DYNAMIC_CAPABILITY_NAME));
-        Assert.assertTrue(providedCaps.contains(CLIENT_FACTORY_CAPABILITY_NAME));
-        Assert.assertTrue(providedCaps.contains(NOTIFICATION_REGISTRY_CAPABILITY_NAME));
+        Assert.assertTrue(providedCaps.contains(ModelControllerClientFactory.SERVICE_DESCRIPTOR.getName()));
+        Assert.assertTrue(providedCaps.contains(NotificationHandlerRegistry.SERVICE_DESCRIPTOR.getName()));
     }
 
     /**
