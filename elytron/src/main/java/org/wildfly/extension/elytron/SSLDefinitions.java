@@ -31,7 +31,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-//import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
@@ -1526,6 +1525,8 @@ class SSLDefinitions {
                 final String cipherSuiteNames = CIPHER_SUITE_NAMES.resolveModelAttribute(context, model).asStringOrNull(); // doesn't have a default value yet since we are disabling TLS 1.3 by default
                 final boolean acceptOCSPStapling = ACCEPT_OCSP_STAPLING.resolveModelAttribute(context, model).asBoolean();
                 final boolean softFail = OCSP_STAPLING_SOFT_FAIL.resolveModelAttribute(context, model).asBoolean();
+                final String trustManagerName = TRUST_MANAGER.resolveModelAttribute(context,model).asString();
+
                 return () -> {
                     X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagerInjector.getOptionalValue());
                     X509ExtendedTrustManager trustManager = getX509TrustManager(trustManagerInjector.getOptionalValue());
@@ -1538,7 +1539,7 @@ class SSLDefinitions {
                         X509RevocationTrustManager.Builder revocationBuilder = X509RevocationTrustManager.builder();
                         // TODO: determine if the following approach is valid
                         revocationBuilder.setTrustManagerFactory(trustManagerFactory);
-                        revocationBuilder.setTrustStore(getKeyStoreFromTrustManager(trustManager));
+                        revocationBuilder.setTrustStore(getModifiableTrustManagerService(context, trustManagerName).getModifiableValue());
 
                         revocationBuilder.setCheckRevocation(true);
                         revocationBuilder.setSoftFail(softFail);
@@ -1779,15 +1780,30 @@ class SSLDefinitions {
         }
     }
 
-    public static KeyStore getKeyStoreFromTrustManager(X509ExtendedTrustManager trustManager) throws Exception {
-        // TODO: proporly extract the keystore from the trustmanager
-        KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        trustStore.load(null, null);
-        X509Certificate[] trustedCerts = trustManager.getAcceptedIssuers();
-        for (X509Certificate certificate : trustedCerts) {
-            trustStore.setCertificateEntry(certificate.getSerialNumber().toString(), certificate);
+    public static ModifiableKeyStoreService getModifiableTrustManagerService(OperationContext context, String trustManagerName) throws OperationFailedException {
+        ServiceRegistry serviceRegistry = context.getServiceRegistry(false);
+        RuntimeCapability<Void> runtimeCapability = TRUST_MANAGER_RUNTIME_CAPABILITY.fromBaseCapability(trustManagerName);
+        ServiceName serviceName = runtimeCapability.getCapabilityServiceName();
+
+        ServiceController<TrustManager> serviceContainer = getRequiredService(serviceRegistry, serviceName, TrustManager.class);
+        ServiceController.State serviceState = serviceContainer.getState();
+        if (serviceState != ServiceController.State.UP) {
+            throw ROOT_LOGGER.requiredServiceNotUp(serviceName, serviceState);
         }
-        return trustStore;
+
+        String keyStoreName = null;
+        Set<ServiceName> serviceNames = serviceContainer.requires();
+        for(ServiceName name : serviceNames) {
+            if (name.getCanonicalName().contains(KEY_STORE_CAPABILITY)) {
+                keyStoreName = (name).getCanonicalName().substring(KEY_STORE_CAPABILITY.length() + 1);
+            }
+        }
+
+        if (keyStoreName == null) {
+            throw ROOT_LOGGER.unableToLoadKeystoreCapabilityService();
+        } else {
+            return getModifiableKeyStoreService(context, keyStoreName);
+        }
     }
 
 }
