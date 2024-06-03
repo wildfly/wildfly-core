@@ -192,27 +192,37 @@ public class Launcher {
     }
 
     /**
-     * Adds an environment variable to the process being created.
+     * Adds an environment variable to the process being created. If the key or value is {@code null}, the environment
+     * variable will not be added.
      *
      * @param key   they key for the variable
      * @param value the value for the variable
      *
      * @return the launcher
+     * @see ProcessBuilder#environment()
      */
     public Launcher addEnvironmentVariable(final String key, final String value) {
-        env.put(key, value);
+        if (key != null && value != null) {
+            env.put(key, value);
+        }
         return this;
     }
 
     /**
-     * Adds the environment variables to the process being created.
+     * Adds the environment variables to the process being created. Note that {@code null} keys or values will not be
+     * added.
      *
      * @param env the environment variables to add
      *
      * @return the launcher
+     * @see ProcessBuilder#environment()
      */
     public Launcher addEnvironmentVariables(final Map<String, String> env) {
-        this.env.putAll(env);
+        env.forEach((key, value) -> {
+            if (key != null && value != null) {
+                addEnvironmentVariable(key, value);
+            }
+        });
         return this;
     }
 
