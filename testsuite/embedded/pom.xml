@@ -92,7 +92,7 @@
                         <org.jboss.logging.provider>jdk</org.jboss.logging.provider>
                         <jboss.test.start.timeout>${jboss.test.start.timeout}</jboss.test.start.timeout>
                         <jboss.test.log.dir>${project.build.directory}${file.separator}test-logs</jboss.test.log.dir>
-                        <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
+                        <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.jvm.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
                         <maven.repo.local>${settings.localRepository}</maven.repo.local>
                     </systemPropertyVariables>
                 </configuration>

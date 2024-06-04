@@ -105,7 +105,7 @@
 
                     <systemPropertyVariables>
                         <jboss.home>${wildfly.home}</jboss.home>
-                        <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
+                        <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.jvm.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
