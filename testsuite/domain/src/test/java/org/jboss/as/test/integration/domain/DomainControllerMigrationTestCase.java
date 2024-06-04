@@ -174,7 +174,11 @@ public class DomainControllerMigrationTestCase {
 
         hostUtils[1].executeForResult(becomePrimaryOp);
 
-        hostUtils[1].reload("failover-h2", false, true);
+        DomainLifecycleUtil.ReloadParameters parameters = new DomainLifecycleUtil.ReloadParameters()
+                .setRestartServers(false)
+                .setWaitForServers(true);
+
+        hostUtils[1].reload("failover-h2", parameters);
 
         // Read the first system property. This proves we are using the config provided via failover-h1
         ModelNode readSysPropOp = new ModelNode();
@@ -200,7 +204,11 @@ public class DomainControllerMigrationTestCase {
 
         hostUtils[2].executeForResult(changePrimaryOp);
 
-        hostUtils[2].reload(HOSTS[2], false,  true);
+        parameters = new DomainLifecycleUtil.ReloadParameters()
+                .setRestartServers(false)
+                .setWaitForServers(true);
+
+        hostUtils[2].reload(HOSTS[2], parameters);
 
         // Read the second system property. This proves we correctly got the config from failover-h2.
         readSysPropOp = new ModelNode();

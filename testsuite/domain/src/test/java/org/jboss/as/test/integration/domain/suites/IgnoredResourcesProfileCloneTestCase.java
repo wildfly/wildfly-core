@@ -269,7 +269,11 @@ public class IgnoredResourcesProfileCloneTestCase {
     }
 
     private static void reloadSecondary(DomainLifecycleUtil secondaryLifecycleUtil) throws Exception {
-        secondaryLifecycleUtil.reload("secondary", false, false);
+        DomainLifecycleUtil.ReloadParameters parameters = new DomainLifecycleUtil.ReloadParameters()
+                .setRestartServers(false)
+                .setWaitForServers(false);
+
+        secondaryLifecycleUtil.reload("secondary", parameters);
     }
 
     private List<String> getSubsystems(String profile, DomainClient client) throws Exception {

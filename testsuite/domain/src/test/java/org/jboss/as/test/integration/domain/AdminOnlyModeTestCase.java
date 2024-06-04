@@ -89,8 +89,11 @@ public class AdminOnlyModeTestCase {
     public void testAdminOnlyMode() throws Exception {
         final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
+        DomainLifecycleUtil.ReloadParameters parameters = new DomainLifecycleUtil.ReloadParameters()
+                .setAdminOnly(true);
+
         // restart primary HC in admin only mode
-        domainPrimaryLifecycleUtil.reloadAdminOnly("primary");
+        domainPrimaryLifecycleUtil.reload("primary", parameters);
 
         ModelNode op = new ModelNode();
         op.get(OP).set(READ_ATTRIBUTE_OPERATION);
@@ -101,8 +104,11 @@ public class AdminOnlyModeTestCase {
         final ModelNode result = executeForResult(primaryClient, op);
         Assert.assertEquals("ADMIN_ONLY", result.asString());
 
+        parameters = new DomainLifecycleUtil.ReloadParameters()
+                .setWaitForServers(true);
+
         // restart back to normal mode
-        domainPrimaryLifecycleUtil.reload("primary", null, true);
+        domainPrimaryLifecycleUtil.reload("primary", parameters);
 
         // Wait for the secondary to reconnect
         waitForHost(primaryClient, "secondary");
@@ -113,8 +119,11 @@ public class AdminOnlyModeTestCase {
     public void testAdminOnlyModeRestartServers() throws Exception {
         final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
+        DomainLifecycleUtil.ReloadParameters parameters = new DomainLifecycleUtil.ReloadParameters()
+                .setAdminOnly(true);
+
         // restart primary HC in admin only mode
-        domainPrimaryLifecycleUtil.reloadAdminOnly("primary");
+        domainPrimaryLifecycleUtil.reload("primary", parameters);
 
         ModelNode op = new ModelNode();
         op.get(OP).set(READ_ATTRIBUTE_OPERATION);
@@ -125,8 +134,12 @@ public class AdminOnlyModeTestCase {
         final ModelNode result = executeForResult(primaryClient, op);
         Assert.assertEquals("ADMIN_ONLY", result.asString());
 
+        parameters = new DomainLifecycleUtil.ReloadParameters()
+                .setRestartServers(true)
+                .setWaitForServers(true);
+
         // restart back to normal mode
-        domainPrimaryLifecycleUtil.reload("primary", true, true);
+        domainPrimaryLifecycleUtil.reload("primary", parameters);
 
         // Wait for the secondary to reconnect
         waitForHost(primaryClient, "secondary");
@@ -137,8 +150,11 @@ public class AdminOnlyModeTestCase {
     public void testServersCannotStartInAdminOnlyMode() throws Exception {
         final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
+        DomainLifecycleUtil.ReloadParameters parameters = new DomainLifecycleUtil.ReloadParameters()
+                .setAdminOnly(true);
+
         // restart primary HC in admin only mode
-        domainPrimaryLifecycleUtil.reloadAdminOnly("primary");
+        domainPrimaryLifecycleUtil.reload("primary", parameters);
 
         ModelNode op = new ModelNode();
         op.get(OP).set(READ_ATTRIBUTE_OPERATION);
@@ -158,8 +174,12 @@ public class AdminOnlyModeTestCase {
         result = executeOperation(primaryClient, PathAddress.pathAddress(mainOne), START);
         Assert.assertTrue(result.asString(), result.get(FAILURE_DESCRIPTION).asString().contains("WFLYHC0048"));
 
+        parameters = new DomainLifecycleUtil.ReloadParameters()
+                .setWaitForServers(true)
+                .setTimeout(300L);
+
         // restart back to normal mode
-        domainPrimaryLifecycleUtil.reload("primary", null, true, 300L);
+        domainPrimaryLifecycleUtil.reload("primary", parameters);
     }
 
 

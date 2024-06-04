@@ -146,7 +146,10 @@ public class OutboundLdapConnectionTestCase {
     }
 
     private void reload() throws IOException, TimeoutException, InterruptedException {
-        domainPrimaryLifecycleUtil.reload("primary", null, false);
+        DomainLifecycleUtil.ReloadParameters parameters = new DomainLifecycleUtil.ReloadParameters()
+                .setWaitForServers(false);
+
+        domainPrimaryLifecycleUtil.reload("primary", parameters);
     }
 
 
