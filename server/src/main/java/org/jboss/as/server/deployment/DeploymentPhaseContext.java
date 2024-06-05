@@ -9,6 +9,7 @@ import org.jboss.as.controller.RequirementServiceTarget;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.service.ServiceDependency;
 
 /**
  * The deployment unit processor context.  Maintains state pertaining to the current cycle
@@ -93,8 +94,23 @@ public interface DeploymentPhaseContext extends Attachable {
      * @param serviceName the service name to add to {@link Attachments#NEXT_PHASE_DEPS}
      * @param supplier the supplier into which the dependency value is injected
      * @throws IllegalStateException If this is the last phase
+     * @deprecated Use {@link #requires(ServiceDependency)} instead.
      */
-    <T> void requires(ServiceName serviceName, DelegatingSupplier<T> supplier);
+    @Deprecated(forRemoval = true)
+    default <T> void requires(ServiceName serviceName, DelegatingSupplier<T> supplier) {
+        ServiceDependency<T> dependency = ServiceDependency.on(serviceName);
+        supplier.set(dependency);
+        this.requires(dependency);
+    }
+
+    /**
+     * Adds the specified dependency to the next phase service.
+     *
+     * @param <T> the dependency type
+     * @param dependency a service dependency
+     * @throws IllegalStateException If this is the last phase
+     */
+    <T> void requires(ServiceDependency<T> dependency);
 
     /**
      * Adds a dependency on the service to the next phase service. The service value will be make available as an attachment to

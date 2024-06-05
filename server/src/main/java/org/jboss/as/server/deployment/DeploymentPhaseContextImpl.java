@@ -12,6 +12,7 @@ import org.jboss.as.controller.RequirementServiceTarget;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
+import org.wildfly.service.ServiceDependency;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -63,27 +64,12 @@ final class DeploymentPhaseContextImpl extends SimpleAttachable implements Deplo
     }
 
     @Override
-    public <T> void requires(final ServiceName serviceName, final DelegatingSupplier<T> supplier) {
-        this.dependencies.add(new SupplierDeploymentPhaseDependency<>(serviceName, supplier));
+    public <T> void requires(ServiceDependency<T> dependency) {
+        this.dependencies.add(dependency);
     }
 
     @Override
     public <T> void addDeploymentDependency(ServiceName serviceName, AttachmentKey<T> attachmentKey) {
         addToAttachmentList(Attachments.NEXT_PHASE_ATTACHABLE_DEPS, new AttachableDependency(attachmentKey, serviceName, true));
-    }
-
-    private static final class SupplierDeploymentPhaseDependency<T> implements Consumer<ServiceBuilder<?>> {
-        private final ServiceName name;
-        private final DelegatingSupplier<T> supplier;
-
-        private SupplierDeploymentPhaseDependency(final ServiceName name, final DelegatingSupplier<T> supplier) {
-            this.name = name;
-            this.supplier = supplier;
-        }
-
-        @Override
-        public void accept(ServiceBuilder<?> builder) {
-            supplier.set(builder.requires(name));
-        }
     }
 }

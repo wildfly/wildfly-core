@@ -12,7 +12,9 @@ import java.util.function.Supplier;
  * @param <T> the type of objects that may be supplied by this supplier.
  *
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
+ * @deprecated To be removed without replacement.
  */
+@Deprecated(forRemoval = true)
 public final class DelegatingSupplier<T> implements Supplier<T> {
 
     private volatile Supplier<T> delegate;
