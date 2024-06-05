@@ -202,7 +202,7 @@
                         <wildfly.debug>${ts.debug}</wildfly.debug>
                         <wildfly.debug.port>8787</wildfly.debug.port>
                         <server.config>standalone.xml</server.config>
-                        <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args}</jvm.args>
+                        <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.jvm.args}</jvm.args>
                     </systemPropertyVariables>
                 </configuration>
                 <executions combine.children="append">
