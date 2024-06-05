@@ -69,7 +69,12 @@ public class DomainSnapshot {
                 @Override
                 public void close() throws Exception {
                     for (Snapshot snapshot : snapShots) {
-                        snapshot.lifecycleUtil.reload(snapshot.hostName, snapshot.stability, snapshot.hostConfig, snapshot.domainConfig);
+                        DomainLifecycleUtil.ReloadEnhancedParameters reloadParams = new DomainLifecycleUtil.ReloadEnhancedParameters();
+                        reloadParams.setStability(snapshot.stability)
+                                .setHostConfig(snapshot.hostConfig)
+                                .setDomainConfig(snapshot.domainConfig);
+
+                        snapshot.lifecycleUtil.reload(snapshot.hostName, reloadParams);
                         PathAddress hostAddress = PathAddress.pathAddress(HOST, snapshot.hostName);
                         Stability reloadedStability = getStability(hostAddress, snapshot.lifecycleUtil.getDomainClient());
                         Assert.assertSame(reloadedStability, snapshot.stability);

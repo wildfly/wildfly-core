@@ -159,7 +159,9 @@ public class StabilityDomainSetupSnapshotRestoreTasks {
         }
 
         //Reload the server to the desired stability level
-        domainLifecycleUtil.reload(hostAddress.getLastElement().getValue(), stability, null, null);
+        DomainLifecycleUtil.ReloadEnhancedParameters reload = new DomainLifecycleUtil.ReloadEnhancedParameters();
+        reload.setStability(stability);
+        domainLifecycleUtil.reload(hostAddress.getLastElement().getValue(), reload);
         client = domainLifecycleUtil.getDomainClient();
         Stability reloadedStability = readCurrentStability(hostAddress, client);
         Assert.assertEquals(stability, reloadedStability);

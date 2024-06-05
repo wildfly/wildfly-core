@@ -4,6 +4,15 @@
  */
 package org.jboss.as.test.integration.domain.management.util;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_CONFIG;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_CONFIG;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD_ENHANCED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_SERVERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.safeClose;
 
 import java.io.File;
@@ -104,7 +113,7 @@ public class DomainLifecycleUtil implements AutoCloseable {
         assert clientConfiguration != null : "clientConfiguration is null";
         this.configuration = configuration;
         this.clientConfiguration = clientConfiguration;
-        this.address = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.HOST, configuration.getHostName()));
+        this.address = PathAddress.pathAddress(PathElement.pathElement(HOST, configuration.getHostName()));
         this.closeClientConfig = closeClientConfig;
     }
 
@@ -444,17 +453,29 @@ public class DomainLifecycleUtil implements AutoCloseable {
      */
     public void reload(String host, ReloadParameters parameters) throws IOException, InterruptedException, TimeoutException {
         ModelNode op = new ModelNode();
-        op.get(ModelDescriptionConstants.ADDRESS).add(ModelDescriptionConstants.HOST, host);
-        op.get(ModelDescriptionConstants.OP).set("reload");
+        op.get(ADDRESS).add(HOST, host);
+        op.get(OP).set(RELOAD);
         op.get("admin-only").set(parameters.adminOnly);
-        op.get(ModelDescriptionConstants.RESTART_SERVERS).set(parameters.restartServers);
+        op.get(RESTART_SERVERS).set(parameters.restartServers);
         long startupTimeout;
         if (parameters.timeout == null) {
             startupTimeout = configuration.getStartupTimeoutInSeconds();
         } else {
             startupTimeout = parameters.timeout;
         }
-
+        if (parameters.hostConfig != null) {
+            op.get(HOST_CONFIG).set(parameters.hostConfig);
+        }
+        if (parameters.domainConfig != null) {
+            op.get(DOMAIN_CONFIG).set(parameters.domainConfig);
+        }
+        if (parameters instanceof ReloadEnhancedParameters) {
+            Stability stabilityParam = ((ReloadEnhancedParameters) parameters).stability;
+            if (stabilityParam != null) {
+                op.get(OP).set(RELOAD_ENHANCED);
+                op.get(STABILITY).set(stabilityParam.toString());
+            }
+        }
         executeAwaitConnectionClosed(op);
         // Try to reconnect to the hc
         connect();
@@ -479,6 +500,10 @@ public class DomainLifecycleUtil implements AutoCloseable {
         boolean waitForServers = true;
 
         Long timeout = null;
+
+        String hostConfig;
+
+        String domainConfig;
 
         /**
          * Sets the adminOnly
@@ -524,6 +549,46 @@ public class DomainLifecycleUtil implements AutoCloseable {
          */
         public ReloadParameters setTimeout(Long timeout) {
             this.timeout = timeout;
+            return this;
+        }
+
+        /**
+         * Sets the hostConfig
+         *
+         * @param hostConfig the path to the host configuration file to use
+         * @return this ReloadParameters object
+         */
+        public ReloadParameters setHostConfig(String hostConfig) {
+            this.hostConfig = hostConfig;
+            return this;
+        }
+
+        /**
+         * Sets the domainConfig
+         *
+         * @param domainConfig the path to the domain configuration file to use
+         * @return this ReloadParameters object
+         */
+        public ReloadParameters setDomainConfig(String domainConfig) {
+            this.domainConfig = domainConfig;
+            return this;
+        }
+    }
+
+    /**
+     * Reload parameters to execute reload-enhanced operation
+     */
+    public static class ReloadEnhancedParameters extends ReloadParameters {
+        Stability stability;
+
+        /**
+         * Sets the stability
+         *
+         * @param stability the stability level to use
+         * @return this ReloadParameters object
+         */
+        public ReloadParameters setStability(Stability stability) {
+            this.stability = stability;
             return this;
         }
     }
