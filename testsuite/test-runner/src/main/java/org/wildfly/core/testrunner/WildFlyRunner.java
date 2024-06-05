@@ -184,17 +184,34 @@ public class WildFlyRunner extends BlockJUnit4ClassRunner {
             Security.insertProviderAt(ELYTRON_PROVIDER, 0);
             providerInstalled = true;
         }
+        RuntimeException setupException = null;
         try {
             if (automaticServerControl) {
                 runSetupTasks();
             }
         } catch (AssumptionViolatedException e) {
             assumptionFailedInServerSetup = e;
+        } catch (RuntimeException e) {
+            setupException = e;
         }
-        super.run(notifier);
+        if (setupException == null) {
+            super.run(notifier);
+        }
 
         if (automaticServerControl) {
-            runTearDownTasks();
+            RuntimeException tearDownException = null;
+            try {
+                runTearDownTasks();
+            } catch (RuntimeException e) {
+                tearDownException = e;
+            } finally {
+                if (setupException != null) {
+                    throw setupException;
+                }
+                if (tearDownException != null) {
+                    throw tearDownException;
+                }
+            }
         }
         if (providerInstalled) {
             Security.removeProvider(ELYTRON_PROVIDER.getName());
