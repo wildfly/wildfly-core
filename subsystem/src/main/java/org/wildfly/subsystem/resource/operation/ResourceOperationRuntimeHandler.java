@@ -206,20 +206,24 @@ public interface ResourceOperationRuntimeHandler {
                 // Detect whether this was triggered during rollback
                 boolean runtime = !context.isRollbackOnly();
                 if (context.isResourceServiceRestartAllowed()) {
-                    if (runtime ? context.markResourceRestarted(ancestorAddress, this) : context.revertResourceRestarted(ancestorAddress, this)) {
-                        ResourceOperationRuntimeHandler ancestorRuntimeHandler = this.ancestorRuntimeHandler;
+                    try {
                         Resource ancestorResource = context.readResourceFromRoot(ancestorAddress);
                         Resource originalAncestorResource = context.getOriginalRootResource().navigate(ancestorAddress);
-                        // Remove/recreate parent services in separate step using an OperationContext relative to the ancestor resource
-                        // This is necessary to support service installation via CapabilityServiceTarget
-                        // We don't actually execute a read-resource operation, we just need a valid operation with the correct address
-                        context.addStep(Util.getReadResourceOperation(ancestorAddress), new OperationStepHandler() {
-                            @Override
-                            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                                ancestorRuntimeHandler.removeRuntime(context, runtime ? originalAncestorResource : ancestorResource);
-                                ancestorRuntimeHandler.addRuntime(context, runtime ? ancestorResource : originalAncestorResource);
-                            }
-                        }, OperationContext.Stage.RUNTIME, true);
+                        if (runtime ? context.markResourceRestarted(ancestorAddress, this) : context.revertResourceRestarted(ancestorAddress, this)) {
+                            ResourceOperationRuntimeHandler ancestorRuntimeHandler = this.ancestorRuntimeHandler;
+                            // Remove/recreate parent services in separate step using an OperationContext relative to the ancestor resource
+                            // This is necessary to support service installation via CapabilityServiceTarget
+                            // We don't actually execute a read-resource operation, we just need a valid operation with the correct address
+                            context.addStep(Util.getReadResourceOperation(ancestorAddress), new OperationStepHandler() {
+                                @Override
+                                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                                    ancestorRuntimeHandler.removeRuntime(context, runtime ? originalAncestorResource : ancestorResource);
+                                    ancestorRuntimeHandler.addRuntime(context, runtime ? ancestorResource : originalAncestorResource);
+                                }
+                            }, OperationContext.Stage.RUNTIME, true);
+                        }
+                    } catch (Resource.NoSuchResourceException e) {
+                        // If ancestor resource was created in the same batch, the "original" resource may not exist, in which case, there is nothing to restart
                     }
                 } else {
                     if (runtime) {
