@@ -67,9 +67,9 @@ public class HostProcessReloadHandler extends HostEnvironmentAwareProcessReloadH
 
     private static final AttributeDefinition[] SECONDARY_HC_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_HOST_CONFIG, HOST_CONFIG};
 
-    private static final AttributeDefinition[] ENHANCED_PRIMARY_HC_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_DOMAIN_CONFIG, USE_CURRENT_HOST_CONFIG, DOMAIN_CONFIG, HOST_CONFIG, STABILITY};
+    private static final AttributeDefinition[] ENHANCED_PRIMARY_HC_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, USE_CURRENT_DOMAIN_CONFIG, USE_CURRENT_HOST_CONFIG, DOMAIN_CONFIG, HOST_CONFIG, STABILITY};
 
-    private static final AttributeDefinition[] ENHANCED_SECONDARY_HC_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_HOST_CONFIG, HOST_CONFIG, STABILITY};
+    private static final AttributeDefinition[] ENHANCED_SECONDARY_HC_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, USE_CURRENT_HOST_CONFIG, HOST_CONFIG, STABILITY};
 
     private final HostControllerEnvironment environment;
     private final LocalHostControllerInfo hostControllerInfo;
