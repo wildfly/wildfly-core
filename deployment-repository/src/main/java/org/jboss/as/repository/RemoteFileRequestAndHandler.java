@@ -159,7 +159,6 @@ public abstract class RemoteFileRequestAndHandler {
 
     private void getChildFiles(final File base, final List<File> childFiles) {
         for (File child : base.listFiles()) {
-            childFiles.add(child);
             if (child.isFile() || isEmpty(child)) {
                 childFiles.add(child);
             } else {
