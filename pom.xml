@@ -16,7 +16,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>25.0.0.Beta3-SNAPSHOT</version>
+    <version>25.0.0.Beta3</version>
 
     <packaging>pom</packaging>
 
