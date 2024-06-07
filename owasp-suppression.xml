@@ -319,4 +319,89 @@
         <packageUrl regex="true">^pkg:maven/org\.wildfly\.security/wildfly\-elytron\-realm\-token@.*$</packageUrl>
         <cve>CVE-2024-1233</cve>
     </suppress>
+
+    <!-- Used only in tests -->
+    <!-- bulk suppress for all org.apache.directory.api:api-* with CVE-2015-3250 and CVE-2018-1337 -->
+    <suppress>
+        <notes><![CDATA[
+        file name: api-*-1.0.0.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.directory\.api/api.*@.*$</packageUrl>
+        <cve>CVE-2015-3250</cve>
+        <cve>CVE-2018-1337</cve>
+    </suppress>
+    <!-- apacheds-all is used only in tests, not deployed -->
+    <suppress>
+        <notes><![CDATA[
+        file name: apacheds-all-2.0.0-M15.jar (shaded: log4j:log4j:1.2.17)
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/log4j/log4j@.*$</packageUrl>
+        <cve>CVE-2019-17571</cve>
+        <cve>CVE-2020-9493</cve>
+        <cve>CVE-2022-23305</cve>
+        <cve>CVE-2022-23302</cve>
+        <cve>CVE-2022-23307</cve>
+        <cve>CVE-2021-4104</cve>
+        <cve>CVE-2023-26464</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: apacheds-all-2.0.0-M15.jar (shaded: commons-collections:commons-collections:3.2.1)
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/commons\-collections/commons\-collections@.*$</packageUrl>
+        <cve>CVE-2015-7501</cve>
+        <cve>CVE-2015-6420</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: apacheds-all-2.0.0-M15.jar (shaded: org.apache.mina:mina-core:2.0.7)
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.mina/mina\-core@.*$</packageUrl>
+        <cve>CVE-2019-0231</cve>
+    </suppress>
+
+    <!-- CVE-2020-10740 affects WF in version <20. WF-CORE 18 is part of WF26 -->
+    <!-- bulk suppress for all org.wildfly.core:wildfly-* with CVE-2020-10740-->
+    <suppress>
+        <notes><![CDATA[
+        file name: wildfly-*-18.1.2-12-PSI-SNAPSHOT.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.core/wildfly.*@.*$</packageUrl>
+        <cve>CVE-2020-10740</cve>
+    </suppress>
+
+    <!-- okhttp is used only in tests -->
+    <suppress>
+        <notes><![CDATA[
+        file name: okhttp-3.8.1.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp3/okhttp@.*$</packageUrl>
+        <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
+    </suppress>
+    <!-- okio is used only in tests -->
+    <suppress>
+        <notes><![CDATA[
+        file name: okio-1.13.0.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.squareup\.okio/okio@.*$</packageUrl>
+        <cve>CVE-2023-3635</cve>
+    </suppress>
+
+    <!-- packages netty-* are used only in tests-->
+    <suppress>
+        <notes><![CDATA[
+        file name: netty-*-4.1.86.Final.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/netty\-.*@.*$</packageUrl>
+        <cve>CVE-2023-44487</cve>
+    </suppress>
+
+    <!-- packages logback-* are used only in tests -->
+    <suppress>
+        <notes><![CDATA[
+        file name: logback-core-1.2.9.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-.*@.*$</packageUrl>
+        <cve>CVE-2023-6378</cve>
+    </suppress>
 </suppressions>
