@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-testsuite</artifactId>
-        <version>23.0.3-1-PSI-ALPHA-1</version>
+        <version>23.0.3-1-PSI-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
