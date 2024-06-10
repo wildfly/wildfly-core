@@ -58,6 +58,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.PropertyConfigurator;
+import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleLoader;
 import static org.wildfly.core.jar.runtime.Constants.LOG_BOOT_FILE_PROP;
@@ -66,6 +67,7 @@ import static org.wildfly.core.jar.runtime.Constants.LOG_MANAGER_PROP;
 import static org.wildfly.core.jar.runtime.Constants.STANDALONE_CONFIG;
 
 import org.jboss.modules.ModuleLoggerFinder;
+import org.jboss.modules.log.JDKModuleLogger;
 import org.jboss.stdio.LoggingOutputStream;
 import org.jboss.stdio.NullInputStream;
 import org.jboss.stdio.SimpleStdioContextSelector;
@@ -217,6 +219,8 @@ public final class BootableJar implements ShutdownHandler {
             LogContext ctx = configureLogContext();
             // Use our own LogContextSelector which returns the configured context.
             LogContext.setLogContextSelector(() -> ctx);
+            // Set a new JDK module logger to replace the default NoopModuleLogger
+            Module.setModuleLogger(new JDKModuleLogger());
 
             // Make sure our original stdio is properly captured.
             try {
