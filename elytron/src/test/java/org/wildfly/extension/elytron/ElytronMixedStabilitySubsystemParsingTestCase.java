@@ -49,10 +49,12 @@ public class ElytronMixedStabilitySubsystemParsingTestCase extends AbstractSubsy
             private String readResource(String name) throws IOException {
                 String namespaceUri = ElytronSubsystemSchema.CURRENT.get(Stability.DEFAULT).getNamespace().getUri();
                 String version = namespaceUri.substring(namespaceUri.lastIndexOf(':') + 1);
-                if (!name.contains(version + ".xml")) {
-                    return ModelTestUtils.readResource(getClass(), name.replace("elytron", "legacy-elytron-subsystem"));
-                } else {
+                String previewNamespaceUri = ElytronSubsystemSchema.CURRENT.get(Stability.PREVIEW).getNamespace().getUri();
+                String previewVersion = previewNamespaceUri.substring(previewNamespaceUri.lastIndexOf(':') + 1);
+                if (name.contains(version + ".xml") || name.contains(previewVersion + ".xml")) {
                     return ModelTestUtils.readResource(getClass(), name.replace("elytron", "elytron-subsystem"));
+                } else {
+                    return ModelTestUtils.readResource(getClass(), name.replace("elytron", "legacy-elytron-subsystem"));
                 }
             }
         };
