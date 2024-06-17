@@ -1475,6 +1475,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = Message.NONE, value = "- Server configuration file in use: %s")
     String serverConfigFileInUse(String serverConfigFile);
 
+    @Message(id = Message.NONE, value = "- Minimum feature stability level: %s")
+    String serverStabilityInUse(Stability stability);
+
     @Message(id = Message.NONE, value = "%s started in %dms - Started %d of %d services (%d services are lazy, passive or on-demand) %s")
     String startedCleanMessage(String prettyVersionString, long time, int startedServices, int allServices, int passiveOnDemandServices, String append);
 

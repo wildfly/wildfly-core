@@ -267,13 +267,14 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                       final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver, final ManagedAuditLogger auditLogger,
                                       final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                       final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension) {
-        assert rootDescriptionProvider == null: "description provider cannot be used anymore";
-        assert rootResourceDefinition != null: "Null root resource definition";
+        assert rootDescriptionProvider == null : "description provider cannot be used anymore";
+        assert rootResourceDefinition != null : "Null root resource definition";
         assert expressionResolver != null : "Null expressionResolver";
         assert auditLogger != null : "Null auditLogger";
         assert authorizer != null : "Null authorizer";
         assert securityIdentitySupplier != null : "Null securityIdentitySupplier";
-        assert capabilityRegistry!=null : "Null capabilityRegistry";
+        assert capabilityRegistry != null : "Null capabilityRegistry";
+        assert stability != null : "Null stability";
         this.executorService = executorService;
         this.instabilityListener = instabilityListener;
         this.processType = processType;

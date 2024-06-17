@@ -1476,4 +1476,6 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = Message.NONE, value = "- Host Controller configuration file in use: %s")
     String configFileInUse(String hostConfigFile);
 
+    @Message(id = Message.NONE, value = "- Minimum feature stability level: %s")
+    String stabilityInUse(Stability stability);
 }
