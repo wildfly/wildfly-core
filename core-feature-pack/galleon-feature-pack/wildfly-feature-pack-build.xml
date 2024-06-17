@@ -3,7 +3,7 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<build xmlns="urn:wildfly:feature-pack-build:3.1" producer="wildfly-core@maven(org.jboss.universe:community-universe):current">
+<build xmlns="urn:wildfly:feature-pack-build:3.4" producer="wildfly-core@maven(org.jboss.universe:community-universe):current">
     <default-packages>
         <package name="modules.all"/>
         <package name="docs"/>
@@ -13,6 +13,11 @@
         <group name="org.wildfly.core"/>
     </package-schemas>
 
+    <stability-levels>
+        <minimum-stability-level>experimental</minimum-stability-level>
+        <config-stability-level>community</config-stability-level>
+        <package-stability-level>experimental</package-stability-level>
+    </stability-levels>
     <config name="standalone.xml" model="standalone">
         <!-- config name is the resulting xml file name which can be changed by setting the property below
         <props>
