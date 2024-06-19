@@ -22,36 +22,6 @@
         <cve>CVE-2021-32827</cve>
     </suppress>
 
-    <!-- [wildfly-core] The vulnerability applies to io.undertow package, undertow-server from org.wildfly.security.elytron-web package is a different module -->
-    <suppress>
-        <notes><![CDATA[
-       file name: undertow-server-1.9.1.Final.jar
-       ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server.*@.*$</packageUrl>
-        <cve>CVE-2019-3888</cve>
-        <cve>CVE-2019-10184</cve>
-        <cve>CVE-2019-10212</cve>
-        <cve>CVE-2019-14888</cve>
-        <cve>CVE-2019-19343</cve>
-        <cve>CVE-2020-1745</cve>
-        <cve>CVE-2020-1757</cve>
-        <cve>CVE-2020-10705</cve>
-        <cve>CVE-2020-10719</cve>
-    </suppress>
-
-    <!-- [wildfly-core] Applies to versions prior to wildfly 21.0.0 -->
-    <suppress>
-        <notes><![CDATA[
-   file name: wildfly-openssl-macosx-x86_64-2.1.0.SP01.jar
-   file name: wildfly-openssl-linux-s390x-2.1.0.Final.jar
-   file name: wildfly-openssl-linux-i386-2.1.0.SP01.jar
-   file name: wildfly-openssl-java-2.1.4.Final.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.openssl/wildfly\-openssl\-.*$</packageUrl>
-        <cve>CVE-2020-10718</cve>
-        <cve>CVE-2020-10740</cve>
-    </suppress>
-
     <!-- [wildfly-core] Applies to versions prior to wildfly 21.0.0 -->
     <suppress>
         <notes><![CDATA[
@@ -63,133 +33,15 @@
         <cve>CVE-2020-10740</cve>
     </suppress>
 
-    <!-- [wildfly-core] Applies to versions prior to wildfly 21.0.0 -->
+    <!-- False positive, this vulnerability affects module used in wildfly tests only -->
     <suppress>
         <notes><![CDATA[
-   file name: wildfly-galleon-plugins-5.2.2.Final.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.galleon\-plugins/wildfly\-galleon\-plugins@.*$</packageUrl>
-        <cve>CVE-2020-10718</cve>
-        <cve>CVE-2020-10740</cve>
-    </suppress>
-
-    <!-- [wildfly-core] Applies to versions prior to wildfly 21.0.0 -->
-    <suppress>
-        <notes><![CDATA[
-   file name: wildfly-galleon-plugins-5.2.2.Final.jar (shaded: org.wildfly.extras.batavia:transformer-api:1.0.9.Final)
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.extras\.batavia/transformer\-api@.*$</packageUrl>
-        <cve>CVE-2020-10718</cve>
-        <cve>CVE-2020-10740</cve>
-    </suppress>
-
-    <!-- [wildfly-core] Applies to versions prior to wildfly 21.0.0 -->
-    <suppress>
-        <notes><![CDATA[
-   file name: wildfly-galleon-plugins-5.2.2.Final.jar (shaded: org.wildfly.galleon-plugins:transformer:5.2.2.Final)
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.galleon\-plugins/transformer@.*$</packageUrl>
-        <cve>CVE-2020-10718</cve>
-        <cve>CVE-2020-10740</cve>
-    </suppress>
-
-    <!-- CVE-2022-31569 does not affect WildFly -->
-    <suppress>
-        <notes><![CDATA[
-   file name: wildfly-galleon-plugins-5.2.10.Final.jar (shaded: org.eclipse.transformer:org.eclipse.transformer:0.2.0)
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.transformer/org\.eclipse\.transformer@.*$</packageUrl>
-        <cve>CVE-2022-31569</cve>
-    </suppress>
-
-    <!-- The io.undertow system is vulnerable, but not org.wildfly.security.elytron-web:undertow-server which integrates Elytron with Undertow -->
-    <!-- The io.undertow is in version 2.2.17 which is higher then vulnerable prior to 2.2.11.Final -->
-    <suppress>
-        <notes><![CDATA[
-   file name: undertow-server-1.10.1.Final.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server@.*$</packageUrl>
-        <cve>CVE-2021-3629</cve>
-		<cve>CVE-2021-3690</cve>
-        <cve>CVE-2021-3597</cve>
-        <cve>CVE-2020-10687</cve>
-        <cve>CVE-2021-20220</cve>
-    </suppress>
-
-    <!-- This issue touches artifact provisioned in Amazon Linux (https://alas.aws.amazon.com/ALAS-2022-1601.html). Also log4j-cve-2021-44228-hotpatch-1.3.5 is not present in PSI WildFly. -->
-    <suppress>
-       <notes><![CDATA[
-       file name: log4j-api-2.17.2.jar
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j\-api@.*$</packageUrl>
-       <cpe>cpe:/a:apache:log4j</cpe>
-	   <vulnerabilityName>CVE-2022-33915</vulnerabilityName>
-    </suppress>
-
-	<!-- Vulnerability fixed in undertow 2.2.15 -->
-    <suppress>
-       <notes><![CDATA[
-       file name: undertow-server-1.10.1.Final.jar
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server@.*$</packageUrl>
-	   <vulnerabilityName>CVE-2021-3859</vulnerabilityName>
-    </suppress>
-
-	<!-- Vulnerability fixed in undertow 2.2.18 -->
-    <suppress>
-       <notes><![CDATA[
-       file name: undertow-core-2.2.19.Final.jar
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/io\.undertow/undertow\-core@.*$</packageUrl>
-	   <vulnerabilityName>CVE-2022-1319</vulnerabilityName>
-    </suppress>
-    <suppress>
-       <notes><![CDATA[
-       file name: undertow-server-1.10.1.Final.jar
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server@.*$</packageUrl>
-	   <vulnerabilityName>CVE-2022-1319</vulnerabilityName>
-    </suppress>
-
-	<!-- CVE-2022-1259 is directly related to undertow-core -->
-    <suppress>
-       <notes><![CDATA[
-       file name: undertow-server-1.10.1.Final.jar
-       ]]></notes>
-       <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server@.*$</packageUrl>
-	   <vulnerabilityName>CVE-2022-1259</vulnerabilityName>
-    </suppress>
-
-    <!-- Suppression after undertow update to 2.2.19.Final -->
-    <suppress>
-        <notes><![CDATA[
-        file name: undertow-server-1.10.1.Final.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server@.*$</packageUrl>
-        <cve>CVE-2022-2053</cve>
-    </suppress>
-
-	<!-- False positive, this vulnerability affects module used in wildfly tests only -->
-	<suppress>
-		<notes><![CDATA[
 		file name: commons-text-1.8.jar
 		]]></notes>
-		<packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons\-text@.*$</packageUrl>
-		<vulnerabilityName>CVE-2022-42889</vulnerabilityName>
-	</suppress>
-
-    <!-- Suppression after commit https://github.com/PSI-Polska/wildfly/commit/f73161c76990618cf723c7f30118f12fa21af99a -->
-    <suppress>
-        <notes><![CDATA[
-        file name: wildfly-openssl-java-2.2.1.Final.jar
-        file name: wildfly-openssl-linux-s390x-2.2.0.Final.jar
-        file name: wildfly-openssl-linux-x86_64-2.2.0.SP01.jar
-        file name: wildfly-openssl-macosx-x86_64-2.2.0.Final.jar
-        file name: wildfly-openssl-windows-x86_64-2.2.0.Final.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.openssl/wildfly\-openssl\-.*@.*$</packageUrl>
-        <cve>CVE-2022-1278</cve>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons\-text@.*$</packageUrl>
+        <vulnerabilityName>CVE-2022-42889</vulnerabilityName>
     </suppress>
+
     <suppress>
         <notes><![CDATA[
         file name: wildfly-legacy-spi-7.0.0.Final.jar
@@ -197,54 +49,6 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.wildfly\.legacy\.test/wildfly\-legacy\-.*@.*$</packageUrl>
         <cve>CVE-2022-1278</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        file name: wildfly-galleon-plugins-5.2.10.Final.jar (shaded: org.wildfly.extras.batavia:transformer-api:1.0.12.Final)
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.extras\.batavia/transformer\-api@.*$</packageUrl>
-        <cve>CVE-2022-1278</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        file name: wildfly-galleon-plugins-5.2.10.Final.jar (shaded: org.wildfly.galleon-plugins:transformer:5.2.10.Final)
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.galleon\-plugins/transformer@.*$</packageUrl>
-        <cve>CVE-2022-1278</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        file name: wildfly-galleon-plugins-5.2.10.Final.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.galleon\-plugins/wildfly\-galleon\-plugins@.*$</packageUrl>
-        <cve>CVE-2022-1278</cve>
-    </suppress>
-	<suppress>
-        <notes><![CDATA[
-		file name: snakeyaml-1.32.jar
-		]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
-		<!-- Based on https://nvd.nist.gov/vuln/detail/CVE-2022-3064 - CVE affects yaml support in GO language which is not part of WildFly -->
-		<cve>CVE-2022-3064</cve>
-    </suppress>
-    <!--   False positive, based on https://nvd.nist.gov/vuln/detail/CVE-2023-34615 this cve concerns -->
-    <!--   https://github.com/billdavidson/JSONUtil/issues/10 -->
-    <!--   wildfly-elytron-json-util does not contain this JSONUtil -->
-    <!--   CVE was raised based on library name, but it is different library -->
-    <suppress>
-        <notes><![CDATA[
-        file name: wildfly-elytron-json-util-1.19.2-1-PSI.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.security/wildfly\-elytron\-json\-util@.*$</packageUrl>
-        <cve>CVE-2023-34615</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        file name: undertow-server-1.10.1.Final.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server@.*$</packageUrl>
-        <cve>CVE-2023-1108</cve>
-        <cve>CVE-2023-3223</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -261,22 +65,6 @@
         <cve>CVE-2022-4244</cve>
     </suppress>
 
-    <!-- False positive, JGit in version 6.6.1.202309021850-r already contains a fix -->
-    <!-- False positive result caused by https://github.com/jeremylong/DependencyCheck/issues/5943 -->
-    <suppress>
-        <notes><![CDATA[
-   file name: org.eclipse.jgit-6.6.1.202309021850-r.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jgit/org\.eclipse\.jgit@.*$</packageUrl>
-        <cve>CVE-2023-4759</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: org.eclipse.jgit.ssh.apache-6.6.1.202309021850-r.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jgit/org\.eclipse\.jgit\.ssh\.apache@.*$</packageUrl>
-        <cve>CVE-2023-4759</cve>
-    </suppress>
     <!-- Dependency used only in test modules -->
     <suppress>
         <notes><![CDATA[
@@ -284,5 +72,96 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.jayway\.jsonpath/json\-path@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-51074</vulnerabilityName>
+    </suppress>
+
+    <!--Dependency (api-i18n:1.0.0*) used only in tests (scope: test), not distributed as part of the deployment/modules -->
+    <suppress>
+        <notes><![CDATA[
+   file name: api-i18n-1.0.0.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.directory\.api/api\-i18n@1.0.0$</packageUrl>
+        <cve>CVE-2018-1337</cve>
+        <cve>CVE-2015-3250</cve>
+    </suppress>
+    <!--Dependency (api-util:1.0.0*) used only in tests (scope: test), not distributed as part of the deployment/modules -->
+    <suppress>
+        <notes><![CDATA[
+   file name: apacheds-all-2.0.0-M15.jar (shaded: org.apache.directory.api:api-util:1.0.0-M20)
+   file name: api-util-1.0.0.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.directory\.api/api\-util@1.0.0(-M20)?$</packageUrl>
+        <cve>CVE-2018-1337</cve>
+        <cve>CVE-2015-3250</cve>
+    </suppress>
+    <!--Dependencies (api-ldap-*:1.0.0*) used only in tests (scope: test), not distributed as part of the deployment/modules -->
+    <suppress>
+        <notes><![CDATA[
+   file name: apacheds-all-2.0.0-M15.jar (shaded: org.apache.directory.api:api-ldap-*:1.0.0-M20)
+   file name: api-ldap-*-1.0.0.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.directory\.api/api\-ldap\-.*@1.0.0(-M20)?$</packageUrl>
+        <cve>CVE-2018-1337</cve>
+        <cve>CVE-2015-3250</cve>
+    </suppress>
+
+    <!-- Transitive dependencies used only in tests, not distributed as part of the deployment/modules -->
+    <suppress>
+        <notes><![CDATA[
+   file name: apacheds-all-2.0.0-M15.jar (shaded: log4j:log4j:1.2.17)
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/log4j/log4j@.*$</packageUrl>
+        <cve>CVE-2019-17571</cve>
+        <cve>CVE-2020-9493</cve>
+        <cve>CVE-2022-23302</cve>
+        <cve>CVE-2022-23305</cve>
+        <cve>CVE-2022-23307</cve>
+        <cve>CVE-2021-4104</cve>
+        <cve>CVE-2023-26464</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: apacheds-all-2.0.0-M15.jar (shaded: commons-collections:commons-collections:3.2.1)
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/commons\-collections/commons\-collections@.*$</packageUrl>
+        <cve>CVE-2015-7501</cve>
+        <cve>CVE-2015-6420</cve>
+    </suppress>
+
+    <!-- Dependency used only in tests, not distributed as part of the deployment/modules -->
+    <suppress>
+        <notes><![CDATA[
+   file name: xmlunit-core-2.6.3.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.xmlunit/xmlunit\-core@.*$</packageUrl>
+        <cve>CVE-2024-31573</cve>
+    </suppress>
+
+    <!-- CVE-2022-1278 affects WildFly up to (excluding) 27.0.0 -->
+    <suppress>
+        <notes><![CDATA[
+   file name: wildfly-*-23.*.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.core/wildfly\-.*@.*$</packageUrl>
+        <cve>CVE-2022-1278</cve>
+    </suppress>
+
+    <!-- Vulnerabilities affects WildFly up to (excluding) 27.0.0 -->
+    <suppress>
+        <notes><![CDATA[
+   file name: wildfly-galleon-plugins-6.5.4.Final.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.galleon\-plugins/wildfly\-galleon\-plugins@.*$</packageUrl>
+        <cve>CVE-2020-10718</cve>
+        <cve>CVE-2020-10740</cve>
+        <cve>CVE-2022-1278</cve>
+    </suppress>
+
+    <!-- Transitive dependency used only in tests, not distributed as part of the deployment/modules -->
+    <suppress>
+        <notes><![CDATA[
+   file name: mina-core-2.0.16.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.mina/mina\-core@.*$</packageUrl>
+        <cve>CVE-2019-0231</cve>
     </suppress>
 </suppressions>
