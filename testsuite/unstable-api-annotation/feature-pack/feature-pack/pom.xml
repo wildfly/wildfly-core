@@ -51,7 +51,7 @@
                             <goal>index-unstable-api-annotations</goal>
                         </goals>
                         <configuration>
-                            <outputFile>${project.build.directory}/index/wildfly-core-testsuite-unstable-api-annotation-feature-pack.txt</outputFile>
+                            <outputFile>${project.build.directory}/index/wildfly-core-testsuite-unstable-api-annotation-feature-pack.zip</outputFile>
                             <filters>
                                 <filter>
                                     <annotation>org.wildfly.core.test.unstable.api.annotation.classes.api.Unstable</annotation>

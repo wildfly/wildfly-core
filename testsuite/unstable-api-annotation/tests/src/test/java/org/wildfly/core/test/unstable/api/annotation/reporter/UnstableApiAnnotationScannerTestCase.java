@@ -67,7 +67,7 @@ public class UnstableApiAnnotationScannerTestCase {
     private static final String CONTENT = "content";
     private static final String INDEX_INDEX_FILE = "index.txt";
 
-    private static final String TEST_FEATURE_PACK_INDEX = "wildfly-core-testsuite-unstable-api-annotation-feature-pack.txt";
+    private static final String TEST_FEATURE_PACK_INDEX = "wildfly-core-testsuite-unstable-api-annotation-feature-pack.zip";
 
     @Test
     public void testIndexExists() throws Exception {
