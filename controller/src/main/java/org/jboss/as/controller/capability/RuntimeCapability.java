@@ -5,12 +5,12 @@
 
 package org.jboss.as.controller.capability;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ServiceNameFactory;
@@ -133,20 +133,12 @@ public class RuntimeCapability<T> implements Capability {
         assert builder.baseName != null;
         this.name = builder.baseName;
         this.dynamic = builder.dynamic;
-        this.requirements = establishRequirements(builder.requirements);
+        this.requirements = builder.requirements;
         this.dynamicNameMapper = Objects.requireNonNullElse(builder.dynamicNameMapper, UnaryCapabilityNameResolver.DEFAULT);
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceValueType = builder.serviceValueType;
         this.allowMultipleRegistrations = builder.allowMultipleRegistrations;
         this.stability = builder.stability;
-    }
-
-    private static Set<String> establishRequirements(Set<String> input) {
-        if (input != null && !input.isEmpty()) {
-            return Set.copyOf(input);
-        } else {
-            return Collections.emptySet();
-        }
     }
 
     /**
@@ -161,7 +153,7 @@ public class RuntimeCapability<T> implements Capability {
     ) {
         this.name = buildDynamicCapabilityName(baseName, dynamicElement);
         this.dynamic = false;
-        this.requirements = establishRequirements(requirements);
+        this.requirements = requirements;
         this.dynamicNameMapper = Objects.requireNonNullElse(dynamicNameMapper, UnaryCapabilityNameResolver.DEFAULT);
         this.runtimeAPI = runtimeAPI;
         this.serviceValueType = serviceValueType;
@@ -321,8 +313,8 @@ public class RuntimeCapability<T> implements Capability {
         assert isDynamicallyNamed();
         assert dynamicElement != null;
         assert dynamicElement.length > 0;
-        return new RuntimeCapability<>(getName(), serviceValueType, getServiceName(), runtimeAPI,
-                getRequirements(), allowMultipleRegistrations,dynamicNameMapper, this.stability, dynamicElement);
+        return new RuntimeCapability<>(this.name, serviceValueType, getServiceName(), runtimeAPI,
+                this.requirements, allowMultipleRegistrations, dynamicNameMapper, this.stability, dynamicElement);
 
     }
 
@@ -349,8 +341,8 @@ public class RuntimeCapability<T> implements Capability {
         assert path != null;
         String[] dynamicElement = dynamicNameMapper.apply(path);
         assert dynamicElement.length > 0;
-        return new RuntimeCapability<>(getName(), serviceValueType, getServiceName(), runtimeAPI,
-                getRequirements(), allowMultipleRegistrations, dynamicNameMapper, this.stability, dynamicElement);
+        return new RuntimeCapability<>(this.name, serviceValueType, getServiceName(), runtimeAPI,
+                this.requirements, allowMultipleRegistrations, dynamicNameMapper, this.stability, dynamicElement);
     }
 
     @Override
@@ -420,7 +412,7 @@ public class RuntimeCapability<T> implements Capability {
         private final T runtimeAPI;
         private final boolean dynamic;
         private Class<?> serviceValueType;
-        private Set<String> requirements;
+        private Set<String> requirements = Set.of();
         private boolean allowMultipleRegistrations = ALLOW_MULTIPLE;
         private Function<PathAddress, String[]> dynamicNameMapper = UnaryCapabilityNameResolver.DEFAULT;
         private Stability stability = Stability.DEFAULT;
@@ -562,11 +554,33 @@ public class RuntimeCapability<T> implements Capability {
          */
         public Builder<T> addRequirements(String... requirements) {
             assert requirements != null;
-            if (this.requirements == null) {
-                this.requirements = new HashSet<>(requirements.length);
+            if (requirements.length > 0) {
+                this.requirements = this.requirements.isEmpty() ? Set.of(requirements) : Stream.concat(this.requirements.stream(), Stream.of(requirements)).collect(Collectors.toUnmodifiableSet());
             }
-            Collections.addAll(this.requirements, requirements);
             return this;
+        }
+
+        /**
+         * Adds the names of other capabilities that this capability requires. The requirement
+         * for these capabilities will automatically be registered when this capability is registered.
+         *
+         * @param requirements the capability names
+         * @return the builder
+         */
+        public Builder<T> addRequirements(NullaryServiceDescriptor<?>... requirements) {
+            assert requirements != null;
+            switch (requirements.length) {
+                case 0:
+                    return this;
+                case 1:
+                    return this.addRequirements(requirements[0].getName());
+                case 2:
+                    return this.addRequirements(requirements[0].getName(), requirements[1].getName());
+                default:
+                    Stream<String> mapped = Stream.of(requirements).map(NullaryServiceDescriptor::getName);
+                    this.requirements = (this.requirements.isEmpty() ? mapped : Stream.concat(this.requirements.stream(), mapped)).collect(Collectors.toUnmodifiableSet());
+                    return this;
+            }
         }
 
         /**
