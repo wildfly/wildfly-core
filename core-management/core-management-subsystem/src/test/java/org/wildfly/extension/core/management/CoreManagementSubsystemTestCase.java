@@ -16,15 +16,15 @@ import java.util.EnumSet;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2016 Red Hat Inc.
  */
 @RunWith(Parameterized.class)
-public class CoreManagementSubsystem_1_0_TestCase extends AbstractSubsystemSchemaTest<CoreManagementSubsystemSchema_1_0> {
+public class CoreManagementSubsystemTestCase extends AbstractSubsystemSchemaTest<CoreManagementSubsystemSchema> {
 
     @Parameterized.Parameters(name = "{0}")
-    public static Iterable<CoreManagementSubsystemSchema_1_0> getParameters() {
-        return EnumSet.allOf(CoreManagementSubsystemSchema_1_0.class);
+    public static Iterable<CoreManagementSubsystemSchema> getParameters() {
+        return EnumSet.allOf(CoreManagementSubsystemSchema.class);
     }
 
-    public CoreManagementSubsystem_1_0_TestCase(CoreManagementSubsystemSchema_1_0 schema) {
-        super(CoreManagementExtension.SUBSYSTEM_NAME, new CoreManagementExtension(), schema, CoreManagementSubsystemSchema_1_0.ALL.get(schema.getStability()));
+    public CoreManagementSubsystemTestCase(CoreManagementSubsystemSchema schema) {
+        super(CoreManagementExtension.SUBSYSTEM_NAME, new CoreManagementExtension(), schema, CoreManagementSubsystemSchema.CURRENT.get(schema.getStability()));
     }
 
     @Override

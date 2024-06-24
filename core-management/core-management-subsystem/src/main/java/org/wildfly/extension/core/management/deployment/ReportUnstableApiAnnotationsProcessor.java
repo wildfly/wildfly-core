@@ -5,6 +5,13 @@
 
 package org.wildfly.extension.core.management.deployment;
 
+import static org.wildfly.extension.core.management.logging.CoreManagementLogger.UNSUPPORTED_ANNOTATION_LOGGER;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -23,20 +30,12 @@ import org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.ClassInfoS
 import org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.ExtendsAnnotatedClass;
 import org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.ImplementsAnnotatedInterface;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Supplier;
-
-import static org.wildfly.extension.core.management.logging.CoreManagementLogger.UNSUPPORTED_ANNOTATION_LOGGER;
-
 public class ReportUnstableApiAnnotationsProcessor implements DeploymentUnitProcessor {
 
-    private final Supplier<UnstableApiAnnotationLevel> levelSupplier;
+    private final UnstableApiAnnotationLevel level;
 
-    public ReportUnstableApiAnnotationsProcessor(Supplier<UnstableApiAnnotationLevel> levelSupplier) {
-        this.levelSupplier = levelSupplier;
+    public ReportUnstableApiAnnotationsProcessor(UnstableApiAnnotationLevel level) {
+        this.level = level;
     }
 
     /**
@@ -122,7 +121,6 @@ public class ReportUnstableApiAnnotationsProcessor implements DeploymentUnitProc
     }
 
     private AnnotationUsageReporter getAnnotationUsageReporter(DeploymentPhaseContext ctx, DeploymentUnit top) throws DeploymentUnitProcessingException {
-        UnstableApiAnnotationLevel level = levelSupplier.get();
         if (level == UnstableApiAnnotationLevel.ERROR) {
             return new ErrorAnnotationUsageReporter();
         }

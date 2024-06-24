@@ -25,24 +25,24 @@ import java.util.Map;
  *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2016 Red Hat inc.
  */
-public enum CoreManagementSubsystemSchema_1_0 implements PersistentSubsystemSchema<CoreManagementSubsystemSchema_1_0> {
+public enum CoreManagementSubsystemSchema implements PersistentSubsystemSchema<CoreManagementSubsystemSchema> {
 
     VERSION_1_0(1),
     VERSION_1_0_PREVIEW(1, Stability.PREVIEW);
-    static final Map<Stability, CoreManagementSubsystemSchema_1_0> ALL = Feature.map(EnumSet.of(VERSION_1_0, VERSION_1_0_PREVIEW));
+    static final Map<Stability, CoreManagementSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_1_0, VERSION_1_0_PREVIEW));
 
-    private final VersionedNamespace<IntVersion, CoreManagementSubsystemSchema_1_0> namespace;
+    private final VersionedNamespace<IntVersion, CoreManagementSubsystemSchema> namespace;
 
-    CoreManagementSubsystemSchema_1_0(int major) {
+    CoreManagementSubsystemSchema(int major) {
         this.namespace = SubsystemSchema.createLegacySubsystemURN(CoreManagementExtension.SUBSYSTEM_NAME, new IntVersion(major, 0));
     }
 
-    CoreManagementSubsystemSchema_1_0(int major, Stability stability) {
+    CoreManagementSubsystemSchema(int major, Stability stability) {
         this.namespace = SubsystemSchema.createLegacySubsystemURN(CoreManagementExtension.SUBSYSTEM_NAME, stability, new IntVersion(major, 0));
     }
 
     @Override
-    public VersionedNamespace<IntVersion, CoreManagementSubsystemSchema_1_0> getNamespace() {
+    public VersionedNamespace<IntVersion, CoreManagementSubsystemSchema> getNamespace() {
         return this.namespace;
     }
 

@@ -5,6 +5,14 @@
 
 package org.wildfly.extension.core.management.deployment;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
@@ -27,15 +35,6 @@ import org.wildfly.extension.core.management.logging.CoreManagementLogger;
 import org.wildfly.unstable.api.annotation.classpath.index.RuntimeIndex;
 import org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.ClassInfoScanner;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Supplier;
-
 public class ScanUnstableApiAnnotationsProcessor implements DeploymentUnitProcessor {
 
     private final RuntimeIndex runtimeIndex;
@@ -48,13 +47,13 @@ public class ScanUnstableApiAnnotationsProcessor implements DeploymentUnitProces
     private static final String BASE_MODULE_NAME = "org.wildfly._internal.unstable-api-annotation-index";
     private static final String INDEX_FILE = "index.txt";
     private final Stability stability;
-    private final Supplier<UnstableApiAnnotationResourceDefinition.UnstableApiAnnotationLevel> levelSupplier;
+    private final UnstableApiAnnotationResourceDefinition.UnstableApiAnnotationLevel level;
 
     private boolean extraTestOutput;
 
-    public ScanUnstableApiAnnotationsProcessor(RunningMode runningMode, Stability stability, Supplier<UnstableApiAnnotationResourceDefinition.UnstableApiAnnotationLevel> levelSupplier) {
+    public ScanUnstableApiAnnotationsProcessor(RunningMode runningMode, Stability stability, UnstableApiAnnotationResourceDefinition.UnstableApiAnnotationLevel level) {
         this.stability = stability;
-        this.levelSupplier = levelSupplier;
+        this.level = level;
         extraTestOutput = System.getProperties().containsKey(EXTRA_TEST_OUTPUT_PROPERTY);
 
         boolean enableScanning = true;
@@ -106,11 +105,8 @@ public class ScanUnstableApiAnnotationsProcessor implements DeploymentUnitProces
      * @param phaseContext the deployment unit context
      * @throws DeploymentUnitProcessingException
      */
-    public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
+    public void deploy(DeploymentPhaseContext phaseContext) {
         if (runtimeIndex == null) {
-            return;
-        }
-        if (levelSupplier.get() == null) {
             return;
         }
         final DeploymentUnit du = phaseContext.getDeploymentUnit();

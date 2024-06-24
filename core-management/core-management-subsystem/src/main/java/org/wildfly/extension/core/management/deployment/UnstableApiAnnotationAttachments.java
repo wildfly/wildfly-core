@@ -9,8 +9,8 @@ import org.jboss.as.server.deployment.AttachmentKey;
 import org.wildfly.unstable.api.annotation.classpath.runtime.bytecode.ClassInfoScanner;
 
 class UnstableApiAnnotationAttachments {
-    public static final AttachmentKey<ClassInfoScanner> UNSTABLE_API_ANNOTATION_SCANNER = AttachmentKey.create(ClassInfoScanner.class);
+    static final AttachmentKey<ClassInfoScanner> UNSTABLE_API_ANNOTATION_SCANNER = AttachmentKey.create(ClassInfoScanner.class);
 
-    public static final AttachmentKey<Boolean> UNSTABLE_API_ANNOTATIONS_SCANNED = AttachmentKey.create(Boolean.class);
+    static final AttachmentKey<Boolean> UNSTABLE_API_ANNOTATIONS_SCANNED = AttachmentKey.create(Boolean.class);
 
 }

@@ -49,7 +49,7 @@ public class CoreManagementExtension implements Extension {
     @Override
     public void initialize(ExtensionContext context) {
         final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, CURRENT_VERSION);
-        subsystem.registerXMLElementWriter(new PersistentResourceXMLDescriptionWriter(CoreManagementSubsystemSchema_1_0.ALL.get(context.getStability())));
+        subsystem.registerXMLElementWriter(new PersistentResourceXMLDescriptionWriter(CoreManagementSubsystemSchema.CURRENT.get(context.getStability())));
         //This subsystem should be runnable on a host
         subsystem.setHostCapable();
         ManagementResourceRegistration registration = subsystem.registerSubsystemModel(new CoreManagementRootResourceDefinition());
@@ -58,6 +58,6 @@ public class CoreManagementExtension implements Extension {
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMappings(CoreManagementExtension.SUBSYSTEM_NAME, EnumSet.allOf(CoreManagementSubsystemSchema_1_0.class));
+        context.setSubsystemXmlMappings(CoreManagementExtension.SUBSYSTEM_NAME, EnumSet.allOf(CoreManagementSubsystemSchema.class));
     }
 }
