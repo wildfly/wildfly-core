@@ -132,6 +132,7 @@ public class ResourceDescriptorRegistrar implements ManagementResourceRegistrar 
         OperationDefinition addDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD, this.descriptor.getResourceDescriptionResolver())
                 .setParameters(attributes.toArray(AttributeDefinition[]::new))
                 .setDescriptionProvider(new DefaultResourceAddDescriptionProvider(registration, this.descriptor.getResourceDescriptionResolver(), ordered))
+                .setStability(registration.getStability())
                 .withFlag(this.descriptor.getAddOperationRestartFlag())
                 .build();
         registration.registerOperationHandler(addDefinition, this.descriptor.getAddOperationTransformation().apply(new AddResourceOperationStepHandler(this.descriptor)));
@@ -139,6 +140,7 @@ public class ResourceDescriptorRegistrar implements ManagementResourceRegistrar 
         // Register remove resource operation handler
         OperationDefinition removeDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.REMOVE, this.descriptor.getResourceDescriptionResolver())
                 .setDescriptionProvider(new DefaultResourceRemoveDescriptionProvider(this.descriptor.getResourceDescriptionResolver()))
+                .setStability(registration.getStability())
                 .withFlag(this.descriptor.getRemoveOperationRestartFlag())
                 .build();
         registration.registerOperationHandler(removeDefinition, this.descriptor.getResourceOperationTransformation().apply(new RemoveResourceOperationStepHandler(this.descriptor)));

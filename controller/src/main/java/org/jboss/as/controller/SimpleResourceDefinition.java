@@ -217,6 +217,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
                 .setParameters(this.getAddOperationParameters(registration))
                 .setDescriptionProvider(descriptionProvider)
                 .setEntryType(OperationEntry.EntryType.PUBLIC)
+                .setStability(registration.getStability())
                 .withFlags(flags)
                 .build();
         registration.registerOperationHandler(definition, handler);
@@ -234,6 +235,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
         OperationDefinition definition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.REMOVE, this.descriptionResolver)
                 .setDescriptionProvider(descriptionProvider)
                 .setEntryType(OperationEntry.EntryType.PUBLIC)
+                .setStability(registration.getStability())
                 .withFlags(flags)
                 .build();
         registration.registerOperationHandler(definition, handler);
