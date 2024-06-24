@@ -10,6 +10,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REPLY_PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
 
 import java.util.Locale;
 import java.util.Map;
@@ -92,7 +93,8 @@ public class DefaultResourceAddDescriptionProvider implements DescriptionProvide
         //This is auto-generated so don't add any access constraints
 
         result.get(REPLY_PROPERTIES).setEmptyObject();
-
+        // Use the stability level of the resource
+        result.get(STABILITY).set(this.registration.getStability().toString());
 
         return result;
     }
