@@ -5,40 +5,31 @@
 
 package org.wildfly.extension.core.management;
 
-import java.io.IOException;
-
-import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.RunningMode;
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
+import org.jboss.as.subsystem.test.AbstractSubsystemSchemaTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import java.util.EnumSet;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2016 Red Hat Inc.
  */
-public class CoreManagementSubsystemTestCase extends AbstractSubsystemBaseTest {
+@RunWith(Parameterized.class)
+public class CoreManagementSubsystemTestCase extends AbstractSubsystemSchemaTest<CoreManagementSubsystemSchema> {
 
-    public CoreManagementSubsystemTestCase() {
-        super(CoreManagementExtension.SUBSYSTEM_NAME, new CoreManagementExtension());
+    @Parameterized.Parameters(name = "{0}")
+    public static Iterable<CoreManagementSubsystemSchema> getParameters() {
+        return EnumSet.allOf(CoreManagementSubsystemSchema.class);
     }
 
-    @Override
-    protected String getSubsystemXml() throws IOException {
-        return readResource("core-management-subsystem-1_0.xml");
+    public CoreManagementSubsystemTestCase(CoreManagementSubsystemSchema schema) {
+        super(CoreManagementExtension.SUBSYSTEM_NAME, new CoreManagementExtension(), schema, CoreManagementSubsystemSchema.CURRENT.get(schema.getStability()));
     }
 
     @Override
     protected AdditionalInitialization createAdditionalInitialization() {
-        return new AdditionalInitialization() {
-
-            @Override
-            protected ProcessType getProcessType() {
-                return ProcessType.HOST_CONTROLLER;
-            }
-
-            @Override
-            protected RunningMode getRunningMode() {
-                return RunningMode.ADMIN_ONLY;
-            }
-        };
+        return new AdditionalInitialization.AdminOnlyHostControllerAdditionalInitialization(getSubsystemSchema());
     }
+
 }

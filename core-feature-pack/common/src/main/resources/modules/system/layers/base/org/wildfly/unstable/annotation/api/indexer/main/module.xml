@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<module xmlns="urn:jboss:module:1.9" name="org.wildfly.unstable.annotation.api.indexer">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
+    <resources>
+        <artifact name="${org.wildfly.unstable.api.annotation:unstable-api-annotation-classpath-indexer}"/>
+    </resources>
+
+    <dependencies>
+        <module name="org.jboss.logging"/>
+        <module name="io.smallrye.jandex"/>
+    </dependencies>
+</module>

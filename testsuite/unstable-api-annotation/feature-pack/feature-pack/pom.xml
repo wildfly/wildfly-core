@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.wildfly.core</groupId>
+        <artifactId>wildfly-core-testsuite-unstable-api-annotation-feature-pack-parent</artifactId>
+        <version>25.0.0.Beta5-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>wildfly-core-testsuite-unstable-api-annotation-feature-pack</artifactId>
+    <packaging>pom</packaging>
+
+    <name>WildFly Core Test Suite: Unstable API Annotation Feature Pack</name>
+
+    <properties>
+    </properties>
+
+    <build>
+        <finalName>${artifactId}-${project.version}</finalName>
+        <plugins>
+            <plugin>
+                <!-- Feature pack generation is vulnerable to leftover files in the target
+                     folder from previous builds, so always clean even if the clean lifecycle is not invoked -->
+                <artifactId>maven-clean-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>auto-clean</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.wildfly.unstable.api.annotation</groupId>
+                <artifactId>unstable-api-annotation-classpath-indexer-plugin</artifactId>
+                <version>${version.org.wildfly.unstable.api.annotation}</version>
+                <executions>
+                    <execution>
+                        <id>scan-experimental-annotations</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>index-unstable-api-annotations</goal>
+                        </goals>
+                        <configuration>
+                            <outputFile>${project.build.directory}/index/wildfly-core-testsuite-unstable-api-annotation-feature-pack.zip</outputFile>
+                            <filters>
+                                <filter>
+                                    <annotation>org.wildfly.core.test.unstable.api.annotation.classes.api.Unstable</annotation>
+                                    <groupIds>
+                                        <groupId>${project.groupId}</groupId>
+                                    </groupIds>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/resources</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/src/main/resources</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.wildfly.galleon-plugins</groupId>
+                <artifactId>wildfly-galleon-maven-plugin</artifactId>
+                <version>${version.org.wildfly.galleon-plugins}</version>
+                <executions>
+                    <execution>
+                        <id>wildfly-template-feature-pack-build</id>
+                        <goals>
+                            <goal>build-feature-pack</goal>
+                        </goals>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                            <fork-embedded>${galleon.fork.embedded}</fork-embedded>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-annotation-index</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/resources/packages/unstable-api-annotation-index.wildfly-core-testsuite-unstable-api-annotation-feature-pack/content/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/target/index/</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <dependencies>
+        <!-- Other feature pack dependencies -->
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-core-galleon-pack</artifactId>
+            <type>zip</type>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.galleon-plugins</groupId>
+            <artifactId>wildfly-galleon-plugins</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>wildfly-core-testsuite-unstable-api-annotation-feature-pack-subsystem</artifactId>
+        </dependency>
+    </dependencies>
+    
+
+
+</project>

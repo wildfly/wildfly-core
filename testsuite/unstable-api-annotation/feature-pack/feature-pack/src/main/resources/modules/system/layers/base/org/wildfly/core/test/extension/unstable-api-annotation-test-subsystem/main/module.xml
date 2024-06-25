@@ -1,0 +1,26 @@
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  ~
+  -->
+<module xmlns="urn:jboss:module:1.9" name="org.wildfly.core.test.extension.unstable-api-annotation-test-subsystem">
+
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
+    <resources>
+        <artifact name="${org.wildfly.core:wildfly-core-testsuite-unstable-api-annotation-feature-pack-subsystem}"/>
+    </resources>
+
+    <dependencies>
+        <!-- Typical module dependencies for a subsystem -->
+        <module name="org.jboss.as.controller"/>
+        <module name="org.jboss.as.server"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.jboss.modules"/>
+        <module name="org.jboss.staxmapper"/>
+        <module name="org.wildfly.security.manager"/>
+
+    </dependencies>
+</module>

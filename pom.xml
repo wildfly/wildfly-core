@@ -245,6 +245,7 @@
         <version.org.wildfly.security.elytron>2.4.2.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>4.1.0.Final</version.org.wildfly.security.elytron-web>
         <version.org.wildfly.security.jakarta.elytron-ee>3.0.3.Final</version.org.wildfly.security.jakarta.elytron-ee>
+        <version.org.wildfly.unstable.api.annotation>1.0.0.Beta1</version.org.wildfly.unstable.api.annotation>
         <version.org.yaml.snakeyaml>2.2</version.org.yaml.snakeyaml>
     </properties>
 
@@ -2173,10 +2174,16 @@
             </dependency>
 
             <dependency>
+                <groupId>org.wildfly.unstable.api.annotation</groupId>
+                <artifactId>unstable-api-annotation-classpath-indexer</artifactId>
+                <version>${version.org.wildfly.unstable.api.annotation}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${version.org.yaml.snakeyaml}</version>
-	    </dependency>
+    	    </dependency>
             <dependency>
                 <groupId>org.jboss.logging</groupId>
                 <artifactId>jboss-logging-annotations</artifactId>

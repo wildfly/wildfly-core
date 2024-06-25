@@ -38,7 +38,8 @@ class CoreManagementRootResourceDefinition extends PersistentResourceDefinition 
     @Override
     protected List<? extends PersistentResourceDefinition> getChildren() {
         return Arrays.asList(ConfigurationChangeResourceDefinition.INSTANCE,
-                new ProcessStateListenerResourceDefinition()
+                new ProcessStateListenerResourceDefinition(),
+                UnstableApiAnnotationResourceDefinition.INSTANCE
         );
     }
 }
