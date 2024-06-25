@@ -7,19 +7,21 @@ package org.jboss.as.core.model.test;
 import java.io.File;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningModeControl;
+import org.jboss.as.controller.ServiceNameFactory;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.management.Capabilities;
 import org.jboss.as.controller.operations.validation.OperationValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
@@ -103,9 +105,9 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
                 .setMaximumPoolSize(256)
                 .setKeepAliveTime(20L, TimeUnit.SECONDS)
                 .build();
-            ServiceName sn = AbstractControllerService.EXECUTOR_CAPABILITY.getCapabilityServiceName();
+            ServiceName sn = ServiceNameFactory.resolveServiceName(Capabilities.MANAGEMENT_EXECUTOR);
             ServiceBuilder sb = target.addService(sn);
-            Consumer<ExecutorService> c = sb.provides(sn);
+            Consumer<Executor> c = sb.provides(sn);
             sb.setInstance(Service.newInstance(c, mgmtExecutor));
             sb.install();
         }

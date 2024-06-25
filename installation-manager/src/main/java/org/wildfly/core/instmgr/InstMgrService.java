@@ -18,7 +18,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -45,7 +45,7 @@ class InstMgrService implements Service {
     private final InstallationManagerFactory imf;
     private final Supplier<PathManager> pathManagerSupplier;
     private final Consumer<InstMgrService> consumer;
-    private final Supplier<ExecutorService> executorSupplier;
+    private final Supplier<Executor> executorSupplier;
     private PathManager pathManager;
     private final AtomicBoolean started = new AtomicBoolean(false);
     private Path homeDir;
@@ -55,9 +55,9 @@ class InstMgrService implements Service {
     private Path controllerTempDir;
     private final ConcurrentMap<String, Path> tempDirs = new ConcurrentHashMap<>();
     private final InstMgrCandidateStatus candidateStatus;
-    private ExecutorService executor;
+    private Executor executor;
 
-    InstMgrService(InstallationManagerFactory imf, Supplier<PathManager> pathManagerSupplier, Supplier<ExecutorService> executorSupplier, Consumer<InstMgrService> consumer) {
+    InstMgrService(InstallationManagerFactory imf, Supplier<PathManager> pathManagerSupplier, Supplier<Executor> executorSupplier, Consumer<InstMgrService> consumer) {
         this.imf = imf;
         this.pathManagerSupplier = pathManagerSupplier;
         this.candidateStatus = new InstMgrCandidateStatus();
@@ -205,7 +205,7 @@ class InstMgrService implements Service {
         return controllerTempDir;
     }
 
-    public ExecutorService getMgmtExecutor() {
+    public Executor getMgmtExecutor() {
         return executor;
     }
 
