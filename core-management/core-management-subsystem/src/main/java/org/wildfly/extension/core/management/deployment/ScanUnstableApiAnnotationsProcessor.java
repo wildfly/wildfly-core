@@ -5,12 +5,11 @@
 
 package org.wildfly.extension.core.management.deployment;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.jboss.as.controller.RunningMode;
@@ -27,6 +26,7 @@ import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
+import org.jboss.modules.Resource;
 import org.jboss.vfs.VirtualFile;
 import org.jboss.vfs.VisitorAttributes;
 import org.jboss.vfs.util.SuffixMatchFilter;
@@ -45,7 +45,8 @@ public class ScanUnstableApiAnnotationsProcessor implements DeploymentUnitProces
     private final String EXTRA_TEST_OUTPUT_PROPERTY = "org.wildfly.test.unstable-api-annotation.extra-output";
 
     private static final String BASE_MODULE_NAME = "org.wildfly._internal.unstable-api-annotation-index";
-    private static final String INDEX_FILE = "index.txt";
+
+    private static final String README_TXT = "README.txt";
     private final Stability stability;
     private final UnstableApiAnnotationResourceDefinition.UnstableApiAnnotationLevel level;
 
@@ -59,9 +60,8 @@ public class ScanUnstableApiAnnotationsProcessor implements DeploymentUnitProces
         boolean enableScanning = true;
         if (runningMode == RunningMode.ADMIN_ONLY) {
             enableScanning = false;
-        } else if (stability.enables(Stability.EXPERIMENTAL) || !stability.enables(UnstableApiAnnotationResourceDefinition.STABILITY)) {
-            // We don't care about scanning at the experimental level.
-            // Also, we need to be at the level where the feature is enabled or lower
+        } else if (!stability.enables(UnstableApiAnnotationResourceDefinition.STABILITY)) {
+            // We need to be at the level where the feature is enabled or lower
             enableScanning = false;
         }
 
@@ -72,26 +72,30 @@ public class ScanUnstableApiAnnotationsProcessor implements DeploymentUnitProces
             try {
                 module = moduleLoader.loadModule(BASE_MODULE_NAME);
             } catch (ModuleLoadException e) {
-                // TODO make this module part of core so it is always there
+                // We might not have provisioned the module in future
             }
-            if (module != null) {
-                URL url = module.getExportedResource(INDEX_FILE);
-                List<URL> urls = new ArrayList<>();
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
-                    String fileName = reader.readLine();
-                    while (fileName != null) {
-                        fileName = fileName.trim();
-                        if (!fileName.isEmpty() && !fileName.startsWith("#")) {
-                            urls.add(module.getExportedResource(fileName));
-                        }
-                        fileName = reader.readLine();
-                    }
 
-                    if (!urls.isEmpty()) {
-                        runtimeIndex = RuntimeIndex.load(urls);
+            if (module != null) {
+
+                List<URL> urls = new ArrayList<>();
+                try {
+                    for (Iterator<Resource> it = module.globResources("**/*"); it.hasNext(); ) {
+                        Resource resource = it.next();
+                        URL url = resource.getURL();
+                        if (!url.getFile().equals(README_TXT)) {
+                            urls.add(resource.getURL());
+                        }
                     }
-                } catch (IOException e) {
+                } catch (ModuleLoadException e) {
                     throw new RuntimeException(e);
+                }
+
+                if (!urls.isEmpty()) {
+                    try {
+                        runtimeIndex = RuntimeIndex.load(urls);
+                    } catch(IOException e){
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         }

@@ -5,7 +5,23 @@
 
 package org.wildfly.core.test.unstable.api.annotation.reporter;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
+
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import jakarta.inject.Inject;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
@@ -39,21 +55,6 @@ import org.wildfly.extension.core.management.CoreManagementExtension;
 import org.wildfly.extension.core.management.UnstableApiAnnotationResourceDefinition;
 import org.wildfly.test.stability.StabilityServerSetupSnapshotRestoreTasks;
 
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
-
 @RunWith(WildFlyRunner.class)
 @ServerSetup({UnstableApiAnnotationScannerTestCase.AddUnstableApiAnnotationResourceSetupTask.class, UnstableApiAnnotationScannerTestCase.SystemPropertyServerSetupTask.class})
 public class UnstableApiAnnotationScannerTestCase {
@@ -64,9 +65,9 @@ public class UnstableApiAnnotationScannerTestCase {
     private static final String INDEX_MODULE_DIR =
             "system/layers/base/org/wildfly/_internal/unstable-api-annotation-index/main";
 
-    private static final String CONTENT = "content";
-    private static final String INDEX_INDEX_FILE = "index.txt";
+    private static final String README_TXT = "README.txt";
 
+    private static final String CONTENT = "content";
     private static final String TEST_FEATURE_PACK_INDEX = "wildfly-core-testsuite-unstable-api-annotation-feature-pack.zip";
 
     @Test
@@ -85,21 +86,10 @@ public class UnstableApiAnnotationScannerTestCase {
         Path indexContentDir = indexModulePath.resolve(CONTENT);
         Assert.assertTrue(Files.exists(indexContentDir));
 
-        Path mainIndexFile = indexContentDir.resolve(INDEX_INDEX_FILE);
-        Assert.assertTrue(Files.exists(mainIndexFile));
-
-        List<String> mainIndexFileList = Files.readAllLines(mainIndexFile)
-                .stream()
-                .filter(s -> !s.isEmpty())
-                .filter(s -> !s.startsWith("#"))
-                .collect(Collectors.toList());
-
-        Assert.assertEquals(1, mainIndexFileList.size());
-        Assert.assertTrue(mainIndexFileList.contains(TEST_FEATURE_PACK_INDEX));
 
         Set<String> indices = Files.list(indexContentDir)
-                .filter(p -> !p.getFileName().toString().equals(INDEX_INDEX_FILE))
                 .map(p -> p.getFileName().toString())
+                .filter(f -> !f.equals(README_TXT))
                 .collect(Collectors.toSet());
 
         Assert.assertEquals(1, indices.size());
