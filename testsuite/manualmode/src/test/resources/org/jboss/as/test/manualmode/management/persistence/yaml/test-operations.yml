@@ -4,7 +4,6 @@ wildfly-configuration:
     standard-sockets:
       socket-binding:
         management-https: !remove
-
   subsystem:
     elytron:
       disallowed-providers: !undefine

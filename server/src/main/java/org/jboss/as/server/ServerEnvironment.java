@@ -347,11 +347,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         javaExtDirs = getFilesFromProperty(JAVA_EXT_DIRS, props);
 
         if (launchType.equals(LaunchType.SELF_CONTAINED)) {
-            Path[] supplementalConfigurationFiles = findSupplementalConfigurationFiles(null, supplementalConfiguration);
-            ConfigurationExtension configurationExtension = ConfigurationExtensionFactory.createConfigurationExtension(supplementalConfigurationFiles);
-            if (configurationExtension != null) {
-                configInteractionPolicy = configurationExtension.shouldProcessOperations(runningModeControl) ? ConfigurationFile.InteractionPolicy.READ_ONLY : configInteractionPolicy;
-            }
             homeDir = new File(WildFlySecurityManager.getPropertyPrivileged("user.dir", "."));
             serverBaseDir = new File(WildFlySecurityManager.getPropertyPrivileged("user.dir", "."));
             serverLogDir = new File(WildFlySecurityManager.getPropertyPrivileged("user.dir", "."));

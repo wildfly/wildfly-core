@@ -1,0 +1,12 @@
+wildfly-configuration:
+    deployment:
+        test.jar:
+            content:
+                - 
+                    path: test.jar
+                    relative-to: jboss.server.base.dir
+                    archive: true
+        hello.jar:
+            content:
+                -
+                    empty: true

@@ -6,9 +6,16 @@ package org.jboss.as.test.manualmode.management.persistence.yaml;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ARCHIVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_MODE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 
@@ -145,6 +152,8 @@ public class YamlExtensionTestCase {
         testRemoveSocketYaml = getResourceFilePath("test-remove-socket.yml");
         testAddingExtensionPathDeploymentOverlayIgnored = getResourceFilePath("test-adding-extension-path-deployment-overlay-ignored.yml");
         testAddingEmptyExtensionFailYaml = getResourceFilePath("test-adding-empty-extension.yml");
+        testDeploymentYaml = getResourceFilePath("test-deployment.yml");
+        testManagedDeploymentYaml = getResourceFilePath("test-managed-deployment.yml");
         testReplacingByEmptyResourceYaml = getResourceFilePath("test-replacing-by-empty-resource.yml");
         testWrongIndentationYaml = getResourceFilePath("test-indentation-wrong.yml");
         testNonExistentAttributeYaml = getResourceFilePath("test-setting-non-existent-attribute.yml");
@@ -154,6 +163,7 @@ public class YamlExtensionTestCase {
         testRemoveNonExistentResource = getResourceFilePath("test-remove-non-existent-resource.yml");
         testListAddOperationToStringFails = getResourceFilePath("test-list-add-operation-to-string-fails.yml");
         testListAddOperationToNonExistentResourceFails = getResourceFilePath("test-list-add-operation-to-non-existent-resource.yml");
+        createDeployment(configurationDir.getParent().resolve("test.jar"));
         cliScript = getResourceFilePath("test.cli");
         defaultXml = loadFile(configurationDir.resolve("standalone.xml")).replace("\"", "'");
         expectedXml = loadFile(referenceConfiguration).replace("\"", "'");
@@ -248,6 +258,41 @@ public class YamlExtensionTestCase {
         assertThat("Information that adding path is ignored is missing in log.", byteArrayOutputStream.toString(), CoreMatchers.containsString("WFLYCTL0508: The yaml element 'extension' and its sub-elements are ignored."));
     }
 
+    @Test
+    public void testDeploymentYaml() throws Exception {
+        container.startYamlExtension(new Path[]{testDeploymentYaml});
+        try (ModelControllerClient client = container.getClient().getControllerClient()) {
+            ModelNode deployment = readDeployment(client, "test.jar");
+            Assert.assertEquals("test.jar", deployment.get(NAME).asString());
+            Assert.assertEquals("test.jar", deployment.get(RUNTIME_NAME).asString());
+            Assert.assertEquals("true", deployment.get(ENABLED).asString());
+            ModelNode contentItemNode = deployment.get(CONTENT).get(0);
+            Assert.assertEquals("test.jar", contentItemNode.get(PATH).asString());
+            Assert.assertEquals("jboss.server.base.dir", contentItemNode.get(RELATIVE_TO).asString());
+            Assert.assertTrue(contentItemNode.get(ARCHIVE).asBoolean());
+            deployment = readDeployment(client, "hello.jar");
+            Assert.assertEquals("hello.jar", deployment.get(NAME).asString());
+            Assert.assertEquals("hello.jar", deployment.get(RUNTIME_NAME).asString());
+            contentItemNode = deployment.get(CONTENT).get(0);
+            Assert.assertEquals("test.jar", contentItemNode.get(PATH).asString());
+            Assert.assertEquals("jboss.server.base.dir", contentItemNode.get(RELATIVE_TO).asString());
+            Assert.assertTrue(contentItemNode.get(ARCHIVE).asBoolean());
+        }
+    }
+
+    /**
+     * Managed deployments are not supported. We should fail
+     */
+    @Test
+    public void testServerStartFailedForManagedDeployment() {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        try {
+            container.startYamlExtension(new PrintStream(byteArrayOutputStream), new Path[]{testManagedDeploymentYaml});
+            Assert.assertFalse(container.isStarted());
+        } catch (RuntimeException ex) {
+            Assert.assertFalse(container.isStarted());
+        }
+    }
 
     private static void createDeployment(Path deployment) throws IOException {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
