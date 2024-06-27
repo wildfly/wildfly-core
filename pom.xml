@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  ~ Copyright The WildFly Authors
-  ~ SPDX-License-Identifier: Apache-2.0
-  -->
+<!-- -->
+<!-- ****************************************************************** -->
+<!--   -->
+<!-- Copyright 2024 PSI Software SE. All rights reserved. -->
+<!-- PSI PROPRIETARY/CONFIDENTIAL. Use is subject to license terms -->
+<!--   -->
+<!-- ****************************************************************** -->
   <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -245,7 +248,7 @@
         <version.org.wildfly.openssl.wildfly-openssl-linux-s390x>2.2.2.SP01</version.org.wildfly.openssl.wildfly-openssl-linux-s390x>
         <version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>2.2.3.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>2.2.6.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>4.0.0.Final</version.org.wildfly.security.elytron-web>
         <version.org.wildfly.security.jakarta.elytron-ee>3.0.3.Final</version.org.wildfly.security.jakarta.elytron-ee>
         <version.org.yaml.snakeyaml>2.2</version.org.yaml.snakeyaml>
