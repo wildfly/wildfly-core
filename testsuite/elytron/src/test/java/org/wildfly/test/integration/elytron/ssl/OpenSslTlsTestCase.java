@@ -12,29 +12,20 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FilePermission;
 import java.io.IOException;
 import java.lang.reflect.ReflectPermission;
 import java.nio.file.Files;
-import java.security.KeyStore;
 import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import jakarta.inject.Inject;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedKeyManager;
-import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.as.controller.PathAddress;
@@ -68,6 +59,8 @@ import org.wildfly.security.ssl.ProtocolSelector;
 import org.wildfly.security.ssl.SSLContextBuilder;
 import org.wildfly.security.ssl.test.util.CAGenerationTool;
 import org.wildfly.security.ssl.test.util.CAGenerationTool.Identity;
+import org.wildfly.security.ssl.test.util.DefinedCAIdentity;
+import org.wildfly.security.ssl.test.util.DefinedIdentity;
 import org.wildfly.test.security.common.TestRunnerConfigSetupTask;
 import org.wildfly.test.security.common.elytron.CliPath;
 import org.wildfly.test.security.common.elytron.ConfigurableElement;
@@ -83,6 +76,7 @@ import org.xnio.OptionMap;
 import org.xnio.Xnio;
 
 import io.undertow.protocols.ssl.UndertowXnioSsl;
+import jakarta.inject.Inject;
 
 @RunWith(WildFlyRunner.class)
 @org.wildfly.core.testrunner.ServerSetup({ OpenSslTlsTestCase.KeyMaterialSetup.class, OpenSslTlsTestCase.ServerSetup.class })
@@ -109,7 +103,7 @@ public class OpenSslTlsTestCase {
 
     static {
         try {
-            WORK_DIR = Files.createTempDirectory("jks-").toFile();
+            WORK_DIR = Files.createTempDirectory("tls-").toFile();
         } catch (IOException e) {
             throw new RuntimeException("Unable to create temporary folder", e);
         }
@@ -327,41 +321,13 @@ public class OpenSslTlsTestCase {
             }
             clientContextBuilder.setProtocolSelector(protocolSelector);
         }
-        clientContextBuilder.setKeyManager(getKeyManager(CLIENT_KEY_STORE_FILE));
-        clientContextBuilder.setTrustManager(getTrustManager(TRUST_STORE_FILE));
+        DefinedCAIdentity caIdentity = caGenerationTool.getDefinedCAIdentity(Identity.CA);
+        DefinedIdentity scarab = caGenerationTool.getDefinedIdentity(Identity.SCARAB);
+        clientContextBuilder.setKeyManager(scarab.createKeyManager());
+        clientContextBuilder.setTrustManager(caIdentity.createTrustManager());
         clientContextBuilder.setClientMode(true);
         SSLContext clientContext = clientContextBuilder.build().create();
         return new UndertowXnioSsl(Xnio.getInstance(), OptionMap.EMPTY, clientContext);
-    }
-
-    private static X509ExtendedKeyManager getKeyManager(final File ksFile) throws Exception {
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        keyManagerFactory.init(loadKeyStore(ksFile), PASSWORD.toCharArray());
-        for (KeyManager current : keyManagerFactory.getKeyManagers()) {
-            if (current instanceof X509ExtendedKeyManager) {
-                return (X509ExtendedKeyManager) current;
-            }
-        }
-        throw new IllegalStateException("Unable to obtain X509ExtendedKeyManager.");
-    }
-
-    private static X509TrustManager getTrustManager(File trustStoreFile) throws Exception {
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        trustManagerFactory.init(loadKeyStore(trustStoreFile));
-        for (TrustManager current : trustManagerFactory.getTrustManagers()) {
-            if (current instanceof X509TrustManager) {
-                return (X509TrustManager) current;
-            }
-        }
-        throw new IllegalStateException("Unable to obtain X509TrustManager.");
-    }
-
-    private static KeyStore loadKeyStore(final File ksFile) throws Exception {
-        KeyStore ks = KeyStore.getInstance("JKS");
-        try (FileInputStream fis = new FileInputStream(ksFile)) {
-            ks.load(fis, PASSWORD.toCharArray());
-        }
-        return ks;
     }
 
     private void performSimpleTest(UndertowXnioSsl ssl, String expectedCipherSuite, String expectedProtocol) throws Exception {
