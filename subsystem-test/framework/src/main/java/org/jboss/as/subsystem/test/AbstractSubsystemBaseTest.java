@@ -6,11 +6,13 @@
 package org.jboss.as.subsystem.test;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.PathAddress;
@@ -110,6 +112,26 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
     protected String getSubsystemXml(String configId) throws IOException {
         return readResource(configId);
 
+    }
+
+    /**
+     * Retrieves XML content from multiple resources identified by the given list of configuration IDs.
+     *
+     * @param configIds A list of configuration IDs, each identifying a resource whose XML content will be retrieved.
+     * @return A concatenated string containing the XML content of all resources identified by the configIds.
+     * @throws IOException If an I/O error occurs while reading any of the resources.
+     */
+
+    protected String getSubsystemXml(List<String> configIds) throws IOException {
+        return configIds.stream()
+                .map(configId -> {
+                    try {
+                        return readResource(configId);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                })
+                .collect(Collectors.joining());
     }
 
     /**
