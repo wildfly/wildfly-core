@@ -6,11 +6,17 @@ package org.jboss.as.controller.persistence.yaml;
 
 import static org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker.CLI_SCRIPT_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BYTES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EMPTY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INPUT_STREAM_INDEX;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
@@ -28,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -77,7 +84,9 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
     private boolean needReload;
     private Path[] files;
     private final List<Map<String, Object>> configs = new ArrayList<>();
+    private final Map<String, Object> deployments = new LinkedHashMap<>();
     private static final String[] EXCLUDED_ELEMENTS = {"deployment", "extension", "deployment-overlay", "path"};
+    public static final Set<String> MANAGED_CONTENT_ATTRIBUTES = Set.of(INPUT_STREAM_INDEX, HASH, BYTES, URL, EMPTY);
 
     @SuppressWarnings("unchecked")
     public YamlConfigurationExtension() {
@@ -114,11 +123,15 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                         boolean isPresent = config.containsKey(excluded);
                         if (isPresent) {
                             Object value = config.remove(excluded);
-                            String message = MGMT_OP_LOGGER.ignoreYamlElement(excluded);
-                            if (value != null) {
-                                message = message + MGMT_OP_LOGGER.ignoreYamlSubElement(yaml.dump(value).trim());
+                            if (value instanceof Map && DEPLOYMENT.equals(excluded)) {
+                                deployments.putAll((Map<String, Object>) value);
+                            } else {
+                                String message = MGMT_OP_LOGGER.ignoreYamlElement(excluded);
+                                if (value != null) {
+                                    message = message + MGMT_OP_LOGGER.ignoreYamlSubElement(yaml.dump(value).trim());
+                                }
+                                MGMT_OP_LOGGER.warn(message);
                             }
-                            MGMT_OP_LOGGER.warn(message);
                         }
                     }
                     parsedFiles.add(file.toAbsolutePath().toString());
@@ -159,6 +172,9 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
         }
         for (Map<String, Object> config : configs) {
             processResource(PathAddress.EMPTY_ADDRESS, new HashMap<>(config), rootRegistration, rootRegistration, xmlOperations, postExtensionOps, false);
+        }
+        for (Map.Entry<String, Object> deployment : deployments.entrySet()) {
+            processUnmanagedDeployments(rootRegistration, deployment, xmlOperations, postExtensionOps);
         }
         this.configs.clear();
         needReload = true;
@@ -395,13 +411,22 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
     @SuppressWarnings("unchecked")
     private void processAttributes(PathAddress address, ImmutableManagementResourceRegistration rootRegistration, OperationEntry operationEntry, Map<String, Object> map, List<ParsedBootOp> postExtensionOps, Map<PathAddress, ParsedBootOp> xmlOperations) {
         Set<AttributeDefinition> attributes = new HashSet<>();
+        Set<String> attributeNames = new HashSet<>();
         for (AttributeAccess attributeAccess : rootRegistration.getAttributes(address).values()) {
             if (attributeAccess.getStorageType() == AttributeAccess.Storage.CONFIGURATION) {
                 AttributeDefinition def = attributeAccess.getAttributeDefinition();
                 if (def != null) {
                     if (!def.isResourceOnly()) {
                         attributes.add(def);
+                        attributeNames.add(def.getName());
                     }
+                }
+            }
+        }
+        for (AttributeDefinition def : operationEntry.getOperationDefinition().getParameters()) {
+            if (def != null && ! attributeNames.contains(def.getName())) {
+                if (!def.isResourceOnly()) {
+                    attributes.add(def);
                 }
             }
         }
@@ -522,6 +547,23 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
     @Override
     public String getCommandLineInstructions() {
         return MGMT_OP_LOGGER.argYaml();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void processUnmanagedDeployments(ImmutableManagementResourceRegistration rootRegistration, Map.Entry<String, Object> deployment, Map<PathAddress, ParsedBootOp> xmlOperations, List<ParsedBootOp> postExtensionOps) {
+        String name = deployment.getKey();
+        OperationEntry operationEntry = rootRegistration.getOperationEntry(PathAddress.pathAddress("deployment", name), ADD);
+        assert deployment.getValue() instanceof Map;
+        Map<String, Object> attributes = (Map<String, Object>) deployment.getValue();
+        if (attributes.get("content") instanceof Iterable) {
+            Map<String, Object> content = (Map<String, Object>) (((Iterable<? extends Object>) attributes.get("content")).iterator().next());
+            Set<String> result = content.keySet().stream().distinct().filter(MANAGED_CONTENT_ATTRIBUTES::contains).collect(Collectors.toSet());
+            if (!result.isEmpty()) {
+                throw MGMT_OP_LOGGER.unsupportedDeployment(name, result);
+            }
+        }
+        PathAddress address = PathAddress.pathAddress(DEPLOYMENT, name);
+        processAttributes(address, rootRegistration, operationEntry, attributes, postExtensionOps, xmlOperations);
     }
 
     private interface Operation {
