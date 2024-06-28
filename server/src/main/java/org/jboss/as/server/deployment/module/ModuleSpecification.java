@@ -24,7 +24,7 @@ import org.jboss.modules.security.PermissionFactory;
 
 /**
  * Information used to build a module.
- *
+ * <p>
  * <strong>This class is not thread safe.</strong> It should only be used by the deployment unit processors
  * associated with a single deployment unit, with a parent deployment and a subdeployment considered to
  * be separate deployments.
@@ -38,13 +38,6 @@ public class ModuleSpecification extends SimpleAttachable {
      * System dependencies are dependencies that are added automatically by the container.
      */
     private final Set<ModuleDependency> systemDependenciesSet = new LinkedHashSet<>();
-
-    /**
-     * List view of {@link #systemDependenciesSet}.
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated(forRemoval = true)
-    private final List<ModuleDependency> systemDependencies = new ArrayList<>();
 
     /**
      * Local dependencies are dependencies on other parts of the deployment, such as a class-path entry
@@ -64,13 +57,6 @@ public class ModuleSpecification extends SimpleAttachable {
      * User dependencies are not affected by exclusions.
      */
     private final Set<ModuleDependency> userDependenciesSet = new HashSet<>();
-
-    /**
-     * List view of {@link #userDependenciesSet}.
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated(forRemoval = true)
-    private final List<ModuleDependency> userDependencies = new ArrayList<>();
 
     private final List<ResourceLoaderSpec> resourceLoaders = new ArrayList<>();
 
@@ -97,7 +83,7 @@ public class ModuleSpecification extends SimpleAttachable {
     private final Set<ModuleIdentifier> excludedDependencies = new HashSet<>();
 
     /**
-     * Flag that is set to true if modules of non private sub deployments should be able to see each other
+     * Flag that is set to true if modules of non-private sub deployments should be able to see each other
      */
     private boolean subDeploymentModulesIsolated;
 
@@ -114,7 +100,7 @@ public class ModuleSpecification extends SimpleAttachable {
     /**
      * Flag that indicates that this module should always be visible to other sub deployments, even if sub deployments
      * are isolated and there is no specify dependency on this module.
-     *
+     * <p>
      * If sub deployments are not isolated then this flag has no effect.
      *
      */
@@ -144,7 +130,7 @@ public class ModuleSpecification extends SimpleAttachable {
     public void addSystemDependency(final ModuleDependency dependency) {
         if (!exclusions.contains(dependency.getIdentifier())) {
             if (systemDependenciesSet.add(dependency)) {
-                resetDependencyLists(this.systemDependencies);
+                resetDependencyLists();
             }
         } else {
             excludedDependencies.add(dependency.getIdentifier());
@@ -159,7 +145,7 @@ public class ModuleSpecification extends SimpleAttachable {
 
     public void addUserDependency(final ModuleDependency dependency) {
         if (this.userDependenciesSet.add(dependency)) {
-            resetDependencyLists(this.userDependencies);
+            resetDependencyLists();
         }
     }
 
@@ -180,7 +166,7 @@ public class ModuleSpecification extends SimpleAttachable {
             ModuleDependency md = iter.next();
             if (predicate.test(md)) {
                 iter.remove();
-                resetDependencyLists(userDependencies);
+                resetDependencyLists();
             }
         }
     }
@@ -188,7 +174,7 @@ public class ModuleSpecification extends SimpleAttachable {
     public void addLocalDependency(final ModuleDependency dependency) {
         if (!exclusions.contains(dependency.getIdentifier())) {
             if (this.localDependenciesSet.add(dependency)) {
-                resetDependencyLists(null);
+                resetDependencyLists();
             }
         } else {
             excludedDependencies.add(dependency.getIdentifier());
@@ -199,15 +185,6 @@ public class ModuleSpecification extends SimpleAttachable {
         for (final ModuleDependency dependency : dependencies) {
             addLocalDependency(dependency);
         }
-    }
-
-    /** @deprecated use {@link #getSystemDependenciesSet()} */
-    @Deprecated(forRemoval = true)
-    public List<ModuleDependency> getSystemDependencies() {
-        if (systemDependencies.isEmpty()) {
-            systemDependencies.addAll(systemDependenciesSet);
-        }
-        return Collections.unmodifiableList(systemDependencies);
     }
 
     /**
@@ -244,7 +221,7 @@ public class ModuleSpecification extends SimpleAttachable {
             final ModuleDependency dep = it.next();
             if (dep.getIdentifier().equals(exclusion)) {
                 it.remove();
-                resetDependencyLists(this.systemDependencies);
+                resetDependencyLists();
             }
         }
         it = localDependenciesSet.iterator();
@@ -252,7 +229,7 @@ public class ModuleSpecification extends SimpleAttachable {
             final ModuleDependency dep = it.next();
             if (dep.getIdentifier().equals(exclusion)) {
                 it.remove();
-                resetDependencyLists(null);
+                resetDependencyLists();
             }
         }
     }
@@ -261,15 +238,6 @@ public class ModuleSpecification extends SimpleAttachable {
         for (final ModuleIdentifier exclusion : exclusions) {
             addExclusion(exclusion);
         }
-    }
-
-
-    /**
-     * @deprecated use {@link #getLocalDependenciesSet()} ()}
-     */
-    @Deprecated(forRemoval = true)
-    public List<ModuleDependency> getLocalDependencies() {
-        return Collections.unmodifiableList(new ArrayList<>(localDependenciesSet));
     }
 
 
@@ -283,18 +251,6 @@ public class ModuleSpecification extends SimpleAttachable {
     }
 
     /**
-     * @deprecated use {@link #getUserDependenciesSet()}
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated(forRemoval = true)
-    public List<ModuleDependency> getUserDependencies() {
-        if (userDependencies.isEmpty()) {
-            userDependencies.addAll(userDependenciesSet);
-        }
-        return Collections.unmodifiableList(userDependencies);
-    }
-
-    /**
      * User dependencies are dependencies that the user has specifically added, either via jboss-deployment-structure.xml
      * or via the manifest.
      * <p/>
@@ -304,20 +260,6 @@ public class ModuleSpecification extends SimpleAttachable {
      */
     public Set<ModuleDependency> getUserDependenciesSet() {
         return Collections.unmodifiableSet(userDependenciesSet);
-    }
-
-    /**
-     * Gets a modifiable view of the user dependencies list.
-     *
-     * @return The user dependencies
-     *
-     * @deprecated use {@link #addUserDependency(ModuleDependency)} and {@link #removeUserDependencies(Predicate)}
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated(forRemoval = true)
-    public Collection<ModuleDependency> getMutableUserDependencies() {
-        resetDependencyLists(this.userDependencies);
-        return userDependenciesSet;
     }
 
     @SuppressWarnings("unused")
@@ -471,10 +413,7 @@ public class ModuleSpecification extends SimpleAttachable {
         return unExcludedModuleExclusion;
     }
 
-    private void resetDependencyLists(List<ModuleDependency> listView) {
-        if (listView != null) {
-            listView.clear();
-        }
+    private void resetDependencyLists() {
         allDependencies = null;
     }
 
