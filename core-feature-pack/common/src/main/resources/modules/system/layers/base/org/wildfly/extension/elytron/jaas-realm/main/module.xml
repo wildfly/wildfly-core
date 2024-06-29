@@ -33,10 +33,6 @@
         <exclude path="org/wildfly/extension/elytron/JaasCustomSecurityRealmWrapper"/>
     </exports>
 
-    <resources>
-        <artifact name="${org.wildfly.core:wildfly-elytron-integration}"/>
-    </resources>
-
     <dependencies>
         <module name="java.logging"/>
         <module name="java.xml"/>
@@ -48,5 +44,6 @@
         <module name="org.jboss.logmanager"/>
         <module name="org.wildfly.common"/>
         <module name="org.wildfly.security.elytron-private" export="true"/>
+        <module name="org.wildfly.extension.elytron"/>
     </dependencies>
 </module>
