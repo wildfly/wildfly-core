@@ -17,7 +17,6 @@ import java.util.function.Consumer;
 import org.jboss.as.controller.RequirementServiceTarget;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.LifecycleEvent;
 import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.DelegatingServiceRegistry;
@@ -151,10 +150,10 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
             }
 
             final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
-            final Set<ModuleIdentifier> nonexsistentExcludedDependencies = moduleSpecification.getNonexistentExcludedDependencies();
+            final Set<String> nonexsistentExcludedDependencies = moduleSpecification.getFictitiousExcludedDependencies();
             if (!nonexsistentExcludedDependencies.isEmpty()) {
-                for (ModuleIdentifier module : nonexsistentExcludedDependencies) {
-                    ServerLogger.DEPLOYMENT_LOGGER.excludedDependenciesNotExist(module.getName());
+                for (String module : nonexsistentExcludedDependencies) {
+                    ServerLogger.DEPLOYMENT_LOGGER.excludedDependenciesNotExist(module);
                 }
             }
         }

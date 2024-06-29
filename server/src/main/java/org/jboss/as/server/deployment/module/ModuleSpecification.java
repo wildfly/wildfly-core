@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.jboss.as.server.deployment.SimpleAttachable;
 import org.jboss.modules.DependencySpec;
@@ -70,17 +71,17 @@ public class ModuleSpecification extends SimpleAttachable {
     /**
      * Modules that cannot be added as dependencies to the deployment, as the user has excluded them
      */
-    private final Set<ModuleIdentifier> exclusions = new HashSet<>();
+    private final Set<String> exclusions = new HashSet<>();
 
     /**
      * A Map structure that contains an exclusion target module as a key and its aliases as values.
      */
-    private final HashMap<ModuleIdentifier, List<ModuleIdentifier>> exclusionsMap = new HashMap<>();
+    private final HashMap<String, List<String>> exclusionsMap = new HashMap<>();
 
     /**
      * A subset of found dependencies that are excluded in process of deployment, as the user has excluded them
      */
-    private final Set<ModuleIdentifier> excludedDependencies = new HashSet<>();
+    private final Set<String> excludedDependencies = new HashSet<>();
 
     /**
      * Flag that is set to true if modules of non-private sub deployments should be able to see each other
@@ -114,7 +115,7 @@ public class ModuleSpecification extends SimpleAttachable {
     /**
      * Module aliases
      */
-    private final List<ModuleIdentifier> aliases = new ArrayList<>();
+    private final Set<String> aliases = new LinkedHashSet<>();
 
     /**
      * JBoss modules system dependencies, which allow you to specify dependencies on the app class loader
@@ -128,12 +129,12 @@ public class ModuleSpecification extends SimpleAttachable {
     private final List<PermissionFactory> permissionFactories = new ArrayList<>();
 
     public void addSystemDependency(final ModuleDependency dependency) {
-        if (!exclusions.contains(dependency.getIdentifier())) {
+        if (!exclusions.contains(dependency.getIdentifier().getName())) {
             if (systemDependenciesSet.add(dependency)) {
                 resetDependencyLists();
             }
         } else {
-            excludedDependencies.add(dependency.getIdentifier());
+            excludedDependencies.add(dependency.getIdentifier().getName());
         }
     }
 
@@ -172,12 +173,12 @@ public class ModuleSpecification extends SimpleAttachable {
     }
 
     public void addLocalDependency(final ModuleDependency dependency) {
-        if (!exclusions.contains(dependency.getIdentifier())) {
+        if (!exclusions.contains(dependency.getIdentifier().getName())) {
             if (this.localDependenciesSet.add(dependency)) {
                 resetDependencyLists();
             }
         } else {
-            excludedDependencies.add(dependency.getIdentifier());
+            excludedDependencies.add(dependency.getIdentifier().getName());
         }
     }
 
@@ -196,20 +197,27 @@ public class ModuleSpecification extends SimpleAttachable {
         return Collections.unmodifiableSet(systemDependenciesSet);
     }
 
+    /**
+     * Records that a module with the given identifier should be excluded from use as a system or local dependency.
+     * @param exclusion the module to exclude. Cannot be {@code null}
+     *
+     * @deprecated use {@link #addModuleExclusion(String)}
+     */
+    @Deprecated(forRemoval = true)
     public void addExclusion(final ModuleIdentifier exclusion) {
-        final String targetModule = ModuleAliasChecker.getTargetModule(exclusion.toString());
+        addModuleExclusion(exclusion.getName());
+    }
+
+    /**
+     * Records that a module with the given name should be excluded from use as a system or local dependency.
+     * @param exclusion the module to exclude. Cannot be {@code null}
+     */
+    public void addModuleExclusion(final String exclusion) {
+        final String targetModule = ModuleAliasChecker.getTargetModule(exclusion);
         if (targetModule != null) {
-            final ModuleIdentifier identifier = ModuleIdentifier.create(targetModule);
             // The exclusion is an alias
-            final List<ModuleIdentifier> aliases;
-            if (exclusionsMap.containsKey(identifier)) {
-                aliases = exclusionsMap.get(identifier);
-            } else {
-                aliases = new ArrayList<>();
-                exclusionsMap.put(identifier, aliases);
-            }
+            List<String> aliases = exclusionsMap.computeIfAbsent(targetModule, k -> new ArrayList<>());
             aliases.add(exclusion);
-            exclusions.add(identifier);
         } else {
             // The exclusion is not an alias
             exclusionsMap.putIfAbsent(exclusion, new ArrayList<>());
@@ -219,7 +227,7 @@ public class ModuleSpecification extends SimpleAttachable {
         Iterator<ModuleDependency> it = systemDependenciesSet.iterator();
         while (it.hasNext()) {
             final ModuleDependency dep = it.next();
-            if (dep.getIdentifier().equals(exclusion)) {
+            if (dep.getIdentifier().getName().equals(exclusion)) {
                 it.remove();
                 resetDependencyLists();
             }
@@ -227,13 +235,20 @@ public class ModuleSpecification extends SimpleAttachable {
         it = localDependenciesSet.iterator();
         while (it.hasNext()) {
             final ModuleDependency dep = it.next();
-            if (dep.getIdentifier().equals(exclusion)) {
+            if (dep.getIdentifier().getName().equals(exclusion)) {
                 it.remove();
                 resetDependencyLists();
             }
         }
     }
 
+    /**
+     * Records a collection of modules as being {@link #addModuleExclusion(String) excluded}.
+     * @param exclusions the identifiers of the modules to exclude. Cannot be {@code null}
+     *
+     * @deprecated iterate over the exclusions and call {@link #addModuleExclusion(String)}
+     */
+    @Deprecated(forRemoval = true)
     public void addExclusions(final Iterable<ModuleIdentifier> exclusions) {
         for (final ModuleIdentifier exclusion : exclusions) {
             addExclusion(exclusion);
@@ -346,16 +361,55 @@ public class ModuleSpecification extends SimpleAttachable {
         this.localLast = localLast;
     }
 
+    /**
+     * Record that another module is an alias for this module.
+     * @param moduleIdentifier the identifier of the alias module. Cannot be {@code null}
+     *
+     * @deprecated use {@link #addModuleAlias(String)}
+     */
+    @Deprecated(forRemoval = true)
     @SuppressWarnings("unused")
     public void addAlias(final ModuleIdentifier moduleIdentifier) {
+        addModuleAlias(moduleIdentifier.getName());
+    }
+
+    /**
+     * Record that another module is an alias for this module.
+     * @param moduleIdentifier the identifier of the alias module. Cannot be {@code null}
+     */
+    public void addModuleAlias(final String moduleIdentifier) {
         aliases.add(moduleIdentifier);
     }
 
+    /**
+     * Record that a collection of other modules are aliases for this module.
+     * @param moduleIdentifiers the identifiers of the alias modules. Cannot be {@code null}
+     *
+     * @deprecated iterate over the identifiers and call {@link #addModuleAlias(String)}
+     */
+    @Deprecated(forRemoval = true)
     public void addAliases(final Collection<ModuleIdentifier> moduleIdentifiers) {
-        aliases.addAll(moduleIdentifiers);
+        for (ModuleIdentifier id : moduleIdentifiers) {
+            addModuleAlias(id.getName());
+        }
     }
 
+    /**
+     * Gets the identifiers of modules that are aliases for this module.
+     * @return the identifiers. Will not return {@code null}
+     *
+     * @deprecated use {@link #getModuleAliases()}
+     */
+    @Deprecated(forRemoval = true)
     public List<ModuleIdentifier> getAliases() {
+        return aliases.stream().map(ModuleIdentifier::create).collect(Collectors.toList());
+    }
+
+    /**
+     * Gets the names of modules that are aliases for this module.
+     * @return the names. Will not return {@code null}
+     */
+    public Set<String> getModuleAliases() {
         return aliases;
     }
 
@@ -397,15 +451,33 @@ public class ModuleSpecification extends SimpleAttachable {
         return permissionFactories;
     }
 
+    /**
+     * Gets the identifiers of dependencies that {@link #addModuleExclusion(String) were meant to be excluded} but which were
+     * never recorded as a dependency.
+     *
+     * @return the names. Will not return {@code null}
+     *
+     * @deprecated use {@link #getFictitiousExcludedDependencies()}
+     */
+    @Deprecated(forRemoval = true)
     public Set<ModuleIdentifier> getNonexistentExcludedDependencies() {
+        return getFictitiousExcludedDependencies().stream().map(ModuleIdentifier::create).collect(Collectors.toSet());
+    }
+
+    /**
+     * Gets the names of dependencies that  {@link #addModuleExclusion(String) were meant to be excluded} but which were
+     * never recorded as a dependency.
+     *
+     * @return the names. Will not return {@code null}
+     */
+    public Set<String> getFictitiousExcludedDependencies() {
         // WFCORE-4234 check all excluded dependencies via jboss-deployment-structure.xml are also valid.
-        final Set<ModuleIdentifier> unExcludedModuleExclusion = new HashSet<>(exclusions);
-        for (ModuleIdentifier identifier : excludedDependencies) {
-            for (Map.Entry<ModuleIdentifier, List<ModuleIdentifier>> entry : exclusionsMap.entrySet()) {
+        final Set<String> unExcludedModuleExclusion = new HashSet<>(exclusions);
+        for (String identifier : excludedDependencies) {
+            for (Map.Entry<String, List<String>> entry : exclusionsMap.entrySet()) {
                 if (entry.getKey().equals(identifier) || entry.getValue().contains(identifier)) {
                     unExcludedModuleExclusion.remove(entry.getKey());
-                    unExcludedModuleExclusion.removeAll(entry.getValue());
-
+                    entry.getValue().forEach(unExcludedModuleExclusion::remove);
                     break;
                 }
             }
