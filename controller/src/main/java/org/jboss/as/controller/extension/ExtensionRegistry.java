@@ -256,7 +256,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
      * @param hostControllerInfoAccessor the host controller
      * @deprecated Use {@link #builder(ProcessType)} instead.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl, ManagedAuditLogger auditLogger, JmxAuthorizer authorizer,
             Supplier<SecurityIdentity> securityIdentitySupplier, RuntimeHostControllerInfoAccessor hostControllerInfoAccessor) {
         this(builder(processType).withRunningModeControl(runningModeControl)
@@ -273,7 +273,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
      * @param runningModeControl the process' running mode
      * @deprecated Here for core-model-test and subsystem-test backwards compatibility
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl) {
         this(builder(processType).withRunningModeControl(runningModeControl));
     }

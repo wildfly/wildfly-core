@@ -239,7 +239,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      *
      * @deprecated for internal us only, may change or be removed at any time without notice
      */
-    @Deprecated
+    @Deprecated(forRemoval = false)
     public static final String JBOSS_PERSIST_SERVER_CONFIG = "jboss.server.persist.config";
 
     public static final String DOMAIN_BASE_DIR = "jboss.domain.base.dir";

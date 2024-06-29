@@ -46,7 +46,7 @@ public interface CapabilityReferenceRecorder extends Feature {
      * @return base name of dependant, usually name of the attribute that provides reference to capability
      * @deprecated No longer required and may throw {@link java.lang.UnsupportedOperationException}
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     String getBaseDependentName();
 
     /**
@@ -59,7 +59,7 @@ public interface CapabilityReferenceRecorder extends Feature {
      * dependent attribute to construct name of capability
      * @deprecated No longer required and may throw {@link java.lang.UnsupportedOperationException}
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     default boolean isDynamicDependent() {
         throw new UnsupportedOperationException();
     }

@@ -38,7 +38,7 @@ public final class Services {
      *
      * @deprecated use capability @code{org.wildfly.management.executor}
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public static final ServiceName JBOSS_SERVER_EXECUTOR = JBOSS_AS.append("server-executor");
 
     /**
@@ -51,13 +51,13 @@ public final class Services {
      *
      * @deprecated use capability @code{org.wildfly.management.external-module}
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public static final ServiceName JBOSS_EXTERNAL_MODULE_SERVICE = JBOSS_AS.append("external-module-service");
 
     public static final ServiceName JBOSS_PRODUCT_CONFIG_SERVICE = JBOSS_AS.append("product-config");
 
     /** @deprecated use capability @code{org.wildfly.server.suspend-controller}  */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public static final ServiceName JBOSS_SUSPEND_CONTROLLER = ServerService.SUSPEND_CONTROLLER_CAPABILITY.getCapabilityServiceName();
 
     /**
@@ -69,7 +69,7 @@ public final class Services {
      * @return service builder instance
      * @deprecated Use {@link #requireServerExecutor(ServiceBuilder)} instead. This method will be removed in the future.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public static <T> ServiceBuilder<T> addServerExecutorDependency(ServiceBuilder<T> builder, Injector<ExecutorService> injector) {
         return builder.addDependency(ServerService.MANAGEMENT_EXECUTOR, ExecutorService.class, injector);
     }

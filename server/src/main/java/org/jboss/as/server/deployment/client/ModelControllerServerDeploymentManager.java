@@ -20,7 +20,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @deprecated Use {@link org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager.Factory}
  */
-@Deprecated
+@Deprecated(forRemoval = true)
 public class ModelControllerServerDeploymentManager extends AbstractServerDeploymentManager {
 
     private final ModelControllerClient client;

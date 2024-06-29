@@ -191,7 +191,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
      * @param authorizer              handles authorization
      * @param capabilityRegistry      the capability registry
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     protected AbstractControllerService(final ProcessType processType, final RunningModeControl runningModeControl,
                                         final ConfigurationPersister configurationPersister,
                                         final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
@@ -217,7 +217,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
      * @param capabilityRegistry      the capability registry
      * @deprecated For use by legacy versions
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     protected AbstractControllerService(final Supplier<ExecutorService> executorService,
                                         final Supplier<ControllerInstabilityListener> instabilityListener,
                                         final ProcessType processType, final RunningModeControl runningModeControl,

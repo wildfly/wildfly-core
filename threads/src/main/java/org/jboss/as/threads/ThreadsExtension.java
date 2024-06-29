@@ -23,7 +23,10 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ *
+ * @deprecated the code module containing this extension only exists to support use of particular resource definition classes in other subsystems.
  */
+@Deprecated(forRemoval = true)
 public class ThreadsExtension extends AbstractLegacyExtension {
 
     public static final String SUBSYSTEM_NAME = "threads";
@@ -52,7 +55,7 @@ public class ThreadsExtension extends AbstractLegacyExtension {
         registration.registerXMLElementWriter(ThreadsParser2_0::new);
 
         // Remoting threads description and operation handlers
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings({"removal"})
         final ManagementResourceRegistration subsystem = registration.registerSubsystemModel(new ThreadSubsystemResourceDefinition(registerRuntimeOnly));
 
         return Collections.singleton(subsystem);
