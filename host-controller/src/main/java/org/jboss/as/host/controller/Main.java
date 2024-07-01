@@ -5,6 +5,8 @@
 
 package org.jboss.as.host.controller;
 
+import static org.jboss.as.server.ElapsedTime.startingFromJvmStart;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +26,7 @@ import java.util.Properties;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.interfaces.InetAddressUtil;
+import org.jboss.as.server.ElapsedTime;
 import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
@@ -124,9 +127,8 @@ public final class Main {
 
     private HostControllerBootstrap boot(String[] args, final String authCode) {
         try {
-            // TODO make this settable via an embedding process
-            final long startTime = Module.getStartTime();
-            final HostControllerEnvironmentWrapper hostControllerEnvironmentWrapper = determineEnvironment(args, startTime);
+            final HostControllerEnvironmentWrapper hostControllerEnvironmentWrapper =
+                    determineEnvironment(args, startingFromJvmStart(), ProcessType.HOST_CONTROLLER);
             if (hostControllerEnvironmentWrapper.getHostControllerEnvironment() == null) {
                 usage(hostControllerEnvironmentWrapper.getProductConfig()); // In case there was an error determining the environment print the usage
                 if (hostControllerEnvironmentWrapper.getHostControllerEnvironmentStatus() == HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR) {
@@ -188,11 +190,9 @@ public final class Main {
         CommandLineArgumentUsageImpl.printUsage(productConfig, STDOUT);
     }
 
-    public static HostControllerEnvironmentWrapper determineEnvironment(String[] args, long startTime) {
-        return determineEnvironment(args, startTime, ProcessType.HOST_CONTROLLER);
-    }
-
-    public static HostControllerEnvironmentWrapper determineEnvironment(String[] args, long startTime, ProcessType processType) {
+    public static HostControllerEnvironmentWrapper determineEnvironment(String[] args,
+                                                                        ElapsedTime elapsedTime,
+                                                                        ProcessType processType) {
         Integer pmPort = null;
         InetAddress pmAddress = null;
         final PCSocketConfig pcSocketConfig = new PCSocketConfig();
@@ -479,7 +479,7 @@ public final class Main {
         return new HostControllerEnvironmentWrapper(new HostControllerEnvironment(hostSystemProperties, isRestart, modulePath,
                 pmAddress, pmPort, pcSocketConfig.getBindAddress(), pcSocketConfig.getBindPort(), defaultJVM, domainConfig,
                 initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles, cachedDc,
-                productConfig, securityManagerEnabled, startTime, processType, hostConfigInteractionPolicy, domainConfigInteractionPolicy));
+                productConfig, securityManagerEnabled, elapsedTime, processType, hostConfigInteractionPolicy, domainConfigInteractionPolicy));
     }
 
     private static boolean isJavaSecurityManagerConfigured(final Map<String, String> props) {

@@ -36,6 +36,7 @@ import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.remoting.HttpListenerRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.BootstrapListener;
+import org.jboss.as.server.ElapsedTime;
 import org.jboss.as.server.FutureServiceContainer;
 import org.jboss.as.server.Services;
 import org.jboss.as.server.logging.ServerLogger;
@@ -78,8 +79,9 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
     private final ControlledProcessState processState;
     private final String authCode;
     private final CapabilityRegistry capabilityRegistry;
+    private final ElapsedTime elapsedTime;
     private volatile FutureServiceContainer futureContainer;
-    private volatile long startTime;
+    private volatile boolean everStopped;
 
     public HostControllerService(final HostControllerEnvironment environment, final HostRunningModeControl runningModeControl,
                           final String authCode, final ControlledProcessState processState, FutureServiceContainer futureContainer) {
@@ -87,7 +89,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         this.runningModeControl = runningModeControl;
         this.authCode = authCode;
         this.processState = processState;
-        this.startTime = environment.getStartTime();
+        this.elapsedTime = environment.getElapsedTime();
         this.futureContainer = futureContainer;
         this.capabilityRegistry = new CapabilityRegistry(false);
     }
@@ -99,8 +101,10 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
 
     @Override
     public void start(StartContext context) throws StartException {
-        //Moved to AbstractControllerService.start()
-        // processState.setStarting();
+
+        // If this is a reload, track start time independently of the overall process elapsed time
+        ElapsedTime startupTime = everStopped ? elapsedTime.checkpoint() : elapsedTime;
+
         final ProductConfig config = environment.getProductConfig();
         final String prettyVersion = config.getPrettyVersionString();
         final String banner = environment.getStability() == org.jboss.as.version.Stability.EXPERIMENTAL ? config.getBanner() : "";
@@ -149,14 +153,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
 
         final ServiceContainer serviceContainer = myController.getServiceContainer();
 
-        long startTime = this.startTime;
-        if (startTime == -1) {
-            startTime = System.currentTimeMillis();
-        } else {
-            this.startTime = -1;
-        }
-
-        final BootstrapListener bootstrapListener = new BootstrapListener(serviceContainer, startTime, serviceTarget, futureContainer, prettyVersion + " (Host Controller)", environment.getDomainTempDir());
+        final BootstrapListener bootstrapListener = new BootstrapListener(serviceContainer, startupTime, serviceTarget, futureContainer, prettyVersion + " (Host Controller)", environment.getDomainTempDir());
         bootstrapListener.getStabilityMonitor().addController(myController);
 
         // The first default services are registered before the bootstrap operations are executed.
@@ -209,6 +206,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         //processState.setStopping();
         ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, (int) (context.getElapsedTime() / 1000000L));
         BootstrapListener.deleteStartupMarker(environment.getDomainTempDir());
+        everStopped = true;
     }
 
     @Override

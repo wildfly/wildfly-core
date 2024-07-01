@@ -6,7 +6,7 @@
 package org.wildfly.core.embedded;
 
 /**
- * A context used to activate and restore the environment for embedded containers.
+ * A context used to activate and restore the environment for an {@link EmbeddedManagedProcess}.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
