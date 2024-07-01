@@ -6,14 +6,21 @@
 package org.jboss.as.server.deployment.module;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import org.jboss.modules.ModuleLoader;
+import org.jboss.modules.filter.PathFilter;
+import org.jboss.modules.filter.PathFilters;
 import org.junit.Test;
 
 public class ModuleSpecificationTestCase {
@@ -22,59 +29,166 @@ public class ModuleSpecificationTestCase {
     private static final ModuleDependency DEP_A = createModuleDependency("a");
     private static final ModuleDependency DEP_B = createModuleDependency("b");
     private static final ModuleDependency DEP_C = createModuleDependency("c");
-    private static final Set<ModuleDependency> ALL_USER_DEPS = Set.of(DEP_A, DEP_B, DEP_C);
+    private static final Set<ModuleDependency> INITIAL_DEPS = Set.of(DEP_A, DEP_B, DEP_C);
+
+    private static final ModuleDependency DEP_A_FILTERED = createModuleDependency("a", PathFilters.getMetaInfFilter());
+    private static final ModuleDependency DEP_B_WITH_REASON = createModuleDependency("a", "because");
+
+    private static final Set<ModuleDependency> ALL_DEPS = Set.of(DEP_A, DEP_B, DEP_C, DEP_A_FILTERED);
+
+    private static final ModuleDependency DEP_D = createModuleDependency("d");
+    private static final ModuleDependency DEP_E = createModuleDependency("e");
 
     private static ModuleDependency createModuleDependency(String identifier) {
-        return new ModuleDependency(TEST_LOADER, identifier, false, false, true, false);
+        return createModuleDependency(identifier, (String) null);
+    }
+    private static ModuleDependency createModuleDependency(String identifier, String reason) {
+        return new ModuleDependency(TEST_LOADER, identifier, false, false, true, false, reason);
+    }
+    private static ModuleDependency createModuleDependency(String identifier, PathFilter importFilter) {
+        ModuleDependency dependency = createModuleDependency(identifier, (String) null);
+        dependency.addImportFilter(importFilter, true);
+        return dependency;
     }
 
     @Test
     public void testUserDependencyConsistency() {
-        ModuleSpecification ms = new ModuleSpecification();
-        ms.addUserDependencies(ALL_USER_DEPS);
-
-        // Sanity check
-        assertEquals(ALL_USER_DEPS, ms.getUserDependenciesSet());
-        List<ModuleDependency> userDepList = ms.getUserDependencies();
-        assertEquals(ALL_USER_DEPS.size(), userDepList.size());
-        for (ModuleDependency md : ALL_USER_DEPS) {
-            assertTrue(userDepList.contains(md));
-        }
+        ModuleSpecification ms = dependencySetConsistencyTest(
+                ModuleSpecification::addUserDependencies,
+                ModuleSpecification::getUserDependenciesSet,
+                ModuleSpecification::addUserDependency,
+                false
+        );
 
         // Removal consistency
         ms.removeUserDependencies(md -> md.getIdentifier().getName().equals("a"));
-        userDepList = ms.getUserDependencies();
         Set<ModuleDependency> userDepSet = ms.getUserDependenciesSet();
-        assertEquals(ALL_USER_DEPS.size() -1, userDepList.size());
-        assertEquals(ALL_USER_DEPS.size() -1, userDepSet.size());
-        for (ModuleDependency md : ALL_USER_DEPS) {
-            boolean shouldFind = !md.equals(DEP_A);
-            assertEquals(shouldFind, userDepList.contains(md));
+        assertEquals(INITIAL_DEPS.size() /* the initials, minus 'a', plus 'd'*/, userDepSet.size());
+        for (ModuleDependency md : ALL_DEPS) {
+            boolean shouldFind = !md.getIdentifier().getName().equals("a");
             assertEquals(shouldFind, userDepSet.contains(md));
         }
+        assertTrue(userDepSet.contains(DEP_D));
+    }
 
-        // Deprecated removal consistency
-        ms.addUserDependency(DEP_A);
-        Collection<ModuleDependency> modifiable = ms.getMutableUserDependencies();
-        assertTrue(modifiable.remove(DEP_A));
-        userDepList = ms.getUserDependencies();
-        userDepSet = ms.getUserDependenciesSet();
-        assertEquals(ALL_USER_DEPS.size() -1, userDepList.size());
-        assertEquals(ALL_USER_DEPS.size() -1, userDepSet.size());
-        for (ModuleDependency md : ALL_USER_DEPS) {
-            boolean shouldFind = !md.equals(DEP_A);
-            assertEquals(shouldFind, userDepList.contains(md));
-            assertEquals(shouldFind, userDepSet.contains(md));
+    @Test
+    public void testSystemDependencyConsistency() {
+        dependencySetConsistencyTest(
+                ModuleSpecification::addSystemDependencies,
+                ModuleSpecification::getSystemDependenciesSet,
+                ModuleSpecification::addSystemDependency,
+                true
+        );
+    }
+
+    @Test
+    public void testLocalDependencyConsistency() {
+        dependencySetConsistencyTest(
+                ModuleSpecification::addLocalDependencies,
+                ModuleSpecification::getLocalDependenciesSet,
+                ModuleSpecification::addLocalDependency,
+                true
+        );
+    }
+
+    @Test
+    public void testModuleAliases() {
+        ModuleSpecification ms = new ModuleSpecification();
+        for (ModuleDependency dependency : ALL_DEPS) {
+            ms.addModuleAlias(dependency.getIdentifier().getName());
+        }
+        Set<String> aliases = ms.getModuleAliases();
+        assertEquals(ALL_DEPS.size() - 1, aliases.size());
+        for (ModuleDependency dep : INITIAL_DEPS) {
+            assertTrue(dep + " missing", aliases.contains(dep.getIdentifier().getName()));
+        }
+    }
+
+    @Test
+    public void testAllDependencies() {
+        ModuleSpecification ms = new ModuleSpecification();
+        ms.addLocalDependencies(ALL_DEPS);
+        ms.addUserDependencies(ALL_DEPS);
+        ms.addSystemDependencies(ALL_DEPS);
+
+        List<ModuleDependency> all = ms.getAllDependencies();
+        assertEquals(ALL_DEPS.size() * 3, all.size());
+        Map<ModuleDependency, Integer> count = new HashMap<>();
+        for (ModuleDependency dep : all) {
+            Integer val = count.get(dep);
+            if (val == null) val = 0;
+            count.put(dep, val + 1);
+        }
+        Integer THREE = 3;
+        for (ModuleDependency dep : ALL_DEPS) {
+            assertEquals(dep + " has unexpected count in " + all, THREE, count.get(dep));
+        }
+    }
+
+    private ModuleSpecification dependencySetConsistencyTest(BiConsumer<ModuleSpecification, Collection<ModuleDependency>> setupConsumer,
+                                              Function<ModuleSpecification, Set<ModuleDependency>> readFunction,
+                                              BiConsumer<ModuleSpecification, ModuleDependency> addConsumer,
+                                                             boolean exclusionsSupported) {
+
+        ModuleSpecification ms = new ModuleSpecification();
+        setupConsumer.accept(ms, INITIAL_DEPS);
+
+        // Sanity check
+        Set<ModuleDependency> depSet = readFunction.apply(ms);
+        assertEquals(INITIAL_DEPS, depSet);
+
+        List<ModuleDependency> all = ms.getAllDependencies();
+        assertEquals(all.size(), depSet.size());
+        for (ModuleDependency dep : all) {
+            assertTrue(dep + " is invalid in allDependencies list", depSet.contains(dep));
         }
 
-        // Demonstrate why getMutableUserDependencies() is deprecated
-        // It hands out a ref to mutable internal state to external code
-        // which can modify it at some later point, unknown to the ModuleSpecification
-        modifiable.remove(DEP_B);
-        userDepList = ms.getUserDependencies();
-        userDepSet = ms.getUserDependenciesSet();
-        assertEquals(userDepList.size(), userDepSet.size() + 1);
-        assertTrue(userDepList.contains(DEP_B));
-        assertFalse(userDepSet.contains(DEP_B));
+        try {
+            depSet.iterator().remove();
+            fail("Should not be able to modify dependency set");
+        } catch (UnsupportedOperationException good) {
+            // good
+        }
+
+        try {
+            depSet.add(DEP_A_FILTERED);
+            fail("Should not be able to modify dependency set");
+        } catch (UnsupportedOperationException good) {
+            // good
+        }
+
+        // Adding an existing dep with a different reason is ignored
+        addConsumer.accept(ms, DEP_B_WITH_REASON);
+        depSet = readFunction.apply(ms);
+        assertEquals(INITIAL_DEPS, depSet);
+
+        // WFCORE-6442 Adding an existing dep with a different filter is accepted
+        addConsumer.accept(ms, DEP_A_FILTERED);
+        depSet = readFunction.apply(ms);
+        assertEquals(ALL_DEPS, depSet);
+
+        all = ms.getAllDependencies();
+        assertEquals(all.size(), depSet.size());
+        for (ModuleDependency dep : all) {
+            assertTrue(dep + " is invalid in allDependencies list", depSet.contains(dep));
+        }
+
+        // Test exclusions are treated as expected
+        ms.addModuleExclusion(DEP_D.getIdentifier().getName());
+        addConsumer.accept(ms, DEP_D);
+        depSet = readFunction.apply(ms);
+        assertEquals(ALL_DEPS.size() + (exclusionsSupported ? 0 : 1), depSet.size());
+        assertNotEquals(exclusionsSupported, depSet.contains(DEP_D));
+        for (ModuleDependency dep : ALL_DEPS) {
+            assertTrue(depSet.contains(dep));
+        }
+
+        // Check fictitious exclusion tracking
+        ms.addModuleExclusion(DEP_E.getIdentifier().getName());
+        Set<String> fictitious = ms.getFictitiousExcludedDependencies();
+        Set<String> expected = exclusionsSupported ? Set.of(DEP_E.getIdentifier().getName()) : Set.of(DEP_D.getIdentifier().getName(), DEP_E.getIdentifier().getName());
+        assertEquals(expected, fictitious);
+
+        return ms;
     }
 }
