@@ -26,7 +26,7 @@ public class UnboundedQueueThreadPoolWriteAttributeHandler extends ThreadsWriteA
     private final ServiceName serviceNameBase;
     private final RuntimeCapability capability;
 
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public UnboundedQueueThreadPoolWriteAttributeHandler(ServiceName serviceNameBase) {
         this(null, serviceNameBase);
     }

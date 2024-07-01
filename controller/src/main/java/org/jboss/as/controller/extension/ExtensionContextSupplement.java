@@ -18,7 +18,8 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  *
  * @deprecated for internal use only; may be removed at any time
  */
-@Deprecated
+@SuppressWarnings("DeprecatedIsStillUsed")
+@Deprecated(forRemoval = false)
 public interface ExtensionContextSupplement {
     /** @throws java.lang.UnsupportedOperationException if called from an invalid caller */
     AuditLogger getAuditLogger(boolean inheritConfiguration, boolean manualCommit);

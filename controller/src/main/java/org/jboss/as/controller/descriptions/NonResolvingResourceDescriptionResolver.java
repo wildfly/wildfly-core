@@ -22,7 +22,7 @@ public class NonResolvingResourceDescriptionResolver extends StandardResourceDes
      * No-arg constructor.
      * @deprecated use {@link #INSTANCE} instead
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public NonResolvingResourceDescriptionResolver() {
         super("", "", NonResolvingResourceDescriptionResolver.class.getClassLoader());
     }

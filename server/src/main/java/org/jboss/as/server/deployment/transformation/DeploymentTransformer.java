@@ -12,10 +12,11 @@ import java.nio.file.Path;
 
 /**
  * Performs transformation operations on deployment content.
- *
+ * <p>
  * This interface is experimental and may be removed or altered at any time.
  */
-@Deprecated
+@SuppressWarnings("DeprecatedIsStillUsed")
+@Deprecated(forRemoval = false)
 public interface DeploymentTransformer {
 
     /**

@@ -116,7 +116,7 @@ class RejectedAttributesLogContext {
         return null;
     }
 
-    @Deprecated //todo replace with context.getLogger()....
+    //todo replace with context.getLogger()....
     String getOperationRejectDescription() {
         if (op == null) {
             throw new IllegalStateException();

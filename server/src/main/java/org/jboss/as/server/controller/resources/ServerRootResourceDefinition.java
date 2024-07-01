@@ -231,7 +231,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
      * The 'timeout' parameter for server lifecycle ops
      * @deprecated Since Version 9.0.0, use suspend-timeout instead.
      */
-    @Deprecated
+    @Deprecated(forRemoval = false) // false because this @Deprected is just to help us remember to remove this some day. We don't want IDE errors about it.
     public static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
             .setDefaultValue(ModelNode.ZERO)
             .setRequired(false)

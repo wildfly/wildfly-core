@@ -21,13 +21,12 @@ import java.util.List;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-@Deprecated
-@SuppressWarnings("deprecation")
+@Deprecated(forRemoval = true)
+@SuppressWarnings({"removal", "DeprecatedIsStillUsed"})
 class ThreadSubsystemResourceDefinition extends PersistentResourceDefinition {
     private final boolean registerRuntimeOnly;
 
     ThreadSubsystemResourceDefinition(boolean runtimeOnly) {
-        //noinspection deprecation
         super(ThreadsExtension.SUBSYSTEM_PATH,
                 new DeprecatedResourceDescriptionResolver(ThreadsExtension.SUBSYSTEM_NAME, ThreadsExtension.SUBSYSTEM_NAME, ThreadsExtension.RESOURCE_NAME,
                         ThreadsExtension.class.getClassLoader(), true, false), ThreadsSubsystemAdd.INSTANCE, ReloadRequiredRemoveStepHandler.INSTANCE,
