@@ -5,6 +5,9 @@
 
 package org.jboss.as.controller.management;
 
+import java.util.concurrent.Executor;
+
+import org.wildfly.service.descriptor.NullaryServiceDescriptor;
 
 /**
  * Class to hold capabilities provided by and required by resources within this package.
@@ -12,6 +15,7 @@ package org.jboss.as.controller.management;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public final class Capabilities {
+    public static final NullaryServiceDescriptor<Executor> MANAGEMENT_EXECUTOR = NullaryServiceDescriptor.of("org.wildfly.management.executor", Executor.class);
 
     public static final String HTTP_MANAGEMENT_CAPABILITY = "org.wildfly.management.http-interface";
 

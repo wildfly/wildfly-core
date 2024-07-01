@@ -7,7 +7,7 @@ package org.wildfly.extension.io;
 
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -27,12 +27,12 @@ public final class WorkerService implements Service<XnioWorker> {
 
     private final XnioWorker.Builder builder;
     private final Consumer<XnioWorker> workerConsumer;
-    private final Supplier<ExecutorService> executorSupplier;
+    private final Supplier<Executor> executorSupplier;
     private final Object stopLock = new Object();
     private XnioWorker worker;
     private volatile StopContext stopContext;
 
-    public WorkerService(final Consumer<XnioWorker> workerConsumer, final Supplier<ExecutorService> executorSupplier, final XnioWorker.Builder builder) {
+    public WorkerService(final Consumer<XnioWorker> workerConsumer, final Supplier<Executor> executorSupplier, final XnioWorker.Builder builder) {
         this.workerConsumer = workerConsumer;
         this.executorSupplier = executorSupplier;
         this.builder = builder;
@@ -48,7 +48,7 @@ public final class WorkerService implements Service<XnioWorker> {
     @Override
     public void stop(final StopContext context) {
         this.stopContext = context;
-        final ExecutorService executorService = executorSupplier.get();
+        final Executor executor = executorSupplier.get();
         Runnable asyncStop = () -> {
             XnioWorker localWorker = worker;
             workerConsumer.accept(null);
@@ -76,7 +76,7 @@ public final class WorkerService implements Service<XnioWorker> {
                     List<Runnable> tasks = localWorker.shutdownNow();
                     for (Runnable task : tasks) {
                         IOLogger.ROOT_LOGGER.debugf("Worker was shut down forcibly. Submitting task %s to the management executor", task);
-                        executorService.submit(task);
+                        executor.execute(task);
                     }
                 }
             } finally {
@@ -93,7 +93,7 @@ public final class WorkerService implements Service<XnioWorker> {
 
         try {
             try {
-                executorService.execute(asyncStop);
+                executor.execute(asyncStop);
             } catch (RejectedExecutionException e) {
                 asyncStop.run();
             }

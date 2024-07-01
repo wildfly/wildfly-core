@@ -4,11 +4,10 @@
  */
 package org.wildfly.subsystem.service;
 
-import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
-import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.RequirementServiceBuilder;
+import org.jboss.as.controller.management.Capabilities;
 import org.jboss.msc.Service;
 import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.ServiceBuilder;
@@ -35,7 +34,7 @@ public class AsyncServiceBuilder<T> extends org.wildfly.service.AsyncServiceBuil
     }
 
     public AsyncServiceBuilder(RequirementServiceBuilder<T> builder, Async async) {
-        super(builder, builder.requiresCapability(AbstractControllerService.EXECUTOR_CAPABILITY.getName(), Executor.class), async);
+        super(builder, builder.requires(Capabilities.MANAGEMENT_EXECUTOR), async);
         this.builder = builder;
     }
 

@@ -49,6 +49,7 @@ import org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.management.Capabilities;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.notification.NotificationSupport;
 import org.jboss.as.controller.operations.common.Util;
@@ -143,9 +144,9 @@ public abstract class AbstractControllerService implements Service<ModelControll
      * This capability isn't necessarily directly related to this class but we declare it
      * here as it's as good a place as any at this time.
      */
-    public static final RuntimeCapability<Void> EXECUTOR_CAPABILITY =
-            RuntimeCapability.Builder.of("org.wildfly.management.executor", ExecutorService.class)
-                    .build();
+    // TODO Exposing the ability to shutdown the executor is not ideal
+    // TODO Remove type narrowing once references to ExecutorService are removed from WildFly
+    public static final RuntimeCapability<Void> EXECUTOR_CAPABILITY = RuntimeCapability.Builder.of(Capabilities.MANAGEMENT_EXECUTOR.asType(ExecutorService.class)).build();
 
     /**
      * Capability users of the controller use to read process state and get notification of state changes.

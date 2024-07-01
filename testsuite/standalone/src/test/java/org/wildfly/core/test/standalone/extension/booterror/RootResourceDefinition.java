@@ -24,6 +24,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.management.Capabilities;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -41,7 +42,7 @@ import org.jboss.msc.service.StopContext;
 public class RootResourceDefinition extends SimpleResourceDefinition {
 
     static final RuntimeCapability<Void> CAPABILITY = RuntimeCapability.Builder.of("boot.error", Void.class)
-            .addRequirements(ModelControllerClientFactory.SERVICE_DESCRIPTOR.getName(), "org.wildfly.management.executor")
+            .addRequirements(ModelControllerClientFactory.SERVICE_DESCRIPTOR, Capabilities.MANAGEMENT_EXECUTOR)
             .build();
 
     static final SimpleAttributeDefinition ATTRIBUTE = new SimpleAttributeDefinitionBuilder("attribute", ModelType.STRING, true).build();
@@ -104,7 +105,7 @@ public class RootResourceDefinition extends SimpleResourceDefinition {
             // will start during boot so that simulates a non-boot op failing during boot
             CapabilityServiceBuilder<?> builder = context.getCapabilityServiceTarget().addCapability(CAPABILITY);
             Supplier<ModelControllerClientFactory> mccf = builder.requires(ModelControllerClientFactory.SERVICE_DESCRIPTOR);
-            Supplier<Executor> executor = builder.requiresCapability("org.wildfly.management.executor", Executor.class);
+            Supplier<Executor> executor = builder.requires(Capabilities.MANAGEMENT_EXECUTOR);
             builder.setInstance(new BootErrorService(mccf, executor)).install();
         }
     }

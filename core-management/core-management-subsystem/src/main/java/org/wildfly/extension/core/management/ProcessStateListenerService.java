@@ -11,9 +11,10 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import java.util.concurrent.Executor;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
@@ -25,6 +26,7 @@ import org.jboss.as.controller.ControlledProcessState.State;
 import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.management.Capabilities;
 import org.jboss.as.server.suspend.OperationListener;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.msc.Service;
@@ -56,7 +58,7 @@ public class ProcessStateListenerService implements Service {
 
     private final Supplier<ProcessStateNotifier> processStateNotifierSupplier;
     private final Supplier<SuspendController> suspendControllerSupplier;
-    private final Supplier<ExecutorService> executorServiceSupplier;
+    private final Supplier<Executor> executorSupplier;
     private final PropertyChangeListener propertyChangeListener;
     private final OperationListener operationListener;
     private final ProcessStateListener listener;
@@ -71,7 +73,7 @@ public class ProcessStateListenerService implements Service {
     private ProcessStateListenerService(ProcessType processType, RunningMode runningMode, String name, ProcessStateListener listener, Map<String, String> properties, int timeout,
                                         final Supplier<ProcessStateNotifier> processStateNotifierSupplier,
                                         final Supplier<SuspendController> suspendControllerSupplier,
-                                        final Supplier<ExecutorService> executorServiceSupplier
+                                        final Supplier<Executor> executorSupplier
     ) {
         CoreManagementLogger.ROOT_LOGGER.debugf("Initalizing ProcessStateListenerService with a running mode of %s", runningMode);
         this.listener = listener;
@@ -92,7 +94,7 @@ public class ProcessStateListenerService implements Service {
         };
         this.processStateNotifierSupplier = processStateNotifierSupplier;
         this.suspendControllerSupplier = suspendControllerSupplier;
-        this.executorServiceSupplier = executorServiceSupplier;
+        this.executorSupplier = executorSupplier;
         if (!processType.isHostController()) {
             this.operationListener = new OperationListener() {
                 @Override
@@ -135,7 +137,7 @@ public class ProcessStateListenerService implements Service {
                 return;
             }
             final RuntimeConfigurationStateChangeEvent event = new RuntimeConfigurationStateChangeEvent(oldState, newState);
-            Future<?> controlledProcessStateTransition = executorServiceSupplier.get().submit(() -> {
+            RunnableFuture<Void> controlledProcessStateTransition = new FutureTask<>(() -> {
                 CoreManagementLogger.ROOT_LOGGER.debugf("Executing runtimeConfigurationStateChanged %s in thread %s", event, Thread.currentThread().getName());
                 ClassLoader currentTccl = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
                 try {
@@ -144,7 +146,8 @@ public class ProcessStateListenerService implements Service {
                 } finally {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(currentTccl);
                 }
-            });
+            }, null);
+            executorSupplier.get().execute(controlledProcessStateTransition);
             try {
                 controlledProcessStateTransition.get(timeout, TimeUnit.SECONDS);
             } catch (InterruptedException ex) {
@@ -206,7 +209,7 @@ public class ProcessStateListenerService implements Service {
             }
             this.runningState = newState;
             final RunningStateChangeEvent event = new RunningStateChangeEvent(oldState, newState);
-            Future<?> suspendStateTransition = executorServiceSupplier.get().submit(() -> {
+            RunnableFuture<Void> suspendStateTransition = new FutureTask<>(() -> {
                 CoreManagementLogger.ROOT_LOGGER.debugf("Executing runningStateChanged %s in thread %s", event, Thread.currentThread().getName());
                 ClassLoader currentTccl = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
                 try {
@@ -215,7 +218,8 @@ public class ProcessStateListenerService implements Service {
                 } finally {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(currentTccl);
                 }
-            });
+            }, null);
+            executorSupplier.get().execute(suspendStateTransition);
             try {
                 suspendStateTransition.get(timeout, TimeUnit.SECONDS);
             } catch (InterruptedException ex) {
@@ -236,7 +240,7 @@ public class ProcessStateListenerService implements Service {
     static void install(CapabilityServiceTarget serviceTarget, ProcessType processType, RunningMode runningMode, String listenerName, ProcessStateListener listener, Map<String, String> properties, int timeout) {
         final CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(PROCESS_STATE_LISTENER_CAPABILITY.fromBaseCapability(listenerName));
         final Supplier<ProcessStateNotifier> psnSupplier = builder.requires(ProcessStateNotifier.SERVICE_DESCRIPTOR);
-        final Supplier<ExecutorService> esSupplier = builder.requiresCapability("org.wildfly.management.executor", ExecutorService.class);
+        final Supplier<Executor> esSupplier = builder.requires(Capabilities.MANAGEMENT_EXECUTOR);
         final Supplier<SuspendController> scSupplier = !processType.isHostController() ? builder.requiresCapability("org.wildfly.server.suspend-controller", SuspendController.class) : null;
         builder.setInstance(new ProcessStateListenerService(processType, runningMode, listenerName, listener, properties, timeout, psnSupplier, scSupplier, esSupplier));
         builder.install();
@@ -299,7 +303,7 @@ public class ProcessStateListenerService implements Service {
             }
         };
         try {
-            executorServiceSupplier.get().execute(task);
+            executorSupplier.get().execute(task);
         } catch (RejectedExecutionException e) {
             task.run();
         } finally {
@@ -334,10 +338,10 @@ public class ProcessStateListenerService implements Service {
                 }
             }
         };
-        final ExecutorService executorService = executorServiceSupplier.get();
+        final Executor executor = executorSupplier.get();
         try {
             try {
-                executorService.execute(asyncStop);
+                executor.execute(asyncStop);
             } catch (RejectedExecutionException e) {
                 asyncStop.run();
             }

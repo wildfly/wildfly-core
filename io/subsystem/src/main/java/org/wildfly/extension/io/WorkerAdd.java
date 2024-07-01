@@ -13,7 +13,7 @@ import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_MAX_
 import static org.wildfly.extension.io.WorkerResourceDefinition.STACK_SIZE;
 
 import java.lang.management.ManagementFactory;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -26,6 +26,7 @@ import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.management.Capabilities;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -209,7 +210,7 @@ class WorkerAdd extends AbstractAddStepHandler {
 
         final CapabilityServiceBuilder<?> capBuilder = context.getCapabilityServiceTarget().addCapability(WorkerResourceDefinition.CAPABILITY);
         final Consumer<XnioWorker> workerConsumer = capBuilder.provides(WorkerResourceDefinition.CAPABILITY);
-        final Supplier<ExecutorService> executorSupplier = capBuilder.requiresCapability("org.wildfly.management.executor", ExecutorService.class);
+        final Supplier<Executor> executorSupplier = capBuilder.requires(Capabilities.MANAGEMENT_EXECUTOR);
         capBuilder.setInstance(new WorkerService(workerConsumer.andThen(maxThreadsRecorder), executorSupplier, builder));
         capBuilder.setInitialMode(ServiceController.Mode.ON_DEMAND);
         capBuilder.install();
