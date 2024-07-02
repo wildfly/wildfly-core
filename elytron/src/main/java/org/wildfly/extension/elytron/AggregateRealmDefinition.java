@@ -103,7 +103,7 @@ class AggregateRealmDefinition extends SimpleResourceDefinition {
     private static class RealmAddHandler extends BaseAddHandler {
 
         private RealmAddHandler() {
-            super(SECURITY_REALM_RUNTIME_CAPABILITY, ATTRIBUTES_8_0);
+            super(SECURITY_REALM_RUNTIME_CAPABILITY);
         }
 
         @Override

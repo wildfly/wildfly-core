@@ -125,7 +125,7 @@ class PolicyDefinitions {
 
     static ResourceDefinition getPolicy() {
         AttributeDefinition[] attributes = new AttributeDefinition[] {DEFAULT_POLICY, JaccPolicyDefinition.POLICY, CustomPolicyDefinition.POLICY};
-        AbstractAddStepHandler add = new BaseAddHandler(POLICY_RUNTIME_CAPABILITY, attributes) {
+        AbstractAddStepHandler add = new BaseAddHandler(POLICY_RUNTIME_CAPABILITY) {
 
             @Override
             protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {

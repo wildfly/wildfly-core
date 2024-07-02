@@ -358,7 +358,7 @@ class RoleMapperDefinitions {
 
 
         private RoleMapperAddHandler(AttributeDefinition ... attributes) {
-            super(ROLE_MAPPER_RUNTIME_CAPABILITY, attributes);
+            super(ROLE_MAPPER_RUNTIME_CAPABILITY);
         }
 
         @Override

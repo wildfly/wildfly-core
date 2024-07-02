@@ -196,7 +196,7 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
     static class SecretKeyCredentialStoreAddHandler extends DoohickeyAddHandler<CredentialStore> {
 
         private SecretKeyCredentialStoreAddHandler() {
-            super(CREDENTIAL_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES, CREDENTIAL_STORE_API_CAPABILITY);
+            super(CREDENTIAL_STORE_RUNTIME_CAPABILITY, CREDENTIAL_STORE_API_CAPABILITY);
         }
 
         @Override

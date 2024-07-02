@@ -102,7 +102,7 @@ class CertificateAuthorityDefinition extends SimpleResourceDefinition {
 
     private static class CertificateAuthorityAddHandler extends BaseAddHandler {
         private CertificateAuthorityAddHandler() {
-            super(CERTIFICATE_AUTHORITY_RUNTIME_CAPABILITY, ATTRIBUTES);
+            super(CERTIFICATE_AUTHORITY_RUNTIME_CAPABILITY);
         }
 
         @Override

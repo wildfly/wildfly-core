@@ -263,7 +263,7 @@ class PrincipalDecoderDefinitions {
         }
 
         private PrincipalDecoderAddHandler(AttributeDefinition ... attributes) {
-            super(CAPABILITIES, attributes);
+            super(CAPABILITIES);
         }
 
         @Override
