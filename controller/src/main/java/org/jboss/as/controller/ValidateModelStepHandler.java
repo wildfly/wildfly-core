@@ -223,11 +223,12 @@ final class ValidateModelStepHandler implements OperationStepHandler {
             return;
         }
 
-        final Set<String> keys = subModel.keys();
-        final Set<String> definedKeys = new HashSet<>(keys.size());
-        for (String key : keys) {
-            if (subModel.hasDefined(key)) {
-                definedKeys.add(key);
+        // only top-level model contains all keys, we have to retrieve keys from the description
+        final AttributeDefinition[] keys = attr.getValueTypes();
+        final Set<String> definedKeys = new HashSet<>(keys.length);
+        for (AttributeDefinition key : keys) {
+            if (subModel.hasDefined(key.getName()) || key.getDefaultValue() != null) {
+                definedKeys.add(key.getName());
             }
         }
         AttributeDefinition[] subAttrs = attr.getValueTypes();

@@ -101,7 +101,6 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
 
         static final SimpleAttributeDefinition RECURSIVE_SEARCH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_RECURSIVE, ModelType.BOOLEAN, true)
                 .setRequires(ElytronDescriptionConstants.FILTER)
-                .setDefaultValue(ModelNode.TRUE)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -312,7 +311,6 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
 
         static final SimpleAttributeDefinition USE_RECURSIVE_SEARCH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.USE_RECURSIVE_SEARCH, ModelType.BOOLEAN, true)
                 .setRequires(ElytronDescriptionConstants.SEARCH_BASE_DN)
-                .setDefaultValue(ModelNode.FALSE)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -497,7 +495,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
             }
 
             ModelNode useRecursiveSearchNode = IdentityMappingObjectDefinition.USE_RECURSIVE_SEARCH.resolveModelAttribute(context, identityMappingNode);
-            if (useRecursiveSearchNode.asBoolean()) {
+            if (useRecursiveSearchNode.isDefined() && useRecursiveSearchNode.asBoolean()) {
                 identityMappingBuilder.searchRecursive();
             }
 

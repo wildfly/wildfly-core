@@ -64,7 +64,7 @@
         <!-- Remote domain controller configuration with a host and port -->
         <remote security-realm="ManagementRealm">
             <discovery-options>
-                <static-discovery name="start-option" host="${jboss.test.host.primary.address}" port="9999" />
+                <static-discovery name="start-option" protocol="remote" host="${jboss.test.host.primary.address}" port="9999" />
             </discovery-options>
         </remote>
     </domain-controller>
