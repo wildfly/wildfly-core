@@ -11,6 +11,7 @@ import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -52,7 +53,7 @@ public interface HostControllerLogger extends BasicLogger {
      * <strong>Usage:</strong> Use this in code related to Host Controller functionality, except
      * for areas described in the documentation of {@link #DOMAIN_LOGGER}.
      */
-    HostControllerLogger ROOT_LOGGER = Logger.getMessageLogger(HostControllerLogger.class, "org.jboss.as.host.controller");
+    HostControllerLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), HostControllerLogger.class, "org.jboss.as.host.controller");
 
     /**
      * A logger with a category of {@code org.jboss.as.domain.controller}.
@@ -60,7 +61,7 @@ public interface HostControllerLogger extends BasicLogger {
      * in code specific to the function of the primary Host Controller, e.g. the registration/deregistration
      * of secondary Host Contollers.
      */
-    HostControllerLogger DOMAIN_LOGGER = Logger.getMessageLogger(HostControllerLogger.class, "org.jboss.as.domain.controller");
+    HostControllerLogger DOMAIN_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), HostControllerLogger.class, "org.jboss.as.domain.controller");
 
     /**
      * Logs a warning message indicating the remote domain controller could not connect.

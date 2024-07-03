@@ -5,6 +5,7 @@
 package org.jboss.as.cli.impl._private;
 
 import java.io.File;
+import java.lang.invoke.MethodHandles;
 
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.annotations.MessageLogger;
@@ -26,7 +27,7 @@ public interface BootScriptInvokerLogger extends BasicLogger {
     /**
      * Default root logger with category of the package name.
      */
-    BootScriptInvokerLogger ROOT_LOGGER = Logger.getMessageLogger(BootScriptInvokerLogger.class, "org.jboss.as.cli");
+    BootScriptInvokerLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), BootScriptInvokerLogger.class, "org.jboss.as.cli");
 
     /**
      * Logs an info message to advertise that a script file is being processed.

@@ -5,6 +5,8 @@
 
 package org.jboss.as.platform.mbean.logging;
 
+import java.lang.invoke.MethodHandles;
+
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
@@ -20,7 +22,7 @@ public interface PlatformMBeanLogger extends BasicLogger {
     /**
      * A logger with the category of the package.
      */
-    PlatformMBeanLogger ROOT_LOGGER = Logger.getMessageLogger(PlatformMBeanLogger.class, "org.jboss.as.platform.mbean");
+    PlatformMBeanLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), PlatformMBeanLogger.class, "org.jboss.as.platform.mbean");
 
     /**
      * Creates an exception indicating that an operation parameter attribute name is unknown

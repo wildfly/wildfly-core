@@ -9,6 +9,7 @@ import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import org.jboss.as.repository.ExplodedContentException;
 import org.jboss.logging.BasicLogger;
@@ -28,7 +29,7 @@ public interface DeploymentRepositoryLogger extends BasicLogger {
     /**
      * A logger with the category of the package name.
      */
-    DeploymentRepositoryLogger ROOT_LOGGER = Logger.getMessageLogger(DeploymentRepositoryLogger.class, "org.jboss.as.repository");
+    DeploymentRepositoryLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), DeploymentRepositoryLogger.class, "org.jboss.as.repository");
 
     /**
      * Logs an informational message indicating the content was added at the location, represented by the {@code path}

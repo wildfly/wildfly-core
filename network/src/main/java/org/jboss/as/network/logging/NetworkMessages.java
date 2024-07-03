@@ -5,6 +5,8 @@
 
 package org.jboss.as.network.logging;
 
+import java.lang.invoke.MethodHandles;
+
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageBundle;
 import org.jboss.logging.Messages;
@@ -20,7 +22,7 @@ public interface NetworkMessages {
     /**
      * The default messages
      */
-    NetworkMessages MESSAGES = Messages.getBundle(NetworkMessages.class);
+    NetworkMessages MESSAGES = Messages.getBundle(MethodHandles.lookup(), NetworkMessages.class);
 
     /**
      * Creates an exception indicating the value cannot be changed while the socket is bound.

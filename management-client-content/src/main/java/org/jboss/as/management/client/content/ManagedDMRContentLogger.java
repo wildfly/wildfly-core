@@ -5,6 +5,7 @@
 
 package org.jboss.as.management.client.content;
 
+import java.lang.invoke.MethodHandles;
 import java.security.NoSuchAlgorithmException;
 
 import org.jboss.as.controller.OperationFailedException;
@@ -26,7 +27,7 @@ interface ManagedDMRContentLogger extends BasicLogger {
     /**
      * A logger with the category of the package.
      */
-    ManagedDMRContentLogger ROOT_LOGGER = Logger.getMessageLogger(ManagedDMRContentLogger.class, "org.jboss.as.management.client.content");
+    ManagedDMRContentLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ManagedDMRContentLogger.class, "org.jboss.as.management.client.content");
 
     /**
      * Creates an exception indicating the expected content hash provided by the caller does not match the current value.
