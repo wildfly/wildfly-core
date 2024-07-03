@@ -12,6 +12,7 @@ package org.wildfly.extension.elytron;
  */
 interface ElytronDescriptionConstants {
 
+    String ACCEPT_OCSP_STAPLING = "accept-ocsp-stapling";
     String ACCOUNT_KEY = "account-key";
     String ACTION = "action";
     String ACTIVE_SESSION_COUNT = "active-session-count";
@@ -73,6 +74,8 @@ interface ElytronDescriptionConstants {
     String BCRYPT_MAPPER = "bcrypt-mapper";
 
     String CAA_IDENTITIES = "caa-identities";
+    String CACHE_SIZE = "cache-size";
+    String CACHE_LIFETIME = "cache-lifetime";
     String CACHING_REALM = "caching-realm";
     String CASE_PRINCIPAL_TRANSFORMER = "case-principal-transformer";
     String CALLBACK_HANDLER = "callback-handler";
@@ -246,6 +249,7 @@ interface ElytronDescriptionConstants {
     String IDENTITY_MAPPING = "identity-mapping";
     String IDENTITY_REALM = "identity-realm";
     String IGNORE_UNAVAILABLE_REALMS = "ignore-unavailable-realms";
+    String IGNORE_EXTENSIONS = "ignore-extensions";
     String IMPLEMENTATION = "implementation";
     String IMPLEMENTATION_PROPERTIES = "implementation-properties";
     String IMPORT_CERTIFICATE = "import-certificate";
@@ -366,6 +370,8 @@ interface ElytronDescriptionConstants {
     String OBTAIN_CERTIFICATE = "obtain-certificate";
     String OBTAIN_KERBEROS_TICKET = "obtain-kerberos-ticket";
     String OCSP = "ocsp";
+    String OCSP_STAPLING = "ocsp-stapling";
+    String OCSP_STAPLING_SOFT_FAIL = "ocsp-stapling-soft-fail";
     String OID = "oid";
     String ONLY_LEAF_CERT = "only-leaf-cert";
     String OPERATIONS = "operations";
@@ -467,6 +473,9 @@ interface ElytronDescriptionConstants {
     String RESPONDER = "responder";
     String RESPONDER_CERTIFICATE = "responder-certificate";
     String RESPONDER_KEYSTORE = "responder-keystore";
+    String RESPONDER_OVERRIDE = "responder-override";
+    String RESPONDER_URI = "responder-uri";
+    String RESPONSE_TIMEOUT = "response-timeout";
     String REVERSE = "reverse";
     String REVOKE_CERTIFICATE = "revoke-certificate";
     String RIGHT = "right";

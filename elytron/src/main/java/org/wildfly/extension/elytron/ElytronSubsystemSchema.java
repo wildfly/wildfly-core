@@ -193,7 +193,9 @@ public enum ElytronSubsystemSchema implements PersistentSubsystemSchema<ElytronS
 
     private void addTlsParser(PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder) {
         TlsParser tlsParser = new TlsParser();
-        if (this.since(ElytronSubsystemSchema.VERSION_18_0_COMMUNITY) && this.enables(getDynamicClientSSLContextDefinition())) {
+        if (this.since(ElytronSubsystemSchema.VERSION_18_0_PREVIEW) && this.enables(SSLDefinitions.OCSP_STAPLING)) {
+            builder.addChild(tlsParser.tlsParserPreview_18_0);
+        } else if (this.since(ElytronSubsystemSchema.VERSION_18_0_COMMUNITY) && this.enables(getDynamicClientSSLContextDefinition())) {
             builder.addChild(tlsParser.tlsParserCommunity_18_0);
         } else if (this.since(ElytronSubsystemSchema.VERSION_14_0)) {
             builder.addChild(tlsParser.tlsParser_14_0);

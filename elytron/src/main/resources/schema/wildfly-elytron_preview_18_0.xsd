@@ -5145,6 +5145,9 @@
                 Definitions of a single server side SSLContext.
             </xs:documentation>
         </xs:annotation>
+        <xs:all>
+            <xs:element name="ocsp-stapling" type="ocspStaplingType" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
@@ -5298,6 +5301,61 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="ocspStaplingType">
+        <xs:annotation>
+            <xs:documentation>
+                Enables online certificate status protocol Stapling for the server SSL context.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="response-timeout" type="xs:int" use="optional" default="5000">
+            <xs:annotation>
+                <xs:documentation>
+                    Controls the maximum amount of time in millisecond the server will use to obtain OCSP responses,
+                    whether from the cache or by contacting an OCSP responder.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cache-size" type="xs:int" use="optional" default="256">
+            <xs:annotation>
+                <xs:documentation>
+                    Controls the maximum cache size in entries.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cache-lifetime" type="xs:int" use="optional" default="3600">
+            <xs:annotation>
+                <xs:documentation>
+                    Controls the maximum life of a cached response in seconds.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="responder-uri" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The responder to contact in case the certificate used by the server does
+                    not have the Authority Info Access (AIA) extension. This does not override
+                    the AIA extension value unless "responder-override" is set to true.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="responder-override" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Determines whether the Authority information from the AIA extension
+                    value would be overridden by the value of the `responderURI`.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ignore-extentions" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    determines whether the forwarding of OCSP extensions specified in the
+                    "status_request" or "status_request_v2" TLS extensions is disabled or not.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="clientSSLContextsType">
         <xs:annotation>
             <xs:documentation>
@@ -5369,6 +5427,34 @@
             <xs:annotation>
                 <xs:documentation>
                     The name of the providers to obtain the Provider[] to use to load the SSLContext.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accept-ocsp-stapling" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates whether the client would accept OCSP stapled responses fom the model or not.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ocsp-stapling-soft-fail" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates the behaviour of the client when the stapled status of the server's certificate is unknown.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="responder-certificate" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The alias for OCSP Responder certificate. Keep undefined to use the issuer of certificate being validated.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="responder-keystore" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The keystore for responder-certificate. Keep undefined to use trust-manager keystore. Requires responder-certificate to be defined.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

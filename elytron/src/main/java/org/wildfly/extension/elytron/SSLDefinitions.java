@@ -26,6 +26,7 @@ import static org.wildfly.extension.elytron.FileAttributeDefinitions.PATH;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.security.provider.util.ProviderUtil.findProvider;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -232,6 +233,36 @@ class SSLDefinitions {
             //.setDefaultValue(new ModelNode(CipherSuiteSelector.OPENSSL_DEFAULT_CIPHER_SUITE_NAMES))
             .build();
 
+    static final SimpleAttributeDefinition ACCEPT_OCSP_STAPLING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ACCEPT_OCSP_STAPLING, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .setDefaultValue(ModelNode.FALSE)
+            .build();
+
+    static final SimpleAttributeDefinition OCSP_STAPLING_SOFT_FAIL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.OCSP_STAPLING_SOFT_FAIL, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .setDefaultValue(ModelNode.TRUE)
+            .build();
+
+    static final SimpleAttributeDefinition ACCEPT_OCSP_RESPONDER_CERTIFICATE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RESPONDER_CERTIFICATE, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .setRequired(false)
+            .build();
+
+    static final SimpleAttributeDefinition ACCEPT_OCSP_RESPONDER_KEYSTORE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RESPONDER_KEYSTORE, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .setCapabilityReference(KEY_STORE_CAPABILITY, SSL_CONTEXT_CAPABILITY)
+            .setRequired(false)
+            .setRequires(ElytronDescriptionConstants.RESPONDER_CERTIFICATE)
+            .build();
+
     private static final String[] ALLOWED_PROTOCOLS = { "SSLv2", "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
 
     static final StringListAttributeDefinition PROTOCOLS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.PROTOCOLS)
@@ -396,6 +427,55 @@ class SSLDefinitions {
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition RESPONSE_TIMEOUT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RESPONSE_TIMEOUT, ModelType.INT, true)
+            .setValidator(new IntRangeValidator(1))
+            .setDefaultValue(new ModelNode(5000))
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final SimpleAttributeDefinition CACHE_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CACHE_SIZE, ModelType.INT, true)
+            .setDefaultValue(new ModelNode(256))
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final SimpleAttributeDefinition CACHE_LIFETIME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CACHE_LIFETIME, ModelType.INT, true)
+            .setDefaultValue(new ModelNode(3600))
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final SimpleAttributeDefinition RESPONDER_URI = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RESPONDER_URI, ModelType.STRING, true)
+            .setRequires(ElytronDescriptionConstants.RESPONDER_OVERRIDE)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final SimpleAttributeDefinition RESPONDER_OVERRIDE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RESPONDER_OVERRIDE, ModelType.BOOLEAN, true)
+            .setDefaultValue(ModelNode.FALSE)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final SimpleAttributeDefinition IGNORE_EXTENSIONS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.IGNORE_EXTENSIONS, ModelType.BOOLEAN, true)
+            .setDefaultValue(ModelNode.FALSE)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final ObjectTypeAttributeDefinition OCSP_STAPLING = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.OCSP_STAPLING, RESPONSE_TIMEOUT, CACHE_SIZE, CACHE_LIFETIME, RESPONDER_URI, RESPONDER_OVERRIDE, IGNORE_EXTENSIONS)
+            .setRequired(false)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
             .build();
 
     /*
@@ -941,31 +1021,6 @@ class SSLDefinitions {
                 }
                 return resolvedPath;
             }
-
-            private TrustManagerFactory createTrustManagerFactory(Provider[] providers, String providerName, String algorithm) throws StartException {
-                TrustManagerFactory trustManagerFactory = null;
-
-                if (providers != null) {
-                    for (Provider current : providers) {
-                        if (providerName == null || providerName.equals(current.getName())) {
-                            try {
-                                // TODO - We could check the Services within each Provider to check there is one of the required type/algorithm
-                                // However the same loop would need to remain as it is still possible a specific provider can't create it.
-                                return TrustManagerFactory.getInstance(algorithm, current);
-                            } catch (NoSuchAlgorithmException ignored) {
-                            }
-                        }
-                    }
-                    if (trustManagerFactory == null)
-                        throw ROOT_LOGGER.unableToCreateManagerFactory(TrustManagerFactory.class.getSimpleName(), algorithm);
-                }
-
-                try {
-                    return TrustManagerFactory.getInstance(algorithm);
-                } catch (NoSuchAlgorithmException e) {
-                    throw new StartException(e);
-                }
-            }
         };
 
         ResourceDescriptionResolver resolver = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.TRUST_MANAGER);
@@ -1288,7 +1343,7 @@ class SSLDefinitions {
                 SECURITY_DOMAIN, WANT_CLIENT_AUTH, NEED_CLIENT_AUTH, AUTHENTICATION_OPTIONAL,
                 USE_CIPHER_SUITES_ORDER, MAXIMUM_SESSION_CACHE_SIZE, SESSION_TIMEOUT, WRAP, keyManagerDefinition, TRUST_MANAGER,
                 PRE_REALM_PRINCIPAL_TRANSFORMER, POST_REALM_PRINCIPAL_TRANSFORMER, FINAL_PRINCIPAL_TRANSFORMER, REALM_MAPPER,
-                providersDefinition, PROVIDER_NAME};
+                providersDefinition, PROVIDER_NAME, OCSP_STAPLING};
 
         AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.PASSIVE, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
 
@@ -1316,7 +1371,29 @@ class SSLDefinitions {
                 final int maximumSessionCacheSize = MAXIMUM_SESSION_CACHE_SIZE.resolveModelAttribute(context, model).asInt();
                 final int sessionTimeout = SESSION_TIMEOUT.resolveModelAttribute(context, model).asInt();
                 final boolean wrap = WRAP.resolveModelAttribute(context, model).asBoolean();
+                final String ocspStapling = OCSP_STAPLING.resolveModelAttribute(context, model).asStringOrNull();
+                final int responseTimeout;
+                final int cacheSize;
+                final int cacheLifetime;
+                final String responderURI;
+                final boolean responderOverride;
+                final boolean ignoreExtensions;
 
+                if (ocspStapling != null) {
+                    responseTimeout = RESPONSE_TIMEOUT.resolveModelAttribute(context, model).asInt();
+                    cacheSize = CACHE_SIZE.resolveModelAttribute(context, model).asInt();
+                    cacheLifetime = CACHE_LIFETIME.resolveModelAttribute(context, model).asInt();
+                    responderURI = RESPONDER_URI.resolveModelAttribute(context, model).asString();
+                    responderOverride = RESPONDER_OVERRIDE.resolveModelAttribute(context, model).asBoolean();
+                    ignoreExtensions = IGNORE_EXTENSIONS.resolveModelAttribute(context, model).asBoolean();
+                } else {
+                    responseTimeout = 0;
+                    cacheSize = 0;
+                    cacheLifetime = 0;
+                    responderURI = null;
+                    responderOverride = false;
+                    ignoreExtensions = false;
+                }
                 return () -> {
                     SecurityDomain securityDomain = securityDomainInjector.getOptionalValue();
                     X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagerInjector.getOptionalValue());
@@ -1365,6 +1442,15 @@ class SSLDefinitions {
                             .setSessionCacheSize(maximumSessionCacheSize)
                             .setSessionTimeout(sessionTimeout)
                             .setWrap(wrap);
+
+                    if (ocspStapling != null) {
+                        builder.setResponseTimeout(responseTimeout)
+                                .setCacheSize(cacheSize)
+                                .setCacheLifetime(cacheLifetime)
+                                .setResponderURI(responderURI)
+                                .setResponderOverride(responderOverride)
+                                .setIgnoreExtensions(ignoreExtensions);
+                    }
 
                     if (ROOT_LOGGER.isTraceEnabled()) {
                         ROOT_LOGGER.tracef(
@@ -1461,7 +1547,7 @@ class SSLDefinitions {
                 .build();
 
         AttributeDefinition[] attributes = new AttributeDefinition[]{CIPHER_SUITE_FILTER, CIPHER_SUITE_NAMES, PROTOCOLS,
-                KEY_MANAGER, TRUST_MANAGER, providersDefinition, PROVIDER_NAME};
+                KEY_MANAGER, TRUST_MANAGER, providersDefinition, PROVIDER_NAME, ACCEPT_OCSP_STAPLING, OCSP_STAPLING_SOFT_FAIL, ACCEPT_OCSP_RESPONDER_CERTIFICATE, ACCEPT_OCSP_RESPONDER_KEYSTORE};
 
         AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
             @Override
@@ -1475,15 +1561,41 @@ class SSLDefinitions {
                 final List<String> protocols = PROTOCOLS.unwrap(context, model);
                 final String cipherSuiteFilter = CIPHER_SUITE_FILTER.resolveModelAttribute(context, model).asString(); // has default value, can't be null
                 final String cipherSuiteNames = CIPHER_SUITE_NAMES.resolveModelAttribute(context, model).asStringOrNull(); // doesn't have a default value yet since we are disabling TLS 1.3 by default
+                final boolean acceptOCSPStapling = ACCEPT_OCSP_STAPLING.resolveModelAttribute(context, model).asBoolean();
+                final boolean softFail = OCSP_STAPLING_SOFT_FAIL.resolveModelAttribute(context, model).asBoolean();
+                final String trustManagerName = TRUST_MANAGER.resolveModelAttribute(context,model).asString();
+                String responderCertAlias = ACCEPT_OCSP_RESPONDER_CERTIFICATE.resolveModelAttribute(context, model).asStringOrNull();
+                String responderKeystore = ACCEPT_OCSP_RESPONDER_KEYSTORE.resolveModelAttribute(context, model).asStringOrNull();
+
                 return () -> {
                     X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagerInjector.getOptionalValue());
                     X509ExtendedTrustManager trustManager = getX509TrustManager(trustManagerInjector.getOptionalValue());
                     Provider[] providers = filterProviders(providersInjector.getOptionalValue(), providerName);
+                    if (providers == null) {
+                        providers = filterProviders(java.security.Security.getProviders(), providerName);
+                    }
 
                     SSLContextBuilder builder = new SSLContextBuilder();
                     if (keyManager != null) builder.setKeyManager(keyManager);
+                    if (acceptOCSPStapling) {
+                        final String algorithm = TrustManagerFactory.getDefaultAlgorithm();
+                        Provider provider = findProvider(providers, providerName, TrustManagerFactory.class, algorithm);
+                        final TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm(), provider);
+                        X509RevocationTrustManager.Builder revocationBuilder = X509RevocationTrustManager.builder();
+                        revocationBuilder.setTrustManagerFactory(trustManagerFactory);
+                        revocationBuilder.setTrustStore(getModifiableTrustManagerService(context, trustManagerName).getModifiableValue());
+                        revocationBuilder.setOcspResponderCert((X509Certificate) getModifiableKeyStoreService(context, responderKeystore).getModifiableValue().getCertificate(responderCertAlias));
+                        revocationBuilder.setCheckRevocation(true);
+                        revocationBuilder.setSoftFail(softFail);
+                        trustManager = revocationBuilder.build();
+                    }
+
                     if (trustManager != null) builder.setTrustManager(trustManager);
-                    if (providers != null) builder.setProviderSupplier(() -> providers);
+                    if (providers != null) {
+                        Provider[] finalProviders = providers;
+                        builder.setProviderSupplier(() -> finalProviders);
+                    }
+
                     builder.setCipherSuiteSelector(CipherSuiteSelector.aggregate(cipherSuiteNames != null ? CipherSuiteSelector.fromNamesString(cipherSuiteNames) : null, CipherSuiteSelector.fromString(cipherSuiteFilter)));
                     if (!protocols.isEmpty()) {
                         List<Protocol> list = new ArrayList<>();
@@ -1496,7 +1608,8 @@ class SSLDefinitions {
                         ));
                     }
                     builder.setClientMode(true)
-                            .setWrap(false);
+                            .setWrap(false)
+                            .setAcceptOCSPStapling(acceptOCSPStapling);
 
                     if (ROOT_LOGGER.isTraceEnabled()) {
                         ROOT_LOGGER.tracef(
@@ -1686,6 +1799,57 @@ class SSLDefinitions {
 
         public InjectedValue<PathManager> getPathManagerInjector() {
             return pathManagerInjector;
+        }
+    }
+
+    private static TrustManagerFactory createTrustManagerFactory(Provider[] providers, String providerName, String algorithm) throws StartException {
+        TrustManagerFactory trustManagerFactory = null;
+
+        if (providers != null) {
+            for (Provider current : providers) {
+                if (providerName == null || providerName.equals(current.getName())) {
+                    try {
+                        // TODO - We could check the Services within each Provider to check there is one of the required type/algorithm
+                        // However the same loop would need to remain as it is still possible a specific provider can't create it.
+                        return TrustManagerFactory.getInstance(algorithm, current);
+                    } catch (NoSuchAlgorithmException ignored) {
+                    }
+                }
+            }
+            if (trustManagerFactory == null)
+                throw ROOT_LOGGER.unableToCreateManagerFactory(TrustManagerFactory.class.getSimpleName(), algorithm);
+        }
+
+        try {
+            return TrustManagerFactory.getInstance(algorithm);
+        } catch (NoSuchAlgorithmException e) {
+            throw new StartException(e);
+        }
+    }
+
+    public static ModifiableKeyStoreService getModifiableTrustManagerService(OperationContext context, String trustManagerName) throws OperationFailedException {
+        ServiceRegistry serviceRegistry = context.getServiceRegistry(false);
+        RuntimeCapability<Void> runtimeCapability = TRUST_MANAGER_RUNTIME_CAPABILITY.fromBaseCapability(trustManagerName);
+        ServiceName serviceName = runtimeCapability.getCapabilityServiceName();
+
+        ServiceController<TrustManager> serviceContainer = getRequiredService(serviceRegistry, serviceName, TrustManager.class);
+        ServiceController.State serviceState = serviceContainer.getState();
+        if (serviceState != ServiceController.State.UP) {
+            throw ROOT_LOGGER.requiredServiceNotUp(serviceName, serviceState);
+        }
+
+        String keyStoreName = null;
+        Set<ServiceName> serviceNames = serviceContainer.requires();
+        for(ServiceName name : serviceNames) {
+            if (name.getCanonicalName().contains(KEY_STORE_CAPABILITY)) {
+                keyStoreName = (name).getCanonicalName().substring(KEY_STORE_CAPABILITY.length() + 1);
+            }
+        }
+
+        if (keyStoreName == null) {
+            throw ROOT_LOGGER.unableToLoadKeystoreCapabilityService();
+        } else {
+            return getModifiableKeyStoreService(context, keyStoreName);
         }
     }
 

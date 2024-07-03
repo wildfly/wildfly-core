@@ -27,6 +27,7 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,6 +60,7 @@ import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -109,13 +111,15 @@ public class TlsTestCase extends AbstractSubsystemTest {
     private static final String NEGOTIATED_PROTOCOL = "negotiatedProtocol";
 
     private static final String INIT_TEST_FILE = "/trust-manager-reload-test.truststore";
+    private static final String INIT_TEST_SERVER_SSL_CONTEXT = "serverContext";
+    private static final String INIT_TEST_CLIENT_SSL_CONTEXT = "clientContext";
     private static final String INIT_TEST_TRUSTSTORE = "myTS";
     private static final String INIT_TEST_TRUSTMANAGER = "myTM";
     public static String disabledAlgorithms;
 
 
     public TlsTestCase() {
-        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
+        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension(), Stability.PREVIEW);
     }
 
     private KernelServices services = null;
@@ -328,7 +332,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
         if (services != null) return;
         String subsystemXml;
         subsystemXml = JdkUtils.getJavaSpecVersion() <= 12 ? "tls-sun.xml" : "tls-oracle13plus.xml";
-        services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource(subsystemXml).build();
+        services = super.createKernelServicesBuilder(new TestEnvironment(Stability.PREVIEW)).setSubsystemXmlResource(subsystemXml).build();
         if (!services.isSuccessfulBoot()) {
             if (services.getBootError() != null) {
                 Assert.fail(services.getBootError().toString());
@@ -642,6 +646,53 @@ public class TlsTestCase extends AbstractSubsystemTest {
         ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-ocsp-simple");
         TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
         MatcherAssert.assertThat(trustManager, CoreMatchers.instanceOf(X509RevocationTrustManager.class));
+    }
+
+    @Test
+    public void testOcspStaplingServerSimple() {
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.SERVER_SSL_CONTEXT, INIT_TEST_SERVER_SSL_CONTEXT);
+        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
+        operation.get(ElytronDescriptionConstants.KEY_MANAGER).set("ServerKeyManager");
+        operation.get(ElytronDescriptionConstants.PROVIDERS).set("ManagerProviderLoader");
+        Assert.assertEquals(SUCCESS, services.executeOperation(operation).get(OUTCOME).asString());
+
+        operation.get(ClientConstants.OP).set(ClientConstants.WRITE_ATTRIBUTE_OPERATION);
+        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.OCSP_STAPLING);
+        operation.get(ClientConstants.VALUE).set(Collections.emptySet());
+        Assert.assertEquals(SUCCESS, services.executeOperation(operation).get(OUTCOME).asString());
+
+        operation.get(ClientConstants.OP).set(ClientConstants.WRITE_ATTRIBUTE_OPERATION);
+        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.OCSP_STAPLING + "." + ElytronDescriptionConstants.RESPONSE_TIMEOUT);
+        operation.get(ClientConstants.VALUE).set(2500);
+        operation.get(ClientConstants.OP).set(ClientConstants.WRITE_ATTRIBUTE_OPERATION);
+        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.OCSP_STAPLING + "." + ElytronDescriptionConstants.CACHE_SIZE);
+        operation.get(ClientConstants.VALUE).set(512);
+        operation.get(ClientConstants.OP).set(ClientConstants.WRITE_ATTRIBUTE_OPERATION);
+        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.OCSP_STAPLING + "." + ElytronDescriptionConstants.CACHE_LIFETIME);
+        operation.get(ClientConstants.VALUE).set(7200);
+        operation.get(ClientConstants.OP).set(ClientConstants.WRITE_ATTRIBUTE_OPERATION);
+        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.OCSP_STAPLING + "." + ElytronDescriptionConstants.RESPONDER_URI);
+        operation.get(ClientConstants.VALUE).set("http://localhost:8080/ocsp");
+        operation.get(ClientConstants.OP).set(ClientConstants.WRITE_ATTRIBUTE_OPERATION);
+        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.OCSP_STAPLING + "." + ElytronDescriptionConstants.RESPONDER_OVERRIDE);
+        operation.get(ClientConstants.VALUE).set(true);
+        operation.get(ClientConstants.OP).set(ClientConstants.WRITE_ATTRIBUTE_OPERATION);
+        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.OCSP_STAPLING + "." + ElytronDescriptionConstants.IGNORE_EXTENSIONS);
+        operation.get(ClientConstants.VALUE).set(true);
+        Assert.assertEquals(SUCCESS, services.executeOperation(operation).get(OUTCOME).asString());
+    }
+
+//    @Test
+    public void testOcspStaplingClientSimple() {
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, INIT_TEST_CLIENT_SSL_CONTEXT);
+        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
+        operation.get(ElytronDescriptionConstants.TRUST_MANAGER).set("CaTrustManager");
+        operation.get(ElytronDescriptionConstants.PROVIDERS).set("ManagerProviderLoader");
+        operation.get(ElytronDescriptionConstants.ACCEPT_OCSP_STAPLING).set(true);
+        operation.get(ElytronDescriptionConstants.OCSP_STAPLING_SOFT_FAIL).set(true);
+        Assert.assertEquals(SUCCESS, services.executeOperation(operation).get(OUTCOME).asString());
     }
 
     private SSLContext getSslContext(String contextName) {
