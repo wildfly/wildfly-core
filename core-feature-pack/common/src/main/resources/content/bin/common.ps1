@@ -348,8 +348,9 @@ Function Start-WildFly-Process {
  Param(
    [Parameter(Mandatory=$true)]
    [string[]] $programArguments,
-   [boolean] $runInBackground = $false
-
+   [boolean] $runInBackground = $false,
+   [string] $logFileProperties = "$global:JBOSS_CONFIG_DIR\logging.properties",
+   [string] $logFile = "$global:JBOSS_LOG_DIR\server.log"
 ) #end param
 
 	if(($JBOSS_PIDFILE -ne '') -and (Test-Path $JBOSS_PIDFILE)) {
@@ -380,8 +381,14 @@ Function Start-WildFly-Process {
 			    Write-Host "INFO: Restarting..."
 				Start-WildFly-Process -programArguments $programArguments
 			} elseif ($LastExitCode -eq 20) { # :shutdown(perform-installation=true) was called
-                Write-Host "INFO: Executing the installation manager"
-                & "$JBOSS_HOME\bin\installation-manager.ps1" -installationHome "$JBOSS_HOME" -instMgrLogProperties "$JBOSS_CONFIG_DIR\logging.properties"
+                Write-Host "INFO: Starting Candidate Server installation using Management CLI Installer script"
+                $instMgrOutFile="$JBOSS_LOG_DIR\management-cli-installer-out.log"
+                & "$JBOSS_HOME\bin\installation-manager.ps1" -installationHome "$JBOSS_HOME" -instMgrLogProperties "$logFileProperties" -instMgrLogFile "$logFile" *>> $instMgrOutFile
+                if ($LastExitCode -eq 0) {
+                    Write-Host "INFO: Candidate Server installation completed successfully."
+                } else {
+                    Write-Host "ERROR: Candidate Server installation failed. Check Management CLI Installer script log file for more information: $instMgrOutFile"
+                }
                 Write-Host "INFO: Restarting..."
                 Start-WildFly-Process -programArguments $programArguments
             }
