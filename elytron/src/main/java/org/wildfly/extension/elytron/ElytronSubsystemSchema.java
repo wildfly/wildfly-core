@@ -54,8 +54,9 @@ public enum ElytronSubsystemSchema implements PersistentSubsystemSchema<ElytronS
     VERSION_17_0(17),
     VERSION_18_0(18),
     VERSION_18_0_COMMUNITY(18, Stability.COMMUNITY),
+    VERSION_18_0_PREVIEW(18, Stability.PREVIEW),
     ;
-    static final Map<Stability, ElytronSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_18_0, VERSION_18_0_COMMUNITY));
+    static final Map<Stability, ElytronSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_18_0, VERSION_18_0_COMMUNITY, VERSION_18_0_PREVIEW));
 
     private final VersionedNamespace<IntVersion, ElytronSubsystemSchema> namespace;
 
