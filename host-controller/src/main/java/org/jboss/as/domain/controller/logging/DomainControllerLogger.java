@@ -11,6 +11,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -46,14 +47,14 @@ public interface DomainControllerLogger extends BasicLogger {
      * in code specific to the function of the primary Host Controller, e.g. the registration/deregistration
      * of secondary Host Contollers.
      */
-    DomainControllerLogger ROOT_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.domain.controller");
+    DomainControllerLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), DomainControllerLogger.class, "org.jboss.as.domain.controller");
 
     /**
      * A logger with the category of {@code org.jboss.as.host.controller}.
      * <strong>Usage:</strong> Use this in code related to Host Controller functionality, except
      * for areas described in the documentation of {@link #ROOT_LOGGER}.
      */
-    DomainControllerLogger HOST_CONTROLLER_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.host.controller");
+    DomainControllerLogger HOST_CONTROLLER_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), DomainControllerLogger.class, "org.jboss.as.host.controller");
 
     @LogMessage(level = Level.WARN)
     @Message(id = 1, value = "Ignoring 'include' child of 'socket-binding-group' %s")

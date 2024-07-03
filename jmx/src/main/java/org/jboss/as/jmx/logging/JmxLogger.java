@@ -8,6 +8,7 @@ package org.jboss.as.jmx.logging;
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.WARN;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,7 @@ public interface JmxLogger extends BasicLogger {
     /**
      * A logger with the category of the package name.
      */
-    JmxLogger ROOT_LOGGER = Logger.getMessageLogger(JmxLogger.class, "org.jboss.as.jmx");
+    JmxLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), JmxLogger.class, "org.jboss.as.jmx");
 
 //    /**
 //     * Creates an exception indicating the inability to shutdown the RMI registry.

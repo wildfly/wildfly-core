@@ -10,6 +10,7 @@ import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.File;
+import java.lang.invoke.MethodHandles;
 import java.util.Set;
 
 import org.jboss.as.controller.OperationFailedException;
@@ -31,7 +32,7 @@ public interface DeploymentScannerLogger extends BasicLogger {
     /**
      * A logger with the category of the package name.
      */
-    DeploymentScannerLogger ROOT_LOGGER = Logger.getMessageLogger(DeploymentScannerLogger.class, "org.jboss.as.server.deployment.scanner");
+    DeploymentScannerLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), DeploymentScannerLogger.class, "org.jboss.as.server.deployment.scanner");
 
     /**
      * Logs a warning message indicating the extraneous deployment marker file could not be removed.

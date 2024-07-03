@@ -5,6 +5,7 @@
 
 package org.jboss.as.threads;
 
+import java.lang.invoke.MethodHandles;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +32,7 @@ interface ThreadsLogger extends BasicLogger {
     /**
      * A logger with a category of the package name.
      */
-    ThreadsLogger ROOT_LOGGER = Logger.getMessageLogger(ThreadsLogger.class, "org.jboss.as.threads");
+    ThreadsLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ThreadsLogger.class, "org.jboss.as.threads");
 
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 1, value = "The '%s' attribute is no longer supported. The value [%f] of the '%s' attribute " +

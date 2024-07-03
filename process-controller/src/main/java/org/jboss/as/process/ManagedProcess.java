@@ -24,6 +24,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.lang.invoke.MethodHandles;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -125,9 +126,9 @@ final class ManagedProcess {
         this.pcAuthKey = pcAuthKey;
         isPrivileged = privileged;
         respawnPolicy = respawn ? RespawnPolicy.RESPAWN : RespawnPolicy.NONE;
-        logStatus = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.process." + processName + ".status");
-        logSystemErr = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.process." + processName + ".system.stderr");
-        logSystemOut = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.process." + processName + ".system.stdout");
+        logStatus = Logger.getMessageLogger(MethodHandles.lookup(), ProcessLogger.class, "org.jboss.as.process." + processName + ".status");
+        logSystemErr = Logger.getMessageLogger(MethodHandles.lookup(), ProcessLogger.class, "org.jboss.as.process." + processName + ".system.stderr");
+        logSystemOut = Logger.getMessageLogger(MethodHandles.lookup(), ProcessLogger.class, "org.jboss.as.process." + processName + ".system.stdout");
     }
 
     int incrementAndGetRespawnCount() {

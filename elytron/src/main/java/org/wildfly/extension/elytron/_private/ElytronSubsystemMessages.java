@@ -8,6 +8,7 @@ package org.wildfly.extension.elytron._private;
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -45,7 +46,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     /**
      * A root logger with the category of the package name.
      */
-    ElytronSubsystemMessages ROOT_LOGGER = Logger.getMessageLogger(ElytronSubsystemMessages.class, "org.wildfly.extension.elytron");
+    ElytronSubsystemMessages ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ElytronSubsystemMessages.class, "org.wildfly.extension.elytron");
 
     /**
      * {@link OperationFailedException} if the same realm is injected multiple times for a single domain.

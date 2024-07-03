@@ -8,6 +8,7 @@ package org.wildfly.extension.io.logging;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
+import java.lang.invoke.MethodHandles;
 import java.net.InetSocketAddress;
 
 import org.jboss.as.controller.OperationFailedException;
@@ -28,7 +29,7 @@ public interface IOLogger extends BasicLogger {
     /**
      * A root logger with the category of the package name.
      */
-    IOLogger ROOT_LOGGER = Logger.getMessageLogger(IOLogger.class, "org.wildfly.extension.io");
+    IOLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), IOLogger.class, "org.wildfly.extension.io");
 
 
     @LogMessage(level = INFO)

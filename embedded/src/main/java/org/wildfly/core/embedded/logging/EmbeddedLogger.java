@@ -6,6 +6,7 @@
 package org.wildfly.core.embedded.logging;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 
 import org.jboss.logging.BasicLogger;
@@ -29,7 +30,7 @@ public interface EmbeddedLogger extends BasicLogger {
     /**
      * A logger with a category of the package name.
      */
-    EmbeddedLogger ROOT_LOGGER = Logger.getMessageLogger(EmbeddedLogger.class, "org.jboss.as.embedded");
+    EmbeddedLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), EmbeddedLogger.class, "org.jboss.as.embedded");
 
 //    /**
 //     * Logs a warning message indicating the file handle, represented by the {@code file} parameter, could not be

@@ -5,6 +5,7 @@
 package org.wildfly.core.jar.runtime._private;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -31,7 +32,7 @@ public interface BootableJarLogger extends BasicLogger {
     /**
      * Default root logger with category of the package name.
      */
-    BootableJarLogger ROOT_LOGGER = Logger.getMessageLogger(BootableJarLogger.class, "org.wildfly.jar");
+    BootableJarLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), BootableJarLogger.class, "org.wildfly.jar");
 
     @LogMessage(level = DEBUG)
     @Message(id = 1, value = "Shutting down")
