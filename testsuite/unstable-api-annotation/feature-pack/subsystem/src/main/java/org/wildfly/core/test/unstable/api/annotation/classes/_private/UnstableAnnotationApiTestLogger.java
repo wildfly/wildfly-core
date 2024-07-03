@@ -14,6 +14,8 @@ import org.jboss.logging.annotations.MessageLogger;
 
 import static org.jboss.logging.Logger.Level.INFO;
 
+import java.lang.invoke.MethodHandles;
+
 /**
  * Log messages for our template subsystem.
  *
@@ -24,7 +26,7 @@ import static org.jboss.logging.Logger.Level.INFO;
 // TODO Rename to something that makes sense for your subsystem.
 public interface UnstableAnnotationApiTestLogger extends BasicLogger {
 
-    UnstableAnnotationApiTestLogger LOGGER = Logger.getMessageLogger(UnstableAnnotationApiTestLogger.class, "org.wildfly.extension.galleon.pack.template.subsystem");
+    UnstableAnnotationApiTestLogger LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), UnstableAnnotationApiTestLogger.class, "org.wildfly.extension.galleon.pack.template.subsystem");
 
     /**
      * Logs an informational message indicating the subsystem is being activated.

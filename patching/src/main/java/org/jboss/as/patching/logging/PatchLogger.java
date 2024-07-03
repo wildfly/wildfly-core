@@ -10,6 +10,7 @@ import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
 import java.io.SyncFailedException;
+import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 
 import org.jboss.as.controller.OperationFailedException;
@@ -33,7 +34,7 @@ import org.jboss.logging.annotations.Param;
 @MessageLogger(projectCode = "WFLYPAT", length = 4)
 public interface PatchLogger extends BasicLogger {
 
-    PatchLogger ROOT_LOGGER = Logger.getMessageLogger(PatchLogger.class, "org.jboss.as.patching");
+    PatchLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), PatchLogger.class, "org.jboss.as.patching");
 
     @LogMessage(level = WARN)
     @Message(id = 1, value = "Cannot delete file %s")

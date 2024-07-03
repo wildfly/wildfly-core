@@ -8,6 +8,7 @@ import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
+import java.lang.invoke.MethodHandles;
 import java.net.InetAddress;
 
 import org.jboss.logging.BasicLogger;
@@ -25,7 +26,7 @@ import org.jboss.modules.ModuleNotFoundException;
 @MessageLogger(projectCode = "WFLYDMHTTP", length = 4)
 
 public interface HttpServerLogger extends BasicLogger {
-    HttpServerLogger ROOT_LOGGER = Logger.getMessageLogger(HttpServerLogger.class, "org.jboss.as.domain.http.api.undertow");
+    HttpServerLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), HttpServerLogger.class, "org.jboss.as.domain.http.api.undertow");
 
     @LogMessage(level = ERROR)
     @Message(id = 1, value = "Unexpected error executing model request")
