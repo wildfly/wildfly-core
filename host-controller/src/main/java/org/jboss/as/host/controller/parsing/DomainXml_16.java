@@ -34,7 +34,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequiredElement;
@@ -105,12 +104,12 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
     private final ExtensionXml extensionXml;
     private final ExtensionRegistry extensionRegistry;
 
-    DomainXml_16(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final Namespace namespace) {
+    DomainXml_16(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final String namespaceUri) {
         super(new DomainSocketBindingsXml());
+        this.namespace = Namespace.forUri(namespaceUri);
         accessControlXml = AccessControlXml.newInstance(namespace);
         this.extensionXml = extensionXml;
         this.extensionRegistry = extensionRegistry;
-        this.namespace = namespace;
     }
 
     @Override
@@ -134,7 +133,7 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
         writer.writeStartDocument();
         writer.writeStartElement(Element.DOMAIN.getLocalName());
 
-        writer.writeDefaultNamespace(CURRENT.getUriString());
+        writer.writeDefaultNamespace(namespace.getUriString());
         writeNamespaces(writer, modelNode);
         writeSchemaLocation(writer, modelNode);
 
@@ -155,7 +154,7 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
 
         if (modelNode.hasDefined(CORE_SERVICE) && modelNode.get(CORE_SERVICE).hasDefined(MANAGEMENT)) {
             // We use CURRENT here as we only support writing the most recent.
-            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this, true);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, true);
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
         }
 

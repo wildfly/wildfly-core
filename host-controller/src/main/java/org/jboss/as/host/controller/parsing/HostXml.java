@@ -5,8 +5,6 @@
 
 package org.jboss.as.host.controller.parsing;
 
-import static org.jboss.as.controller.parsing.Namespace.CURRENT;
-
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -15,12 +13,11 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.parsing.ExtensionXml;
+import org.jboss.as.controller.parsing.ManagementXmlReaderWriter;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.ModuleLoader;
-import org.jboss.staxmapper.XMLElementReader;
-import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -31,7 +28,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author <a href="mailto:jperkins@jboss.com">James R. Perkins</a>
  */
-public final class HostXml implements XMLElementReader<List<ModelNode>>, XMLElementWriter<ModelMarshallingContext> {
+public final class HostXml implements ManagementXmlReaderWriter {
 
     private final String defaultHostControllerName;
     private final RunningMode runningMode;
@@ -49,7 +46,7 @@ public final class HostXml implements XMLElementReader<List<ModelNode>>, XMLElem
     }
 
     @Override
-    public void readElement(final XMLExtendedStreamReader reader, final List<ModelNode> operationList)
+    public void readElement(final XMLExtendedStreamReader reader, final String namespaceUri, final List<ModelNode> operationList)
             throws XMLStreamException {
         Namespace readerNS = Namespace.forUri(reader.getNamespaceURI());
         switch (readerNS.getMajorVersion()) {
@@ -87,14 +84,14 @@ public final class HostXml implements XMLElementReader<List<ModelNode>>, XMLElem
                 new HostXml_18(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
                 break;
             default:
-                new HostXml_20(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
+                new HostXml_20(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, namespaceUri).readElement(reader, operationList);
         }
     }
 
     @Override
-    public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
+    public void writeContent(final XMLExtendedStreamWriter writer, final String namespaceUri, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new HostXml_20(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, CURRENT).writeContent(writer, context);
+        new HostXml_20(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, namespaceUri).writeContent(writer, context);
     }
 
 }

@@ -4,8 +4,6 @@
  */
 package org.jboss.as.host.controller.parsing;
 
-import static org.jboss.as.controller.parsing.Namespace.CURRENT;
-
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -13,12 +11,11 @@ import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.parsing.ExtensionXml;
+import org.jboss.as.controller.parsing.ManagementXmlReaderWriter;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.ModuleLoader;
-import org.jboss.staxmapper.XMLElementReader;
-import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -28,7 +25,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author Emanuel Muckenhuber
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public final class DomainXml implements XMLElementReader<List<ModelNode>>, XMLElementWriter<ModelMarshallingContext> {
+public final class DomainXml implements ManagementXmlReaderWriter {
 
     private final ExtensionXml extensionXml;
     private final ExtensionRegistry extensionRegistry;
@@ -39,7 +36,7 @@ public final class DomainXml implements XMLElementReader<List<ModelNode>>, XMLEl
     }
 
     @Override
-    public void readElement(final XMLExtendedStreamReader reader, final List<ModelNode> nodes) throws XMLStreamException {
+    public void readElement(final XMLExtendedStreamReader reader, final String namespaceUri, final List<ModelNode> nodes) throws XMLStreamException {
         Namespace readerNS = Namespace.forUri(reader.getNamespaceURI());
         switch (readerNS.getMajorVersion()) {
             case 1:
@@ -63,18 +60,14 @@ public final class DomainXml implements XMLElementReader<List<ModelNode>>, XMLEl
             case 15:
                 new DomainXml_5(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
                 break;
-            case 16:
-            case 17:
-            case 18:
-            case 19:
             default:
-                new DomainXml_16(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
+                new DomainXml_16(extensionXml, extensionRegistry, namespaceUri).readElement(reader, nodes);
         }
     }
 
     @Override
-    public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context) throws XMLStreamException {
-        new DomainXml_16(extensionXml, extensionRegistry, CURRENT).writeContent(writer, context);
+    public void writeContent(final XMLExtendedStreamWriter writer, final String namespaceUri, final ModelMarshallingContext context) throws XMLStreamException {
+        new DomainXml_16(extensionXml, extensionRegistry, namespaceUri).writeContent(writer, context);
     }
 
 }

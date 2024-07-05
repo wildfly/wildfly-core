@@ -42,7 +42,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SSL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STATIC_DISCOVERY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
-import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingOneOf;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
@@ -127,15 +126,15 @@ final class HostXml_20 extends CommonXml implements ManagementXmlDelegate {
     private final Namespace namespace;
 
     HostXml_20(String defaultHostControllerName, RunningMode runningMode, boolean isCachedDC,
-               final ExtensionRegistry extensionRegistry, final ExtensionXml extensionXml, final Namespace namespace) {
+               final ExtensionRegistry extensionRegistry, final ExtensionXml extensionXml, final String namespaceUri) {
         super(new SocketBindingsXml.HostSocketBindingsXml());
+        this.namespace = Namespace.forUri(namespaceUri);
         this.auditLogDelegate = AuditLogXml.newInstance(namespace, true);
         this.defaultHostControllerName = defaultHostControllerName;
         this.runningMode = runningMode;
         this.isCachedDc = isCachedDC;
         this.extensionRegistry = extensionRegistry;
         this.extensionXml = extensionXml;
-        this.namespace = namespace;
     }
 
     @Override
@@ -164,7 +163,7 @@ final class HostXml_20 extends CommonXml implements ManagementXmlDelegate {
         writer.writeStartDocument();
         writer.writeStartElement(Element.HOST.getLocalName());
 
-        writer.writeDefaultNamespace(Namespace.CURRENT.getUriString());
+        writer.writeDefaultNamespace(namespace.getUriString());
         writeNamespaces(writer, modelNode);
         writeSchemaLocation(writer, modelNode);
 
@@ -190,7 +189,7 @@ final class HostXml_20 extends CommonXml implements ManagementXmlDelegate {
         boolean hasCoreServices = modelNode.hasDefined(CORE_SERVICE);
 
         if (hasCoreServices) {
-            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this, false);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, false);
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
         }
 

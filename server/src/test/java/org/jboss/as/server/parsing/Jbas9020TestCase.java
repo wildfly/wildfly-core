@@ -4,7 +4,9 @@
  */
 package org.jboss.as.server.parsing;
 
+import org.jboss.as.controller.parsing.ManagementXmlSchema;
 import org.jboss.as.controller.parsing.Namespace;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Test;
@@ -36,7 +38,8 @@ public class Jbas9020TestCase {
                 "    </deployments>" +
                 "</server>";
         final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
-        final StandaloneXml parser = new StandaloneXml(null, null, null, null);
+        final StandaloneXmlSchemas standaloneXmlSchemas = new StandaloneXmlSchemas(Stability.DEFAULT, null, null, null);
+        final ManagementXmlSchema parser = standaloneXmlSchemas.getCurrent();
         final List<ModelNode> operationList = new ArrayList<ModelNode>();
         final XMLMapper mapper = XMLMapper.Factory.create();
         mapper.registerRootElement(new QName(namespace, "server"), parser);
@@ -56,7 +59,8 @@ public class Jbas9020TestCase {
                 "    </deployments>" +
                 "</server>";
         final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
-        final StandaloneXml parser = new StandaloneXml(null, null, null, null);
+        final StandaloneXmlSchemas standaloneXmlSchemas = new StandaloneXmlSchemas(Stability.DEFAULT, null, null, null);
+        final ManagementXmlSchema parser = standaloneXmlSchemas.getCurrent();
         final List<ModelNode> operationList = new ArrayList<ModelNode>();
         final XMLMapper mapper = XMLMapper.Factory.create();
         mapper.registerRootElement(new QName(namespace, "server"), parser);
@@ -78,7 +82,8 @@ public class Jbas9020TestCase {
                 "    </deployments>" +
                 "</server>";
         final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
-        final StandaloneXml parser = new StandaloneXml(null, null, null, null);
+        final StandaloneXmlSchemas standaloneXmlSchemas = new StandaloneXmlSchemas(Stability.DEFAULT, null, null, null);
+        final ManagementXmlSchema parser = standaloneXmlSchemas.getCurrent();
         final List<ModelNode> operationList = new ArrayList<ModelNode>();
         final XMLMapper mapper = XMLMapper.Factory.create();
         mapper.registerRootElement(new QName(namespace, "server"), parser);

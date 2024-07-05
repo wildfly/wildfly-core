@@ -30,7 +30,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
-import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequiredElement;
@@ -95,15 +94,15 @@ final class StandaloneXml_18 extends CommonXml implements ManagementXmlDelegate 
 
     private final AccessControlXml accessControlXml;
     private final StandaloneXml.ParsingOption[] parsingOptions;
-    private AuditLogXml auditLogDelegate;
     private final Namespace namespace;
+    private AuditLogXml auditLogDelegate;
     private ExtensionHandler extensionHandler;
     private final DeferredExtensionContext deferredExtensionContext;
 
-    StandaloneXml_18(ExtensionHandler extensionHandler, Namespace namespace, DeferredExtensionContext deferredExtensionContext, StandaloneXml.ParsingOption... options) {
+    StandaloneXml_18(ExtensionHandler extensionHandler, String namespaceUri, DeferredExtensionContext deferredExtensionContext, StandaloneXml.ParsingOption... options) {
         super(new SocketBindingsXml.ServerSocketBindingsXml());
-        this.namespace = namespace;
         this.extensionHandler = extensionHandler;
+        this.namespace = Namespace.forUri(namespaceUri);
         this.accessControlXml = AccessControlXml.newInstance(namespace);
         this.auditLogDelegate = AuditLogXml.newInstance(namespace, false);
         this.deferredExtensionContext = deferredExtensionContext;
@@ -708,7 +707,7 @@ final class StandaloneXml_18 extends CommonXml implements ManagementXmlDelegate 
             ServerRootResourceDefinition.ORGANIZATION_IDENTIFIER.marshallAsAttribute(modelNode, false, writer);
         }
 
-        writer.writeDefaultNamespace(CURRENT.getUriString());
+        writer.writeDefaultNamespace(namespace.getUriString());
         writeNamespaces(writer, modelNode);
         writeSchemaLocation(writer, modelNode);
 
@@ -725,7 +724,7 @@ final class StandaloneXml_18 extends CommonXml implements ManagementXmlDelegate 
         }
 
         if (modelNode.hasDefined(CORE_SERVICE)) {
-            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this, false);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, false);
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
         }
 

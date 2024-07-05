@@ -11,12 +11,15 @@ import java.util.Map;
 
 import javax.xml.XMLConstants;
 
+import org.jboss.as.controller.Feature;
+import org.jboss.as.version.Stability;
+
 /**
  * An enumeration of the supported domain model namespaces.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public enum Namespace {
+public enum Namespace implements Feature {
 
     // must be first
     UNKNOWN(null), NONE(null),
@@ -113,14 +116,20 @@ public enum Namespace {
 
     private final int majorVersion;
     private final String name;
+    private final Stability stability;
 
     Namespace(final String name) {
         this(-1, name);
     }
 
     Namespace(final int majorVersion, final String name) {
+        this(majorVersion, name, Stability.DEFAULT);
+    }
+
+    Namespace(final int majorVersion, final String name, final Stability stability) {
         this.majorVersion = majorVersion;
         this.name = name;
+        this.stability = stability;
     }
 
     /**
@@ -139,6 +148,11 @@ public enum Namespace {
      */
     public String getUriString() {
         return name;
+    }
+
+    @Override
+    public Stability getStability() {
+        return stability;
     }
 
     /**

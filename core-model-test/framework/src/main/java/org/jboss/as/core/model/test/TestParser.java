@@ -14,13 +14,15 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.parsing.ManagementXmlSchema;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
-import org.jboss.as.host.controller.parsing.DomainXml;
-import org.jboss.as.host.controller.parsing.HostXml;
+import org.jboss.as.host.controller.parsing.DomainXmlSchemas;
+import org.jboss.as.host.controller.parsing.HostXmlSchemas;
 import org.jboss.as.model.test.ModelTestParser;
-import org.jboss.as.server.parsing.StandaloneXml;
+import org.jboss.as.server.parsing.StandaloneXmlSchemas;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
@@ -47,17 +49,22 @@ public class TestParser implements ModelTestParser {
     public static TestParser create(ExtensionRegistry registry, XMLMapper xmlMapper, TestModelType type) {
         TestParser testParser;
         String root;
+        Stability stability = Stability.DEFAULT;
         if (type == TestModelType.STANDALONE) {
-            StandaloneXml standaloneXml = new StandaloneXml(null, Executors.newCachedThreadPool(), registry);
-            testParser = new TestParser(type, standaloneXml, standaloneXml);
+
+            StandaloneXmlSchemas xmlSchemas = new StandaloneXmlSchemas(stability, null, Executors.newCachedThreadPool(), registry);
+            ManagementXmlSchema schema = xmlSchemas.getCurrent();
+            testParser = new TestParser(type, schema, schema);
             root = "server";
         } else if (type == TestModelType.DOMAIN) {
-            DomainXml domainXml = new DomainXml(null, Executors.newCachedThreadPool(), registry);
-            testParser = new TestParser(type, domainXml, domainXml);
+            DomainXmlSchemas xmlSchemas = new DomainXmlSchemas(stability, null, Executors.newCachedThreadPool(), registry);
+            ManagementXmlSchema schema = xmlSchemas.getCurrent();
+            testParser = new TestParser(type, schema, schema);
             root = "domain";
         } else if (type == TestModelType.HOST) {
-            HostXml hostXml = new HostXml("primary", RunningMode.NORMAL, false, null, Executors.newCachedThreadPool(), registry);
-            testParser = new TestParser(type, hostXml, hostXml);
+            HostXmlSchemas xmlSchemas = new HostXmlSchemas(stability, "primary", RunningMode.NORMAL, false, null, Executors.newCachedThreadPool(), registry);
+            ManagementXmlSchema schema = xmlSchemas.getCurrent();
+            testParser = new TestParser(type, schema, schema);
             root = "host";
         } else {
             throw new IllegalArgumentException("Unknown type " + type);
