@@ -115,6 +115,7 @@ public interface SubsystemPersistence<S extends SubsystemSchema<S>> {
     static <S extends Enum<S> & SubsystemSchema<S>> SubsystemPersistence<S> of(Map<S, XMLElementWriter<SubsystemMarshallingContext>> currentWriters) {
         Assert.assertFalse(currentWriters.isEmpty());
         Class<S> schemaClass = currentWriters.keySet().iterator().next().getDeclaringClass();
+        Map<Stability, S> currentSchemas = Feature.map(currentWriters.keySet());
         return new SubsystemPersistence<>() {
             @Override
             public Set<S> getSchemas() {
@@ -123,7 +124,8 @@ public interface SubsystemPersistence<S extends SubsystemSchema<S>> {
 
             @Override
             public XMLElementWriter<SubsystemMarshallingContext> getWriter(Stability stability) {
-                return currentWriters.get(stability);
+                S currentSchema = currentSchemas.get(stability);
+                return currentWriters.get(currentSchema);
             }
         };
     }
