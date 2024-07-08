@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -119,10 +120,10 @@ public class TestInstallationManager implements InstallationManager {
 
             // History sample data
             history = new HashMap<>();
-            history.put("update", new HistoryResult("update", Instant.now(), "update", "update description"));
-            history.put("install", new HistoryResult("install", Instant.now(), "install", "install description"));
-            history.put("rollback", new HistoryResult("rollback", Instant.now(), "rollback", "rollback description"));
-            history.put("config_change", new HistoryResult("config_change", Instant.now(), "config_change", "config_change description"));
+            history.put("update", new HistoryResult("update", Instant.now(), "update", "update description", Collections.emptyList()));
+            history.put("install", new HistoryResult("install", Instant.now(), "install", "install description", Collections.emptyList()));
+            history.put("rollback", new HistoryResult("rollback", Instant.now(), "rollback", "rollback description", Collections.emptyList()));
+            history.put("config_change", new HistoryResult("config_change", Instant.now(), "config_change", "config_change description", Collections.emptyList()));
 
             // List Updates sample Data
 
