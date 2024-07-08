@@ -9,6 +9,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.aesh.command.CommandDefinition;
 import org.aesh.command.CommandException;
@@ -109,8 +110,14 @@ public class HistoryCommand extends AbstractInstMgrCommand {
                 String hash = resultMn.get(InstMgrConstants.HISTORY_RESULT_HASH).asString();
                 String timeStamp = resultMn.get(InstMgrConstants.HISTORY_RESULT_TIMESTAMP).asString();
                 String type = resultMn.get(InstMgrConstants.HISTORY_RESULT_TYPE).asString();
-                String description = resultMn.get(InstMgrConstants.HISTORY_RESULT_DESCRIPTION).asStringOrNull();
-                description = description == null ? "[]" : description;
+                final List<String> versions = resultMn.get(InstMgrConstants.HISTORY_RESULT_CHANNEL_VERSIONS).asListOrEmpty().stream().map(ModelNode::asString).collect(Collectors.toList());
+                String description;
+                if (versions.isEmpty()) {
+                    description = resultMn.get(InstMgrConstants.HISTORY_RESULT_DESCRIPTION).asStringOrNull();
+                    description = description == null ? "[]" : description;
+                } else {
+                    description = "[" + String.join(" + ", versions) + "]";
+                }
                 ctx.printLine(String.format("[%s] %s - %s %s", hash, timeStamp, type, description));
             }
         }
