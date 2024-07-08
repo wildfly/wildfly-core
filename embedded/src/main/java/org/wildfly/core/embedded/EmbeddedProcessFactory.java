@@ -140,7 +140,14 @@ public class EmbeddedProcessFactory {
 
         setupVfsModule(moduleLoader);
 
-        // Load the Embedded Server Module
+        // Load the org.wildfly.embedded module using the ModuleLoader from the Configuration
+        //
+        // Note that, depending on the Configuration, the classes in this module may be of a different
+        // version from those with the same name included in the archive that provides this
+        // EmbeddedProcessFactory class. The module must provide a factory class whose name matches SERVER_FACTORY
+        // that provides a 'create' method with the same parameter types as the one provided by the same class
+        // in this class's artifact, and that returns an object that provides methods with the same signatures
+        // as those in the EmbeddedManagedProcess interface included in this class's artifact.
         final Module embeddedModule;
         try {
             embeddedModule = moduleLoader.loadModule(MODULE_ID_EMBEDDED);
@@ -148,7 +155,7 @@ public class EmbeddedProcessFactory {
             throw EmbeddedLogger.ROOT_LOGGER.moduleLoaderError(mle, MODULE_ID_EMBEDDED, moduleLoader);
         }
 
-        // Load the Embedded Server Factory via the modular environment
+        // Load the EmbeddedStandaloneServerFactory via the modular environment.
         final ModuleClassLoader embeddedModuleCL = embeddedModule.getClassLoader();
         final Class<?> embeddedServerFactoryClass;
         final Class<?> standaloneServerClass;
@@ -238,7 +245,14 @@ public class EmbeddedProcessFactory {
 
         setupVfsModule(moduleLoader);
 
-        // Load the Embedded Server Module
+        // Load the org.wildfly.embedded module using the ModuleLoader from the Configuration
+        //
+        // Note that, depending on the Configuration, the classes in this module may be of a different
+        // version from those with the same name included in the archive that provides this
+        // EmbeddedProcessFactory class. The module must provide a factory class whose name matches HOST_FACTORY
+        // that provides a 'create' method with the same parameter types as the one provided by the same class
+        // in this class's artifact, and that returns an object that provides methods with the same signatures
+        // as those in the EmbeddedManagedProcess interface included in this class's artifact.
         final Module embeddedModule;
         try {
             embeddedModule = moduleLoader.loadModule(MODULE_ID_EMBEDDED);
@@ -246,7 +260,7 @@ public class EmbeddedProcessFactory {
             throw EmbeddedLogger.ROOT_LOGGER.moduleLoaderError(mle, MODULE_ID_EMBEDDED, moduleLoader);
         }
 
-        // Load the Embedded Server Factory via the modular environment
+        // Load the EmbeddedHostControllerFactory via the modular environment
         final ModuleClassLoader embeddedModuleCL = embeddedModule.getClassLoader();
         final Class<?> embeddedHostControllerFactoryClass;
         final Class<?> hostControllerClass;

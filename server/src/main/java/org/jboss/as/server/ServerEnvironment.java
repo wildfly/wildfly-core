@@ -299,22 +299,35 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final ProductConfig productConfig;
     private final RunningModeControl runningModeControl;
     private final UUID serverUUID;
-    private final long startTime;
+    private final ElapsedTime elapsedTime;
     private final boolean startSuspended;
     private final boolean startGracefully;
     private final GitRepository repository;
     private volatile Stability stability;
 
+    /** Only for test cases */
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
             final RunningMode initialRunningMode, ProductConfig productConfig, boolean startSuspended) {
         this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode, productConfig,
-                System.currentTimeMillis(), startSuspended, false, null, null, null, null);
+                ElapsedTime.startingFromNow(), startSuspended, false, null, null, null, null);
+    }
+
+    /** @deprecated use the variant that takes an {@link ElapsedTime elapsedTime} parameter instead of {@code long startTime}*/
+    @Deprecated(forRemoval = true)
+    public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
+                             final ConfigurationFile.InteractionPolicy configurationInteractionPolicy, final LaunchType launchType,
+                             final RunningMode initialRunningMode, ProductConfig productConfig, long startTime, boolean startSuspended,
+                             final boolean startGracefully, final String gitRepository, final String gitBranch, final String gitAuthConfiguration,
+                             final String supplementalConfiguration) {
+        this(hostControllerName, props, env, serverConfig, configurationInteractionPolicy, launchType, initialRunningMode,
+                productConfig, ElapsedTime.startingFromJvmStart(), startSuspended, startGracefully,
+                gitRepository, gitBranch, gitAuthConfiguration, supplementalConfiguration);
     }
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
             final ConfigurationFile.InteractionPolicy configurationInteractionPolicy, final LaunchType launchType,
-            final RunningMode initialRunningMode, ProductConfig productConfig, long startTime, boolean startSuspended,
+            final RunningMode initialRunningMode, ProductConfig productConfig, ElapsedTime elapsedTime, boolean startSuspended,
             final boolean startGracefully, final String gitRepository, final String gitBranch, final String gitAuthConfiguration,
             final String supplementalConfiguration) {
         assert props != null;
@@ -330,7 +343,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
 
         this.initialRunningMode = initialRunningMode == null ? RunningMode.NORMAL : initialRunningMode;
         this.runningModeControl = new RunningModeControl(this.initialRunningMode);
-        this.startTime = startTime;
+        this.elapsedTime = elapsedTime;
 
         this.hostControllerName = hostControllerName;
         if (standalone && hostControllerName != null) {
@@ -1083,7 +1096,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      * @return the time, in ms since the epoch
      */
     public long getStartTime() {
-        return startTime;
+        return elapsedTime.getStartTime();
     }
 
     public boolean useGit() {
@@ -1282,5 +1295,14 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             default:      return alias;
         }
         return "standalone-" + alias + ".xml";
+    }
+
+    /**
+     * Gets this server's {@link ElapsedTime} tracker.
+     *
+     * @return the elapsed time tracker. Will not be {@code null}.
+     */
+    ElapsedTime getElapsedTime() {
+        return elapsedTime;
     }
 }
