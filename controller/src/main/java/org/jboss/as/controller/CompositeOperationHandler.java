@@ -31,7 +31,7 @@ import org.jboss.dmr.ModelType;
  */
 public class CompositeOperationHandler implements OperationStepHandler {
 
-    @Deprecated
+    /** Key that domain mode handlers can use to communicate that domain-specific execution has occurred. */
     public static final OperationContext.AttachmentKey<Boolean> DOMAIN_EXECUTION_KEY = OperationContext.AttachmentKey.create(Boolean.class);
 
     public static final CompositeOperationHandler INSTANCE = new CompositeOperationHandler();

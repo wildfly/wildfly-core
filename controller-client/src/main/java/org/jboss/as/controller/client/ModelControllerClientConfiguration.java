@@ -80,7 +80,7 @@ public interface ModelControllerClientConfiguration extends Closeable {
      * @return the SSLContext.
      * @deprecated Use {@link ModelControllerClientConfiguration#getSslContextFactory()}
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     SSLContext getSSLContext();
 
 

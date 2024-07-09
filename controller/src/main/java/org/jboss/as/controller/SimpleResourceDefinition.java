@@ -249,7 +249,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
      * @param flags        with flags
      * @deprecated Redundant with {@link #registerAddOperation(ManagementResourceRegistration, OperationStepHandler, org.jboss.as.controller.registry.OperationEntry.Flag...)
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     protected void registerAddOperation(final ManagementResourceRegistration registration, final AbstractAddStepHandler handler, OperationEntry.Flag... flags) {
         this.registerAddOperation(registration, (OperationStepHandler) handler, flags);
     }
@@ -262,7 +262,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
      * @param flags        with flags
      * @deprecated Redundant with {@link #registerRemoveOperation(ManagementResourceRegistration, OperationStepHandler, org.jboss.as.controller.registry.OperationEntry.Flag...)
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     protected void registerRemoveOperation(final ManagementResourceRegistration registration, final AbstractRemoveStepHandler handler, OperationEntry.Flag... flags) {
         registerRemoveOperation(registration, (OperationStepHandler) handler, flags);
     }

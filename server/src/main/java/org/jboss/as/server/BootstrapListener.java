@@ -32,16 +32,16 @@ public final class BootstrapListener {
     private final StabilityMonitor monitor = new StabilityMonitor();
     private final ServiceContainer serviceContainer;
     private final ServiceTarget serviceTarget;
-    private final long startTime;
+    private final ElapsedTime elapsedTime;
     private final String prettyVersion;
     private final FutureServiceContainer futureContainer;
     private final File tempDir;
     private  String startedCleanMessage;
     private  String startedWitErrorsMessage;
 
-    public BootstrapListener(final ServiceContainer serviceContainer, final long startTime, final ServiceTarget serviceTarget, final FutureServiceContainer futureContainer, final String prettyVersion, final File tempDir) {
+    public BootstrapListener(final ServiceContainer serviceContainer, final ElapsedTime elapsedTime, final ServiceTarget serviceTarget, final FutureServiceContainer futureContainer, final String prettyVersion, final File tempDir) {
         this.serviceContainer = serviceContainer;
-        this.startTime = startTime;
+        this.elapsedTime = elapsedTime;
         this.serviceTarget = serviceTarget;
         this.prettyVersion = prettyVersion;
         this.futureContainer = futureContainer;
@@ -66,7 +66,7 @@ public final class BootstrapListener {
             Thread.currentThread().interrupt();
         } finally {
             serviceTarget.removeMonitor(monitor);
-            final long bootstrapTime = System.currentTimeMillis() - startTime;
+            final long bootstrapTime = elapsedTime.getElapsedTime();
             done(bootstrapTime, statistics, messages);
             monitor.clear();
         }
@@ -108,10 +108,10 @@ public final class BootstrapListener {
         }
         if (failed == 0 && problem == 0) {
             startedCleanMessage = ServerLogger.AS_ROOT_LOGGER.startedCleanMessage(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, onDemand + passive + lazy, appendMessage);
-            createStartupMarker("success", startTime);
+            createStartupMarker("success", elapsedTime.getStartTime());
         } else {
             startedWitErrorsMessage = ServerLogger.AS_ROOT_LOGGER.startedWitErrorsMessage(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, failed + problem, onDemand + passive + lazy, appendMessage);
-            createStartupMarker("error", startTime);
+            createStartupMarker("error", elapsedTime.getStartTime());
         }
     }
 

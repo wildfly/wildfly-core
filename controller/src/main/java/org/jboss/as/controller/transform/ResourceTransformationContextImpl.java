@@ -322,7 +322,6 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         return root;
     }
 
-    @Deprecated
     static ResourceTransformationContext createAliasContext(final PathAddress address, final ResourceTransformationContext context) {
         if (context instanceof ResourceTransformationContextImpl) {
             final ResourceTransformationContextImpl impl = (ResourceTransformationContextImpl) context;
@@ -333,7 +332,6 @@ class ResourceTransformationContextImpl implements ResourceTransformationContext
         }
     }
 
-    @Deprecated
     static TransformationContext wrapForOperation(TransformationContext context, ModelNode operation) {
         if(context instanceof ResourceTransformationContextImpl) {
             final ResourceTransformationContextImpl impl = (ResourceTransformationContextImpl) context;

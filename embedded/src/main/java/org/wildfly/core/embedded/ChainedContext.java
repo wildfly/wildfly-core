@@ -11,6 +11,8 @@ import java.util.List;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
 
 /**
+ * A {@link Context} that wraps other contexts and invokes them in the order they are {@link #add(Context) added}.
+ *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 class ChainedContext implements Context {

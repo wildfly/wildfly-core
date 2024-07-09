@@ -17,7 +17,6 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Emanuel Muckenhuber
  */
-@Deprecated //todo could probably be removed as it is not used anywhere
 public class AliasOperationTransformer implements CombinedTransformer {
 
     public interface AddressTransformer {

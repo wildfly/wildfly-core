@@ -29,6 +29,7 @@ import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
 import org.jboss.as.server.Bootstrap;
+import org.jboss.as.server.ElapsedTime;
 import org.jboss.as.server.Main;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.ServerService;
@@ -239,6 +240,7 @@ public class EmbeddedStandaloneServerFactory {
 
         @Override
         public void start() throws EmbeddedProcessStartException {
+            ElapsedTime elapsedTime = ElapsedTime.startingFromNow();
             ClassLoader tccl = SecurityActions.getTccl();
             try {
                 SecurityActions.setTccl(embeddedModuleCL);
@@ -255,7 +257,8 @@ public class EmbeddedStandaloneServerFactory {
                     });
 
                     // Determine the ServerEnvironment
-                    ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.EMBEDDED, startTime).getServerEnvironment();
+                    ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv,
+                            ServerEnvironment.LaunchType.EMBEDDED, elapsedTime).getServerEnvironment();
                     if (serverEnvironment == null) {
                         // Nothing to do
                         return;

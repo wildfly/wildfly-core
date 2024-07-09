@@ -75,7 +75,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
      * @throws XMLStreamException if {@code value} is not valid
      * @deprecated use {@link #getParser()}
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public void parseAndAddParameterElement(final String value, final ModelNode operation, final XMLStreamReader reader) throws XMLStreamException {
         ModelNode paramVal = AttributeParser.SIMPLE.parse(this, value, reader);
         operation.get(getName()).add(paramVal);

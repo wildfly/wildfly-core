@@ -36,7 +36,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  *
  * @author Brian Stansberry
  */
-@Deprecated
+@Deprecated(forRemoval = false)
 public class ExternalManagementRequestExecutor implements Service<ExecutorService> {
 
     /**
@@ -44,7 +44,7 @@ public class ExternalManagementRequestExecutor implements Service<ExecutorServic
      *
      * @deprecated may be removed at any time
      */
-    @Deprecated
+    @Deprecated(forRemoval = false)
     public static final ServiceName SERVICE_NAME = Services.JBOSS_AS.append("external-mgmt-executor");
 
     // The Executor settings.
