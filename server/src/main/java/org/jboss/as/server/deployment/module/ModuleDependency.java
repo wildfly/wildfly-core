@@ -21,6 +21,91 @@ import org.jboss.modules.filter.PathFilter;
  */
 public final class ModuleDependency implements Serializable {
 
+    public static final class Builder {
+        private final ModuleLoader moduleLoader;
+        @SuppressWarnings("deprecation")
+        private final ModuleIdentifier identifier;
+        private boolean export;
+        private boolean optional;
+        private boolean importServices;
+        private boolean userSpecified;
+        private String reason;
+
+        public static Builder of(ModuleLoader moduleLoader, String moduleName) {
+            return new Builder(moduleLoader, moduleName);
+        }
+
+        private Builder(ModuleLoader moduleLoader, String moduleName) {
+            this.moduleLoader = moduleLoader;
+            //noinspection deprecation
+            this.identifier = ModuleIdentifier.create(moduleName);
+        }
+
+        /**
+         * Sets whether the dependent module should export this dependency's resources.
+         *
+         * @param export {@code true} if the dependencies resources should be exported
+         * @return this builder
+         */
+        public Builder setExport(boolean export) {
+            this.export = export;
+            return this;
+        }
+
+        /**
+         * Sets whether the dependent module should be able to import services from this dependency.
+         *
+         * @param importServices {@code true} if the dependent module should be able to load services from the dependency
+         * @return this builder
+         */
+        public Builder setImportServices(boolean importServices) {
+            this.importServices = importServices;
+            return this;
+        }
+
+        /**
+         * Sets whether this dependency is optional.
+         *
+         * @param optional {@code true} if the dependencys is optional
+         * @return this builder
+         */
+        public Builder setOptional(boolean optional) {
+            this.optional = optional;
+            return this;
+        }
+
+        /**
+         * Sets whether this dependency was explicitly specified by the user.
+         *
+         * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
+         * @return this builder
+         */
+        public Builder setUserSpecified(boolean userSpecified) {
+            this.userSpecified = userSpecified;
+            return this;
+        }
+
+        /**
+         * Sets an informational reason describing why this dependency was added.
+         *
+         * @param reason the reason. May be {@code null}
+         * @return this builder
+         */
+        public Builder setReason(String reason) {
+            this.reason = reason;
+            return this;
+        }
+
+        /**
+         * Build a {@code ModuleDependency} using this builder's settings.
+         *
+         * @return the {@code ModuleDependency}. Will not return {@code null}
+         */
+        public ModuleDependency build() {
+            return new ModuleDependency(moduleLoader, identifier, optional, export, importServices, userSpecified, reason);
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -50,6 +135,9 @@ public final class ModuleDependency implements Serializable {
     private final boolean userSpecified;
     private final String reason;
 
+    // NOTE: this constructor isn't deprecated because it's used in over 100 places, and perhaps 40+ more if
+    // the uses of the equivalent c'tor taking ModuleIdentifier make a simple switch to this. Changing all that
+    // code to use the builder just to clear a deprecation warning is a simple way to introduce bugs.
     /**
      * Construct a new instance.
      *
@@ -57,7 +145,7 @@ public final class ModuleDependency implements Serializable {
      * @param identifier the module identifier
      * @param optional {@code true} if this is an optional dependency
      * @param export {@code true} if resources should be exported by default
-     * @param importServices
+     * @param importServices {@code true} if the dependent module should be able to load services from the dependency
      * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
      */
     public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
@@ -71,10 +159,13 @@ public final class ModuleDependency implements Serializable {
      * @param identifier the module identifier
      * @param optional {@code true} if this is an optional dependency
      * @param export {@code true} if resources should be exported by default
-     * @param importServices
+     * @param importServices  {@code true} if the dependent module should be able to load services from the dependency
      * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
      * @param reason reason for adding implicit module dependency
+     *
+     * @deprecated Use a {@link Builder}
      */
+    @Deprecated(forRemoval = true)
     public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified, String reason) {
         this(moduleLoader, ModuleIdentifier.create(identifier), optional, export, importServices, userSpecified, reason);
     }
@@ -86,9 +177,12 @@ public final class ModuleDependency implements Serializable {
      * @param identifier the module identifier
      * @param optional {@code true} if this is an optional dependency
      * @param export {@code true} if resources should be exported by default
-     * @param importServices
+     * @param importServices  {@code true} if the dependent module should be able to load services from the dependency
      * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
+     *
+     * @deprecated Use a {@link Builder} or @link ModuleDependency(ModuleLoader, String, boolean, boolean, boolean, boolean)}
      */
+    @Deprecated(forRemoval = true)
     public ModuleDependency(final ModuleLoader moduleLoader, final ModuleIdentifier identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
         this(moduleLoader, identifier, optional, export, importServices, userSpecified, null);
     }
@@ -100,10 +194,13 @@ public final class ModuleDependency implements Serializable {
      * @param identifier the module identifier
      * @param optional {@code true} if this is an optional dependency
      * @param export {@code true} if resources should be exported by default
-     * @param importServices
+     * @param importServices {@code true} if the dependent module should be able to load services from the dependency
      * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
      * @param reason reason for adding implicit module dependency
+     *
+     * @deprecated Use a {@link Builder}
      */
+    @Deprecated(forRemoval = true)
     public ModuleDependency(final ModuleLoader moduleLoader, final ModuleIdentifier identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified, String reason) {
         this.identifier = identifier;
         this.optional = optional;
