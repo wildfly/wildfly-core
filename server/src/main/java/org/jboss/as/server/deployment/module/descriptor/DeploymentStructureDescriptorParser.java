@@ -234,17 +234,17 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         List<ModuleDependency> aliasDependencies = new ArrayList<>();
 
         // Pre-index additionalmodules
-        Map<ModuleIdentifier, AdditionalModuleSpecification> index = new HashMap<>();
+        Map<String, AdditionalModuleSpecification> index = new HashMap<>();
 
         // Only iterate additionalModules once, instead of once per dependency
         for (AdditionalModuleSpecification module : additionalModules.values()) {
-            for (ModuleIdentifier alias : module.getAliases()) {
+            for (String alias : module.getModuleAliases()) {
                 index.put(alias, module);
             }
         }
         // No more nested loop
         for (ModuleDependency dependency : moduleDependencies) {
-            ModuleIdentifier identifier = dependency.getIdentifier();
+            String identifier = dependency.getIdentifier().getName();
             if (index.containsKey(identifier)) {
                 aliasDependencies.add(new ModuleDependency(dependency.getModuleLoader(), index.get(identifier).getModuleIdentifier(), dependency.isOptional(), dependency.isExport(), dependency.isImportServices(), dependency.isUserSpecified()));
             }
@@ -253,7 +253,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         ModuleAliasChecker.checkModuleAliasesForDependencies(moduleDependencies, MessageContext.JBOSS_DEPLOYMENT_STRUCTURE_CONTEXT, deploymentUnit.getName());
         moduleSpec.addUserDependencies(moduleDependencies);
         ModuleAliasChecker.checkModuleAliasesForExclusions(rootDeploymentSpecification.getExclusions(), MessageContext.JBOSS_DEPLOYMENT_STRUCTURE_CONTEXT, deploymentUnit.getName());
-        moduleSpec.addExclusions(rootDeploymentSpecification.getExclusions());
+        rootDeploymentSpecification.getExclusions().stream().map(ModuleIdentifier::getName).forEach(moduleSpec::addModuleExclusion);
         moduleSpec.addAliases(rootDeploymentSpecification.getAliases());
         moduleSpec.addModuleSystemDependencies(rootDeploymentSpecification.getSystemDependencies());
         for (final ResourceRoot additionalResourceRoot : rootDeploymentSpecification.getResourceRoots()) {
@@ -279,7 +279,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         for (final ModuleIdentifier dependency : rootDeploymentSpecification.getAnnotationModules()) {
             ModuleIdentifier identifier = dependency;
             for (AdditionalModuleSpecification module : additionalModules.values()) {
-                if (module.getAliases().contains(dependency)) {
+                if (module.getModuleAliases().contains(dependency.getName())) {
                     identifier = module.getModuleIdentifier();
                     break;
                 }
@@ -287,7 +287,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, identifier);
             // additional modules will not be created till much later, a dep on them would fail
             if (identifier.getName().startsWith(ServiceModuleLoader.MODULE_PREFIX) &&
-                !(additionalModules.keySet().contains(identifier) || isSubdeployment(identifier, deploymentUnit))) {
+                !(additionalModules.containsKey(identifier) || isSubdeployment(identifier, deploymentUnit))) {
                 phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(identifier));
             }
         }

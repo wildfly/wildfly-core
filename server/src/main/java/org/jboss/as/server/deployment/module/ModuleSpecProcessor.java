@@ -280,9 +280,10 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
     private void installAliases(final ModuleSpecification moduleSpecification, final ModuleIdentifier moduleIdentifier, final DeploymentUnit deploymentUnit, final DeploymentPhaseContext phaseContext) {
 
         ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
-        for (final ModuleIdentifier alias : moduleSpecification.getAliases()) {
+        for (final String aliasName : moduleSpecification.getModuleAliases()) {
+            final ModuleIdentifier alias = ModuleIdentifier.create(aliasName);
             final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(alias);
-            final ModuleSpec spec = ModuleSpec.buildAlias(alias, moduleIdentifier).create();
+            final ModuleSpec spec = ModuleSpec.buildAlias(aliasName, moduleIdentifier.getName()).create();
 
             HashSet<ModuleDependency> dependencies = new HashSet<>(moduleSpecification.getAllDependencies());
             //we need to add the module we are aliasing as a dependency, to make sure that it will be resolved
