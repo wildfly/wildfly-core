@@ -5,12 +5,10 @@
 
 package org.wildfly.core.instmgr;
 
-import static org.jboss.as.controller.AbstractControllerService.EXECUTOR_CAPABILITY;
-import static org.jboss.as.controller.AbstractControllerService.PATH_MANAGER_CAPABILITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -19,6 +17,8 @@ import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.ServiceNameFactory;
+import org.jboss.as.controller.management.Capabilities;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
@@ -87,8 +87,8 @@ public final class InstMgrInitialization implements ModelControllerServiceInitia
         ServiceName serviceName = InstMgrResourceDefinition.INSTALLATION_MANAGER_CAPABILITY.getCapabilityServiceName();
         ServiceBuilder<?> serviceBuilder = target.addService(serviceName);
         Consumer<InstMgrService> consumer = serviceBuilder.provides(serviceName);
-        Supplier<PathManager> pathManagerSupplier = serviceBuilder.requires(PATH_MANAGER_CAPABILITY.getCapabilityServiceName());
-        Supplier<ExecutorService> executorSupplier = serviceBuilder.requires(EXECUTOR_CAPABILITY.getCapabilityServiceName());
+        Supplier<PathManager> pathManagerSupplier = serviceBuilder.requires(ServiceNameFactory.resolveServiceName(PathManager.SERVICE_DESCRIPTOR));
+        Supplier<Executor> executorSupplier = serviceBuilder.requires(ServiceNameFactory.resolveServiceName(Capabilities.MANAGEMENT_EXECUTOR));
 
         InstMgrService imService = new InstMgrService(imf, pathManagerSupplier, executorSupplier, consumer);
         serviceBuilder.setInstance(imService).setInitialMode(ServiceController.Mode.PASSIVE).install();

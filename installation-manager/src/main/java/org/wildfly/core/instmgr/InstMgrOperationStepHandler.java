@@ -18,7 +18,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -128,7 +128,7 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
     protected List<Repository> getRepositoriesFromOperationStreams(OperationContext context, List<ModelNode> mavenRepoFileIndexes, Path workDir)
             throws OperationFailedException, ExecutionException {
         final List<CompletableFuture<Repository>> futureResults = new ArrayList<>();
-        final ExecutorService mgmtExecutor = imService.getMgmtExecutor();
+        final Executor mgmtExecutor = imService.getMgmtExecutor();
         for (ModelNode indexMn : mavenRepoFileIndexes) {
             int index = indexMn.asInt();
             CompletableFuture<Path> futureZip = CompletableFuture
