@@ -23,7 +23,7 @@
     </properties>
 
     <build>
-        <finalName>${artifactId}-${project.version}</finalName>
+        <finalName>${project.artifactId}-${project.version}</finalName>
         <plugins>
             <plugin>
                 <!-- Feature pack generation is vulnerable to leftover files in the target
@@ -83,6 +83,21 @@
                             </resources>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>copy-annotation-index</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/resources/packages/unstable-api-annotation-index.wildfly-core-testsuite-unstable-api-annotation-feature-pack/content/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/target/index/</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -102,28 +117,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-annotation-index</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/target/resources/packages/unstable-api-annotation-index.wildfly-core-testsuite-unstable-api-annotation-feature-pack/content/</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${basedir}/target/index/</directory>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
         </plugins>
     </build>
 
