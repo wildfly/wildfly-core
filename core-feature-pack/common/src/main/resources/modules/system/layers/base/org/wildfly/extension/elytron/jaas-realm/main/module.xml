@@ -29,10 +29,6 @@
         <property name="jboss.api" value="deprecated"/>
     </properties>
 
-    <exports>
-        <exclude path="org/wildfly/extension/elytron/JaasCustomSecurityRealmWrapper"/>
-    </exports>
-
     <dependencies>
         <module name="java.logging"/>
         <module name="java.xml"/>
@@ -44,6 +40,17 @@
         <module name="org.jboss.logmanager"/>
         <module name="org.wildfly.common"/>
         <module name="org.wildfly.security.elytron-private" export="true"/>
-        <module name="org.wildfly.extension.elytron"/>
+        <module name="org.wildfly.extension.elytron" export="true">
+            <exports>
+                <!--
+                     Limit what we export by excluding resources in subdirectories of 'org/wildfly/extension/elytron'.
+                     The meaning of the trailing '*' in the path here is to match subdirectories, but not individual
+                     resources directly under 'org/wildfly/extension/elytron'.
+                     Ideally we would only export a single class, but JBoss Modules does not support that kind of
+                     configuration, so as a next-best we don't export resources that are not in that class's package.
+                 -->
+                <exclude path="org/wildfly/extension/elytron/*"/>
+            </exports>
+        </module>
     </dependencies>
 </module>
