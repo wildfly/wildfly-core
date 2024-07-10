@@ -99,6 +99,20 @@ public final class ParseUtils {
     }
 
     /**
+     * Get an exception reporting an element using an unsupported namespace.
+     * @param reader the stream reader
+     * @return the exception
+     */
+    public static XMLStreamException unsupportedNamespace(final XMLExtendedStreamReader reader) {
+        final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.unsupportedNamespace(reader.getName(), reader.getLocation());
+
+        return new XMLStreamValidationException(ex.getMessage(),
+                                                ValidationError.from(ex, ErrorType.UNSUPPORTED_ELEMENT)
+                                                        .element(reader.getName()),
+                                                ex);
+    }
+
+    /**
      * Get an exception reporting an unexpected end tag for an XML element.
      * @param reader the stream reader
      * @return the exception

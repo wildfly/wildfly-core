@@ -23,12 +23,12 @@ import static org.junit.Assert.assertEquals;
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
 public class Jbas9020TestCase {
-    private static final String namespace = Namespace.DOMAIN_1_0.getUriString();
+    private static final String namespace = Namespace.DOMAIN_1_7.getUriString();
 
     @Test
     public void testContent() throws Exception {
         final String xml = "<?xml version='1.0' encoding='UTF-8'?>" +
-                "<server name=\"example\" xmlns=\"urn:jboss:domain:1.0\">" +
+                "<server name=\"example\" xmlns=\"urn:jboss:domain:1.7\">" +
                 "    <deployments>" +
                 "        <deployment name=\"test.war\" runtime-name=\"test-run.war\">" +
                 "            <content sha1=\"1234\"/>" +
@@ -48,7 +48,7 @@ public class Jbas9020TestCase {
     @Test
     public void testFSArchive() throws Exception {
         final String xml = "<?xml version='1.0' encoding='UTF-8'?>" +
-                "<server name=\"example\" xmlns=\"urn:jboss:domain:1.0\">" +
+                "<server name=\"example\" xmlns=\"urn:jboss:domain:1.7\">" +
                 "    <deployments>" +
                 "        <deployment name=\"test.war\" runtime-name=\"test-run.war\">" +
                 "            <fs-archive path=\"${jboss.home}/content/welcome.jar\"/>" +
@@ -70,7 +70,7 @@ public class Jbas9020TestCase {
     @Test
     public void testFSExploded() throws Exception {
         final String xml = "<?xml version='1.0' encoding='UTF-8'?>" +
-                "<server name=\"example\" xmlns=\"urn:jboss:domain:1.0\">" +
+                "<server name=\"example\" xmlns=\"urn:jboss:domain:1.7\">" +
                 "    <deployments>" +
                 "        <deployment name=\"test.war\" runtime-name=\"test-run.war\">" +
                 "            <fs-exploded path=\"deployments/test.jar\" relative-to=\"jboss.server.base.dir\"/>" +

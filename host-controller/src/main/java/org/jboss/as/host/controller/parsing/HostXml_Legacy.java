@@ -23,26 +23,23 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROPERTIES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECURITY_REALM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SSL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STATIC_DISCOVERY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USERNAME;
-import static org.jboss.as.controller.parsing.Namespace.DOMAIN_1_0;
+
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingOneOf;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequiredElement;
 import static org.jboss.as.controller.parsing.ParseUtils.nextElement;
-import static org.jboss.as.controller.parsing.ParseUtils.parsePossibleExpression;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.controller.parsing.ParseUtils.unsupportedNamespace;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
 import java.util.ArrayList;
@@ -129,123 +126,32 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             throw unexpectedElement(reader);
         }
         Namespace readerNS = Namespace.forUri(reader.getNamespaceURI());
-        if (readerNS == DOMAIN_1_0) {
-            readHostElement_1_0(reader, address, operationList);
-
-        } else if (readerNS.getMajorVersion() == 1 || readerNS.getMajorVersion() == 2) {
-            readHostElement_1_1(readerNS, reader, address, operationList);
-
-        } else {
-            // Instead of having to list the remaining versions we just check it is actually a valid version.
-            for (Namespace current : Namespace.domainValues()) {
-                if (readerNS.equals(current)) {
-                    readHostElement_3_0(readerNS, reader, address, operationList);
-                    return;
-                }
-            }
-            throw unexpectedElement(reader);
+        switch (readerNS) {
+            case DOMAIN_1_0:
+            case DOMAIN_1_1:
+            case DOMAIN_1_2:
+            case DOMAIN_1_3:
+            case DOMAIN_1_4:
+            case DOMAIN_1_5:
+            case DOMAIN_1_6:
+                throw unsupportedNamespace(reader);
+            case DOMAIN_1_7:
+            case DOMAIN_1_8:
+            case DOMAIN_2_0:
+            case DOMAIN_2_1:
+            case DOMAIN_2_2:
+                readHostElement_1_7(readerNS, reader, address, operationList);
+                break;
+            case DOMAIN_3_0:
+                readHostElement_3_0(readerNS, reader, address, operationList);
+                break;
+            default:
+                // This should not be reachable as the namespace should have been validated by the caller.
+                throw unexpectedElement(reader);
         }
     }
 
-    private void readHostElement_1_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
-            throws XMLStreamException {
-        String hostName = null;
-
-        // Deffer adding the namespaces and schema locations until after the host has been created.
-        List<ModelNode> namespaceOperations = new LinkedList<ModelNode>();
-        parseNamespaces(reader, address, namespaceOperations);
-
-        // attributes
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            switch (Namespace.forUri(reader.getAttributeNamespace(i))) {
-                case NONE: {
-                    final String value = reader.getAttributeValue(i);
-                    final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-                    switch (attribute) {
-                        case NAME: {
-                            hostName = value;
-                            break;
-                        }
-                        default:
-                            throw unexpectedAttribute(reader, i);
-                    }
-                    break;
-                }
-                case XML_SCHEMA_INSTANCE: {
-                    switch (Attribute.forName(reader.getAttributeLocalName(i))) {
-                        case SCHEMA_LOCATION: {
-                            parseSchemaLocations(reader, address, namespaceOperations, i);
-                            break;
-                        }
-                        case NO_NAMESPACE_SCHEMA_LOCATION: {
-                            // todo, jeez
-                            break;
-                        }
-                        default: {
-                            throw unexpectedAttribute(reader, i);
-                        }
-                    }
-                    break;
-                }
-                default:
-                    throw unexpectedAttribute(reader, i);
-            }
-        }
-
-        // The following also updates the address parameter so this address can be used for future operations
-        // in the context of this host.
-         final ModelNode hostAddOp = addLocalHost(address, list, hostName);
-        // The namespace operations were created before the host name was known, the address can now be updated
-        // to the local host specific address.
-        for (ModelNode operation : namespaceOperations) {
-            operation.get(OP_ADDR).set(address);
-            list.add(operation);
-        }
-
-        // Content
-        // Handle elements: sequence
-
-        Element element = nextElement(reader, DOMAIN_1_0);
-
-        if (element == Element.SYSTEM_PROPERTIES) {
-            parseSystemProperties(reader, address, DOMAIN_1_0, list, false);
-            element = nextElement(reader, DOMAIN_1_0);
-        }
-        if (element == Element.PATHS) {
-            parsePaths(reader, address, DOMAIN_1_0, list, true);
-            element = nextElement(reader, DOMAIN_1_0);
-        }
-
-        if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(DOMAIN_1_0, this, false);
-            managementXml.parseManagement(reader, address, list, false);
-            element = nextElement(reader, DOMAIN_1_0);
-        }
-        if (element == Element.DOMAIN_CONTROLLER) {
-            parseDomainController(reader, address, list, hostAddOp);
-            element = nextElement(reader, DOMAIN_1_0);
-        }
-        final Set<String> interfaceNames = new HashSet<String>();
-        if (element == Element.INTERFACES) {
-            parseInterfaces(reader, interfaceNames, address, DOMAIN_1_0, list, true);
-            element = nextElement(reader, DOMAIN_1_0);
-        }
-        if (element == Element.JVMS) {
-            parseJvms(reader, address, list);
-            element = nextElement(reader, DOMAIN_1_0);
-        }
-        if (element == Element.SERVERS) {
-            parseServers_1_0(reader, address, list);
-            element = nextElement(reader, DOMAIN_1_0);
-        }
-        if (element != null) {
-            throw unexpectedElement(reader);
-        }
-
-    }
-
-    private void readHostElement_1_1(final Namespace namespace, final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
+    private void readHostElement_1_7(final Namespace namespace, final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
             throws XMLStreamException {
         String hostName = null;
 
@@ -338,22 +244,13 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             element = nextElement(reader, namespace);
         }
         if (element == Element.SERVERS) {
-            switch (namespace) {
-                case DOMAIN_1_1:
-                    parseServers_1_0(reader, address, list);
-                    break;
-                default:
-                    parseServers_1_2(reader, address, list);
-                    break;
-            }
+            parseServers_1_7(reader, address, list);
             element = nextElement(reader, namespace);
         }
         if (element != null) {
             throw unexpectedElement(reader);
         }
-
     }
-
 
     private void readHostElement_3_0(final Namespace namespace, final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
             throws XMLStreamException {
@@ -452,14 +349,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             element = nextElement(reader, namespace);
         }
         if (element == Element.SERVERS) {
-            switch (namespace) {
-                case DOMAIN_1_1:
-                    parseServers_1_0(reader, address, list);
-                    break;
-                default:
-                    parseServers_1_2(reader, address, list);
-                    break;
-            }
+            parseServers_1_7(reader, address, list);
             element = nextElement(reader, namespace);
         }
         if (element == Element.PROFILE) {
@@ -472,164 +362,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
     }
 
-    private void parseHttpManagementInterface1_0(final XMLExtendedStreamReader reader, final ModelNode address,
-                                                   final List<ModelNode> list) throws XMLStreamException {
-
-        final ModelNode mgmtSocket = new ModelNode();
-        mgmtSocket.get(OP).set(ADD);
-        ModelNode operationAddress = address.clone();
-        operationAddress.add(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
-        mgmtSocket.get(OP_ADDR).set(operationAddress);
-
-        // Handle attributes
-        boolean hasInterfaceName = false;
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            if (!isNoNamespaceAttribute(reader, i)) {
-                throw unexpectedAttribute(reader, i);
-            } else {
-                final String value = reader.getAttributeValue(i);
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-                switch (attribute) {
-                    case INTERFACE: {
-                        HttpManagementResourceDefinition.INTERFACE.parseAndSetParameter(value, mgmtSocket, reader);
-                        hasInterfaceName = true;
-                        break;
-                    }
-                    case PORT: {
-                        HttpManagementResourceDefinition.HTTP_PORT.parseAndSetParameter(value, mgmtSocket, reader);
-                        break;
-                    }
-                    case SECURE_PORT: {
-                        HttpManagementResourceDefinition.HTTPS_PORT.parseAndSetParameter(value, mgmtSocket, reader);
-                        break;
-                    }
-                    case MAX_THREADS: {
-                        // ignore xsd mistake
-                        break;
-                    }
-                    case SECURITY_REALM: {
-                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
-                    }
-                    default:
-                        throw unexpectedAttribute(reader, i);
-                }
-            }
-        }
-
-        requireNoContent(reader);
-
-        if (!hasInterfaceName) {
-            throw missingRequired(reader, Collections.singleton(Attribute.INTERFACE.getLocalName()));
-        }
-
-        list.add(mgmtSocket);
-    }
-
-    private void parseNativeManagementInterface1_0(final XMLExtendedStreamReader reader, final ModelNode address,
-                                                   final List<ModelNode> list) throws XMLStreamException {
-
-        final ModelNode mgmtSocket = new ModelNode();
-        mgmtSocket.get(OP).set(ADD);
-        ModelNode operationAddress = address.clone();
-        operationAddress.add(MANAGEMENT_INTERFACE, NATIVE_INTERFACE);
-        mgmtSocket.get(OP_ADDR).set(operationAddress);
-
-        // Handle attributes
-        boolean hasInterface = false;
-
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            if (!isNoNamespaceAttribute(reader, i)) {
-                throw unexpectedAttribute(reader, i);
-            } else {
-                final String value = reader.getAttributeValue(i);
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-                switch (attribute) {
-                    case INTERFACE: {
-                        NativeManagementResourceDefinition.INTERFACE.parseAndSetParameter(value, mgmtSocket, reader);
-                        hasInterface = true;
-                        break;
-                    }
-                    case PORT: {
-                        NativeManagementResourceDefinition.NATIVE_PORT.parseAndSetParameter(value, mgmtSocket, reader);
-                        break;
-                    }
-                    case SECURE_PORT:
-                        // ignore -- this was a bug in the xsd
-                        break;
-                    case SECURITY_REALM: {
-                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
-                    }
-                    default:
-                        throw unexpectedAttribute(reader, i);
-                }
-            }
-        }
-
-        requireNoContent(reader);
-
-        if (!hasInterface) {
-            throw missingRequired(reader, Collections.singleton(Attribute.INTERFACE.getLocalName()));
-        }
-
-        list.add(mgmtSocket);
-    }
-
-    private void parseManagementInterface1_1(XMLExtendedStreamReader reader, ModelNode address, boolean http, List<ModelNode> list)  throws XMLStreamException {
-
-        final ModelNode operationAddress = address.clone();
-        operationAddress.add(MANAGEMENT_INTERFACE, http ? HTTP_INTERFACE : NATIVE_INTERFACE);
-        final ModelNode addOp = Util.getEmptyOperation(ADD, operationAddress);
-
-        // Handle attributes
-
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
-            if (!isNoNamespaceAttribute(reader, i)) {
-                throw unexpectedAttribute(reader, i);
-            } else {
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-                switch (attribute) {
-                    case SECURITY_REALM: {
-                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
-                    }
-                    case CONSOLE_ENABLED:{
-                        if (http){
-                            HttpManagementResourceDefinition.CONSOLE_ENABLED.parseAndSetParameter(value, addOp, reader);
-                        } else {
-                            throw unexpectedAttribute(reader, i);
-                        }
-                        break;
-                    }
-                    default:
-                        throw unexpectedAttribute(reader, i);
-                }
-            }
-        }
-
-        // Handle elements
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, namespace);
-            final Element element = Element.forName(reader.getLocalName());
-            switch (element) {
-                case SOCKET:
-                    if (http) {
-                        parseHttpManagementSocket(reader, addOp);
-                    } else {
-                        parseNativeManagementSocket(reader, addOp);
-                    }
-                    break;
-                default:
-                    throw unexpectedElement(reader);
-            }
-        }
-
-        list.add(addOp);
-    }
-
-    private void parseHttpManagementInterfaceAttributes_1_5(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
+   private void parseHttpManagementInterfaceAttributes_1_7(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
             final String value = reader.getAttributeValue(i);
@@ -720,7 +453,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    private void parseNativeManagementInterfaceAttributes_1_5(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
+    private void parseNativeManagementInterfaceAttributes_1_7(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
             final String value = reader.getAttributeValue(i);
@@ -766,7 +499,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    private void parseManagementInterface_1_5(XMLExtendedStreamReader reader, ModelNode address, boolean http, List<ModelNode> list)  throws XMLStreamException {
+    private void parseManagementInterface_1_7(XMLExtendedStreamReader reader, ModelNode address, boolean http, List<ModelNode> list)  throws XMLStreamException {
 
         final ModelNode operationAddress = address.clone();
         operationAddress.add(MANAGEMENT_INTERFACE, http ? HTTP_INTERFACE : NATIVE_INTERFACE);
@@ -776,7 +509,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         if (http) {
             switch (namespace.getMajorVersion()) {
                 case 1:
-                    parseHttpManagementInterfaceAttributes_1_5(reader, addOp);
+                    parseHttpManagementInterfaceAttributes_1_7(reader, addOp);
                     break;
                 case 2:
                     parseHttpManagementInterfaceAttributes_2_0(reader, addOp);
@@ -788,7 +521,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             switch (namespace.getMajorVersion()) {
                 case 1:
                 case 2:
-                    parseNativeManagementInterfaceAttributes_1_5(reader, addOp);
+                    parseNativeManagementInterfaceAttributes_1_7(reader, addOp);
                     break;
                 default:
                     parseNativeManagementInterfaceAttributes_3_0(reader, addOp);
@@ -812,7 +545,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                                         parseHttpManagementSocket(reader, addOp);
                                         break;
                                     default:
-                                        parseHttpManagementSocket_1_6_and_3_0(reader, addOp);
+                                        parseHttpManagementSocket_1_7_and_3_0(reader, addOp);
                                         break;
                                 }
                         }
@@ -900,7 +633,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    private void parseHttpManagementSocket_1_6_and_3_0(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
+    private void parseHttpManagementSocket_1_7_and_3_0(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
         // Handle attributes
         boolean hasInterface = false;
 
@@ -1003,28 +736,12 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                         throw ControllerLogger.ROOT_LOGGER.childAlreadyDeclared(Element.LOCAL.getLocalName(), Element.DOMAIN_CONTROLLER.getLocalName(), reader.getLocation());
                     }
                     hostAddOp.get(IS_DOMAIN_CONTROLLER).set(false);
-                    switch (namespace) {
-                        case DOMAIN_1_0:
-                            parseRemoteDomainController1_0(reader, address, list);
+                    switch (namespace.getMajorVersion()) {
+                        case 1:
+                            parseRemoteDomainController_1_7(reader, address, list);
                             break;
-                        case DOMAIN_1_1:
-                        case DOMAIN_1_2:
-                        case DOMAIN_1_3:
-                        case DOMAIN_1_4:
-                            parseRemoteDomainController1_1(reader, address, list);
-                            break;
-                        case DOMAIN_1_5:
-                            parseRemoteDomainController_1_5(reader, address, list);
-                            break;
-                        default:
-                            switch (namespace.getMajorVersion()) {
-                                case 1:
-                                    parseRemoteDomainController_1_6(reader, address, list);
-                                    break;
-                                default:  // i.e. 2.x, 3.x
-                                    parseRemoteDomainController_2_0(reader, address, list);
-                            }
-                            break;
+                        default:  // i.e. 2.x, 3.x
+                            parseRemoteDomainController_2_0(reader, address, list);
                     }
                     hasRemote = true;
                     break;
@@ -1061,62 +778,12 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             }
         }
     }
-    private void parseRemoteDomainController1_0(final XMLExtendedStreamReader reader, final ModelNode address,
-            final List<ModelNode> list) throws XMLStreamException {
-        parseRemoteDomainControllerAttributes_1_0(reader, address, list);
-        requireNoContent(reader);
-    }
 
-    private void parseRemoteDomainController1_1(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
-        switch (namespace) {
-            case DOMAIN_1_1:
-            case DOMAIN_1_2:
-                parseRemoteDomainControllerAttributes_1_0(reader, address, list);
-                break;
-            default:
-                parseRemoteDomainControllerAttributes_1_3(reader, address, list);
-                break;
-        }
-
-        Set<String> types = new HashSet<String>();
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, namespace);
-            final Element element = Element.forName(reader.getLocalName());
-            switch (element) {
-                case IGNORED_RESOURCE: {
-                    parseIgnoredResource(reader, address, list, types);
-                    break;
-                }
-                default:
-                    throw unexpectedElement(reader);
-            }
-        }
-    }
-
-    private void parseRemoteDomainController_1_5(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
-
-        parseRemoteDomainControllerAttributes_1_5(reader, address, list, false);
-
-        Set<String> types = new HashSet<String>();
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, namespace);
-            final Element element = Element.forName(reader.getLocalName());
-            switch (element) {
-                case IGNORED_RESOURCE: {
-                    parseIgnoredResource(reader, address, list, types);
-                    break;
-                }
-                default:
-                    throw unexpectedElement(reader);
-            }
-        }
-    }
-
-    private void parseRemoteDomainController_1_6(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+    private void parseRemoteDomainController_1_7(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         boolean requireDiscoveryOptions;
         boolean hasDiscoveryOptions = false;
 
-        requireDiscoveryOptions = parseRemoteDomainControllerAttributes_1_5(reader, address, list, true);
+        requireDiscoveryOptions = parseRemoteDomainControllerAttributes_1_7(reader, address, list, true);
 
         Set<String> types = new HashSet<String>();
         Set<String> staticDiscoveryOptionNames = new HashSet<String>();
@@ -1192,132 +859,6 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    private void parseRemoteDomainControllerAttributes_1_0(final XMLExtendedStreamReader reader, final ModelNode address,
-            final List<ModelNode> list) throws XMLStreamException {
-        // Handle attributes
-        String host = null;
-        ModelNode port = null;
-        String securityRealm = null;
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
-            if (!isNoNamespaceAttribute(reader, i)) {
-                throw unexpectedAttribute(reader, i);
-            } else {
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-                switch (attribute) {
-                    case HOST: {
-                        host = value;
-                        break;
-                    }
-                    case PORT: {
-                        port = parsePossibleExpression(value);
-                        if(port.getType() != ModelType.EXPRESSION) {
-                            try {
-                                int portNo = Integer.parseInt(value);
-                                if (portNo < 1) {
-                                    throw ControllerLogger.ROOT_LOGGER.invalidPort(attribute.getLocalName(), value, reader.getLocation());
-                                }
-                            }catch(NumberFormatException e) {
-                                throw ControllerLogger.ROOT_LOGGER.invalidPort(attribute.getLocalName(), value, reader.getLocation());
-                            }
-                        }
-                        break;
-                    }
-                    case SECURITY_REALM: {
-                        securityRealm = value;
-                        break;
-                    }
-                    default:
-                        throw unexpectedAttribute(reader, i);
-                }
-            }
-        }
-        if (host == null) {
-            throw ParseUtils.missingRequired(reader, Collections.singleton(Attribute.HOST.getLocalName()));
-        }
-        if (port == null) {
-            throw ParseUtils.missingRequired(reader, Collections.singleton(Attribute.PORT.getLocalName()));
-        }
-
-        final ModelNode update = new ModelNode();
-        update.get(OP_ADDR).set(address);
-        update.get(OP).set(RemoteDomainControllerAddHandler.OPERATION_NAME);
-        update.get(HOST).set(parsePossibleExpression(host));
-        update.get(PORT).set(port);
-        if (securityRealm != null) {
-            update.get(SECURITY_REALM).set(securityRealm);
-        }
-        list.add(update);
-    }
-
-    private void parseRemoteDomainControllerAttributes_1_3(final XMLExtendedStreamReader reader, final ModelNode address,
-            final List<ModelNode> list) throws XMLStreamException {
-        // Handle attributes
-        String host = null;
-        ModelNode port = null;
-        String securityRealm = null;
-        String username = null;
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            final String value = reader.getAttributeValue(i);
-            if (!isNoNamespaceAttribute(reader, i)) {
-                throw unexpectedAttribute(reader, i);
-            } else {
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-                switch (attribute) {
-                    case HOST: {
-                        host = value;
-                        break;
-                    }
-                    case PORT: {
-                        port = parsePossibleExpression(value);
-                        if(port.getType() != ModelType.EXPRESSION) {
-                            try {
-                                int portNo = Integer.parseInt(value);
-                                if (portNo < 1) {
-                                    throw ControllerLogger.ROOT_LOGGER.invalidPort(attribute.getLocalName(), value, reader.getLocation());
-                                }
-                            }catch(NumberFormatException e) {
-                                throw ControllerLogger.ROOT_LOGGER.invalidPort(attribute.getLocalName(), value, reader.getLocation());
-                            }
-                        }
-                        break;
-                    }
-                    case SECURITY_REALM: {
-                        securityRealm = value;
-                        break;
-                    }
-                    case USERNAME: {
-                        username = value;
-                        break;
-                    }
-                    default:
-                        throw unexpectedAttribute(reader, i);
-                }
-            }
-        }
-        if (host == null) {
-            throw ParseUtils.missingRequired(reader, Collections.singleton(Attribute.HOST.getLocalName()));
-        }
-        if (port == null) {
-            throw ParseUtils.missingRequired(reader, Collections.singleton(Attribute.PORT.getLocalName()));
-        }
-
-        final ModelNode update = new ModelNode();
-        update.get(OP_ADDR).set(address);
-        update.get(OP).set(RemoteDomainControllerAddHandler.OPERATION_NAME);
-        update.get(HOST).set(parsePossibleExpression(host));
-        update.get(PORT).set(port);
-        if (securityRealm != null) {
-            update.get(SECURITY_REALM).set(securityRealm);
-        }
-        if (username != null) {
-            update.get(USERNAME).set(username);
-        }
-        list.add(update);
-    }
-
     /**
      * The only difference between version 1.5 and 1.6 of the schema were to make is possible to define discovery options, this
      * resulted in the host and port attributes becoming optional -this method also indicates if discovery options are required
@@ -1326,7 +867,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
      * @param allowDiscoveryOptions i.e. are host and port potentially optional?
      * @return true if discovery options are required, i.e. no host and port set and the admin policy requires a config.
      */
-    private boolean parseRemoteDomainControllerAttributes_1_5(final XMLExtendedStreamReader reader, final ModelNode address,
+    private boolean parseRemoteDomainControllerAttributes_1_7(final XMLExtendedStreamReader reader, final ModelNode address,
                                                               final List<ModelNode> list, boolean allowDiscoveryOptions) throws XMLStreamException {
 
         final ModelNode update = new ModelNode();
@@ -1796,24 +1337,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    private void parseServers_1_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
-            throws XMLStreamException {
-        // Handle elements
-        final Set<String> names = new HashSet<String>();
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, namespace);
-            final Element element = Element.forName(reader.getLocalName());
-            switch (element) {
-                case SERVER:
-                    parseServer(reader, address, list, names);
-                    break;
-                default:
-                    throw unexpectedElement(reader);
-            }
-        }
-    }
-
-    private void parseServers_1_2(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+    private void parseServers_1_7(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         parseServersAttributes(reader, address, list);
         // Handle elements
         final Set<String> names = new HashSet<String>();
@@ -1838,87 +1362,18 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         final ModelNode address = addUpdate.require(OP_ADDR);
         list.add(addUpdate);
 
-        // Handle elements
-        switch (namespace.getMajorVersion()) {
-            case 1:
-                switch (namespace) {
-                    case DOMAIN_1_0:
-                        parseServerContent1_0(reader, addUpdate, address, list);
-                        break;
-                    case DOMAIN_1_1:
-                    case DOMAIN_1_2:
-                    case DOMAIN_1_3:
-                    case DOMAIN_1_4:
-                    case DOMAIN_1_5:
-                    case DOMAIN_1_6:
-                    case DOMAIN_1_7:
-                        parseServerContent1_1(reader, addUpdate, address, list);
-                        break;
-                    default:
-                        parseServerContent1_8(reader, addUpdate, address, list);
-                }
+        switch (namespace) {
+            case DOMAIN_1_8:
+                parseServerContent1_8(reader, addUpdate, address, list);
                 break;
             default:
-                // Versions 2 and 3 don't contain the additional element added in version 1.8
-                parseServerContent1_1(reader, addUpdate, address, list);
+                // Versions 1.7, 2 and 3 don't contain the additional element added in version 1.8
+                parseServerContent1_7(reader, addUpdate, address, list);
                 break;
         }
-
     }
 
-    private void parseServerContent1_0(final XMLExtendedStreamReader reader, final ModelNode serverAddOperation, final ModelNode serverAddress,
-                                       final List<ModelNode> list) throws XMLStreamException {
-        boolean sawJvm = false;
-        boolean sawSystemProperties = false;
-        boolean sawSocketBinding = false;
-        final Set<String> interfaceNames = new HashSet<String>();
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, namespace);
-            final Element element = Element.forName(reader.getLocalName());
-            switch (element) {
-                case INTERFACE_SPECS: {
-                    parseInterfaces(reader, interfaceNames, serverAddress, namespace, list, true);
-                    break;
-                }
-                case JVM: {
-                    if (sawJvm) {
-                        throw ControllerLogger.ROOT_LOGGER.alreadyDefined(element.getLocalName(), reader.getLocation());
-                    }
-
-                    JvmXml.parseJvm(reader, serverAddress, namespace, list, new HashSet<String>(), true);
-                    sawJvm = true;
-                    break;
-                }
-                case PATHS: {
-                    parsePaths(reader, serverAddress, namespace, list, true);
-                    break;
-                }
-                case SOCKET_BINDING_GROUP: {
-                    if (sawSocketBinding) {
-                        throw ControllerLogger.ROOT_LOGGER.alreadyDefined(element.getLocalName(), reader.getLocation());
-                    }
-                    parseSocketBindingGroupRef(reader, serverAddOperation, ServerConfigResourceDefinition.SOCKET_BINDING_GROUP,
-                            ServerConfigResourceDefinition.SOCKET_BINDING_PORT_OFFSET,
-                            ServerConfigResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE);
-                    sawSocketBinding = true;
-                    break;
-                }
-                case SYSTEM_PROPERTIES: {
-                    if (sawSystemProperties) {
-                        throw ControllerLogger.ROOT_LOGGER.alreadyDefined(element.getLocalName(), reader.getLocation());
-                    }
-                    parseSystemProperties(reader, serverAddress, namespace, list, false);
-                    sawSystemProperties = true;
-                    break;
-                }
-                default:
-                    throw unexpectedElement(reader);
-            }
-        }
-
-    }
-
-    private void parseServerContent1_1(final XMLExtendedStreamReader reader, final ModelNode serverAddOperation,
+    private void parseServerContent1_7(final XMLExtendedStreamReader reader, final ModelNode serverAddOperation,
                                        final ModelNode serverAddress, final List<ModelNode> list) throws XMLStreamException {
         boolean sawJvm = false;
         boolean sawSystemProperties = false;
@@ -2213,37 +1668,12 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             switch (element) {
                 case NATIVE_INTERFACE: {
                     interfaceDefined = true;
-                    switch (namespace) {
-                        case DOMAIN_1_0:
-                            parseNativeManagementInterface1_0(reader, address, operationsList);
-                            break;
-                        case DOMAIN_1_1:
-                        case DOMAIN_1_2:
-                        case DOMAIN_1_3:
-                        case DOMAIN_1_4:
-                            parseManagementInterface1_1(reader, address, false, operationsList);
-                            break;
-                        default:
-                            parseManagementInterface_1_5(reader, address, false, operationsList);
-                    }
+                    parseManagementInterface_1_7(reader, address, false, operationsList);
                     break;
                 }
                 case HTTP_INTERFACE: {
                     interfaceDefined = true;
-                    switch (namespace) {
-                        case DOMAIN_1_0:
-                            parseHttpManagementInterface1_0(reader, address, operationsList);
-                            break;
-                        case DOMAIN_1_1:
-                        case DOMAIN_1_2:
-                        case DOMAIN_1_3:
-                        case DOMAIN_1_4:
-                            parseManagementInterface1_1(reader, address, true, operationsList);
-                            break;
-                        default:
-                            parseManagementInterface_1_5(reader, address, true, operationsList);
-                            break;
-                    }
+                    parseManagementInterface_1_7(reader, address, true, operationsList);
                     break;
                 }
                 default: {
