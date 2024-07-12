@@ -9,11 +9,7 @@ import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
 
 import java.io.IOException;
 
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.notification.NotificationFilter;
-import org.jboss.as.controller.notification.NotificationHandler;
-import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
@@ -23,6 +19,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
 import org.junit.Assert;
 import org.junit.Test;
+import org.wildfly.service.ServiceInstaller;
 
 /**
  * @author Stuart Douglas
@@ -60,21 +57,7 @@ public class RequestControllerSubsystemTestCase extends AbstractSubsystemBaseTes
 
             @Override
             protected void addExtraServices(ServiceTarget target) {
-                SuspendController suspendController = new SuspendController();
-                final NotificationHandlerRegistry nhr = new NotificationHandlerRegistry() {
-                    @Override
-                    public void registerNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter) {
-
-                    }
-
-                    @Override
-                    public void unregisterNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter) {
-
-                    }
-                };
-                suspendController.getNotificationHandlerRegistry().setValue(() -> nhr);
-                target.addService(JBOSS_SUSPEND_CONTROLLER, suspendController)
-                        .install();
+                ServiceInstaller.builder(new SuspendController()).provides(JBOSS_SUSPEND_CONTROLLER).build().install(target);
             }
 
             @Override

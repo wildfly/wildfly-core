@@ -14,13 +14,11 @@ import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 
-import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.Assert;
 
 /**
@@ -46,8 +44,6 @@ public class SuspendController implements Service<SuspendController> {
     private final NavigableMap<Integer, List<ServerActivity>> activitiesByGroup = new TreeMap<>();
 
     private final List<OperationListener> operationListeners = new ArrayList<>();
-
-    private final InjectedValue<NotificationHandlerRegistry> notificationHandlerRegistry = new InjectedValue<>();
 
     private int groupsCount;
 
@@ -247,10 +243,6 @@ public class SuspendController implements Service<SuspendController> {
     @Override
     public SuspendController getValue() throws IllegalStateException, IllegalArgumentException {
         return this;
-    }
-
-    public InjectedValue<NotificationHandlerRegistry> getNotificationHandlerRegistry() {
-        return notificationHandlerRegistry;
     }
 
     private void processGroups(Iterator<List<ServerActivity>> iterator,

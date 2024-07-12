@@ -53,7 +53,6 @@ import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.notification.Notification;
-import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -314,7 +313,6 @@ public final class ServerService extends AbstractControllerService {
                 }
             }
             context.getServiceTarget().addService(SUSPEND_CONTROLLER_CAPABILITY.getCapabilityServiceName(), suspendController)
-                    .addDependency(JBOSS_SERVER_NOTIFICATION_REGISTRY, NotificationHandlerRegistry.class, suspendController.getNotificationHandlerRegistry())
                     .install();
 
             GracefulShutdownService gracefulShutdownService = new GracefulShutdownService();
