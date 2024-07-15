@@ -1598,6 +1598,10 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                 } else {
                     buffer.append("standalone@");
                 }
+                if (Util.isServerInReadOnlyMode(this)){
+                    buffer.append("(read-only)");
+                    printLine("Server is in read-only mode", "warning");
+                }
                 if (controllerHost != null) {
                     buffer.append(controllerHost).append(':').append(getControllerPort()).append(' ');
                 } else {

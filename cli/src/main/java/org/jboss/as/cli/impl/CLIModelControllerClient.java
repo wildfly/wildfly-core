@@ -98,8 +98,8 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
     private final AtomicInteger state = new AtomicInteger(CLOSED);
 
     CLIModelControllerClient(final ControllerAddress address, CallbackHandler handler, int connectionTimeout,
-            final ConnectionCloseHandler closeHandler, Map<String, String> saslOptions, SecurityFactory<SSLContext> sslContextFactory,
-            boolean fallbackSslContext, ProtocolTimeoutHandler timeoutHandler, String clientBindAddress) throws IOException {
+           final ConnectionCloseHandler closeHandler, Map<String, String> saslOptions, SecurityFactory<SSLContext> sslContextFactory,
+           boolean fallbackSslContext, ProtocolTimeoutHandler timeoutHandler, String clientBindAddress) throws IOException {
         this.handler = handler;
         this.closeHandler = closeHandler;
 
