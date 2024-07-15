@@ -2042,6 +2042,20 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="connection-timeout" type="xs:integer" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The timeout for connecting in milliseconds. A non-zero value specifies the timeout when connecting to a resource. A timeout of zero is interpreted as an infinite timeout.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="read-timeout" type="xs:integer" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The read timeout in milliseconds. A non-zero value specifies the timeout when reading from Input stream when a connection is established to a resource. A timeout of zero is interpreted as an infinite timeout.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="oauth2IntrospectionTokenRealmValidatorType">
@@ -2082,6 +2096,20 @@
             <xs:annotation>
                 <xs:documentation>
                     A policy that defines how host names should be verified when using HTTPS. Allowed values: "ANY".
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="connection-timeout" type="xs:integer" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The timeout for connecting in milliseconds. A non-zero value specifies the timeout when connecting to a resource. A timeout of zero is interpreted as an infinite timeout.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="read-timeout" type="xs:integer" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The read timeout in milliseconds. A non-zero value specifies the timeout when reading from Input stream when a connection is established to a resource. A timeout of zero is interpreted as an infinite timeout.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
