@@ -99,3 +99,9 @@ rem set "DISABLE_JDK_SERIAL_FILTER=true"
 rem # Uncomment to add a Java agent. If an agent is added to the module options, then jboss-modules.jar is added as an agent
 rem # on the JVM. This allows things like the log manager or security manager to be configured before the agent is invoked.
 rem set "MODULE_OPTS=-javaagent:agent.jar"
+
+rem # Uncomment the following line to enable debug traces for the Management CLI script file
+rem set "INST_MGR_SCRIPT_DEBUG=true"
+
+rem # Uncomment the following line to configure the grace period (in seconds) before applying a candidate server
+rem set "INST_MGR_SCRIPT_WINDOWS_COUNTDOWN=10"

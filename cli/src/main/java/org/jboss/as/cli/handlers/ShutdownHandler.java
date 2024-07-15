@@ -7,7 +7,6 @@ package org.jboss.as.cli.handlers;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.cli.AwaiterModelControllerClient;
@@ -177,11 +176,6 @@ public class ShutdownHandler extends BaseOperationCommand {
 
             if(isLocalClient) {
                 ctx.printLine("The JBoss CLI session will be closed automatically to allow the server be updated. Once the server has been restarted, you can relaunch the JBoss CLI session.", false);
-                try {
-                    TimeUnit.SECONDS.sleep(3);
-                } catch (InterruptedException e) {
-                    // Ignored
-                }
                 // We are using a CLI which was launched from the server installation we have requested to be updated.
                 // In order to prevent keeping using a jboss-modules.jar that could have been updated, we finish the CLI process
                 // Once the server has been restarted the user will launch again the CLI that will use the most recent updates

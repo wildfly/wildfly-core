@@ -90,3 +90,9 @@ rem set "HOST_CONTROLLER_JAVA_OPTS=%HOST_CONTROLLER_JAVA_OPTS% -agentlib:jdwp=tr
 rem # Sample JPDA settings for shared memory debugging
 rem set "PROCESS_CONTROLLER_JAVA_OPTS=%PROCESS_CONTROLLER_JAVA_OPTS% -agentlib:jdwp=transport=dt_shmem,address=jboss,server=y,suspend=n"
 rem set "HOST_CONTROLLER_JAVA_OPTS=%HOST_CONTROLLER_JAVA_OPTS% -agentlib:jdwp=transport=dt_shmem,address=jboss,server=y,suspend=n"
+
+rem # Uncomment the following line to enable debug traces for the Management CLI script file
+rem set "INST_MGR_SCRIPT_DEBUG=true"
+
+rem # Uncomment the following line to configure the grace period (in seconds) before applying a candidate server
+rem set "INST_MGR_SCRIPT_WINDOWS_COUNTDOWN=10"
