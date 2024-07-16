@@ -122,7 +122,7 @@ class HttpServerDefinitions {
 
     static ResourceDefinition getConfigurableHttpServerMechanismFactoryDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { HTTP_SERVER_FACTORY, CONFIGURED_FILTERS, PROPERTIES };
-        AbstractAddStepHandler add = new TrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<HttpServerAuthenticationMechanismFactory> getValueSupplier(
@@ -176,7 +176,7 @@ class HttpServerDefinitions {
 
     static ResourceDefinition getProviderHttpServerMechanismFactoryDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { PROVIDERS };
-        AbstractAddStepHandler add = new TrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<HttpServerAuthenticationMechanismFactory> getValueSupplier(
@@ -214,7 +214,7 @@ class HttpServerDefinitions {
 
     static ResourceDefinition getServiceLoaderServerMechanismFactoryDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { MODULE };
-        AbstractAddStepHandler add = new TrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.PASSIVE, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.PASSIVE, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<HttpServerAuthenticationMechanismFactory> getValueSupplier(

@@ -21,7 +21,7 @@ public class DuplicateExtCommandSubsystemResourceDescription extends SimpleResou
     public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, DuplicateExtCommandsExtension.SUBSYSTEM_NAME);
 
     public DuplicateExtCommandSubsystemResourceDescription() {
-        super(PATH, NonResolvingResourceDescriptionResolver.INSTANCE, new ModelOnlyAddStepHandler(), new AbstractRemoveStepHandler() {
+        super(PATH, NonResolvingResourceDescriptionResolver.INSTANCE, ModelOnlyAddStepHandler.INSTANCE, new AbstractRemoveStepHandler() {
         });
     }
 

@@ -97,7 +97,7 @@ class DeploymentPermissionsResourceDefinition extends PersistentResourceDefiniti
 
     private DeploymentPermissionsResourceDefinition() {
         super(DEPLOYMENT_PERMISSIONS_PATH, SecurityManagerExtension.getResolver(Constants.DEPLOYMENT_PERMISSIONS),
-                new ReloadRequiredAddStepHandler(ATTRIBUTES), ReloadRequiredRemoveStepHandler.INSTANCE);
+                ReloadRequiredAddStepHandler.INSTANCE, ReloadRequiredRemoveStepHandler.INSTANCE);
     }
 
     @Override

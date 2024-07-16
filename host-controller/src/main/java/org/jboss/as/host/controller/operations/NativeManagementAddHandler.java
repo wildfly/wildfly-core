@@ -9,7 +9,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAT
 import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
-import static org.jboss.as.host.controller.resources.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.remoting.RemotingServices.REMOTING_BASE;
 import static org.jboss.as.remoting.management.ManagementRemotingServices.MANAGEMENT_CONNECTOR;
 
@@ -46,7 +45,6 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
     private final LocalHostControllerInfoImpl hostControllerInfo;
 
     public NativeManagementAddHandler(final LocalHostControllerInfoImpl hostControllerInfo) {
-        super(ATTRIBUTE_DEFINITIONS);
         this.hostControllerInfo = hostControllerInfo;
     }
 

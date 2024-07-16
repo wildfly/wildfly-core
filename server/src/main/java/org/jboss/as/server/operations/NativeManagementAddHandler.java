@@ -10,7 +10,6 @@ import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATIO
 import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.jboss.as.remoting.RemotingServices.REMOTING_BASE;
 import static org.jboss.as.remoting.management.ManagementRemotingServices.MANAGEMENT_CONNECTOR;
-import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING;
 
 import java.util.Arrays;
@@ -47,8 +46,7 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
     public static final NativeManagementAddHandler INSTANCE = new NativeManagementAddHandler();
     public static final String OPERATION_NAME = ModelDescriptionConstants.ADD;
 
-    public NativeManagementAddHandler() {
-        super(ATTRIBUTE_DEFINITIONS);
+    private NativeManagementAddHandler() {
     }
 
     @Override

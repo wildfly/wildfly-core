@@ -8,7 +8,6 @@ package org.wildfly.extension.requestcontroller;
 import static org.wildfly.extension.requestcontroller.RequestControllerRootDefinition.REQUEST_CONTROLLER_CAPABILITY;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -19,7 +18,6 @@ import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelNode;
 
-import java.util.Collection;
 import java.util.function.Supplier;
 
 
@@ -29,10 +27,6 @@ import java.util.function.Supplier;
  * @author Stuart Douglas
  */
 class RequestControllerSubsystemAdd extends AbstractBoottimeAddStepHandler {
-
-    RequestControllerSubsystemAdd(Collection<AttributeDefinition> attributeDefinitions) {
-        super(attributeDefinitions);
-    }
 
     /**
      * {@inheritDoc}

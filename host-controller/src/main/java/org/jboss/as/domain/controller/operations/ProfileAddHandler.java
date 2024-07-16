@@ -9,7 +9,6 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -19,8 +18,7 @@ public class ProfileAddHandler extends AbstractAddStepHandler {
 
     public static final ProfileAddHandler INSTANCE = new ProfileAddHandler();
 
-    ProfileAddHandler() {
-        super(ProfileResourceDefinition.ATTRIBUTES);
+    private ProfileAddHandler() {
     }
 
     protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {

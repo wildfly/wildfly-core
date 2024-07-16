@@ -25,7 +25,6 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.resources.ServerConfigResource;
-import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -46,7 +45,6 @@ public class ServerAddHandler extends AbstractAddStepHandler {
      * Create the ServerAddHandler
      */
     private ServerAddHandler(LocalHostControllerInfo hostControllerInfo, ServerInventory serverInventory, ControlledProcessState processState, File domainDataDir) {
-        super(ServerConfigResourceDefinition.WRITABLE_ATTRIBUTES);
         this.hostControllerInfo = hostControllerInfo;
         this.serverInventory = serverInventory;
         this.processState = processState;

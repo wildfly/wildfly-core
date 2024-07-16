@@ -76,7 +76,6 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
     public static final HttpManagementAddHandler INSTANCE = new HttpManagementAddHandler();
 
     private HttpManagementAddHandler() {
-        super(HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
     }
 
     @Override

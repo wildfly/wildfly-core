@@ -277,7 +277,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
     static class NonOrderedChildResourceDefinition extends SimpleResourceDefinition {
 
         public NonOrderedChildResourceDefinition() {
-            super(NON_ORDERED_CHILD, NonResolvingResourceDescriptionResolver.INSTANCE, new ModelOnlyAddStepHandler(REQUEST_ATTRIBUTES), new ModelOnlyRemoveStepHandler());
+            super(NON_ORDERED_CHILD, NonResolvingResourceDescriptionResolver.INSTANCE, ModelOnlyAddStepHandler.INSTANCE, new ModelOnlyRemoveStepHandler());
         }
 
 

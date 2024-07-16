@@ -39,7 +39,6 @@ public class UnboundedQueueThreadPoolAdd extends AbstractAddStepHandler {
     }
 
     public UnboundedQueueThreadPoolAdd(ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase, RuntimeCapability<Void> capability, boolean allowCoreThreadTimeout) {
-        super(ATTRIBUTES);
         this.threadFactoryResolver = threadFactoryResolver;
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;

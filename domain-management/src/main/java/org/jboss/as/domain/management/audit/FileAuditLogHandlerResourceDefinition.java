@@ -41,7 +41,7 @@ public class FileAuditLogHandlerResourceDefinition extends AbstractFileAuditLogH
     public FileAuditLogHandlerResourceDefinition(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
         super(auditLogger, pathManager, PathElement.pathElement(ModelDescriptionConstants.FILE_HANDLER),
                 DomainManagementResolver.getDeprecatedResolver(AccessAuditResourceDefinition.DEPRECATED_MESSAGE_CATEGORY, "core.management.file-handler"),
-                new FileAuditLogHandlerAddHandler(auditLogger, pathManager, FULL_ATTRIBUTES), new HandlerRemoveHandler(auditLogger));
+                new FileAuditLogHandlerAddHandler(auditLogger, pathManager), new HandlerRemoveHandler(auditLogger));
         setDeprecated(ModelVersion.create(1, 7));
     }
 
@@ -83,8 +83,8 @@ public class FileAuditLogHandlerResourceDefinition extends AbstractFileAuditLogH
 
     protected static class FileAuditLogHandlerAddHandler extends AbstractFileAuditLogHandlerAddHandler {
 
-        protected FileAuditLogHandlerAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition[] attributes) {
-            super(auditLogger, pathManager, attributes);
+        protected FileAuditLogHandlerAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
+            super(auditLogger, pathManager);
         }
 
         @Override

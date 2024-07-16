@@ -65,7 +65,7 @@ public class FilterResourceDefinition extends SimpleResourceDefinition {
     /**
      * A step handler to add a custom filter
      */
-    private static final OperationStepHandler ADD = new LoggingOperations.LoggingAddOperationStepHandler(ATTRIBUTES) {
+    private static final OperationStepHandler ADD = new LoggingOperations.LoggingAddOperationStepHandler() {
         private final List<String> reservedNames = Arrays.asList(
                 "accept",
                 "deny",

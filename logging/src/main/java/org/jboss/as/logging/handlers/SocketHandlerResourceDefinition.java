@@ -123,7 +123,7 @@ public class SocketHandlerResourceDefinition extends SimpleResourceDefinition {
             SSL_CONTEXT,
     };
 
-    private static final LoggingAddOperationStepHandler ADD_HANDLER = new LoggingAddOperationStepHandler(ATTRIBUTES) {
+    private static final LoggingAddOperationStepHandler ADD_HANDLER = new LoggingAddOperationStepHandler() {
 
         @Override
         protected OperationStepHandler additionalModelStep(final LogContextConfiguration logContextConfiguration) {

@@ -55,7 +55,6 @@ class LoggingSubsystemAdd extends AbstractAddStepHandler {
     private final WildFlyLogContextSelector contextSelector;
 
     LoggingSubsystemAdd(final PathManager pathManager, final WildFlyLogContextSelector contextSelector) {
-        super(LoggingResourceDefinition.ATTRIBUTES);
         this.pathManager = pathManager;
         this.contextSelector = contextSelector;
     }

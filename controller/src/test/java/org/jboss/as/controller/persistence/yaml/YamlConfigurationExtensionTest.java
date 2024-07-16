@@ -70,7 +70,7 @@ public class YamlConfigurationExtensionTest {
                 .setValidator(new StringLengthValidator(0, true, true))
                 .build();
         SimpleResourceDefinition systemPropertyResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("system-property"), descriptionResolver)
-                .setAddHandler(new AbstractBoottimeAddStepHandler(valueAtt) {
+                .setAddHandler(new AbstractBoottimeAddStepHandler() {
                 })) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
@@ -85,14 +85,11 @@ public class YamlConfigurationExtensionTest {
             }
         };
         SimpleResourceDefinition extensionResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("extension"), descriptionResolver)
-                .setAddHandler(new AbstractBoottimeAddStepHandler(SimpleAttributeDefinitionBuilder.create("module", STRING, false)
-                        .setAllowExpression(true)
-                        .setValidator(new StringLengthValidator(0, true, true))
-                        .build()) {
+                .setAddHandler(new AbstractBoottimeAddStepHandler() {
                 }));
         AttributeDefinition listAtt = PrimitiveListAttributeDefinition.Builder.of("strings", STRING).build();
         SimpleResourceDefinition listResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("list"), descriptionResolver)
-                .setAddHandler(new AbstractBoottimeAddStepHandler(listAtt) {
+                .setAddHandler(new AbstractBoottimeAddStepHandler() {
                 })) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
@@ -101,7 +98,7 @@ public class YamlConfigurationExtensionTest {
             }
         };
         SimpleResourceDefinition basicResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("basic"), descriptionResolver)
-                .setAddHandler(new AbstractBoottimeAddStepHandler(valueAtt) {
+                .setAddHandler(new AbstractBoottimeAddStepHandler() {
                 })) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
@@ -111,7 +108,7 @@ public class YamlConfigurationExtensionTest {
         };
         PropertiesAttributeDefinition propertiesAtt = new PropertiesAttributeDefinition.Builder("props", false).build();
         SimpleResourceDefinition propertyResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("property"), descriptionResolver)
-                .setAddHandler(new AbstractBoottimeAddStepHandler(propertiesAtt) {
+                .setAddHandler(new AbstractBoottimeAddStepHandler() {
                 })) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
@@ -137,7 +134,7 @@ public class YamlConfigurationExtensionTest {
                 .setRequired(false)
                 .build();
         SimpleResourceDefinition classpathResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("classpath"), descriptionResolver)
-                .setAddHandler(new AbstractBoottimeAddStepHandler(COMPLEX_MAP) {
+                .setAddHandler(new AbstractBoottimeAddStepHandler() {
                 })) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
@@ -146,7 +143,7 @@ public class YamlConfigurationExtensionTest {
             }
         };
         SimpleResourceDefinition childResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("child"), descriptionResolver)
-                .setAddHandler(new AbstractBoottimeAddStepHandler(valueAtt) {
+                .setAddHandler(new AbstractBoottimeAddStepHandler() {
                 })) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
@@ -155,7 +152,7 @@ public class YamlConfigurationExtensionTest {
             }
         };
         SimpleResourceDefinition parentResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("parent"), descriptionResolver)
-                .setAddHandler(new AbstractBoottimeAddStepHandler(valueAtt) {
+                .setAddHandler(new AbstractBoottimeAddStepHandler() {
                 })) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
@@ -185,7 +182,7 @@ public class YamlConfigurationExtensionTest {
                 .build();
         ManagementResourceRegistration connectorRegistration = root.registerSubModel(new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(
                 PathElement.pathElement("connector"), NonResolvingResourceDescriptionResolver.INSTANCE)
-                .setAddHandler(new AbstractBoottimeAddStepHandler(connectorType) {
+                .setAddHandler(new AbstractBoottimeAddStepHandler() {
                 })
                 .setRemoveHandler(new AbstractRemoveStepHandler() {
                 }))
@@ -194,7 +191,7 @@ public class YamlConfigurationExtensionTest {
         ManagementResourceRegistration acceptorRegistration = connectorRegistration.registerSubModel(
                 new SimpleResourceDefinition(
                         new SimpleResourceDefinition.Parameters(PathElement.pathElement("acceptor"), NonResolvingResourceDescriptionResolver.INSTANCE)
-                                .setAddHandler(new AbstractBoottimeAddStepHandler(connectorType) {
+                                .setAddHandler(new AbstractBoottimeAddStepHandler() {
                                 })
                                 .setRemoveHandler(new AbstractRemoveStepHandler() {
                                 }))

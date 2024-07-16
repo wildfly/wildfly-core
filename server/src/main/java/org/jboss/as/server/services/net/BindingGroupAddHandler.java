@@ -48,7 +48,6 @@ public class BindingGroupAddHandler extends AbstractAddStepHandler {
     public static final BindingGroupAddHandler INSTANCE = new BindingGroupAddHandler();
 
     private BindingGroupAddHandler() {
-        super(SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE, SocketBindingGroupResourceDefinition.PORT_OFFSET);
     }
 
     /**

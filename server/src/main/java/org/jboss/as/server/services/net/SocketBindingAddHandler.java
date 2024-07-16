@@ -30,7 +30,6 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -71,12 +70,6 @@ public class SocketBindingAddHandler extends AbstractAddStepHandler {
      * Create the SocketBindingAddHandler
      */
     protected SocketBindingAddHandler() {
-        super(  AbstractSocketBindingResourceDefinition.INTERFACE,
-                AbstractSocketBindingResourceDefinition.PORT,
-                AbstractSocketBindingResourceDefinition.FIXED_PORT,
-                AbstractSocketBindingResourceDefinition.MULTICAST_ADDRESS,
-                AbstractSocketBindingResourceDefinition.MULTICAST_PORT,
-                AbstractSocketBindingResourceDefinition.CLIENT_MAPPINGS);
     }
 
     @Override

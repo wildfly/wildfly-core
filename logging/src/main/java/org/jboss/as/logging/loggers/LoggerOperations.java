@@ -78,7 +78,6 @@ final class LoggerOperations {
         private final AttributeDefinition[] attributes;
 
         LoggerAddOperationStepHandler(final AttributeDefinition[] attributes) {
-            super(attributes);
             this.attributes = attributes;
         }
 

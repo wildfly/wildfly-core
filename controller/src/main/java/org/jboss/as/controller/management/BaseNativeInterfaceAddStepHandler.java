@@ -7,7 +7,6 @@ package org.jboss.as.controller.management;
 
 import java.util.List;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
@@ -22,10 +21,6 @@ import org.xnio.OptionMap.Builder;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public abstract class BaseNativeInterfaceAddStepHandler extends ManagementInterfaceAddStepHandler {
-
-    protected BaseNativeInterfaceAddStepHandler(final AttributeDefinition[] attributeDefinitions) {
-        super(attributeDefinitions);
-    }
 
     @Override
     public void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {

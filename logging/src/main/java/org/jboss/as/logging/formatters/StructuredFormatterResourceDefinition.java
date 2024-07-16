@@ -349,10 +349,11 @@ public abstract class StructuredFormatterResourceDefinition extends SimpleResour
 
     private static class AddStructuredFormatterStepHandler extends LoggingOperations.LoggingAddOperationStepHandler {
         private final Class<? extends StructuredFormatter> type;
+        private final AttributeDefinition[] attributes;
 
         private AddStructuredFormatterStepHandler(final Class<? extends StructuredFormatter> type, final AttributeDefinition[] attributes) {
-            super(attributes);
             this.type = type;
+            this.attributes = attributes;
         }
 
         @SuppressWarnings({"OverlyStrongTypeCast", "StatementWithEmptyBody"})

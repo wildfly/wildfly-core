@@ -135,10 +135,6 @@ public class TestSecureExpressionsExtension implements Extension {
 
     public static final class AddHandler extends AbstractBoottimeAddStepHandler {
 
-        private AddHandler() {
-            super(ATTR);
-        }
-
         @Override
         protected void performBoottime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
 

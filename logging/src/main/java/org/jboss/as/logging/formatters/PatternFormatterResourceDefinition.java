@@ -100,7 +100,7 @@ public class PatternFormatterResourceDefinition extends SimpleResourceDefinition
     /**
      * A step handler to add a pattern formatter
      */
-    private static final OperationStepHandler ADD = new LoggingOperations.LoggingAddOperationStepHandler(ATTRIBUTES) {
+    private static final OperationStepHandler ADD = new LoggingOperations.LoggingAddOperationStepHandler() {
 
         @Override
         public void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {

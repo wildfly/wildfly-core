@@ -513,7 +513,7 @@ class DomainDefinition extends SimpleResourceDefinition {
     private static class DomainAddHandler extends BaseAddHandler {
 
         private DomainAddHandler() {
-            super(SECURITY_DOMAIN_RUNTIME_CAPABILITY, ATTRIBUTES);
+            super(SECURITY_DOMAIN_RUNTIME_CAPABILITY);
         }
 
         @Override

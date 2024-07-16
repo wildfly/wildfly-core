@@ -102,7 +102,7 @@ public class JaasRealmDefinition extends SimpleResourceDefinition {
     private static class RealmAddHandler extends BaseAddHandler {
 
         private RealmAddHandler() {
-            super(SECURITY_REALM_RUNTIME_CAPABILITY, ATTRIBUTES);
+            super(SECURITY_REALM_RUNTIME_CAPABILITY);
         }
 
         @Override

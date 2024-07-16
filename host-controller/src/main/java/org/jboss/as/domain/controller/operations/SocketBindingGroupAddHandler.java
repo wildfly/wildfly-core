@@ -23,7 +23,6 @@ public class SocketBindingGroupAddHandler extends ModelOnlyAddStepHandler {
     public static final SocketBindingGroupAddHandler INSTANCE = new SocketBindingGroupAddHandler();
 
     private SocketBindingGroupAddHandler() {
-        super(SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE, SocketBindingGroupResourceDefinition.INCLUDES);
     }
 
     /**

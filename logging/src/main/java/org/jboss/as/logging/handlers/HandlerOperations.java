@@ -120,7 +120,6 @@ final class HandlerOperations {
         private final Class<? extends Handler> type;
 
         HandlerAddOperationStepHandler(final Class<? extends Handler> type, final AttributeDefinition[] attributes, final ConfigurationProperty<?>... constructionProperties) {
-            super(attributes);
             this.type = type;
             this.attributes = attributes;
             final List<String> names = new ArrayList<>();

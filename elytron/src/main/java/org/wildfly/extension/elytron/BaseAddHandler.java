@@ -25,15 +25,14 @@ import org.jboss.dmr.ModelNode;
  */
 class BaseAddHandler extends AbstractAddStepHandler implements ElytronOperationStepHandler {
 
-    private final Set<RuntimeCapability> runtimeCapabilities;
+    private final Set<RuntimeCapability<?>> runtimeCapabilities;
 
     /**
      * Constructor of the add handler that takes an array of {@link AttributeDefinition}.
      *
      * @param attributes  the {@link AttributeDefinition} instances associated with this resource.
      */
-    BaseAddHandler(AttributeDefinition... attributes) {
-        super(attributes);
+    BaseAddHandler() {
         this.runtimeCapabilities = Collections.emptySet();
     }
 
@@ -43,8 +42,7 @@ class BaseAddHandler extends AbstractAddStepHandler implements ElytronOperationS
      * @param runtimeCapability the {@link RuntimeCapability} that will be provided at runtime.
      * @param attributes the {@link AttributeDefinition} instances associated with this resource.
      */
-    BaseAddHandler(RuntimeCapability<?> runtimeCapability, AttributeDefinition... attributes) {
-        super(attributes);
+    BaseAddHandler(RuntimeCapability<?> runtimeCapability) {
         this.runtimeCapabilities = Collections.singleton(runtimeCapability);
     }
 
@@ -56,8 +54,7 @@ class BaseAddHandler extends AbstractAddStepHandler implements ElytronOperationS
      * @param capabilities a {@link Set} of capabilitiies that will be added.
      * @param attributes the {@link AttributeDefinition} instances associated with this resource.
      */
-    BaseAddHandler(Set<RuntimeCapability> capabilities, AttributeDefinition... attributes) {
-        super(attributes);
+    BaseAddHandler(Set<RuntimeCapability<?>> capabilities) {
         this.runtimeCapabilities = capabilities;
     }
 
@@ -67,7 +64,7 @@ class BaseAddHandler extends AbstractAddStepHandler implements ElytronOperationS
     protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         super.recordCapabilitiesAndRequirements(context, operation, resource);
         final String pathValue = context.getCurrentAddressValue();
-        for (RuntimeCapability r : runtimeCapabilities) {
+        for (RuntimeCapability<?> r : runtimeCapabilities) {
             context.registerAdditionalCapabilityRequirement(ELYTRON_CAPABILITY, r.isDynamicallyNamed() ? r.getDynamicName(pathValue) : r.getName(), null);
         }
     }
