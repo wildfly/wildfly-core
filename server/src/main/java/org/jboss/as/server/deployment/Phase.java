@@ -397,6 +397,7 @@ public enum Phase {
     public static final int DEPENDENCIES_MICROPROFILE_JWT               = 0x18A0;
     public static final int DEPENDENCIES_MICROPROFILE_REACTIVE_MESSAGING = 0x18B0;
     public static final int DEPENDENCIES_MICROPROFILE_REACTIVE_STREAMS_OPERATORS = 0x18C0;
+    public static final int DEPENDENCIES_OPENTELEMETRY                  = 0x18C5;
     public static final int DEPENDENCIES_MICROPROFILE_TELEMETRY         = 0x18D0;
     public static final int DEPENDENCIES_MICROPROFILE_FAULT_TOLERANCE   = 0x1900;
     public static final int DEPENDENCIES_MICROMETER                     = 0x1910;
@@ -556,6 +557,7 @@ public enum Phase {
     public static final int POST_MODULE_MICROPROFILE_OPENTRACING        = 0x3780;
     public static final int POST_MODULE_MICROPROFILE_OPENAPI            = 0x3790;
     public static final int POST_MODULE_MICROPROFILE_FAULT_TOLERANCE    = 0x3800;
+    public static final int POST_MODULE_OPENTELEMETRY                   = 0x3810;
     public static final int POST_MODULE_MICROPROFILE_TELEMETRY          = 0x3820;
 
     public static final int POST_MODULE_EJB_HIBERNATE_VALIDATOR         = 0x3850;
