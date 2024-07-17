@@ -100,8 +100,8 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
         this.descriptionResolver = parameters.descriptionResolver.get();
         this.addHandler = parameters.addHandler;
         this.removeHandler = parameters.removeHandler;
-        this.addRestartLevel = parameters.addRestartLevel;
-        this.removeRestartLevel = parameters.removeRestartLevel;
+        this.addRestartLevel = parameters.getAddRestartLevel();
+        this.removeRestartLevel = parameters.getRemoveRestartLevel();
         this.deprecationData = parameters.deprecationData;
         this.capabilities = parameters.capabilities != null ? parameters.capabilities : NO_CAPABILITIES ;
         this.incorporatingCapabilities = parameters.incorporatingCapabilities;
@@ -294,11 +294,11 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
         private final AtomicReference<DeprecationData> deprecationData;
         private OperationStepHandler addHandler;
         private OperationStepHandler removeHandler;
-        private OperationEntry.Flag addRestartLevel = OperationEntry.Flag.RESTART_NONE;
-        private OperationEntry.Flag removeRestartLevel = OperationEntry.Flag.RESTART_ALL_SERVICES;
+        private OperationEntry.Flag addRestartLevel;
+        private OperationEntry.Flag removeRestartLevel;
         private RuntimeCapability[] capabilities;
         private Set<RuntimeCapability> incorporatingCapabilities;
-        private Set<CapabilityReferenceRecorder> requirements = new HashSet<>();
+        private final Set<CapabilityReferenceRecorder> requirements = new HashSet<>();
         private RuntimePackageDependency[] additionalPackages;
 
         /**
@@ -312,7 +312,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
 
         /**
          * Creates a Parameters object
-         * @param pathElement the path element of the created ResourceDefinition. Cannot be {@code null}
+         * @param registration the description of the resource registration. Cannot be {@code null}
          * @param descriptionResolver the description resolver. Cannot be {@code null}
          */
         public Parameters(ResourceRegistration registration, ResourceDescriptionResolver descriptionResolver) {
@@ -350,7 +350,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
         /**
          * Creates a Parameters object
          *
-         * @param pathElement         the path element of the created ResourceDefinition. Cannot be {@code null}
+         * @param registration        the description of the resource registration. Cannot be {@code null}
          * @param descriptionProvider the description provider. Cannot be {@code null}
          */
         public Parameters(ResourceRegistration registration, DescriptionProvider descriptionProvider) {
@@ -424,6 +424,10 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
             return this;
         }
 
+        private OperationEntry.Flag getAddRestartLevel() {
+            return addRestartLevel == null ? OperationEntry.Flag.RESTART_NONE : addRestartLevel;
+        }
+
         /**
          * Sets the remove restart level. The default is {@link OperationEntry.Flag#RESTART_ALL_SERVICES}
          * @param removeRestartLevel the restart level
@@ -434,6 +438,10 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
             Assert.checkNotNullParam("removeRestartLevel", removeRestartLevel);
             this.removeRestartLevel = validateRestartLevel("removeRestartLevel", removeRestartLevel);
             return this;
+        }
+
+        private OperationEntry.Flag getRemoveRestartLevel() {
+            return removeRestartLevel == null ? OperationEntry.Flag.RESTART_ALL_SERVICES : removeRestartLevel;
         }
 
         /**
