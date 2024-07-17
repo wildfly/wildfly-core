@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.jboss.as.test.integration.domain.installationmanager;
+package org.jboss.as.test.manualmode.installationmanager;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -30,10 +30,12 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import jakarta.inject.Inject;
+
 import org.jboss.as.cli.Util;
-import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.module.util.TestModule;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -41,16 +43,21 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.wildfly.core.instmgr.InstMgrConstants;
 import org.wildfly.core.instmgr.cli.UpdateCommand;
+import org.wildfly.core.testrunner.ManagementClient;
+import org.wildfly.core.testrunner.ServerControl;
+import org.wildfly.core.testrunner.ServerController;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.test.installationmanager.TestInstallationManager;
 import org.wildfly.test.installationmanager.TestInstallationManagerFactory;
 
 /**
- * Tests the high-level Installation Manager commands in domain mode environment. It uses a mocked implementation of the
+ * Tests the high-level Installation Manager commands in standalone mode environment. It uses a mocked implementation of the
  * installation manager, which provides dummy data for the test.
  * <p>
  * The purpose of this test is to ensure that the high-level commands, which rely on low-level management operations, can
@@ -58,46 +65,42 @@ import org.wildfly.test.installationmanager.TestInstallationManagerFactory;
  * <p>
  * See InstMgrResourceTestCase for low-level management operation unit testing.
  */
+@RunWith(WildFlyRunner.class)
+@ServerControl(manual = true)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase {
 
     private static final String MODULE_NAME = "org.jboss.prospero";
-    private static DomainTestSupport testSupport;
     private static TestModule testModule;
 
-    private static Path primaryPrepareServerDir;
-    private static Path secondaryPrepareServerDir;
+    private static Path prepareServerDir;
 
     static final Path TARGET_DIR = Paths.get(System.getProperty("basedir", ".")).resolve("target");
-    static Path primaryCustomPatchBaseDir;
-    static Path secondaryCustomPatchBaseDir;
+    static Path customPatchBaseDir;
+
+    @Inject
+    protected static ManagementClient client;
+    @Inject
+    protected static ServerController container;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         createTestModule();
-        testSupport = DomainTestSupport.createAndStartDefaultSupport(InstallationManagerIntegrationTestCase.class.getSimpleName());
-        AbstractCliTestBase.initCLI(DomainTestSupport.primaryAddress);
+        container.start();
+        AbstractCliTestBase.initCLI();
 
-        primaryPrepareServerDir = Paths.get(testSupport.getDomainPrimaryConfiguration().getDomainDirectory()).resolve("tmp")
+        prepareServerDir = Paths.get(TestSuiteEnvironment.getJBossHome()).resolve("standalone").resolve("tmp")
                 .resolve(InstMgrConstants.PREPARED_SERVER_SUBPATH);
 
-        secondaryPrepareServerDir = Paths.get(testSupport.getDomainSecondaryConfiguration().getDomainDirectory()).resolve("tmp")
-                .resolve(InstMgrConstants.PREPARED_SERVER_SUBPATH);
-
-        primaryCustomPatchBaseDir = Paths.get(testSupport.getDomainPrimaryConfiguration().getJbossHome()).resolve(InstMgrConstants.CUSTOM_PATCH_SUBPATH);
-
-        secondaryCustomPatchBaseDir = Paths.get(testSupport.getDomainSecondaryConfiguration().getJbossHome()).resolve(InstMgrConstants.CUSTOM_PATCH_SUBPATH);
+        customPatchBaseDir = Paths.get(TestSuiteEnvironment.getJBossHome()).resolve(InstMgrConstants.CUSTOM_PATCH_SUBPATH);
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         try {
             AbstractCliTestBase.closeCLI();
-            if (testSupport != null) {
-                testSupport.close();
-            }
-            testSupport = null;
         } finally {
+            container.stop();
             testModule.remove();
         }
     }
@@ -112,15 +115,9 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @After
     public void clean() throws IOException {
-        String host = "secondary";
         // Clean any previous state
-        assertTrue(cli.sendLine("installer clean --host=" + host, false));
-        Assert.assertTrue(!Files.exists(secondaryPrepareServerDir));
-
-        host = "primary";
-        // Clean any previous state
-        assertTrue(cli.sendLine("installer clean --host=" + host, false));
-        Assert.assertTrue(!Files.exists(primaryPrepareServerDir));
+        assertTrue(cli.sendLine("installer clean", false));
+        Assert.assertTrue(!Files.exists(prepareServerDir));
 
        for(File testZip : TARGET_DIR.toFile().listFiles((dir, name) -> name.startsWith("installation-manager") && name.endsWith(".zip"))) {
            Files.deleteIfExists(testZip.toPath());
@@ -128,17 +125,17 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     }
 
     @Test
-    public void requireHost() {
+    public void rejectsHost() {
         final List<String> commands = List.of("update", "clean", "revert", "history", "channel-list",
                 "channel-add --channel-name test --manifest test --repositories test", "channel-edit --channel-name test --manifest test --repositories test",
                 "channel-remove --channel-name test", "upload-custom-patch --custom-patch-file=dummy --manifest=manifest");
 
         for (String command : commands) {
             AssertionError exception = assertThrows(AssertionError.class, () -> {
-                cli.sendLine("installer " + command);
+                cli.sendLine("installer " + command + " --host=test");
             });
 
-            String expectedMessage = "The --host option must be used in domain mode.";
+            String expectedMessage = "The --host option is not available in the current context.";
             String actualMessage = exception.getMessage();
 
             assertTrue(actualMessage, actualMessage.contains(expectedMessage));
@@ -166,8 +163,8 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
     }
 
     @Test
-    public void _a_listChannel() throws IOException {
-        cli.sendLine("installer channel-list --host=primary");
+    public void _a_listChannel() throws Exception {
+        cli.sendLine("installer channel-list");
         String output = cli.readOutput();
 
         TestInstallationManager.initialize();
@@ -177,11 +174,6 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
             expected.append(buildChannelOutput(channel));
         }
         expected.append("-------");
-
-        Assert.assertEquals(expected.toString(), output);
-
-        cli.sendLine("installer channel-list --host=secondary");
-        output = cli.readOutput();
 
         Assert.assertEquals(expected.toString(), output);
     }
@@ -191,14 +183,13 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         String channelName = "test-primary";
         String manifestGavOrUrl = "group:artifact:primary-1.0.0.Final";
         String repoStr = "https://primary.com";
-        String host = "primary";
 
         cli.sendLine(
-                "installer channel-add --channel-name=" + channelName + " --manifest=" + manifestGavOrUrl + " --repositories=" + repoStr + " --host=" + host);
+                "installer channel-add --channel-name=" + channelName + " --manifest=" + manifestGavOrUrl + " --repositories=" + repoStr);
         String output = cli.readOutput();
         Assert.assertEquals("Channel '" + channelName + "' created.", output);
 
-        cli.sendLine("installer channel-list --host=" + host);
+        cli.sendLine("installer channel-list");
         output = cli.readOutput();
 
         StringBuilder expected = new StringBuilder();
@@ -214,47 +205,13 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         expected.append("-------");
 
         Assert.assertEquals(expected.toString(), output);
-
-        // verify the secondary Host
-        expected = new StringBuilder();
-        channelName = "test-secondary";
-        manifestGavOrUrl = "/test";
-        repoStr = "https://secondary.com";
-        host = "secondary";
-
-        cli.sendLine(
-                "installer channel-add --channel-name=" + channelName + " --manifest=" + manifestGavOrUrl + " --repositories=" + repoStr + " --host=" + host);
-        output = cli.readOutput();
-        Assert.assertEquals("Channel '" + channelName + "' created.", output);
-
-        cli.sendLine("installer channel-list --host=" + host);
-        output = cli.readOutput();
-
-        TestInstallationManager.initialize();
-        for (Channel channel : TestInstallationManager.lstChannels) {
-            expected.append(buildChannelOutput(channel));
-        }
-
-        repository = new Repository("id0", repoStr);
-        newChannel = new Channel(channelName, List.of(repository), Paths.get(manifestGavOrUrl).toUri().toURL());
-        expected.append(buildChannelOutput(newChannel));
-        expected.append("-------");
-
-        Assert.assertEquals(expected.toString(), output);
     }
 
     @Test
     public void _c_removeChannel() {
         String channelName = "channel-test-1";
-        String host = "primary";
-        cli.sendLine("installer channel-remove --channel-name=" + channelName + " --host=" + host);
+        cli.sendLine("installer channel-remove --channel-name=" + channelName);
         String output = cli.readOutput();
-        Assert.assertEquals("Channel '" + channelName + "' has been successfully removed.", output);
-
-        channelName = "channel-test-2";
-        host = "secondary";
-        cli.sendLine("installer channel-remove --channel-name=" + channelName + " --host=" + host);
-        output = cli.readOutput();
         Assert.assertEquals("Channel '" + channelName + "' has been successfully removed.", output);
     }
 
@@ -263,37 +220,18 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         String channelName = "channel-test-2";
         String manifestGavOrUrl = "group:artifact:edited-1.0.0.Final";
         String repoStr = "https://edited.com";
-        String host = "primary";
 
         cli.sendLine(
-                "installer channel-edit --channel-name=" + channelName + " --manifest=" + manifestGavOrUrl + " --repositories=" + repoStr + " --host=" + host);
+                "installer channel-edit --channel-name=" + channelName + " --manifest=" + manifestGavOrUrl + " --repositories=" + repoStr);
         String output = cli.readOutput();
         Assert.assertEquals("Channel '" + channelName + "' has been modified.", output);
 
-        cli.sendLine("installer channel-list --host=" + host);
+        cli.sendLine("installer channel-list");
         output = cli.readOutput();
 
         Repository repository = new Repository("id0", repoStr);
         Channel newChannel = new Channel(channelName, List.of(repository), manifestGavOrUrl);
         String expected = buildChannelOutput(newChannel);
-        Assert.assertTrue(output, output.contains(expected));
-
-        channelName = "channel-test-1";
-        manifestGavOrUrl = "group:artifact:edited-1.0.0.Final";
-        repoStr = "https://edited.com";
-        host = "secondary";
-
-        cli.sendLine(
-                "installer channel-edit --channel-name=" + channelName + " --manifest=" + manifestGavOrUrl + " --repositories=" + repoStr + " --host=" + host);
-        output = cli.readOutput();
-        Assert.assertEquals("Channel '" + channelName + "' has been modified.", output);
-
-        cli.sendLine("installer channel-list --host=" + host);
-        output = cli.readOutput();
-
-        repository = new Repository("id0", repoStr);
-        newChannel = new Channel(channelName, List.of(repository), manifestGavOrUrl);
-        expected = buildChannelOutput(newChannel);
         Assert.assertTrue(output, output.contains(expected));
     }
 
@@ -302,11 +240,9 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         String channelName = "unknown";
         String manifestGavOrUrl = "group:artifact:edited-1.0.0.Final";
         String repoStr = "https://edited.com";
-        String host = "primary";
 
         AssertionError exception = assertThrows(AssertionError.class, () -> {
-            cli.sendLine("installer channel-edit --channel-name=" + channelName + " --manifest=" + manifestGavOrUrl + " --repositories=" + repoStr + " --host="
-                    + host);
+            cli.sendLine("installer channel-edit --channel-name=" + channelName + " --manifest=" + manifestGavOrUrl + " --repositories=" + repoStr);
         });
 
         String expectedMessage = "Channel '" + channelName + "' is not present.";
@@ -317,8 +253,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @Test
     public void _f_testHistory() throws IOException {
-        String host = "secondary";
-        cli.sendLine("installer history --host=" + host);
+        cli.sendLine("installer history");
         String output = cli.readOutput();
 
         String[] lines = output.split("\n");
@@ -339,8 +274,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @Test
     public void testRevisionDetails() throws Exception {
-        String host = "primary";
-        cli.sendLine("installer history --revision=dummy --host=" + host);
+        cli.sendLine("installer history --revision=dummy");
         String output = cli.readOutput();
 
         assertTrue(output, output.contains("org.test.groupid1:org.test.artifact1.installed"));
@@ -353,10 +287,9 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @Test
     public void testCreateSnapShot() throws IOException {
-        String host = "primary";
         Path exportPath = TARGET_DIR.normalize().toAbsolutePath().resolve("generated.zip");
         try {
-            cli.sendLine("attachment save --operation=/host=" + host + "/core-service=installer:clone-export() --file=" + exportPath);
+            cli.sendLine("attachment save --operation=/core-service=installer:clone-export() --file=" + exportPath);
             String output = cli.readOutput();
             String expected = "File saved to " + exportPath;
             assertEquals(expected, output);
@@ -383,8 +316,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @Test
     public void updateWithDryRun() {
-        String host = "primary";
-        cli.sendLine("installer update --dry-run --host=" + host);
+        cli.sendLine("installer update --dry-run");
         String output = cli.readOutput();
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.installed"));
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.removed"));
@@ -393,54 +325,48 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @Test
     public void updateWithConfirm() throws IOException {
-        String host = "primary";
-        cli.sendLine("installer update --repositories=id0::http://localhost --confirm --host=" + host);
+        cli.sendLine("installer update --repositories=id0::http://localhost --confirm");
         String output = cli.readOutput();
 
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.installed"));
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.removed"));
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.updated"));
 
-        Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
-        Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
-                directoryOnlyContains(primaryPrepareServerDir,p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(prepareServerDir) && Files.isDirectory(prepareServerDir));
+        Assert.assertTrue(prepareServerDir + " does not contain the expected file marker",
+                directoryOnlyContains(prepareServerDir, p -> prepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
     public void updateWithConfirmRepositories() throws IOException {
-        String host = "primary";
-        cli.sendLine("installer update --confirm --repositories=id0::http://localhost --host=" + host);
+        cli.sendLine("installer update --confirm --repositories=id0::http://localhost");
         String output = cli.readOutput();
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.installed"));
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.removed"));
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.updated"));
 
-        Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
-        Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
-                directoryOnlyContains(primaryPrepareServerDir, p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(prepareServerDir) && Files.isDirectory(prepareServerDir));
+        Assert.assertTrue(prepareServerDir + " does not contain the expected file marker",
+                directoryOnlyContains(prepareServerDir, p -> prepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
     public void updateWithConfirmLocalCache() throws IOException {
-        String host = "primary";
-
-        cli.sendLine("installer update --confirm --local-cache=" + TARGET_DIR + " --host=" + host);
+        cli.sendLine("installer update --confirm --local-cache=" + TARGET_DIR);
         String output = cli.readOutput();
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.installed"));
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.removed"));
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.updated"));
 
-        Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
-        Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
-                directoryOnlyContains(primaryPrepareServerDir, p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(prepareServerDir) && Files.isDirectory(prepareServerDir));
+        Assert.assertTrue(prepareServerDir + " does not contain the expected file marker",
+                directoryOnlyContains(prepareServerDir, p -> prepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
     public void updateLocalCacheWithUseDefaultLocalCache() {
-        String host = "primary";
-
         AssertionError exception = assertThrows(AssertionError.class, () -> {
-            cli.sendLine("installer update --local-cache=" + TARGET_DIR + " --use-default-local-cache --host=" + host);
+            cli.sendLine("installer update --local-cache=" + TARGET_DIR + " --use-default-local-cache");
         });
 
         String expectedMessage = "WFLYIM0021:";
@@ -448,7 +374,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         Assert.assertTrue(getCauseLogFailure(actualMessage, expectedMessage), actualMessage.contains(expectedMessage));
 
         exception = assertThrows(AssertionError.class, () -> {
-            cli.sendLine("installer update --local-cache=" + TARGET_DIR + " --use-default-local-cache --host=" + host);
+            cli.sendLine("installer update --local-cache=" + TARGET_DIR + " --use-default-local-cache");
         });
 
         expectedMessage = "WFLYIM0021:";
@@ -458,9 +384,8 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @Test
     public void cannotUseConfirmAndDryRunAtTheSameTime() {
-        String host = "primary";
         AssertionError exception = assertThrows(AssertionError.class, () -> {
-            cli.sendLine("installer update --confirm --dry-run --host=" + host);
+            cli.sendLine("installer update --confirm --dry-run");
         });
 
         String expectedMessage = UpdateCommand.CONFIRM_OPTION + " and " + UpdateCommand.DRY_RUN_OPTION + " cannot be used at the same time.";
@@ -471,19 +396,17 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @Test
     public void updateWithConfirmUsingMavenZipFile() throws IOException {
-        String host = "primary";
         Path target = TARGET_DIR.resolve("installation-manager.zip");
         File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
-        cli.sendLine("installer update --confirm --maven-repo-files=" + target + " --host=" + host);
+        cli.sendLine("installer update --confirm --maven-repo-files=" + target);
         String output = cli.readOutput();
-        verifyUpdatePrepareDirWasCreated(host, output);
+        verifyUpdatePrepareDirWasCreated(output);
 
     }
     @Test
     public void updateWithConfirmUsingMultipleMavenZipFiles() throws IOException {
-        String host = "primary";
         Path targetOne = TARGET_DIR.resolve("installation-manager-one.zip");
         File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), targetOne);
@@ -492,13 +415,13 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         source = new File(getClass().getResource("test-repo-two").getFile());
         zipDir(source.toPath().toAbsolutePath(), targetTwo);
 
-        cli.sendLine("installer update --confirm --maven-repo-files=" + targetOne + "," + targetTwo + " --host=" + host);
+        cli.sendLine("installer update --confirm --maven-repo-files=" + targetOne + "," + targetTwo);
         String output = cli.readOutput();
-        verifyUpdatePrepareDirWasCreated(host, output);
+        verifyUpdatePrepareDirWasCreated(output);
     }
 
-    public void verifyUpdatePrepareDirWasCreated(String host, String output) throws IOException {
-        final Path expectedPreparedServerDir = host.equals("primary") ? primaryPrepareServerDir : secondaryPrepareServerDir;
+    public void verifyUpdatePrepareDirWasCreated(String output) throws IOException {
+        final Path expectedPreparedServerDir = prepareServerDir;
 
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.installed"));
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.removed"));
@@ -514,12 +437,11 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @Test
     public void updateWithDryRunMavenZipFile() throws IOException {
-        String host = "primary";
         Path target = TARGET_DIR.resolve("installation-manager.zip");
         File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
-        cli.sendLine("installer update --dry-run --maven-repo-files=" + target + " --host=" + host);
+        cli.sendLine("installer update --dry-run --maven-repo-files=" + target);
         String output = cli.readOutput();
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.installed"));
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.removed"));
@@ -527,12 +449,11 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         Assert.assertFalse(output,
                 output.contains("The candidate server has been generated. To apply it, restart the server with 'shutdown --perform-installation' command."));
 
-        Assert.assertFalse(Files.exists(primaryPrepareServerDir));
+        Assert.assertFalse(Files.exists(prepareServerDir));
     }
 
     @Test
     public void updateWithDryRunMultipleMavenZipFile() throws IOException {
-        String host = "primary";
         Path targetOne = TARGET_DIR.resolve("installation-manager-one.zip");
         File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), targetOne);
@@ -541,7 +462,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), targetTwo);
 
-        cli.sendLine("installer update --dry-run --maven-repo-files=" + targetOne +","+ targetTwo + " --host=" + host);
+        cli.sendLine("installer update --dry-run --maven-repo-files=" + targetOne +","+ targetTwo);
         String output = cli.readOutput();
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.installed"));
         Assert.assertTrue(output, output.contains("org.findupdates:findupdates.removed"));
@@ -549,29 +470,26 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         Assert.assertFalse(output,
                 output.contains("The candidate server has been generated. To apply it, restart the server with 'shutdown --perform-installation' command."));
 
-        Assert.assertFalse(Files.exists(primaryPrepareServerDir));
+        Assert.assertFalse(Files.exists(prepareServerDir));
     }
 
     @Test
     public void updateUsingBlockingTimeout() throws IOException {
-        String host = "secondary";
-        assertTrue(cli.sendLine("installer update --confirm --headers={blocking-timeout=100} --host=" + host, false));
+        assertTrue(cli.sendLine("installer update --confirm --headers={blocking-timeout=100}", false));
 
-        Assert.assertTrue(Files.exists(secondaryPrepareServerDir) && Files.isDirectory(secondaryPrepareServerDir));
-        Assert.assertTrue(secondaryPrepareServerDir + " does not contain the expected file marker",
-                directoryOnlyContains(secondaryPrepareServerDir, p -> secondaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(prepareServerDir) && Files.isDirectory(prepareServerDir));
+        Assert.assertTrue(prepareServerDir + " does not contain the expected file marker",
+                directoryOnlyContains(prepareServerDir, p -> prepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
     public void updateCannotBeUsedWithMavenRepoFileAndRepositories() throws IOException {
-        String host = "primary";
-
         Path target = TARGET_DIR.resolve("installation-manager.zip");
         File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
         AssertionError exception = assertThrows(AssertionError.class, () -> {
-            cli.sendLine("installer update --repositories=id0::http://localhost --maven-repo-files=" + target + " --host=" + host);
+            cli.sendLine("installer update --repositories=id0::http://localhost --maven-repo-files=" + target);
         });
 
         String expectedMessage = "WFLYIM0012:";
@@ -581,23 +499,19 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @Test
     public void revertWithMavenZipFile() throws IOException {
-        String host = "primary";
-
         Path target = TARGET_DIR.resolve("installation-manager.zip");
         File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
-        Assert.assertTrue(cli.sendLine("installer revert --revision=dummy --maven-repo-files=" + target + " --host=" + host, false));
+        Assert.assertTrue(cli.sendLine("installer revert --revision=dummy --maven-repo-files=" + target, false));
 
-        Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
-        Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
-                directoryOnlyContains(primaryPrepareServerDir, p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(prepareServerDir) && Files.isDirectory(prepareServerDir));
+        Assert.assertTrue(prepareServerDir + " does not contain the expected file marker",
+                directoryOnlyContains(prepareServerDir, p -> prepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
     public void revertWithMultipleMavenZipFiles() throws IOException {
-        String host = "primary";
-
         Path targetOne = TARGET_DIR.resolve("installation-manager-one.zip");
         File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), targetOne);
@@ -606,52 +520,44 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         source = new File(getClass().getResource("test-repo-two").getFile());
         zipDir(source.toPath().toAbsolutePath(), targetTwo);
 
-        Assert.assertTrue(cli.sendLine("installer revert --revision=dummy --maven-repo-files=" + targetOne + "," + targetTwo + " --host=" + host, false));
+        Assert.assertTrue(cli.sendLine("installer revert --revision=dummy --maven-repo-files=" + targetOne + "," + targetTwo, false));
 
-        Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
-        Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
-                directoryOnlyContains(primaryPrepareServerDir, p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(prepareServerDir) && Files.isDirectory(prepareServerDir));
+        Assert.assertTrue(prepareServerDir + " does not contain the expected file marker",
+                directoryOnlyContains(prepareServerDir, p -> prepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
     public void revertWithNoResolveLocalMavenCache() throws IOException {
-        String host = "primary";
+        assertTrue(cli.sendLine("installer revert --revision=dummy --no-resolve-local-cache", false));
 
-        assertTrue(cli.sendLine("installer revert --revision=dummy --no-resolve-local-cache --host=" + host, false));
-
-        Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
-        Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
-                directoryOnlyContains(primaryPrepareServerDir, p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(prepareServerDir) && Files.isDirectory(prepareServerDir));
+        Assert.assertTrue(prepareServerDir + " does not contain the expected file marker",
+                Files.list(prepareServerDir).allMatch(p -> prepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
     public void revertWithUseDefaultLocalCache() throws IOException {
-        String host = "primary";
+        assertTrue(cli.sendLine("installer revert --revision=dummy --use-default-local-cache", false));
 
-        assertTrue(cli.sendLine("installer revert --revision=dummy --use-default-local-cache --host=" + host, false));
-
-        Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
-        Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
-                directoryOnlyContains(primaryPrepareServerDir, p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(prepareServerDir) && Files.isDirectory(prepareServerDir));
+        Assert.assertTrue(prepareServerDir + " does not contain the expected file marker",
+                directoryOnlyContains(prepareServerDir, p -> prepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
     public void revertWithLocalCacheMavenCache() throws IOException {
-        String host = "primary";
+        assertTrue(cli.sendLine("installer revert --revision=dummy --local-cache=" + TARGET_DIR, false));
 
-        assertTrue(cli.sendLine("installer revert --revision=dummy --local-cache=" + TARGET_DIR + " --host=" + host, false));
-
-        Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
-        Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
-                directoryOnlyContains(primaryPrepareServerDir, p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(prepareServerDir) && Files.isDirectory(prepareServerDir));
+        Assert.assertTrue(prepareServerDir + " does not contain the expected file marker",
+                directoryOnlyContains(prepareServerDir, p -> prepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
     public void revertLocalCacheWithUseDefaultLocalCache() {
-        String host = "primary";
-
         AssertionError exception = assertThrows(AssertionError.class, () -> {
-            cli.sendLine("installer revert --revision=dummy --local-cache=" + TARGET_DIR + " --use-default-local-cache --host=" + host);
+            cli.sendLine("installer revert --revision=dummy --local-cache=" + TARGET_DIR + " --use-default-local-cache");
         });
 
         String expectedMessage = "WFLYIM0021:";
@@ -659,7 +565,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         Assert.assertTrue(getCauseLogFailure(actualMessage, expectedMessage), actualMessage.contains(expectedMessage));
 
         exception = assertThrows(AssertionError.class, () -> {
-            cli.sendLine("installer revert --revision=dummy --local-cache=" + TARGET_DIR + " --use-default-local-cache=true --host=" + host);
+            cli.sendLine("installer revert --revision=dummy --local-cache=" + TARGET_DIR + " --use-default-local-cache=true");
         });
 
         expectedMessage = "WFLYIM0021:";
@@ -669,54 +575,44 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @Test
     public void revertWithOffline() throws IOException {
-        String host = "primary";
+        assertTrue(cli.sendLine("installer revert --revision=dummy --offline", false));
 
-        assertTrue(cli.sendLine("installer revert --revision=dummy --offline --host=" + host, false));
-
-        Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
-        Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
-                directoryOnlyContains(primaryPrepareServerDir, p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(prepareServerDir) && Files.isDirectory(prepareServerDir));
+        Assert.assertTrue(prepareServerDir + " does not contain the expected file marker",
+                directoryOnlyContains(prepareServerDir, p -> prepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
     public void revertWithHeaders() throws IOException {
-        String host = "secondary";
+        assertTrue(cli.sendLine("installer revert --revision=dummy --headers={blocking-timeout=100}", false));
 
-        assertTrue(cli.sendLine("installer revert --revision=dummy --headers={blocking-timeout=100} --host=" + host, false));
-
-        Assert.assertTrue(Files.exists(secondaryPrepareServerDir) && Files.isDirectory(secondaryPrepareServerDir));
-        Assert.assertTrue(secondaryPrepareServerDir + " does not contain the expected file marker",
-                directoryOnlyContains(secondaryPrepareServerDir, p -> secondaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(prepareServerDir) && Files.isDirectory(prepareServerDir));
+        Assert.assertTrue(prepareServerDir + " does not contain the expected file marker",
+                directoryOnlyContains(prepareServerDir, p -> prepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
     public void revertWithRepositories() throws IOException {
-        String host = "primary";
+        assertTrue(cli.sendLine("installer revert --revision=dummy --repositories=id0::http://localhost", false));
 
-        assertTrue(cli.sendLine("installer revert --revision=dummy --repositories=id0::http://localhost --host=" + host, false));
-
-        Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
-        Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
-                directoryOnlyContains(primaryPrepareServerDir, p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(prepareServerDir) && Files.isDirectory(prepareServerDir));
+        Assert.assertTrue(prepareServerDir + " does not contain the expected file marker",
+                directoryOnlyContains(prepareServerDir, p -> prepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
     public void simpleRevert() throws IOException {
-        String host = "primary";
+        assertTrue(cli.sendLine("installer revert --revision=dummy", false));
 
-        assertTrue(cli.sendLine("installer revert --revision=dummy --host=" + host, false));
-
-        Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
-        Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
-                directoryOnlyContains(primaryPrepareServerDir, p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+        Assert.assertTrue(Files.exists(prepareServerDir) && Files.isDirectory(prepareServerDir));
+        Assert.assertTrue(prepareServerDir + " does not contain the expected file marker",
+                directoryOnlyContains(prepareServerDir, p -> prepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
     public void revertCannotBeUsedWithoutRevision() {
-        String host = "primary";
-
         AssertionError exception = assertThrows(AssertionError.class, () -> {
-            cli.sendLine("installer revert --host=" + host);
+            cli.sendLine("installer revert");
         });
 
         String expectedMessage = "WFLYCTL0155:";
@@ -726,14 +622,12 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @Test
     public void revertCannotBeUsedWithMavenRepoFileAndRepositories() throws IOException {
-        String host = "primary";
-
         Path target = TARGET_DIR.resolve("installation-manager.zip");
         File source = new File(getClass().getResource("test-repo-one").getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
         AssertionError exception = assertThrows(AssertionError.class, () -> {
-            cli.sendLine("installer revert --revision=dummy --repositories=id0::http://localhost --maven-repo-files=" + target + " --host=" + host);
+            cli.sendLine("installer revert --revision=dummy --repositories=id0::http://localhost --maven-repo-files=" + target);
         });
 
         String expectedMessage = "WFLYIM0012:";
@@ -743,20 +637,18 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @Test
     public void uploadAndRemoveCustomPatch() throws IOException {
-        String host = "primary";
         String patchManifestGA = "group:artifact";
-        Path hostCustomPatchDir = primaryCustomPatchBaseDir.resolve(patchManifestGA.replace(":", "_"));
+        Path customPatchDir = customPatchBaseDir.resolve(patchManifestGA.replace(":", "_"));
 
-        createAndUploadCustomPatch(patchManifestGA, host, hostCustomPatchDir, "test-repo-one", "artifact-one");
-        removeCustomPatch(patchManifestGA, host, hostCustomPatchDir);
+        createAndUploadCustomPatch(patchManifestGA, customPatchDir, "test-repo-one", "artifact-one");
+        removeCustomPatch(patchManifestGA, customPatchDir);
     }
 
     @Test
     public void removeNonExistingCustomPatch() {
-        String host = "primary";
         String patchManifestGA = "group-unknown:artifact-unknown";
         AssertionError exception = assertThrows(AssertionError.class, () -> {
-            cli.sendLine("installer remove-custom-patch --manifest=" + patchManifestGA + " --host=" + host);
+            cli.sendLine("installer remove-custom-patch --manifest=" + patchManifestGA);
         });
         String expectedMessage = "WFLYIM0020:";
         String actualMessage = exception.getMessage();
@@ -766,81 +658,76 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
     @Test
     public void uploadAndRemoveMultipleCustomPatches() throws IOException {
-        String host = "primary";
         String patchManifestGA_1 = "group1:artifact1";
-        Path hostCustomPatchDir_1 = primaryCustomPatchBaseDir.resolve(patchManifestGA_1.replace(":", "_"));
-        createAndUploadCustomPatch(patchManifestGA_1, host, hostCustomPatchDir_1, "test-repo-one", "artifact-one");
+        Path customPatchDir_1 = customPatchBaseDir.resolve(patchManifestGA_1.replace(":", "_"));
+        createAndUploadCustomPatch(patchManifestGA_1, customPatchDir_1, "test-repo-one", "artifact-one");
 
         String patchManifestGA_2 = "group2:artifact2";
-        Path hostCustomPatchDir_2 = primaryCustomPatchBaseDir.resolve(patchManifestGA_2.replace(":", "_"));
-        createAndUploadCustomPatch(patchManifestGA_2, host, hostCustomPatchDir_2, "test-repo-two", "artifact-two");
+        Path customPatchDir_2 = customPatchBaseDir.resolve(patchManifestGA_2.replace(":", "_"));
+        createAndUploadCustomPatch(patchManifestGA_2, customPatchDir_2, "test-repo-two", "artifact-two");
 
-        removeCustomPatch(patchManifestGA_1, host, hostCustomPatchDir_1);
+        removeCustomPatch(patchManifestGA_1, customPatchDir_1);
 
         // check we still have the second patch
-        final Path customPatchMavenRepo = hostCustomPatchDir_2.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES);
+        final Path customPatchMavenRepo = customPatchDir_2.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES);
         Assert.assertTrue(Files.exists(customPatchMavenRepo) && Files.isDirectory(customPatchMavenRepo));
-        Assert.assertTrue(hostCustomPatchDir_2 + " does not contain the expected maven repository",
+        Assert.assertTrue(customPatchDir_2 + " does not contain the expected maven repository",
                 directoryOnlyContains(customPatchMavenRepo, p -> customPatchMavenRepo.relativize(p).toString().equals("artifact-two")));
 
         // remove the patch 2
-        removeCustomPatch(patchManifestGA_2, host, hostCustomPatchDir_2);
+        removeCustomPatch(patchManifestGA_2, customPatchDir_2);
     }
 
     @Test
     public void testProductInfoIncludesInstallerInfo() throws Exception {
         cli.sendLine(":product-info");
 
-        ModelNode res = cli.readAllAsOpResult().getResponseNode();
+        ModelNode response = cli.readAllAsOpResult().getResponseNode();
 
-        final List<ModelNode> hostResults = res.get("result").asList();
-        for (ModelNode host : hostResults) {
-            final List<ModelNode> summaries = host.get("result").asList();
-            for (ModelNode summary : summaries) {
-                summary = summary.get("summary");
-                if (!summary.hasDefined("instance-identifier")) {
-                    continue;
-                }
-
-                Assert.assertTrue(summary.toString(), summary.hasDefined("last-update-date"));
-                Assert.assertTrue(summary.hasDefined("channel-versions"));
-                Assert.assertEquals(List.of(new ModelNode("Update 1")), summary.get("channel-versions").asList());
+        final List<ModelNode> results = response.get("result").asList();
+        for (ModelNode res : results) {
+            final ModelNode summary = res.get("result").get("summary");
+            if (!summary.hasDefined("instance-identifier")) {
+                continue;
             }
+
+            Assert.assertTrue(summary.toString(), summary.hasDefined("last-update-date"));
+            Assert.assertTrue(summary.hasDefined("channel-versions"));
+            Assert.assertEquals(List.of(new ModelNode("Update 1")), summary.get("channel-versions").asList());
         }
     }
 
-    public void createAndUploadCustomPatch(String customPatchManifest, String host, Path hostCustomPatchDir, String mavenDirToZip, String expectedArtifact) throws IOException {
+    public void createAndUploadCustomPatch(String customPatchManifest, Path customPatchDir, String mavenDirToZip, String expectedArtifact) throws IOException {
         Path target = TARGET_DIR.resolve("installation-manager.zip");
         File source = new File(getClass().getResource(mavenDirToZip).getFile());
         zipDir(source.toPath().toAbsolutePath(), target);
 
         // verify the patch doesn't exist yet
-        final Path customPatchMavenRepo = hostCustomPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES);
+        final Path customPatchMavenRepo = customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES);
         Assert.assertFalse(Files.exists(customPatchMavenRepo));
 
         Assert.assertTrue(
-                cli.sendLine("installer upload-custom-patch --custom-patch-file=" + target + " --manifest=" + customPatchManifest + " --host=" + host, false));
+                cli.sendLine("installer upload-custom-patch --custom-patch-file=" + target + " --manifest=" + customPatchManifest, false));
         // verify clean operation without arguments don't remove the patch
-        Assert.assertTrue(cli.sendLine("installer clean --host=" + host, false));
+        Assert.assertTrue(cli.sendLine("installer clean", false));
         Assert.assertTrue(Files.exists(customPatchMavenRepo) && Files.isDirectory(customPatchMavenRepo));
-        Assert.assertTrue(hostCustomPatchDir + " does not contain the expected artifact included in the custom patch Zip file",
+        Assert.assertTrue(customPatchDir + " does not contain the expected artifact included in the custom patch Zip file",
                 directoryOnlyContains(customPatchMavenRepo, p -> customPatchMavenRepo.relativize(p).toString().equals(expectedArtifact)));
     }
 
-    public void removeCustomPatch(String customPatchManifest, String host, Path hostCustomPatchDir) {
+    public void removeCustomPatch(String customPatchManifest, Path customPatchDir) {
         // remove the custom patch
-        final Path primaryCustomPatchMavenRepo = hostCustomPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES);
-        Assert.assertTrue(cli.sendLine("installer remove-custom-patch --manifest=" + customPatchManifest + " --host=" + host, false));
-        Assert.assertFalse(Files.exists(primaryCustomPatchMavenRepo));
+        final Path customPatchMavenRepo = customPatchDir.resolve(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES);
+        Assert.assertTrue(cli.sendLine("installer remove-custom-patch --manifest=" + customPatchManifest, false));
+        Assert.assertFalse(Files.exists(customPatchMavenRepo));
     }
 
     @Test
     public void cannotShutDownIfNoServerPrepared() {
-        String host = "primary";
         AssertionError exception = assertThrows(AssertionError.class, () -> {
-            cli.sendLine("shutdown --perform-installation --host=" + host);
+            cli.sendLine("shutdown --perform-installation");
         });
-        String expectedMessage = "WFLYHC0218:";
+        String expectedMessage = "WFLYSRV0295:";
         String actualMessage = exception.getMessage();
         Assert.assertTrue(actualMessage, actualMessage.contains(expectedMessage));
     }

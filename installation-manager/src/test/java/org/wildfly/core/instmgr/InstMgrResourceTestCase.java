@@ -371,7 +371,18 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
             Assert.assertTrue(entry.hasDefined(InstMgrConstants.HISTORY_RESULT_TIMESTAMP));
             Assert.assertTrue(entry.hasDefined(InstMgrConstants.HISTORY_RESULT_TYPE));
             Assert.assertTrue(entry.hasDefined(InstMgrConstants.HISTORY_RESULT_DESCRIPTION));
+
+            // verify the channel version information is available (only "update" in test collection contains it)
+            if (entry.get(InstMgrConstants.HISTORY_RESULT_HASH).asString().equals("update")) {
+                Assert.assertTrue(entry.hasDefined(InstMgrConstants.HISTORY_RESULT_CHANNEL_VERSIONS));
+                final List<ModelNode> versions = entry.get(InstMgrConstants.HISTORY_RESULT_CHANNEL_VERSIONS).asList();
+                Assert.assertEquals(1, versions.size());
+                Assert.assertEquals("Update 1", versions.get(0).asString());
+            } else {
+                Assert.assertFalse(entry.hasDefined(InstMgrConstants.HISTORY_RESULT_CHANNEL_VERSIONS));
+            }
         }
+
     }
 
     @Test
