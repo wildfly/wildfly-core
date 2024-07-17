@@ -33,7 +33,6 @@ class AccessAuthorizationProviderWriteAttributeHandler extends AbstractWriteAttr
     private final DelegatingConfigurableAuthorizer configurableAuthorizer;
 
     AccessAuthorizationProviderWriteAttributeHandler(DelegatingConfigurableAuthorizer configurableAuthorizer) {
-        super(AccessAuthorizationResourceDefinition.PROVIDER);
         this.configurableAuthorizer = configurableAuthorizer;
     }
 

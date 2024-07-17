@@ -45,7 +45,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.AttachmentKey;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.ResourceDefinition;
@@ -313,11 +312,10 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(INITIAL_PROVIDERS, FINAL_PROVIDERS, DISALLOWED_PROVIDERS, REGISTER_JASPI_FACTORY);
-        resourceRegistration.registerReadWriteAttribute(INITIAL_PROVIDERS, null, writeHandler);
-        resourceRegistration.registerReadWriteAttribute(FINAL_PROVIDERS, null, writeHandler);
-        resourceRegistration.registerReadWriteAttribute(DISALLOWED_PROVIDERS, null, writeHandler);
-        resourceRegistration.registerReadWriteAttribute(DEFAULT_AUTHENTICATION_CONTEXT, null, new ElytronWriteAttributeHandler<Void>(DEFAULT_AUTHENTICATION_CONTEXT) {
+        resourceRegistration.registerReadWriteAttribute(INITIAL_PROVIDERS, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(FINAL_PROVIDERS, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(DISALLOWED_PROVIDERS, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(DEFAULT_AUTHENTICATION_CONTEXT, null, new ElytronWriteAttributeHandler<Void>() {
 
             @Override
             protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
@@ -337,8 +335,8 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
         });
         resourceRegistration.registerReadWriteAttribute(SECURITY_PROPERTIES, null, new SecurityPropertiesWriteHandler(SECURITY_PROPERTIES));
-        resourceRegistration.registerReadWriteAttribute(REGISTER_JASPI_FACTORY, null, writeHandler);
-        resourceRegistration.registerReadWriteAttribute(DEFAULT_SSL_CONTEXT, null, new ElytronWriteAttributeHandler<Void>(DEFAULT_SSL_CONTEXT) {
+        resourceRegistration.registerReadWriteAttribute(REGISTER_JASPI_FACTORY, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(DEFAULT_SSL_CONTEXT, null, new ElytronWriteAttributeHandler<Void>() {
 
             @Override
             protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,

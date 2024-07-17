@@ -163,7 +163,7 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler handler = new WriteHandler(domainHostExcludeRegistry, attributes);
+        OperationStepHandler handler = new WriteHandler(domainHostExcludeRegistry);
         for (AttributeDefinition ad : attributes) {
             resourceRegistration.registerReadWriteAttribute(ad, null, handler);
         }
@@ -275,8 +275,7 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
 
         private final DomainHostExcludeRegistry domainHostExcludeRegistry;
 
-        private WriteHandler(DomainHostExcludeRegistry domainHostExcludeRegistry, AttributeDefinition... attributes) {
-            super(attributes);
+        private WriteHandler(DomainHostExcludeRegistry domainHostExcludeRegistry) {
             this.domainHostExcludeRegistry = domainHostExcludeRegistry;
         }
 

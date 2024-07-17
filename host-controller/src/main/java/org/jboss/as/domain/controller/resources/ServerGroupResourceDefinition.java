@@ -122,7 +122,7 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
             } else if (attr.getName().equals(PROFILE.getName()) || attr.getName().equals(SOCKET_BINDING_GROUP.getName())) {
                 resourceRegistration.registerReadWriteAttribute(attr, null, referenceValidationHandler);
             } else {
-                resourceRegistration.registerReadWriteAttribute(attr, null, new ModelOnlyWriteAttributeHandler(attr));
+                resourceRegistration.registerReadWriteAttribute(attr, null, ModelOnlyWriteAttributeHandler.INSTANCE);
             }
         }
     }
@@ -151,9 +151,7 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
         public static OperationStepHandler INSTANCE = new ServerRestartRequiredWriteAttributeHandler();
 
         private ServerRestartRequiredWriteAttributeHandler() {
-            super(PROFILE, SOCKET_BINDING_GROUP);
         }
-
 
         @Override
         protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue,

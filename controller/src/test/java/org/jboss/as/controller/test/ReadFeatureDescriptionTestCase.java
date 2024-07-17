@@ -86,7 +86,7 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
     private static final String ROOT_CAPABILITY_NAME = "root-capability";
     private static final String DYNAMIC_CAPABILITY_NAME = "dynamic-capability";
 
-    private static final OperationStepHandler WRITE_HANDLER = new ModelOnlyWriteAttributeHandler();
+    private static final OperationStepHandler WRITE_HANDLER = ModelOnlyWriteAttributeHandler.INSTANCE;
 
     private ManagementResourceRegistration registration;
 
@@ -542,7 +542,7 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         registration = managementModel.getRootResourceRegistration();
 
         // register root attr and capability
-        ModelOnlyWriteAttributeHandler writeHandler = new ModelOnlyWriteAttributeHandler();
+        OperationStepHandler writeHandler = ModelOnlyWriteAttributeHandler.INSTANCE;
         registration.registerReadWriteAttribute(new SimpleAttributeDefinitionBuilder(NAME, ModelType.STRING).build(), null, writeHandler);
         registration.registerCapability(RuntimeCapability.Builder.of(ROOT_CAPABILITY_NAME).build());
         registration.registerCapability(RuntimeCapability.Builder.of(DYNAMIC_CAPABILITY_NAME, true).build());

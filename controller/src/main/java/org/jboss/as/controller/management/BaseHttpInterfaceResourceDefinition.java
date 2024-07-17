@@ -198,7 +198,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         AttributeDefinition[] attributeDefinitions = getAttributeDefinitions();
-        OperationStepHandler defaultWriteHandler = new ManagementWriteAttributeHandler(attributeDefinitions, getValidationConsumer());
+        OperationStepHandler defaultWriteHandler = new ManagementWriteAttributeHandler(getValidationConsumer());
         for (AttributeDefinition attr : attributeDefinitions) {
             if (attr.equals(HTTP_UPGRADE_ENABLED)) {
                 HttpUpgradeAttributeHandler handler = new HttpUpgradeAttributeHandler();

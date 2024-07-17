@@ -677,7 +677,7 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(READ_WRITE, null, new ReloadRequiredWriteAttributeHandler(READ_WRITE));
+            resourceRegistration.registerReadWriteAttribute(READ_WRITE, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
             resourceRegistration.registerReadOnlyAttribute(READ_ONLY, null);
             resourceRegistration.registerReadOnlyAttribute(RUNTIME, new CoreRuntimeHandler());
             resourceRegistration.registerReadWriteAttribute(READ_WRITE_ALIAS, TestAttributeAliasHandler.READ_WRITE_ALIAS, TestAttributeAliasHandler.READ_WRITE_ALIAS);
@@ -699,7 +699,7 @@ public class AliasResourceTestCase extends AbstractControllerTestBase {
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(READ_WRITE, null, new ReloadRequiredWriteAttributeHandler(READ_WRITE));
+            resourceRegistration.registerReadWriteAttribute(READ_WRITE, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
         }
 
         @Override

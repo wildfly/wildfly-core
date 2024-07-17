@@ -69,7 +69,7 @@ public abstract class VersionedExtensionCommon implements Extension {
         final ManagementResourceRegistration reg = registration.registerSubsystemModel(new TestResourceDefinition(SUBSYSTEM_PATH, new TestModelOnlyAddHandler(TEST_ATTRIBUTE)) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-                resourceRegistration.registerReadWriteAttribute(TEST_ATTRIBUTE, null, new BasicAttributeWriteHandler(TEST_ATTRIBUTE));
+                resourceRegistration.registerReadWriteAttribute(TEST_ATTRIBUTE, null, new BasicAttributeWriteHandler());
             }
         });
         reg.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
@@ -127,6 +127,10 @@ public abstract class VersionedExtensionCommon implements Extension {
     };
 
     private static class BasicAttributeWriteHandler extends AbstractWriteAttributeHandler<Void> {
+
+        protected BasicAttributeWriteHandler() {
+            super(List.of());
+        }
 
         protected BasicAttributeWriteHandler(AttributeDefinition def) {
             super(def);

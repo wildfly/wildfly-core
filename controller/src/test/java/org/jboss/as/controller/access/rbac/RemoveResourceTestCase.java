@@ -224,7 +224,7 @@ public class RemoveResourceTestCase extends AbstractControllerTestBase {
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
             for (AttributeDefinition attribute : attributes) {
-                resourceRegistration.registerReadWriteAttribute(attribute, null, new ModelOnlyWriteAttributeHandler(attribute));
+                resourceRegistration.registerReadWriteAttribute(attribute, null, ModelOnlyWriteAttributeHandler.INSTANCE);
             }
         }
     }

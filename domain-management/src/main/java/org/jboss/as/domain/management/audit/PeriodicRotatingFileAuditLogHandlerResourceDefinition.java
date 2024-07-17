@@ -61,15 +61,15 @@ public class PeriodicRotatingFileAuditLogHandlerResourceDefinition extends Abstr
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
-        HandlerWriteAttributeHandler write = getWriteAttributeHandler(auditLogger, pathManager, ATTRIBUTES);
+        HandlerWriteAttributeHandler write = getWriteAttributeHandler(auditLogger, pathManager);
         for (AttributeDefinition def : ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(def, null, write);
         }
     }
 
     @Override
-    protected HandlerWriteAttributeHandler getWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition... attributeDefinitions) {
-        return new PeriodicRotatingHandlerWriteAttributeHandler(auditLogger, pathManager, attributeDefinitions);
+    protected HandlerWriteAttributeHandler getWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
+        return new PeriodicRotatingHandlerWriteAttributeHandler(auditLogger, pathManager);
     }
 
     private static PeriodicRotatingFileAuditLogHandler createPeriodicRotatingFileAuditLogHandler(final PathManagerService pathManager,
@@ -105,8 +105,8 @@ public class PeriodicRotatingFileAuditLogHandlerResourceDefinition extends Abstr
 
     protected static class PeriodicRotatingHandlerWriteAttributeHandler extends AbstractFileAuditLogHandlerWriteAttributeHandler {
 
-        public PeriodicRotatingHandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition... attributeDefinitions) {
-            super(auditLogger, pathManager, attributeDefinitions);
+        public PeriodicRotatingHandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
+            super(auditLogger, pathManager);
         }
 
         @Override

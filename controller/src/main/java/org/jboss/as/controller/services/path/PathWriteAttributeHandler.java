@@ -12,7 +12,6 @@ import static org.jboss.as.controller.services.path.PathResourceDefinition.READ_
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager.Event;
@@ -28,8 +27,7 @@ class PathWriteAttributeHandler extends AbstractWriteAttributeHandler<PathWriteA
 
     private final PathManagerService pathManager;
 
-    PathWriteAttributeHandler(final PathManagerService pathManager, final SimpleAttributeDefinition definition) {
-        super(definition);
+    PathWriteAttributeHandler(final PathManagerService pathManager) {
         this.pathManager = pathManager;
     }
 

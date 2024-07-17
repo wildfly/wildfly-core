@@ -175,8 +175,7 @@ public class AuditLogHandlerResourceDefinition extends SimpleResourceDefinition 
         final ManagedAuditLogger auditLogger;
         final PathManagerService pathManager;
 
-        HandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition... attributeDefinitions) {
-            super(attributeDefinitions);
+        HandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
             this.auditLogger = auditLogger;
             this.pathManager = pathManager;
         }

@@ -8,7 +8,6 @@ package org.jboss.as.server.operations;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -25,8 +24,7 @@ public class SystemPropertyValueWriteAttributeHandler extends AbstractWriteAttri
 
     private final ProcessEnvironmentSystemPropertyUpdater systemPropertyUpdater;
 
-    public SystemPropertyValueWriteAttributeHandler(ProcessEnvironmentSystemPropertyUpdater systemPropertyUpdater, AttributeDefinition valueAttribute) {
-        super(valueAttribute);
+    public SystemPropertyValueWriteAttributeHandler(ProcessEnvironmentSystemPropertyUpdater systemPropertyUpdater) {
         this.systemPropertyUpdater = systemPropertyUpdater;
     }
 

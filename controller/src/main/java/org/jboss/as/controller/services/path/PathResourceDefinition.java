@@ -177,9 +177,9 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadOnlyAttribute(NAME, ReadResourceNameOperationStepHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(RELATIVE_TO_LOCAL, null, new PathWriteAttributeHandler(pathManager, RELATIVE_TO_LOCAL));
+        resourceRegistration.registerReadWriteAttribute(RELATIVE_TO_LOCAL, null, new PathWriteAttributeHandler(pathManager));
         SimpleAttributeDefinition pathAttr = specified ? PATH_SPECIFIED : PATH_NAMED;
-        resourceRegistration.registerReadWriteAttribute(pathAttr, null, new PathWriteAttributeHandler(pathManager, pathAttr));
+        resourceRegistration.registerReadWriteAttribute(pathAttr, null, new PathWriteAttributeHandler(pathManager));
         resourceRegistration.registerReadOnlyAttribute(READ_ONLY, null);
     }
 

@@ -120,7 +120,7 @@ public class PatternFormatterResourceDefinition extends SimpleResourceDefinition
         }
     };
 
-    private static final OperationStepHandler WRITE = new LoggingWriteAttributeHandler(ATTRIBUTES) {
+    private static final OperationStepHandler WRITE = new LoggingWriteAttributeHandler() {
 
         @Override
         protected boolean applyUpdate(final OperationContext context, final String attributeName, final String addressName, final ModelNode value, final LogContextConfiguration logContextConfiguration) {

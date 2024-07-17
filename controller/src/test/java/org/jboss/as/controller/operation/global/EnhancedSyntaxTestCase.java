@@ -118,14 +118,14 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
 
                 })
                 .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
-                .addReadWriteAttribute(LIST_ATTRIBUTE, null, new ModelOnlyWriteAttributeHandler(LIST_ATTRIBUTE))
+                .addReadWriteAttribute(LIST_ATTRIBUTE, null, ModelOnlyWriteAttributeHandler.INSTANCE)
                 .addReadWriteAttribute(RUNTIME_LIST_ATTRIBUTE, new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         context.addStep((context1, operation1) -> context.getResult().set(runtimeListAttributeValue),
                                 OperationContext.Stage.RUNTIME);
                     }
-                }, new AbstractWriteAttributeHandler(RUNTIME_LIST_ATTRIBUTE) {
+                }, new AbstractWriteAttributeHandler<>() {
                     @Override
                     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
                         runtimeListAttributeValue = operation.get(VALUE);
@@ -136,14 +136,14 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
                     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Object handback) throws OperationFailedException {
                     }
                 })
-                .addReadWriteAttribute(MAP_ATTRIBUTE, null, new ModelOnlyWriteAttributeHandler(MAP_ATTRIBUTE))
+                .addReadWriteAttribute(MAP_ATTRIBUTE, null, ModelOnlyWriteAttributeHandler.INSTANCE)
                 .addReadWriteAttribute(RUNTIME_MAP_ATTRIBUTE, new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         context.addStep((context1, operation1) -> context.getResult().set(runtimeMapAttributeValue),
                                 OperationContext.Stage.RUNTIME);
                     }
-                }, new AbstractWriteAttributeHandler(RUNTIME_MAP_ATTRIBUTE) {
+                }, new AbstractWriteAttributeHandler<>() {
                     @Override
                     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
                         runtimeMapAttributeValue = operation.get(VALUE);
@@ -153,10 +153,10 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
                     @Override
                     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Object handback) throws OperationFailedException {
                     }
-                }).addReadWriteAttribute(COMPLEX_ATTRIBUTE, null, new ModelOnlyWriteAttributeHandler(COMPLEX_ATTRIBUTE))
-                .addReadWriteAttribute(OBJECT_LIST, null, new ModelOnlyWriteAttributeHandler(OBJECT_LIST))
-                .addReadWriteAttribute(COMPLEX_ATTRIBUTE2, null, new ModelOnlyWriteAttributeHandler(COMPLEX_ATTRIBUTE2))
-                .addReadWriteAttribute(NORMAL_LOOKING_EXTENDED, null, new ModelOnlyWriteAttributeHandler(NORMAL_LOOKING_EXTENDED))
+                }).addReadWriteAttribute(COMPLEX_ATTRIBUTE, null, ModelOnlyWriteAttributeHandler.INSTANCE)
+                .addReadWriteAttribute(OBJECT_LIST, null, ModelOnlyWriteAttributeHandler.INSTANCE)
+                .addReadWriteAttribute(COMPLEX_ATTRIBUTE2, null, ModelOnlyWriteAttributeHandler.INSTANCE)
+                .addReadWriteAttribute(NORMAL_LOOKING_EXTENDED, null, ModelOnlyWriteAttributeHandler.INSTANCE)
                 .build();
     }
 

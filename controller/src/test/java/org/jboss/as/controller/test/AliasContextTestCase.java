@@ -159,7 +159,7 @@ public class AliasContextTestCase extends AbstractControllerTestBase {
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(READ_WRITE, null, new ModelOnlyWriteAttributeHandler(READ_WRITE));
+            resourceRegistration.registerReadWriteAttribute(READ_WRITE, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
 
 

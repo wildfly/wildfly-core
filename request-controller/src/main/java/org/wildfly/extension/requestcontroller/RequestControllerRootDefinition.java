@@ -80,9 +80,9 @@ class RequestControllerRootDefinition extends PersistentResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        MaxRequestsWriteHandler handler = new MaxRequestsWriteHandler(MAX_REQUESTS);
+        MaxRequestsWriteHandler handler = new MaxRequestsWriteHandler();
         resourceRegistration.registerReadWriteAttribute(MAX_REQUESTS, null, handler);
-        resourceRegistration.registerReadWriteAttribute(TRACK_INDIVIDUAL_ENDPOINTS, null, new ReloadRequiredWriteAttributeHandler(TRACK_INDIVIDUAL_ENDPOINTS));
+        resourceRegistration.registerReadWriteAttribute(TRACK_INDIVIDUAL_ENDPOINTS, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
         if(registerRuntimeOnly) {
             resourceRegistration.registerMetric(ACTIVE_REQUESTS, new ActiveRequestsReadHandler());
         }

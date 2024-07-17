@@ -120,10 +120,6 @@ final class LoggerOperations {
      */
     static class LoggerWriteAttributeHandler extends LoggingOperations.LoggingWriteAttributeHandler {
 
-        LoggerWriteAttributeHandler(final AttributeDefinition[] attributes) {
-            super(attributes);
-        }
-
         @Override
         protected boolean applyUpdate(final OperationContext context, final String attributeName, final String addressName, final ModelNode value, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
             final String loggerName = getLogManagerLoggerName(addressName);

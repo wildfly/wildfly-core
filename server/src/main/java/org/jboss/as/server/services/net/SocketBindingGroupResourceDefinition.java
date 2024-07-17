@@ -55,6 +55,6 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
-        resourceRegistration.registerReadWriteAttribute(PORT_OFFSET, null, new ReloadRequiredWriteAttributeHandler(PORT_OFFSET));
+        resourceRegistration.registerReadWriteAttribute(PORT_OFFSET, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
     }
 }

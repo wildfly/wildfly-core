@@ -133,7 +133,7 @@ public class SyslogHandlerResourceDefinition extends SimpleResourceDefinition {
     };
 
     private static final HandlerAddOperationStepHandler ADD_HANDLER = new HandlerAddOperationStepHandler(SyslogHandler.class, ATTRIBUTES);
-    private static final LogHandlerWriteAttributeHandler WRITE_HANDLER = new LogHandlerWriteAttributeHandler(ATTRIBUTES);
+    private static final LogHandlerWriteAttributeHandler WRITE_HANDLER = new LogHandlerWriteAttributeHandler();
 
     public static final SyslogHandlerResourceDefinition INSTANCE = new SyslogHandlerResourceDefinition();
 

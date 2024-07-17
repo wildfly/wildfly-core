@@ -270,7 +270,7 @@ class PolicyDefinitions {
                 .setMaxOccurs(1)) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-                OperationStepHandler write = new ReloadRequiredWriteAttributeHandler(attributes) {
+                OperationStepHandler write = new ReloadRequiredWriteAttributeHandler() {
                     @Override
                     protected void recordCapabilitiesAndRequirements(OperationContext context, AttributeDefinition attributeDefinition, ModelNode newValue, ModelNode oldValue) {
                         super.recordCapabilitiesAndRequirements(context, attributeDefinition, newValue, oldValue);
@@ -288,8 +288,7 @@ class PolicyDefinitions {
                     if (current != DEFAULT_POLICY) {
                         resourceRegistration.registerReadWriteAttribute(current, null, write);
                     } else {
-                        resourceRegistration.registerReadWriteAttribute(current, null,
-                                new ModelOnlyWriteAttributeHandler(DEFAULT_POLICY));
+                        resourceRegistration.registerReadWriteAttribute(current, null, ModelOnlyWriteAttributeHandler.INSTANCE);
                     }
                 }
             }

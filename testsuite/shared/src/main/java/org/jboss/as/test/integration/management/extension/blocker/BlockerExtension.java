@@ -111,7 +111,7 @@ public class BlockerExtension implements Extension {
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
             super.registerAttributes(resourceRegistration);
-            resourceRegistration.registerReadWriteAttribute(FOO, null, new ModelOnlyWriteAttributeHandler(FOO));
+            resourceRegistration.registerReadWriteAttribute(FOO, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
     }
 

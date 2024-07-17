@@ -48,7 +48,7 @@ public class LocalDestinationOutboundSocketBindingResourceDefinition extends Out
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         for (SimpleAttributeDefinition ad : ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(ad, null, new OutboundSocketBindingWriteHandler(ad, false));
+            resourceRegistration.registerReadWriteAttribute(ad, null, new OutboundSocketBindingWriteHandler(false));
         }
     }
 }

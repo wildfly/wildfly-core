@@ -144,10 +144,6 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
     private static class CoreMBeansSensitivityWriteHandler extends AbstractWriteAttributeHandler<Boolean> {
         static final CoreMBeansSensitivityWriteHandler INSTANCE = new CoreMBeansSensitivityWriteHandler();
 
-        private CoreMBeansSensitivityWriteHandler() {
-            super(NON_CORE_MBEAN_SENSITIVITY);
-
-        }
         @Override
         protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
                 ModelNode resolvedValue, ModelNode currentValue,

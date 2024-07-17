@@ -5,7 +5,6 @@
 package org.jboss.as.threads;
 
 
-
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -25,7 +24,7 @@ public class ScheduledThreadPoolWriteAttributeHandler extends ThreadsWriteAttrib
     private final RuntimeCapability capability;
 
     public ScheduledThreadPoolWriteAttributeHandler(final RuntimeCapability capability, ServiceName serviceNameBase) {
-        super(ScheduledThreadPoolAdd.ATTRIBUTES, ScheduledThreadPoolAdd.RW_ATTRIBUTES);
+        super(ScheduledThreadPoolAdd.ATTRIBUTES);
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;
     }

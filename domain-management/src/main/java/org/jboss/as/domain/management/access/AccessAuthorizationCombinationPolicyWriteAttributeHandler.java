@@ -25,7 +25,6 @@ public class AccessAuthorizationCombinationPolicyWriteAttributeHandler extends A
     private final WritableAuthorizerConfiguration authorizerConfiguration;
 
     AccessAuthorizationCombinationPolicyWriteAttributeHandler(WritableAuthorizerConfiguration authorizerConfiguration) {
-        super(AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY);
         this.authorizerConfiguration = authorizerConfiguration;
     }
 

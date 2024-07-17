@@ -115,12 +115,12 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
         addAttribute("long", ModelType.LONG, resourceRegistration);
         addAttribute("type", ModelType.TYPE, resourceRegistration);
         PrimitiveListAttributeDefinition list = new PrimitiveListAttributeDefinition.Builder("list", ModelType.INT).setRequired(false).setAllowExpression(allowExpressions).build();
-        resourceRegistration.registerReadWriteAttribute(list, null, new ReloadRequiredWriteAttributeHandler(list));
+        resourceRegistration.registerReadWriteAttribute(list, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
         SimpleMapAttributeDefinition map = new SimpleMapAttributeDefinition.Builder("map", ModelType.INT, true).setRequired(false).setAllowExpression(allowExpressions).build();
-        resourceRegistration.registerReadWriteAttribute(map, null, new ReloadRequiredWriteAttributeHandler(map));
+        resourceRegistration.registerReadWriteAttribute(map, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
 
 
-        resourceRegistration.registerReadWriteAttribute(complex, null, new ReloadRequiredWriteAttributeHandler(complex));
+        resourceRegistration.registerReadWriteAttribute(complex, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
     }
 
     private static SimpleAttributeDefinition createAttribute(String name, ModelType type, boolean allowExpressions) {
@@ -131,7 +131,7 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
 
     private void addAttribute(String name, ModelType type, ManagementResourceRegistration resourceRegistration) {
         AttributeDefinition attr = createAttribute(name, type, allowExpressions);
-        resourceRegistration.registerReadWriteAttribute(attr, null, new ModelOnlyWriteAttributeHandler(attr));
+        resourceRegistration.registerReadWriteAttribute(attr, null, ModelOnlyWriteAttributeHandler.INSTANCE);
     }
 
 

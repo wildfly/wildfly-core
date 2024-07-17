@@ -64,13 +64,13 @@ class SubsystemInitialization {
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(definition);
 
         // Test attribute
-        registration.registerReadWriteAttribute(TEST_ATTRIBUTE, null, new BasicAttributeWriteHandler(TEST_ATTRIBUTE));
+        registration.registerReadWriteAttribute(TEST_ATTRIBUTE, null, new BasicAttributeWriteHandler());
 
         // Other basic handlers
         final AttributeDefinition integer = SimpleAttributeDefinitionBuilder.create("int", ModelType.INT, true).setAllowExpression(allowExpressions).build();
         final AttributeDefinition string = SimpleAttributeDefinitionBuilder.create("string", ModelType.STRING, true).setAllowExpression(allowExpressions).build();
-        registration.registerReadWriteAttribute(integer, null, new BasicAttributeWriteHandler(integer));
-        registration.registerReadWriteAttribute(string, null, new BasicAttributeWriteHandler(string));
+        registration.registerReadWriteAttribute(integer, null, new BasicAttributeWriteHandler());
+        registration.registerReadWriteAttribute(string, null, new BasicAttributeWriteHandler());
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
         return new RegistrationResult() {
@@ -95,10 +95,6 @@ class SubsystemInitialization {
     }
 
     private static class BasicAttributeWriteHandler extends AbstractWriteAttributeHandler<Void> {
-
-        protected BasicAttributeWriteHandler(AttributeDefinition def) {
-            super(def);
-        }
 
         @Override
         protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Void> voidHandbackHolder) throws OperationFailedException {

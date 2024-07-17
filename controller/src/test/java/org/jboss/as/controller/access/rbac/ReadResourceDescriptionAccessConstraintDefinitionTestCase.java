@@ -31,7 +31,6 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -240,7 +239,7 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
         }
     }
 
-    private static class ConstrainedChildResourceDefinition extends SimpleResourceDefinition implements ResourceDefinition {
+    private static class ConstrainedChildResourceDefinition extends SimpleResourceDefinition {
         ConstrainedChildResourceDefinition(){
             super(new Parameters(PathElement.pathElement("constrained-resource"), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
@@ -250,8 +249,8 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(STANDARD_ATTR, null, new TestWriteAttributeHandler(STANDARD_ATTR));
-            resourceRegistration.registerReadWriteAttribute(SENSITIVE_ATTR, null, new TestWriteAttributeHandler(SENSITIVE_ATTR));
+            resourceRegistration.registerReadWriteAttribute(STANDARD_ATTR, null, new TestWriteAttributeHandler());
+            resourceRegistration.registerReadWriteAttribute(SENSITIVE_ATTR, null, new TestWriteAttributeHandler());
         }
 
         @Override
@@ -275,11 +274,11 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(STANDARD_ATTR, null, new TestWriteAttributeHandler(STANDARD_ATTR));
+            resourceRegistration.registerReadWriteAttribute(STANDARD_ATTR, null, new TestWriteAttributeHandler());
         }
     }
 
-    private static class ApplicationChildResourceDefinition extends SimpleResourceDefinition implements ResourceDefinition {
+    private static class ApplicationChildResourceDefinition extends SimpleResourceDefinition {
         ApplicationChildResourceDefinition(){
             super(new Parameters(PathElement.pathElement("application-resource"), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
@@ -289,18 +288,13 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(STANDARD_ATTR, null, new TestWriteAttributeHandler(STANDARD_ATTR));
-            resourceRegistration.registerReadWriteAttribute(APPLICATION_ATTR, null, new TestWriteAttributeHandler(APPLICATION_ATTR));
+            resourceRegistration.registerReadWriteAttribute(STANDARD_ATTR, null, new TestWriteAttributeHandler());
+            resourceRegistration.registerReadWriteAttribute(APPLICATION_ATTR, null, new TestWriteAttributeHandler());
         }
 
     }
 
     private static class TestWriteAttributeHandler extends AbstractWriteAttributeHandler<Void> {
-
-
-        public TestWriteAttributeHandler(AttributeDefinition... definitions) {
-            super(definitions);
-        }
 
         @Override
         protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,

@@ -308,24 +308,21 @@ public class WriteAttributeTestCase extends AbstractRbacTestBase {
                     .create(UNCONSTRAINED_READWRITE_ATTRIBUTE, ModelType.STRING, true)
                     .setDefaultValue(new ModelNode(OLD_VALUE_OF_UNCONSTRAINED_READWRITE_ATTRIBUTE))
                     .build();
-            resourceRegistration.registerReadWriteAttribute(attributeDefinition, null,
-                    new ModelOnlyWriteAttributeHandler(attributeDefinition));
+            resourceRegistration.registerReadWriteAttribute(attributeDefinition, null, ModelOnlyWriteAttributeHandler.INSTANCE);
 
             attributeDefinition = SimpleAttributeDefinitionBuilder
                     .create(SENSITIVE_CONSTRAINED_READWRITE_ATTRIBUTE, ModelType.STRING, true)
                     .setDefaultValue(new ModelNode(OLD_VALUE_OF_SENSITIVE_CONSTRAINED_READWRITE_ATTRIBUTE))
                     .setAccessConstraints(MY_SENSITIVE_CONSTRAINT)
                     .build();
-            resourceRegistration.registerReadWriteAttribute(attributeDefinition, null,
-                    new ModelOnlyWriteAttributeHandler(attributeDefinition));
+            resourceRegistration.registerReadWriteAttribute(attributeDefinition, null, ModelOnlyWriteAttributeHandler.INSTANCE);
 
             attributeDefinition = SimpleAttributeDefinitionBuilder
                     .create(APPLICATION_CONSTRAINED_READWRITE_ATTRIBUTE, ModelType.STRING, true)
                     .setDefaultValue(new ModelNode(OLD_VALUE_OF_APPLICATION_CONSTRAINED_READWRITE_ATTRIBUTE))
                     .setAccessConstraints(MY_APPLICATION_CONSTRAINT)
                     .build();
-            resourceRegistration.registerReadWriteAttribute(attributeDefinition, null,
-                    new ModelOnlyWriteAttributeHandler(attributeDefinition));
+            resourceRegistration.registerReadWriteAttribute(attributeDefinition, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
     }
 }

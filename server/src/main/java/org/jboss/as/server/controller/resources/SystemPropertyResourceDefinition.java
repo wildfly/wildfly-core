@@ -77,9 +77,9 @@ public class SystemPropertyResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadWriteAttribute(VALUE, null, new SystemPropertyValueWriteAttributeHandler(systemPropertyUpdater, VALUE));
+        resourceRegistration.registerReadWriteAttribute(VALUE, null, new SystemPropertyValueWriteAttributeHandler(systemPropertyUpdater));
         if (useBoottime) {
-            resourceRegistration.registerReadWriteAttribute(BOOT_TIME, null, new ModelOnlyWriteAttributeHandler(BOOT_TIME));
+            resourceRegistration.registerReadWriteAttribute(BOOT_TIME, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
     }
 
