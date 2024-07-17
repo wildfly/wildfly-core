@@ -120,7 +120,7 @@ public class TestInstallationManager implements InstallationManager {
 
             // History sample data
             history = new HashMap<>();
-            history.put("update", new HistoryResult("update", Instant.now(), "update", "update description", Collections.emptyList()));
+            history.put("update", new HistoryResult("update", Instant.now(), "update", "update description", List.of(new ManifestVersion("org.channel", "Update 1", "1.0.0.Final", ManifestVersion.Type.MAVEN))));
             history.put("install", new HistoryResult("install", Instant.now(), "install", "install description", Collections.emptyList()));
             history.put("rollback", new HistoryResult("rollback", Instant.now(), "rollback", "rollback description", Collections.emptyList()));
             history.put("config_change", new HistoryResult("config_change", Instant.now(), "config_change", "config_change description", Collections.emptyList()));
