@@ -242,19 +242,6 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
     }
 
     /**
-     * Registers add operation
-     *
-     * @param registration resource on which to register
-     * @param handler      operation handler to register
-     * @param flags        with flags
-     * @deprecated Redundant with {@link #registerAddOperation(ManagementResourceRegistration, OperationStepHandler, org.jboss.as.controller.registry.OperationEntry.Flag...)
-     */
-    @Deprecated(forRemoval = true)
-    protected void registerAddOperation(final ManagementResourceRegistration registration, final AbstractAddStepHandler handler, OperationEntry.Flag... flags) {
-        this.registerAddOperation(registration, (OperationStepHandler) handler, flags);
-    }
-
-    /**
      * Registers remove operation
      *
      * @param registration resource on which to register
