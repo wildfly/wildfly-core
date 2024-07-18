@@ -78,8 +78,15 @@ if ($INST_MGR_COMMAND -eq $null) {
 $JAVA_OPTS="-Dlogging.configuration=file:$instMgrLogProperties $JAVA_OPTS"
 Write-Host "$INST_MGR_COMMAND"
 
+if ($INST_MGR_SCRIPT_WINDOWS_COUNTDOWN -eq $null) {
+  $INST_MGR_SCRIPT_WINDOWS_COUNTDOWN=10
+}
+
 try
 {
+    Write-Host "Waiting $INST_MGR_SCRIPT_WINDOWS_COUNTDOWN seconds before applying the Candidate Server..."
+    Start-Sleep -Seconds $INST_MGR_SCRIPT_WINDOWS_COUNTDOWN
+
     Invoke-Expression "& $INST_MGR_COMMAND 2>&1"
 
     $exitCode = if ($?) {0} else {1}

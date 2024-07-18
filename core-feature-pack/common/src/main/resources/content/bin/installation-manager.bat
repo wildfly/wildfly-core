@@ -39,7 +39,7 @@ if "%INST_MGR_STATUS%" neq "PREPARED" (
     goto EOF
 )
 
-IF NOT DEFINED %INST_MGR_COMMAND (
+IF NOT DEFINED INST_MGR_COMMAND (
     echo ERROR: Installation Manager command was not set.
 
     goto EOF
@@ -52,6 +52,11 @@ set "INST_MGR_COMMAND=!INST_MGR_COMMAND:\\=\!"
 setlocal DisableDelayedExpansion
 
 set JAVA_OPTS=-Dlogging.configuration=file:"%INST_MGR_LOG_PROPERTIES%" %JAVA_OPTS%
+
+IF NOT DEFINED INST_MGR_SCRIPT_WINDOWS_COUNTDOWN set INST_MGR_SCRIPT_WINDOWS_COUNTDOWN=10
+echo Waiting %INST_MGR_SCRIPT_WINDOWS_COUNTDOWN% seconds before applying the Candidate Server...
+timeout /T %INST_MGR_SCRIPT_WINDOWS_COUNTDOWN% /NOBREAK >nul
+
 call %INST_MGR_COMMAND%
 set INST_MGR_RESULT=%errorlevel%
 
