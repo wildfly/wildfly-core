@@ -12,7 +12,7 @@ import org.junit.runners.model.InitializationError;
  * @deprecated Use {@link WildFlyRunner} instead
  * @author Stuart Douglas
  */
-@Deprecated
+@Deprecated(forRemoval = true)
 public class WildflyTestRunner extends WildFlyRunner {
 
     /**
