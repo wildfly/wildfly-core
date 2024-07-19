@@ -107,7 +107,7 @@ class RoleDecoderDefinitions {
     private static class SimpleRoleDecoderAddHandler extends BaseAddHandler {
 
         private SimpleRoleDecoderAddHandler() {
-            super(ROLE_DECODER_RUNTIME_CAPABILITY, ATTRIBUTE);
+            super(ROLE_DECODER_RUNTIME_CAPABILITY);
         }
 
         @Override
@@ -156,7 +156,7 @@ class RoleDecoderDefinitions {
     private static class SourceAddressRoleDecoderAddHandler extends BaseAddHandler {
 
         private SourceAddressRoleDecoderAddHandler() {
-            super(ROLE_DECODER_RUNTIME_CAPABILITY, SOURCE_ADDRESS, PATTERN, ROLES);
+            super(ROLE_DECODER_RUNTIME_CAPABILITY);
         }
 
         @Override

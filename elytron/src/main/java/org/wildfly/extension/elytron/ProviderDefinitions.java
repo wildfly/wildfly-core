@@ -109,7 +109,7 @@ class ProviderDefinitions {
     static ResourceDefinition getProviderLoaderDefinition(boolean serverOrHostController) {
         AttributeDefinition[] attributes = new AttributeDefinition[] { MODULE, CLASS_NAMES, PATH, RELATIVE_TO, ARGUMENT, CONFIGURATION };
 
-        AbstractAddStepHandler add = new DoohickeyAddHandler<Provider[]>(PROVIDERS_RUNTIME_CAPABILITY, attributes, PROVIDERS_API_CAPABILITY) {
+        AbstractAddStepHandler add = new DoohickeyAddHandler<Provider[]>(PROVIDERS_RUNTIME_CAPABILITY, PROVIDERS_API_CAPABILITY) {
 
             @Override
             protected ElytronDoohickey<Provider[]> createDoohickey(PathAddress resourceAddress) {

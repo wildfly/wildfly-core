@@ -9,7 +9,6 @@ import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies
 
 import java.util.function.Consumer;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -31,8 +30,8 @@ abstract class DoohickeyAddHandler<T> extends BaseAddHandler {
     private final RuntimeCapability<?> runtimeCapability;
     private final String apiCapabilityName;
 
-    public DoohickeyAddHandler(RuntimeCapability<?> runtimeCapability, AttributeDefinition[] configAttributes, String apiCapabilityName) {
-        super(runtimeCapability, configAttributes);
+    public DoohickeyAddHandler(RuntimeCapability<?> runtimeCapability, String apiCapabilityName) {
+        super(runtimeCapability);
         this.runtimeCapability =  runtimeCapability;
         this.apiCapabilityName = apiCapabilityName;
     }

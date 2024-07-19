@@ -156,10 +156,6 @@ class JaspiDefinition {
 
     static class JaspiAddHandler extends BaseAddHandler {
 
-        JaspiAddHandler() {
-            super(ATTRIBUTES);
-        }
-
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
             final String layer = LAYER.resolveModelAttribute(context, model).asString();

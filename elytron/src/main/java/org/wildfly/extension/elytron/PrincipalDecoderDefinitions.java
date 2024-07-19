@@ -9,7 +9,6 @@ import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_R
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -134,7 +133,7 @@ class PrincipalDecoderDefinitions {
 
     static ResourceDefinition getConstantPrincipalDecoder() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { CONSTANT };
-        AbstractAddStepHandler add = new PrincipalDecoderAddHandler(attributes) {
+        AbstractAddStepHandler add = new PrincipalDecoderAddHandler() {
 
             @Override
             protected ValueSupplier<PrincipalDecoder> getValueSupplier(ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
@@ -149,7 +148,7 @@ class PrincipalDecoderDefinitions {
 
     static ResourceDefinition getX500AttributePrincipalDecoder() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { OID, ATTRIBUTE_NAME, JOINER, START_SEGMENT, MAXIMUM_SEGMENTS, REVERSE, CONVERT, REQUIRED_OIDS, REQUIRED_ATTRIBUTES };
-        AbstractAddStepHandler add = new PrincipalDecoderAddHandler(attributes) {
+        AbstractAddStepHandler add = new PrincipalDecoderAddHandler() {
 
             @Override
             protected ValueSupplier<PrincipalDecoder> getValueSupplier(ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
@@ -192,7 +191,7 @@ class PrincipalDecoderDefinitions {
     static ResourceDefinition getConcatenatingPrincipalDecoder() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { JOINER, PRINCIPAL_DECODERS };
 
-        AbstractAddStepHandler add = new PrincipalDecoderAddHandler(attributes) {
+        AbstractAddStepHandler add = new PrincipalDecoderAddHandler() {
 
             @Override
             protected ValueSupplier<PrincipalDecoder> getValueSupplier(ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
@@ -253,17 +252,8 @@ class PrincipalDecoderDefinitions {
 
     private static class PrincipalDecoderAddHandler extends BaseAddHandler {
 
-        private static final Set<RuntimeCapability> CAPABILITIES;
-
-        static {
-            Set<RuntimeCapability> capabilities = new HashSet<>(2);
-            capabilities.add(PRINCIPAL_DECODER_RUNTIME_CAPABILITY);
-            capabilities.add(PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY);
-            CAPABILITIES = capabilities;
-        }
-
-        private PrincipalDecoderAddHandler(AttributeDefinition ... attributes) {
-            super(CAPABILITIES, attributes);
+        private PrincipalDecoderAddHandler() {
+            super(Set.of(PRINCIPAL_DECODER_RUNTIME_CAPABILITY, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY));
         }
 
         @Override
