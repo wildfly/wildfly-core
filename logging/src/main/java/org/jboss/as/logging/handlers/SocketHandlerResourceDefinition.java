@@ -29,6 +29,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -311,10 +312,6 @@ public class SocketHandlerResourceDefinition extends SimpleResourceDefinition {
     private static class WriteAttributeHandler extends LoggingOperations.LoggingWriteAttributeHandler {
         static final WriteAttributeHandler INSTANCE = new WriteAttributeHandler();
 
-        WriteAttributeHandler() {
-            super(ATTRIBUTES);
-        }
-
         @SuppressWarnings("deprecation")
         @Override
         protected boolean applyUpdate(final OperationContext context, final String attributeName, final String addressName,
@@ -341,7 +338,7 @@ public class SocketHandlerResourceDefinition extends SimpleResourceDefinition {
                     configuration.setFilter(null);
                 }
             }
-            return Logging.requiresReload(getAttributeDefinition(attributeName).getFlags());
+            return Logging.requiresReload(context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getFlags());
 
         }
 

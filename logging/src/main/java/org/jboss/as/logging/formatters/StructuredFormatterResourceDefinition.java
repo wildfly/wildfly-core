@@ -293,7 +293,7 @@ public abstract class StructuredFormatterResourceDefinition extends SimpleResour
                         .setCapabilities(Capabilities.FORMATTER_CAPABILITY)
         );
         attributes = Logging.join(DEFAULT_ATTRIBUTES, additionalAttributes);
-        writeHandler = new WriteStructuredFormatterStepHandler(attributes);
+        writeHandler = new WriteStructuredFormatterStepHandler();
     }
 
     @Override
@@ -430,10 +430,6 @@ public abstract class StructuredFormatterResourceDefinition extends SimpleResour
     }
 
     private static class WriteStructuredFormatterStepHandler extends LoggingOperations.LoggingWriteAttributeHandler {
-
-        WriteStructuredFormatterStepHandler(final AttributeDefinition[] attributes) {
-            super(attributes);
-        }
 
         @Override
         protected boolean applyUpdate(final OperationContext context, final String attributeName, final String addressName,

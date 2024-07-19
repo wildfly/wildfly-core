@@ -143,7 +143,7 @@ public abstract class AbstractHandlerDefinition extends SimpleResourceDefinition
         super(parameters);
         this.registerLegacyOps = registerLegacyOps;
         this.writableAttributes = writableAttributes;
-        writeHandler = new HandlerOperations.LogHandlerWriteAttributeHandler(this.writableAttributes);
+        writeHandler = new HandlerOperations.LogHandlerWriteAttributeHandler();
         this.readOnlyAttributes = readOnlyAttributes;
     }
 
