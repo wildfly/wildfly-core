@@ -64,7 +64,7 @@ public class JmxAuditLoggerResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        AuditLogWriteAttributeHandler wah = new AuditLogWriteAttributeHandler(auditLogger, LOG_BOOT, LOG_READ_ONLY, ENABLED);
+        AuditLogWriteAttributeHandler wah = new AuditLogWriteAttributeHandler(auditLogger);
         resourceRegistration.registerReadWriteAttribute(LOG_BOOT, null, wah);
         resourceRegistration.registerReadWriteAttribute(LOG_READ_ONLY, null, wah);
         resourceRegistration.registerReadWriteAttribute(ENABLED, null, wah);
@@ -165,8 +165,7 @@ public class JmxAuditLoggerResourceDefinition extends SimpleResourceDefinition {
 
         private final ManagedAuditLogger auditLogger;
 
-        AuditLogWriteAttributeHandler(ManagedAuditLogger auditLogger, AttributeDefinition...attributeDefinitions) {
-            super(attributeDefinitions);
+        AuditLogWriteAttributeHandler(ManagedAuditLogger auditLogger) {
             this.auditLogger = auditLogger;
         }
 
