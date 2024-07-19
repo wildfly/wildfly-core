@@ -5,7 +5,6 @@
 package org.jboss.as.server.services.net;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.dmr.ModelNode;
 
@@ -19,7 +18,6 @@ public class BindingFixedPortHandler extends AbstractBindingWriteHandler {
     public static final BindingFixedPortHandler INSTANCE = new BindingFixedPortHandler();
 
     private BindingFixedPortHandler() {
-        super(AbstractSocketBindingResourceDefinition.FIXED_PORT);
     }
 
     @Override

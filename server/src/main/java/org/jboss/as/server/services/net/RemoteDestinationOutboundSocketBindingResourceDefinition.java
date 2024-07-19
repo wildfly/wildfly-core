@@ -52,7 +52,7 @@ public class RemoteDestinationOutboundSocketBindingResourceDefinition extends Ou
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         for (SimpleAttributeDefinition ad : ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(ad, null, new OutboundSocketBindingWriteHandler(ad, true));
+            resourceRegistration.registerReadWriteAttribute(ad, null, new OutboundSocketBindingWriteHandler(true));
         }
     }
 }
