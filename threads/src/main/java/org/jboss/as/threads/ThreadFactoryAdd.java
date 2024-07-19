@@ -35,7 +35,6 @@ public class ThreadFactoryAdd extends AbstractAddStepHandler {
      * @param cap : nullable -  Setting it to null will only use old service name.
      */
     ThreadFactoryAdd(RuntimeCapability cap) {
-        super(ATTRIBUTES);
         this.cap = cap;
     }
 
