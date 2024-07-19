@@ -161,7 +161,7 @@ public class NewExtension implements Extension {
         protected TestResourceDefinition() {
             super(SUBSYSTEM_PATH,
                     NonResolvingResourceDescriptionResolver.INSTANCE,
-                    new ModelOnlyAddStepHandler(ATTRIBUTES),
+                    ModelOnlyAddStepHandler.INSTANCE,
                     ModelOnlyRemoveStepHandler.INSTANCE);
         }
 

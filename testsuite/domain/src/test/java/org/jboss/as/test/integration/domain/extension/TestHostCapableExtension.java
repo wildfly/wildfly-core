@@ -129,10 +129,6 @@ public class TestHostCapableExtension implements Extension {
 
         private static class AddSubsystemHandler extends AbstractAddStepHandler {
 
-            AddSubsystemHandler() {
-                super(NAME, SOCKET_BINDING);
-            }
-
             @Override
             protected void performRuntime(OperationContext context, ModelNode operation, Resource resource)
                     throws OperationFailedException {
