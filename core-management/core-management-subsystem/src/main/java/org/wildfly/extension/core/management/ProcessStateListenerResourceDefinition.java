@@ -91,10 +91,6 @@ public class ProcessStateListenerResourceDefinition extends PersistentResourceDe
 
     private static class ProcessStateListenerAddHandler extends AbstractAddStepHandler  {
 
-        ProcessStateListenerAddHandler() {
-            super(ATTRIBUTES);
-        }
-
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
             super.performRuntime(context, operation, model);
