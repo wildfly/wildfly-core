@@ -57,8 +57,6 @@ public class OrderedChildResourceExtension implements Extension {
     private static final String NAMESPACE = "urn:jboss:test:extension:ordered:child:resource:1.0";
     public static final PathElement CHILD = PathElement.pathElement("child");
     private static final AttributeDefinition ATTR = new SimpleAttributeDefinitionBuilder("attr", ModelType.STRING, true).build();
-    private static final AttributeDefinition[] REQUEST_ATTRIBUTES = new AttributeDefinition[]{ATTR};
-
 
     @Override
     public void initialize(ExtensionContext context) {
@@ -83,7 +81,7 @@ public class OrderedChildResourceExtension implements Extension {
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(ATTR, null, new ModelOnlyWriteAttributeHandler(REQUEST_ATTRIBUTES));
+            resourceRegistration.registerReadWriteAttribute(ATTR, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
 
         @Override

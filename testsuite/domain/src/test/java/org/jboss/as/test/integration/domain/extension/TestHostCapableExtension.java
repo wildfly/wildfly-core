@@ -100,7 +100,7 @@ public class TestHostCapableExtension implements Extension {
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
             super.registerAttributes(resourceRegistration);
-            OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(NAME, SOCKET_BINDING);
+            OperationStepHandler writeHandler = ReloadRequiredWriteAttributeHandler.INSTANCE;
             resourceRegistration.registerReadWriteAttribute(NAME, null, writeHandler);
             resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING, null, writeHandler);
         }

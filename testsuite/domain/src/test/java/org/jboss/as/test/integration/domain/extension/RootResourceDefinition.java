@@ -38,7 +38,7 @@ public class RootResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
-        resourceRegistration.registerReadWriteAttribute(NAME, null, new ReloadRequiredWriteAttributeHandler(NAME));
+        resourceRegistration.registerReadWriteAttribute(NAME, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
     }
 
     @Override
