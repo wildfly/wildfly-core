@@ -30,7 +30,6 @@ import java.security.Provider;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -140,7 +139,6 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
 
     private static final KeyStoreAddHandler ADD = new KeyStoreAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, KEY_STORE_RUNTIME_CAPABILITY);
-    private static final AbstractWriteAttributeHandler WRITE = new ElytronReloadRequiredWriteAttributeHandler(CONFIG_ATTRIBUTES);
 
     KeyStoreDefinition() {
         super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE), RESOURCE_RESOLVER)
@@ -154,7 +152,7 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         for (AttributeDefinition current : CONFIG_ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(current, null, WRITE);
+            resourceRegistration.registerReadWriteAttribute(current, null, ElytronReloadRequiredWriteAttributeHandler.INSTANCE);
         }
 
         if (isServerOrHostController(resourceRegistration)) {

@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.function.Function;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -79,9 +78,8 @@ class CustomComponentDefinition<C, T> extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        AbstractWriteAttributeHandler writeHandler = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
         for (AttributeDefinition current : ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(current, null, writeHandler);
+            resourceRegistration.registerReadWriteAttribute(current, null, ElytronReloadRequiredWriteAttributeHandler.INSTANCE);
         }
     }
 

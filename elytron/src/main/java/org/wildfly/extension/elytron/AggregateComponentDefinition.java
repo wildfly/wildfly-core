@@ -87,9 +87,8 @@ class AggregateComponentDefinition<T> extends SimpleResourceDefinition {
 
         AbstractAddStepHandler add = new AggregateComponentAddHandler<T>(aggregationType, aggregator, aggregateReferences, runtimeCapability, dependOnProviderRegistration);
         OperationStepHandler remove = new TrivialCapabilityServiceRemoveHandler(add, runtimeCapability);
-        OperationStepHandler write = new ElytronReloadRequiredWriteAttributeHandler(aggregateReferences);
 
-        return new AggregateComponentDefinition<T>(aggregationType, componentName, add, remove, aggregateReferences, write, runtimeCapability);
+        return new AggregateComponentDefinition<T>(aggregationType, componentName, add, remove, aggregateReferences, ElytronReloadRequiredWriteAttributeHandler.INSTANCE, runtimeCapability);
     }
 
     static <T> AggregateComponentDefinition<T> create(Class<T> aggregationType, String componentName, String referencesName,
@@ -104,9 +103,8 @@ class AggregateComponentDefinition<T> extends SimpleResourceDefinition {
 
         AbstractAddStepHandler add = new AggregateApiComponentAddHandler<T>(aggregationType, aggregator, aggregateReferences, runtimeCapability, apiCapabilityName, dependOnProviderRegistration);
         OperationStepHandler remove = new TrivialCapabilityServiceRemoveHandler(add, runtimeCapability);
-        OperationStepHandler write = new ElytronReloadRequiredWriteAttributeHandler(aggregateReferences);
 
-        return new AggregateComponentDefinition<T>(aggregationType, componentName, add, remove, aggregateReferences, write, runtimeCapability);
+        return new AggregateComponentDefinition<T>(aggregationType, componentName, add, remove, aggregateReferences, ElytronReloadRequiredWriteAttributeHandler.INSTANCE, runtimeCapability);
     }
 
     private static class AggregateComponentAddHandler<T> extends BaseAddHandler {

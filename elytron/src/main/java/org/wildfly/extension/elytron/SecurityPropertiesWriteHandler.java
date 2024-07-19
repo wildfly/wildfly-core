@@ -23,7 +23,6 @@ class SecurityPropertiesWriteHandler extends AbstractWriteAttributeHandler {
     private final PropertiesAttributeDefinition securityProperties;
 
     SecurityPropertiesWriteHandler(PropertiesAttributeDefinition attributeDefinition) {
-        super(attributeDefinition);
         securityProperties = attributeDefinition;
     }
 

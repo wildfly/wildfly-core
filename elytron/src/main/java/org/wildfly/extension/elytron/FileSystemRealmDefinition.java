@@ -188,12 +188,11 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        AbstractWriteAttributeHandler handler = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
-        AbstractWriteAttributeHandler integrityHandler = new IntegrityWriteAttributeDisabledHandler(INTEGRITY_ATTRIBUTES);
-        AbstractWriteAttributeHandler encryptionHandler = new EncryptionWriteAttributeDisabledHandler(ENCRYPTION_ATTRIBUTES);
+        AbstractWriteAttributeHandler integrityHandler = new IntegrityWriteAttributeDisabledHandler();
+        AbstractWriteAttributeHandler encryptionHandler = new EncryptionWriteAttributeDisabledHandler();
 
         for (AttributeDefinition attr : ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(attr, null, handler);
+            resourceRegistration.registerReadWriteAttribute(attr, null, ElytronReloadRequiredWriteAttributeHandler.INSTANCE);
         }
         for (AttributeDefinition attr : INTEGRITY_ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(attr, null, integrityHandler);
@@ -436,9 +435,6 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
      * @see <a href="https://issues.redhat.com/browse/WFCORE-6129">WFCORE-6129</a>
      */
     private static class IntegrityWriteAttributeDisabledHandler extends ReloadRequiredWriteAttributeHandler {
-        public IntegrityWriteAttributeDisabledHandler(final AttributeDefinition... definitions) {
-            super(definitions);
-        }
 
         @Override
         protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
@@ -465,10 +461,6 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
      * @see <a href="https://issues.redhat.com/browse/WFCORE-6129">WFCORE-6129</a>
      */
     private static class EncryptionWriteAttributeDisabledHandler extends ReloadRequiredWriteAttributeHandler {
-
-        public EncryptionWriteAttributeDisabledHandler(final AttributeDefinition... definitions) {
-            super(definitions);
-        }
 
         @Override
         protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,

@@ -98,8 +98,7 @@ class RoleDecoderDefinitions {
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(ATTRIBUTE, null,
-                    new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTE));
+            resourceRegistration.registerReadWriteAttribute(ATTRIBUTE, null, ElytronReloadRequiredWriteAttributeHandler.INSTANCE);
         }
 
     }
@@ -147,8 +146,7 @@ class RoleDecoderDefinitions {
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
             for (AttributeDefinition attributeDefinition : ATTRIBUTES) {
-                resourceRegistration.registerReadWriteAttribute(attributeDefinition, null,
-                        new ElytronReloadRequiredWriteAttributeHandler(attributeDefinition));
+                resourceRegistration.registerReadWriteAttribute(attributeDefinition, null, ElytronReloadRequiredWriteAttributeHandler.INSTANCE);
             }
         }
     }
