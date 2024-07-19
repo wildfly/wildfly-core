@@ -6,6 +6,7 @@
 package org.jboss.as.test.integration.domain.suites;
 
 import java.io.IOException;
+import java.net.URL;
 
 import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
@@ -125,10 +126,12 @@ public class SimpleRbacProviderTestSuite {
 
     private static void createTestModule() throws IOException {
         testModule = new TestModule(MODULE_NAME, "org.wildfly.installation-manager.api");
+        final URL serviceLoader = SimpleRbacProviderTestSuite.class.getClassLoader()
+                .getResource("org/wildfly/test/installationmanager/services/org.wildfly.installationmanager.spi.InstallationManagerFactory");
         testModule.addResource("test-mock-installation-manager.jar")
                 .addClass(TestInstallationManager.class)
                 .addClass(TestInstallationManagerFactory.class)
-                .addAsManifestResource("META-INF/services/org.wildfly.installationmanager.spi.InstallationManagerFactory",
+                .addAsManifestResource(serviceLoader,
                         "services/org.wildfly.installationmanager.spi.InstallationManagerFactory");
         testModule.create(true);
     }
