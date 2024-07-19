@@ -113,4 +113,4 @@ if ($SERVER_OPTS -ne $null){
 $backgroundProcess = Get-Env LAUNCH_JBOSS_IN_BACKGROUND 'false'
 $runInBackGround = $global:RUN_IN_BACKGROUND -or ($backgroundProcess -eq 'true')
 
-Start-WildFly-Process -programArguments $PROG_ARGS -runInBackground $runInBackGround
+Start-WildFly-Process -programArguments $PROG_ARGS -runInBackground $runInBackGround -logFileProperties "$JBOSS_CONFIG_DIR\logging.properties" -logFile "$JBOSS_LOG_DIR\host-controller.log"

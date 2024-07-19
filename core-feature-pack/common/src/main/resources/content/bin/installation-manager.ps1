@@ -4,24 +4,29 @@
 param (
     [Parameter(Mandatory=$true)]
     [string]$installationHome,
-    [string]$instMgrLogProperties
+    [string]$instMgrLogProperties,
+    [string]$instMgrLogFile
 )
 
-# Sanitizes URLs to avoid issues with unsupported long paths
-function Sanitize-Path {
-    param(
+function Write-Log {
+    param (
         [Parameter(Mandatory=$true)]
-        [string]$inputPath
+        [string]$Level,
+        [Parameter(Mandatory=$true)]
+        [string]$Message,
+        [string]$LogName = "[management-cli-installer]"
     )
-
-    # Check if the path starts with double backslashes and contains at least one additional character
-    if ($inputPath -match '^\\\\[^\\]+\\.*') {
-        $removedBackslash = $inputPath.Substring(2)
-        return "\\?\UNC\$removedBackslash"
+    $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logMessage = "$TimeStamp $Level $LogName - $Message"
+    if ($Level -eq "INFO") {
+        Write-Output $logMessage
+    } elseif ($Level -eq "ERROR") {
+        Write-Error $logMessage
     } else {
-        return "\\?\$inputPath"
+        Write-Debug $logMessage
     }
 }
+Write-Log -Level "INFO" -Message "Executing Management CLI Installer script."
 
 # For security, reset the environment variables first
 Set-Variable -Name INST_MGR_COMMAND -Scope Script
@@ -29,8 +34,8 @@ Set-Variable -Name INST_MGR_STATUS -Scope Script
 
 $propsFile="$installationHome\bin\installation-manager.properties"
 if ($propsFile -eq $null) {
-    Write-Error "ERROR: Installation Manager properties file not found at $propsFile."
-    return
+    Write-Log -Level "ERROR" -Message "Installation Manager properties file not found at $propsFile."
+    exit 1
 }
 
 if (Test-Path -Path $propsFile -PathType Leaf) {
@@ -49,34 +54,36 @@ if (Test-Path -Path $propsFile -PathType Leaf) {
             $value = $value -replace '\\(.)', '$1'
             $value = $value -replace '\:(.)', ':$1'
 
-            Write-Debug "Creating variable: $key=$value"
+            Write-Log -Level "DEBUG" -Message "Creating variable: $key=$value"
             Set-Variable -Name $key -Value "$value" -Scope Script
         }
     }
 } else {
-    Write-Error "ERROR: Installation Manager properties file not found at $propsFile."
-    return
+    Write-Log -Level "ERROR" -Message "Installation Manager properties file not found at $propsFile."
+    exit 1
 }
 
 # Check the status is the expected
 if ($INST_MGR_STATUS -eq $null) {
-    Write-Error "ERROR: Cannot read the Installation Manager status."
-    return
+    Write-Log -Level "ERROR" -Message "Cannot read the Installation Manager status."
+    exit 1
 }
 
 # Check the status is the expected
 if ($INST_MGR_STATUS -ne "PREPARED") {
-    Write-Error "ERROR: The Candidate Server installation is not in the PREPARED status. The current status is $INST_MGR_STATUS."
-    return
+    Write-Log -Level "ERROR" -Message "The Candidate Server installation is not in the PREPARED status. The current status is $INST_MGR_STATUS."
+    exit 1
 }
 
 if ($INST_MGR_COMMAND -eq $null) {
-    Write-Error "ERROR: Installation Manager command was not set."
-    return
+    Write-Log -Level "ERROR" -Message "Installation Manager command was not set."
+    exit 1
 }
 
-$JAVA_OPTS="-Dlogging.configuration=file:$instMgrLogProperties $JAVA_OPTS"
-Write-Host "$INST_MGR_COMMAND"
+$JAVA_OPTS="-Dorg.jboss.boot.log.file=$instMgrLogFile -Dorg.wildfly.prospero.log.file -Dlogging.configuration=file:`"$instMgrLogProperties`" $JAVA_OPTS"
+
+Write-Log -Level "INFO" -Message "JAVA_OPTS environment variable: $JAVA_OPTS"
+Write-Log -Level "INFO" -Message "Executing the Installation Manager command: $INST_MGR_COMMAND"
 
 if ($INST_MGR_SCRIPT_WINDOWS_COUNTDOWN -eq $null) {
   $INST_MGR_SCRIPT_WINDOWS_COUNTDOWN=10
@@ -84,7 +91,7 @@ if ($INST_MGR_SCRIPT_WINDOWS_COUNTDOWN -eq $null) {
 
 try
 {
-    Write-Host "Waiting $INST_MGR_SCRIPT_WINDOWS_COUNTDOWN seconds before applying the Candidate Server..."
+    Write-Log -Level "INFO" -Message "Waiting $INST_MGR_SCRIPT_WINDOWS_COUNTDOWN seconds before applying the Candidate Server..."
     Start-Sleep -Seconds $INST_MGR_SCRIPT_WINDOWS_COUNTDOWN
 
     Invoke-Expression "& $INST_MGR_COMMAND 2>&1"
@@ -92,13 +99,17 @@ try
     $exitCode = if ($?) {0} else {1}
 
     if ($exitCode -eq 0) {
-        Write-Host "INFO: The Candidate Server was successfully applied."
+        Write-Log -Level "INFO" -Message "The Candidate Server was successfully applied."
         $resetStatus = "INST_MGR_STATUS=CLEAN"
         "$resetStatus" | Set-Content -Path $propsFile
+        Write-Log -Level "INFO" -Message "Management CLI Installer script finished."
+        exit 0
     } elseif ($exitCode -eq 1) {
-        Write-Error "ERROR: The operation was unsuccessful. The candidate server was not installed correctly."
+        Write-Log -Level "ERROR" -Message "The operation was unsuccessful. The candidate server was not installed correctly. Check server logs for more information."
     }
 }
 catch {
-    Write-Error "ERROR: An unknown error occurred trying to launch the installation manager."
+    Write-Log -Level "ERROR" -Message "An unknown error occurred trying to launch the installation manager."
 }
+
+exit 1

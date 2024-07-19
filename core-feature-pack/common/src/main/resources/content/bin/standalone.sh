@@ -392,8 +392,14 @@ while true; do
    if [ "$JBOSS_STATUS" -eq 10 ]; then
       echo "INFO: Restarting..."
    elif [ "$JBOSS_STATUS" -eq 20 ]; then
-        echo "INFO: Executing the installation manager"
-        "${JBOSS_HOME}/bin/installation-manager.sh" "${JBOSS_HOME}" "${JBOSS_CONFIG_DIR}/logging.properties"
+        echo "INFO: Starting Candidate Server installation using Management CLI Installer script"
+        INST_MGR_CONSOLE_FILE="${JBOSS_LOG_DIR}/management-cli-installer-out.log"
+        "${JBOSS_HOME}/bin/installation-manager.sh" "${JBOSS_HOME}" "${JBOSS_CONFIG_DIR}/logging.properties" "${JBOSS_LOG_DIR}/server.log" >> "${INST_MGR_CONSOLE_FILE}" 2>&1
+        if [ $? -eq 0 ]; then
+          echo "INFO: Candidate Server installation completed successfully."
+        else
+          echo "ERROR: Candidate Server installation failed. Check Management CLI Installer script log file for more information: ${INST_MGR_CONSOLE_FILE}"
+        fi
         echo "INFO: Restarting..."
    else
       exit $JBOSS_STATUS
