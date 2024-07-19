@@ -148,10 +148,6 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
 
     static class WriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
 
-        public WriteAttributeHandler() {
-            super(ATTRIBUTES);
-        }
-
         @Override
         protected boolean requiresRuntime(OperationContext context) {
             return context.isBooting() == false;

@@ -21,7 +21,6 @@ class AccessAuthorizationUseIdentityRolesWriteAttributeHandler extends AbstractW
     private final WritableAuthorizerConfiguration writableConfiguration;
 
     AccessAuthorizationUseIdentityRolesWriteAttributeHandler(WritableAuthorizerConfiguration writableConfiguration) {
-        super(AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES);
         this.writableConfiguration = writableConfiguration;
     }
 

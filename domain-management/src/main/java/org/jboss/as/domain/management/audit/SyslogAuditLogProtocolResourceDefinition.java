@@ -89,7 +89,7 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler handler = new SyslogAuditLogHandlerResourceDefinition.HandlerWriteAttributeHandler(auditLogger, pathManager, environmentReader, attributes);
+        OperationStepHandler handler = new SyslogAuditLogHandlerResourceDefinition.HandlerWriteAttributeHandler(auditLogger, pathManager, environmentReader);
         for (AttributeDefinition def : attributes){
             resourceRegistration.registerReadWriteAttribute(def, null, handler);
         }
@@ -233,7 +233,6 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
 
         private final ManagedAuditLogger auditLogger;
         private final PathManagerService pathManager;
-        private final AttributeDefinition[] attributes;
         private final EnvironmentNameReader environmentReader;
 
         private TlsKeyStore(ManagedAuditLogger auditLogger, PathManagerService pathManager, PathElement pathElement,
@@ -244,7 +243,6 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
                     .setCapabilities(SYSLOG_AUDIT_TLS_HANDLER));
             this.auditLogger = auditLogger;
             this.pathManager = pathManager;
-            this.attributes = attributes;
             this.environmentReader = environmentReader;
         }
 
@@ -262,7 +260,7 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            OperationStepHandler handler = new SyslogAuditLogHandlerResourceDefinition.HandlerWriteAttributeHandler(auditLogger, pathManager, environmentReader, attributes);
+            OperationStepHandler handler = new SyslogAuditLogHandlerResourceDefinition.HandlerWriteAttributeHandler(auditLogger, pathManager, environmentReader);
             if (getPathElement().equals(TRUSTSTORE_ELEMENT)) {
                 for (AttributeDefinition attr : TRUSTSTORE_ATTRIBUTES){
                     resourceRegistration.registerReadWriteAttribute(attr, null, handler);

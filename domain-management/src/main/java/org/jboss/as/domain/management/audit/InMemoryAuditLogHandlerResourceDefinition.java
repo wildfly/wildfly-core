@@ -173,7 +173,6 @@ public class InMemoryAuditLogHandlerResourceDefinition extends AuditLogHandlerRe
         private final ManagedAuditLogger auditLogger;
 
         public InMemoryMaxHistoryWriteHandler(ManagedAuditLogger auditLogger) {
-            super(MAX_OPERATION_COUNT);
             this.auditLogger = auditLogger;
         }
 

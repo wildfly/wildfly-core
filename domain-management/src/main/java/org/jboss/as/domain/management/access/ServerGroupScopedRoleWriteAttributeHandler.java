@@ -27,7 +27,6 @@ class ServerGroupScopedRoleWriteAttributeHandler extends AbstractWriteAttributeH
     private final Map<String, ServerGroupEffectConstraint> constraintMap;
 
     public ServerGroupScopedRoleWriteAttributeHandler(Map<String, ServerGroupEffectConstraint> constraintMap) {
-        super(ServerGroupScopedRoleResourceDefinition.SERVER_GROUPS);
         this.constraintMap = constraintMap;
     }
 

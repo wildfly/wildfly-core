@@ -79,7 +79,7 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         //This one only takes effect at boot
-        resourceRegistration.registerReadWriteAttribute(LOG_BOOT, null, new ModelOnlyWriteAttributeHandler(LOG_BOOT));
+        resourceRegistration.registerReadWriteAttribute(LOG_BOOT, null, ModelOnlyWriteAttributeHandler.INSTANCE);
 
         resourceRegistration.registerReadWriteAttribute(LOG_READ_ONLY, null, new AuditLogReadOnlyWriteAttributeHandler(auditLogger));
         resourceRegistration.registerReadWriteAttribute(ENABLED, null, new AuditLogEnabledWriteAttributeHandler(auditLogger));
@@ -195,7 +195,6 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
         private final ManagedAuditLogger auditLogger;
 
         AuditLogEnabledWriteAttributeHandler(ManagedAuditLogger auditLogger) {
-            super(AuditLogLoggerResourceDefinition.ENABLED);
             this.auditLogger = auditLogger;
         }
 
@@ -227,7 +226,6 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
         private final ManagedAuditLogger auditLogger;
 
         public AuditLogReadOnlyWriteAttributeHandler(ManagedAuditLogger auditLogger) {
-            super(AuditLogLoggerResourceDefinition.LOG_READ_ONLY);
             this.auditLogger = auditLogger;
         }
 

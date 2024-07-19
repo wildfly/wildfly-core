@@ -22,7 +22,6 @@ public class RoleIncludeAllWriteAttributeHandler extends AbstractWriteAttributeH
     private final WritableAuthorizerConfiguration authorizerConfiguration;
 
     RoleIncludeAllWriteAttributeHandler(final WritableAuthorizerConfiguration authorizerConfiguration) {
-        super(RoleMappingResourceDefinition.INCLUDE_ALL);
         this.authorizerConfiguration = authorizerConfiguration;
     }
 

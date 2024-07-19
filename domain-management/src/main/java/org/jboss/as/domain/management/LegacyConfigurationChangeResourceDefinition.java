@@ -150,7 +150,6 @@ public class LegacyConfigurationChangeResourceDefinition extends SimpleResourceD
         private final ConfigurationChangesCollector collector;
 
         private LegacyMaxHistoryWriteHandler(ConfigurationChangesCollector collector) {
-            super(MAX_HISTORY);
             this.collector = collector;
         }
 
