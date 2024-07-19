@@ -5,16 +5,11 @@
 
 package org.jboss.as.threads;
 
-import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.DeprecatedResourceDescriptionResolver;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * {@link org.jboss.as.controller.ResourceDefinition} for the root resource of the threads subsystem.
@@ -23,35 +18,25 @@ import java.util.List;
  */
 @Deprecated(forRemoval = true)
 @SuppressWarnings({"removal", "DeprecatedIsStillUsed"})
-class ThreadSubsystemResourceDefinition extends PersistentResourceDefinition {
+class ThreadSubsystemResourceDefinition extends SimpleResourceDefinition {
     private final boolean registerRuntimeOnly;
 
     ThreadSubsystemResourceDefinition(boolean runtimeOnly) {
-        super(ThreadsExtension.SUBSYSTEM_PATH,
-                new DeprecatedResourceDescriptionResolver(ThreadsExtension.SUBSYSTEM_NAME, ThreadsExtension.SUBSYSTEM_NAME, ThreadsExtension.RESOURCE_NAME,
-                        ThreadsExtension.class.getClassLoader(), true, false), ThreadsSubsystemAdd.INSTANCE, ReloadRequiredRemoveStepHandler.INSTANCE,
-                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_ALL_SERVICES);
+        super(new Parameters(ThreadsExtension.SUBSYSTEM_PATH, new DeprecatedResourceDescriptionResolver(ThreadsExtension.SUBSYSTEM_NAME, ThreadsExtension.SUBSYSTEM_NAME, ThreadsExtension.RESOURCE_NAME, ThreadsExtension.class.getClassLoader(), true, false))
+                .setAddHandler(ThreadsSubsystemAdd.INSTANCE).setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
+                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE).setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES));
         setDeprecated(ThreadsExtension.DEPRECATED_SINCE);
         this.registerRuntimeOnly = runtimeOnly;
     }
 
     @Override
-    public Collection<AttributeDefinition> getAttributes() {
-        return Collections.emptySet();
-    }
-
-    @Override
-    protected List<? extends PersistentResourceDefinition> getChildren() {
-        return Arrays.asList(
-                ThreadFactoryResourceDefinition.DEFAULT_INSTANCE,
-                QueuelessThreadPoolResourceDefinition.create(true, registerRuntimeOnly),
-                QueuelessThreadPoolResourceDefinition.create(false, registerRuntimeOnly),
-
-                BoundedQueueThreadPoolResourceDefinition.create(true, registerRuntimeOnly),
-                BoundedQueueThreadPoolResourceDefinition.create(false, registerRuntimeOnly),
-
-                UnboundedQueueThreadPoolResourceDefinition.create(registerRuntimeOnly),
-                ScheduledThreadPoolResourceDefinition.create(registerRuntimeOnly)
-        );
+    public void registerChildren(ManagementResourceRegistration registration) {
+        registration.registerSubModel(ThreadFactoryResourceDefinition.DEFAULT_INSTANCE);
+        registration.registerSubModel(QueuelessThreadPoolResourceDefinition.create(true, this.registerRuntimeOnly));
+        registration.registerSubModel(QueuelessThreadPoolResourceDefinition.create(false, this.registerRuntimeOnly));
+        registration.registerSubModel(BoundedQueueThreadPoolResourceDefinition.create(true, this.registerRuntimeOnly));
+        registration.registerSubModel(BoundedQueueThreadPoolResourceDefinition.create(false, this.registerRuntimeOnly));
+        registration.registerSubModel(UnboundedQueueThreadPoolResourceDefinition.create(this.registerRuntimeOnly));
+        registration.registerSubModel(ScheduledThreadPoolResourceDefinition.create(this.registerRuntimeOnly));
     }
 }

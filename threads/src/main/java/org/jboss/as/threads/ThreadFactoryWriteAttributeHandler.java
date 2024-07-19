@@ -25,7 +25,7 @@ public class ThreadFactoryWriteAttributeHandler extends ThreadsWriteAttributeOpe
     public static final ThreadFactoryWriteAttributeHandler INSTANCE = new ThreadFactoryWriteAttributeHandler();
 
     private ThreadFactoryWriteAttributeHandler() {
-        super(ThreadFactoryAdd.ATTRIBUTES, ThreadFactoryAdd.RW_ATTRIBUTES);
+        super(ThreadFactoryAdd.ATTRIBUTES);
     }
 
     @Override

@@ -26,9 +26,6 @@ public class ThreadFactoryAdd extends AbstractAddStepHandler {
     static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {
         PoolAttributeDefinitions.GROUP_NAME, PoolAttributeDefinitions.THREAD_NAME_PATTERN, PoolAttributeDefinitions.PRIORITY};
 
-    static final AttributeDefinition[] RW_ATTRIBUTES = new AttributeDefinition[] {
-        PoolAttributeDefinitions.GROUP_NAME, PoolAttributeDefinitions.THREAD_NAME_PATTERN, PoolAttributeDefinitions.PRIORITY};
-
     private final RuntimeCapability cap;
 
     /**
