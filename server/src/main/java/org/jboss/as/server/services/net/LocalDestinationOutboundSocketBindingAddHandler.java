@@ -45,7 +45,6 @@ public class LocalDestinationOutboundSocketBindingAddHandler extends AbstractAdd
     static final LocalDestinationOutboundSocketBindingAddHandler INSTANCE = new LocalDestinationOutboundSocketBindingAddHandler();
 
     private LocalDestinationOutboundSocketBindingAddHandler() {
-        super(LocalDestinationOutboundSocketBindingResourceDefinition.ATTRIBUTES);
     }
 
     @Override

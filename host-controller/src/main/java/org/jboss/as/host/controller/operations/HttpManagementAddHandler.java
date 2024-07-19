@@ -7,7 +7,6 @@ package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
-import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.remoting.RemotingHttpUpgradeService.HTTP_UPGRADE_REGISTRY;
 import static org.jboss.as.server.mgmt.UndertowHttpManagementService.EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY;
 
@@ -77,7 +76,6 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
     private final HostControllerEnvironment environment;
 
     public HttpManagementAddHandler(final LocalHostControllerInfoImpl hostControllerInfo, final HostControllerEnvironment environment) {
-        super(ATTRIBUTE_DEFINITIONS);
         this.hostControllerInfo = hostControllerInfo;
         this.environment = environment;
     }

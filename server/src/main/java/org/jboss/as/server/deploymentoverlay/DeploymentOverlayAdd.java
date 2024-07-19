@@ -23,7 +23,6 @@ public class DeploymentOverlayAdd extends AbstractAddStepHandler {
     public static final DeploymentOverlayAdd INSTANCE = new DeploymentOverlayAdd();
 
     private DeploymentOverlayAdd() {
-        super(DeploymentOverlayDefinition.attributes());
     }
 
     @Override

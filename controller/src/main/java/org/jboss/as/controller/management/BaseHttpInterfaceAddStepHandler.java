@@ -12,11 +12,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.HttpInterfaceCommonPolicy.Header;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.remoting3.RemotingOptions;
@@ -34,12 +34,8 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
     protected static final String SASL_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.sasl-authentication-factory";
     protected static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";
 
-    protected BaseHttpInterfaceAddStepHandler(final AttributeDefinition[] attributeDefinitions) {
-        super(attributeDefinitions);
-    }
-
     @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
+    protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         if (operation.hasDefined(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED)) {
             boolean httpUpgradeEnabled = operation.remove(ModelDescriptionConstants.HTTP_UPGRADE_ENABLED).asBoolean();
             ModelNode httpUpgrade = operation.get(ModelDescriptionConstants.HTTP_UPGRADE);
@@ -53,7 +49,7 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
             }
         }
 
-        super.populateModel(operation, model);
+        super.populateModel(context, operation, resource);
     }
 
     @Override

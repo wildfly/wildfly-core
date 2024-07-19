@@ -9,6 +9,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.server.deploymentoverlay.DeploymentOverlayModel.DEPLOYMENT_OVERRIDE_DEPLOYMENT_PATH;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -28,7 +29,7 @@ public class DeploymentOverlayDeploymentDefinition extends SimpleResourceDefinit
 
     public DeploymentOverlayDeploymentDefinition() {
         super(new Parameters(DEPLOYMENT_OVERRIDE_DEPLOYMENT_PATH, ControllerResolver.getResolver(DEPLOYMENT_OVERLAY + '.' + DEPLOYMENT))
-                .setAddHandler(new DeploymentOverlayDeploymentAdd()));
+                .setAddHandler(ModelOnlyAddStepHandler.INSTANCE));
     }
 
     @Override
