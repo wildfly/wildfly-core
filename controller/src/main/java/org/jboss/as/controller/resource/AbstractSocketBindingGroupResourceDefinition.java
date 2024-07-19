@@ -66,6 +66,6 @@ public abstract class AbstractSocketBindingGroupResourceDefinition extends Simpl
         super.registerAttributes(resourceRegistration);
 
         resourceRegistration.registerReadOnlyAttribute(NAME, null);
-        resourceRegistration.registerReadWriteAttribute(defaultInterface, null, new ReloadRequiredWriteAttributeHandler(defaultInterface));
+        resourceRegistration.registerReadWriteAttribute(defaultInterface, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
     }
 }

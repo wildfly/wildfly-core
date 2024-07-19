@@ -119,8 +119,7 @@ public class WriteAttributeOperationTestCase extends AbstractControllerTestBase 
             .setMaxSize(1)
             .build();
 
-    private static final OperationStepHandler handler = new ReloadRequiredWriteAttributeHandler(
-            BOOLEAN_ATT, LONG_ATT, STRING_ATT, DOUBLE_ATT, INT_ATT, BYTES_ATT, BIGINT_ATT, BIGDEC_ATT);
+    private static final OperationStepHandler handler = ReloadRequiredWriteAttributeHandler.INSTANCE;
 
     @Override
     protected void initModel(ManagementModel managementModel) {

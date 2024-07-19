@@ -38,9 +38,8 @@ public class ModelOnlyResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler writeHandler = new ModelOnlyWriteAttributeHandler(attributes);
         for (AttributeDefinition ad : attributes) {
-            resourceRegistration.registerReadWriteAttribute(ad, null, writeHandler);
+            resourceRegistration.registerReadWriteAttribute(ad, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
     }
 }

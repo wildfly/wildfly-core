@@ -7,7 +7,6 @@ package org.jboss.as.controller.management;
 
 import java.util.function.Consumer;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
@@ -23,13 +22,11 @@ class ManagementWriteAttributeHandler extends ReloadRequiredWriteAttributeHandle
 
     private final Consumer<OperationContext> contextConsumer;
 
-    ManagementWriteAttributeHandler(AttributeDefinition[] attributes) {
-        super(attributes);
+    ManagementWriteAttributeHandler() {
         contextConsumer = null;
     }
 
-    ManagementWriteAttributeHandler(AttributeDefinition[] attributes, Consumer<OperationContext> contextConsumer) {
-        super(attributes);
+    ManagementWriteAttributeHandler(Consumer<OperationContext> contextConsumer) {
         this.contextConsumer = contextConsumer;
     }
 

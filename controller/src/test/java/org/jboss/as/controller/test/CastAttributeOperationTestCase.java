@@ -115,8 +115,7 @@ public class CastAttributeOperationTestCase extends AbstractControllerTestBase {
             .setMaxSize(1)
             .build();
 
-    private static final OperationStepHandler handler = new ModelOnlyWriteAttributeHandler(
-            BOOLEAN_ATT, LONG_ATT, STRING_ATT, DOUBLE_ATT, INT_ATT, BYTES_ATT, BIGINT_ATT, BIGDEC_ATT);
+    private static final OperationStepHandler handler = ModelOnlyWriteAttributeHandler.INSTANCE;
 
     @Override
     protected void initModel(ManagementModel managementModel) {

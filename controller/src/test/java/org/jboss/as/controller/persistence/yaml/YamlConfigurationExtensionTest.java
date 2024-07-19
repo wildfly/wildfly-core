@@ -75,13 +75,13 @@ public class YamlConfigurationExtensionTest {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 super.registerAttributes(resourceRegistration);
-                resourceRegistration.registerReadWriteAttribute(valueAtt, null, new ModelOnlyWriteAttributeHandler(valueAtt));
+                resourceRegistration.registerReadWriteAttribute(valueAtt, null, ModelOnlyWriteAttributeHandler.INSTANCE);
             }
 
             @Override
             public void registerOperations(ManagementResourceRegistration resourceRegistration) {
                 super.registerOperations(resourceRegistration);
-                resourceRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of(WRITE_ATTRIBUTE_OPERATION, descriptionResolver).build(), new ModelOnlyWriteAttributeHandler(valueAtt));
+                resourceRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of(WRITE_ATTRIBUTE_OPERATION, descriptionResolver).build(), ModelOnlyWriteAttributeHandler.INSTANCE);
             }
         };
         SimpleResourceDefinition extensionResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("extension"), descriptionResolver)
@@ -97,7 +97,7 @@ public class YamlConfigurationExtensionTest {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 super.registerAttributes(resourceRegistration);
-                resourceRegistration.registerReadWriteAttribute(listAtt, null, new ModelOnlyWriteAttributeHandler(valueAtt));
+                resourceRegistration.registerReadWriteAttribute(listAtt, null, ModelOnlyWriteAttributeHandler.INSTANCE);
             }
         };
         SimpleResourceDefinition basicResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("basic"), descriptionResolver)
@@ -106,7 +106,7 @@ public class YamlConfigurationExtensionTest {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 super.registerAttributes(resourceRegistration);
-                resourceRegistration.registerReadWriteAttribute(valueAtt, null, new ModelOnlyWriteAttributeHandler(valueAtt));
+                resourceRegistration.registerReadWriteAttribute(valueAtt, null, ModelOnlyWriteAttributeHandler.INSTANCE);
             }
         };
         PropertiesAttributeDefinition propertiesAtt = new PropertiesAttributeDefinition.Builder("props", false).build();
@@ -116,13 +116,13 @@ public class YamlConfigurationExtensionTest {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 super.registerAttributes(resourceRegistration);
-                resourceRegistration.registerReadWriteAttribute(propertiesAtt, null, new ModelOnlyWriteAttributeHandler(propertiesAtt));
+                resourceRegistration.registerReadWriteAttribute(propertiesAtt, null, ModelOnlyWriteAttributeHandler.INSTANCE);
             }
 
             @Override
             public void registerOperations(ManagementResourceRegistration resourceRegistration) {
                 super.registerOperations(resourceRegistration);
-                resourceRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of(WRITE_ATTRIBUTE_OPERATION, descriptionResolver).build(), new ModelOnlyWriteAttributeHandler(propertiesAtt));
+                resourceRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of(WRITE_ATTRIBUTE_OPERATION, descriptionResolver).build(), ModelOnlyWriteAttributeHandler.INSTANCE);
             }
         };
         ObjectTypeAttributeDefinition CLASS = ObjectTypeAttributeDefinition.Builder.of("class",
@@ -142,7 +142,7 @@ public class YamlConfigurationExtensionTest {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 super.registerAttributes(resourceRegistration);
-                resourceRegistration.registerReadWriteAttribute(COMPLEX_MAP, null, new ModelOnlyWriteAttributeHandler(valueAtt));
+                resourceRegistration.registerReadWriteAttribute(COMPLEX_MAP, null, ModelOnlyWriteAttributeHandler.INSTANCE);
             }
         };
         SimpleResourceDefinition childResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("child"), descriptionResolver)
@@ -151,7 +151,7 @@ public class YamlConfigurationExtensionTest {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 super.registerAttributes(resourceRegistration);
-                resourceRegistration.registerReadWriteAttribute(valueAtt, null, new ModelOnlyWriteAttributeHandler(valueAtt));
+                resourceRegistration.registerReadWriteAttribute(valueAtt, null, ModelOnlyWriteAttributeHandler.INSTANCE);
             }
         };
         SimpleResourceDefinition parentResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("parent"), descriptionResolver)
@@ -160,7 +160,7 @@ public class YamlConfigurationExtensionTest {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 super.registerAttributes(resourceRegistration);
-                resourceRegistration.registerReadWriteAttribute(valueAtt, null, new ModelOnlyWriteAttributeHandler(valueAtt));
+                resourceRegistration.registerReadWriteAttribute(valueAtt, null, ModelOnlyWriteAttributeHandler.INSTANCE);
             }
 
             @Override
@@ -190,7 +190,7 @@ public class YamlConfigurationExtensionTest {
                 .setRemoveHandler(new AbstractRemoveStepHandler() {
                 }))
         );
-        connectorRegistration.registerReadWriteAttribute(connectorType, null, new ModelOnlyWriteAttributeHandler(connectorType));
+        connectorRegistration.registerReadWriteAttribute(connectorType, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         ManagementResourceRegistration acceptorRegistration = connectorRegistration.registerSubModel(
                 new SimpleResourceDefinition(
                         new SimpleResourceDefinition.Parameters(PathElement.pathElement("acceptor"), NonResolvingResourceDescriptionResolver.INSTANCE)
@@ -199,7 +199,7 @@ public class YamlConfigurationExtensionTest {
                                 .setRemoveHandler(new AbstractRemoveStepHandler() {
                                 }))
         );
-        acceptorRegistration.registerReadWriteAttribute(connectorType, null, new ModelOnlyWriteAttributeHandler(connectorType));
+        acceptorRegistration.registerReadWriteAttribute(connectorType, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         rootRegistration = root;
     }
 

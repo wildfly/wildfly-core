@@ -120,7 +120,7 @@ public class GlobalNotificationsTestCase extends AbstractControllerTestBase {
                     }
                     // no-op
                 })
-                .addReadWriteAttribute(MY_ATTRIBUTE, null, new AbstractWriteAttributeHandler<Long>(MY_ATTRIBUTE) {
+                .addReadWriteAttribute(MY_ATTRIBUTE, null, new AbstractWriteAttributeHandler<Long>() {
                     @Override
                     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Long> handbackHolder) throws OperationFailedException {
                         return false;

@@ -156,7 +156,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         ManagementResourceRegistration profileASub2Reg = profileReg.registerSubModel(
                 new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem2"), NonResolvingResourceDescriptionResolver.INSTANCE));
         AttributeDefinition longAttr = TestUtils.createAttribute("long", ModelType.LONG, "number");
-        profileASub2Reg.registerReadWriteAttribute(longAttr, null, new ModelOnlyWriteAttributeHandler(longAttr));
+        profileASub2Reg.registerReadWriteAttribute(longAttr, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("type", ModelType.TYPE), null);
         profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("string1", ModelType.STRING), null);
         profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("string2", ModelType.STRING), null);

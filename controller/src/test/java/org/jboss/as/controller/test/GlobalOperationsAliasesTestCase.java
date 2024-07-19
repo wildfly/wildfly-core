@@ -178,23 +178,23 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
         ManagementResourceRegistration profileASub2Reg = profileReg.registerSubModel(
                 new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem2"), NonResolvingResourceDescriptionResolver.INSTANCE));
         AttributeDefinition longAttr = TestUtils.createAttribute("long", ModelType.LONG);
-        profileASub2Reg.registerReadWriteAttribute(longAttr, null, new ModelOnlyWriteAttributeHandler(longAttr));
+        profileASub2Reg.registerReadWriteAttribute(longAttr, null, ModelOnlyWriteAttributeHandler.INSTANCE);
 
         ManagementResourceRegistration profileBSub3Reg = profileReg.registerSubModel(
                 new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem3"), NonResolvingResourceDescriptionResolver.INSTANCE));
         ManagementResourceRegistration squatter1Reg = profileBSub3Reg.registerSubModel(
                 new SimpleResourceDefinition(PathElement.pathElement("service", "squatter1"), NonResolvingResourceDescriptionResolver.INSTANCE));
         AttributeDefinition squatter1Name = TestUtils.createAttribute("name", ModelType.STRING);
-        squatter1Reg.registerReadWriteAttribute(squatter1Name, null, new ModelOnlyWriteAttributeHandler(squatter1Name));
+        squatter1Reg.registerReadWriteAttribute(squatter1Name, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         AttributeDefinition squatter1Thing = TestUtils.createAttribute("thing1", ModelType.STRING);
-        squatter1Reg.registerReadWriteAttribute(squatter1Thing, null, new ModelOnlyWriteAttributeHandler(squatter1Thing));
+        squatter1Reg.registerReadWriteAttribute(squatter1Thing, null, ModelOnlyWriteAttributeHandler.INSTANCE);
 
         ManagementResourceRegistration squatter3Reg = profileBSub3Reg.registerSubModel(
                 new SimpleResourceDefinition(PathElement.pathElement("service", "squatter3"), NonResolvingResourceDescriptionResolver.INSTANCE));
         AttributeDefinition squatter3Name = TestUtils.createAttribute("name", ModelType.STRING);
-        squatter3Reg.registerReadWriteAttribute(squatter3Name, null, new ModelOnlyWriteAttributeHandler(squatter3Name));
+        squatter3Reg.registerReadWriteAttribute(squatter3Name, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         AttributeDefinition squatter3Thing = TestUtils.createAttribute("thing3", ModelType.LONG);
-        squatter3Reg.registerReadWriteAttribute(squatter3Thing, null, new ModelOnlyWriteAttributeHandler(squatter3Thing));
+        squatter3Reg.registerReadWriteAttribute(squatter3Thing, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         profileBSub3Reg.registerAlias(
                 PathElement.pathElement("service", "squatter2"),
                 new AliasEntry(squatter3Reg) {

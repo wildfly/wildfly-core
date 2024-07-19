@@ -69,12 +69,12 @@ public class ValidateModelTestCase extends AbstractControllerTestBase {
 
                 })
                 .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
-                .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
-                .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
-                .addReadWriteAttribute(alter1, null, new ReloadRequiredWriteAttributeHandler(alter1))
-                .addReadWriteAttribute(alter2, null, new ReloadRequiredWriteAttributeHandler(alter2))
-                .addReadWriteAttribute(alter3, null, new ReloadRequiredWriteAttributeHandler(alter3))
-                .addReadWriteAttribute(object, null, new ReloadRequiredWriteAttributeHandler(object))
+                .addReadWriteAttribute(ad, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
+                .addReadWriteAttribute(other, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
+                .addReadWriteAttribute(alter1, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
+                .addReadWriteAttribute(alter2, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
+                .addReadWriteAttribute(alter3, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
+                .addReadWriteAttribute(object, null, ReloadRequiredWriteAttributeHandler.INSTANCE)
                 .build();
     }
 

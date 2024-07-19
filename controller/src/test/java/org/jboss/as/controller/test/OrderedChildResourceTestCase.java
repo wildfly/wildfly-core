@@ -147,7 +147,7 @@ public class OrderedChildResourceTestCase extends AbstractControllerTestBase {
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(ATTR, null, new ModelOnlyWriteAttributeHandler(ATTR));
+            resourceRegistration.registerReadWriteAttribute(ATTR, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
 
         @Override
@@ -167,7 +167,7 @@ public class OrderedChildResourceTestCase extends AbstractControllerTestBase {
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(ATTR, null, new ModelOnlyWriteAttributeHandler(ATTR));
+            resourceRegistration.registerReadWriteAttribute(ATTR, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
     }
 }

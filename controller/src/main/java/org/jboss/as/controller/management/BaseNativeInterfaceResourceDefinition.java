@@ -84,7 +84,7 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         AttributeDefinition[] attributeDefinitions = getAttributeDefinitions();
-        OperationStepHandler writeHandler = new ManagementWriteAttributeHandler(attributeDefinitions);
+        OperationStepHandler writeHandler = new ManagementWriteAttributeHandler();
         for (AttributeDefinition attr : attributeDefinitions) {
             resourceRegistration.registerReadWriteAttribute(attr, null, writeHandler);
         }

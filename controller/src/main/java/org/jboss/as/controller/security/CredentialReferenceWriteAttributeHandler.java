@@ -11,6 +11,8 @@ import static org.jboss.as.controller.security.CredentialReference.rollbackCrede
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -23,12 +25,23 @@ import org.jboss.dmr.ModelNode;
  */
 public class CredentialReferenceWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
 
-    public CredentialReferenceWriteAttributeHandler(AttributeDefinition... attributes) {
-        super(attributes);
+    public static final OperationStepHandler INSTANCE = new CredentialReferenceWriteAttributeHandler();
+
+    private CredentialReferenceWriteAttributeHandler() {
     }
 
+    /**
+     * @deprecated Use {@link #INSTANCE} instead.
+     */
+    @Deprecated(forRemoval = true)
+    public CredentialReferenceWriteAttributeHandler(AttributeDefinition... attributes) {
+    }
+
+    /**
+     * @deprecated Use {@link #INSTANCE} instead.
+     */
+    @Deprecated(forRemoval = true)
     public CredentialReferenceWriteAttributeHandler(AttributeDefinition attribute) {
-        super(attribute);
     }
 
     @Override
@@ -47,7 +60,7 @@ public class CredentialReferenceWriteAttributeHandler extends ReloadRequiredWrit
 
     @Override
     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode resolvedValue, Void handback) throws OperationFailedException {
-        rollbackCredentialStoreUpdate(getAttributeDefinition(attributeName), context, resolvedValue);
+        rollbackCredentialStoreUpdate(context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getAttributeDefinition(), context, resolvedValue);
     }
 
 }

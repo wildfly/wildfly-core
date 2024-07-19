@@ -6,6 +6,7 @@ package org.jboss.as.controller.services.path;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
 
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -177,9 +178,9 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadOnlyAttribute(NAME, ReadResourceNameOperationStepHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(RELATIVE_TO_LOCAL, null, new PathWriteAttributeHandler(pathManager, RELATIVE_TO_LOCAL));
-        SimpleAttributeDefinition pathAttr = specified ? PATH_SPECIFIED : PATH_NAMED;
-        resourceRegistration.registerReadWriteAttribute(pathAttr, null, new PathWriteAttributeHandler(pathManager, pathAttr));
+        OperationStepHandler handler = new PathWriteAttributeHandler(this.pathManager);
+        resourceRegistration.registerReadWriteAttribute(RELATIVE_TO_LOCAL, null, handler);
+        resourceRegistration.registerReadWriteAttribute(this.specified ? PATH_SPECIFIED : PATH_NAMED, null, handler);
         resourceRegistration.registerReadOnlyAttribute(READ_ONLY, null);
     }
 
