@@ -29,7 +29,6 @@ public class WritePathAttributeHandler extends ReloadRequiredWriteAttributeHandl
     private final PathManager pathManager;
 
     public WritePathAttributeHandler(PathManager pathManager) {
-        super(DeploymentScannerDefinition.PATH);
         this.pathManager = pathManager;
     }
 
