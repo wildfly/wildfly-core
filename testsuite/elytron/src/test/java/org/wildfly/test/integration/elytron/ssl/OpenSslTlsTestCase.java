@@ -108,9 +108,7 @@ public class OpenSslTlsTestCase {
             throw new RuntimeException("Unable to create temporary folder", e);
         }
     }
-    private static final File SERVER_KEY_STORE_FILE = new File(WORK_DIR, "scarab.keystore");
-    private static final File CLIENT_KEY_STORE_FILE = new File(WORK_DIR, "ladybird.keystore");
-    private static final File TRUST_STORE_FILE = new File(WORK_DIR, "ca.truststore");
+
     private static final String TEST_JAR = "test.jar";
 
     @BeforeClass
@@ -164,17 +162,20 @@ public class OpenSslTlsTestCase {
                     .build();
 
             // KeyStores
+            DefinedCAIdentity ca = caGenerationTool.getDefinedCAIdentity(Identity.CA);
+            DefinedIdentity scarab = caGenerationTool.getDefinedIdentity(Identity.SCARAB);
             final SimpleKeyStore.Builder ksCommon = SimpleKeyStore.builder()
-                    .withType("JKS")
                     .withCredentialReference(credentialReference);
             elements.add(ksCommon.withName(SERVER_KEY_STORE_NAME)
+                    .withType(scarab.getKeyStoreType())
                     .withPath(CliPath.builder()
-                            .withPath(SERVER_KEY_STORE_FILE.getAbsolutePath())
+                            .withPath(scarab.getKeyStoreFile().getAbsolutePath())
                             .build())
                     .build());
             elements.add(ksCommon.withName(SERVER_TRUST_STORE_NAME)
+                    .withType(ca.getKeyStoreType())
                     .withPath(CliPath.builder()
-                            .withPath(TRUST_STORE_FILE.getAbsolutePath())
+                            .withPath(ca.getKeyStoreFile().getAbsolutePath())
                             .build())
                     .build());
 
