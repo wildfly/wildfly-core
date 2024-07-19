@@ -6,6 +6,8 @@
 package org.wildfly.core.instmgr;
 
 import java.nio.file.Path;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -53,7 +55,10 @@ public class InstMgrHistoryHandler extends InstMgrOperationStepHandler {
                     for (HistoryResult hr : history) {
                         ModelNode entry = new ModelNode();
                         entry.get(InstMgrConstants.HISTORY_RESULT_HASH).set(hr.getName());
-                        entry.get(InstMgrConstants.HISTORY_RESULT_TIMESTAMP).set(hr.timestamp().toString());
+                        if (hr.timestamp() != null) {
+                            final java.util.Date timestamp = Date.from(hr.timestamp());
+                            entry.get(InstMgrConstants.HISTORY_RESULT_TIMESTAMP).set(DateFormat.getInstance().format(timestamp));
+                        }
                         entry.get(InstMgrConstants.HISTORY_RESULT_TYPE).set(hr.getType().toLowerCase(Locale.ENGLISH));
                         if (hr.getVersions() != null && !hr.getVersions().isEmpty()) {
                             final ModelNode versions = entry.get(InstMgrConstants.HISTORY_RESULT_CHANNEL_VERSIONS);
