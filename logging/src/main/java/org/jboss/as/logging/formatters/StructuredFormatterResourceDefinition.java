@@ -16,6 +16,7 @@ import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -288,7 +289,7 @@ public abstract class StructuredFormatterResourceDefinition extends SimpleResour
                                           final Class<? extends StructuredFormatter> type, final AttributeDefinition... additionalAttributes) {
         super(
                 new Parameters(pathElement, LoggingExtension.getResourceDescriptionResolver(descriptionPrefix))
-                        .setAddHandler(new AddStructuredFormatterStepHandler(type, Logging.join(DEFAULT_ATTRIBUTES, additionalAttributes)))
+                        .setAddHandler(new AddStructuredFormatterStepHandler(type))
                         .setRemoveHandler(REMOVE)
                         .setCapabilities(Capabilities.FORMATTER_CAPABILITY)
         );
@@ -350,8 +351,7 @@ public abstract class StructuredFormatterResourceDefinition extends SimpleResour
     private static class AddStructuredFormatterStepHandler extends LoggingOperations.LoggingAddOperationStepHandler {
         private final Class<? extends StructuredFormatter> type;
 
-        private AddStructuredFormatterStepHandler(final Class<? extends StructuredFormatter> type, final AttributeDefinition[] attributes) {
-            super(attributes);
+        private AddStructuredFormatterStepHandler(final Class<? extends StructuredFormatter> type) {
             this.type = type;
         }
 
@@ -391,7 +391,8 @@ public abstract class StructuredFormatterResourceDefinition extends SimpleResour
             }
 
             // Process the attributes
-            for (AttributeDefinition attribute : attributes) {
+            for (AttributeAccess access : context.getResourceRegistration().getAttributes(PathAddress.EMPTY_ADDRESS).values()) {
+                AttributeDefinition attribute = access.getAttributeDefinition();
                 if (attribute == META_DATA) {
                     final String metaData = modelValueToMetaData(META_DATA.resolveModelAttribute(context, model));
                     if (metaData != null) {

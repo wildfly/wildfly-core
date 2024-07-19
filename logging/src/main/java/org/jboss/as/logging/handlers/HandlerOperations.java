@@ -38,6 +38,7 @@ import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.logging.CommonAttributes;
 import org.jboss.as.logging.ConfigurationProperty;
@@ -116,13 +117,10 @@ final class HandlerOperations {
      */
     static class HandlerAddOperationStepHandler extends LoggingOperations.LoggingAddOperationStepHandler {
         private final String[] constructionProperties;
-        private final AttributeDefinition[] attributes;
         private final Class<? extends Handler> type;
 
-        HandlerAddOperationStepHandler(final Class<? extends Handler> type, final AttributeDefinition[] attributes, final ConfigurationProperty<?>... constructionProperties) {
-            super(attributes);
+        HandlerAddOperationStepHandler(final Class<? extends Handler> type, final ConfigurationProperty<?>... constructionProperties) {
             this.type = type;
-            this.attributes = attributes;
             final List<String> names = new ArrayList<>();
             for (ConfigurationProperty<?> prop : constructionProperties) {
                 names.add(prop.getPropertyName());
@@ -131,17 +129,14 @@ final class HandlerOperations {
         }
 
         @Override
-        public void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-            for (AttributeDefinition attribute : attributes) {
+        public void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+            super.populateModel(context, operation, resource);
+            if (context.getResourceRegistration().getAttributeNames(PathAddress.EMPTY_ADDRESS).contains(CommonAttributes.FILTER.getName())) {
                 // Filter attribute needs to be converted to filter spec
-                if (CommonAttributes.FILTER.equals(attribute)) {
-                    final ModelNode filter = CommonAttributes.FILTER.validateOperation(operation);
-                    if (filter.isDefined()) {
-                        final String value = Filters.filterToFilterSpec(filter);
-                        model.get(FILTER_SPEC.getName()).set(value.isEmpty() ? new ModelNode() : new ModelNode(value));
-                    }
-                } else {
-                    attribute.validateAndSet(operation, model);
+                final ModelNode filter = CommonAttributes.FILTER.validateOperation(operation);
+                if (filter.isDefined()) {
+                    final String value = Filters.filterToFilterSpec(filter);
+                    resource.getModel().get(FILTER_SPEC.getName()).set(value.isEmpty() ? new ModelNode() : new ModelNode(value));
                 }
             }
         }
@@ -202,7 +197,8 @@ final class HandlerOperations {
                 }
             }
 
-            for (AttributeDefinition attribute : attributes) {
+            for (AttributeAccess access : context.getResourceRegistration().getAttributes(PathAddress.EMPTY_ADDRESS).values()) {
+                AttributeDefinition attribute = access.getAttributeDefinition();
                 // CLASS and MODULE should be ignored
                 final boolean skip;
                 if ((attribute.equals(CLASS) || attribute.equals(MODULE)) || attribute.equals(FILTER)) {
@@ -261,6 +257,10 @@ final class HandlerOperations {
      * A default log handler write attribute step handler.
      */
     static class LogHandlerWriteAttributeHandler extends LoggingOperations.LoggingWriteAttributeHandler {
+        static final OperationStepHandler INSTANCE = new LogHandlerWriteAttributeHandler();
+
+        private LogHandlerWriteAttributeHandler() {
+        }
 
         @Override
         protected boolean applyUpdate(final OperationContext context, final String attributeName, final String addressName, final ModelNode value, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {

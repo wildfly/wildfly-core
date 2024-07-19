@@ -132,14 +132,11 @@ public class SyslogHandlerResourceDefinition extends SimpleResourceDefinition {
             NAMED_FORMATTER
     };
 
-    private static final HandlerAddOperationStepHandler ADD_HANDLER = new HandlerAddOperationStepHandler(SyslogHandler.class, ATTRIBUTES);
-    private static final LogHandlerWriteAttributeHandler WRITE_HANDLER = new LogHandlerWriteAttributeHandler();
-
     public static final SyslogHandlerResourceDefinition INSTANCE = new SyslogHandlerResourceDefinition();
 
     private SyslogHandlerResourceDefinition() {
         super(new Parameters(SYSLOG_HANDLER_PATH, LoggingExtension.getResourceDescriptionResolver(NAME))
-                .setAddHandler(ADD_HANDLER)
+                .setAddHandler( new HandlerAddOperationStepHandler(SyslogHandler.class))
                 .setRemoveHandler(HandlerOperations.REMOVE_HANDLER)
                 .setCapabilities(Capabilities.HANDLER_CAPABILITY));
     }
@@ -147,7 +144,7 @@ public class SyslogHandlerResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(final ManagementResourceRegistration resourceRegistration) {
         for (AttributeDefinition def : ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(def, null, WRITE_HANDLER);
+            resourceRegistration.registerReadWriteAttribute(def, null, LogHandlerWriteAttributeHandler.INSTANCE);
         }
     }
 

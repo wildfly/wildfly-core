@@ -20,7 +20,6 @@ import javax.xml.stream.XMLStreamWriter;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.DefaultAttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -110,7 +109,6 @@ public abstract class AbstractHandlerDefinition extends SimpleResourceDefinition
             FILTER,
     };
 
-    private final OperationStepHandler writeHandler;
     private final AttributeDefinition[] writableAttributes;
     private final AttributeDefinition[] readOnlyAttributes;
     private final boolean registerLegacyOps;
@@ -118,22 +116,21 @@ public abstract class AbstractHandlerDefinition extends SimpleResourceDefinition
     protected AbstractHandlerDefinition(final PathElement path,
                                         final Class<? extends Handler> type,
                                         final AttributeDefinition[] attributes) {
-        this(createParameters(path, type, attributes), true, null, attributes);
+        this(createParameters(path, type), true, null, attributes);
     }
 
     protected AbstractHandlerDefinition(final PathElement path,
                                         final boolean registerLegacyOps,
                                         final Class<? extends Handler> type,
                                         final AttributeDefinition[] attributes) {
-        this(createParameters(path, type, attributes), registerLegacyOps, null, attributes);
+        this(createParameters(path, type), registerLegacyOps, null, attributes);
     }
 
     protected AbstractHandlerDefinition(final PathElement path,
                                         final Class<? extends Handler> type,
                                         final AttributeDefinition[] attributes,
                                         final ConfigurationProperty<?>... constructionProperties) {
-        this(createParameters(path, type, attributes, constructionProperties),
-                true, null, attributes);
+        this(createParameters(path, type, constructionProperties), true, null, attributes);
     }
 
     protected AbstractHandlerDefinition(final Parameters parameters,
@@ -143,7 +140,6 @@ public abstract class AbstractHandlerDefinition extends SimpleResourceDefinition
         super(parameters);
         this.registerLegacyOps = registerLegacyOps;
         this.writableAttributes = writableAttributes;
-        writeHandler = new HandlerOperations.LogHandlerWriteAttributeHandler();
         this.readOnlyAttributes = readOnlyAttributes;
     }
 
@@ -152,9 +148,9 @@ public abstract class AbstractHandlerDefinition extends SimpleResourceDefinition
         for (AttributeDefinition def : writableAttributes) {
             // Filter requires a special reader
             if (def.getName().equals(FILTER.getName())) {
-                resourceRegistration.registerReadWriteAttribute(def, LoggingOperations.ReadFilterOperationStepHandler.INSTANCE, writeHandler);
+                resourceRegistration.registerReadWriteAttribute(def, LoggingOperations.ReadFilterOperationStepHandler.INSTANCE, HandlerOperations.LogHandlerWriteAttributeHandler.INSTANCE);
             } else {
-                resourceRegistration.registerReadWriteAttribute(def, null, writeHandler);
+                resourceRegistration.registerReadWriteAttribute(def, null, HandlerOperations.LogHandlerWriteAttributeHandler.INSTANCE);
             }
         }
         if (readOnlyAttributes != null) {
@@ -240,10 +236,9 @@ public abstract class AbstractHandlerDefinition extends SimpleResourceDefinition
      * @return the default parameters
      */
     static Parameters createParameters(final PathElement path, final Class<? extends Handler> type,
-                                               final AttributeDefinition[] addAttributes,
                                                final ConfigurationProperty<?>... constructionProperties) {
         return new Parameters(path, LoggingExtension.getResourceDescriptionResolver(path.getKey()))
-                .setAddHandler(new HandlerOperations.HandlerAddOperationStepHandler(type, addAttributes, constructionProperties))
+                .setAddHandler(new HandlerOperations.HandlerAddOperationStepHandler(type, constructionProperties))
                 .setRemoveHandler(HandlerOperations.REMOVE_HANDLER)
                 .setCapabilities(Capabilities.HANDLER_CAPABILITY);
     }
