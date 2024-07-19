@@ -72,7 +72,7 @@ class SaslResource extends ConnectorChildResource {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         final RestartConnectorWriteAttributeHandler writeHandler =
-                new RestartConnectorWriteAttributeHandler(parent, ATTRIBUTES);
+                new RestartConnectorWriteAttributeHandler(parent);
         resourceRegistration.registerReadWriteAttribute(INCLUDE_MECHANISMS_ATTRIBUTE, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(QOP_ATTRIBUTE, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(STRENGTH_ATTRIBUTE, null, writeHandler);
