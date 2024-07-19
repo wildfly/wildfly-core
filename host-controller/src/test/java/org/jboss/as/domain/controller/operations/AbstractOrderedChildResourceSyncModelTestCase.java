@@ -282,7 +282,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
 
 
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(ATTR, null, new ModelOnlyWriteAttributeHandler(ATTR));
+            resourceRegistration.registerReadWriteAttribute(ATTR, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
     }
 
@@ -296,7 +296,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(ATTR, null, new ModelOnlyWriteAttributeHandler(ATTR));
+            resourceRegistration.registerReadWriteAttribute(ATTR, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
 
     }

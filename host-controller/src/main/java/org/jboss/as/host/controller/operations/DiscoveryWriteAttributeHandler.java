@@ -6,7 +6,6 @@ package org.jboss.as.host.controller.operations;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
-import org.jboss.as.host.controller.discovery.DiscoveryOptionsResourceDefinition;
 
 /**
  * Handles changes to the options attribute containing the list
@@ -15,10 +14,6 @@ import org.jboss.as.host.controller.discovery.DiscoveryOptionsResourceDefinition
  * @author Alexey Loubyansky
  */
 public class DiscoveryWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
-
-    public DiscoveryWriteAttributeHandler() {
-        super(DiscoveryOptionsResourceDefinition.OPTIONS);
-    }
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {

@@ -98,6 +98,6 @@ public class ProfileResourceDefinition extends SimpleResourceDefinition {
     }
 
     public static OperationStepHandler createIncludesValidationHandler() {
-        return new DomainIncludesValidationWriteAttributeHandler(INCLUDES);
+        return new DomainIncludesValidationWriteAttributeHandler();
     }
 }

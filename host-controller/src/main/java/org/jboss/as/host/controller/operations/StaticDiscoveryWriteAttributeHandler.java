@@ -12,7 +12,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
-import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
@@ -30,10 +29,6 @@ import org.jboss.dmr.Property;
  *
  */
 public class StaticDiscoveryWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
-
-    public StaticDiscoveryWriteAttributeHandler(SimpleAttributeDefinition attribute) {
-        super(attribute);
-    }
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {

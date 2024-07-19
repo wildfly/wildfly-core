@@ -20,14 +20,7 @@ public class SocketBindingResourceDefinition extends AbstractSocketBindingResour
 
     public static final SocketBindingResourceDefinition INSTANCE = new SocketBindingResourceDefinition();
 
-    private static final OperationStepHandler SHARED_HANDLER = new ModelOnlyWriteAttributeHandler(
-            AbstractSocketBindingResourceDefinition.INTERFACE,
-            AbstractSocketBindingResourceDefinition.PORT,
-            AbstractSocketBindingResourceDefinition.FIXED_PORT,
-            AbstractSocketBindingResourceDefinition.MULTICAST_ADDRESS,
-            AbstractSocketBindingResourceDefinition.MULTICAST_PORT,
-            AbstractSocketBindingResourceDefinition.CLIENT_MAPPINGS
-    );
+    private static final OperationStepHandler SHARED_HANDLER = ModelOnlyWriteAttributeHandler.INSTANCE;
 
     private SocketBindingResourceDefinition() {
         super(SocketBindingAddHandler.INSTANCE, SocketBindingRemoveHandler.INSTANCE, org.jboss.as.server.services.net.SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY);

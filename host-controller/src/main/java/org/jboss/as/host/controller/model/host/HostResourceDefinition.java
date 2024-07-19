@@ -290,15 +290,14 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration hostRegistration) {
         super.registerAttributes(hostRegistration);
-        hostRegistration.registerReadWriteAttribute(DIRECTORY_GROUPING, null, new ReloadRequiredWriteAttributeHandler(
-                DIRECTORY_GROUPING) {
+        hostRegistration.registerReadWriteAttribute(DIRECTORY_GROUPING, null, new ReloadRequiredWriteAttributeHandler() {
             @Override
             protected boolean requiresRuntime(OperationContext context) {
                 return context.getRunningMode() == RunningMode.NORMAL && !context.isBooting();
             }
 
         });
-        hostRegistration.registerReadWriteAttribute(ORGANIZATION_IDENTIFIER, null, new ModelOnlyWriteAttributeHandler(ORGANIZATION_IDENTIFIER));
+        hostRegistration.registerReadWriteAttribute(ORGANIZATION_IDENTIFIER, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         // provide the domain-organization, this was defined here, but never had any handlers or storage defined.
         hostRegistration.registerReadOnlyAttribute(DOMAIN_ORGANIZATION_IDENTIFIER, new ReadAttributeHandler() {
                     @Override

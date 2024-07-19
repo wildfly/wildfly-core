@@ -118,7 +118,6 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
     }
 
     private DomainControllerWriteAttributeHandler() {
-        super(org.jboss.as.host.controller.model.host.HostResourceDefinition.DOMAIN_CONTROLLER);
     }
 
     @Override
