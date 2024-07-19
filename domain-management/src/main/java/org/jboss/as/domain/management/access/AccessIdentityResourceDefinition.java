@@ -93,7 +93,6 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
         private final ManagementSecurityIdentitySupplier securityIdentitySupplier;
 
         AccessIdentityAddHandler(ManagementSecurityIdentitySupplier securityIdentitySupplier) {
-            super(ATTRIBUTES);
             this.securityIdentitySupplier = securityIdentitySupplier;
         }
 

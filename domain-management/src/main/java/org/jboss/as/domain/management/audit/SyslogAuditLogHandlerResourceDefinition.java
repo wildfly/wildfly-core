@@ -305,7 +305,6 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
         private final EnvironmentNameReader environmentReader;
 
         private SyslogAuditLogHandlerAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, EnvironmentNameReader environmentReader) {
-            super(ATTRIBUTES);
             this.pathManager = pathManager;
             this.auditLogger = auditLogger;
             this.environmentReader = environmentReader;

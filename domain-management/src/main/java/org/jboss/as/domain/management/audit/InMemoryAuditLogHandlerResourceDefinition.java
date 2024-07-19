@@ -143,12 +143,6 @@ public class InMemoryAuditLogHandlerResourceDefinition extends AuditLogHandlerRe
             return true;
         }
 
-        @Override
-        protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-            super.populateModel(operation, model);
-            MAX_OPERATION_COUNT.validateAndSet(operation, model);
-        }
-
         private InMemoryAuditLogHandler createHandler(final OperationContext context, final ModelNode model) throws OperationFailedException {
             final String name = context.getCurrentAddressValue();
             final int maxHistory = MAX_OPERATION_COUNT.resolveModelAttribute(context, model).asInt();
