@@ -9,7 +9,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.server.services.net.OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -32,9 +31,7 @@ class OutboundSocketBindingWriteHandler extends AbstractWriteAttributeHandler<Bo
 
     private final boolean remoteDestination;
 
-    OutboundSocketBindingWriteHandler(final AttributeDefinition attribute,
-                                      final boolean remoteDestination) {
-        super(attribute);
+    OutboundSocketBindingWriteHandler(final boolean remoteDestination) {
         this.remoteDestination = remoteDestination;
     }
 

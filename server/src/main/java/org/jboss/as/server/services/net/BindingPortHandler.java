@@ -6,7 +6,6 @@ package org.jboss.as.server.services.net;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.dmr.ModelNode;
 
@@ -20,7 +19,6 @@ public class BindingPortHandler extends AbstractBindingWriteHandler {
     public static final BindingPortHandler INSTANCE = new BindingPortHandler();
 
     private BindingPortHandler() {
-        super(AbstractSocketBindingResourceDefinition.PORT);
     }
 
     @Override

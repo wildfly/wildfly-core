@@ -434,12 +434,12 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         if (isDomain) {
             resourceRegistration.registerReadOnlyAttribute(NAME, serverEnvironment.getProcessNameReadHandler());
-            resourceRegistration.registerReadWriteAttribute(PROFILE_NAME, null, new ModelOnlyWriteAttributeHandler(PROFILE_NAME));
+            resourceRegistration.registerReadWriteAttribute(PROFILE_NAME, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         } else {
             resourceRegistration.registerReadWriteAttribute(NAME, serverEnvironment.getProcessNameReadHandler(), serverEnvironment.getProcessNameWriteHandler());
             // The legacy "undefined" profile-name
             resourceRegistration.registerReadOnlyAttribute(NULL_PROFILE_NAME, null);
-            resourceRegistration.registerReadWriteAttribute(ORGANIZATION_IDENTIFIER, null, new ModelOnlyWriteAttributeHandler(ORGANIZATION_IDENTIFIER));
+            resourceRegistration.registerReadWriteAttribute(ORGANIZATION_IDENTIFIER, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
         resourceRegistration.registerReadOnlyAttribute(LAUNCH_TYPE, new LaunchTypeHandler(serverEnvironment.getLaunchType()));
 

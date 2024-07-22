@@ -11,7 +11,6 @@ import static org.jboss.as.server.services.net.SocketBindingResourceDefinition.S
 import java.net.UnknownHostException;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -28,10 +27,6 @@ import org.jboss.msc.service.ServiceName;
  * @author Emanuel Muckenhuber
  */
 abstract class AbstractBindingWriteHandler extends AbstractWriteAttributeHandler<AbstractBindingWriteHandler.RollbackInfo> {
-
-    public AbstractBindingWriteHandler(AttributeDefinition... definitions) {
-        super(definitions);
-    }
 
     /**
      * Handle the actual runtime change.

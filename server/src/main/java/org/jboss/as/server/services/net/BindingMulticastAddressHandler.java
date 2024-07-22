@@ -9,7 +9,6 @@ import java.net.UnknownHostException;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
@@ -24,7 +23,6 @@ public class BindingMulticastAddressHandler extends AbstractBindingWriteHandler 
     public static final BindingMulticastAddressHandler INSTANCE = new BindingMulticastAddressHandler();
 
     private BindingMulticastAddressHandler() {
-        super(AbstractSocketBindingResourceDefinition.MULTICAST_ADDRESS);
     }
 
     @Override

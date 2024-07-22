@@ -7,7 +7,6 @@ package org.jboss.as.server.services.net;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.resource.AbstractSocketBindingResourceDefinition;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.dmr.ModelNode;
 
@@ -21,7 +20,6 @@ public class ClientMappingsHandler extends AbstractBindingWriteHandler {
     public static final ClientMappingsHandler INSTANCE = new ClientMappingsHandler();
 
     private ClientMappingsHandler() {
-        super(AbstractSocketBindingResourceDefinition.CLIENT_MAPPINGS);
     }
 
     @Override
