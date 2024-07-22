@@ -167,7 +167,7 @@ public class NewExtension implements Extension {
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(TEST, null, new ModelOnlyWriteAttributeHandler());
+            resourceRegistration.registerReadWriteAttribute(TEST, null, ModelOnlyWriteAttributeHandler.INSTANCE);
             //Custom write handler to attach the old value
             resourceRegistration.registerReadWriteAttribute(PROPERTIES, null, new ModelOnlyWriteAttributeHandler(){
                 @Override

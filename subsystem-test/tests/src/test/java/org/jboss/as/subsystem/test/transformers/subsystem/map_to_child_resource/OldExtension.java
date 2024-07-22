@@ -75,7 +75,7 @@ public class OldExtension implements Extension {
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(TEST, null, new ModelOnlyWriteAttributeHandler());
+            resourceRegistration.registerReadWriteAttribute(TEST, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
 
         @Override
@@ -94,7 +94,7 @@ public class OldExtension implements Extension {
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(VALUE, null, new ModelOnlyWriteAttributeHandler());
+            resourceRegistration.registerReadWriteAttribute(VALUE, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
     }
 }

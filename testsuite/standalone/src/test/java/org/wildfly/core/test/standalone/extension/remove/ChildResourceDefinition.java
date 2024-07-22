@@ -37,7 +37,7 @@ public class ChildResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
-        resourceRegistration.registerReadWriteAttribute(CHILD_ATTRIBUTE, null, new ReloadRequiredWriteAttributeHandler(CHILD_ATTRIBUTE));
+        resourceRegistration.registerReadWriteAttribute(CHILD_ATTRIBUTE, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
     }
 
     private static class AddChildHandler extends AbstractAddStepHandler {
