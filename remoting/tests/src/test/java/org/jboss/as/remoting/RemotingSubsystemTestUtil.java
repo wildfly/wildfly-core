@@ -69,7 +69,7 @@ class RemotingSubsystemTestUtil {
 
     static void registerIOExtension(ExtensionRegistry extensionRegistry, ManagementResourceRegistration rootRegistration) {
         ManagementResourceRegistration extReg = rootRegistration.registerSubModel(new SimpleResourceDefinition(PathElement.pathElement(EXTENSION, "org.wildfly.extension.io"),
-                NonResolvingResourceDescriptionResolver.INSTANCE, new ModelOnlyAddStepHandler(), ModelOnlyRemoveStepHandler.INSTANCE));
+                NonResolvingResourceDescriptionResolver.INSTANCE, ModelOnlyAddStepHandler.INSTANCE, ModelOnlyRemoveStepHandler.INSTANCE));
         extReg.registerReadOnlyAttribute(new SimpleAttributeDefinitionBuilder("module", ModelType.STRING).build(), null);
 
         Extension ioe = new IOExtension();

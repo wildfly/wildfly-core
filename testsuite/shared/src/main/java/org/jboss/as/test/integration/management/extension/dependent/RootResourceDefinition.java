@@ -81,10 +81,6 @@ public class RootResourceDefinition extends PersistentResourceDefinition {
 
         private static final AbstractAddStepHandler INSTANCE = new AddSubsystemHandler();
 
-        private AddSubsystemHandler()  {
-            super(ATTRIBUTE);
-        }
-
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
             String osb = ATTRIBUTE.resolveModelAttribute(context, resource.getModel()).asString();
