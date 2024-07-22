@@ -39,7 +39,7 @@ public class Subsystem1RootResource extends SimpleResourceDefinition {
 
         profileSub1Reg.registerReadOnlyAttribute(createAttribute("read-only", ModelType.INT, null, false, false, true), null);
         final AttributeDefinition attribute = createAttribute("read-write", ModelType.INT, null, false, false, true);
-        profileSub1Reg.registerReadWriteAttribute(attribute, null, new ModelOnlyWriteAttributeHandler(attribute));
+        profileSub1Reg.registerReadWriteAttribute(attribute, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         profileSub1Reg.registerMetric(createMetric("metric1", ModelType.INT), TestMetricHandler.INSTANCE);
         profileSub1Reg.registerMetric(createMetric("metric2", ModelType.INT), TestMetricHandler.INSTANCE);
 

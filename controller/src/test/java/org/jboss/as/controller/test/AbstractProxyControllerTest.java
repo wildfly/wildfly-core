@@ -737,7 +737,7 @@ public abstract class AbstractProxyControllerTest {
             });*/
             serverChildReg.registerReadOnlyAttribute(createAttribute("name", ModelType.STRING), null);
             final AttributeDefinition value = createAttribute("value", ModelType.STRING);
-            serverChildReg.registerReadWriteAttribute(value, null, new ModelOnlyWriteAttributeHandler(value));
+            serverChildReg.registerReadWriteAttribute(value, null, ModelOnlyWriteAttributeHandler.INSTANCE);
             serverChildReg.registerMetric(createMetric("metric", ModelType.STRING), GlobalOperationsTestCase.TestMetricHandler.INSTANCE);
 
             serverChildReg.registerOperationHandler(createOperationDefinition("test-op"),

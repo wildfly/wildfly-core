@@ -69,7 +69,7 @@ public class ReadConfigAsFeaturesTestCase extends AbstractControllerTestBase {
             .build();
     private static final AttributeDefinition ATTR_SUBSYSTEM_DEF = TestUtils.createAttribute(SUBSYSTEM, ModelType.STRING);
 
-    private static final OperationStepHandler WRITE_HANDLER = new ModelOnlyWriteAttributeHandler();
+    private static final OperationStepHandler WRITE_HANDLER = ModelOnlyWriteAttributeHandler.INSTANCE;
 
     private ManagementResourceRegistration registration;
 

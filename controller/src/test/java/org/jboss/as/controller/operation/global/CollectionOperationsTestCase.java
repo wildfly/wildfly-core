@@ -57,8 +57,8 @@ public class CollectionOperationsTestCase extends AbstractCollectionOperationsTe
                     }
                 })
                 .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
-                .addReadWriteAttribute(WRONG_ATTRIBUTE, null, new ModelOnlyWriteAttributeHandler(WRONG_ATTRIBUTE))
-                .addReadWriteAttribute(LIST_ATTRIBUTE, null, new AbstractWriteAttributeHandler(LIST_ATTRIBUTE) {
+                .addReadWriteAttribute(WRONG_ATTRIBUTE, null, ModelOnlyWriteAttributeHandler.INSTANCE)
+                .addReadWriteAttribute(LIST_ATTRIBUTE, null, new AbstractWriteAttributeHandler<>() {
                     @Override
                     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
                         runtimeListAttributeValue = operation.get(VALUE);
@@ -69,7 +69,7 @@ public class CollectionOperationsTestCase extends AbstractCollectionOperationsTe
                     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Object handback) throws OperationFailedException {
                     }
                 })
-                .addReadWriteAttribute(MAP_ATTRIBUTE, null, new AbstractWriteAttributeHandler(MAP_ATTRIBUTE) {
+                .addReadWriteAttribute(MAP_ATTRIBUTE, null, new AbstractWriteAttributeHandler<>() {
                     @Override
                     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
                         runtimeMapAttributeValue = operation.get(VALUE);

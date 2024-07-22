@@ -2062,7 +2062,7 @@ public class ReadResourceDescriptionAccessControlTestCase extends AbstractContro
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
             for (AttributeDefinition attribute : attributes) {
-                resourceRegistration.registerReadWriteAttribute(attribute, null, new ModelOnlyWriteAttributeHandler(attribute));
+                resourceRegistration.registerReadWriteAttribute(attribute, null, ModelOnlyWriteAttributeHandler.INSTANCE);
             }
             for (AttributeDefinition attribute : readOnlyAttributes) {
                 resourceRegistration.registerReadOnlyAttribute(attribute, null);

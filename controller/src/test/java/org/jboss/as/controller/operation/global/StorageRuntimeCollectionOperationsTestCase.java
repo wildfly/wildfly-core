@@ -58,7 +58,7 @@ public class StorageRuntimeCollectionOperationsTestCase extends AbstractCollecti
                         context.addStep((context1, operation1) -> context.getResult().set(runtimeListAttributeValue),
                                 OperationContext.Stage.RUNTIME);
                     }
-                }, new AbstractWriteAttributeHandler(LIST_ATTRIBUTE) {
+                }, new AbstractWriteAttributeHandler<>() {
                     @Override
                     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
                         // AbstractWriteAttributeHandler performs validation in MODEL stage, when final
@@ -82,7 +82,7 @@ public class StorageRuntimeCollectionOperationsTestCase extends AbstractCollecti
                         context.addStep((context1, operation1) -> context.getResult().set(runtimeMapAttributeValue),
                                 OperationContext.Stage.RUNTIME);
                     }
-                }, new AbstractWriteAttributeHandler(MAP_ATTRIBUTE) {
+                }, new AbstractWriteAttributeHandler<>() {
                     @Override
                     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
                         runtimeMapAttributeValue = operation.get(VALUE);
