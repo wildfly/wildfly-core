@@ -35,7 +35,6 @@ class EnhancedQueueExecutorAdd extends AbstractAddStepHandler {
     }
 
     EnhancedQueueExecutorAdd(ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase, RuntimeCapability<Void> capability, boolean allowCoreThreadTimeout) {
-        super(ATTRIBUTES);
         this.threadFactoryResolver = threadFactoryResolver;
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;

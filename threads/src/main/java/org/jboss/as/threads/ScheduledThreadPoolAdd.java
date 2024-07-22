@@ -32,7 +32,6 @@ public class ScheduledThreadPoolAdd extends AbstractAddStepHandler {
     private final RuntimeCapability<Void> capability;
 
     public ScheduledThreadPoolAdd(ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase, RuntimeCapability<Void> capability) {
-        super(ATTRIBUTES);
         this.threadFactoryResolver = threadFactoryResolver;
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;

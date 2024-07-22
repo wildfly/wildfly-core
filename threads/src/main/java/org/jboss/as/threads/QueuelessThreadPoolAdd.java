@@ -49,7 +49,6 @@ public class QueuelessThreadPoolAdd extends AbstractAddStepHandler {
 
     public QueuelessThreadPoolAdd(boolean blocking, ThreadFactoryResolver threadFactoryResolver,
                                   HandoffExecutorResolver handoffExecutorResolver, ServiceName serviceNameBase, RuntimeCapability<Void> capability) {
-        super(blocking ? BLOCKING_ATTRIBUTES : NON_BLOCKING_ATTRIBUTES);
         this.blocking = blocking;
         this.threadFactoryResolver = threadFactoryResolver;
         this.handoffExecutorResolver = handoffExecutorResolver;
