@@ -54,7 +54,7 @@ class RequestControllerRootDefinition extends PersistentResourceDefinition {
 
     RequestControllerRootDefinition(boolean registerRuntimeOnly) {
         super(new SimpleResourceDefinition.Parameters(RequestControllerExtension.SUBSYSTEM_PATH, RequestControllerExtension.getResolver())
-                .setAddHandler(new RequestControllerSubsystemAdd(getAttributeDefinitions(registerRuntimeOnly)))
+                .setAddHandler(new RequestControllerSubsystemAdd())
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addCapabilities(REQUEST_CONTROLLER_CAPABILITY));
         this.registerRuntimeOnly = registerRuntimeOnly;
