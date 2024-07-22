@@ -320,7 +320,6 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
         private final EnvironmentNameReader environmentReader;
 
         ProtocolConfigAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition[] attributes, EnvironmentNameReader environmentReader){
-            super(attributes);
             this.auditLogger = auditLogger;
             this.pathManager = pathManager;
             this.environmentReader = environmentReader;
@@ -371,7 +370,6 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
         private final PathElement pathElement;
 
         TlsKeyStoreAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition[] attributes, EnvironmentNameReader environmentReader, PathElement pathElement) {
-            super(attributes);
             this.auditLogger = auditLogger;
             this.pathManager = pathManager;
             this.environmentReader = environmentReader;

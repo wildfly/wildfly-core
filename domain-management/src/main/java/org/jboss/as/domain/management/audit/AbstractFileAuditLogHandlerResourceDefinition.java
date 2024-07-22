@@ -67,8 +67,7 @@ public abstract class AbstractFileAuditLogHandlerResourceDefinition extends Audi
         protected final ManagedAuditLogger auditLogger;
         protected final PathManagerService pathManager;
 
-        protected AbstractFileAuditLogHandlerAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition[] attributes) {
-            super(attributes);
+        protected AbstractFileAuditLogHandlerAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
             this.auditLogger = auditLogger;
             this.pathManager = pathManager;
         }

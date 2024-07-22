@@ -124,7 +124,6 @@ public class JsonAuditLogFormatterResourceDefinition extends SimpleResourceDefin
         private final ManagedAuditLogger auditLogger;
 
         private JsonAuditLogFormatterAddHandler(ManagedAuditLogger auditLogger) {
-            super(ATTRIBUTES);
             this.auditLogger = auditLogger;
         }
 

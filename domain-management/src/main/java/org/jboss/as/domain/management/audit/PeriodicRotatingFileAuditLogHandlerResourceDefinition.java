@@ -45,7 +45,7 @@ public class PeriodicRotatingFileAuditLogHandlerResourceDefinition extends Abstr
 
     public PeriodicRotatingFileAuditLogHandlerResourceDefinition(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
         super(auditLogger, pathManager, PathElement.pathElement(PERIODIC_ROTATING_FILE_HANDLER), DomainManagementResolver.getResolver("core.management.periodic-rotating-file-handler"),
-                new PeriodicRotatingFileAuditLogHandlerAddHandler(auditLogger, pathManager, FULL_ATTRIBUTES), new HandlerRemoveHandler(auditLogger));
+                new PeriodicRotatingFileAuditLogHandlerAddHandler(auditLogger, pathManager), new HandlerRemoveHandler(auditLogger));
     }
 
     public static ModelNode createServerAddOperation(final PathAddress address, final ModelNode fileHandler){
@@ -86,8 +86,8 @@ public class PeriodicRotatingFileAuditLogHandlerResourceDefinition extends Abstr
 
     protected static class PeriodicRotatingFileAuditLogHandlerAddHandler extends AbstractFileAuditLogHandlerAddHandler {
 
-        protected PeriodicRotatingFileAuditLogHandlerAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition[] attributes) {
-            super(auditLogger, pathManager, attributes);
+        protected PeriodicRotatingFileAuditLogHandlerAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
+            super(auditLogger, pathManager);
         }
 
         @Override

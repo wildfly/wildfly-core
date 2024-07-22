@@ -55,7 +55,7 @@ public class SizeRotatingFileAuditLogHandlerResourceDefinition extends AbstractF
 
     public SizeRotatingFileAuditLogHandlerResourceDefinition(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
         super(auditLogger, pathManager, PathElement.pathElement(SIZE_ROTATING_FILE_HANDLER), DomainManagementResolver.getResolver("core.management.size-rotating-file-handler"),
-                new SizeRotatingFileAuditLogHandlerAddHandler(auditLogger, pathManager, FULL_ATTRIBUTES), new HandlerRemoveHandler(auditLogger));
+                new SizeRotatingFileAuditLogHandlerAddHandler(auditLogger, pathManager), new HandlerRemoveHandler(auditLogger));
     }
 
     public static ModelNode createServerAddOperation(final PathAddress address, final ModelNode fileHandler){
@@ -97,8 +97,8 @@ public class SizeRotatingFileAuditLogHandlerResourceDefinition extends AbstractF
 
     protected static class SizeRotatingFileAuditLogHandlerAddHandler extends AbstractFileAuditLogHandlerAddHandler {
 
-        protected SizeRotatingFileAuditLogHandlerAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition[] attributes) {
-            super(auditLogger, pathManager, attributes);
+        protected SizeRotatingFileAuditLogHandlerAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
+            super(auditLogger, pathManager);
         }
 
         @Override
