@@ -45,7 +45,7 @@ if "%INST_MGR_STATUS%" neq "PREPARED" (
     goto EOF
 )
 
-IF NOT DEFINED %INST_MGR_COMMAND% (
+IF NOT DEFINED INST_MGR_COMMAND (
     echo %date% %time% ERROR %LOG_NAME% - Installation Manager command was not set.
 
     goto EOF
