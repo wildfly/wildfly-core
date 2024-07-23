@@ -30,14 +30,6 @@ public abstract class ManagementInterfaceAddStepHandler extends AbstractAddStepH
 
     public static final OperationContext.AttachmentKey<Boolean> MANAGEMENT_INTERFACE_KEY = OperationContext.AttachmentKey.create(Boolean.class);
 
-    protected ManagementInterfaceAddStepHandler(final AttributeDefinition[] attributeDefinitions) {
-        super(attributeDefinitions);
-    }
-
-    protected ManagementInterfaceAddStepHandler() {
-        super();
-    }
-
    @Override
     protected boolean requiresRuntime(OperationContext context) {
         //TODO Gigantic HACK to disable the runtime part of this for the core model testing.

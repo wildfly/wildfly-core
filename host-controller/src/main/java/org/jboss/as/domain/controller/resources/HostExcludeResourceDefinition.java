@@ -221,7 +221,6 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
         private final DomainHostExcludeRegistry domainHostExcludeRegistry;
 
         private AddHandler(DomainHostExcludeRegistry domainHostExcludeRegistry) {
-            super(HostExcludeResourceDefinition.attributes);
             this.domainHostExcludeRegistry = domainHostExcludeRegistry;
         }
 

@@ -187,7 +187,7 @@ public class AliasTransformerTestCase {
     static class AbstractChildResourceDefinition extends SimpleResourceDefinition {
         public AbstractChildResourceDefinition(PathElement element) {
             super(new Parameters(element, NonResolvingResourceDescriptionResolver.INSTANCE)
-                    .setAddHandler(new ModelOnlyAddStepHandler())
+                    .setAddHandler(ModelOnlyAddStepHandler.INSTANCE)
                     .setRemoveHandler(new ModelOnlyRemoveStepHandler())
                     .setOrderedChild());
         }

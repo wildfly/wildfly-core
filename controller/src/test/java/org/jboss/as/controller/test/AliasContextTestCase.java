@@ -166,7 +166,7 @@ public class AliasContextTestCase extends AbstractControllerTestBase {
         @Override
         public void registerOperations(ManagementResourceRegistration resourceRegistration) {
             super.registerOperations(resourceRegistration);
-            resourceRegistration.registerOperationHandler(createOperationDefinition(ADD, READ_WRITE, TYPE), new ModelOnlyAddStepHandler(READ_WRITE));
+            resourceRegistration.registerOperationHandler(createOperationDefinition(ADD, READ_WRITE, TYPE), ModelOnlyAddStepHandler.INSTANCE);
         }
     }
 

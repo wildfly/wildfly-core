@@ -27,7 +27,7 @@ public class ModelOnlyResourceDefinition extends SimpleResourceDefinition {
     }
 
     public ModelOnlyResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver, AttributeDefinition... attributes) {
-        super(pathElement, descriptionResolver, new ModelOnlyAddStepHandler(attributes), ModelOnlyRemoveStepHandler.INSTANCE);
+        super(pathElement, descriptionResolver, ModelOnlyAddStepHandler.INSTANCE, ModelOnlyRemoveStepHandler.INSTANCE);
         this.attributes = attributes;
     }
 
