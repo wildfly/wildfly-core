@@ -14,6 +14,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,9 +58,15 @@ public class LoggingDependenciesTestCase extends AbstractLoggingTestCase {
         container.stop();
     }
 
-    @Test(expected = ServerDeploymentException.class)
+    @Test
     public void disableLoggingDependencies() throws Exception {
         final JavaArchive archive = createDeployment(Log4j2ServiceActivator.class, Log4j2ServiceActivator.DEPENDENCIES);
+        // Required permissions for log4j2
+        addPermissions(archive,
+                new RuntimePermission("getClassLoader"),
+                new RuntimePermission("accessDeclaredMembers"),
+                new RuntimePermission("getenv.*")
+        );
         // Ensure the log4j deployment can be deployed
         deploy(archive);
         undeploy();
@@ -69,6 +76,11 @@ public class LoggingDependenciesTestCase extends AbstractLoggingTestCase {
         // Restart the container, expect the exception during deployment
         container.stop();
         container.start();
-        deploy(archive);
+        try {
+            deploy(archive);
+            Assert.fail("Expected a ServerDeploymentException to be thrown.");
+        } catch (ServerDeploymentException expected) {
+
+        }
     }
 }
