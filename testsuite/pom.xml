@@ -306,8 +306,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <failIfNoTests>false</failIfNoTests>
-			<forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
-                        <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
+                        <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                         <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
                         <systemPropertyVariables>
                             <jboss.dist>${jboss.dist}</jboss.dist>
