@@ -166,8 +166,8 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
 
         resourceRegistration.registerReadOnlyAttribute(NAME, ReadResourceNameOperationStepHandler.INSTANCE);
 
-        resourceRegistration.registerReadWriteAttribute(AUTO_START, null, new ModelOnlyWriteAttributeHandler(AUTO_START));
-        resourceRegistration.registerReadWriteAttribute(UPDATE_AUTO_START_WITH_SERVER_STATUS, null, new ModelOnlyWriteAttributeHandler(UPDATE_AUTO_START_WITH_SERVER_STATUS));
+        resourceRegistration.registerReadWriteAttribute(AUTO_START, null, ModelOnlyWriteAttributeHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(UPDATE_AUTO_START_WITH_SERVER_STATUS, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_GROUP, null, ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE);
         resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_DEFAULT_INTERFACE, null, ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE);
         resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING_PORT_OFFSET, null, ServerRestartRequiredServerConfigWriteAttributeHandler.INSTANCE);

@@ -4,7 +4,6 @@
  */
 package org.jboss.as.domain.controller.operations;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -18,10 +17,6 @@ import org.jboss.dmr.ModelNode;
  * @author Kabir Khan
  */
 public class DomainIncludesValidationWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
-
-    public DomainIncludesValidationWriteAttributeHandler(AttributeDefinition... attributeDefinitions) {
-        super(attributeDefinitions);
-    }
 
     @Override
     protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue,

@@ -214,8 +214,8 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
-        resourceRegistration.registerReadWriteAttribute(NAME, null, new ModelOnlyWriteAttributeHandler(NAME));
-        resourceRegistration.registerReadWriteAttribute(ORGANIZATION_IDENTIFIER, null, new ModelOnlyWriteAttributeHandler(ORGANIZATION_IDENTIFIER));
+        resourceRegistration.registerReadWriteAttribute(NAME, null, ModelOnlyWriteAttributeHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(ORGANIZATION_IDENTIFIER, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         resourceRegistration.registerReadOnlyAttribute(PROCESS_TYPE, isMaster ? ProcessTypeHandler.MASTER : ProcessTypeHandler.SLAVE);
         resourceRegistration.registerReadOnlyAttribute(LAUNCH_TYPE, new OperationStepHandler() {
             @Override

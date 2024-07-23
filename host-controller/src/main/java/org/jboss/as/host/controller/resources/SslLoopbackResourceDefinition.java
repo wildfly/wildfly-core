@@ -15,7 +15,6 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -79,9 +78,8 @@ public class SslLoopbackResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler handler = new ModelOnlyWriteAttributeHandler(ATTRIBUTES);
         for (AttributeDefinition attr : ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(attr, null, handler);
+            resourceRegistration.registerReadWriteAttribute(attr, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
     }
 

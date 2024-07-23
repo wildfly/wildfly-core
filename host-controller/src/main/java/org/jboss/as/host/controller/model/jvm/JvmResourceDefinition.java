@@ -6,7 +6,6 @@ package org.jboss.as.host.controller.model.jvm;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -40,10 +39,8 @@ public class JvmResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        AttributeDefinition[] defs = JvmAttributes.getAttributes(server);
-        OperationStepHandler handler = new ModelOnlyWriteAttributeHandler(defs);
         for (AttributeDefinition attr : JvmAttributes.getAttributes(server)) {
-            resourceRegistration.registerReadWriteAttribute(attr, null, handler);
+            resourceRegistration.registerReadWriteAttribute(attr, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
     }
 

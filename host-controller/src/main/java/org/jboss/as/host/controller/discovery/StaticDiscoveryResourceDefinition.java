@@ -52,7 +52,7 @@ public class StaticDiscoveryResourceDefinition extends SimpleResourceDefinition 
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
         for (final SimpleAttributeDefinition attribute : STATIC_DISCOVERY_ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(attribute, null, new StaticDiscoveryWriteAttributeHandler(attribute));
+            resourceRegistration.registerReadWriteAttribute(attribute, null, new StaticDiscoveryWriteAttributeHandler());
         }
     }
 }

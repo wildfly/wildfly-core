@@ -86,7 +86,7 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
     }
 
     public static OperationStepHandler createIncludesValidationHandler() {
-        return new DomainIncludesValidationWriteAttributeHandler(INCLUDES);
+        return new DomainIncludesValidationWriteAttributeHandler();
     }
 
 }

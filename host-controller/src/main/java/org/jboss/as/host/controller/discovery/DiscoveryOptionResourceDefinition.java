@@ -69,7 +69,7 @@ public class DiscoveryOptionResourceDefinition extends SimpleResourceDefinition 
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
         for (final AttributeDefinition attribute : DISCOVERY_ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(attribute, null, new ModelOnlyWriteAttributeHandler(attribute));
+            resourceRegistration.registerReadWriteAttribute(attribute, null, ModelOnlyWriteAttributeHandler.INSTANCE);
         }
     }
 }
