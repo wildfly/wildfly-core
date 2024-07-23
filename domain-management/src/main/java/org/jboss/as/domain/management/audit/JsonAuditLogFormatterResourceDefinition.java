@@ -102,7 +102,7 @@ public class JsonAuditLogFormatterResourceDefinition extends SimpleResourceDefin
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        HandlerWriteAttributeHandler write = new HandlerWriteAttributeHandler(auditLogger, ATTRIBUTES);
+        HandlerWriteAttributeHandler write = new HandlerWriteAttributeHandler(auditLogger);
         for (AttributeDefinition def : ATTRIBUTES){
             resourceRegistration.registerReadWriteAttribute(def, null, write);
         }
@@ -204,8 +204,7 @@ public class JsonAuditLogFormatterResourceDefinition extends SimpleResourceDefin
     private static class HandlerWriteAttributeHandler extends AbstractWriteAttributeHandler<Void> {
         private final ManagedAuditLogger auditLogger;
 
-        public HandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, AttributeDefinition... attributeDefinitions) {
-            super(attributeDefinitions);
+        public HandlerWriteAttributeHandler(ManagedAuditLogger auditLogger) {
             this.auditLogger = auditLogger;
         }
 

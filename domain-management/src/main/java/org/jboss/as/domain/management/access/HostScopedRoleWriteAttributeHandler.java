@@ -27,7 +27,6 @@ class HostScopedRoleWriteAttributeHandler extends AbstractWriteAttributeHandler<
     private final Map<String, HostEffectConstraint> constraintMap;
 
     HostScopedRoleWriteAttributeHandler(Map<String, HostEffectConstraint> constraintMap) {
-        super(HostScopedRolesResourceDefinition.HOSTS);
         this.constraintMap = constraintMap;
     }
 

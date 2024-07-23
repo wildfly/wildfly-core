@@ -132,7 +132,7 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
-        OperationStepHandler writeAttribute = new HandlerWriteAttributeHandler(auditLogger, pathManager, environmentReader, ATTRIBUTES);
+        OperationStepHandler writeAttribute = new HandlerWriteAttributeHandler(auditLogger, pathManager, environmentReader);
         for (AttributeDefinition def : ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(def, null, writeAttribute);
         }
@@ -355,8 +355,8 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
     static class HandlerWriteAttributeHandler extends AuditLogHandlerResourceDefinition.HandlerWriteAttributeHandler {
         private final EnvironmentNameReader environmentReader;
 
-        public HandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, EnvironmentNameReader environmentReader, AttributeDefinition... attributeDefinition) {
-            super(auditLogger, pathManager, attributeDefinition);
+        public HandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, EnvironmentNameReader environmentReader) {
+            super(auditLogger, pathManager);
             this.environmentReader = environmentReader;
         }
 
@@ -411,7 +411,7 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
                 addr = addr.subAddress(0, addr.size() - 1);
                 auditLogger.updateSyslogHandlerReconnectTimeout(Util.getNameFromAddress(addr), valueToRestore.asInt());
             } else if (attributeName.equals(KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME) || attributeName.equals(KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                rollbackCredentialStoreUpdate(getAttributeDefinition(attributeName), context, valueToRevert);
+                rollbackCredentialStoreUpdate(context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getAttributeDefinition(), context, valueToRevert);
             } else {
                 auditLogger.getUpdater().rollbackChanges();
             }

@@ -54,13 +54,13 @@ public abstract class AbstractFileAuditLogHandlerResourceDefinition extends Audi
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
-        HandlerWriteAttributeHandler write = getWriteAttributeHandler(auditLogger, pathManager, ATTRIBUTES);
+        HandlerWriteAttributeHandler write = getWriteAttributeHandler(auditLogger, pathManager);
         for (AttributeDefinition def : ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(def, null, write);
         }
     }
 
-    protected abstract HandlerWriteAttributeHandler getWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition... attributeDefinitions);
+    protected abstract HandlerWriteAttributeHandler getWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager);
 
     protected abstract static class AbstractFileAuditLogHandlerAddHandler extends AbstractAddStepHandler {
 
@@ -109,8 +109,8 @@ public abstract class AbstractFileAuditLogHandlerResourceDefinition extends Audi
 
     protected abstract static class AbstractFileAuditLogHandlerWriteAttributeHandler extends AuditLogHandlerResourceDefinition.HandlerWriteAttributeHandler {
 
-        public AbstractFileAuditLogHandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition... attributeDefinitions) {
-            super(auditLogger, pathManager, attributeDefinitions);
+        public AbstractFileAuditLogHandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
+            super(auditLogger, pathManager);
         }
 
         @Override

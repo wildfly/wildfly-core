@@ -71,15 +71,15 @@ public class SizeRotatingFileAuditLogHandlerResourceDefinition extends AbstractF
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
-        HandlerWriteAttributeHandler write = getWriteAttributeHandler(auditLogger, pathManager, ATTRIBUTES);
+        HandlerWriteAttributeHandler write = getWriteAttributeHandler(auditLogger, pathManager);
         for (AttributeDefinition def : ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(def, null, write);
         }
     }
 
     @Override
-    protected HandlerWriteAttributeHandler getWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition... attributeDefinitions) {
-        return new SizeRotatingHandlerWriteAttributeHandler(auditLogger, pathManager, attributeDefinitions);
+    protected HandlerWriteAttributeHandler getWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
+        return new SizeRotatingHandlerWriteAttributeHandler(auditLogger, pathManager);
     }
 
     private static SizeRotatingFileAuditLogHandler createSizeRotatingFileAuditLogHandler(final PathManagerService pathManager,
@@ -109,8 +109,8 @@ public class SizeRotatingFileAuditLogHandlerResourceDefinition extends AbstractF
 
     protected static class SizeRotatingHandlerWriteAttributeHandler extends AbstractFileAuditLogHandlerWriteAttributeHandler {
 
-        public SizeRotatingHandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition... attributeDefinitions) {
-            super(auditLogger, pathManager, attributeDefinitions);
+        public SizeRotatingHandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager) {
+            super(auditLogger, pathManager);
         }
 
         @Override
