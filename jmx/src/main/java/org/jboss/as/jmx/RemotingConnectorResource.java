@@ -51,7 +51,7 @@ public class RemotingConnectorResource extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        final OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(USE_MANAGEMENT_ENDPOINT) {
+        final OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler() {
             @Override
             protected void recordCapabilitiesAndRequirements(OperationContext context, AttributeDefinition attributeDefinition, ModelNode newValue, ModelNode oldValue) {
                 super.recordCapabilitiesAndRequirements(context, attributeDefinition, newValue, oldValue);
