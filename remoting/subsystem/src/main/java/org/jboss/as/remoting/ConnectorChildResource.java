@@ -105,8 +105,8 @@ abstract class ConnectorChildResource extends SimpleResourceDefinition {
 
     static class RestartConnectorWriteAttributeHandler extends RestartParentWriteAttributeHandler {
 
-        RestartConnectorWriteAttributeHandler(String parent, Collection<AttributeDefinition> attributes) {
-            super(parent, attributes);
+        RestartConnectorWriteAttributeHandler(String parent) {
+            super(parent);
         }
 
         @Override

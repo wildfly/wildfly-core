@@ -44,6 +44,6 @@ public class PropertyResource extends ConnectorChildResource {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadWriteAttribute(VALUE, null, new RestartConnectorWriteAttributeHandler(parent, ATTRIBUTES));
+        resourceRegistration.registerReadWriteAttribute(VALUE, null, new RestartConnectorWriteAttributeHandler(parent));
     }
 }

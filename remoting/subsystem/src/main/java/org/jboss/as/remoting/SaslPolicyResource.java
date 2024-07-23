@@ -52,7 +52,7 @@ class SaslPolicyResource extends ConnectorChildResource {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        final RestartConnectorWriteAttributeHandler writeHandler = new RestartConnectorWriteAttributeHandler(parent, ATTRIBUTES);
+        final RestartConnectorWriteAttributeHandler writeHandler = new RestartConnectorWriteAttributeHandler(parent);
         resourceRegistration.registerReadWriteAttribute(FORWARD_SECRECY, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(NO_ACTIVE, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(NO_ANONYMOUS, null, writeHandler);
