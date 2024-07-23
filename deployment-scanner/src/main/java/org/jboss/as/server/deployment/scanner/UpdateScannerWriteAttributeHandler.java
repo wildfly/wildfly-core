@@ -17,6 +17,7 @@ import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.server.deployment.scanner.api.DeploymentScanner;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -28,11 +29,6 @@ import org.jboss.msc.service.ServiceController;
  */
 final class UpdateScannerWriteAttributeHandler extends AbstractWriteAttributeHandler<DeploymentScanner> {
 
-    UpdateScannerWriteAttributeHandler() {
-        super(AUTO_DEPLOY_EXPLODED, AUTO_DEPLOY_XML, AUTO_DEPLOY_ZIPPED, DEPLOYMENT_TIMEOUT,
-                RUNTIME_FAILURE_CAUSES_ROLLBACK, SCAN_ENABLED, SCAN_INTERVAL);
-    }
-
     @Override
     protected boolean applyUpdateToRuntime(final OperationContext context, final ModelNode operation,
             final String attributeName, final ModelNode resolvedValue, final ModelNode currentValue,
@@ -42,7 +38,7 @@ final class UpdateScannerWriteAttributeHandler extends AbstractWriteAttributeHan
         final ServiceController<?> controller = context.getServiceRegistry(true).getRequiredService(DeploymentScannerService.getServiceName(name));
         if (controller.getState() == ServiceController.State.UP) {// https://issues.jboss.org/browse/WFCORE-1635
             DeploymentScanner scanner = (DeploymentScanner) controller.getValue();
-            updateScanner(attributeName, scanner, resolvedValue);
+            updateScanner(context, attributeName, scanner, resolvedValue);
             handbackHolder.setHandback(scanner);
         }
 
@@ -53,12 +49,12 @@ final class UpdateScannerWriteAttributeHandler extends AbstractWriteAttributeHan
     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
                                          ModelNode valueToRestore, ModelNode valueToRevert, DeploymentScanner handback) throws OperationFailedException {
         if (handback != null) {
-            updateScanner(attributeName, handback, context.resolveExpressions(valueToRestore));
+            updateScanner(context, attributeName, handback, context.resolveExpressions(valueToRestore));
         }
     }
 
-    private void updateScanner(String attributeName, DeploymentScanner scanner, ModelNode resolvedNewValue) {
-        AttributeDefinition ad = getAttributeDefinition(attributeName);
+    private void updateScanner(OperationContext context, String attributeName, DeploymentScanner scanner, ModelNode resolvedNewValue) {
+        AttributeDefinition ad = context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getAttributeDefinition();
         if (ad == AUTO_DEPLOY_EXPLODED) {
             scanner.setAutoDeployExplodedContent(resolvedNewValue.asBoolean());
         } else if (ad == AUTO_DEPLOY_XML) {

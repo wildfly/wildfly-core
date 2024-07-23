@@ -22,7 +22,6 @@ public class WriteRelativeToAttributeHandler extends ReloadRequiredWriteAttribut
     private final PathManager pathManager;
 
     public WriteRelativeToAttributeHandler(PathManager pathManager) {
-        super(DeploymentScannerDefinition.RELATIVE_TO);
         this.pathManager = pathManager;
     }
 
