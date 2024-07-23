@@ -116,7 +116,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadWriteAttribute(WORKER_TASK_MAX_THREADS,
                 new WorkerReadAttributeHandler(WORKER_TASK_MAX_THREADS.getOption()),
-                new WorkerWriteAttributeHandler(WORKER_TASK_MAX_THREADS){
+                new WorkerWriteAttributeHandler(){
                     @Override
                     boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
                         return worker.setOption(Options.WORKER_TASK_MAX_THREADS, value.asInt()) == null;
@@ -124,7 +124,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
                 });
         resourceRegistration.registerReadWriteAttribute(WORKER_TASK_CORE_THREADS,
                 new WorkerReadAttributeHandler(WORKER_TASK_CORE_THREADS.getOption()),
-                new WorkerWriteAttributeHandler(WORKER_TASK_CORE_THREADS) {
+                new WorkerWriteAttributeHandler() {
                     @Override
                     boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
                         return worker.setOption(Options.WORKER_TASK_CORE_THREADS, value.asInt()) == null;
@@ -132,7 +132,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
                 });
         resourceRegistration.registerReadWriteAttribute(WORKER_TASK_KEEPALIVE,
                 new WorkerReadAttributeHandler(WORKER_TASK_KEEPALIVE.getOption()),
-                new WorkerWriteAttributeHandler(WORKER_TASK_KEEPALIVE){
+                new WorkerWriteAttributeHandler(){
                     @Override
                     boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
                         return worker.setOption(Options.WORKER_TASK_KEEPALIVE, value.asInt()) == null;
@@ -140,7 +140,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
                 });
         resourceRegistration.registerReadWriteAttribute(STACK_SIZE,
                 new WorkerReadAttributeHandler(STACK_SIZE.getOption()),
-                new WorkerWriteAttributeHandler(STACK_SIZE){
+                new WorkerWriteAttributeHandler(){
                     @Override
                     boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
                         return worker.setOption(Options.STACK_SIZE, value.asLong()) == null;
@@ -148,7 +148,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
                 });
         resourceRegistration.registerReadWriteAttribute(WORKER_IO_THREADS,
                 new WorkerReadAttributeHandler(WORKER_IO_THREADS.getOption()),
-                new WorkerWriteAttributeHandler(WORKER_IO_THREADS){
+                new WorkerWriteAttributeHandler(){
                     @Override
                     boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
                         return worker.setOption(Options.WORKER_IO_THREADS, value.asInt()) == null;
@@ -201,10 +201,6 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     }
 
     private abstract static class WorkerWriteAttributeHandler extends AbstractWriteAttributeHandler {
-
-        WorkerWriteAttributeHandler(final AttributeDefinition... definitions){
-            super(definitions);
-        }
 
         @Override
         protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode value, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
