@@ -262,10 +262,6 @@ final class HandlerOperations {
      */
     static class LogHandlerWriteAttributeHandler extends LoggingOperations.LoggingWriteAttributeHandler {
 
-        LogHandlerWriteAttributeHandler(final AttributeDefinition... attributes) {
-            super(attributes);
-        }
-
         @Override
         protected boolean applyUpdate(final OperationContext context, final String attributeName, final String addressName, final ModelNode value, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
             boolean restartRequired = false;
@@ -312,13 +308,9 @@ final class HandlerOperations {
                     // queue-length is a construction parameter, runtime changes are not allowed
                     restartRequired = true;
                 } else {
-                    for (AttributeDefinition attribute : getAttributes()) {
-                        if (attribute.getName().equals(attributeName)) {
-                            handleProperty(attribute, context, value, logContextConfiguration, configuration, false);
-                            restartRequired = Logging.requiresReload(attribute.getFlags());
-                            break;
-                        }
-                    }
+                    AttributeDefinition attribute = context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getAttributeDefinition();
+                    handleProperty(attribute, context, value, logContextConfiguration, configuration, false);
+                    restartRequired = Logging.requiresReload(attribute.getFlags());
                 }
             }
             return restartRequired;

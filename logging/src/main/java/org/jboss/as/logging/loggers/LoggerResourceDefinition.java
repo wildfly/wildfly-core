@@ -108,7 +108,7 @@ public class LoggerResourceDefinition extends SimpleResourceDefinition {
                 .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig(LoggingExtension.SUBSYSTEM_NAME, NAME)))
                 .setCapabilities(Capabilities.LOGGER_CAPABILITY));
         writableAttributes = (includeLegacy ? join(WRITABLE_ATTRIBUTES, LEGACY_ATTRIBUTES) : WRITABLE_ATTRIBUTES);
-        this.writeHandler = new LoggerOperations.LoggerWriteAttributeHandler(writableAttributes);
+        this.writeHandler = new LoggerOperations.LoggerWriteAttributeHandler();
     }
 
     @Override

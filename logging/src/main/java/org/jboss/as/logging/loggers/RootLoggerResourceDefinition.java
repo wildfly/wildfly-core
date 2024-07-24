@@ -101,7 +101,7 @@ public class RootLoggerResourceDefinition extends SimpleResourceDefinition {
                 .setCapabilities(Capabilities.LOGGER_CAPABILITY));
         attributes = (includeLegacy ? join(ATTRIBUTES, LEGACY_ATTRIBUTES) : ATTRIBUTES);
         addHandler = new LoggerOperations.LoggerAddOperationStepHandler(attributes);
-        writeHandler = new LoggerOperations.LoggerWriteAttributeHandler(attributes);
+        writeHandler = new LoggerOperations.LoggerWriteAttributeHandler();
     }
 
     @Override
