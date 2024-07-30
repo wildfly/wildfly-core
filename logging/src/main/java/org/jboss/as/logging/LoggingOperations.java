@@ -163,9 +163,6 @@ public final class LoggingOperations {
      * A base step handler for logging operations.
      */
     public abstract static class LoggingAddOperationStepHandler extends AbstractAddStepHandler {
-        public LoggingAddOperationStepHandler(final AttributeDefinition... attributes) {
-            super(attributes);
-        }
 
         @Override
         public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {

@@ -9,14 +9,12 @@ import static org.jboss.as.logging.CommonAttributes.ADD_HANDLER_OPERATION_NAME;
 import static org.jboss.as.logging.CommonAttributes.FILTER;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.REMOVE_HANDLER_OPERATION_NAME;
-import static org.jboss.as.logging.Logging.join;
 import static org.jboss.as.logging.loggers.LoggerAttributes.FILTER_SPEC;
 import static org.jboss.as.logging.loggers.LoggerAttributes.HANDLERS;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationDefinition;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -93,33 +91,24 @@ public class LoggerResourceDefinition extends SimpleResourceDefinition {
             USE_PARENT_HANDLERS
     };
 
-    private static final AttributeDefinition[] LEGACY_ATTRIBUTES = {
-            FILTER,
-    };
-
-    private final AttributeDefinition[] writableAttributes;
-    private final OperationStepHandler writeHandler;
+    private final boolean includeLegacy;
 
     public LoggerResourceDefinition(final boolean includeLegacy) {
         super(new Parameters(LOGGER_PATH, LoggingExtension.getResourceDescriptionResolver(NAME))
-                .setAddHandler(includeLegacy ? new LoggerOperations.LoggerAddOperationStepHandler(join(WRITABLE_ATTRIBUTES, LEGACY_ATTRIBUTES))
-                        : new LoggerOperations.LoggerAddOperationStepHandler(WRITABLE_ATTRIBUTES))
+                .setAddHandler(LoggerOperations.LoggerAddOperationStepHandler.INSTANCE)
                 .setRemoveHandler(LoggerOperations.REMOVE_LOGGER)
                 .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig(LoggingExtension.SUBSYSTEM_NAME, NAME)))
                 .setCapabilities(Capabilities.LOGGER_CAPABILITY));
-        writableAttributes = (includeLegacy ? join(WRITABLE_ATTRIBUTES, LEGACY_ATTRIBUTES) : WRITABLE_ATTRIBUTES);
-        this.writeHandler = new LoggerOperations.LoggerWriteAttributeHandler();
+        this.includeLegacy = includeLegacy;
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        for (AttributeDefinition def : writableAttributes) {
-            // Filter requires a special reader
-            if (def.getName().equals(FILTER.getName())) {
-                resourceRegistration.registerReadWriteAttribute(def, ReadFilterOperationStepHandler.INSTANCE, writeHandler);
-            } else {
-                resourceRegistration.registerReadWriteAttribute(def, null, writeHandler);
-            }
+        for (AttributeDefinition def : WRITABLE_ATTRIBUTES) {
+            resourceRegistration.registerReadWriteAttribute(def, null, LoggerOperations.LoggerWriteAttributeHandler.INSTANCE);
+        }
+        if (this.includeLegacy) {
+            resourceRegistration.registerReadWriteAttribute(FILTER, ReadFilterOperationStepHandler.INSTANCE, LoggerOperations.LoggerWriteAttributeHandler.INSTANCE);
         }
         resourceRegistration.registerReadOnlyAttribute(CATEGORY, ReadResourceNameOperationStepHandler.INSTANCE);
     }

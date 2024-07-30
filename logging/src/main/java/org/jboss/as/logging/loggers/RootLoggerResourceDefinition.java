@@ -9,14 +9,12 @@ import static org.jboss.as.logging.CommonAttributes.ADD_HANDLER_OPERATION_NAME;
 import static org.jboss.as.logging.CommonAttributes.FILTER;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.REMOVE_HANDLER_OPERATION_NAME;
-import static org.jboss.as.logging.Logging.join;
 import static org.jboss.as.logging.loggers.LoggerAttributes.FILTER_SPEC;
 import static org.jboss.as.logging.loggers.LoggerAttributes.HANDLERS;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationDefinition;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
@@ -46,11 +44,6 @@ public class RootLoggerResourceDefinition extends SimpleResourceDefinition {
     private static final String ROOT_LOGGER_ADD_HANDLER_OPERATION_NAME = "root-logger-assign-handler";
     private static final String ROOT_LOGGER_REMOVE_HANDLER_OPERATION_NAME = "root-logger-unassign-handler";
     private static final ResourceDescriptionResolver ROOT_RESOLVER = LoggingExtension.getResourceDescriptionResolver(NAME);
-
-
-    private static final AttributeDefinition[] LEGACY_ATTRIBUTES = {
-            FILTER,
-    };
 
     private static final AttributeDefinition[] ATTRIBUTES = {
             FILTER_SPEC,
@@ -88,30 +81,23 @@ public class RootLoggerResourceDefinition extends SimpleResourceDefinition {
             .setParameters(CommonAttributes.HANDLER_NAME)
             .build();
 
-    private final AttributeDefinition[] attributes;
-    private final OperationStepHandler addHandler;
-    private final OperationStepHandler writeHandler;
+    private final boolean includeLegacy;
 
     public RootLoggerResourceDefinition(final boolean includeLegacy) {
         super(new Parameters(ROOT_LOGGER_PATH, ROOT_RESOLVER)
-                .setAddHandler(includeLegacy ?
-                        new LoggerOperations.LoggerAddOperationStepHandler(join(ATTRIBUTES, LEGACY_ATTRIBUTES)) :
-                        new LoggerOperations.LoggerAddOperationStepHandler(ATTRIBUTES))
+                .setAddHandler(LoggerOperations.LoggerAddOperationStepHandler.INSTANCE)
                 .setRemoveHandler(LoggerOperations.REMOVE_LOGGER)
                 .setCapabilities(Capabilities.LOGGER_CAPABILITY));
-        attributes = (includeLegacy ? join(ATTRIBUTES, LEGACY_ATTRIBUTES) : ATTRIBUTES);
-        addHandler = new LoggerOperations.LoggerAddOperationStepHandler(attributes);
-        writeHandler = new LoggerOperations.LoggerWriteAttributeHandler();
+        this.includeLegacy = includeLegacy;
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        for (AttributeDefinition def : attributes) {
-            if (def.getName().equals(FILTER.getName())) {
-                resourceRegistration.registerReadWriteAttribute(def, ReadFilterOperationStepHandler.INSTANCE, writeHandler);
-            } else {
-                resourceRegistration.registerReadWriteAttribute(def, null, writeHandler);
-            }
+        for (AttributeDefinition def : ATTRIBUTES) {
+            resourceRegistration.registerReadWriteAttribute(def, null, LoggerOperations.LoggerWriteAttributeHandler.INSTANCE);
+        }
+        if (this.includeLegacy) {
+            resourceRegistration.registerReadWriteAttribute(FILTER, ReadFilterOperationStepHandler.INSTANCE, LoggerOperations.LoggerWriteAttributeHandler.INSTANCE);
         }
     }
 
@@ -119,7 +105,7 @@ public class RootLoggerResourceDefinition extends SimpleResourceDefinition {
     public void registerOperations(ManagementResourceRegistration registration) {
         super.registerOperations(registration);
 
-        registration.registerOperationHandler(ADD_ROOT_LOGGER_DEFINITION, addHandler);
+        registration.registerOperationHandler(ADD_ROOT_LOGGER_DEFINITION, LoggerOperations.LoggerAddOperationStepHandler.INSTANCE);
         registration.registerOperationHandler(ROOT_LOGGER_REMOVE_OPERATION, LoggerOperations.REMOVE_LOGGER);
         registration.registerOperationHandler(CHANGE_LEVEL_OPERATION, LoggerOperations.CHANGE_LEVEL);
         registration.registerOperationHandler(ADD_HANDLER_OPERATION, LoggerOperations.ADD_HANDLER);

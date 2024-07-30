@@ -24,6 +24,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.logging.CommonAttributes;
 import org.jboss.as.logging.LoggingOperations;
@@ -75,25 +76,20 @@ final class LoggerOperations {
      * A step handler for add operations of logging handlers. Adds default properties to the handler configuration.
      */
     static final class LoggerAddOperationStepHandler extends LoggingOperations.LoggingAddOperationStepHandler {
-        private final AttributeDefinition[] attributes;
+        static final OperationStepHandler INSTANCE = new LoggerAddOperationStepHandler();
 
-        LoggerAddOperationStepHandler(final AttributeDefinition[] attributes) {
-            super(attributes);
-            this.attributes = attributes;
+        private LoggerAddOperationStepHandler() {
         }
 
         @Override
-        public void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-            for (AttributeDefinition attribute : attributes) {
+        public void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+            super.populateModel(context, operation, resource);
+            if (context.getResourceRegistration().getAttributeNames(PathAddress.EMPTY_ADDRESS).contains(CommonAttributes.FILTER.getName())) {
                 // Filter attribute needs to be converted to filter spec
-                if (CommonAttributes.FILTER.equals(attribute)) {
-                    final ModelNode filter = CommonAttributes.FILTER.validateOperation(operation);
-                    if (filter.isDefined()) {
-                        final String value = Filters.filterToFilterSpec(filter);
-                        model.get(LoggerAttributes.FILTER_SPEC.getName()).set(value.isEmpty() ? new ModelNode() : new ModelNode(value));
-                    }
-                } else {
-                    attribute.validateAndSet(operation, model);
+                final ModelNode filter = CommonAttributes.FILTER.validateOperation(operation);
+                if (filter.isDefined()) {
+                    final String value = Filters.filterToFilterSpec(filter);
+                    resource.getModel().get(LoggerAttributes.FILTER_SPEC.getName()).set(value.isEmpty() ? new ModelNode() : new ModelNode(value));
                 }
             }
         }
@@ -108,7 +104,8 @@ final class LoggerOperations {
                 configuration = logContextConfiguration.addLoggerConfiguration(loggerName);
             }
 
-            for (AttributeDefinition attribute : attributes) {
+            for (AttributeAccess access : context.getResourceRegistration().getAttributes(PathAddress.EMPTY_ADDRESS).values()) {
+                AttributeDefinition attribute = access.getAttributeDefinition();
                 handleProperty(attribute, context, model, configuration);
             }
         }
@@ -119,6 +116,10 @@ final class LoggerOperations {
      * A default log handler write attribute step handler.
      */
     static class LoggerWriteAttributeHandler extends LoggingOperations.LoggingWriteAttributeHandler {
+        static final OperationStepHandler INSTANCE = new LoggerWriteAttributeHandler();
+
+        private LoggerWriteAttributeHandler() {
+        }
 
         @Override
         protected boolean applyUpdate(final OperationContext context, final String attributeName, final String addressName, final ModelNode value, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
@@ -209,7 +210,7 @@ final class LoggerOperations {
     /**
      * A step handler to remove a handler.
      */
-    static final OperationStepHandler REMOVE_HANDLER = new LoggerUpdateOperationStepHandler(HANDLERS) {
+    static final OperationStepHandler REMOVE_HANDLER = new LoggerUpdateOperationStepHandler() {
 
         @Override
         public void updateModel(final OperationContext context, final ModelNode operation, final ModelNode model) {
