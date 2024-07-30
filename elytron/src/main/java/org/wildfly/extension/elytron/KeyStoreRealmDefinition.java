@@ -65,7 +65,7 @@ class KeyStoreRealmDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadWriteAttribute(KEYSTORE, null, new ElytronReloadRequiredWriteAttributeHandler(KEYSTORE));
+        resourceRegistration.registerReadWriteAttribute(KEYSTORE, null, ElytronReloadRequiredWriteAttributeHandler.INSTANCE);
     }
 
     private static class RealmAddHandler extends BaseAddHandler {

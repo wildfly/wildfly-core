@@ -236,9 +236,8 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler handler = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
         for (AttributeDefinition attr : ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(attr, null, handler);
+            resourceRegistration.registerReadWriteAttribute(attr, null, ElytronReloadRequiredWriteAttributeHandler.INSTANCE);
         }
     }
 

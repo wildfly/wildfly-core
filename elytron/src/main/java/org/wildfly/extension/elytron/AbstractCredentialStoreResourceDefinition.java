@@ -26,7 +26,6 @@ import java.util.logging.Level;
 
 import javax.crypto.SecretKey;
 
-import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -110,9 +109,8 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         AttributeDefinition[] configAttributes = getAttributeDefinitions();
-        AbstractWriteAttributeHandler write = new ElytronReloadRequiredWriteAttributeHandler(configAttributes);
         for (AttributeDefinition current : configAttributes) {
-            resourceRegistration.registerReadWriteAttribute(current, null, write);
+            resourceRegistration.registerReadWriteAttribute(current, null, ElytronReloadRequiredWriteAttributeHandler.INSTANCE);
         }
         if (isServerOrHostController(resourceRegistration)) {
             resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {

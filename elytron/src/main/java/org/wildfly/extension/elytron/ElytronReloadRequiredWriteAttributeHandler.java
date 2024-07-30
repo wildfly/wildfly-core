@@ -9,11 +9,10 @@ import static org.jboss.as.controller.security.CredentialReference.applyCredenti
 import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
 import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
 
-import java.util.Collection;
-
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.CredentialReference;
@@ -23,12 +22,11 @@ import org.jboss.dmr.ModelNode;
  * @author <a href="mailto:thofman@redhat.com">Tomas Hofman</a>
  */
 class ElytronReloadRequiredWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler implements ElytronOperationStepHandler {
-    ElytronReloadRequiredWriteAttributeHandler(final AttributeDefinition... definitions) {
-        super(definitions);
-    }
 
-    ElytronReloadRequiredWriteAttributeHandler(final Collection<AttributeDefinition> definitions) {
-        super(definitions);
+    static final OperationStepHandler INSTANCE = new ElytronReloadRequiredWriteAttributeHandler();
+
+    private ElytronReloadRequiredWriteAttributeHandler() {
+        // Hide
     }
 
     @Override
@@ -59,7 +57,7 @@ class ElytronReloadRequiredWriteAttributeHandler extends ReloadRequiredWriteAttr
     @Override
     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode resolvedValue, Void handback) throws OperationFailedException {
         if (attributeName.equals(CredentialReference.CREDENTIAL_REFERENCE)) {
-            rollbackCredentialStoreUpdate(getAttributeDefinition(attributeName), context, resolvedValue);
+            rollbackCredentialStoreUpdate(context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getAttributeDefinition(), context, resolvedValue);
         }
     }
 }

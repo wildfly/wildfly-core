@@ -20,7 +20,6 @@ import java.util.Set;
 import java.util.function.BinaryOperator;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeMarshallers;
@@ -345,9 +344,8 @@ class RoleMapperDefinitions {
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
              if (attributes != null && attributes.length > 0) {
-                 AbstractWriteAttributeHandler write = new ElytronReloadRequiredWriteAttributeHandler(attributes);
                  for (AttributeDefinition current : attributes) {
-                     resourceRegistration.registerReadWriteAttribute(current, null, write);
+                     resourceRegistration.registerReadWriteAttribute(current, null, ElytronReloadRequiredWriteAttributeHandler.INSTANCE);
                  }
              }
         }

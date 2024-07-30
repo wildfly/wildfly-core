@@ -24,7 +24,6 @@ import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.BasicAttributes;
 import javax.naming.ldap.LdapName;
 
-import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
@@ -208,7 +207,6 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
 
     private static final KeyStoreAddHandler ADD = new KeyStoreAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, KEY_STORE_RUNTIME_CAPABILITY);
-    private static final AbstractWriteAttributeHandler WRITE = new ElytronReloadRequiredWriteAttributeHandler(CONFIG_ATTRIBUTES);
 
     LdapKeyStoreDefinition() {
         super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.LDAP_KEY_STORE), RESOURCE_RESOLVER)
@@ -222,7 +220,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         for (AttributeDefinition current : CONFIG_ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(current, null, WRITE);
+            resourceRegistration.registerReadWriteAttribute(current, null, ElytronReloadRequiredWriteAttributeHandler.INSTANCE);
         }
 
         if (isServerOrHostController(resourceRegistration)) {
