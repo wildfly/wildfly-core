@@ -209,7 +209,7 @@ class SaslServerDefinitions {
 
     static ResourceDefinition getConfigurableSaslServerFactoryDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { SASL_SERVER_FACTORY, SERVER_NAME, PROTOCOL, PROPERTIES, CONFIGURED_FILTERS };
-        AbstractAddStepHandler add = new SaslServerAddHandler(attributes) {
+        AbstractAddStepHandler add = new SaslServerAddHandler() {
 
             @Override
             protected ServiceBuilder<SaslServerFactory> installService(OperationContext context,
@@ -285,7 +285,7 @@ class SaslServerDefinitions {
     }
 
     static ResourceDefinition getProviderSaslServerFactoryDefinition() {
-        AbstractAddStepHandler add = new SaslServerAddHandler(PROVIDERS) {
+        AbstractAddStepHandler add = new SaslServerAddHandler() {
 
             @Override
             protected ServiceBuilder<SaslServerFactory> installService(OperationContext context,
@@ -315,7 +315,7 @@ class SaslServerDefinitions {
     }
 
     static ResourceDefinition getServiceLoaderSaslServerFactoryDefinition() {
-        AbstractAddStepHandler add = new SaslServerAddHandler(MODULE) {
+        AbstractAddStepHandler add = new SaslServerAddHandler() {
 
             @Override
             protected ValueSupplier<SaslServerFactory> getValueSupplier(OperationContext context, ModelNode model)
@@ -342,7 +342,7 @@ class SaslServerDefinitions {
 
     static ResourceDefinition getMechanismProviderFilteringSaslServerFactory() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { SASL_SERVER_FACTORY, ENABLING, MECH_PROVIDER_FILTERS };
-        AbstractAddStepHandler add = new SaslServerAddHandler(attributes) {
+        AbstractAddStepHandler add = new SaslServerAddHandler() {
 
             @Override
             protected ServiceBuilder<SaslServerFactory> installService(OperationContext context,
@@ -451,8 +451,8 @@ class SaslServerDefinitions {
 
     private static class SaslServerAddHandler extends BaseAddHandler {
 
-        private SaslServerAddHandler(AttributeDefinition ... attributes) {
-            super(SASL_SERVER_FACTORY_RUNTIME_CAPABILITY, attributes);
+        private SaslServerAddHandler() {
+            super(SASL_SERVER_FACTORY_RUNTIME_CAPABILITY);
         }
 
         @Override

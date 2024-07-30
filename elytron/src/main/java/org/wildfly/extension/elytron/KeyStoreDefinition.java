@@ -222,7 +222,7 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
     private static class KeyStoreAddHandler extends BaseAddHandler {
 
         private KeyStoreAddHandler() {
-            super(KEY_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES);
+            super(KEY_STORE_RUNTIME_CAPABILITY);
         }
 
         @Override

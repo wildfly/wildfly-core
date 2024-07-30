@@ -52,10 +52,10 @@ class RealmDefinitions {
             .setRestartAllServices()
             .build();
 
-    static AttributeDefinition[] IDENTITY_REALM_ATTRIBUTES = { IDENTITY, ATTRIBUTE_NAME, ATTRIBUTE_VALUES };
+    static final AttributeDefinition[] IDENTITY_REALM_ATTRIBUTES = { IDENTITY, ATTRIBUTE_NAME, ATTRIBUTE_VALUES };
 
     static ResourceDefinition getIdentityRealmDefinition() {
-        AbstractAddStepHandler add = new TrivialAddHandler<SecurityRealm>(SecurityRealm.class, IDENTITY_REALM_ATTRIBUTES, SECURITY_REALM_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<SecurityRealm>(SecurityRealm.class, SECURITY_REALM_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SecurityRealm> getValueSupplier(ServiceBuilder<SecurityRealm> serviceBuilder,

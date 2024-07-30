@@ -252,8 +252,7 @@ class AuthenticationClientDefinitions {
 
     static ResourceDefinition getAuthenticationClientDefinition() {
 
-        TrivialAddHandler<AuthenticationConfiguration> add = new TrivialAddHandler<AuthenticationConfiguration>(AuthenticationConfiguration.class, AUTHENTICATION_CONFIGURATION_ALL_ATTRIBUTES,
-                AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY) {
+        TrivialAddHandler<AuthenticationConfiguration> add = new TrivialAddHandler<>(AuthenticationConfiguration.class, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY) {
 
             @Override
             protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
@@ -404,7 +403,7 @@ class AuthenticationClientDefinitions {
     static ResourceDefinition getAuthenticationContextDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { CONTEXT_EXTENDS, MATCH_RULES };
 
-        TrivialAddHandler<AuthenticationContext> add = new TrivialAddHandler<AuthenticationContext>(AuthenticationContext.class, attributes, AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY) {
+        TrivialAddHandler<AuthenticationContext> add = new TrivialAddHandler<AuthenticationContext>(AuthenticationContext.class, AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<AuthenticationContext> getValueSupplier(ServiceBuilder<AuthenticationContext> serviceBuilder, OperationContext context, ModelNode model)
