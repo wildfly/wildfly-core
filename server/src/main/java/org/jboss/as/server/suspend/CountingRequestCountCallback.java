@@ -11,7 +11,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * its delegate.
  *
  * @author Stuart Douglas
+ * @deprecated To be removed without replacement
  */
+@Deprecated(forRemoval = true)
 public class CountingRequestCountCallback implements ServerActivityCallback {
 
     private final AtomicInteger count;

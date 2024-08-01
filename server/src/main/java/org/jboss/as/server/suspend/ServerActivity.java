@@ -5,32 +5,37 @@
 
 package org.jboss.as.server.suspend;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+
 /**
  * A server activity that may have to finish before the server can shut down gracefully.
  *
  * @author Stuart Douglas
+ * @deprecated Use {@link SuspendableActivity} instead.
  */
-public interface ServerActivity {
+@Deprecated(forRemoval = true)
+public interface ServerActivity extends SuspendableActivity {
 
     /**
      * The lowest valid value to return from {@link #getExecutionGroup()}.
      */
     @SuppressWarnings("unused")
-    int LOWEST_EXECUTION_GROUP = 1;
+    int LOWEST_EXECUTION_GROUP = SuspendableActivityRegistry.SuspendPriority.FIRST.ordinal();
     /**
      * The default value returned from {@link #getExecutionGroup()}. Implementations should use this
      * unless there is a clear reason to use a different value.
      */
-    int DEFAULT_EXECUTION_GROUP = 5;
+    int DEFAULT_EXECUTION_GROUP = SuspendableActivityRegistry.SuspendPriority.DEFAULT.ordinal();
     /**
      * The highest valid value to return from {@link #getExecutionGroup()}.
      */
     @SuppressWarnings("unused")
-    int HIGHEST_EXECUTION_GROUP = 10;
+    int HIGHEST_EXECUTION_GROUP = SuspendableActivityRegistry.SuspendPriority.LAST.ordinal();
 
     /**
      * Returns a value that indicates to which set of {@code ServerActivity} instances
-     * {@link SuspendController#registerActivity(ServerActivity) registered} with the {@link SuspendController}
+     * {@link ServerActivityRegistry#addServerActivity(ServerActivity) registered} with the {@link ServerActivityRegistry}
      * this activity should belong. All {@code ServerActivity} instances with the same execution group value have their
      * {@link #preSuspend(ServerActivityCallback) preSuspend}, {@link #suspended(ServerActivityCallback) suspended}
      * and {@link #resume() resume} methods invoked separately from activities with different execution group values.
@@ -78,4 +83,37 @@ public interface ServerActivity {
      */
     void resume();
 
+    @Override
+    default CompletionStage<Void> prepare(ServerSuspendContext context) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        try {
+            this.preSuspend(() -> future.complete(null));
+        } catch (Throwable e) {
+            future.completeExceptionally(e);
+        }
+        return future;
+    }
+
+    @Override
+    default CompletionStage<Void> suspend(ServerSuspendContext context) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        try {
+            this.suspended(() -> future.complete(null));
+        } catch (Throwable e) {
+            future.completeExceptionally(e);
+        }
+        return future;
+    }
+
+    @Override
+    default CompletionStage<Void> resume(ServerResumeContext context) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        try {
+            this.resume();
+            future.complete(null);
+        } catch (Throwable e) {
+            future.completeExceptionally(e);
+        }
+        return future;
+    }
 }

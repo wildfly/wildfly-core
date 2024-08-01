@@ -42,7 +42,6 @@ import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.suspend.OperationListener;
 import org.jboss.as.server.suspend.SuspendController;
-import org.jboss.as.server.suspend.SuspendController.State;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -147,7 +146,7 @@ public class ServerShutdownHandler implements OperationStepHandler {
                             //to stop new requests being accepted as it is shutting down
                             final ShutdownAction shutdown = new ShutdownAction(getOperationName(operation), restart, performInstallation);
                             final SuspendController suspendController = ServerShutdownHandler.this.suspendController;
-                            if (suspendController.getState() == State.SUSPENDED) {
+                            if (suspendController.getState() == SuspendController.State.SUSPENDED) {
                                 // WFCORE-4935 if server is already in suspend, don't register any listener, just shut it down
                                 shutdown.shutdown();
                             } else {

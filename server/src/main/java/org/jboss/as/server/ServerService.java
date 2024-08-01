@@ -112,6 +112,7 @@ import org.jboss.as.server.mgmt.domain.HostControllerConnectionService;
 import org.jboss.as.server.moduleservice.ExtensionIndexService;
 import org.jboss.as.server.moduleservice.ExternalModule;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
+import org.jboss.as.server.suspend.ServerSuspendController;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
@@ -161,12 +162,10 @@ public final class ServerService extends AbstractControllerService {
     private final SuspendController suspendController;
     public static final String SERVER_NAME = "server";
 
-    static final String SUSPEND_CONTROLLER_CAPABILITY_NAME = "org.wildfly.server.suspend-controller";
     static final String EXTERNAL_MODULE_CAPABILITY_NAME = "org.wildfly.management.external-module";
 
-    static final RuntimeCapability<Void> SUSPEND_CONTROLLER_CAPABILITY =
-            RuntimeCapability.Builder.of(SUSPEND_CONTROLLER_CAPABILITY_NAME, SuspendController.class)
-                    .build();
+    // TODO Remove type narrowing as soon as references to the implementation class are dropped from WildFly
+    static final RuntimeCapability<Void> SUSPEND_CONTROLLER_CAPABILITY = RuntimeCapability.Builder.of(ServerSuspendController.SERVICE_DESCRIPTOR.asType(SuspendController.class)).build();
 
     static final RuntimeCapability<Void> EXTERNAL_MODULE_CAPABILITY =
             RuntimeCapability.Builder.of(EXTERNAL_MODULE_CAPABILITY_NAME, ExternalModule.class)
