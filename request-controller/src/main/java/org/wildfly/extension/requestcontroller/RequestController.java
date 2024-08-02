@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,9 +21,11 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Supplier;
 
 import org.jboss.as.server.suspend.CountingRequestCountCallback;
-import org.jboss.as.server.suspend.ServerActivity;
 import org.jboss.as.server.suspend.ServerActivityCallback;
-import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.as.server.suspend.ServerResumeContext;
+import org.jboss.as.server.suspend.ServerSuspendContext;
+import org.jboss.as.server.suspend.SuspendableActivity;
+import org.jboss.as.server.suspend.SuspendableActivityRegistry;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
@@ -40,12 +44,12 @@ import org.wildfly.extension.requestcontroller.logging.RequestControllerLogger;
  *
  * @author Stuart Douglas
  */
-public class RequestController implements Service<RequestController>, ServerActivity {
+public class RequestController implements Service<RequestController>, SuspendableActivity {
 
     static final ServiceName SERVICE_NAME = RequestControllerRootDefinition.REQUEST_CONTROLLER_CAPABILITY.getCapabilityServiceName();
 
     private static final AtomicIntegerFieldUpdater<RequestController> activeRequestCountUpdater = AtomicIntegerFieldUpdater.newUpdater(RequestController.class, "activeRequestCount");
-    private static final AtomicReferenceFieldUpdater<RequestController, ServerActivityCallback> listenerUpdater = AtomicReferenceFieldUpdater.newUpdater(RequestController.class, ServerActivityCallback.class, "listener");
+    private static final AtomicReferenceFieldUpdater<RequestController, CompletableFuture> suspendUpdater = AtomicReferenceFieldUpdater.newUpdater(RequestController.class, CompletableFuture.class, "suspend");
 
     private volatile int maxRequestCount = -1;
 
@@ -56,57 +60,46 @@ public class RequestController implements Service<RequestController>, ServerActi
     private final Map<ControlPointIdentifier, ControlPoint> entryPoints = new HashMap<>();
 
     @SuppressWarnings("unused")
-    private volatile ServerActivityCallback listener = null;
+    private volatile CompletableFuture<Void> suspend = null;
 
     private final boolean trackIndividualControlPoints;
-    private final Supplier<SuspendController> suspendController;
+    private final Supplier<SuspendableActivityRegistry> registry;
 
-    public RequestController(boolean trackIndividualControlPoints, Supplier<SuspendController> suspendControllerSupplier) {
+    public RequestController(boolean trackIndividualControlPoints, Supplier<SuspendableActivityRegistry> registry) {
         this.trackIndividualControlPoints = trackIndividualControlPoints;
-        this.suspendController = suspendControllerSupplier;
-    }
-
-    @Override
-    public void preSuspend(ServerActivityCallback listener) {
-        listener.done();
+        this.registry = registry;
     }
 
     private Timer timer;
 
     private final Deque<QueuedTask> taskQueue = new LinkedBlockingDeque<>();
 
-    /**
-     * Pause the controller. All existing requests will have a chance to finish, and once all requests are
-     * finished the provided listener will be invoked.
-     * <p/>
-     * While the container is paused no new requests will be accepted.
-     *
-     * @param requestCountListener The listener that will be notified when all requests are done
-     */
-    public synchronized void suspended(ServerActivityCallback requestCountListener) {
+    @Override
+    public CompletionStage<Void> suspend(ServerSuspendContext context) {
         this.paused = true;
-        listenerUpdater.set(this, requestCountListener);
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        suspendUpdater.set(this, result);
 
         if (activeRequestCountUpdater.get(this) == 0) {
-            if (listenerUpdater.compareAndSet(this, requestCountListener, null)) {
-                requestCountListener.done();
+            if (suspendUpdater.compareAndSet(this, result, null)) {
+                result.complete(null);
             }
         }
+        return result;
     }
 
-    /**
-     * Unpause the server, allowing it to resume normal operations
-     */
     @Override
-    public synchronized void resume() {
+    public CompletionStage<Void> resume(ServerResumeContext context) {
         this.paused = false;
-        ServerActivityCallback listener = listenerUpdater.get(this);
-        if (listener != null) {
-            listenerUpdater.compareAndSet(this, listener, null);
+        CompletableFuture<Void> suspend = suspendUpdater.get(this);
+        if (suspend != null) {
+            suspendUpdater.compareAndSet(this, suspend, null);
+            suspend.cancel(false);
         }
         while (!taskQueue.isEmpty() && (activeRequestCount < maxRequestCount || maxRequestCount < 0)) {
             runQueuedTask(false);
         }
+        return SuspendableActivity.COMPLETED;
     }
 
     /**
@@ -225,10 +218,10 @@ public class RequestController implements Service<RequestController>, ServerActi
         int result = activeRequestCountUpdater.decrementAndGet(this);
         if (paused) {
             if (paused && result == 0) {
-                ServerActivityCallback listener = listenerUpdater.get(this);
-                if (listener != null) {
-                    if (listenerUpdater.compareAndSet(this, listener, null)) {
-                        listener.done();
+                CompletableFuture<Void> suspend = suspendUpdater.get(this);
+                if (suspend != null) {
+                    if (suspendUpdater.compareAndSet(this, suspend, null)) {
+                        suspend.complete(null);
                     }
                 }
             }
@@ -302,13 +295,13 @@ public class RequestController implements Service<RequestController>, ServerActi
 
     @Override
     public void start(StartContext startContext) throws StartException {
-        suspendController.get().registerActivity(this);
+        this.registry.get().registerActivity(this);
         timer = new Timer();
     }
 
     @Override
     public void stop(StopContext stopContext) {
-        suspendController.get().unRegisterActivity(this);
+        this.registry.get().registerActivity(this);
         timer.cancel();
         timer = null;
         while (!taskQueue.isEmpty()) {

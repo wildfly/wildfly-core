@@ -5,11 +5,11 @@
 
 package org.wildfly.extension.requestcontroller;
 
-import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
-
 import java.io.IOException;
 
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.ServiceNameFactory;
+import org.jboss.as.server.suspend.ServerSuspendController;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
@@ -57,7 +57,7 @@ public class RequestControllerSubsystemTestCase extends AbstractSubsystemBaseTes
 
             @Override
             protected void addExtraServices(ServiceTarget target) {
-                ServiceInstaller.builder(new SuspendController()).provides(JBOSS_SUSPEND_CONTROLLER).build().install(target);
+                ServiceInstaller.builder(new SuspendController()).provides(ServiceNameFactory.resolveServiceName(ServerSuspendController.SERVICE_DESCRIPTOR)).build().install(target);
             }
 
             @Override

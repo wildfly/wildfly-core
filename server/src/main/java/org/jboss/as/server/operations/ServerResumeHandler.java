@@ -15,11 +15,12 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
-import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.suspend.ServerSuspendController;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Handler that suspends server operations
+ * Handler that resumes server operations
  *
  * @author Stuart Douglas
  */
@@ -29,9 +30,9 @@ public class ServerResumeHandler implements OperationStepHandler {
             .setRuntimeOnly()
             .build();
 
-    private final SuspendController suspendController;
+    private final ServerSuspendController suspendController;
 
-    public ServerResumeHandler(SuspendController suspendController) {
+    public ServerResumeHandler(ServerSuspendController suspendController) {
         this.suspendController = suspendController;
     }
 
@@ -49,9 +50,8 @@ public class ServerResumeHandler implements OperationStepHandler {
                     @Override
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                         if (resultAction == OperationContext.ResultAction.KEEP) {
-                            //even if the timeout is zero we still pause the server
-                            //to stop new requests being accepted as it is shutting down
-                            ServerResumeHandler.this.suspendController.resume();
+                            ServerLogger.ROOT_LOGGER.resumingServer();
+                            ServerResumeHandler.this.suspendController.resume(ServerSuspendController.Context.RUNNING).toCompletableFuture().join();
                         }
                     }
                 });

@@ -117,7 +117,7 @@ import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.as.server.services.net.SpecifiedInterfaceAddHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceRemoveHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
-import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.as.server.suspend.ServerSuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -209,7 +209,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static final AttributeDefinition SUSPEND_STATE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_STATE, ModelType.STRING)
-            .setValidator(EnumValidator.create(SuspendController.State.class))
+            .setValidator(EnumValidator.create(ServerSuspendController.State.class))
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
@@ -266,7 +266,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
     private final CapabilityRegistry capabilityRegistry;
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
     private final BootErrorCollector bootErrorCollector;
-    private final SuspendController suspendController;
+    private final ServerSuspendController suspendController;
 
     public ServerRootResourceDefinition(
             final ContentRepository contentRepository,
@@ -284,7 +284,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider,
             final BootErrorCollector bootErrorCollector,
             final CapabilityRegistry capabilityRegistry,
-            final SuspendController suspendController) {
+            final ServerSuspendController suspendController) {
         super(new Parameters(ResourceRegistration.root(), ServerDescriptions.getResourceDescriptionResolver(SERVER, false))
                 .addCapabilities(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.HOME_DIR),
                         PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_BASE_DIR),

@@ -7,6 +7,7 @@ package org.jboss.as.server;
 
 import java.lang.management.ManagementFactory;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -17,8 +18,8 @@ import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.server.jmx.RunningStateJmx;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.server.suspend.OperationListener;
 import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.as.server.suspend.ServerSuspendController;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
@@ -97,7 +98,7 @@ final class BootstrapImpl implements Bootstrap {
         final ControlledProcessState processState = new ControlledProcessState(true);
         shutdownHook.setControlledProcessState(processState);
         ProcessStateNotifier processStateNotifier = ControlledProcessStateService.addService(tracker, processState);
-        final SuspendController suspendController = new SuspendController();
+        ServerSuspendController suspendController = new SuspendController();
         this.shutdownHook.setSuspendController(suspendController);
         //Instantiating the suspendcontroller here to be able to get a reference to it in RunningStateJmx
         //Note that the SuspendController service will be started in the ServerService during the boot of the server.
@@ -210,7 +211,7 @@ final class BootstrapImpl implements Bootstrap {
         private boolean down;
         private ControlledProcessState processState;
         private ServiceContainer container;
-        private volatile SuspendController suspendController;
+        private volatile ServerSuspendController suspendController;
 
         private ServiceContainer register() {
 
@@ -229,7 +230,7 @@ final class BootstrapImpl implements Bootstrap {
             this.processState = ps;
         }
 
-        private void setSuspendController(SuspendController suspendController) {
+        private void setSuspendController(ServerSuspendController suspendController) {
             this.suspendController = suspendController;
         }
 
@@ -249,7 +250,7 @@ final class BootstrapImpl implements Bootstrap {
             try {
                 if (ps != null) {
                     if (!failed && ps.getState() == ControlledProcessState.State.RUNNING) {
-                        suspend(this.suspendController);
+                        suspend(this.container);
                     }
                     ps.setStopping();
                 }
@@ -281,69 +282,29 @@ final class BootstrapImpl implements Bootstrap {
             }
         }
 
-        private static void suspend(SuspendController suspendController) {
-            try {
-                if (suspendController != null) {
-                    long timeout = getSuspendTimeout();
-                    final CountDownLatch suspendLatch = new CountDownLatch(1);
-                    OperationListener listener = new OperationListener() {
-                        @Override
-                        public void suspendStarted() {
-
-                        }
-
-                        @Override
-                        public void complete() {
-                            suspendController.removeListener(this);
-                            suspendLatch.countDown();
-                        }
-
-                        @Override
-                        public void cancelled() {
-                            suspendController.removeListener(this);
-                            suspendLatch.countDown();
-                        }
-
-                        @Override
-                        public void timeout() {
-                            suspendController.removeListener(this);
-                            suspendLatch.countDown();
-                        }
-                    };
-                    suspendController.addListener(listener);
-                    suspendController.suspend(timeout);
-                    if (timeout > 0) {
-                        // The latch should trip within 'timeout' but if necessary we'll wait
-                        // 500 ms longer for it in the off chance a gc or something delays things
-                        suspendLatch.await(timeout + 500, TimeUnit.MILLISECONDS);
-                    } else if (timeout < 0) {
-                        suspendLatch.await();
-                    } // else 0 means we don't wait for tasks to finish
+        private void suspend(ServiceContainer sc) {
+            ServerSuspendController suspendController = this.suspendController;
+            if ((suspendController != null) && !sc.isShutdownComplete()) {
+                long timeoutSeconds = getSuspendTimeout();
+                CompletableFuture<Void> suspend = suspendController.suspend(ServerSuspendController.Context.SHUTDOWN).toCompletableFuture();
+                if (timeoutSeconds >= 0) {
+                    // If necessary we'll wait 500 ms longer for it in the off chance a gc or something delays things
+                    suspend = suspend.orTimeout(TimeUnit.MILLISECONDS.convert(timeoutSeconds, TimeUnit.SECONDS) + 500, TimeUnit.MILLISECONDS);
                 }
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            }
-            catch (Throwable t) {
-                // ignored
+                suspend.join();
             }
         }
 
         private static long getSuspendTimeout() {
-            long result = 0;
             String timeoutString = System.getProperty(SIGTERM_SUSPEND_TIMEOUT_PROP);
             if (timeoutString != null && timeoutString.length() > 0) {
                 try {
-                    int max = Integer.decode(timeoutString);
-                    result = max > 0 ? max * 1000 : max;
-                } catch(NumberFormatException ex) {
-                    try {
-                        ServerLogger.ROOT_LOGGER.failedToParseCommandLineInteger(SIGTERM_SUSPEND_TIMEOUT_PROP, timeoutString);
-                    } catch (Throwable ignored) {
-                        // ignore
-                    }
+                    return Integer.decode(timeoutString);
+                } catch (NumberFormatException ex) {
+                    ServerLogger.ROOT_LOGGER.failedToParseCommandLineInteger(SIGTERM_SUSPEND_TIMEOUT_PROP, timeoutString);
                 }
             }
-            return result;
+            return 0L;
         }
     }
 }

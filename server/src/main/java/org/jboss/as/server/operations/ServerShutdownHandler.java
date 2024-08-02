@@ -20,6 +20,9 @@ import java.io.FileReader;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.Properties;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.controller.ControlledProcessState;
@@ -40,8 +43,7 @@ import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.SystemExiter;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.server.suspend.OperationListener;
-import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.as.server.suspend.ServerSuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -72,9 +74,9 @@ public class ServerShutdownHandler implements OperationStepHandler {
 
     private final ControlledProcessState processState;
     private final ServerEnvironment environment;
-    private final SuspendController suspendController;
+    private final ServerSuspendController suspendController;
 
-    public ServerShutdownHandler(ControlledProcessState processState, ServerEnvironment serverEnvironment, SuspendController suspendController) {
+    public ServerShutdownHandler(ControlledProcessState processState, ServerEnvironment serverEnvironment, ServerSuspendController suspendController) {
         this.processState = processState;
         this.environment = serverEnvironment;
         this.suspendController = suspendController;
@@ -87,7 +89,7 @@ public class ServerShutdownHandler implements OperationStepHandler {
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         renameTimeoutToSuspendTimeout(operation);
         final boolean restart = RESTART.resolveModelAttribute(context, operation).asBoolean();
-        final int timeout = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt(); //in seconds, need to convert to ms
+        final int seconds = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt();
         final boolean performInstallation = PERFORM_INSTALLATION.resolveModelAttribute(context, operation).asBoolean();
 
         // Verify the candidate server is prepared
@@ -145,37 +147,16 @@ public class ServerShutdownHandler implements OperationStepHandler {
                             //even if the timeout is zero we still pause the server
                             //to stop new requests being accepted as it is shutting down
                             final ShutdownAction shutdown = new ShutdownAction(getOperationName(operation), restart, performInstallation);
-                            final SuspendController suspendController = ServerShutdownHandler.this.suspendController;
-                            if (suspendController.getState() == SuspendController.State.SUSPENDED) {
-                                // WFCORE-4935 if server is already in suspend, don't register any listener, just shut it down
+                            final ServerSuspendController suspendController = ServerShutdownHandler.this.suspendController;
+                            CompletableFuture<Void> suspend = suspendController.suspend(ServerSuspendController.Context.SHUTDOWN).toCompletableFuture();
+                            if (seconds >= 0) {
+                                suspend = suspend.orTimeout(seconds, TimeUnit.SECONDS);
+                            }
+                            try {
+                                suspend.join();
                                 shutdown.shutdown();
-                            } else {
-                                OperationListener listener = new OperationListener() {
-                                    @Override
-                                    public void suspendStarted() {
-
-                                    }
-
-                                    @Override
-                                    public void complete() {
-                                        suspendController.removeListener(this);
-                                        shutdown.shutdown();
-                                    }
-
-                                    @Override
-                                    public void cancelled() {
-                                        suspendController.removeListener(this);
-                                        shutdown.cancel();
-                                    }
-
-                                    @Override
-                                    public void timeout() {
-                                        suspendController.removeListener(this);
-                                        shutdown.shutdown();
-                                    }
-                                };
-                                suspendController.addListener(listener);
-                                suspendController.suspend(timeout > 0 ? timeout * 1000 : timeout);
+                            } catch (CancellationException e) {
+                                shutdown.cancel();
                             }
                         }
                     }
