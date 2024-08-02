@@ -18,10 +18,11 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
-import org.jboss.as.server.suspend.CountingRequestCountCallback;
-import org.jboss.as.server.suspend.ServerActivityCallback;
 import org.jboss.as.server.suspend.ServerResumeContext;
 import org.jboss.as.server.suspend.ServerSuspendContext;
 import org.jboss.as.server.suspend.SuspendableActivity;
@@ -103,24 +104,59 @@ public class RequestController implements Service<RequestController>, Suspendabl
     }
 
     /**
+     * Pauses control points matching the specified predicate.
+     *
+     * @param filter a control point filter
+     * @return a stage that will complete when the deployments matching the specified predicate are paused.
+     */
+    private synchronized CompletionStage<Void> pause(Predicate<ControlPoint> filter) {
+        List<ControlPoint> controlPoints = this.entryPoints.values().stream().filter(filter).collect(Collectors.toUnmodifiableList());
+        if (controlPoints.isEmpty()) return SuspendableActivity.COMPLETED;
+        AtomicInteger count = new AtomicInteger(controlPoints.size());
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        for (ControlPoint controlPoint : controlPoints) {
+            controlPoint.pause().whenComplete(new BiConsumer<>() {
+                @Override
+                public void accept(Void ignore, Throwable exception) {
+                    if (exception != null) {
+                        result.completeExceptionally(exception);
+                    } else if (count.decrementAndGet() == 0) {
+                        result.complete(null);
+                    }
+                }
+            });
+        }
+        return result;
+    }
+
+    /**
+     * Pauses a given deployment
+     *
+     * @param deployment The deployment to pause
+     * @return a stage that completes when all control points for the the specified deployment have paused.
+     */
+    public CompletionStage<Void> pauseDeployment(final String deployment) {
+        return this.pause(new DeploymentFilter(deployment));
+    }
+
+    /**
      * Pauses a given deployment
      *
      * @param deployment The deployment to pause
      * @param listener The listener that will be notified when the pause is complete
+     * @deprecated Superseded by {@link #pauseDeployment(String)}.
      */
-    public synchronized void pauseDeployment(final String deployment, ServerActivityCallback listener) {
-        final List<ControlPoint> eps = new ArrayList<ControlPoint>();
-        for (ControlPoint ep : entryPoints.values()) {
-            if (ep.getDeployment().equals(deployment)) {
-                if(!ep.isPaused()) {
-                    eps.add(ep);
-                }
-            }
-        }
-        CountingRequestCountCallback realListener = new CountingRequestCountCallback(eps.size(), listener);
-        for (ControlPoint ep : eps) {
-            ep.pause(realListener);
-        }
+    @Deprecated(forRemoval = true)
+    public void pauseDeployment(final String deployment, org.jboss.as.server.suspend.ServerActivityCallback listener) {
+        this.pauseDeployment(deployment).whenComplete((ignore, exception) -> listener.done());
+    }
+
+    /**
+     * Resumes the control points matching the specified predicate.
+     * @param filter a control point filter
+     */
+    private synchronized void resume(Predicate<ControlPoint> filter) {
+        this.entryPoints.values().stream().filter(filter).forEach(ControlPoint::resume);
     }
 
     /**
@@ -128,38 +164,30 @@ public class RequestController implements Service<RequestController>, Suspendabl
      *
      * @param deployment The deployment to resume
      */
-    public synchronized void resumeDeployment(final String deployment) {
-        for (ControlPoint ep : entryPoints.values()) {
-            if (ep.getDeployment().equals(deployment)) {
-                ep.resume();
-            }
-        }
+    public void resumeDeployment(final String deployment) {
+        this.resume(new DeploymentFilter(deployment));
     }
 
     /**
      * Pauses a given entry point. This can be used to stop all requests though a given mechanism, e.g. all web requests
      *
-     * @param controlPoint The control point
-     * @param listener   The listener
+     * @param controlPoint the entry point to pause
+     * @return a stage that completes when all control points for the specified entry point have paused.
      */
-    public synchronized void pauseControlPoint(final String controlPoint, ServerActivityCallback listener) {
-        final List<ControlPoint> eps = new ArrayList<ControlPoint>();
-        for (ControlPoint ep : entryPoints.values()) {
-            if (ep.getEntryPoint().equals(controlPoint)) {
-                if(!ep.isPaused()) {
-                    eps.add(ep);
-                }
-            }
-        }
-        if(eps.isEmpty()) {
-            if(listener != null) {
-                listener.done();
-            }
-        }
-        CountingRequestCountCallback realListener = new CountingRequestCountCallback(eps.size(), listener);
-        for (ControlPoint ep : eps) {
-            ep.pause(realListener);
-        }
+    public CompletionStage<Void> pauseControlPoint(final String entryPoint) {
+        return this.pause(new EntryPointFilter(entryPoint));
+    }
+
+    /**
+     * Pauses a given entry point. This can be used to stop all requests though a given mechanism, e.g. all web requests
+     *
+     * @param entryPoint the entry point to pause
+     * @param listener   The listener
+     * @deprecated Superseded by {@link #pauseControlPoint(String)}
+     */
+    @Deprecated(forRemoval = true)
+    public void pauseControlPoint(final String entryPoint, org.jboss.as.server.suspend.ServerActivityCallback listener) {
+        this.pauseControlPoint(entryPoint).whenComplete((ignore, exception) -> listener.done());
     }
 
     /**
@@ -167,12 +195,8 @@ public class RequestController implements Service<RequestController>, Suspendabl
      *
      * @param entryPoint The entry point
      */
-    public synchronized void resumeControlPoint(final String entryPoint) {
-        for (ControlPoint ep : entryPoints.values()) {
-            if (ep.getEntryPoint().equals(entryPoint)) {
-                ep.resume();
-            }
-        }
+    public void resumeControlPoint(final String entryPoint) {
+        this.resume(new EntryPointFilter(entryPoint));
     }
 
     public synchronized RequestControllerState getState() {
@@ -469,4 +493,29 @@ public class RequestController implements Service<RequestController>, Suspendabl
         }
     }
 
+    private static class DeploymentFilter implements Predicate<ControlPoint> {
+        private final String deployment;
+
+        DeploymentFilter(String deployment) {
+            this.deployment = deployment;
+        }
+
+        @Override
+        public boolean test(ControlPoint controlPoint) {
+            return controlPoint.getDeployment().equals(this.deployment);
+        }
+    }
+
+    private static class EntryPointFilter implements Predicate<ControlPoint> {
+        private final String entryPoint;
+
+        EntryPointFilter(String entryPoint) {
+            this.entryPoint = entryPoint;
+        }
+
+        @Override
+        public boolean test(ControlPoint controlPoint) {
+            return controlPoint.getEntryPoint().equals(this.entryPoint);
+        }
+    }
 }
