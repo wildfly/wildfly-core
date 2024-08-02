@@ -10,7 +10,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
-import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.SUSPEND_TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.renameTimeoutToSuspendTimeout;
@@ -46,8 +45,6 @@ import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.as.server.suspend.SuspendController.State;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceRegistry;
 
 /**
  * Handler that shuts down the standalone server.
@@ -74,13 +71,14 @@ public class ServerShutdownHandler implements OperationStepHandler {
             .setRuntimeOnly()
             .build();
 
-
     private final ControlledProcessState processState;
     private final ServerEnvironment environment;
+    private final SuspendController suspendController;
 
-    public ServerShutdownHandler(ControlledProcessState processState, ServerEnvironment serverEnvironment) {
+    public ServerShutdownHandler(ControlledProcessState processState, ServerEnvironment serverEnvironment, SuspendController suspendController) {
         this.processState = processState;
         this.environment = serverEnvironment;
+        this.suspendController = suspendController;
     }
 
     /**
@@ -148,9 +146,7 @@ public class ServerShutdownHandler implements OperationStepHandler {
                             //even if the timeout is zero we still pause the server
                             //to stop new requests being accepted as it is shutting down
                             final ShutdownAction shutdown = new ShutdownAction(getOperationName(operation), restart, performInstallation);
-                            final ServiceRegistry registry = context.getServiceRegistry(false);
-                            final ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(JBOSS_SUSPEND_CONTROLLER);
-                            final SuspendController suspendController = suspendControllerServiceController.getValue();
+                            final SuspendController suspendController = ServerShutdownHandler.this.suspendController;
                             if (suspendController.getState() == State.SUSPENDED) {
                                 // WFCORE-4935 if server is already in suspend, don't register any listener, just shut it down
                                 shutdown.shutdown();

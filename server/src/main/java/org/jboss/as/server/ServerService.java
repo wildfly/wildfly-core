@@ -127,6 +127,7 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.EnhancedQueueExecutor;
 import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.service.ServiceInstaller;
 
 /**
  * Service for the {@link org.jboss.as.controller.ModelController} for an AS server instance.
@@ -286,7 +287,8 @@ public final class ServerService extends AbstractControllerService {
                         super.getAuditLogger(),
                         getMutableRootResourceRegistrationProvider(),
                         super.getBootErrorCollector(),
-                        configuration.getCapabilityRegistry()));
+                        configuration.getCapabilityRegistry(),
+                        this.suspendController));
         super.start(context);
     }
 
@@ -312,8 +314,7 @@ public final class ServerService extends AbstractControllerService {
                     suspendController.nonGracefulStart();
                 }
             }
-            context.getServiceTarget().addService(SUSPEND_CONTROLLER_CAPABILITY.getCapabilityServiceName(), suspendController)
-                    .install();
+            ServiceInstaller.builder(this.suspendController).provides(SUSPEND_CONTROLLER_CAPABILITY.getCapabilityServiceName()).build().install(context.getServiceTarget());
 
             GracefulShutdownService gracefulShutdownService = new GracefulShutdownService();
             context.getServiceTarget().addService(GracefulShutdownService.SERVICE_NAME, gracefulShutdownService)

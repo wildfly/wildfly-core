@@ -7,7 +7,6 @@ package org.jboss.as.server.operations;
 
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
-import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.SUSPEND_TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.renameTimeoutToSuspendTimeout;
@@ -25,8 +24,6 @@ import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.suspend.OperationListener;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceRegistry;
 
 /**
  * Handler that suspends server operations
@@ -35,13 +32,17 @@ import org.jboss.msc.service.ServiceRegistry;
  */
 public class ServerSuspendHandler implements OperationStepHandler {
 
-    public static final ServerSuspendHandler INSTANCE = new ServerSuspendHandler();
-
     public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.SUSPEND,
                 ServerDescriptions.getResourceDescriptionResolver(RUNNING_SERVER))
             .setParameters(TIMEOUT, SUSPEND_TIMEOUT)
             .setRuntimeOnly()
             .build();
+
+    private final SuspendController suspendController;
+
+    public ServerSuspendHandler(SuspendController suspendController) {
+        this.suspendController = suspendController;
+    }
 
     /**
      * {@inheritDoc}
@@ -56,9 +57,7 @@ public class ServerSuspendHandler implements OperationStepHandler {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(final OperationContext context, ModelNode operation) throws OperationFailedException {
-                final ServiceRegistry registry = context.getServiceRegistry(false);
-                ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(JBOSS_SUSPEND_CONTROLLER);
-                final SuspendController suspendController = suspendControllerServiceController.getValue();
+                final SuspendController suspendController = ServerSuspendHandler.this.suspendController;
 
                 final CountDownLatch latch = new CountDownLatch(1);
                 final AtomicBoolean cancelled = new AtomicBoolean();

@@ -15,10 +15,6 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.msc.service.Service;
-import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
-import org.jboss.msc.service.StopContext;
 import org.wildfly.common.Assert;
 
 /**
@@ -32,7 +28,7 @@ import org.wildfly.common.Assert;
  *
  * @author Stuart Douglas
  */
-public class SuspendController implements Service<SuspendController> {
+public class SuspendController {
 
     /**
      * Timer that handles the timeout. We create it on pause, rather than leaving it hanging round.
@@ -47,17 +43,12 @@ public class SuspendController implements Service<SuspendController> {
 
     private int groupsCount;
 
-    private boolean startSuspended;
-
     private final ServerActivityCallback listener = this::activityPaused;
 
-    public SuspendController() {
-        this.startSuspended = false;
-    }
-
     public void setStartSuspended(boolean startSuspended) {
-        //TODO: it is not very clear what this boolean stands for now.
-        this.startSuspended = startSuspended;
+        if (startSuspended) {
+            ServerLogger.AS_ROOT_LOGGER.startingServerSuspended();
+        }
         state = State.SUSPENDED;
     }
 
@@ -187,17 +178,6 @@ public class SuspendController implements Service<SuspendController> {
         }
     }
 
-    @Override
-    public synchronized void start(StartContext startContext) throws StartException {
-        if(startSuspended) {
-            ServerLogger.AS_ROOT_LOGGER.startingServerSuspended();
-        }
-    }
-
-    @Override
-    public synchronized void stop(StopContext stopContext) {
-    }
-
     public State getState() {
         return state;
     }
@@ -238,11 +218,6 @@ public class SuspendController implements Service<SuspendController> {
 
     public synchronized void removeListener(final OperationListener listener) {
         operationListeners.remove(listener);
-    }
-
-    @Override
-    public SuspendController getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
     }
 
     private void processGroups(Iterator<List<ServerActivity>> iterator,

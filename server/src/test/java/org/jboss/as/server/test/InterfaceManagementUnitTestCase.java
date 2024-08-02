@@ -61,6 +61,7 @@ import org.jboss.as.server.Services;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.parsing.StandaloneXml;
 import org.jboss.as.server.services.net.NetworkInterfaceService;
+import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -310,7 +311,7 @@ public class InterfaceManagementUnitTestCase {
         public void start(StartContext context) throws StartException {
             rootResourceDefinition.setDelegate(new ServerRootResourceDefinition(MockRepository.INSTANCE,
                     persister, environment, processState, null, extensionRegistry, false, MOCK_PATH_MANAGER, null,
-                    authorizer, securityIdentitySupplier, AuditLogger.NO_OP_LOGGER, getMutableRootResourceRegistrationProvider(), getBootErrorCollector(), capabilityRegistry));
+                    authorizer, securityIdentitySupplier, AuditLogger.NO_OP_LOGGER, getMutableRootResourceRegistrationProvider(), getBootErrorCollector(), capabilityRegistry, new SuspendController()));
             super.start(context);
         }
 

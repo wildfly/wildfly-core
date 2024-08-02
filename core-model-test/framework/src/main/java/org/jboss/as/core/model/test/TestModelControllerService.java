@@ -78,6 +78,7 @@ import org.jboss.as.server.ServerEnvironmentService;
 import org.jboss.as.server.ServerPathManagerService;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.controller.resources.VersionModelInitializer;
+import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
@@ -407,7 +408,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                     securityIdentitySupplier,
                     AuditLogger.NO_OP_LOGGER,
                     getMutableRootResourceRegistrationProvider(),
-                    getBootErrorCollector(), capabilityRegistry));
+                    getBootErrorCollector(), capabilityRegistry, new SuspendController()));
         }
 
         @Override

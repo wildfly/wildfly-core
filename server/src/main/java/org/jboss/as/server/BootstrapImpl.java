@@ -5,8 +5,6 @@
 
 package org.jboss.as.server;
 
-import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
-
 import java.lang.management.ManagementFactory;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -100,6 +98,7 @@ final class BootstrapImpl implements Bootstrap {
         shutdownHook.setControlledProcessState(processState);
         ProcessStateNotifier processStateNotifier = ControlledProcessStateService.addService(tracker, processState);
         final SuspendController suspendController = new SuspendController();
+        this.shutdownHook.setSuspendController(suspendController);
         //Instantiating the suspendcontroller here to be able to get a reference to it in RunningStateJmx
         //Note that the SuspendController service will be started in the ServerService during the boot of the server.
         RunningStateJmx.registerMBean(
@@ -211,6 +210,7 @@ final class BootstrapImpl implements Bootstrap {
         private boolean down;
         private ControlledProcessState processState;
         private ServiceContainer container;
+        private volatile SuspendController suspendController;
 
         private ServiceContainer register() {
 
@@ -229,6 +229,10 @@ final class BootstrapImpl implements Bootstrap {
             this.processState = ps;
         }
 
+        private void setSuspendController(SuspendController suspendController) {
+            this.suspendController = suspendController;
+        }
+
         @Override
         public void run() {
             shutdown(false);
@@ -245,7 +249,7 @@ final class BootstrapImpl implements Bootstrap {
             try {
                 if (ps != null) {
                     if (!failed && ps.getState() == ControlledProcessState.State.RUNNING) {
-                        suspend(sc);
+                        suspend(this.suspendController);
                     }
                     ps.setStopping();
                 }
@@ -277,9 +281,8 @@ final class BootstrapImpl implements Bootstrap {
             }
         }
 
-        private static void suspend(ServiceContainer sc) {
+        private static void suspend(SuspendController suspendController) {
             try {
-                final SuspendController suspendController = getSuspendController(sc);
                 if (suspendController != null) {
                     long timeout = getSuspendTimeout();
                     final CountDownLatch suspendLatch = new CountDownLatch(1);
@@ -323,17 +326,6 @@ final class BootstrapImpl implements Bootstrap {
             catch (Throwable t) {
                 // ignored
             }
-        }
-
-        private static SuspendController getSuspendController(ServiceContainer sc) {
-            SuspendController result = null;
-            if (sc != null && !sc.isShutdownComplete()) {
-                final ServiceController serviceController = sc.getService(JBOSS_SUSPEND_CONTROLLER);
-                if (serviceController != null && serviceController.getState() == ServiceController.State.UP) {
-                    result = (SuspendController) serviceController.getValue();
-                }
-            }
-            return result;
         }
 
         private static long getSuspendTimeout() {
