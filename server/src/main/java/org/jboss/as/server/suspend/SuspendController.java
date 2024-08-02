@@ -12,11 +12,9 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -90,27 +88,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
         for (OperationListener listener: this.listeners) {
             listener.suspendStarted();
         }
-        // Handle TimeoutException by triggering listener
-        BiFunction<Void, Throwable, Void> timeoutHandler = (ignore, exception) -> {
-            if (exception != null) {
-                if (exception instanceof TimeoutException) {
-                    for (OperationListener listener: this.listeners) {
-                        listener.timeout();
-                    }
-                    return null;
-                }
-                // Don't re-wrap CompletionException/CancellationException
-                throw (exception instanceof RuntimeException) ? (RuntimeException) exception : new CompletionException(exception);
-            }
-            return null;
-        };
-        CompletableFuture<Void> result = new CompletableFuture<>() {
-            @Override
-            public CompletableFuture<Void> orTimeout(long timeout, TimeUnit unit) {
-                // Redirect timeout exceptions to ServerSuspendListener
-                return super.orTimeout(timeout, unit).handle(timeoutHandler);
-            }
-        };
+        CompletableFuture<Void> result = new CompletableFuture<>();
         // Prepare activity groups in priority order, i.e. first -> last
         this.phaseStage(this.activityGroups, SuspendableActivity::prepare, context, Functions.discardingBiConsumer()).whenComplete((ignored, prepareException) -> {
             if (prepareException != null) {
@@ -235,7 +213,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
     }
 
     /**
-     * @deprecated Superseded by {@link #suspend(ServerSuspendContext)} using {@link CompletableFuture#orTimeout(Object, long, TimeUnit)}.
+     * @deprecated Superseded by {@link #suspend(ServerSuspendContext)} using {@link CompletableFuture#completeOnTimeout(Object, long, TimeUnit)}.
      */
     @Deprecated(forRemoval = true)
     public void suspend(long timeoutMillis) {
@@ -248,7 +226,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
         }
         CompletableFuture<Void> suspend = this.suspend(Context.RUNNING).toCompletableFuture();
         if (timeoutMillis >= 0) {
-            suspend.orTimeout(timeoutMillis, TimeUnit.MILLISECONDS);
+            suspend.completeOnTimeout(null, timeoutMillis, TimeUnit.MILLISECONDS);
         }
         suspend.join();
     }

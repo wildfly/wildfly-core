@@ -122,10 +122,6 @@ public class ProcessStateListenerService implements Service {
                             break;
                     }
                 }
-
-                @Override
-                public void timeout() {
-                }
             };
         } else {
             operationListener = null;

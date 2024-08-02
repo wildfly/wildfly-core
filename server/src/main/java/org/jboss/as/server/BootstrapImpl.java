@@ -289,7 +289,7 @@ final class BootstrapImpl implements Bootstrap {
                 CompletableFuture<Void> suspend = suspendController.suspend(ServerSuspendController.Context.SHUTDOWN).toCompletableFuture();
                 if (timeoutSeconds >= 0) {
                     // If necessary we'll wait 500 ms longer for it in the off chance a gc or something delays things
-                    suspend = suspend.orTimeout(TimeUnit.MILLISECONDS.convert(timeoutSeconds, TimeUnit.SECONDS) + 500, TimeUnit.MILLISECONDS);
+                    suspend.completeOnTimeout(null, TimeUnit.MILLISECONDS.convert(timeoutSeconds, TimeUnit.SECONDS) + 500, TimeUnit.MILLISECONDS);
                 }
                 suspend.join();
             }

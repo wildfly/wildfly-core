@@ -150,7 +150,7 @@ public class ServerShutdownHandler implements OperationStepHandler {
                             final ServerSuspendController suspendController = ServerShutdownHandler.this.suspendController;
                             CompletableFuture<Void> suspend = suspendController.suspend(ServerSuspendController.Context.SHUTDOWN).toCompletableFuture();
                             if (seconds >= 0) {
-                                suspend = suspend.orTimeout(seconds, TimeUnit.SECONDS);
+                                suspend.completeOnTimeout(null, seconds, TimeUnit.SECONDS);
                             }
                             try {
                                 suspend.join();

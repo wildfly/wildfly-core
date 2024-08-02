@@ -178,10 +178,6 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
                             mbean.setRunningState(mbean.getRunningState(), RunningState.ADMIN_ONLY);
                         }
                     }
-
-                    @Override
-                    public void timeout() {
-                    }
                 });
             } else {
                 mbean.setRunningState(null, RunningState.STARTING);

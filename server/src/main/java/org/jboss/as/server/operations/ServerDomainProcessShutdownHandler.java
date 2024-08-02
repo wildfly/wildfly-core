@@ -70,7 +70,7 @@ public class ServerDomainProcessShutdownHandler implements OperationStepHandler 
                             //to stop new requests being accepted as it is shutting down
 
                             CompletionStage<Void> suspend = ServerDomainProcessShutdownHandler.this.suspendController.suspend(ServerSuspendController.Context.SHUTDOWN);
-                            SUSPEND_STAGE.set((seconds >= 0) ? suspend.toCompletableFuture().orTimeout(seconds, TimeUnit.SECONDS) : suspend);
+                            SUSPEND_STAGE.set((seconds >= 0) ? suspend.toCompletableFuture().completeOnTimeout(null, seconds, TimeUnit.SECONDS) : suspend);
                         }
                     }
                 });
