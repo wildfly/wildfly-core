@@ -50,7 +50,7 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
-import org.jboss.as.server.deployment.AbstractDeploymentUnitService;
+import org.jboss.as.server.deployment.DeploymentStatus;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -109,7 +109,7 @@ public class DeploymentAttributes {
             .build();
 
     public static final AttributeDefinition STATUS = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.STATUS, ModelType.STRING, true)
-        .setValidator(new EnumValidator<AbstractDeploymentUnitService.DeploymentStatus>(AbstractDeploymentUnitService.DeploymentStatus.class))
+        .setValidator(new EnumValidator<DeploymentStatus>(DeploymentStatus.class))
         .build();
 
     public static final SimpleAttributeDefinition ENABLED_TIME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ENABLED_TIME, ModelType.LONG, true)

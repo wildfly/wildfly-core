@@ -49,6 +49,7 @@ import org.jboss.as.server.deployment.transformation.DeploymentTransformer;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.LifecycleEvent;
 import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.ServiceBuilder;
@@ -57,6 +58,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.vfs.VirtualFile;
+import org.wildfly.service.capture.ServiceValueExecutorRegistry;
 
 /**
  * Utility methods used by operation handlers involved with deployment.
@@ -107,8 +109,13 @@ public class DeploymentHandlerUtil {
     private DeploymentHandlerUtil() {
     }
 
-    public static void deploy(final OperationContext context, final ModelNode operation, final String deploymentUnitName, final String managementName, final ContentItem... contents) throws OperationFailedException {
+    static void deploy(final OperationContext context, final ModelNode operation, final String deploymentUnitName,
+                       final String managementName,
+                       final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry,
+                       final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> deploymentStatusRegistry,
+                       final ContentItem... contents) throws OperationFailedException {
         assert contents != null : "contents is null";
+        assert deploymentStatusRegistry != null : "Null deploymentStatusRegistry";
 
         if (context.isNormalServer()) {
             //Checking for duplicate runtime name
@@ -155,7 +162,8 @@ public class DeploymentHandlerUtil {
                             }
                         });
                     } else {
-                        doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, contents);
+                        doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration,
+                                deploymentUnitRegistry, deploymentStatusRegistry, contents);
 
                         context.completeStep(new OperationContext.ResultHandler() {
                             @Override
@@ -177,13 +185,16 @@ public class DeploymentHandlerUtil {
         }
     }
 
-    public static void doDeploy(final OperationContext context, final String deploymentUnitName, final String managementName,
-                                final Resource deploymentResource, final ImmutableManagementResourceRegistration registration,
-                                final ManagementResourceRegistration mutableRegistration, final ContentItem... contents) {
+    static void doDeploy(final OperationContext context, final String deploymentUnitName, final String managementName,
+                         final Resource deploymentResource, final ImmutableManagementResourceRegistration registration,
+                         final ManagementResourceRegistration mutableRegistration,
+                         final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry,
+                         final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> deploymentStatusRegistry,
+                         final ContentItem... contents) {
 
         final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(deploymentUnitName);
 
-        final ServiceTarget serviceTarget = context.getServiceTarget();
+        final ServiceTarget serviceTarget = context.getCapabilityServiceTarget();
         final ServiceController<?> contentService;
         // TODO: overlay service
         final ServiceName contentsServiceName = deploymentUnitServiceName.append("contents");
@@ -206,7 +217,7 @@ public class DeploymentHandlerUtil {
         // associated with the current OperationContext
         AnnotationIndexSupport annotationIndexSupport = getAnnotationIndexCache(context);
 
-        final ServiceBuilder<?> sb = serviceTarget.addService(deploymentUnitServiceName);
+        final ServiceBuilder<?> sb = serviceTarget.addService();
         final Consumer<DeploymentUnit> deploymentUnitConsumer = sb.provides(deploymentUnitServiceName);
         final Supplier<DeploymentMountProvider> serverDeploymentRepositorySupplier = sb.requires(DeploymentMountProvider.SERVICE_NAME);
         final Supplier<PathManager> pathManagerSupplier = sb.requires(context.getCapabilityServiceName(PathManager.SERVICE_DESCRIPTOR));
@@ -218,6 +229,15 @@ public class DeploymentHandlerUtil {
                 annotationIndexSupport, isExplodedContent);
         final ServiceController<?> deploymentUnitController = sb.setInstance(service).install();
 
+        // Install a separate service to track the RootDeploymentUnitService.getStatus value. We use a separate service
+        // controller instead of just a second 'provides' because this service does not *depend* on the service
+        // that uses deploymentUnitServiceName; i.e. it must start and provide a value even if the deploymentUnitServiceName
+        // service fails in start.
+        final ServiceName deploymentStatusServiceName = Services.deploymentStatusName(deploymentUnitServiceName);
+        final ServiceBuilder<?> statusBuilder = serviceTarget.addService();
+        final Consumer<Supplier<DeploymentStatus>> statusConsumer = statusBuilder.provides(deploymentStatusServiceName);
+        statusBuilder.setInstance(Service.newInstance(statusConsumer, service::getStatus)).install();
+
         contentService.addListener(new LifecycleListener() {
             @Override
             public void handleEvent(final ServiceController<?> controller, final LifecycleEvent event) {
@@ -226,10 +246,19 @@ public class DeploymentHandlerUtil {
                 }
             }
         });
+
+        // Make the deployment unit available to the DeploymentListModulesHandler
+        deploymentUnitRegistry.capture(deploymentUnitServiceName).install(serviceTarget);
+
+        // Make the deployment status available to the DeploymentStatusHandler
+        deploymentStatusRegistry.capture(deploymentStatusServiceName).install(serviceTarget);
     }
 
-    public static void redeploy(final OperationContext context, final String deploymentUnitName,
-                                final String managementName, final ContentItem... contents) throws OperationFailedException {
+    static void redeploy(final OperationContext context, final String deploymentUnitName,
+                         final String managementName,
+                         final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry,
+                         final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> deploymentStatusRegistry,
+                         final ContentItem... contents) {
         assert contents != null : "contents is null";
 
         if (context.isNormalServer()) {
@@ -241,16 +270,15 @@ public class DeploymentHandlerUtil {
             DeploymentResourceSupport.cleanup(deployment);
 
             context.addStep(new OperationStepHandler() {
-                public void execute(final OperationContext context, ModelNode operation) throws OperationFailedException {
-                    final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(deploymentUnitName);
-                    context.removeService(deploymentUnitServiceName);
-                    context.removeService(deploymentUnitServiceName.append("contents"));
+                public void execute(final OperationContext context, ModelNode operation) {
+                    removeDeploymentServices(context, deploymentUnitName);
 
                     final AtomicBoolean logged = new AtomicBoolean(false);
                     context.addStep(new OperationStepHandler() {
                         @Override
-                        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                            doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, contents);
+                        public void execute(OperationContext context, ModelNode operation) {
+                            doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration,
+                                    deploymentUnitRegistry, deploymentStatusRegistry, contents);
                             context.completeStep(new OperationContext.ResultHandler() {
                                 @Override
                                 public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
@@ -273,7 +301,8 @@ public class DeploymentHandlerUtil {
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override
                         public void handleRollback(OperationContext context, ModelNode operation) {
-                            doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, contents);
+                            doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration,
+                                    deploymentUnitRegistry, deploymentStatusRegistry, contents);
                             if (!logged.get()) {
                                 if (context.hasFailureDescription()) {
                                     ServerLogger.ROOT_LOGGER.undeploymentRolledBack(deploymentUnitName, context.getFailureDescription().asString());
@@ -288,8 +317,11 @@ public class DeploymentHandlerUtil {
         }
     }
 
-    public static void replace(final OperationContext context, final ModelNode originalDeployment, final String deploymentUnitName, final String managementName,
-                               final String replacedDeploymentUnitName, final ContentItem... contents) throws OperationFailedException {
+    static void replace(final OperationContext context, final ModelNode originalDeployment, final String deploymentUnitName, final String managementName,
+                               final String replacedDeploymentUnitName,
+                               final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry,
+                               final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> deploymentStatusRegistry,
+                               final ContentItem... contents) {
         assert contents != null : "contents is null";
 
         if (context.isNormalServer()) {
@@ -303,12 +335,10 @@ public class DeploymentHandlerUtil {
 
             context.addStep(new OperationStepHandler() {
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    final ServiceName replacedDeploymentUnitServiceName = Services.deploymentUnitName(replacedDeploymentUnitName);
-                    final ServiceName replacedContentsServiceName = replacedDeploymentUnitServiceName.append("contents");
-                    context.removeService(replacedContentsServiceName);
-                    context.removeService(replacedDeploymentUnitServiceName);
+                    removeDeploymentServices(context, replacedDeploymentUnitName);
 
-                    doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, contents);
+                    doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration,
+                            deploymentUnitRegistry, deploymentStatusRegistry, contents);
                     if (originalDeployment.hasDefined(PERSISTENT.getName()) && !PERSISTENT.resolveModelAttribute(context, originalDeployment).asBoolean() && PERSISTENT.resolveModelAttribute(context, operation).asBoolean()) {
                         ModelNode notificationData = new ModelNode();
                         notificationData.get(NAME).set(managementName);
@@ -332,7 +362,8 @@ public class DeploymentHandlerUtil {
                                 DeploymentResourceSupport.cleanup(deployment);
                                 final String runtimeName = originalDeployment.require(RUNTIME_NAME).asString();
                                 final DeploymentHandlerUtil.ContentItem[] contents = getContents(originalDeployment.require(CONTENT));
-                                doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, contents);
+                                doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration,
+                                        deploymentUnitRegistry, deploymentStatusRegistry, contents);
 
                                 if (context.hasFailureDescription()) {
                                     ServerLogger.ROOT_LOGGER.replaceRolledBack(replacedDeploymentUnitName, deploymentUnitName, getFormattedFailureDescription(context));
@@ -349,7 +380,9 @@ public class DeploymentHandlerUtil {
         }
     }
 
-    public static void undeploy(final OperationContext context, final ModelNode operation, final String managementName, final String runtimeName) {
+    public static void undeploy(final OperationContext context, final ModelNode operation, final String managementName, final String runtimeName,
+                                final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry,
+                                final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> deploymentStatusRegistry) {
         if (context.isNormalServer()) {
             // WFCORE-1577 -- the resource we want may not be at the op address if this is called for full-replace-deployment
             PathAddress resourceAddress = context.getCurrentAddress().size() == 0 ? PathAddress.pathAddress(DEPLOYMENT, managementName) : PathAddress.EMPTY_ADDRESS;
@@ -374,10 +407,7 @@ public class DeploymentHandlerUtil {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) {
 
-                    final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(runtimeName);
-
-                    context.removeService(deploymentUnitServiceName);
-                    context.removeService(deploymentUnitServiceName.append("contents"));
+                    removeDeploymentServices(context, runtimeName);
 
                     context.completeStep(new OperationContext.ResultHandler() {
                         @Override
@@ -386,7 +416,8 @@ public class DeploymentHandlerUtil {
 
                                 final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
                                 final DeploymentHandlerUtil.ContentItem[] contents = getContents(model.require(CONTENT));
-                                doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, contents);
+                                doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration,
+                                        deploymentUnitRegistry, deploymentStatusRegistry, contents);
 
                                 if (context.hasFailureDescription()) {
                                     ServerLogger.ROOT_LOGGER.undeploymentRolledBack(runtimeName, getFormattedFailureDescription(context));
@@ -401,6 +432,14 @@ public class DeploymentHandlerUtil {
                 }
             }, OperationContext.Stage.RUNTIME);
         }
+    }
+
+    static void removeDeploymentServices(final OperationContext context, final String deploymentUnitName) {
+        final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(deploymentUnitName);
+        context.removeService(deploymentUnitServiceName);
+        context.removeService(deploymentUnitServiceName.append("contents"));
+        context.removeService(Services.deploymentStatusName(deploymentUnitServiceName));
+
     }
 
     public static boolean isManaged(ModelNode contentItem) {

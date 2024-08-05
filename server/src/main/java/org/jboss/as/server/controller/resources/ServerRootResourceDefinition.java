@@ -15,6 +15,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
 import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_CAPABILITY;
 
+import java.util.function.Supplier;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BootErrorCollector;
 import org.jboss.as.controller.CapabilityRegistry;
@@ -87,6 +89,8 @@ import org.jboss.as.server.controller.descriptions.ServerDescriptionConstants;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.deployment.DeploymentFullReplaceHandler;
 import org.jboss.as.server.deployment.DeploymentReplaceHandler;
+import org.jboss.as.server.deployment.DeploymentStatus;
+import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUploadBytesHandler;
 import org.jboss.as.server.deployment.DeploymentUploadStreamAttachmentHandler;
 import org.jboss.as.server.deployment.DeploymentUploadURLHandler;
@@ -120,6 +124,7 @@ import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.service.capture.ServiceValueExecutorRegistry;
 
 /**
  *
@@ -266,6 +271,10 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
     private final CapabilityRegistry capabilityRegistry;
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
     private final BootErrorCollector bootErrorCollector;
+    private final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry =
+            ServiceValueExecutorRegistry.newInstance();
+    private final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> deploymentStatusRegistry =
+            ServiceValueExecutorRegistry.newInstance();
 
     public ServerRootResourceDefinition(
             final ContentRepository contentRepository,
@@ -351,8 +360,10 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         DeploymentUploadBytesHandler.register(resourceRegistration, contentRepository);
         DeploymentUploadURLHandler.register(resourceRegistration, contentRepository);
         DeploymentUploadStreamAttachmentHandler.register(resourceRegistration, contentRepository);
-        resourceRegistration.registerOperationHandler(DeploymentAttributes.REPLACE_DEPLOYMENT_DEFINITION, DeploymentReplaceHandler.create(contentRepository));
-        resourceRegistration.registerOperationHandler(DeploymentAttributes.FULL_REPLACE_DEPLOYMENT_DEFINITION, DeploymentFullReplaceHandler.create(contentRepository));
+        resourceRegistration.registerOperationHandler(DeploymentAttributes.REPLACE_DEPLOYMENT_DEFINITION,
+                DeploymentReplaceHandler.create(contentRepository, deploymentUnitRegistry, deploymentStatusRegistry));
+        resourceRegistration.registerOperationHandler(DeploymentAttributes.FULL_REPLACE_DEPLOYMENT_DEFINITION,
+                DeploymentFullReplaceHandler.create(contentRepository, deploymentUnitRegistry, deploymentStatusRegistry));
 
         if (!isDomain) {
             if(serverEnvironment.useGit()) {
@@ -546,13 +557,15 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);
 
         // Deployments
-        ManagementResourceRegistration deployments = resourceRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, serverEnvironment));
+        ManagementResourceRegistration deployments = resourceRegistration.registerSubModel(
+                ServerDeploymentResourceDefinition.create(contentRepository, serverEnvironment, deploymentUnitRegistry,
+                        deploymentStatusRegistry));
 
         //deployment overlays
         resourceRegistration.registerSubModel(new DeploymentOverlayDefinition(false, contentRepository, null));
 
         // The sub-deployments registry
-        deployments.registerSubModel(ServerSubDeploymentResourceDefinition.create());
+        deployments.registerSubModel(ServerSubDeploymentResourceDefinition.create(deploymentUnitRegistry));
 
         // Extensions
         resourceRegistration.registerSubModel(new ExtensionResourceDefinition(extensionRegistry, parallelBoot, ExtensionRegistryType.SERVER, rootResourceRegistrationProvider));

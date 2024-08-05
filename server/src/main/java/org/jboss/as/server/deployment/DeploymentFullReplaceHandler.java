@@ -26,6 +26,7 @@ import static org.jboss.as.server.deployment.DeploymentHandlerUtils.hasValidCont
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -42,6 +43,7 @@ import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.deployment.transformation.DeploymentTransformer;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.service.capture.ServiceValueExecutorRegistry;
 
 /**
  * Handles replacement in the runtime of one deployment by another.
@@ -53,18 +55,28 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = FULL_REPLACE_DEPLOYMENT;
 
     protected final ContentRepository contentRepository;
+    private final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry;
+    private final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> statusRegistry;
 
     @SuppressWarnings("deprecation")
     private final DeploymentTransformer deploymentTransformer;
 
-    protected DeploymentFullReplaceHandler(final ContentRepository contentRepository) {
+    private DeploymentFullReplaceHandler(final ContentRepository contentRepository,
+                                         final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry,
+                                         final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> statusRegistry) {
         assert contentRepository != null : "Null contentRepository";
+        assert deploymentUnitRegistry != null : "Null deploymentUnitRegistry";
+        assert statusRegistry != null : "Null statusRegistry";
         this.contentRepository = contentRepository;
+        this.deploymentUnitRegistry = deploymentUnitRegistry;
+        this.statusRegistry = statusRegistry;
         this.deploymentTransformer = loadDeploymentTransformer();
     }
 
-    public static DeploymentFullReplaceHandler create(final ContentRepository contentRepository) {
-        return new DeploymentFullReplaceHandler(contentRepository);
+    public static DeploymentFullReplaceHandler create(final ContentRepository contentRepository,
+                                                      final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry,
+                                                      final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> statusRegistry) {
+        return new DeploymentFullReplaceHandler(contentRepository, deploymentUnitRegistry, statusRegistry);
     }
 
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -91,7 +103,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
 //            throw ServerLogger.ROOT_LOGGER.noSuchDeployment(name);
 //        }
 
-        // verify that the resource existance before removing it
+        // verify that the resource exists before removing it
         context.readResourceForUpdate(PathAddress.pathAddress(deploymentPath));
         // WFCORE-495 remove and call context.addResource() as below to add new resource with updated PERSISTENT value
         final ModelNode deploymentModel = context.removeResource(PathAddress.pathAddress(deploymentPath)).getModel();
@@ -158,9 +170,10 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         context.addResource(PathAddress.pathAddress(deploymentPath), resource);
 
         if (ENABLED.resolveModelAttribute(context, deploymentModel).asBoolean()) {
-            DeploymentHandlerUtil.replace(context, originalDeployment, runtimeName, name, replacedRuntimeName, contentItem);
+            DeploymentHandlerUtil.replace(context, originalDeployment, runtimeName, name, replacedRuntimeName,
+                    deploymentUnitRegistry, statusRegistry, contentItem);
         } else if (wasDeployed) {
-            DeploymentHandlerUtil.undeploy(context, operation, name, runtimeName);
+            DeploymentHandlerUtil.undeploy(context, operation, name, runtimeName, deploymentUnitRegistry, statusRegistry);
         }
 
         addFlushHandler(context, contentRepository, new OperationContext.ResultHandler() {

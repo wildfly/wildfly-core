@@ -47,7 +47,7 @@ class DomainDeploymentResourceDefinition extends DeploymentResourceDefinition {
             OperationStepHandler explodeDeploymentHandler, OperationStepHandler explodedDeploymentAddContentHandler,
             OperationStepHandler explodedDeploymentRemoveContentHandler, OperationStepHandler explodedDeploymentReadContentHandler,
             OperationStepHandler explodedDeploymentBrowseContentHandler) {
-        super(parent, addHandler, removeHandler);
+        super(parent, addHandler, removeHandler, null);
         this.addDefinition = addDefinition;
         this.explodeDeploymentHandler = explodeDeploymentHandler;
         this.explodedDeploymentAddContentHandler = explodedDeploymentAddContentHandler;

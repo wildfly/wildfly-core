@@ -18,6 +18,7 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNE
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.SERVER_ADD_ATTRIBUTES;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtil.deploy;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.loadDeploymentTransformer;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.transformDeploymentBytes;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.addFlushHandler;
@@ -27,6 +28,7 @@ import static org.jboss.as.server.deployment.DeploymentHandlerUtils.hasValidCont
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -42,6 +44,7 @@ import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.deployment.transformation.DeploymentTransformer;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.service.capture.ServiceValueExecutorRegistry;
 
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.createFailureException;
 
@@ -58,15 +61,24 @@ public class DeploymentAddHandler implements OperationStepHandler {
 
     @SuppressWarnings("deprecation")
     private final DeploymentTransformer deploymentTransformer;
+    private final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry;
+    private final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> deploymentStatusRegistry;
 
-    protected DeploymentAddHandler(final ContentRepository contentRepository) {
+    private DeploymentAddHandler(final ContentRepository contentRepository,
+                                 final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry,
+                                 final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> deploymentStatusRegistry) {
+        this.deploymentUnitRegistry = deploymentUnitRegistry;
         assert contentRepository != null : "Null contentRepository";
+        assert deploymentStatusRegistry != null : "Null deploymentStatusRegistry";
         this.contentRepository = contentRepository;
+        this.deploymentStatusRegistry = deploymentStatusRegistry;
         this.deploymentTransformer = loadDeploymentTransformer();
     }
 
-    public static DeploymentAddHandler create(final ContentRepository contentRepository) {
-        return new DeploymentAddHandler(contentRepository);
+    public static DeploymentAddHandler create(final ContentRepository contentRepository,
+                                              final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry,
+                                              final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> deploymentStatusRegistry) {
+        return new DeploymentAddHandler(contentRepository, deploymentUnitRegistry, deploymentStatusRegistry);
     }
 
     /**
@@ -134,7 +146,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
         }
 
         if (ENABLED.resolveModelAttribute(context, newModel).asBoolean() && context.isNormalServer()) {
-            DeploymentHandlerUtil.deploy(context, operation, runtimeName, name, contentItem);
+            deploy(context, operation, runtimeName, name, deploymentUnitRegistry, deploymentStatusRegistry, contentItem);
             DeploymentUtils.enableAttribute(newModel);
         }
 

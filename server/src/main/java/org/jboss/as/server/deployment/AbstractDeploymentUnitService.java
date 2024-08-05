@@ -33,7 +33,7 @@ import org.jboss.msc.service.StopContext;
  * @author John Bailey
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public abstract class AbstractDeploymentUnitService implements Service<DeploymentUnit> {
+public abstract class AbstractDeploymentUnitService implements org.jboss.msc.Service {
 
     private static final String FIRST_PHASE_NAME = Phase.values()[0].name();
     final ImmutableManagementResourceRegistration registration;
@@ -72,11 +72,10 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         Consumer<StartContext> installer = new Consumer<>() {
             @Override
             public void accept(StartContext context) {
-                ServiceName serviceName = AbstractDeploymentUnitService.this.deploymentUnit.getServiceName().append(FIRST_PHASE_NAME);
-                DeploymentUnitPhaseService<?> phaseService = DeploymentUnitPhaseService.create(AbstractDeploymentUnitService.this.deploymentUnit, Phase.values()[0]);
-                context.getChildTarget().addService(serviceName, phaseService)
-                        .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, phaseService.getDeployerChainsInjector())
-                        .install();
+                ServiceBuilder<?> phaseServiceBuilder = context.getChildTarget().addService();
+                DeploymentUnitPhaseService.createAndSetInstance(phaseServiceBuilder,
+                                AbstractDeploymentUnitService.this.deploymentUnit, Phase.values()[0]);
+                phaseServiceBuilder.install();
             }
         };
 
@@ -179,11 +178,7 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         return ((SimpleAttachable) this.deploymentUnit).attachmentKeys();
     }
 
-    public synchronized DeploymentUnit getValue() throws IllegalStateException, IllegalArgumentException {
-        return deploymentUnit;
-    }
-
-    public DeploymentStatus getStatus() {
+    DeploymentStatus getStatus() {
         StabilityMonitor monitor = this.monitor;
         if (monitor == null) {
             return DeploymentStatus.STOPPED;
@@ -197,10 +192,4 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         return problems.isEmpty() ? DeploymentStatus.OK : DeploymentStatus.FAILED;
     }
 
-    public enum DeploymentStatus {
-        NEW,
-        OK,
-        FAILED,
-        STOPPED
-    }
 }

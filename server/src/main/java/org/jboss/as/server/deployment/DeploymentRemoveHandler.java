@@ -9,12 +9,15 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RESOURCE_ALL;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtil.doDeploy;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtil.removeDeploymentServices;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.addFlushHandler;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.OperationContext;
@@ -27,7 +30,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceName;
+import org.wildfly.service.capture.ServiceValueExecutorRegistry;
 
 /**
  * Handles removal of a deployment from the model.
@@ -39,9 +42,19 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = REMOVE;
 
     private final ContentRepository contentRepository;
+    private final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry;
+    private final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> deploymentStatusRegistry;
 
-    public DeploymentRemoveHandler(ContentRepository contentRepository) {
+
+    public DeploymentRemoveHandler(final ContentRepository contentRepository,
+                                   final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry,
+                                   final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> deploymentStatusRegistry) {
+        assert contentRepository != null : "Null contentRepository";
+        assert deploymentUnitRegistry != null : "Null deploymentUnitRegistry";
+        assert deploymentStatusRegistry != null : "Null deploymentStatusRegistry";
         this.contentRepository = contentRepository;
+        this.deploymentUnitRegistry = deploymentUnitRegistry;
+        this.deploymentStatusRegistry = deploymentStatusRegistry;
     }
 
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -61,9 +74,7 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
                     final boolean enabled = ENABLED.resolveModelAttribute(context, model).asBoolean();
                     if (enabled) {
                         runtimeName = RUNTIME_NAME.resolveModelAttribute(context, model).asString();
-                        final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(runtimeName);
-                        context.removeService(deploymentUnitServiceName);
-                        context.removeService(deploymentUnitServiceName.append("contents"));
+                        removeDeploymentServices(context, runtimeName);
                     } else {
                         runtimeName = null;
                     }
@@ -115,7 +126,8 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
                                    ModelNode contentNode, ImmutableManagementResourceRegistration registration,
                                    ManagementResourceRegistration mutableRegistration) {
         final DeploymentHandlerUtil.ContentItem[] contents = getContents(contentNode);
-        DeploymentHandlerUtil.doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, contents);
+        doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration,
+                deploymentUnitRegistry, deploymentStatusRegistry, contents);
     }
 
     private void removeContent(OperationContext context, List<byte[]> removedHashes, String name) {

@@ -61,7 +61,7 @@ public enum Phase {
      * </ul>
      * <p>
      */
-    STRUCTURE(null),
+    STRUCTURE(),
     /**
      * This phase assembles information from the root structure to prepare for adding and processing additional external
      * structure, such as from class path entries and other similar mechanisms.
@@ -90,11 +90,11 @@ public enum Phase {
      * </ul>
      * <p>
      */
-    PARSE(null),
+    PARSE(),
     /**
      * In this phase parsing of deployment metadata is complete and the component may be registered with the subsystem.
      */
-    REGISTER(null),
+    REGISTER(),
     /**
      * In this phase, the full structure of the deployment unit is made available and module dependencies may be assembled.
      * <p>
@@ -121,28 +121,18 @@ public enum Phase {
      * </ul>
      * <p>
      */
-    DEPENDENCIES(null),
-    CONFIGURE_MODULE(null),
+    DEPENDENCIES(),
+    CONFIGURE_MODULE(),
 
     /**
      * Processors that need to start/complete before the deployment classloader is used to load application classes,
      * belong in the FIRST_MODULE_USE phase.
      */
-    FIRST_MODULE_USE(null),
-    POST_MODULE(null),
-    INSTALL(null),
-    CLEANUP(null),
+    FIRST_MODULE_USE(),
+    POST_MODULE(),
+    INSTALL(),
+    CLEANUP(),
     ;
-
-    /**
-     * This is the key for the attachment to use as the phase's "value".  The attachment is taken from
-     * the deployment unit.  If a phase doesn't have a single defining "value", {@code null} is specified.
-     */
-    private final AttachmentKey<?> phaseKey;
-
-    private Phase(final AttachmentKey<?> key) {
-        phaseKey = key;
-    }
 
     /**
      * Get the next phase, or {@code null} if none.
@@ -156,13 +146,15 @@ public enum Phase {
     }
 
     /**
-     * Get the attachment key of the {@code DeploymentUnit} attachment that represents the result value
-     * of this phase.
+     * Unused as phases don't have associated values that can be attached.
      *
-     * @return the key
+     * @return always returns {@code null}
+     *
+     * @deprecated will be removed as phases don't have associated values.
      */
+    @Deprecated(forRemoval = true)
     public AttachmentKey<?> getPhaseKey() {
-        return phaseKey;
+        return null;
     }
 
     // STRUCTURE

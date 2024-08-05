@@ -14,6 +14,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
 
+import java.util.function.Supplier;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -27,6 +29,7 @@ import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.service.capture.ServiceValueExecutorRegistry;
 
 /**
  * Handles replacement in the runtime of one deployment by another.
@@ -38,14 +41,24 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = REPLACE_DEPLOYMENT;
 
     private final ContentRepository contentRepository;
+    private final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry;
+    private final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> statusRegistry;
 
-    protected DeploymentReplaceHandler(ContentRepository contentRepository) {
+    protected DeploymentReplaceHandler(ContentRepository contentRepository,
+                                       final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry,
+                                       final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> statusRegistry) {
         assert contentRepository != null : "Null contentRepository";
+        assert deploymentUnitRegistry != null : "Null deploymentUnitRegistry";
+        assert statusRegistry != null : "Null statusRegistry";
         this.contentRepository = contentRepository;
+        this.deploymentUnitRegistry = deploymentUnitRegistry;
+        this.statusRegistry = statusRegistry;
     }
 
-    public static DeploymentReplaceHandler create(ContentRepository contentRepository) {
-        return new DeploymentReplaceHandler(contentRepository);
+    public static DeploymentReplaceHandler create(final ContentRepository contentRepository,
+                                                  final ServiceValueExecutorRegistry<DeploymentUnit> deploymentUnitRegistry,
+                                                  final ServiceValueExecutorRegistry<Supplier<DeploymentStatus>> statusRegistry) {
+        return new DeploymentReplaceHandler(contentRepository, deploymentUnitRegistry, statusRegistry);
     }
 
     @Override
@@ -86,7 +99,6 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
             if (contentItemNode.hasDefined(HASH)) {
                 byte[] hash = contentItemNode.require(HASH).asBytes();
                 addFromHash(ModelContentReference.fromDeploymentName(name, hash));
-            } else {
             }
             runtimeName = operation.hasDefined(RUNTIME_NAME) ? DeploymentAttributes.REPLACE_DEPLOYMENT_ATTRIBUTES.get(RUNTIME_NAME).resolveModelAttribute(context, operation).asString() : replacedName;
 
@@ -113,7 +125,7 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
         replaceNode.get(ENABLED.getName()).set(false);
 
         final DeploymentHandlerUtil.ContentItem[] contents = getContents(deployNode.require(CONTENT));
-        DeploymentHandlerUtil.replace(context, replaceNode, runtimeName, name, replacedName, contents);
+        DeploymentHandlerUtil.replace(context, replaceNode, runtimeName, name, replacedName, deploymentUnitRegistry, statusRegistry, contents);
     }
 
     protected void addFromHash(ContentReference reference) throws OperationFailedException {

@@ -26,7 +26,10 @@ import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
+import org.wildfly.service.capture.FunctionExecutor;
+import org.wildfly.service.capture.FunctionExecutorRegistry;
 
 /**
  * Handles listing module dependencies of a deployment and sub-deployment.
@@ -36,7 +39,10 @@ import org.jboss.msc.service.ServiceRegistry;
 public class DeploymentListModulesHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = LIST_MODULES;
 
-    public DeploymentListModulesHandler() {
+    private final FunctionExecutorRegistry<ServiceName, DeploymentUnit> executorRegistry;
+
+    public DeploymentListModulesHandler(FunctionExecutorRegistry<ServiceName, DeploymentUnit> executorRegistry) {
+        this.executorRegistry = executorRegistry;
     }
 
     @Override
@@ -55,9 +61,12 @@ public class DeploymentListModulesHandler implements OperationStepHandler {
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) {
-                    final ServiceRegistry sr = context.getServiceRegistry(false);
-                    final ServiceController<?> deploymentUnitSc = sr.getService(Services.deploymentUnitName(runtimeName));
-                    final DeploymentUnit deploymentUnit = (DeploymentUnit) deploymentUnitSc.getValue();
+                    ServiceName deploymentUnitServiceName = Services.deploymentUnitName(runtimeName);
+                    FunctionExecutor<DeploymentUnit> functionExecutor = executorRegistry.getExecutor(deploymentUnitServiceName);
+                    final DeploymentUnit deploymentUnit = functionExecutor == null ? null : functionExecutor.execute(du -> du);
+                    if (deploymentUnit == null) {
+                        return;
+                    }
 
                     ModuleIdentifier moduleIdentifier = null;
                     if (subDeploymentFlag) {
@@ -74,6 +83,7 @@ public class DeploymentListModulesHandler implements OperationStepHandler {
                         moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER);
                     }
 
+                    ServiceRegistry sr = context.getServiceRegistry(false);
                     final ServiceController<?> moduleLoadServiceController = sr.getService(ServiceModuleLoader.moduleServiceName(moduleIdentifier));
                     final ModuleLoadService moduleLoadService = (ModuleLoadService) moduleLoadServiceController.getService();
 

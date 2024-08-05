@@ -46,6 +46,7 @@ import org.jboss.as.subsystem.test.ControllerInitializer.TestControllerAccessor;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.vfs.VirtualFile;
+import org.wildfly.service.capture.ServiceValueExecutorRegistry;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -118,7 +119,8 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
     private void initExtraModelInternal(Resource rootResource, ManagementResourceRegistration rootRegistration) {
         rootResource.getModel().get(SUBSYSTEM);
 
-        rootRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, null));
+        rootRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, null,
+                ServiceValueExecutorRegistry.newInstance(), ServiceValueExecutorRegistry.newInstance()));
 
         controllerInitializer.setTestModelControllerAccessor(this);
         controllerInitializer.initializeModel(rootResource, rootRegistration);

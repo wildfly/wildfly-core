@@ -13,14 +13,15 @@ import java.util.ListIterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.RequirementServiceTarget;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.LifecycleEvent;
 import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.DelegatingServiceRegistry;
-import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
@@ -29,42 +30,51 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 
 /**
  * A service which executes a particular phase of deployment.
  *
- * @param <T> the public type of this deployment unit phase
- *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-final class DeploymentUnitPhaseService<T> implements Service<T> {
+final class DeploymentUnitPhaseService implements Service {
 
-    private final InjectedValue<DeployerChains> deployerChainsInjector = new InjectedValue<DeployerChains>();
     private final DeploymentUnit deploymentUnit;
     private final Phase phase;
-    private final AttachmentKey<T> valueKey;
+    private final Supplier<DeployerChains> deployerChainsSupplier;
     private final List<AttachedDependency> injectedAttachedDependencies = new ArrayList<AttachedDependency>();
     /**
      * boolean value that tracks if this phase has already been run.
-     *
+     * <p>
      * If anything attempts to restart the phase a complete deployment restart is performed instead.
      */
     private final AtomicBoolean runOnce = new AtomicBoolean();
 
-    private DeploymentUnitPhaseService(final DeploymentUnit deploymentUnit, final Phase phase, final AttachmentKey<T> valueKey) {
+    private DeploymentUnitPhaseService(final DeploymentUnit deploymentUnit, final Phase phase,
+                                       final Supplier<DeployerChains> deployerChainsSupplier) {
         this.deploymentUnit = deploymentUnit;
         this.phase = phase;
-        this.valueKey = valueKey;
+        this.deployerChainsSupplier = deployerChainsSupplier;
     }
 
-    private static <T> DeploymentUnitPhaseService<T> create(final DeploymentUnit deploymentUnit, final Phase phase, AttachmentKey<T> valueKey) {
-        return new DeploymentUnitPhaseService<T>(deploymentUnit, phase, valueKey);
-    }
-
-    static DeploymentUnitPhaseService<?> create(final DeploymentUnit deploymentUnit, final Phase phase) {
-        return create(deploymentUnit, phase, phase.getPhaseKey());
+    /**
+     * Uses the given {@code serviceBuilder} to create a DeploymentUnitPhaseService instance and
+     * {@link ServiceBuilder#setInstance sets the instance} on the builder. This method <strong>does not</strong>
+     * install the service; that is left to the caller
+     *
+     * @param serviceBuilder the service builder. Cannot be {@code null}
+     * @param deploymentUnit the deployment unit that the phase service will process. Cannot be {@code null}
+     * @param phase the phase that the phase service will process. Cannot be {@code null}
+     * @return the phase service. Will not return {@code null}
+     */
+    static DeploymentUnitPhaseService createAndSetInstance(final ServiceBuilder<?> serviceBuilder,
+                                                           final DeploymentUnit deploymentUnit,
+                                                           final Phase phase) {
+        serviceBuilder.provides(deploymentUnit.getServiceName().append(phase.name())); // this service doesn't really need a name, but it's always had one and debugging may be easier if it has one.
+        Supplier<DeployerChains> deployerChainsSupplier = serviceBuilder.requires(Services.JBOSS_DEPLOYMENT_CHAINS);
+        DeploymentUnitPhaseService phaseService = new DeploymentUnitPhaseService(deploymentUnit, phase, deployerChainsSupplier);
+        serviceBuilder.setInstance(phaseService);
+        return phaseService;
     }
 
     @SuppressWarnings("unchecked")
@@ -97,7 +107,7 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
             return;
         }
         runOnce.set(true);
-        final DeployerChains chains = deployerChainsInjector.getValue();
+        final DeployerChains chains = deployerChainsSupplier.get();
         final DeploymentUnit deploymentUnit = this.deploymentUnit;
         final List<RegisteredDeploymentUnitProcessor> list = chains.getChain(phase);
         final ListIterator<RegisteredDeploymentUnitProcessor> iterator = list.listIterator();
@@ -175,15 +185,13 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
 
         final Phase nextPhase = phase.next();
         if (nextPhase != null) {
-            final ServiceName serviceName = DeploymentUtils.getDeploymentUnitPhaseServiceName(deploymentUnit, nextPhase);
-            final DeploymentUnitPhaseService<?> phaseService = DeploymentUnitPhaseService.create(deploymentUnit, nextPhase);
-            final ServiceBuilder<?> phaseServiceBuilder = serviceTarget.addService(serviceName, phaseService);
+            final ServiceBuilder<?> phaseServiceBuilder = serviceTarget.addService();
+            final DeploymentUnitPhaseService phaseService = createAndSetInstance(phaseServiceBuilder, deploymentUnit, nextPhase);
 
             for (Consumer<ServiceBuilder<?>> dependency: dependencies) {
                 dependency.accept(phaseServiceBuilder);
             }
 
-            phaseServiceBuilder.addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, phaseService.getDeployerChainsInjector());
             for (ServiceName providedValue : context.getController().provides()) {
                 phaseServiceBuilder.requires(providedValue);
             }
@@ -221,7 +229,7 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
 
     public synchronized void stop(final StopContext context) {
         final DeploymentUnit deploymentUnitContext = deploymentUnit;
-        final DeployerChains chains = deployerChainsInjector.getValue();
+        final DeployerChains chains = deployerChainsSupplier.get();
         final List<RegisteredDeploymentUnitProcessor> list = chains.getChain(phase);
         final ListIterator<RegisteredDeploymentUnitProcessor> iterator = list.listIterator(list.size());
         while (iterator.hasPrevious()) {
@@ -238,14 +246,6 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
         } catch (Throwable t) {
             ServerLogger.DEPLOYMENT_LOGGER.caughtExceptionUndeploying(t, prev.getProcessor(), phase, deploymentUnit);
         }
-    }
-
-    public synchronized T getValue() throws IllegalStateException, IllegalArgumentException {
-        return deploymentUnit.getAttachment(valueKey);
-    }
-
-    InjectedValue<DeployerChains> getDeployerChainsInjector() {
-        return deployerChainsInjector;
     }
 
     private static boolean shouldRun(final DeploymentUnit unit, final RegisteredDeploymentUnitProcessor deployer) {

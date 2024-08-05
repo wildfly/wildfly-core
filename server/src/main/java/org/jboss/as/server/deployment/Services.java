@@ -45,6 +45,10 @@ public final class Services {
         return JBOSS_DEPLOYMENT_UNIT.append(name);
     }
 
+    static ServiceName deploymentStatusName(ServiceName deploymentUnitName) {
+        return deploymentUnitName.append("status");
+    }
+
     /**
      * Get the service name of a subdeployment.
      *

@@ -8,20 +8,28 @@ package org.jboss.as.server.deployment;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
 
+import java.util.function.Supplier;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
+import org.wildfly.common.function.ExceptionFunction;
+import org.wildfly.service.capture.FunctionExecutor;
+import org.wildfly.service.capture.FunctionExecutorRegistry;
 
 /**
  * @author Jason T. Greene
  */
-public class DeploymentStatusHandler implements OperationStepHandler {
+public final class DeploymentStatusHandler implements OperationStepHandler {
 
-    public static final OperationStepHandler INSTANCE = new DeploymentStatusHandler();
-    private static final ModelNode NO_METRICS = new ModelNode("no metrics available");
+    private final FunctionExecutorRegistry<ServiceName, Supplier<DeploymentStatus>> executorRegistry;
+
+    public DeploymentStatusHandler(FunctionExecutorRegistry<ServiceName, Supplier<DeploymentStatus>> executorRegistry) {
+        this.executorRegistry = executorRegistry;
+    }
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -33,20 +41,26 @@ public class DeploymentStatusHandler implements OperationStepHandler {
             public void execute(final OperationContext context, final ModelNode operation) {
                 final ModelNode result = context.getResult();
                 if (!isEnabled) {
-                    result.set(AbstractDeploymentUnitService.DeploymentStatus.STOPPED.toString());
+                    result.set(DeploymentStatus.STOPPED.toString());
                 } else {
-                    final ServiceController<?> controller = context.getServiceRegistry(false).getService(Services.deploymentUnitName(runtimeName));
-                    if (controller != null) {
-                        if (controller.getState() == ServiceController.State.DOWN && controller.missing().isEmpty()) {
-                            result.set(AbstractDeploymentUnitService.DeploymentStatus.STOPPED.toString());
-                        } else {
-                            result.set(((AbstractDeploymentUnitService) controller.getService()).getStatus().toString());
-                        }
+                    ServiceName statusServiceName = Services.deploymentStatusName(Services.deploymentUnitName(runtimeName));
+                    FunctionExecutor<Supplier<DeploymentStatus>> functionExecutor = executorRegistry.getExecutor(statusServiceName);
+                    if (functionExecutor != null) {
+                        result.set(functionExecutor.execute(new StatusFunction()));
                     } else {
-                        result.set(NO_METRICS);
+                        result.set(DeploymentStatus.STOPPED.toString());
                     }
                 }
             }
         }, OperationContext.Stage.RUNTIME);
+    }
+
+    private static class StatusFunction implements ExceptionFunction<Supplier<DeploymentStatus>, String, RuntimeException> {
+
+        @Override
+        public String apply(Supplier<DeploymentStatus> supplier) throws RuntimeException {
+            DeploymentStatus ds = supplier == null ? DeploymentStatus.STOPPED : supplier.get();
+            return ds.toString();
+        }
     }
 }

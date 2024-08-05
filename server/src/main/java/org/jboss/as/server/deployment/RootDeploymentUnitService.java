@@ -27,6 +27,7 @@ import org.jboss.vfs.VirtualFile;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
+
     private final Supplier<DeploymentMountProvider> serverDeploymentRepositorySupplier;
     private final Supplier<PathManager> pathManagerSupplier;
     private final Supplier<VirtualFile> contentsSupplier;
