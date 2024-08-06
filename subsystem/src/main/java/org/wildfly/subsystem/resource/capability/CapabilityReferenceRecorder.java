@@ -243,6 +243,11 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
         }
 
         @Override
+        public String[] resolve(OperationContext context, Resource resource, String value) {
+            return this.reference.resolve(context, resource, value);
+        }
+
+        @Override
         public RuntimeCapability<Void> getDependent() {
             return this.reference.getDependent();
         }

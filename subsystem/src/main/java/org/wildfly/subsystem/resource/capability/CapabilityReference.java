@@ -29,19 +29,13 @@ import org.wildfly.service.descriptor.UnaryServiceDescriptor;
  * @param <T> the requirement type
  * @author Paul Ferraro
  */
-public interface CapabilityReference<T> extends CapabilityReferenceRecorder {
+public interface CapabilityReference<T> extends CapabilityReferenceRecorder, CapabilityReferenceResolver<T> {
 
     /**
      * Returns the dependent capability.
      * @return a capability
      */
     RuntimeCapability<Void> getDependent();
-
-    /**
-     * Returns the service descriptor required by the dependent capability.
-     * @return a service descriptor
-     */
-    ServiceDescriptor<T> getRequirement();
 
     @Override
     default String getBaseRequirementName() {
@@ -340,6 +334,16 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder {
         }
 
         @Override
+        public String[] resolve(OperationContext context, Resource resource, String value) {
+            String[] segments = new String[this.requirementNameSegmentResolvers.size()];
+            ListIterator<RequirementNameSegmentResolver> resolvers = this.requirementNameSegmentResolvers.listIterator();
+            while (resolvers.hasNext()) {
+                segments[resolvers.nextIndex()] = resolvers.next().resolve(context, resource, value);
+            }
+            return segments;
+        }
+
+        @Override
         public void addCapabilityRequirements(OperationContext context, Resource resource, String attributeName, String... values) {
             String dependentName = this.resolveDependentName(context);
             for (String value : values) {
@@ -362,12 +366,7 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder {
         }
 
         private String resolveRequirementName(OperationContext context, Resource resource, String value) {
-            String[] segments = new String[this.requirementNameSegmentResolvers.size()];
-            ListIterator<RequirementNameSegmentResolver> resolvers = this.requirementNameSegmentResolvers.listIterator();
-            while (resolvers.hasNext()) {
-                segments[resolvers.nextIndex()] = resolvers.next().resolve(context, resource, value);
-            }
-            return RuntimeCapability.buildDynamicCapabilityName(this.getBaseRequirementName(), segments);
+            return RuntimeCapability.buildDynamicCapabilityName(this.getBaseRequirementName(), this.resolve(context, resource, value));
         }
 
         @Override

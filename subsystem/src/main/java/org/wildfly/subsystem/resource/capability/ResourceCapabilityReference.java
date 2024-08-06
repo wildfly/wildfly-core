@@ -231,6 +231,11 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
         }
 
         @Override
+        public String[] resolve(OperationContext context, Resource resource, String value) {
+            return this.getRequirementNameResolver().apply(context.getCurrentAddress());
+        }
+
+        @Override
         public void addCapabilityRequirements(OperationContext context, Resource resource) {
             if (this.predicate.test(context, resource)) {
                 context.registerAdditionalCapabilityRequirement(this.resolveRequirementName(context), this.resolveDependentName(context), null);
@@ -245,7 +250,7 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
         }
 
         private String resolveRequirementName(OperationContext context) {
-            String[] segments = this.getRequirementNameResolver().apply(context.getCurrentAddress());
+            String[] segments = this.resolve(context, null, null);
             return (segments.length > 0) ? RuntimeCapability.buildDynamicCapabilityName(this.getBaseRequirementName(), segments) : this.getBaseRequirementName();
         }
     }
