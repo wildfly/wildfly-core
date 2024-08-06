@@ -30,7 +30,7 @@ import org.wildfly.subsystem.resource.ManagementResourceRegistrar;
 import org.wildfly.subsystem.resource.ManagementResourceRegistrationContext;
 import org.wildfly.subsystem.resource.ResourceDescriptor;
 import org.wildfly.subsystem.resource.SubsystemResourceDefinitionRegistrar;
-import org.wildfly.subsystem.resource.capability.CapabilityReferenceRecorder;
+import org.wildfly.subsystem.resource.capability.CapabilityReference;
 import org.wildfly.subsystem.resource.operation.ResourceOperationRuntimeHandler;
 import org.wildfly.subsystem.service.ResourceServiceConfigurator;
 import org.wildfly.subsystem.service.ResourceServiceInstaller;
@@ -54,7 +54,7 @@ class IOSubsystemRegistrar implements SubsystemResourceDefinitionRegistrar, Reso
 
     static final AttributeDefinition DEFAULT_WORKER = new SimpleAttributeDefinitionBuilder("default-worker", ModelType.STRING)
             .setRequired(false)
-            .setCapabilityReference(CapabilityReferenceRecorder.builder(DEFAULT_WORKER_CAPABILITY, IOServiceDescriptor.WORKER).build())
+            .setCapabilityReference(CapabilityReference.builder(DEFAULT_WORKER_CAPABILITY, IOServiceDescriptor.WORKER).build())
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
