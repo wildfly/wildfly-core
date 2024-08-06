@@ -226,12 +226,12 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
             super(attributeName, ModelType.OBJECT, optional);
         }
 
+        public Builder(String attributeName, MapAttributeDefinition basis) {
+            super(attributeName, basis);
+        }
+
         public Builder(MapAttributeDefinition basis) {
-            super(basis);
-            this.elementValidator = basis.getElementValidator();
-            if (elementValidator instanceof NillableOrExpressionParameterValidator) {
-                this.allowNullElement = ((NillableOrExpressionParameterValidator) elementValidator).getAllowNull();
-            }
+            this(basis.getName(), basis);
         }
 
         /**

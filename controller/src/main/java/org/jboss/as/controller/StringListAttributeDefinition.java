@@ -86,10 +86,12 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
             setElementValidator(new ModelTypeValidator(ModelType.STRING));
         }
 
-        public Builder(final StringListAttributeDefinition basic) {
-            super(basic);
-            setAttributeParser(AttributeParser.STRING_LIST);
-            setAttributeMarshaller(AttributeMarshaller.STRING_LIST);
+        public Builder(String name, StringListAttributeDefinition basis) {
+            super(name, basis);
+        }
+
+        public Builder(final StringListAttributeDefinition basis) {
+            this(basis.getName(), basis);
         }
 
         @Override
