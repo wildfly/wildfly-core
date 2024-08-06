@@ -6,8 +6,6 @@ package org.wildfly.service.descriptor;
 
 import java.util.Map;
 
-import org.wildfly.common.Assert;
-
 /**
  * Describes a service by its name, provided value type, and dynamic name resolution mechanism.
  * @author Paul Ferraro
@@ -19,13 +17,10 @@ public interface BinaryServiceDescriptor<T> extends ServiceDescriptor<T> {
      * Resolves the dynamic name of the service using the specified segments.
      * @param parent the first dynamic segment
      * @param child the second dynamic segment
-     * @return a tuple containing the resolved name and dynamic segments
+     * @return a tuple containing the resolved name and dynamic segments, or null if segments are not resolvable.
      */
     default Map.Entry<String, String[]> resolve(String parent, String child) {
-        return Map.entry(this.getName(), new String[] {
-                Assert.checkNotNullParamWithNullPointerException("parent", parent),
-                Assert.checkNotNullParamWithNullPointerException("child", child)
-        });
+        return (parent != null) && (child != null) ? Map.entry(this.getName(), new String[] { parent, child }) : null;
     }
 
     @Override
