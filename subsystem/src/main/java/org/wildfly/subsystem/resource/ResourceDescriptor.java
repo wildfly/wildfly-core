@@ -33,7 +33,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.wildfly.common.iteration.CompositeIterable;
-import org.wildfly.subsystem.resource.capability.ResourceCapabilityReferenceRecorder;
+import org.wildfly.subsystem.resource.capability.ResourceCapabilityReference;
 import org.wildfly.subsystem.resource.operation.AddResourceOperationStepHandlerDescriptor;
 import org.wildfly.subsystem.resource.operation.OperationStepHandlerDescriptor;
 import org.wildfly.subsystem.resource.operation.ResourceOperationRuntimeHandler;
@@ -75,7 +75,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
      * Returns a mapping of capability references to an ancestor resource.
      * @return a tuple of capability references and requirement resolvers.
      */
-    default Set<ResourceCapabilityReferenceRecorder<?>> getResourceCapabilityReferences() {
+    default Set<ResourceCapabilityReference<?>> getResourceCapabilityReferences() {
         return Collections.emptySet();
     }
 
@@ -164,7 +164,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         private final Map<PathElement, ResourceRegistration> requiredChildren;
         private final Map<PathElement, ResourceRegistration> requiredSingletonChildren;
         private final Map<AttributeDefinition, AttributeTranslation> attributeTranslations;
-        private final Set<ResourceCapabilityReferenceRecorder<?>> resourceCapabilityReferences;
+        private final Set<ResourceCapabilityReference<?>> resourceCapabilityReferences;
         private final Map<String, UnaryOperator<OperationStepHandler>> operationTransformers;
         private final UnaryOperator<OperationStepHandler> defaultOperationTransformer;
         private final UnaryOperator<Resource> resourceTransformer;
@@ -231,7 +231,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         }
 
         @Override
-        public Set<ResourceCapabilityReferenceRecorder<?>> getResourceCapabilityReferences() {
+        public Set<ResourceCapabilityReference<?>> getResourceCapabilityReferences() {
             return this.resourceCapabilityReferences;
         }
 
@@ -474,7 +474,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @param reference a capability reference recorder
          * @return a reference to this configurator
          */
-        default C addResourceCapabilityReference(ResourceCapabilityReferenceRecorder<?> reference) {
+        default C addResourceCapabilityReference(ResourceCapabilityReference<?> reference) {
             return this.addResourceCapabilityReferences(Set.of(reference));
         }
 
@@ -483,7 +483,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @param references a collection of capability reference recorders
          * @return a reference to this configurator
          */
-        C addResourceCapabilityReferences(Collection<ResourceCapabilityReferenceRecorder<?>> references);
+        C addResourceCapabilityReferences(Collection<? extends ResourceCapabilityReference<?>> references);
 
         /**
          * Applies the specified transformation to the {@value ModelDescriptionConstants#ADD} operation of this resource.
@@ -626,7 +626,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         private Map<PathElement, ResourceRegistration> requiredChildren = Map.of();
         private Map<PathElement, ResourceRegistration> requiredSingletonChildren = Map.of();
         private Map<AttributeDefinition, AttributeTranslation> attributeTranslations = Map.of();
-        private Set<ResourceCapabilityReferenceRecorder<?>> resourceCapabilityReferences = Set.of();
+        private Set<ResourceCapabilityReference<?>> resourceCapabilityReferences = Set.of();
         private Map<String, UnaryOperator<OperationStepHandler>> operationTransformers = Map.of();
         private UnaryOperator<OperationStepHandler> defaultOperationTransformer = UnaryOperator.identity();
         private UnaryOperator<Resource> resourceTransformer = UnaryOperator.identity();
@@ -721,7 +721,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         }
 
         @Override
-        public C addResourceCapabilityReferences(Collection<ResourceCapabilityReferenceRecorder<?>> references) {
+        public C addResourceCapabilityReferences(Collection<? extends ResourceCapabilityReference<?>> references) {
             this.resourceCapabilityReferences = references.isEmpty() ? Set.copyOf(references) : concat(this.resourceCapabilityReferences, references.stream());
             return this.self();
         }

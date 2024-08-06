@@ -19,7 +19,7 @@ import org.jboss.dmr.ModelNode;
 import org.wildfly.discovery.impl.AggregateDiscoveryProvider;
 import org.wildfly.discovery.spi.DiscoveryProvider;
 import org.wildfly.subsystem.resource.ResourceDescriptor;
-import org.wildfly.subsystem.resource.capability.CapabilityReferenceRecorder;
+import org.wildfly.subsystem.resource.capability.CapabilityReference;
 import org.wildfly.subsystem.service.ResourceServiceInstaller;
 import org.wildfly.subsystem.service.ServiceDependency;
 import org.wildfly.subsystem.service.capability.CapabilityServiceInstaller;
@@ -33,7 +33,7 @@ public class AggregateDiscoveryProviderRegistrar extends DiscoveryProviderRegist
     static final PathElement PATH = PathElement.pathElement("aggregate-provider");
 
     private static final StringListAttributeDefinition PROVIDER_NAMES = new StringListAttributeDefinition.Builder("providers")
-            .setCapabilityReference(CapabilityReferenceRecorder.builder(DISCOVERY_PROVIDER_CAPABILITY, DISCOVERY_PROVIDER_DESCRIPTOR).build())
+            .setCapabilityReference(CapabilityReference.builder(DISCOVERY_PROVIDER_CAPABILITY, DISCOVERY_PROVIDER_DESCRIPTOR).build())
             .setFlags(Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
