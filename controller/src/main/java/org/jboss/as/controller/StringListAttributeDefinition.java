@@ -17,9 +17,9 @@ import org.jboss.dmr.ModelType;
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
-public final class StringListAttributeDefinition extends PrimitiveListAttributeDefinition {
+public class StringListAttributeDefinition extends PrimitiveListAttributeDefinition {
 
-    private StringListAttributeDefinition(Builder builder) {
+    protected StringListAttributeDefinition(Builder builder) {
         super(builder, ModelType.STRING);
     }
 

@@ -5,6 +5,8 @@
 
 package org.wildfly.subsystem.resource.capability;
 
+import java.util.Map;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.registry.Resource;
 import org.wildfly.service.descriptor.ServiceDescriptor;
@@ -25,7 +27,7 @@ public interface CapabilityReferenceResolver<T> {
      * @param context an operation context
      * @param resource the resource
      * @param value the attribute value
-     * @return an array of dynamic name segments
+     * @return a map entry containing the requirement name and array of dynamic name segments
      */
-    String[] resolve(OperationContext context, Resource resource, String value);
+    Map.Entry<String, String[]> resolve(OperationContext context, Resource resource, String value);
 }

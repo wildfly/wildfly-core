@@ -42,7 +42,8 @@ public class CapabilityReferenceTestCase {
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
-        Assert.assertSame(requirement, recorder.getRequirement());
+        Assert.assertSame(requirement.getName(), recorder.getRequirement().getName());
+        Assert.assertSame(requirement.getType(), recorder.getRequirement().getType());
         Assert.assertEquals(requirement.getName(), recorder.getBaseRequirementName());
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
@@ -100,7 +101,8 @@ public class CapabilityReferenceTestCase {
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
-        Assert.assertSame(requirement, recorder.getRequirement());
+        Assert.assertSame(requirement.getName(), recorder.getRequirement().getName());
+        Assert.assertSame(requirement.getType(), recorder.getRequirement().getType());
         Assert.assertEquals(requirement.getName(), recorder.getBaseRequirementName());
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
@@ -162,7 +164,8 @@ public class CapabilityReferenceTestCase {
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
-        Assert.assertSame(requirement, recorder.getRequirement());
+        Assert.assertSame(requirement.getName(), recorder.getRequirement().getName());
+        Assert.assertSame(requirement.getType(), recorder.getRequirement().getType());
         Assert.assertEquals(requirement.getName(), recorder.getBaseRequirementName());
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
@@ -225,7 +228,8 @@ public class CapabilityReferenceTestCase {
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
-        Assert.assertSame(requirement, recorder.getRequirement());
+        Assert.assertSame(requirement.getName(), recorder.getRequirement().getName());
+        Assert.assertSame(requirement.getType(), recorder.getRequirement().getType());
         Assert.assertEquals(requirement.getName(), recorder.getBaseRequirementName());
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
@@ -287,7 +291,8 @@ public class CapabilityReferenceTestCase {
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
-        Assert.assertSame(requirement, recorder.getRequirement());
+        Assert.assertSame(requirement.getName(), recorder.getRequirement().getName());
+        Assert.assertSame(requirement.getType(), recorder.getRequirement().getType());
         Assert.assertEquals(requirement.getName(), recorder.getBaseRequirementName());
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
