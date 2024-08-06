@@ -6,8 +6,6 @@ package org.wildfly.service.descriptor;
 
 import java.util.Map;
 
-import org.wildfly.common.Assert;
-
 /**
  * Describes a service by its name, provided value type, and dynamic name resolution mechanism.
  * @author Paul Ferraro
@@ -21,9 +19,7 @@ public interface UnaryServiceDescriptor<T> extends ServiceDescriptor<T> {
      * @return a tuple containing the resolved name and dynamic segments
      */
     default Map.Entry<String, String[]> resolve(String reference) {
-        return Map.entry(this.getName(), new String[] {
-                Assert.checkNotNullParamWithNullPointerException("reference", reference)
-        });
+        return (reference != null) ? Map.entry(this.getName(), new String[] { reference }) : null;
     }
 
     @Override

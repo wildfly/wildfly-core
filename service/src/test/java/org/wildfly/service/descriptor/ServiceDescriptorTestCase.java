@@ -49,9 +49,15 @@ public class ServiceDescriptorTestCase {
         Assert.assertSame(this.quaternaryDescriptor.getName(), resolved.getKey());
         Assert.assertArrayEquals(quaternary, resolved.getValue());
 
-        Assert.assertThrows(NullPointerException.class, () -> this.unaryDescriptor.resolve(null));
-        Assert.assertThrows(NullPointerException.class, () -> this.binaryDescriptor.resolve("foo", null));
-        Assert.assertThrows(NullPointerException.class, () -> this.ternaryDescriptor.resolve("foo", "bar", null));
-        Assert.assertThrows(NullPointerException.class, () -> this.quaternaryDescriptor.resolve("foo", "bar", "baz", null));
+        Assert.assertNull(this.unaryDescriptor.resolve(null));
+        Assert.assertNull(this.binaryDescriptor.resolve("foo", null));
+        Assert.assertNull(this.binaryDescriptor.resolve(null, "bar"));
+        Assert.assertNull(this.ternaryDescriptor.resolve("foo", "bar", null));
+        Assert.assertNull(this.ternaryDescriptor.resolve("foo", null, "baz"));
+        Assert.assertNull(this.ternaryDescriptor.resolve(null, "bar", "baz"));
+        Assert.assertNull(this.quaternaryDescriptor.resolve("foo", "bar", "baz", null));
+        Assert.assertNull(this.quaternaryDescriptor.resolve("foo", "bar", null, "qux"));
+        Assert.assertNull(this.quaternaryDescriptor.resolve("foo", null, "baz", "qux"));
+        Assert.assertNull(this.quaternaryDescriptor.resolve(null, "bar", "baz", "qux"));
     }
 }
