@@ -732,5 +732,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
      *
      * If no suitable section is available add a new section.
      */
+    @Message(id = 1221, value = "Unable to load keystore capability service from trustManager")
+    OperationFailedException unableToLoadKeystoreCapabilityService();
 
 }

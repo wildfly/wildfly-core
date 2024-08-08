@@ -180,6 +180,30 @@ class TlsParser {
             .addAttribute(SSLDefinitions.FINAL_PRINCIPAL_TRANSFORMER)
             .addAttribute(SSLDefinitions.REALM_MAPPER);
 
+    private PersistentResourceXMLBuilder serverSslContextPreviewParser_18_0 = PersistentResourceXMLDescription.builder(PathElement.pathElement(SERVER_SSL_CONTEXT))
+            .setXmlWrapperElement(SERVER_SSL_CONTEXTS)
+            .setMarshallDefaultValues(true)
+            .addAttribute(SSLDefinitions.SECURITY_DOMAIN)
+            .addAttribute(SSLDefinitions.CIPHER_SUITE_FILTER)
+            .addAttribute(SSLDefinitions.CIPHER_SUITE_NAMES)
+            .addAttribute(SSLDefinitions.PROTOCOLS)
+            .addAttribute(SSLDefinitions.WANT_CLIENT_AUTH)
+            .addAttribute(SSLDefinitions.NEED_CLIENT_AUTH)
+            .addAttribute(SSLDefinitions.AUTHENTICATION_OPTIONAL)
+            .addAttribute(SSLDefinitions.USE_CIPHER_SUITES_ORDER)
+            .addAttribute(SSLDefinitions.MAXIMUM_SESSION_CACHE_SIZE)
+            .addAttribute(SSLDefinitions.SESSION_TIMEOUT)
+            .addAttribute(SSLDefinitions.WRAP)
+            .addAttribute(SSLDefinitions.KEY_MANAGER)
+            .addAttribute(SSLDefinitions.TRUST_MANAGER)
+            .addAttribute(SSLDefinitions.PROVIDERS)
+            .addAttribute(SSLDefinitions.PROVIDER_NAME)
+            .addAttribute(SSLDefinitions.PRE_REALM_PRINCIPAL_TRANSFORMER)
+            .addAttribute(SSLDefinitions.POST_REALM_PRINCIPAL_TRANSFORMER)
+            .addAttribute(SSLDefinitions.FINAL_PRINCIPAL_TRANSFORMER)
+            .addAttribute(SSLDefinitions.REALM_MAPPER)
+            .addAttribute(SSLDefinitions.OCSP_STAPLING);    // new OCSP_STAPLING element
+
     private PersistentResourceXMLBuilder clientSslContextParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(CLIENT_SSL_CONTEXT))
             .setXmlWrapperElement(CLIENT_SSL_CONTEXTS)
             .addAttribute(SSLDefinitions.SECURITY_DOMAIN)
@@ -223,6 +247,28 @@ class TlsParser {
             .addAttribute(SSLDefinitions.TRUST_MANAGER)
             .addAttribute(SSLDefinitions.PROVIDERS)
             .addAttribute(SSLDefinitions.PROVIDER_NAME);
+
+    private PersistentResourceXMLBuilder clientSslContextParserPreview_18_0 = PersistentResourceXMLDescription.builder(PathElement.pathElement(CLIENT_SSL_CONTEXT))
+            .setXmlWrapperElement(CLIENT_SSL_CONTEXTS)
+            .addAttribute(SSLDefinitions.SECURITY_DOMAIN)
+            .addAttribute(SSLDefinitions.CIPHER_SUITE_FILTER)
+            .addAttribute(SSLDefinitions.CIPHER_SUITE_NAMES)
+            .addAttribute(SSLDefinitions.PROTOCOLS)
+            .addAttribute(SSLDefinitions.WANT_CLIENT_AUTH)
+            .addAttribute(SSLDefinitions.NEED_CLIENT_AUTH)
+            .addAttribute(SSLDefinitions.AUTHENTICATION_OPTIONAL)
+            .addAttribute(SSLDefinitions.USE_CIPHER_SUITES_ORDER)
+            .addAttribute(SSLDefinitions.MAXIMUM_SESSION_CACHE_SIZE)
+            .addAttribute(SSLDefinitions.SESSION_TIMEOUT)
+            .addAttribute(SSLDefinitions.WRAP)
+            .addAttribute(SSLDefinitions.KEY_MANAGER)
+            .addAttribute(SSLDefinitions.TRUST_MANAGER)
+            .addAttribute(SSLDefinitions.PROVIDERS)
+            .addAttribute(SSLDefinitions.PROVIDER_NAME)
+            .addAttribute(SSLDefinitions.ACCEPT_OCSP_STAPLING)      //new
+            .addAttribute(SSLDefinitions.OCSP_STAPLING_SOFT_FAIL)   // new
+            .addAttribute(SSLDefinitions.ACCEPT_OCSP_RESPONDER_KEYSTORE)    // new
+            .addAttribute(SSLDefinitions.ACCEPT_OCSP_RESPONDER_CERTIFICATE); //new
 
     private PersistentResourceXMLBuilder certificateAuthorityAccountParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(CERTIFICATE_AUTHORITY_ACCOUNT))
             .setXmlWrapperElement(CERTIFICATE_AUTHORITY_ACCOUNTS)
@@ -370,5 +416,21 @@ class TlsParser {
             .addChild(certificateAuthorityAccountParser)
             .addChild(serverSslSniContextParser)
             .addChild(dynamicClientSslContextParser) // new
+            .build();
+
+    final PersistentResourceXMLDescription tlsParserPreview_18_0 = decorator(TLS)
+            .addChild(decorator(KEY_STORES)
+                    .addChild(keyStoreParser)
+                    .addChild(ldapKeyStoreParser)
+                    .addChild(filteringKeyStoreParser)
+            )
+            .addChild(keyManagerParser_12_0)
+            .addChild(trustManagerParser_14_0)
+            .addChild(serverSslContextPreviewParser_18_0)   // new parser with ocsp_stapling
+            .addChild(clientSslContextParserPreview_18_0) // new parser with ocsp_stapling
+            .addChild(certificateAuthorityParser)
+            .addChild(certificateAuthorityAccountParser)
+            .addChild(serverSslSniContextParser)
+            .addChild(dynamicClientSslContextParser)
             .build();
 }
