@@ -19,5 +19,7 @@ public interface IOServiceDescriptor {
     /** Describes the default worker */
     NullaryServiceDescriptor<XnioWorker> DEFAULT_WORKER = NullaryServiceDescriptor.of("org.wildfly.io.default-worker", XnioWorker.class);
     /** Describes a named worker */
-    UnaryServiceDescriptor<XnioWorker> WORKER = UnaryServiceDescriptor.of("org.wildfly.io.worker", DEFAULT_WORKER);
+    UnaryServiceDescriptor<XnioWorker> NAMED_WORKER = UnaryServiceDescriptor.of("org.wildfly.io.worker", XnioWorker.class);
+    /** Resolves to a named or default worker **/
+    UnaryServiceDescriptor<XnioWorker> WORKER = UnaryServiceDescriptor.of(NAMED_WORKER.getName(), DEFAULT_WORKER);
 }
