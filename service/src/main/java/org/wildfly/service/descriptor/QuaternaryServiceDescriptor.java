@@ -6,8 +6,6 @@ package org.wildfly.service.descriptor;
 
 import java.util.Map;
 
-import org.wildfly.common.Assert;
-
 /**
  * Describes a service by its name, provided value type, and dynamic name resolution mechanism.
  * @author Paul Ferraro
@@ -24,12 +22,7 @@ public interface QuaternaryServiceDescriptor<T> extends ServiceDescriptor<T> {
      * @return a tuple containing the resolved name and dynamic segments
      */
     default Map.Entry<String, String[]> resolve(String greatGrandparent, String grandparent, String parent, String child) {
-        return Map.entry(this.getName(), new String[] {
-                Assert.checkNotNullParamWithNullPointerException("greatGrandparent", greatGrandparent),
-                Assert.checkNotNullParamWithNullPointerException("grandparent", grandparent),
-                Assert.checkNotNullParamWithNullPointerException("parent", parent),
-                Assert.checkNotNullParamWithNullPointerException("child", child)
-        });
+        return (greatGrandparent != null) && (grandparent != null) && (parent != null) && (child != null) ? Map.entry(this.getName(), new String[] { greatGrandparent, grandparent, parent, child }) : null;
     }
 
     @Override
