@@ -8,6 +8,7 @@ package org.jboss.as.controller.client.logging;
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.net.URL;
 
@@ -30,7 +31,7 @@ public interface ControllerClientLogger extends BasicLogger {
     /**
      * A logger with the default package name.
      */
-    ControllerClientLogger ROOT_LOGGER = Logger.getMessageLogger(ControllerClientLogger.class, "org.jboss.as.controller.client");
+    ControllerClientLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ControllerClientLogger.class, "org.jboss.as.controller.client");
 
     /**
      * Creates an exception indicating after starting creation of the rollout plan no deployment actions can be added.

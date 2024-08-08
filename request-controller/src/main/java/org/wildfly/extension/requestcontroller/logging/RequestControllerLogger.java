@@ -7,6 +7,8 @@ package org.wildfly.extension.requestcontroller.logging;
 
 import static org.jboss.logging.Logger.Level.WARN;
 
+import java.lang.invoke.MethodHandles;
+
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -23,7 +25,7 @@ public interface RequestControllerLogger extends BasicLogger {
     /**
      * A root logger with the category of the package name.
      */
-    RequestControllerLogger ROOT_LOGGER = Logger.getMessageLogger(RequestControllerLogger.class, "org.wildfly.extension.requestcontroller");
+    RequestControllerLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), RequestControllerLogger.class, "org.wildfly.extension.requestcontroller");
 
 
     @LogMessage(level = WARN)

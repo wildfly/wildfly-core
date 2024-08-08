@@ -9,6 +9,7 @@ import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.File;
+import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 import java.util.Set;
 
@@ -43,7 +44,7 @@ public interface LoggingLogger extends BasicLogger {
     /**
      * A root logger with the category of the package name.
      */
-    LoggingLogger ROOT_LOGGER = Logger.getMessageLogger(LoggingLogger.class, "org.jboss.as.logging");
+    LoggingLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), LoggingLogger.class, "org.jboss.as.logging");
 
     // id = 1, value = "%s caught exception attempting to revert operation %s at address %s" -- now unused
 

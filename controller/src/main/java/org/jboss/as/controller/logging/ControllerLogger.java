@@ -14,6 +14,7 @@ import static org.jboss.logging.annotations.Message.NONE;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
@@ -76,22 +77,22 @@ public interface ControllerLogger extends BasicLogger {
     /**
      * Default root logger with category of the package name.
      */
-    ControllerLogger ROOT_LOGGER = Logger.getMessageLogger(ControllerLogger.class, "org.jboss.as.controller");
+    ControllerLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ControllerLogger.class, "org.jboss.as.controller");
 
     /**
      * Logger for management operation messages.
      */
-    ControllerLogger MGMT_OP_LOGGER = Logger.getMessageLogger(ControllerLogger.class, "org.jboss.as.controller.management-operation");
+    ControllerLogger MGMT_OP_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ControllerLogger.class, "org.jboss.as.controller.management-operation");
 
     /**
      * A logger for logging deprecated resources usage
      */
-    ControllerLogger DEPRECATED_LOGGER = Logger.getMessageLogger(ControllerLogger.class, "org.jboss.as.controller.management-deprecated");
+    ControllerLogger DEPRECATED_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ControllerLogger.class, "org.jboss.as.controller.management-deprecated");
 
     /**
      * A logger for access control related messages.
      */
-    ControllerLogger ACCESS_LOGGER = Logger.getMessageLogger(ControllerLogger.class, "org.jboss.as.controller.access-control");
+    ControllerLogger ACCESS_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ControllerLogger.class, "org.jboss.as.controller.access-control");
 
     /**
      * Logs a warning message indicating the address, represented by the {@code address} parameter, could not be

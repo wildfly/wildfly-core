@@ -8,6 +8,7 @@ package org.jboss.as.jmx.logging;
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.WARN;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,6 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.OperationsException;
 import javax.management.ReflectionException;
-import javax.management.RuntimeOperationsException;
 import javax.management.openmbean.OpenType;
 
 import org.jboss.as.controller.PathAddress;
@@ -45,7 +45,7 @@ public interface JmxLogger extends BasicLogger {
     /**
      * A logger with the category of the package name.
      */
-    JmxLogger ROOT_LOGGER = Logger.getMessageLogger(JmxLogger.class, "org.jboss.as.jmx");
+    JmxLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), JmxLogger.class, "org.jboss.as.jmx");
 
 //    /**
 //     * Creates an exception indicating the inability to shutdown the RMI registry.
@@ -445,7 +445,7 @@ public interface JmxLogger extends BasicLogger {
     String cannotUnregisterMBeansUnderReservedDomain(String domain);
 
     @Message(id = 46, value="The ObjectName coming from MBeanRegistration.preRegister() '%s' is in a reserved JMX domain")
-    RuntimeOperationsException badDomainInCalclulatedObjectNameException(ObjectName name);
+    IllegalArgumentException badDomainInCalculatedObjectNameException(ObjectName name);
 
     @LogMessage(level = ERROR)
     @Message(id = 47, value="An error happened unregistering the '%s' MBean registered in a reserved JMX domain")

@@ -7,6 +7,7 @@ package org.jboss.as.controller.transform;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -46,7 +47,7 @@ public class TransformersLogger {
 
     private TransformersLogger(TransformationTarget target) {
         this.target = target;
-        logger = Logger.getMessageLogger(ControllerLogger.class, "org.jboss.as.controller.transformer." + target.getHostName());
+        logger = Logger.getMessageLogger(MethodHandles.lookup(), ControllerLogger.class, "org.jboss.as.controller.transformer." + target.getHostName());
     }
 
     public static TransformersLogger getLogger(TransformationTarget target){

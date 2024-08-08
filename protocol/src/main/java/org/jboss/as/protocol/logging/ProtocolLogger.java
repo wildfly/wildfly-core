@@ -10,6 +10,7 @@ import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.URI;
@@ -33,17 +34,17 @@ public interface ProtocolLogger extends BasicLogger {
     /**
      * The root logger with a category of the package.
      */
-    ProtocolLogger ROOT_LOGGER = Logger.getMessageLogger(ProtocolLogger.class, "org.jboss.as.protocol");
+    ProtocolLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ProtocolLogger.class, "org.jboss.as.protocol");
 
 //    /**
 //     * A logger with the category {@code org.jboss.as.protocol.client}.
 //     */
-//    ProtocolLogger CLIENT_LOGGER = Logger.getMessageLogger(ProtocolLogger.class, "org.jboss.as.protocol.client");
+//    ProtocolLogger CLIENT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ProtocolLogger.class, "org.jboss.as.protocol.client");
 
     /**
      * A logger with the category {@code org.jboss.as.protocol.connection}.
      */
-    ProtocolLogger CONNECTION_LOGGER = Logger.getMessageLogger(ProtocolLogger.class, "org.jboss.as.protocol.connection");
+    ProtocolLogger CONNECTION_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ProtocolLogger.class, "org.jboss.as.protocol.connection");
 
     /**
      * Logs a warning message indicating an error occurred when closing the channel.
