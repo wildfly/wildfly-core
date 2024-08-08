@@ -62,7 +62,6 @@
                 <configuration>
                     <skip>${skipTests}</skip>
                     <failIfNoTests>false</failIfNoTests>
-                    <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
                     <reuseForks>true</reuseForks>
 
                     <systemPropertyVariables>

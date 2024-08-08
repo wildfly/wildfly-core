@@ -75,7 +75,6 @@
                 <configuration>
                     <failIfNoTests>false</failIfNoTests>
                     <!-- parallel>none</parallel -->
-                    <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
 
                     <!-- Always use a new fork so each test gets it's own embedded environment -->
                     <forkCount>1</forkCount>

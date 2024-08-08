@@ -197,7 +197,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <parallel>none</parallel>
-                    <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
                     <systemPropertyVariables>
                         <wildfly.debug>${ts.debug}</wildfly.debug>
                         <wildfly.debug.port>8787</wildfly.debug.port>

@@ -111,6 +111,12 @@
             ${surefire.jacoco.args} -Djava.io.tmpdir=${project.build.directory}</surefire.jvm.args>
         <surefire.system.args>${surefire.jpda.args} ${surefire.jvm.args}</surefire.system.args>
         <test.level>INFO</test.level>
+        <!-- The maven.test.redirectTestOutputToFile is used by the surefire-maven-plugin and failsafe-maven-plugin to
+             redirect stdout and stderr to a file. We use testLogToFile as shorthand for this setting and default to
+             true. You can override this from the command line by passing false to either of these properties.
+         -->
+        <testLogToFile>true</testLogToFile>
+        <maven.test.redirectTestOutputToFile>${testLogToFile}</maven.test.redirectTestOutputToFile>
 
         <!-- This overrides default surefire plugin version specified in parent pom - reason is to enable TCP/IP communication,
              see https://maven.apache.org/surefire/maven-surefire-plugin/examples/process-communication.html -->
@@ -339,7 +345,6 @@
                     </dependencies>
                     <configuration>
                         <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
-                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <enableAssertions>true</enableAssertions>
                         <systemPropertyVariables>
                             <org.jboss.model.test.cache.root>${org.jboss.model.test.cache.root}</org.jboss.model.test.cache.root>

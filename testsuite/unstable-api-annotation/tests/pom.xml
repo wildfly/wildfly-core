@@ -39,7 +39,6 @@
                     </excludes>
                     <failIfNoTests>false</failIfNoTests>
                     <!-- parallel>none</parallel -->
-                    <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
 
                     <!-- System properties to forked surefire JVM which runs clients. -->
                     <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args} -Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
