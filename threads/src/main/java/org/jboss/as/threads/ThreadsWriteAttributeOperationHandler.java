@@ -10,8 +10,6 @@ import static org.jboss.as.threads.CommonAttributes.TIME;
 import static org.jboss.as.threads.CommonAttributes.UNIT;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
@@ -19,6 +17,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -31,50 +30,42 @@ import org.jboss.msc.service.ServiceController;
  */
 public abstract class ThreadsWriteAttributeOperationHandler extends AbstractWriteAttributeHandler<Boolean> {
 
-    protected final AttributeDefinition[] attributes;
-    protected final Map<String, AttributeDefinition> runtimeAttributes = new HashMap<String, AttributeDefinition>();
+    private final AttributeDefinition[] attributes;
 
     /**
      * Creates a handler that doesn't validate values.
      * @param attributes all persistent attributes of the
      * @param runtimeAttributes attributes whose updated value can immediately be applied to the runtime
      */
-    public ThreadsWriteAttributeOperationHandler(AttributeDefinition[] attributes, AttributeDefinition[] runtimeAttributes) {
-        super(attributes);
+    public ThreadsWriteAttributeOperationHandler(AttributeDefinition[] attributes) {
         this.attributes = attributes;
-        for(AttributeDefinition attr : runtimeAttributes) {
-            this.runtimeAttributes.put(attr.getName(), attr);
-        }
     }
 
     @Override
     protected boolean applyUpdateToRuntime(final OperationContext context, final ModelNode operation,
                                            final String attributeName, final ModelNode newValue,
                                            final ModelNode currentValue, final HandbackHolder<Boolean> handbackHolder) throws OperationFailedException {
-        AttributeDefinition attr = runtimeAttributes.get(attributeName);
-        if (attr == null) {
+        if (context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getFlags().contains(AttributeAccess.Flag.RESTART_ALL_SERVICES)) {
             // Not a runtime attribute; restart required
             return true;
         }
-        else {
-            final ServiceController<?> service = getService(context, operation);
-            if (service == null) {
-                // The service isn't installed, so the work done in the Stage.MODEL part is all there is to it
-                return false;
-            } else if (service.getState() != ServiceController.State.UP) {
-                // Service is installed but not up?
-                //throw new IllegalStateException(String.format("Cannot apply attribue %s to runtime; service %s is not in state %s, it is in state %s",
-                //            attributeName, MessagingServices.JBOSS_MESSAGING, ServiceController.State.UP, hqService.getState()));
-                // No, don't barf; just let the update apply to the model and put the server in a reload-required state
-                return true;
-            } else {
-                // Actually apply the update
-                final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
-                applyOperation(context, model, attributeName, service, false);
-                handbackHolder.setHandback(Boolean.TRUE);
-                return false;
-            }
 
+        final ServiceController<?> service = getService(context, operation);
+        if (service == null) {
+            // The service isn't installed, so the work done in the Stage.MODEL part is all there is to it
+            return false;
+        } else if (service.getState() != ServiceController.State.UP) {
+            // Service is installed but not up?
+            //throw new IllegalStateException(String.format("Cannot apply attribue %s to runtime; service %s is not in state %s, it is in state %s",
+            //            attributeName, MessagingServices.JBOSS_MESSAGING, ServiceController.State.UP, hqService.getState()));
+            // No, don't barf; just let the update apply to the model and put the server in a reload-required state
+            return true;
+        } else {
+            // Actually apply the update
+            final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
+            applyOperation(context, model, attributeName, service, false);
+            handbackHolder.setHandback(Boolean.TRUE);
+            return false;
         }
     }
 
@@ -82,7 +73,7 @@ public abstract class ThreadsWriteAttributeOperationHandler extends AbstractWrit
     protected void revertUpdateToRuntime(final OperationContext context, final ModelNode operation,
                                          final String attributeName, final ModelNode valueToRestore,
                                          final ModelNode valueToRevert, final Boolean handback) throws OperationFailedException {
-        if (handback != null && handback.booleanValue() && runtimeAttributes.containsKey(attributeName)) {
+        if (handback != null && handback.booleanValue() && context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getFlags().contains(AttributeAccess.Flag.RESTART_NONE)) {
             final ServiceController<?> service = getService(context, operation);
             if (service != null && service.getState() == ServiceController.State.UP) {
                 // Create and execute a write-attribute operation that uses the valueToRestore
@@ -94,7 +85,7 @@ public abstract class ThreadsWriteAttributeOperationHandler extends AbstractWrit
     }
 
     public void registerAttributes(final ManagementResourceRegistration registry) {
-        for(AttributeDefinition attribute : attributes) {
+        for (AttributeDefinition attribute : this.attributes) {
             registry.registerReadWriteAttribute(attribute, null, this);
         }
     }

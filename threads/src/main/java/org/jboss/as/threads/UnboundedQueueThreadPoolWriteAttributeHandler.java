@@ -4,8 +4,6 @@
  */
 package org.jboss.as.threads;
 
-
-
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.OperationContext;
@@ -32,7 +30,7 @@ public class UnboundedQueueThreadPoolWriteAttributeHandler extends ThreadsWriteA
     }
 
     public UnboundedQueueThreadPoolWriteAttributeHandler(final RuntimeCapability capability, ServiceName serviceNameBase) {
-        super(UnboundedQueueThreadPoolAdd.ATTRIBUTES, UnboundedQueueThreadPoolAdd.RW_ATTRIBUTES);
+        super(UnboundedQueueThreadPoolAdd.ATTRIBUTES);
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;
     }

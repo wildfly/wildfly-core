@@ -5,16 +5,12 @@
 
 package org.jboss.as.threads;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.concurrent.ThreadFactory;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.PersistentResourceDefinition;
-import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.ServiceRemoveStepHandler;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -24,7 +20,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class ThreadFactoryResourceDefinition extends PersistentResourceDefinition {
+public class ThreadFactoryResourceDefinition extends SimpleResourceDefinition {
     public static final ThreadFactoryResourceDefinition DEFAULT_INSTANCE = new ThreadFactoryResourceDefinition();
 
     public ThreadFactoryResourceDefinition() {
@@ -49,10 +45,5 @@ public class ThreadFactoryResourceDefinition extends PersistentResourceDefinitio
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadOnlyAttribute(PoolAttributeDefinitions.NAME, ReadResourceNameOperationStepHandler.INSTANCE);
         ThreadFactoryWriteAttributeHandler.INSTANCE.registerAttributes(resourceRegistration);
-    }
-
-    @Override
-    public Collection<AttributeDefinition> getAttributes() {
-        return Arrays.asList(ThreadFactoryWriteAttributeHandler.INSTANCE.attributes);
     }
 }

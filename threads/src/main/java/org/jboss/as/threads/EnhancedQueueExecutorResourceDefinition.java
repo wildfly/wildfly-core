@@ -7,13 +7,9 @@ package org.jboss.as.threads;
 
 import static org.jboss.as.threads.CommonAttributes.ENHANCED_QUEUE_THREAD_POOL;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -23,7 +19,7 @@ import org.jboss.msc.service.ServiceName;
 /**
  * {@link org.jboss.as.controller.ResourceDefinition} for an {@code org.jboss.threads.EnhancedQueueExecutor} resource.
  */
-public final class EnhancedQueueExecutorResourceDefinition extends PersistentResourceDefinition {
+public final class EnhancedQueueExecutorResourceDefinition extends SimpleResourceDefinition {
     private final EnhancedQueueExecutorWriteAttributeHandler writeAttributeHandler;
     private final EnhancedQueueExecutorMetricsHandler metricsHandler;
     private final boolean registerRuntimeOnly;
@@ -75,10 +71,5 @@ public final class EnhancedQueueExecutorResourceDefinition extends PersistentRes
         if (registerRuntimeOnly) {
             metricsHandler.registerAttributes(resourceRegistration);
         }
-    }
-
-    @Override
-    public Collection<AttributeDefinition> getAttributes() {
-        return Arrays.asList(writeAttributeHandler.attributes);
     }
 }

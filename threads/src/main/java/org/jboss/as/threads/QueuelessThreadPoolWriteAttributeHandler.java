@@ -5,7 +5,6 @@
 package org.jboss.as.threads;
 
 
-
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.OperationContext;
@@ -27,7 +26,7 @@ public class QueuelessThreadPoolWriteAttributeHandler extends ThreadsWriteAttrib
     private final RuntimeCapability capability;
 
     public QueuelessThreadPoolWriteAttributeHandler(boolean blocking, final RuntimeCapability capability, ServiceName serviceNameBase) {
-        super(blocking ? QueuelessThreadPoolAdd.BLOCKING_ATTRIBUTES : QueuelessThreadPoolAdd.NON_BLOCKING_ATTRIBUTES, QueuelessThreadPoolAdd.RW_ATTRIBUTES);
+        super(blocking ? QueuelessThreadPoolAdd.BLOCKING_ATTRIBUTES : QueuelessThreadPoolAdd.NON_BLOCKING_ATTRIBUTES);
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;
     }

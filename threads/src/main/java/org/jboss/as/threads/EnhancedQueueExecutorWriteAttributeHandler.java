@@ -22,7 +22,7 @@ class EnhancedQueueExecutorWriteAttributeHandler extends ThreadsWriteAttributeOp
     private final RuntimeCapability capability;
 
     EnhancedQueueExecutorWriteAttributeHandler(final RuntimeCapability capability, ServiceName serviceNameBase) {
-        super(EnhancedQueueExecutorAdd.ATTRIBUTES, EnhancedQueueExecutorAdd.RW_ATTRIBUTES);
+        super(EnhancedQueueExecutorAdd.ATTRIBUTES);
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;
     }

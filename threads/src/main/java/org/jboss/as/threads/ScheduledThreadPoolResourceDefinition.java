@@ -7,24 +7,19 @@ package org.jboss.as.threads;
 
 import static org.jboss.as.threads.CommonAttributes.SCHEDULED_THREAD_POOL;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.msc.service.ServiceName;
-
-import java.util.Arrays;
-import java.util.Collection;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.msc.service.ServiceName;
 
 /**
  * {@link org.jboss.as.controller.ResourceDefinition} for a scheduled thread pool resource.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class ScheduledThreadPoolResourceDefinition extends PersistentResourceDefinition {
+public class ScheduledThreadPoolResourceDefinition extends SimpleResourceDefinition {
     private final ScheduledThreadPoolWriteAttributeHandler writeAttributeHandler;
     private final ScheduledThreadPoolMetricsHandler metricsHandler;
     private final boolean registerRuntimeOnly;
@@ -73,10 +68,5 @@ public class ScheduledThreadPoolResourceDefinition extends PersistentResourceDef
         if (registerRuntimeOnly) {
             metricsHandler.registerAttributes(resourceRegistration);
         }
-    }
-
-    @Override
-    public Collection<AttributeDefinition> getAttributes() {
-        return Arrays.asList(writeAttributeHandler.attributes);
     }
 }
