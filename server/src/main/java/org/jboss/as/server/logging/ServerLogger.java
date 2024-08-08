@@ -37,7 +37,7 @@ import org.jboss.as.server.deployment.MountType;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.deployment.module.ExtensionListEntry;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.server.suspend.ServerActivity;
+import org.jboss.as.server.suspend.SuspendableActivity;
 import org.jboss.as.version.Stability;
 import org.jboss.invocation.proxy.MethodIdentifier;
 import org.jboss.logging.BasicLogger;
@@ -1110,7 +1110,7 @@ public interface ServerLogger extends BasicLogger {
 
     @LogMessage(level = ERROR)
     @Message(id = 215, value = "Failed to resume activity %s. To resume normal operation it is recommended that you restart the server.")
-    void failedToResume(ServerActivity activity, @Cause Exception cause);
+    void failedToResume(SuspendableActivity activity, @Cause Throwable cause);
 
     @LogMessage(level = ERROR)
     @Message(id = 216, value = "Error cleaning obsolete content %s ")

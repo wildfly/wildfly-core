@@ -29,7 +29,7 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.domain.RemoteFileRepositoryService;
 import org.jboss.as.server.moduleservice.ExternalModuleService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
-import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.as.server.suspend.ServerSuspendController;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceActivator;
@@ -55,7 +55,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
     private final Bootstrap.Configuration configuration;
     private final RunningModeControl runningModeControl;
     private final ControlledProcessState processState;
-    private final SuspendController suspendController;
+    private final ServerSuspendController suspendController;
     private final boolean standalone;
     private final boolean selfContained;
     private final ElapsedTime elapsedTime;
@@ -63,7 +63,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
     private volatile boolean everStopped;
 
     ApplicationServerService(final List<ServiceActivator> extraServices, final Bootstrap.Configuration configuration,
-                             final ControlledProcessState processState, final SuspendController suspendController,
+                             final ControlledProcessState processState, final ServerSuspendController suspendController,
                              final ElapsedTime elapsedTime) {
         this.extraServices = extraServices;
         this.configuration = configuration;

@@ -943,9 +943,9 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     }
 
     /**
-     * If this is true then the server will start with graceful startup disabled
+     * Indicates whether the server should start gracefully.
      *
-     * @return <code>true</code> if the server should start with graceful startup disabled
+     * @return <code>true</code> if the server should start gracefully, false otherwise
      */
     public boolean isStartGracefully() {
         return startGracefully;

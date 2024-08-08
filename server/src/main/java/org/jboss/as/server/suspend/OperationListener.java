@@ -31,7 +31,10 @@ public interface OperationListener {
 
     /**
      * Invoked when a suspend operation times out.
+     * @deprecated This event is no longer emitted.
      */
-    void timeout();
-
+    @Deprecated(forRemoval = true)
+    default void timeout() {
+        // Do nothing
+    }
 }

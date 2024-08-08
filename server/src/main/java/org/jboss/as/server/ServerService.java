@@ -53,7 +53,6 @@ import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.notification.Notification;
-import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -113,6 +112,7 @@ import org.jboss.as.server.mgmt.domain.HostControllerConnectionService;
 import org.jboss.as.server.moduleservice.ExtensionIndexService;
 import org.jboss.as.server.moduleservice.ExternalModule;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
+import org.jboss.as.server.suspend.ServerSuspendController;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
@@ -128,6 +128,7 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.EnhancedQueueExecutor;
 import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.service.ServiceInstaller;
 
 /**
  * Service for the {@link org.jboss.as.controller.ModelController} for an AS server instance.
@@ -158,15 +159,13 @@ public final class ServerService extends AbstractControllerService {
     private final RunningModeControl runningModeControl;
     private volatile ExtensibleConfigurationPersister extensibleConfigurationPersister;
     private final ServerDelegatingResourceDefinition rootResourceDefinition;
-    private final SuspendController suspendController;
+    private final ServerSuspendController suspendController;
     public static final String SERVER_NAME = "server";
 
-    static final String SUSPEND_CONTROLLER_CAPABILITY_NAME = "org.wildfly.server.suspend-controller";
     static final String EXTERNAL_MODULE_CAPABILITY_NAME = "org.wildfly.management.external-module";
 
-    static final RuntimeCapability<Void> SUSPEND_CONTROLLER_CAPABILITY =
-            RuntimeCapability.Builder.of(SUSPEND_CONTROLLER_CAPABILITY_NAME, SuspendController.class)
-                    .build();
+    // TODO Remove type narrowing as soon as references to the implementation class are dropped from WildFly
+    static final RuntimeCapability<Void> SUSPEND_CONTROLLER_CAPABILITY = RuntimeCapability.Builder.of(ServerSuspendController.SERVICE_DESCRIPTOR.asType(SuspendController.class)).build();
 
     static final RuntimeCapability<Void> EXTERNAL_MODULE_CAPABILITY =
             RuntimeCapability.Builder.of(EXTERNAL_MODULE_CAPABILITY_NAME, ExternalModule.class)
@@ -185,7 +184,7 @@ public final class ServerService extends AbstractControllerService {
                           final OperationStepHandler prepareStep, final BootstrapListener bootstrapListener, final ServerDelegatingResourceDefinition rootResourceDefinition,
                           final RunningModeControl runningModeControl, final ManagedAuditLogger auditLogger,
                           final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
-                          final CapabilityRegistry capabilityRegistry, final SuspendController suspendController, final RuntimeExpressionResolver expressionResolver) {
+                          final CapabilityRegistry capabilityRegistry, final ServerSuspendController suspendController, final RuntimeExpressionResolver expressionResolver) {
         super(executorService, instabilityListener, getProcessType(configuration.getServerEnvironment()), getStability(configuration.getServerEnvironment()), runningModeControl, null, processState,
                 rootResourceDefinition, prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry,
                 configuration.getServerEnvironment().getConfigurationExtension());
@@ -216,7 +215,7 @@ public final class ServerService extends AbstractControllerService {
                                   final ControlledProcessState processState, final BootstrapListener bootstrapListener,
                                   final RunningModeControl runningModeControl, final ManagedAuditLogger auditLogger,
                                   final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
-                                  final SuspendController suspendController) {
+                                  final ServerSuspendController suspendController) {
 
         // Install Executor services
         final String namePattern = "ServerService Thread Pool -- %t";
@@ -287,10 +286,12 @@ public final class ServerService extends AbstractControllerService {
                         super.getAuditLogger(),
                         getMutableRootResourceRegistrationProvider(),
                         super.getBootErrorCollector(),
-                        configuration.getCapabilityRegistry()));
+                        configuration.getCapabilityRegistry(),
+                        this.suspendController));
         super.start(context);
     }
 
+    @Override
     protected void boot(final BootContext context) throws ConfigurationPersistenceException {
         boolean ok;
         Throwable cause = null;
@@ -302,25 +303,20 @@ public final class ServerService extends AbstractControllerService {
             newExtDirs[extDirs.length] = new File(serverEnvironment.getServerBaseDir(), "lib/ext");
             serviceTarget.addService(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX,
                     new ExtensionIndexService(newExtDirs)).setInitialMode(ServiceController.Mode.ON_DEMAND).install();
-            final boolean suspend = runningModeControl.getSuspend()!= null ? runningModeControl.getSuspend() : serverEnvironment.isStartSuspended();
+            final boolean suspend = runningModeControl.getSuspend() != null ? runningModeControl.getSuspend() : serverEnvironment.isStartSuspended();
             final boolean gracefulStartup = serverEnvironment.isStartGracefully();
-            suspendController.setStartSuspended(suspend);
+            this.suspendController.reset();
             runningModeControl.setSuspend(false);
-            if (!gracefulStartup) {
-                if (suspend) {
+            if (suspend) {
+                if (!gracefulStartup) {
                     ServerLogger.ROOT_LOGGER.disregardingNonGraceful();
-                } else {
-                    suspendController.nonGracefulStart();
                 }
+                ServerLogger.AS_ROOT_LOGGER.startingServerSuspended();
+            } else if (!gracefulStartup) {
+                ServerLogger.ROOT_LOGGER.startingNonGraceful();
+                this.suspendController.resume(ServerSuspendController.Context.STARTUP).toCompletableFuture().join();
             }
-            context.getServiceTarget().addService(SUSPEND_CONTROLLER_CAPABILITY.getCapabilityServiceName(), suspendController)
-                    .addDependency(JBOSS_SERVER_NOTIFICATION_REGISTRY, NotificationHandlerRegistry.class, suspendController.getNotificationHandlerRegistry())
-                    .install();
-
-            GracefulShutdownService gracefulShutdownService = new GracefulShutdownService();
-            context.getServiceTarget().addService(GracefulShutdownService.SERVICE_NAME, gracefulShutdownService)
-                    .addDependency(SUSPEND_CONTROLLER_CAPABILITY.getCapabilityServiceName(), SuspendController.class, gracefulShutdownService.getSuspendControllerInjectedValue())
-                    .install();
+            ServiceInstaller.builder(this.suspendController).provides(SUSPEND_CONTROLLER_CAPABILITY.getCapabilityServiceName()).build().install(context.getServiceTarget());
 
             // Activate module loader
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.STRUCTURE, Phase.STRUCTURE_SERVICE_MODULE_LOADER, new DeploymentUnitProcessor() {
@@ -442,10 +438,12 @@ public final class ServerService extends AbstractControllerService {
         }
     }
 
+    @Override
     protected void finishBoot(boolean suspend) throws ConfigurationPersistenceException {
         super.finishBoot();
         if (!suspend) {
-            suspendController.resume();
+            ServerLogger.ROOT_LOGGER.resumingServer();
+            suspendController.resume(ServerSuspendController.Context.STARTUP).toCompletableFuture().join();
         }
     }
 

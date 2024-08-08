@@ -323,7 +323,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerReadOnlyAttribute(HostResourceDefinition.RUNTIME_CONFIGURATION_STATE, new ProcessStateAttributeHandler(processState));
         hostRegistration.registerReadOnlyAttribute(HostResourceDefinition.HOST_STATE, new ProcessStateAttributeHandler(processState));
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.RUNNING_MODE, new RunningModeReadHandler(runningModeControl));
-        hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SUSPEND_STATE, SuspendStateReadHandler.INSTANCE);
+        hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SUSPEND_STATE, new SuspendStateReadHandler(null));
     }
 
 

@@ -15,7 +15,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
-import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.as.server.suspend.SuspendableActivityRegistry;
 import org.jboss.dmr.ModelNode;
 
 import java.util.function.Supplier;
@@ -46,11 +46,9 @@ class RequestControllerSubsystemAdd extends AbstractBoottimeAddStepHandler {
         int maxRequests = RequestControllerRootDefinition.MAX_REQUESTS.resolveModelAttribute(context, resource.getModel()).asInt();
         boolean trackIndividual = RequestControllerRootDefinition.TRACK_INDIVIDUAL_ENDPOINTS.resolveModelAttribute(context, resource.getModel()).asBoolean();
 
-
-
         CapabilityServiceBuilder<?> svcBuilder = context.getCapabilityServiceTarget().addCapability(REQUEST_CONTROLLER_CAPABILITY);
-        Supplier<SuspendController> supplier = svcBuilder.requiresCapability("org.wildfly.server.suspend-controller", SuspendController.class);
-        RequestController requestController = new RequestController(trackIndividual, supplier);
+        Supplier<SuspendableActivityRegistry> registry = svcBuilder.requires(SuspendableActivityRegistry.SERVICE_DESCRIPTOR);
+        RequestController requestController = new RequestController(trackIndividual, registry);
         requestController.setMaxRequestCount(maxRequests);
         svcBuilder.setInstance(requestController)
                 .install();

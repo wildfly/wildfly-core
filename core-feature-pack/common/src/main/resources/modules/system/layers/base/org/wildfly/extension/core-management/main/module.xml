@@ -26,6 +26,7 @@
         <module name="org.jboss.msc"/>
         <module name="org.jboss.staxmapper"/>
         <module name="org.jboss.vfs" services="import"/>
+        <module name="org.wildfly.common"/>
         <module name="org.wildfly.extension.core-management-client"/>
         <module name="org.wildfly.security.elytron-private"/>
         <module name="org.wildfly.service"/>

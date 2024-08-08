@@ -117,7 +117,7 @@ import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.as.server.services.net.SpecifiedInterfaceAddHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceRemoveHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
-import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.as.server.suspend.ServerSuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -209,7 +209,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static final AttributeDefinition SUSPEND_STATE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_STATE, ModelType.STRING)
-            .setValidator(EnumValidator.create(SuspendController.State.class))
+            .setValidator(EnumValidator.create(ServerSuspendController.State.class))
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
@@ -266,6 +266,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
     private final CapabilityRegistry capabilityRegistry;
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
     private final BootErrorCollector bootErrorCollector;
+    private final ServerSuspendController suspendController;
 
     public ServerRootResourceDefinition(
             final ContentRepository contentRepository,
@@ -282,7 +283,8 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             final ManagedAuditLogger auditLogger,
             final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider,
             final BootErrorCollector bootErrorCollector,
-            final CapabilityRegistry capabilityRegistry) {
+            final CapabilityRegistry capabilityRegistry,
+            final ServerSuspendController suspendController) {
         super(new Parameters(ResourceRegistration.root(), ServerDescriptions.getResourceDescriptionResolver(SERVER, false))
                 .addCapabilities(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.HOME_DIR),
                         PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_BASE_DIR),
@@ -309,6 +311,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         this.securityIdentitySupplier = securityIdentitySupplier;
         this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
         this.bootErrorCollector = bootErrorCollector;
+        this.suspendController = suspendController;
     }
 
     @Override
@@ -405,12 +408,12 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             final ServerDomainProcessReloadHandler reloadHandler = new ServerDomainProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, operationIDUpdater, serverEnvironment);
             resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(RELOAD, ModelType.STRING, null, BLOCKING, START_MODE), reloadHandler);
 
-            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(SUSPEND, null, null, TIMEOUT, SUSPEND_TIMEOUT), ServerSuspendHandler.INSTANCE);
+            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(SUSPEND, null, null, TIMEOUT, SUSPEND_TIMEOUT), new ServerSuspendHandler(this.suspendController));
 
-            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(RESUME, null, null), ServerResumeHandler.INSTANCE);
+            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(RESUME, null, null), new ServerResumeHandler(this.suspendController));
 
             // This one is completely private, only for use by the HC
-            resourceRegistration.registerOperationHandler(ServerDomainProcessShutdownHandler.DOMAIN_DEFINITION, new ServerDomainProcessShutdownHandler());
+            resourceRegistration.registerOperationHandler(ServerDomainProcessShutdownHandler.DOMAIN_DEFINITION, new ServerDomainProcessShutdownHandler(this.suspendController));
 
         } else {
 
@@ -418,13 +421,13 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             ServerProcessReloadHandler.registerStandardReloadOperation(resourceRegistration, runningModeControl, processState, serverEnvironment, extensibleConfigurationPersister);
             ServerProcessReloadHandler.registerEnhancedReloadOperation(resourceRegistration, runningModeControl, processState, serverEnvironment, extensibleConfigurationPersister);
 
-            resourceRegistration.registerOperationHandler(ServerSuspendHandler.DEFINITION, ServerSuspendHandler.INSTANCE);
-            resourceRegistration.registerOperationHandler(ServerResumeHandler.DEFINITION, ServerResumeHandler.INSTANCE);
+            resourceRegistration.registerOperationHandler(ServerSuspendHandler.DEFINITION, new ServerSuspendHandler(this.suspendController));
+            resourceRegistration.registerOperationHandler(ServerResumeHandler.DEFINITION, new ServerResumeHandler(this.suspendController));
         }
 
         // The System.exit() based shutdown command is only valid for a server process directly launched from the command line
         if (serverEnvironment.getLaunchType() == ServerEnvironment.LaunchType.STANDALONE) {
-            ServerShutdownHandler serverShutdownHandler = new ServerShutdownHandler(processState, serverEnvironment);
+            ServerShutdownHandler serverShutdownHandler = new ServerShutdownHandler(processState, serverEnvironment, this.suspendController);
             resourceRegistration.registerOperationHandler(ServerShutdownHandler.DEFINITION, serverShutdownHandler);
         }
 
@@ -447,7 +450,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerReadOnlyAttribute(SERVER_STATE, new ProcessStateAttributeHandler(processState));
         resourceRegistration.registerReadOnlyAttribute(PROCESS_TYPE, ProcessTypeHandler.INSTANCE);
         resourceRegistration.registerReadOnlyAttribute(RUNNING_MODE, new RunningModeReadHandler(runningModeControl));
-        resourceRegistration.registerReadOnlyAttribute(SUSPEND_STATE, SuspendStateReadHandler.INSTANCE);
+        resourceRegistration.registerReadOnlyAttribute(SUSPEND_STATE, new SuspendStateReadHandler(this.suspendController));
         resourceRegistration.registerReadOnlyAttribute(UUID, new InstanceUuidReadHandler(serverEnvironment));
 
 
