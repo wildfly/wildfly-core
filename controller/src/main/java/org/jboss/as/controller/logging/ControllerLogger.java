@@ -3782,4 +3782,16 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 512, value = "No resource exists at address '%s'. Ignoring the remove opreation.")
     void removingUnexistingResource(String address);
+
+    /**
+     * Creates an exception indicating a namespace which is no longer supported has been encountered.
+     *
+     * @param name     the fully qualified unexpected element name.
+     * @param location the location of the error.
+     *
+     * @return a {@link XMLStreamException} for the error.
+     */
+    @Message(id = 513, value = "The XML namespace of %s is no longer supported.")
+    XMLStreamException unsupportedNamespace(QName name, @Param Location location);
+
 }

@@ -34,43 +34,6 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
 class VaultXml {
 
     void parseVault(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
-        switch (expectedNs) {
-            case DOMAIN_1_0:
-                throw unexpectedElement(reader);
-            case DOMAIN_1_1:
-            case DOMAIN_1_2:
-            case DOMAIN_1_3:
-            case DOMAIN_1_4:
-            case DOMAIN_1_5:
-                parseVault_1_1(reader, address, expectedNs, list);
-                break;
-            default:
-                if (expectedNs.getMajorVersion() == 2) {
-                    parseVault_1_1(reader, address, expectedNs, list);
-                } else {
-                    parseVault_1_6_and_3_0(reader, address, expectedNs, list);
-                }
-        }
-    }
-
-    private void parseVault_1_1(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            requireNamespace(reader, expectedNs);
-            final Element element = Element.forName(reader.getLocalName());
-            switch (element) {
-                case VAULT_OPTION: {
-                    requireNoContent(reader);
-                    break;
-                }
-                default: {
-                    throw unexpectedElement(reader);
-                }
-            }
-        }
-        CONFIG_LOGGER.vaultSupportRemoved();
-    }
-
-    private void parseVault_1_6_and_3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, expectedNs);
             final Element element = Element.forName(reader.getLocalName());

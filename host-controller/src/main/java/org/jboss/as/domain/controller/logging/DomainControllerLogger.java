@@ -59,9 +59,9 @@ public interface DomainControllerLogger extends BasicLogger {
     @Message(id = 1, value = "Ignoring 'include' child of 'socket-binding-group' %s")
     void warnIgnoringSocketBindingGroupInclude(Location location);
 
-    @LogMessage(level = Level.WARN)
-    @Message(id = 2, value = "Ignoring 'include' child of 'profile' %s")
-    void warnIgnoringProfileInclude(Location location);
+    //@LogMessage(level = Level.WARN)
+    //@Message(id = 2, value = "Ignoring 'include' child of 'profile' %s")
+    //void warnIgnoringProfileInclude(Location location);
 
     /**
      * Logs a warning message indicating an interruption awaiting the final response from the server, represented by the
