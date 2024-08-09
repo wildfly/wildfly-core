@@ -4,6 +4,7 @@
  */
 package org.wildfly.subsystem.resource.operation;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -11,6 +12,7 @@ import java.util.function.UnaryOperator;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.wildfly.subsystem.resource.AttributeTranslation;
@@ -24,9 +26,30 @@ public interface AddResourceOperationStepHandlerDescriptor extends OperationStep
     /**
      * Returns the required child resources for this resource description.
      * @return a collection of resource paths
+     * @deprecated Superseded by {@link #getRequiredChildResources()}.
      */
+    @Deprecated(forRemoval = true)
     default Set<PathElement> getRequiredChildren() {
-        return Set.of();
+        return this.getRequiredChildResources().keySet();
+    }
+
+    /**
+     * Returns the required child resources for this resource description.
+     * @return a collection of resource paths
+     */
+    default Map<PathElement, ResourceRegistration> getRequiredChildResources() {
+        return Map.of();
+    }
+
+    /**
+     * Returns the required singleton child resources for this resource description.
+     * This means only one child resource should exist for the given child type.
+     * @return a collection of resource paths
+     * @deprecated Superseded by {@link #getRequiredSingletonChildResources()
+     */
+    @Deprecated(forRemoval = true)
+    default Set<PathElement> getRequiredSingletonChildren() {
+        return this.getRequiredSingletonChildResources().keySet();
     }
 
     /**
@@ -34,8 +57,8 @@ public interface AddResourceOperationStepHandlerDescriptor extends OperationStep
      * This means only one child resource should exist for the given child type.
      * @return a collection of resource paths
      */
-    default Set<PathElement> getRequiredSingletonChildren() {
-        return Set.of();
+    default Map<PathElement, ResourceRegistration> getRequiredSingletonChildResources() {
+        return Map.of();
     }
 
     /**
