@@ -11,7 +11,9 @@ import org.jboss.as.controller.PathElement;
 /**
  * Provides a {@link PathElement}.
  * @author Paul Ferraro
+ * @deprecated To be removed without replacement
  */
+@Deprecated(forRemoval = true)
 public interface PathElementProvider extends Supplier<PathElement> {
 
     /**
