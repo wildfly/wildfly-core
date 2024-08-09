@@ -17,5 +17,6 @@
         <!-- required by default configuration-->
         <package name="org.wildfly.extension.elytron.jaas-realm"/>
         <package name="org.wildfly.openssl"/>
+        <package name="org.wildfly.security.elytron-dynamic-ssl"/>
     </packages>
 </layer-spec>
