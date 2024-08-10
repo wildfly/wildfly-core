@@ -116,7 +116,7 @@ public class ResourceDescriptorRegistrar implements ManagementResourceRegistrar 
                         .setStability(registration.getStability())
                         .withFlag(this.descriptor.getAddOperationRestartFlag())
                         .build();
-                registration.registerOperationHandler(addDefinition, this.descriptor.getAddOperationTransformation().apply(new AddResourceOperationStepHandler(this.descriptor)));
+                registration.registerOperationHandler(addDefinition, this.descriptor.getOperationTransformation(ModelDescriptionConstants.ADD).apply(new AddResourceOperationStepHandler(this.descriptor)));
 
                 // Register remove resource operation handler
                 OperationDefinition removeDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.REMOVE, this.descriptor.getResourceDescriptionResolver())
@@ -124,16 +124,17 @@ public class ResourceDescriptorRegistrar implements ManagementResourceRegistrar 
                         .setStability(registration.getStability())
                         .withFlag(this.descriptor.getRemoveOperationRestartFlag())
                         .build();
-                registration.registerOperationHandler(removeDefinition, this.descriptor.getResourceOperationTransformation().apply(new RemoveResourceOperationStepHandler(this.descriptor)));
+                registration.registerOperationHandler(removeDefinition, this.descriptor.getOperationTransformation(ModelDescriptionConstants.REMOVE).apply(new RemoveResourceOperationStepHandler(this.descriptor)));
             }
 
             // Override global operations with transformed operations, if necessary
             for (Map.Entry<OperationDefinition, OperationStepHandler> entry : GLOBAL_OPERATIONS.entrySet()) {
+                OperationDefinition definition = entry.getKey();
                 OperationStepHandler handler = entry.getValue();
                 // Only override global operation handlers for non-identity transformations
-                OperationStepHandler transformedHandler = this.descriptor.getResourceOperationTransformation().apply(handler);
+                OperationStepHandler transformedHandler = this.descriptor.getOperationTransformation(definition.getName()).apply(handler);
                 if (handler != transformedHandler) {
-                    registration.registerOperationHandler(entry.getKey(), transformedHandler);
+                    registration.registerOperationHandler(definition, transformedHandler);
                 }
             }
         }
