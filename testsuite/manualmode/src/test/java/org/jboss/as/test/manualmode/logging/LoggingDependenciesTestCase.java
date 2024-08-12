@@ -6,6 +6,7 @@
 package org.jboss.as.test.manualmode.logging;
 
 import java.util.List;
+import java.util.PropertyPermission;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -65,7 +66,10 @@ public class LoggingDependenciesTestCase extends AbstractLoggingTestCase {
         addPermissions(archive,
                 new RuntimePermission("getClassLoader"),
                 new RuntimePermission("accessDeclaredMembers"),
-                new RuntimePermission("getenv.*")
+                new RuntimePermission("getenv.*"),
+                // Required for log4j2 as it uses System.getProperties() during initialization which requires both
+                // read and write permissions for all properties.
+                new PropertyPermission("*", "read,write")
         );
         // Ensure the log4j deployment can be deployed
         deploy(archive);
