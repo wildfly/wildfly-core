@@ -18,7 +18,9 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
+import org.jboss.as.controller.parsing.ManagementXmlSchema;
 import org.jboss.as.controller.parsing.Namespace;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Test;
@@ -53,7 +55,9 @@ public class SupportedNamespaceParsingTestCase {
         for (Namespace current : Namespace.ALL_NAMESPACES) {
             String xml = String.format(TEMPLATE, current.getUriString());
             final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
-            final HostXml parser = new HostXml("primary", null, false, null, null, null);
+            HostXmlSchemas xmlSchemas = new HostXmlSchemas(Stability.DEFAULT, "primary", null, false, null, null, null);
+            ManagementXmlSchema parser = xmlSchemas.getCurrent();
+
             final List<ModelNode> operationList = new ArrayList<ModelNode>();
             final XMLMapper mapper = XMLMapper.Factory.create();
             mapper.registerRootElement(new QName(current.getUriString(), "host"), parser);

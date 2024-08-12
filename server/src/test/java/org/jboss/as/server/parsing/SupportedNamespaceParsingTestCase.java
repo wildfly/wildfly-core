@@ -16,11 +16,11 @@ import java.util.Set;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.jboss.as.controller.parsing.DeferredExtensionContext;
+import org.jboss.as.controller.parsing.ManagementXmlSchema;
 import org.jboss.as.controller.parsing.Namespace;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Test;
@@ -50,9 +50,11 @@ public class SupportedNamespaceParsingTestCase {
         for (Namespace current : Namespace.ALL_NAMESPACES) {
             String xml = String.format(TEMPLATE, current.getUriString());
             final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
-            final StandaloneXml parser = new StandaloneXml(null, new TestDeferredExtensionContext(), null, null);
+            final StandaloneXmlSchemas standaloneXmlSchemas = new StandaloneXmlSchemas(Stability.DEFAULT, null, null, null);
+            final ManagementXmlSchema parser = standaloneXmlSchemas.getCurrent();
             final List<ModelNode> operationList = new ArrayList<ModelNode>();
             final XMLMapper mapper = XMLMapper.Factory.create();
+
             mapper.registerRootElement(new QName(current.getUriString(), "server"), parser);
 
             if (UNSUPPORTED_NS.contains(current)) {
@@ -69,19 +71,4 @@ public class SupportedNamespaceParsingTestCase {
         }
     }
 
-    private static class TestDeferredExtensionContext extends DeferredExtensionContext {
-
-        public TestDeferredExtensionContext() {
-            super(null, null, null);
-        }
-
-        @Override
-        public void addExtension(String moduleName, XMLMapper xmlMapper) {
-        }
-
-        @Override
-        public void load() throws XMLStreamException {
-        }
-
-    }
 }
