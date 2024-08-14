@@ -19,18 +19,7 @@ import org.jboss.as.controller.descriptions.DefaultResourceRemoveDescriptionProv
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.global.ListOperations;
 import org.jboss.as.controller.operations.global.MapOperations;
-import org.jboss.as.controller.operations.global.QueryOperationHandler;
-import org.jboss.as.controller.operations.global.ReadAttributeGroupHandler;
-import org.jboss.as.controller.operations.global.ReadAttributeGroupNamesHandler;
-import org.jboss.as.controller.operations.global.ReadAttributeHandler;
-import org.jboss.as.controller.operations.global.ReadChildrenNamesHandler;
-import org.jboss.as.controller.operations.global.ReadChildrenResourcesHandler;
-import org.jboss.as.controller.operations.global.ReadChildrenTypesHandler;
-import org.jboss.as.controller.operations.global.ReadOperationNamesHandler;
-import org.jboss.as.controller.operations.global.ReadResourceDescriptionHandler;
-import org.jboss.as.controller.operations.global.ReadResourceHandler;
 import org.jboss.as.controller.operations.global.UndefineAttributeHandler;
-import org.jboss.as.controller.operations.global.WriteAttributeHandler;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -68,17 +57,6 @@ public class ResourceDescriptorRegistrar implements ManagementResourceRegistrar 
     }
 
     private static final Map<OperationDefinition, OperationStepHandler> GLOBAL_OPERATIONS = Map.ofEntries(
-            Map.entry(ReadAttributeHandler.RESOLVE_DEFINITION, ReadAttributeHandler.RESOLVE_INSTANCE),
-            Map.entry(ReadResourceHandler.RESOLVE_DEFINITION, ReadResourceHandler.RESOLVE_INSTANCE),
-            Map.entry(ReadAttributeGroupHandler.RESOLVE_DEFINITION, ReadAttributeGroupHandler.RESOLVE_INSTANCE),
-            Map.entry(ReadResourceDescriptionHandler.DEFINITION, ReadResourceDescriptionHandler.INSTANCE),
-            Map.entry(ReadAttributeGroupNamesHandler.DEFINITION, ReadAttributeGroupNamesHandler.INSTANCE),
-            Map.entry(ReadChildrenNamesHandler.DEFINITION, ReadChildrenNamesHandler.INSTANCE),
-            Map.entry(ReadChildrenTypesHandler.DEFINITION, ReadChildrenTypesHandler.INSTANCE),
-            Map.entry(ReadChildrenResourcesHandler.DEFINITION, ReadChildrenResourcesHandler.INSTANCE),
-            Map.entry(ReadOperationNamesHandler.DEFINITION, ReadOperationNamesHandler.INSTANCE),
-            Map.entry(QueryOperationHandler.DEFINITION, QueryOperationHandler.INSTANCE),
-            Map.entry(WriteAttributeHandler.DEFINITION, WriteAttributeHandler.INSTANCE),
             Map.entry(UndefineAttributeHandler.DEFINITION, UndefineAttributeHandler.INSTANCE),
             Map.entry(MapOperations.MAP_PUT_DEFINITION, MapOperations.MAP_PUT_HANDLER),
             Map.entry(MapOperations.MAP_GET_DEFINITION, MapOperations.MAP_GET_HANDLER),
