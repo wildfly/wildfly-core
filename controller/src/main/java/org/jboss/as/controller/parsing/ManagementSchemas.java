@@ -24,10 +24,22 @@ public abstract class ManagementSchemas {
 
     private enum Version implements Feature {
 
-        VERSION_1(1),
-        VERSION_2(2),
-        VERSION_3(3),
-        VERSION_4(4),
+        VERSION_1_0(1, 0),
+        VERSION_1_1(1, 1),
+        VERSION_1_2(1, 2),
+        VERSION_1_3(1, 3),
+        VERSION_1_4(1, 4),
+        VERSION_1_5(1, 5),
+        VERSION_1_6(1, 6),
+        VERSION_1_7(1, 7),
+        VERSION_1_8(1, 8),
+        VERSION_2_0(2, 0),
+        VERSION_2_1(2, 1),
+        VERSION_2_2(2, 2),
+        VERSION_3_0(3, 0),
+        VERSION_4_0(4, 0),
+        VERSION_4_1(4, 1),
+        VERSION_4_2(4,2),
         VERSION_5(5),
         VERSION_6(6),
         VERSION_7(7),
@@ -47,19 +59,29 @@ public abstract class ManagementSchemas {
         ;
 
         private final int majorVersion;
+        private final int minorVersion;
         private final Stability stability;
 
         Version(final int majorVersion) {
-            this(majorVersion, Stability.DEFAULT);
+            this(majorVersion, 0);
         }
 
-        Version(final int majorVersion, final Stability stability) {
+        Version(final int majorVersion, final int minorVersion) {
+            this(majorVersion, minorVersion, Stability.DEFAULT);
+        }
+
+        Version(final int majorVersion, final int minorVersion, final Stability stability) {
             this.majorVersion = majorVersion;
+            this.minorVersion = minorVersion;
             this.stability = stability;
         }
 
         public int getMajorVersion() {
             return majorVersion;
+        }
+
+        public int getMinorVersion() {
+            return minorVersion;
         }
 
         @Override
@@ -79,7 +101,7 @@ public abstract class ManagementSchemas {
                 maxVersion = version.getMajorVersion();
             }
             allSchemas.add(ManagementSchema.create(stability.enables(version.getStability()) ? readerWriterDelegate
-                : UnstableManagementReaderWriter.INSTANCE, version.getStability(), version.getMajorVersion(), localName));
+                : UnstableManagementReaderWriter.INSTANCE, version.getStability(), version.getMajorVersion(), version.getMinorVersion(), localName));
         }
 
         Set<ManagementXmlSchema> current = new HashSet<>();

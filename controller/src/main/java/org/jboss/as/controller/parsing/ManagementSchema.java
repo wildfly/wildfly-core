@@ -60,9 +60,9 @@ public class ManagementSchema implements ManagementXmlSchema {
     }
 
     public static ManagementSchema create(ManagementXmlReaderWriter readerWriterDelegate,
-        Stability stability, int majorVersion, String localName) {
+        Stability stability, int majorVersion, int minorVersion, String localName) {
         VersionedNamespace<IntVersion, ManagementXmlSchema> namespace =
-            IntVersionSchema.createURN(List.of(IntVersionSchema.JBOSS_IDENTIFIER, DOMAIN), stability, new IntVersion(majorVersion));
+            IntVersionSchema.createURN(List.of(IntVersionSchema.JBOSS_IDENTIFIER, DOMAIN), stability, new IntVersion(majorVersion, minorVersion));
         return new ManagementSchema(readerWriterDelegate, namespace, localName);
     }
 }
