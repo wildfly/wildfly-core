@@ -121,31 +121,33 @@ public class ResourceDescriptorRegistrar implements ManagementResourceRegistrar 
                 }
             }
 
-            // Register add resource operation handler
-            boolean ordered = registration.isOrderedChildResource();
-            Stream<AttributeDefinition> attributes = registration.getAttributes(PathAddress.EMPTY_ADDRESS).values().stream()
-                    .filter(AttributeAccess.Storage.CONFIGURATION) // Ignore runtime attributes
-                    .map(AttributeAccess::getAttributeDefinition)
-                    .filter(Predicate.not(AttributeDefinition::isResourceOnly)) // Ignore resource-only attributes
-                    ;
-            if (ordered) {
-                attributes = Stream.concat(Stream.of(DefaultResourceAddDescriptionProvider.INDEX), attributes);
-            }
-            OperationDefinition addDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD, this.descriptor.getResourceDescriptionResolver())
-                    .setParameters(attributes.toArray(AttributeDefinition[]::new))
-                    .setDescriptionProvider(new DefaultResourceAddDescriptionProvider(registration, this.descriptor.getResourceDescriptionResolver(), ordered))
-                    .setStability(registration.getStability())
-                    .withFlag(this.descriptor.getAddOperationRestartFlag())
-                    .build();
-            registration.registerOperationHandler(addDefinition, this.descriptor.getAddOperationTransformation().apply(new AddResourceOperationStepHandler(this.descriptor)));
+            if (!registration.isRuntimeOnly()) {
+                // Register add resource operation handler
+                boolean ordered = registration.isOrderedChildResource();
+                Stream<AttributeDefinition> attributes = registration.getAttributes(PathAddress.EMPTY_ADDRESS).values().stream()
+                        .filter(AttributeAccess.Storage.CONFIGURATION) // Ignore runtime attributes
+                        .map(AttributeAccess::getAttributeDefinition)
+                        .filter(Predicate.not(AttributeDefinition::isResourceOnly)) // Ignore resource-only attributes
+                        ;
+                if (ordered) {
+                    attributes = Stream.concat(Stream.of(DefaultResourceAddDescriptionProvider.INDEX), attributes);
+                }
+                OperationDefinition addDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD, this.descriptor.getResourceDescriptionResolver())
+                        .setParameters(attributes.toArray(AttributeDefinition[]::new))
+                        .setDescriptionProvider(new DefaultResourceAddDescriptionProvider(registration, this.descriptor.getResourceDescriptionResolver(), ordered))
+                        .setStability(registration.getStability())
+                        .withFlag(this.descriptor.getAddOperationRestartFlag())
+                        .build();
+                registration.registerOperationHandler(addDefinition, this.descriptor.getAddOperationTransformation().apply(new AddResourceOperationStepHandler(this.descriptor)));
 
-            // Register remove resource operation handler
-            OperationDefinition removeDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.REMOVE, this.descriptor.getResourceDescriptionResolver())
-                    .setDescriptionProvider(new DefaultResourceRemoveDescriptionProvider(this.descriptor.getResourceDescriptionResolver()))
-                    .setStability(registration.getStability())
-                    .withFlag(this.descriptor.getRemoveOperationRestartFlag())
-                    .build();
-            registration.registerOperationHandler(removeDefinition, this.descriptor.getResourceOperationTransformation().apply(new RemoveResourceOperationStepHandler(this.descriptor)));
+                // Register remove resource operation handler
+                OperationDefinition removeDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.REMOVE, this.descriptor.getResourceDescriptionResolver())
+                        .setDescriptionProvider(new DefaultResourceRemoveDescriptionProvider(this.descriptor.getResourceDescriptionResolver()))
+                        .setStability(registration.getStability())
+                        .withFlag(this.descriptor.getRemoveOperationRestartFlag())
+                        .build();
+                registration.registerOperationHandler(removeDefinition, this.descriptor.getResourceOperationTransformation().apply(new RemoveResourceOperationStepHandler(this.descriptor)));
+            }
 
             // Override global operations with transformed operations, if necessary
             for (Map.Entry<OperationDefinition, OperationStepHandler> entry : GLOBAL_OPERATIONS.entrySet()) {
