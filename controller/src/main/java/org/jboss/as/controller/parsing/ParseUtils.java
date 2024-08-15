@@ -6,6 +6,7 @@
 package org.jboss.as.controller.parsing;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static org.jboss.as.controller.parsing.XmlConstants.XML_SCHEMA_NAMESPACE;
 import static org.jboss.dmr.ModelType.PROPERTY;
 import static org.jboss.dmr.ModelType.STRING;
 
@@ -56,13 +57,13 @@ public final class ParseUtils {
      * @return the element or null if the end is reached
      * @throws XMLStreamException if the namespace is wrong or there is a problem accessing the reader
      */
-    public static Element nextElement(XMLExtendedStreamReader reader, Namespace expectedNamespace) throws XMLStreamException {
+    public static Element nextElement(XMLExtendedStreamReader reader, String expectedNamespaceUri) throws XMLStreamException {
         Element element = nextElement(reader);
 
         if (element == null) {
             return null;
         } else if (element != Element.UNKNOWN
-                && expectedNamespace.equals(Namespace.forUri(reader.getNamespaceURI()))) {
+                && expectedNamespaceUri.equals(reader.getNamespaceURI())) {
             return element;
         }
 
@@ -326,9 +327,9 @@ public final class ParseUtils {
      * @param requiredNs the namespace required
      * @throws XMLStreamException if the current namespace does not match the required namespace
      */
-    public static void requireNamespace(final XMLExtendedStreamReader reader, final Namespace requiredNs) throws XMLStreamException {
-        Namespace actualNs = Namespace.forUri(reader.getNamespaceURI());
-        if (actualNs != requiredNs) {
+    public static void requireNamespace(final XMLExtendedStreamReader reader, final String requiredNs) throws XMLStreamException {
+        String actualNs = reader.getNamespaceURI();
+        if (!actualNs.equals(requiredNs)) {
             throw unexpectedElement(reader);
         }
     }
@@ -520,6 +521,12 @@ public final class ParseUtils {
             result[i] = value;
         }
         return result;
+    }
+
+    public static boolean isXmlNamespaceAttribute(final XMLExtendedStreamReader reader, final int index) {
+        String namespace = reader.getAttributeNamespace(index);
+
+        return XML_SCHEMA_NAMESPACE.equals(namespace);
     }
 
     public static boolean isNoNamespaceAttribute(final XMLExtendedStreamReader reader, final int index) {

@@ -19,6 +19,9 @@ import org.jboss.as.version.Stability;
  */
 public abstract class ManagementSchemas {
 
+    // TODO Maybe this could be calculated from static method, sometimes tests want to use "latest".
+    public static final String CURRENT = "urn:jboss:domain:20.0";
+
     private enum Version implements Feature {
 
         VERSION_1(1),

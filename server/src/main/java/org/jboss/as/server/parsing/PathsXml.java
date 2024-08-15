@@ -30,7 +30,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -76,7 +75,7 @@ class PathsXml {
         RESTRICTED_PATHS = Collections.unmodifiableSet(set);
     }
 
-    void parsePaths(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs,
+    void parsePaths(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs,
             final List<ModelNode> list, final boolean requirePath) throws XMLStreamException {
         final Set<String> pathNames = new HashSet<String>();
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {

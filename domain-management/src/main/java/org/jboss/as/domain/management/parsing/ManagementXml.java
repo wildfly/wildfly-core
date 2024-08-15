@@ -9,8 +9,8 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.dmr.ModelNode;
+import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -23,12 +23,12 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 public interface ManagementXml {
 
-    static ManagementXml newInstance(Namespace namespace, ManagementXmlDelegate delegate, boolean domainConfiguration) {
-        switch (namespace.getMajorVersion()) {
+    static ManagementXml newInstance(IntVersion version, String namespace, ManagementXmlDelegate delegate, boolean domainConfiguration) {
+        switch (version.major()) {
             case 1:
             case 2:
             case 3:
-                return new ManagementXml_Legacy(namespace, delegate, domainConfiguration);
+                return new ManagementXml_Legacy(version, namespace, delegate, domainConfiguration);
             case 4:
                 return new ManagementXml_4(namespace, delegate, domainConfiguration);
             case 5:
@@ -45,7 +45,6 @@ public interface ManagementXml {
             case 16:
             case 17:
                 return new ManagementXml_5(namespace, delegate, domainConfiguration);
-            case 18:
             default:
                 return new ManagementXml_18(namespace, delegate, domainConfiguration);
         }

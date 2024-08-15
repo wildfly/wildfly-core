@@ -29,7 +29,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.domain.management.audit.AccessAuditResourceDefinition;
 import org.jboss.as.domain.management.audit.AuditLogLoggerResourceDefinition;
 import org.jboss.as.domain.management.audit.FileAuditLogHandlerResourceDefinition;
@@ -55,7 +54,7 @@ final class AuditLogXml_4 implements AuditLogXml {
     }
 
     @Override
-    public void parseAuditLog(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    public void parseAuditLog(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs, final List<ModelNode> list) throws XMLStreamException {
 
         requireNamespace(reader, expectedNs);
 
@@ -97,7 +96,8 @@ final class AuditLogXml_4 implements AuditLogXml {
         }
     }
 
-    private void parseAuditLogFormatters(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseAuditLogFormatters(final XMLExtendedStreamReader reader, final ModelNode address,
+                            final String expectedNs, final List<ModelNode> list) throws XMLStreamException {
         requireNamespace(reader, expectedNs);
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, expectedNs);
@@ -161,7 +161,8 @@ final class AuditLogXml_4 implements AuditLogXml {
         requireNoContent(reader);
     }
 
-    private void parseAuditLogHandlers(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseAuditLogHandlers(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs,
+                                        final List<ModelNode> list) throws XMLStreamException {
 
         requireNamespace(reader, expectedNs);   //FIXME is this needed? what it does?
         boolean configurationChangesConfigured = false;
@@ -386,7 +387,8 @@ final class AuditLogXml_4 implements AuditLogXml {
         }
     }
 
-    private void parseSyslogAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseSyslogAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address,
+                            final String expectedNs, final List<ModelNode> list) throws XMLStreamException {
         final ModelNode add = Util.createAddOperation();
         list.add(add);
 
@@ -420,7 +422,8 @@ final class AuditLogXml_4 implements AuditLogXml {
         }
     }
 
-    private void parseSyslogAuditLogHandlerProtocol(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list, final Element protocolElement) throws XMLStreamException {
+    private void parseSyslogAuditLogHandlerProtocol(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs,
+                                                final List<ModelNode> list, final Element protocolElement) throws XMLStreamException {
         PathAddress protocolAddress = PathAddress.pathAddress(address.clone().add(PROTOCOL, protocolElement.getLocalName()));
         ModelNode add = Util.createAddOperation(protocolAddress);
         list.add(add);
@@ -526,7 +529,8 @@ final class AuditLogXml_4 implements AuditLogXml {
         requireNoContent(reader);
     }
 
-    private void parseAuditLogConfig(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final PathElement pathElement, final List<ModelNode> list) throws XMLStreamException {
+    private void parseAuditLogConfig(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs,
+                                        final PathElement pathElement, final List<ModelNode> list) throws XMLStreamException {
 
         requireNamespace(reader, expectedNs);
 
@@ -578,7 +582,8 @@ final class AuditLogXml_4 implements AuditLogXml {
         }
     }
 
-    private void parseAuditLogHandlersReference(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseAuditLogHandlersReference(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs,
+                                                final List<ModelNode> list) throws XMLStreamException {
         requireNamespace(reader, expectedNs);
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {

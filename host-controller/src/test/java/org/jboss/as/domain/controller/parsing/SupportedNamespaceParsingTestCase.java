@@ -10,16 +10,14 @@ import static org.junit.Assert.fail;
 
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.controller.parsing.ManagementXmlSchema;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.host.controller.parsing.DomainXmlSchemas;
 import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
@@ -38,30 +36,35 @@ public class SupportedNamespaceParsingTestCase {
         "<domain name=\"example\" xmlns=\"%s\">" +
         "</domain>";
 
-    private static final Set<Namespace> UNSUPPORTED_NS = EnumSet.of(Namespace.DOMAIN_1_0,
-                                                                    Namespace.DOMAIN_1_1,
-                                                                    Namespace.DOMAIN_1_2,
-                                                                    Namespace.DOMAIN_1_3,
-                                                                    Namespace.DOMAIN_1_4,
-                                                                    Namespace.DOMAIN_1_5,
-                                                                    Namespace.DOMAIN_1_6);
+        private static final Set<String> UNSUPPORTED_NS = Set.of("urn:jboss:domain:1.0",
+                                                                    "urn:jboss:domain:1.1",
+                                                                    "urn:jboss:domain:1.2",
+                                                                    "urn:jboss:domain:1.3",
+                                                                    "urn:jboss:domain:1.4",
+                                                                    "urn:jboss:domain:1.5",
+                                                                    "urn:jboss:domain:1.6");
 
     @Test
     public void testNamespaceHandling() throws Exception {
-        for (Namespace current : Namespace.ALL_NAMESPACES) {
-            String xml = String.format(TEMPLATE, current.getUriString());
+        DomainXmlSchemas xmlSchemas = new DomainXmlSchemas(Stability.DEFAULT, null, null, null);
+        Set<ManagementXmlSchema> schemas = new HashSet<>();
+        schemas.add(xmlSchemas.getCurrent());
+        schemas.addAll(xmlSchemas.getAdditional());
+
+        for (ManagementXmlSchema current : schemas) {
+            String currentNamespace = current.getNamespace().getUri();
+            String xml = String.format(TEMPLATE, currentNamespace);
             final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
-            DomainXmlSchemas xmlSchemas = new DomainXmlSchemas(Stability.DEFAULT, null, null, null);
-            ManagementXmlSchema parser = xmlSchemas.getCurrent();
 
             final List<ModelNode> operationList = new ArrayList<ModelNode>();
             final XMLMapper mapper = XMLMapper.Factory.create();
-            mapper.registerRootElement(new QName(current.getUriString(), "domain"), parser);
 
-            if (UNSUPPORTED_NS.contains(current)) {
+            mapper.registerRootElement(current.getQualifiedName(), current);
+
+            if (UNSUPPORTED_NS.contains(currentNamespace)) {
                 try {
                     mapper.parseDocument(operationList, reader);
-                    fail(String.format("Parsing expected to fail due to unsupported NS %s", current.getUriString()));
+                    fail(String.format("Parsing expected to fail due to unsupported NS %s", currentNamespace));
                 } catch (XMLStreamValidationException e) {
                     assertTrue("Expected error should be WFLYCTL0513" , e.getMessage().contains("WFLYCTL0513"));
                 }

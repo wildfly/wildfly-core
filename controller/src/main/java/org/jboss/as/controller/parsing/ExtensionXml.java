@@ -72,7 +72,7 @@ public class ExtensionXml {
         }
     }
 
-    public void parseExtensions(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list)
+    public void parseExtensions(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs, final List<ModelNode> list)
             throws XMLStreamException {
         DeferredExtensionContext ctx = this.deferredExtensionContext;
         if(ctx == null) {

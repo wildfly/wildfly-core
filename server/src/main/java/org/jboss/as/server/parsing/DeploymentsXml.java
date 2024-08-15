@@ -34,7 +34,6 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.dmr.ModelNode;
@@ -54,7 +53,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 class DeploymentsXml {
 
-    void parseDeployments(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs,
+    void parseDeployments(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs,
             final List<ModelNode> list, final Set<Attribute> allowedAttributes, final Set<Element> allowedElements,
             boolean validateUniqueRuntimeNames) throws XMLStreamException {
         requireNoAttributes(reader);

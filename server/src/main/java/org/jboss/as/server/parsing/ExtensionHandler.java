@@ -10,7 +10,6 @@ import java.util.Set;
 
 import javax.xml.stream.XMLStreamException;
 
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
@@ -26,7 +25,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @since 27/11/15
  */
 public interface ExtensionHandler {
-    void parseExtensions(XMLExtendedStreamReader reader, ModelNode address, Namespace namespace, List<ModelNode> list) throws XMLStreamException;
+    void parseExtensions(XMLExtendedStreamReader reader, ModelNode address, String namespace, List<ModelNode> list) throws XMLStreamException;
 
     Set<ProfileParsingCompletionHandler> getProfileParsingCompletionHandlers();
 

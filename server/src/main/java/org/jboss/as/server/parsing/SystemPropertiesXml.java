@@ -29,7 +29,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
 import org.jboss.as.server.logging.ServerLogger;
@@ -54,7 +53,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 class SystemPropertiesXml {
 
     void parseSystemProperties(final XMLExtendedStreamReader reader, final ModelNode address,
-            final Namespace expectedNs, final List<ModelNode> updates, boolean standalone) throws XMLStreamException {
+            final String expectedNs, final List<ModelNode> updates, boolean standalone) throws XMLStreamException {
 
         Properties properties = WildFlySecurityManager.getSystemPropertiesPrivileged();
 

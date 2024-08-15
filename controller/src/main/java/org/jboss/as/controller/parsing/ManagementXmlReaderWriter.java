@@ -11,6 +11,7 @@ import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.dmr.ModelNode;
+import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -21,7 +22,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 public interface ManagementXmlReaderWriter {
 
-    void readElement(XMLExtendedStreamReader reader, String namespaceUri, List<ModelNode> value) throws XMLStreamException;
+    void readElement(XMLExtendedStreamReader reader, IntVersion version, String namespaceUri, List<ModelNode> value) throws XMLStreamException;
 
-    void writeContent(XMLExtendedStreamWriter streamWriter, String namespaceUri, ModelMarshallingContext value) throws XMLStreamException;
+    void writeContent(XMLExtendedStreamWriter streamWriter, IntVersion version, String namespaceUri, ModelMarshallingContext value) throws XMLStreamException;
 }

@@ -50,13 +50,13 @@ public class ManagementSchema implements ManagementXmlSchema {
 
     @Override
     public void readElement(XMLExtendedStreamReader reader, List<ModelNode> value) throws XMLStreamException {
-        readerWriterDelegate.readElement(reader, namespace.getUri(), value);
+        readerWriterDelegate.readElement(reader, namespace.getVersion(), namespace.getUri(), value);
     }
 
     @Override
     public void writeContent(XMLExtendedStreamWriter streamWriter, ModelMarshallingContext value)
             throws XMLStreamException {
-        readerWriterDelegate.writeContent(streamWriter, namespace.getUri(), value);
+        readerWriterDelegate.writeContent(streamWriter, namespace.getVersion(), namespace.getUri(), value);
     }
 
     public static ManagementSchema create(ManagementXmlReaderWriter readerWriterDelegate,

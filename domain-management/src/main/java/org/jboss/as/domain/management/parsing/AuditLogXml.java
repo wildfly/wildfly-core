@@ -6,8 +6,8 @@ package org.jboss.as.domain.management.parsing;
 
 import java.util.List;
 import javax.xml.stream.XMLStreamException;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.dmr.ModelNode;
+import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -16,8 +16,8 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2015 Red Hat, inc.
  */
 public interface AuditLogXml {
-    static AuditLogXml newInstance(Namespace namespace, boolean host) {
-        switch (namespace.getMajorVersion()) {
+    static AuditLogXml newInstance(IntVersion version, boolean host) {
+        switch (version.major()) {
             case 1:
             case 2:
             case 3:
@@ -32,7 +32,7 @@ public interface AuditLogXml {
     // TODO - The problem is that it is version dependent but it would be nicer to not have processing instructions and find a
     // better way to decide if a native interface is required.
 
-    void parseAuditLog(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs, List<ModelNode> list) throws XMLStreamException;
+    void parseAuditLog(XMLExtendedStreamReader reader, ModelNode address, String expectedNs, List<ModelNode> list) throws XMLStreamException;
 
     // TODO - Writing should be based on what is actually in the model, the delegate should be the final check if interfaces are
     // really disallowed.

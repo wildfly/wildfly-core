@@ -18,6 +18,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
+import static org.jboss.as.controller.parsing.ParseUtils.isXmlNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.nextElement;
 import static org.jboss.as.controller.parsing.ParseUtils.readStringAttributeElement;
@@ -28,6 +29,7 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 import static org.jboss.as.controller.parsing.ParseUtils.unsupportedNamespace;
+import static org.jboss.as.controller.parsing.XmlConstants.XML_SCHEMA_NAMESPACE;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,7 +50,6 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.ExtensionXml;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
@@ -61,6 +62,7 @@ import org.jboss.as.server.parsing.CommonXml;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
 /**
@@ -75,13 +77,16 @@ final class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate 
 
     private final ExtensionXml extensionXml;
     private final ExtensionRegistry extensionRegistry;
-    private final Namespace namespace;
+    private final IntVersion version;
+    private final String namespace;
 
-    DomainXml_Legacy(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final Namespace namespace) {
+    DomainXml_Legacy(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final IntVersion version,
+                    final String namespace) {
         super(new DomainSocketBindingsXml());
         accessControlXml = AccessControlXml.newInstance(namespace);
         this.extensionXml = extensionXml;
         this.extensionRegistry = extensionRegistry;
+        this.version = version;
         this.namespace = namespace;
     }
 
@@ -90,28 +95,14 @@ final class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate 
         if (Element.forName(reader.getLocalName()) != Element.DOMAIN) {
             throw unexpectedElement(reader);
         }
-        Namespace readerNS = Namespace.forUri(reader.getNamespaceURI());
-        switch (readerNS) {
-            case DOMAIN_1_0:
-            case DOMAIN_1_1:
-            case DOMAIN_1_2:
-            case DOMAIN_1_3:
-            case DOMAIN_1_4:
-            case DOMAIN_1_5:
-            case DOMAIN_1_6:
-                throw unsupportedNamespace(reader);
-            case DOMAIN_1_7:
-            case DOMAIN_1_8:
-            case DOMAIN_2_0:
-            case DOMAIN_2_1:
-            case DOMAIN_2_2:
-            case DOMAIN_3_0:
-                readDomainElement1_7(reader, new ModelNode(), nodes);
-                break;
-            default:
-                // This should not be reachable as the namespace should have been validated by the caller.
-                throw unexpectedElement(reader);
+
+        IntVersion cutOff1_7 = new IntVersion(1,7);
+
+        if (version.compareTo(cutOff1_7) < 0) {
+            throw unsupportedNamespace(reader);
         }
+
+        readDomainElement1_7(reader, new ModelNode(), nodes);
     }
 
     private void readDomainElement1_7(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
@@ -137,7 +128,7 @@ final class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate 
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, true);
+            ManagementXml managementXml = ManagementXml.newInstance(version, namespace, this, true);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }
@@ -147,7 +138,7 @@ final class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate 
         }
         final Set<String> interfaceNames = new HashSet<String>();
         if (element == Element.INTERFACES) {
-            parseInterfaces(reader, interfaceNames, address, namespace, list, false);
+            parseInterfaces(reader, interfaceNames, address, version, namespace, list, false);
             element = nextElement(reader, namespace);
         }
         if (element == Element.SOCKET_BINDING_GROUPS) {
@@ -181,26 +172,22 @@ final class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate 
     private void readDomainElementAttributes_1_7(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
-            Namespace ns = Namespace.forUri(reader.getAttributeNamespace(i));
-            switch (ns) {
-                case XML_SCHEMA_INSTANCE: {
-                    switch (Attribute.forName(reader.getAttributeLocalName(i))) {
-                        case SCHEMA_LOCATION: {
-                            parseSchemaLocations(reader, address, list, i);
-                            break;
-                        }
-                        case NO_NAMESPACE_SCHEMA_LOCATION: {
-                            // todo, jeez
-                            break;
-                        }
-                        default: {
-                            throw unexpectedAttribute(reader, i);
-                        }
+            if (isXmlNamespaceAttribute(reader, i)) {
+                switch (Attribute.forName(reader.getAttributeLocalName(i))) {
+                    case SCHEMA_LOCATION: {
+                        parseSchemaLocations(reader, address, list, i);
+                        break;
                     }
-                    break;
+                    case NO_NAMESPACE_SCHEMA_LOCATION: {
+                        // todo, jeez
+                        break;
+                    }
+                    default: {
+                        throw unexpectedAttribute(reader, i);
+                    }
                 }
-                default:
-                    switch (Attribute.forName(reader.getAttributeLocalName(i))) {
+            } else {
+                switch (Attribute.forName(reader.getAttributeLocalName(i))) {
                     case NAME:
                         ModelNode op = new ModelNode();
                         op.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
@@ -364,17 +351,18 @@ final class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate 
                 final Element element = Element.forName(reader.getLocalName());
                 switch (element) {
                     case JVM: {
-                        JvmXml.parseJvm(reader, groupAddress, namespace, list, new HashSet<String>(), false);
+                        JvmXml.parseJvm(reader, groupAddress, version, namespace, list, new HashSet<String>(), false);
                         break;
                     }
                     case SOCKET_BINDING_GROUP: {
-                        if(namespace.compareTo(Namespace.DOMAIN_3_0) >= 0) {
+                        IntVersion version3_0 = new IntVersion(3,0);
+                        if (version.compareTo(version3_0) < 0) {
+                            parseSocketBindingGroupRef(reader, groupAddOp, ServerGroupResourceDefinition.SOCKET_BINDING_GROUP,
+                                ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET, null);
+                        } else {
                             parseSocketBindingGroupRef(reader, groupAddOp, ServerGroupResourceDefinition.SOCKET_BINDING_GROUP,
                                 ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET,
                                 ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE);
-                        } else {
-                             parseSocketBindingGroupRef(reader, groupAddOp, ServerGroupResourceDefinition.SOCKET_BINDING_GROUP,
-                                ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET, null);
                         }
                         break;
                     }
@@ -431,27 +419,22 @@ final class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate 
             // Sequence
             final Map<String, List<ModelNode>> profileOps = new LinkedHashMap<String, List<ModelNode>>();
             while (reader.nextTag() != END_ELEMENT) {
-                Namespace ns = Namespace.forUri(reader.getNamespaceURI());
-                switch (ns) {
-                    case UNKNOWN: {
-                        if (Element.forName(reader.getLocalName()) != Element.SUBSYSTEM) {
-                            throw unexpectedElement(reader);
-                        }
-                        String namespace = reader.getNamespaceURI();
-                        if (profileOps.containsKey(namespace)) {
-                            throw ControllerLogger.ROOT_LOGGER.duplicateDeclaration("subsystem", name, reader.getLocation());
-                        }
-                        // parse content
-                        final List<ModelNode> subsystems = new ArrayList<ModelNode>();
-                        reader.handleAny(subsystems);
-
-                        profileOps.put(namespace, subsystems);
-
-                        break;
-                    }
-                    default: {
+                String readerNamespace = reader.getNamespaceURI();
+                if (readerNamespace != null && !XML_SCHEMA_NAMESPACE.equals(readerNamespace) && !namespace.equals(readerNamespace)) {
+                    if (Element.forName(reader.getLocalName()) != Element.SUBSYSTEM) {
                         throw unexpectedElement(reader);
                     }
+                    String namespace = reader.getNamespaceURI();
+                    if (profileOps.containsKey(namespace)) {
+                        throw ControllerLogger.ROOT_LOGGER.duplicateDeclaration("subsystem", name, reader.getLocation());
+                    }
+                    // parse content
+                    final List<ModelNode> subsystems = new ArrayList<ModelNode>();
+                    reader.handleAny(subsystems);
+
+                    profileOps.put(namespace, subsystems);
+                } else {
+                    throw unexpectedElement(reader);
                 }
             }
 

@@ -30,12 +30,12 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -53,7 +53,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 class InterfacesXml {
 
     public void parseInterfaces(final XMLExtendedStreamReader reader, final Set<String> names, final ModelNode address,
-            final Namespace expectedNs, final List<ModelNode> list, final boolean checkSpecified) throws XMLStreamException {
+            final IntVersion version, final String expectedNs, final List<ModelNode> list, final boolean checkSpecified) throws XMLStreamException {
         requireNoAttributes(reader);
 
         while (reader.nextTag() != END_ELEMENT) {
@@ -74,7 +74,7 @@ class InterfacesXml {
             interfaceAdd.get(OP).set(ADD);
 
             final ModelNode criteriaNode = interfaceAdd;
-            parseInterfaceCriteria(reader, expectedNs, interfaceAdd);
+            parseInterfaceCriteria(reader, version, expectedNs, interfaceAdd);
 
             if (checkSpecified && criteriaNode.getType() != ModelType.STRING && criteriaNode.getType() != ModelType.EXPRESSION
                     && criteriaNode.asInt() == 0) {
@@ -84,7 +84,7 @@ class InterfacesXml {
         }
     }
 
-    private void parseInterfaceCriteria(final XMLExtendedStreamReader reader, final Namespace expectedNs,
+    private void parseInterfaceCriteria(final XMLExtendedStreamReader reader, final IntVersion version, final String expectedNs,
             final ModelNode interfaceModel) throws XMLStreamException {
         // all subsequent elements are criteria elements
         if (reader.nextTag() == END_ELEMENT) {
@@ -95,7 +95,7 @@ class InterfacesXml {
         switch (element) {
             case ANY_IPV4_ADDRESS:
             case ANY_IPV6_ADDRESS: {
-                if (expectedNs.getMajorVersion() >= 3) {
+                if (version.major() >= 3) {
                     throw ParseUtils.unexpectedElement(reader);
                 } else {
                     throw ParseUtils.unsupportedElement(reader, Element.ANY_ADDRESS.getLocalName());
@@ -128,7 +128,7 @@ class InterfacesXml {
         } while (reader.nextTag() != END_ELEMENT);
     }
 
-    private void parseCompoundInterfaceCriterion(final XMLExtendedStreamReader reader, final Namespace expectedNs,
+    private void parseCompoundInterfaceCriterion(final XMLExtendedStreamReader reader, final String expectedNs,
             final ModelNode subModel) throws XMLStreamException {
         requireNoAttributes(reader);
         while (reader.nextTag() != END_ELEMENT) {

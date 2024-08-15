@@ -35,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
+import static org.jboss.as.controller.parsing.ParseUtils.isXmlNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequiredElement;
 import static org.jboss.as.controller.parsing.ParseUtils.nextElement;
@@ -44,6 +45,7 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.controller.parsing.XmlConstants.XML_SCHEMA_NAMESPACE;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,7 +67,6 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.ExtensionXml;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.parsing.WriteUtils;
@@ -85,6 +86,7 @@ import org.jboss.as.server.parsing.CommonXml;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -100,13 +102,16 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
 
     private final AccessControlXml accessControlXml;
 
-    private final Namespace namespace;
+    private final IntVersion version;
+    private final String namespace;
     private final ExtensionXml extensionXml;
     private final ExtensionRegistry extensionRegistry;
 
-    DomainXml_16(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final String namespaceUri) {
+    DomainXml_16(final ExtensionXml extensionXml, final ExtensionRegistry extensionRegistry, final IntVersion version,
+                final String namespaceUri) {
         super(new DomainSocketBindingsXml());
-        this.namespace = Namespace.forUri(namespaceUri);
+        this.version = version;
+        this.namespace = namespaceUri;
         accessControlXml = AccessControlXml.newInstance(namespace);
         this.extensionXml = extensionXml;
         this.extensionRegistry = extensionRegistry;
@@ -117,14 +122,8 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
         if (Element.forName(reader.getLocalName()) != Element.DOMAIN) {
             throw unexpectedElement(reader);
         }
-        // Instead of having to list the remaining versions we just check it is actually a valid version.
-        for (Namespace current : Namespace.domainValues()) {
-            if (namespace.equals(current)) {
-                readDomainElement(reader, new ModelNode(), nodes);
-                return;
-            }
-        }
-        throw unexpectedElement(reader);
+
+        readDomainElement(reader, new ModelNode(), nodes);
     }
 
     void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context) throws XMLStreamException {
@@ -133,7 +132,7 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
         writer.writeStartDocument();
         writer.writeStartElement(Element.DOMAIN.getLocalName());
 
-        writer.writeDefaultNamespace(namespace.getUriString());
+        writer.writeDefaultNamespace(namespace);
         writeNamespaces(writer, modelNode);
         writeSchemaLocation(writer, modelNode);
 
@@ -154,7 +153,7 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
 
         if (modelNode.hasDefined(CORE_SERVICE) && modelNode.get(CORE_SERVICE).hasDefined(MANAGEMENT)) {
             // We use CURRENT here as we only support writing the most recent.
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, true);
+            ManagementXml managementXml = ManagementXml.newInstance(version, namespace, this, true);
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
         }
 
@@ -225,7 +224,7 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, true);
+            ManagementXml managementXml = ManagementXml.newInstance(version, namespace, this, true);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }
@@ -235,7 +234,7 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
         }
         final Set<String> interfaceNames = new HashSet<String>();
         if (element == Element.INTERFACES) {
-            parseInterfaces(reader, interfaceNames, address, namespace, list, false);
+            parseInterfaces(reader, interfaceNames, address, version, namespace, list, false);
             element = nextElement(reader, namespace);
         }
         if (element == Element.SOCKET_BINDING_GROUPS) {
@@ -274,51 +273,47 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
         boolean hasDomainOrg = false;
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
-            Namespace ns = Namespace.forUri(reader.getAttributeNamespace(i));
-            switch (ns) {
-                case XML_SCHEMA_INSTANCE: {
-                    switch (Attribute.forName(reader.getAttributeLocalName(i))) {
-                        case SCHEMA_LOCATION: {
-                            parseSchemaLocations(reader, address, list, i);
-                            break;
-                        }
-                        case NO_NAMESPACE_SCHEMA_LOCATION: {
-                            // todo, jeez
-                            break;
-                        }
-                        default: {
-                            throw unexpectedAttribute(reader, i);
-                        }
+            if (isXmlNamespaceAttribute(reader, i)) {
+                switch (Attribute.forName(reader.getAttributeLocalName(i))) {
+                    case SCHEMA_LOCATION: {
+                        parseSchemaLocations(reader, address, list, i);
+                        break;
                     }
-                    break;
+                    case NO_NAMESPACE_SCHEMA_LOCATION: {
+                        // todo, jeez
+                        break;
+                    }
+                    default: {
+                        throw unexpectedAttribute(reader, i);
+                    }
                 }
-                default:
-                    switch (Attribute.forName(reader.getAttributeLocalName(i))) {
-                        case NAME: {
-                            ModelNode op = new ModelNode();
-                            op.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-                            op.get(NAME).set(NAME);
-                            op.get(VALUE).set(ParseUtils.parsePossibleExpression(reader.getAttributeValue(i)));
-                            list.add(op);
-                            break;
-                        }
-                        case  ORGANIZATION: { // not in the xsd but let's be forgiving to ease migration
-                            if (hasDomainOrg) {
-                                throw unexpectedAttribute(reader, i);
-                            } // else drop down into the domain-organization handling
-                        }
-                        case  DOMAIN_ORGANIZATION: {
-                            ModelNode op = new ModelNode();
-                            op.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-                            op.get(NAME).set(DOMAIN_ORGANIZATION);
-                            op.get(VALUE).set(ParseUtils.parsePossibleExpression(reader.getAttributeValue(i)));
-                            list.add(op);
-                            hasDomainOrg = true;
-                            break;
-                        }
-                        default:
-                            throw unexpectedAttribute(reader, i);
+            } else {
+                switch (Attribute.forName(reader.getAttributeLocalName(i))) {
+                    case NAME: {
+                        ModelNode op = new ModelNode();
+                        op.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
+                        op.get(NAME).set(NAME);
+                        op.get(VALUE).set(ParseUtils.parsePossibleExpression(reader.getAttributeValue(i)));
+                        list.add(op);
+                        break;
                     }
+                    case  ORGANIZATION: { // not in the xsd but let's be forgiving to ease migration
+                        if (hasDomainOrg) {
+                            throw unexpectedAttribute(reader, i);
+                        } // else drop down into the domain-organization handling
+                    }
+                    case  DOMAIN_ORGANIZATION: {
+                        ModelNode op = new ModelNode();
+                        op.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
+                        op.get(NAME).set(DOMAIN_ORGANIZATION);
+                        op.get(VALUE).set(ParseUtils.parsePossibleExpression(reader.getAttributeValue(i)));
+                        list.add(op);
+                        hasDomainOrg = true;
+                        break;
+                    }
+                    default:
+                        throw unexpectedAttribute(reader, i);
+                }
             }
         }
     }
@@ -503,7 +498,7 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
                 final Element element = Element.forName(reader.getLocalName());
                 switch (element) {
                     case JVM: {
-                        JvmXml.parseJvm(reader, groupAddress, namespace, list, new HashSet<String>(), false);
+                        JvmXml.parseJvm(reader, groupAddress, version, namespace, list, new HashSet<String>(), false);
                         break;
                     }
                     case SOCKET_BINDING_GROUP: {
@@ -595,27 +590,22 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
 
             final Map<String, List<ModelNode>> profileOps = new LinkedHashMap<String, List<ModelNode>>();
             while (reader.nextTag() != END_ELEMENT) {
-                Namespace ns = Namespace.forUri(reader.getNamespaceURI());
-                switch (ns) {
-                    case UNKNOWN: {
-                        if (Element.forName(reader.getLocalName()) != Element.SUBSYSTEM) {
-                            throw unexpectedElement(reader);
-                        }
-                        String namespace = reader.getNamespaceURI();
-                        if (profileOps.containsKey(namespace)) {
-                            throw ControllerLogger.ROOT_LOGGER.duplicateDeclaration("subsystem", name, reader.getLocation());
-                        }
-                        // parse content
-                        final List<ModelNode> subsystems = new ArrayList<ModelNode>();
-                        reader.handleAny(subsystems);
-
-                        profileOps.put(namespace, subsystems);
-
-                        break;
-                    }
-                    default: {
+                String readerNamespace = reader.getNamespaceURI();
+                if (readerNamespace != null && !XML_SCHEMA_NAMESPACE.equals(readerNamespace) && !namespace.equals(readerNamespace)) {
+                    if (Element.forName(reader.getLocalName()) != Element.SUBSYSTEM) {
                         throw unexpectedElement(reader);
                     }
+                    String namespace = reader.getNamespaceURI();
+                    if (profileOps.containsKey(namespace)) {
+                        throw ControllerLogger.ROOT_LOGGER.duplicateDeclaration("subsystem", name, reader.getLocation());
+                    }
+                    // parse content
+                    final List<ModelNode> subsystems = new ArrayList<ModelNode>();
+                    reader.handleAny(subsystems);
+
+                    profileOps.put(namespace, subsystems);
+                } else {
+                    throw unexpectedElement(reader);
                 }
             }
 
@@ -640,7 +630,7 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    private void parseManagementClientContent(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs, List<ModelNode> list) throws XMLStreamException {
+    private void parseManagementClientContent(XMLExtendedStreamReader reader, ModelNode address, String expectedNs, List<ModelNode> list) throws XMLStreamException {
         requireNoAttributes(reader);
 
         boolean rolloutPlansAdded = false;

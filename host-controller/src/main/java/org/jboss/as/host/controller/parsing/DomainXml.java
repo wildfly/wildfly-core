@@ -12,10 +12,10 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.ManagementXmlReaderWriter;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.ModuleLoader;
+import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -36,16 +36,15 @@ public final class DomainXml implements ManagementXmlReaderWriter {
     }
 
     @Override
-    public void readElement(final XMLExtendedStreamReader reader, final String namespaceUri, final List<ModelNode> nodes) throws XMLStreamException {
-        Namespace readerNS = Namespace.forUri(reader.getNamespaceURI());
-        switch (readerNS.getMajorVersion()) {
+    public void readElement(final XMLExtendedStreamReader reader, final IntVersion version, final String namespaceUri, final List<ModelNode> nodes) throws XMLStreamException {
+        switch (version.major()) {
             case 1:
             case 2:
             case 3:
-                new DomainXml_Legacy(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
+                new DomainXml_Legacy(extensionXml, extensionRegistry, version, namespaceUri).readElement(reader, nodes);
                 break;
             case 4:
-                new DomainXml_4(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
+                new DomainXml_4(extensionXml, extensionRegistry, version, namespaceUri).readElement(reader, nodes);
                 break;
             case 5:
             case 6:
@@ -58,16 +57,16 @@ public final class DomainXml implements ManagementXmlReaderWriter {
             case 13:
             case 14:
             case 15:
-                new DomainXml_5(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
+                new DomainXml_5(extensionXml, extensionRegistry, version, namespaceUri).readElement(reader, nodes);
                 break;
             default:
-                new DomainXml_16(extensionXml, extensionRegistry, namespaceUri).readElement(reader, nodes);
+                new DomainXml_16(extensionXml, extensionRegistry, version, namespaceUri).readElement(reader, nodes);
         }
     }
 
     @Override
-    public void writeContent(final XMLExtendedStreamWriter writer, final String namespaceUri, final ModelMarshallingContext context) throws XMLStreamException {
-        new DomainXml_16(extensionXml, extensionRegistry, namespaceUri).writeContent(writer, context);
+    public void writeContent(final XMLExtendedStreamWriter writer, final IntVersion version, final String namespaceUri, final ModelMarshallingContext context) throws XMLStreamException {
+        new DomainXml_16(extensionXml, extensionRegistry, version, namespaceUri).writeContent(writer, context);
     }
 
 }

@@ -19,7 +19,6 @@ import java.util.Set;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
@@ -71,9 +70,6 @@ public final class TestParser implements  ModelTestParser {
         ParseUtils.requireNoAttributes(reader);
         final Map<String, List<ModelNode>> profileOps = new LinkedHashMap<String, List<ModelNode>>();
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            if (Namespace.forUri(reader.getNamespaceURI()) != Namespace.UNKNOWN) {
-                throw unexpectedElement(reader);
-            }
             if (Element.forName(reader.getLocalName()) != Element.SUBSYSTEM) {
                 throw unexpectedElement(reader);
             }
