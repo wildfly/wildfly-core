@@ -98,60 +98,63 @@ public class ResourceDescriptorRegistrar implements ManagementResourceRegistrar 
 
     @Override
     public void register(ManagementResourceRegistration registration) {
-        for (RuntimeCapability<?> capability : this.descriptor.getCapabilities()) {
-            registration.registerCapability(capability);
-        }
+        // Registration might be null if this resource is not enabled by the current stability level
+        if (registration != null) {
+            for (RuntimeCapability<?> capability : this.descriptor.getCapabilities()) {
+                registration.registerCapability(capability);
+            }
 
-        registration.registerRequirements(this.descriptor.getResourceCapabilityReferences());
+            registration.registerRequirements(this.descriptor.getResourceCapabilityReferences());
 
-        // Register attributes before operations
-        for (AttributeDefinition attribute : this.descriptor.getAttributes()) {
-            AttributeTranslation translation = this.descriptor.getAttributeTranslation(attribute);
-            if (translation != null) {
-                registration.registerReadWriteAttribute(attribute, new ReadAttributeTranslationOperationStepHandler(translation), new WriteAttributeTranslationOperationStepHandler(translation));
-            } else {
-                OperationStepHandler handler = this.descriptor.getWriteAttributeOperationStepHandler(attribute);
-                if (handler != null) {
-                    registration.registerReadWriteAttribute(attribute, null, handler);
+            // Register attributes before operations
+            for (AttributeDefinition attribute : this.descriptor.getAttributes()) {
+                AttributeTranslation translation = this.descriptor.getAttributeTranslation(attribute);
+                if (translation != null) {
+                    registration.registerReadWriteAttribute(attribute, new ReadAttributeTranslationOperationStepHandler(translation), new WriteAttributeTranslationOperationStepHandler(translation));
                 } else {
-                    registration.registerReadOnlyAttribute(attribute, null);
+                    OperationStepHandler handler = this.descriptor.getWriteAttributeOperationStepHandler(attribute);
+                    if (handler != null) {
+                        registration.registerReadWriteAttribute(attribute, null, handler);
+                    } else {
+                        registration.registerReadOnlyAttribute(attribute, null);
+                    }
                 }
             }
-        }
 
-        // Register add resource operation handler
-        boolean ordered = registration.isOrderedChildResource();
-        Stream<AttributeDefinition> attributes = registration.getAttributes(PathAddress.EMPTY_ADDRESS).values().stream()
-                .filter(AttributeAccess.Storage.CONFIGURATION) // Ignore runtime attributes
-                .map(AttributeAccess::getAttributeDefinition)
-                .filter(Predicate.not(AttributeDefinition::isResourceOnly)) // Ignore resource-only attributes
-                ;
-        if (ordered) {
-            attributes = Stream.concat(Stream.of(DefaultResourceAddDescriptionProvider.INDEX), attributes);
-        }
-        OperationDefinition addDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD, this.descriptor.getResourceDescriptionResolver())
-                .setParameters(attributes.toArray(AttributeDefinition[]::new))
-                .setDescriptionProvider(new DefaultResourceAddDescriptionProvider(registration, this.descriptor.getResourceDescriptionResolver(), ordered))
-                .setStability(registration.getStability())
-                .withFlag(this.descriptor.getAddOperationRestartFlag())
-                .build();
-        registration.registerOperationHandler(addDefinition, this.descriptor.getAddOperationTransformation().apply(new AddResourceOperationStepHandler(this.descriptor)));
+            // Register add resource operation handler
+            boolean ordered = registration.isOrderedChildResource();
+            Stream<AttributeDefinition> attributes = registration.getAttributes(PathAddress.EMPTY_ADDRESS).values().stream()
+                    .filter(AttributeAccess.Storage.CONFIGURATION) // Ignore runtime attributes
+                    .map(AttributeAccess::getAttributeDefinition)
+                    .filter(Predicate.not(AttributeDefinition::isResourceOnly)) // Ignore resource-only attributes
+                    ;
+            if (ordered) {
+                attributes = Stream.concat(Stream.of(DefaultResourceAddDescriptionProvider.INDEX), attributes);
+            }
+            OperationDefinition addDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD, this.descriptor.getResourceDescriptionResolver())
+                    .setParameters(attributes.toArray(AttributeDefinition[]::new))
+                    .setDescriptionProvider(new DefaultResourceAddDescriptionProvider(registration, this.descriptor.getResourceDescriptionResolver(), ordered))
+                    .setStability(registration.getStability())
+                    .withFlag(this.descriptor.getAddOperationRestartFlag())
+                    .build();
+            registration.registerOperationHandler(addDefinition, this.descriptor.getAddOperationTransformation().apply(new AddResourceOperationStepHandler(this.descriptor)));
 
-        // Register remove resource operation handler
-        OperationDefinition removeDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.REMOVE, this.descriptor.getResourceDescriptionResolver())
-                .setDescriptionProvider(new DefaultResourceRemoveDescriptionProvider(this.descriptor.getResourceDescriptionResolver()))
-                .setStability(registration.getStability())
-                .withFlag(this.descriptor.getRemoveOperationRestartFlag())
-                .build();
-        registration.registerOperationHandler(removeDefinition, this.descriptor.getResourceOperationTransformation().apply(new RemoveResourceOperationStepHandler(this.descriptor)));
+            // Register remove resource operation handler
+            OperationDefinition removeDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.REMOVE, this.descriptor.getResourceDescriptionResolver())
+                    .setDescriptionProvider(new DefaultResourceRemoveDescriptionProvider(this.descriptor.getResourceDescriptionResolver()))
+                    .setStability(registration.getStability())
+                    .withFlag(this.descriptor.getRemoveOperationRestartFlag())
+                    .build();
+            registration.registerOperationHandler(removeDefinition, this.descriptor.getResourceOperationTransformation().apply(new RemoveResourceOperationStepHandler(this.descriptor)));
 
-        // Override global operations with transformed operations, if necessary
-        for (Map.Entry<OperationDefinition, OperationStepHandler> entry : GLOBAL_OPERATIONS.entrySet()) {
-            OperationStepHandler handler = entry.getValue();
-            // Only override global operation handlers for non-identity transformations
-            OperationStepHandler transformedHandler = this.descriptor.getResourceOperationTransformation().apply(handler);
-            if (handler != transformedHandler) {
-                registration.registerOperationHandler(entry.getKey(), transformedHandler);
+            // Override global operations with transformed operations, if necessary
+            for (Map.Entry<OperationDefinition, OperationStepHandler> entry : GLOBAL_OPERATIONS.entrySet()) {
+                OperationStepHandler handler = entry.getValue();
+                // Only override global operation handlers for non-identity transformations
+                OperationStepHandler transformedHandler = this.descriptor.getResourceOperationTransformation().apply(handler);
+                if (handler != transformedHandler) {
+                    registration.registerOperationHandler(entry.getKey(), transformedHandler);
+                }
             }
         }
     }
