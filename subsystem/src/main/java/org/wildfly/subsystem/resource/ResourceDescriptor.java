@@ -391,7 +391,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          * @deprecated Superseded by {@link #requireChildResource(ResourceRegistration)}.
          */
-        @Deprecated(forRemoval = true)
+        @Deprecated(forRemoval = true, since = "26.0.0")
         default C requireChild(PathElement path) {
             return this.requireChildResources(Set.of(ResourceRegistration.of(path)));
         }
@@ -402,7 +402,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          * @deprecated Superseded by {@link #requireChildResources(Set)}.
          */
-        @Deprecated(forRemoval = true)
+        @Deprecated(forRemoval = true, since = "26.0.0")
         default C requireChildren(Set<PathElement> paths) {
             return this.requireChildResources(paths.stream().map(ResourceRegistration::of).collect(Collectors.toUnmodifiableSet()));
         }
@@ -429,7 +429,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          * @deprecated Superseded by {@link #requireSingletonChildResource(ResourceRegistration)}.
          */
-        @Deprecated(forRemoval = true)
+        @Deprecated(forRemoval = true, since = "26.0.0")
         default C requireSingletonChild(PathElement path) {
             return this.requireSingletonChildResources(Set.of(ResourceRegistration.of(path)));
         }
@@ -440,7 +440,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          * @deprecated Superseded by {@link #requireSingletonChildResources(Set)}.
          */
-        @Deprecated(forRemoval = true)
+        @Deprecated(forRemoval = true, since = "26.0.0")
         default C requireSingletonChild(Set<PathElement> paths) {
             return this.requireSingletonChildResources(paths.stream().map(ResourceRegistration::of).collect(Collectors.toUnmodifiableSet()));
         }
