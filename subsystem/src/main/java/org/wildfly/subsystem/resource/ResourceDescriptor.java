@@ -81,8 +81,19 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
      * Returns a transformer to be applied to all operations that operate on an existing resource.
      * This is typically used to adapt legacy operations to conform to the current version of the model.
      * @return an operation handler transformer.
+     * @deprecated Superseded by {@link #getOperationTransformation(String)}.
      */
+    @Deprecated(forRemoval = true, since = "26.0.0")
     default UnaryOperator<OperationStepHandler> getResourceOperationTransformation() {
+        return this.getOperationTransformation(""); // Returns default operation transformer
+    }
+
+    /**
+     * Returns a transformer to be applied the specified operation.
+     * This is typically used to adapt legacy operations to conform to the current version of the model.
+     * @return an operation handler transformer.
+     */
+    default UnaryOperator<OperationStepHandler> getOperationTransformation(String operationName) {
         return UnaryOperator.identity();
     }
 
@@ -114,9 +125,11 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
      * Returns a transformer for the add operation handler.
      * This is typically used to adapt legacy operations to conform to the current version of the model.
      * @return an operation handler transformer.
+     * @deprecated Superseded by {@link #getOperationTransformation(String)}
      */
+    @Deprecated(forRemoval = true, since = "26.0.0")
     default UnaryOperator<OperationStepHandler> getAddOperationTransformation() {
-        return UnaryOperator.identity();
+        return this.getOperationTransformation(ModelDescriptionConstants.ADD);
     }
 
     /**
@@ -150,8 +163,8 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         private final Set<PathElement> requiredSingletonChildren;
         private final Map<AttributeDefinition, AttributeTranslation> attributeTranslations;
         private final Set<ResourceCapabilityReferenceRecorder<?>> resourceCapabilityReferences;
-        private final UnaryOperator<OperationStepHandler> addOperationTransformer;
-        private final UnaryOperator<OperationStepHandler> operationTransformer;
+        private final Map<String, UnaryOperator<OperationStepHandler>> operationTransformers;
+        private final UnaryOperator<OperationStepHandler> defaultOperationTransformer;
         private final UnaryOperator<Resource> resourceTransformer;
         private final Optional<Consumer<DeploymentProcessorTarget>> deploymentChainContributor;
         private final OperationEntry.Flag addOperationRestartFlag;
@@ -187,8 +200,8 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
             this.requiredChildren = builder.requiredChildren;
             this.requiredSingletonChildren = builder.requiredSingletonChildren;
             this.resourceCapabilityReferences = builder.resourceCapabilityReferences;
-            this.addOperationTransformer = builder.addOperationTransformer;
-            this.operationTransformer = builder.operationTransformer;
+            this.operationTransformers = builder.operationTransformers;
+            this.defaultOperationTransformer = builder.defaultOperationTransformer;
             this.resourceTransformer = builder.resourceTransformer;
             this.deploymentChainContributor = builder.deploymentChainContributor;
             this.addOperationRestartFlag = builder.addOperationRestartFlag;
@@ -221,8 +234,8 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         }
 
         @Override
-        public UnaryOperator<OperationStepHandler> getResourceOperationTransformation() {
-            return this.operationTransformer;
+        public UnaryOperator<OperationStepHandler> getOperationTransformation(String operationName) {
+            return this.operationTransformers.getOrDefault(operationName, this.defaultOperationTransformer);
         }
 
         @Override
@@ -248,11 +261,6 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         @Override
         public Set<PathElement> getRequiredSingletonChildren() {
             return this.requiredSingletonChildren;
-        }
-
-        @Override
-        public UnaryOperator<OperationStepHandler> getAddOperationTransformation() {
-            return this.addOperationTransformer;
         }
 
         @Override
@@ -435,15 +443,35 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * Applies the specified transformation to the {@value ModelDescriptionConstants#ADD} operation of this resource.
          * @param transformation an operation handler transformation
          * @return a reference to this configurator
+         * @deprecated Superseded by {@link #withOperationTransformation(String, UnaryOperator)}.
          */
-        C withAddResourceOperationTransformation(UnaryOperator<OperationStepHandler> transformation);
+        @Deprecated(forRemoval = true, since = "26.0.0")
+        default C withAddResourceOperationTransformation(UnaryOperator<OperationStepHandler> transformation) {
+            return this.withOperationTransformation(ModelDescriptionConstants.ADD, transformation);
+        }
 
         /**
-         * Applies the specified transformation to the {@value ModelDescriptionConstants#REMOVE} and all global operations of this resource.
+         * Applies the specified transformation to all operations for this resource.
          * @param transformation an operation handler transformation
          * @return a reference to this configurator
          */
         C withOperationTransformation(UnaryOperator<OperationStepHandler> transformation);
+
+        /**
+         * Applies the specified transformation to the specified operation for this resource.
+         * @param transformation an operation handler transformation
+         * @return a reference to this configurator
+         */
+        default C withOperationTransformation(String operationName, UnaryOperator<OperationStepHandler> transformation) {
+            return this.withOperationTransformation(Set.of(operationName), transformation);
+        }
+
+        /**
+         * Applies the specified transformation to the specified operations for this resource.
+         * @param transformation an operation handler transformation
+         * @return a reference to this configurator
+         */
+        C withOperationTransformation(Set<String> operationNames, UnaryOperator<OperationStepHandler> transformation);
 
         /**
          * Applies the specified transformation to the {@link Resource} created by this resource's {@value ModelDescriptionConstants#ADD} operation.
@@ -545,8 +573,8 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         private Set<PathElement> requiredSingletonChildren = Set.of();
         private Map<AttributeDefinition, AttributeTranslation> attributeTranslations = Map.of();
         private Set<ResourceCapabilityReferenceRecorder<?>> resourceCapabilityReferences = Set.of();
-        private UnaryOperator<OperationStepHandler> addOperationTransformer = UnaryOperator.identity();
-        private UnaryOperator<OperationStepHandler> operationTransformer = UnaryOperator.identity();
+        private Map<String, UnaryOperator<OperationStepHandler>> operationTransformers = Map.of();
+        private UnaryOperator<OperationStepHandler> defaultOperationTransformer = UnaryOperator.identity();
         private UnaryOperator<Resource> resourceTransformer = UnaryOperator.identity();
         private Optional<Consumer<DeploymentProcessorTarget>> deploymentChainContributor = Optional.empty();
 
@@ -645,14 +673,14 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         }
 
         @Override
-        public C withAddResourceOperationTransformation(UnaryOperator<OperationStepHandler> transformation) {
-            this.addOperationTransformer = transformation;
+        public C withOperationTransformation(UnaryOperator<OperationStepHandler> transformation) {
+            this.defaultOperationTransformer = transformation;
             return this.self();
         }
 
         @Override
-        public C withOperationTransformation(UnaryOperator<OperationStepHandler> transformation) {
-            this.operationTransformer = transformation;
+        public C withOperationTransformation(Set<String> operationNames, UnaryOperator<OperationStepHandler> transformation) {
+            this.operationTransformers = concat(this.operationTransformers, operationNames.stream(), transformation);
             return this.self();
         }
 

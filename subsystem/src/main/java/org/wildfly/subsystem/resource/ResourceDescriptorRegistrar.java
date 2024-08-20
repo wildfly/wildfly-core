@@ -19,18 +19,7 @@ import org.jboss.as.controller.descriptions.DefaultResourceRemoveDescriptionProv
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.global.ListOperations;
 import org.jboss.as.controller.operations.global.MapOperations;
-import org.jboss.as.controller.operations.global.QueryOperationHandler;
-import org.jboss.as.controller.operations.global.ReadAttributeGroupHandler;
-import org.jboss.as.controller.operations.global.ReadAttributeGroupNamesHandler;
-import org.jboss.as.controller.operations.global.ReadAttributeHandler;
-import org.jboss.as.controller.operations.global.ReadChildrenNamesHandler;
-import org.jboss.as.controller.operations.global.ReadChildrenResourcesHandler;
-import org.jboss.as.controller.operations.global.ReadChildrenTypesHandler;
-import org.jboss.as.controller.operations.global.ReadOperationNamesHandler;
-import org.jboss.as.controller.operations.global.ReadResourceDescriptionHandler;
-import org.jboss.as.controller.operations.global.ReadResourceHandler;
 import org.jboss.as.controller.operations.global.UndefineAttributeHandler;
-import org.jboss.as.controller.operations.global.WriteAttributeHandler;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -68,17 +57,6 @@ public class ResourceDescriptorRegistrar implements ManagementResourceRegistrar 
     }
 
     private static final Map<OperationDefinition, OperationStepHandler> GLOBAL_OPERATIONS = Map.ofEntries(
-            Map.entry(ReadAttributeHandler.RESOLVE_DEFINITION, ReadAttributeHandler.RESOLVE_INSTANCE),
-            Map.entry(ReadResourceHandler.RESOLVE_DEFINITION, ReadResourceHandler.RESOLVE_INSTANCE),
-            Map.entry(ReadAttributeGroupHandler.RESOLVE_DEFINITION, ReadAttributeGroupHandler.RESOLVE_INSTANCE),
-            Map.entry(ReadResourceDescriptionHandler.DEFINITION, ReadResourceDescriptionHandler.INSTANCE),
-            Map.entry(ReadAttributeGroupNamesHandler.DEFINITION, ReadAttributeGroupNamesHandler.INSTANCE),
-            Map.entry(ReadChildrenNamesHandler.DEFINITION, ReadChildrenNamesHandler.INSTANCE),
-            Map.entry(ReadChildrenTypesHandler.DEFINITION, ReadChildrenTypesHandler.INSTANCE),
-            Map.entry(ReadChildrenResourcesHandler.DEFINITION, ReadChildrenResourcesHandler.INSTANCE),
-            Map.entry(ReadOperationNamesHandler.DEFINITION, ReadOperationNamesHandler.INSTANCE),
-            Map.entry(QueryOperationHandler.DEFINITION, QueryOperationHandler.INSTANCE),
-            Map.entry(WriteAttributeHandler.DEFINITION, WriteAttributeHandler.INSTANCE),
             Map.entry(UndefineAttributeHandler.DEFINITION, UndefineAttributeHandler.INSTANCE),
             Map.entry(MapOperations.MAP_PUT_DEFINITION, MapOperations.MAP_PUT_HANDLER),
             Map.entry(MapOperations.MAP_GET_DEFINITION, MapOperations.MAP_GET_HANDLER),
@@ -121,39 +99,42 @@ public class ResourceDescriptorRegistrar implements ManagementResourceRegistrar 
                 }
             }
 
-            // Register add resource operation handler
-            boolean ordered = registration.isOrderedChildResource();
-            Stream<AttributeDefinition> attributes = registration.getAttributes(PathAddress.EMPTY_ADDRESS).values().stream()
-                    .filter(AttributeAccess.Storage.CONFIGURATION) // Ignore runtime attributes
-                    .map(AttributeAccess::getAttributeDefinition)
-                    .filter(Predicate.not(AttributeDefinition::isResourceOnly)) // Ignore resource-only attributes
-                    ;
-            if (ordered) {
-                attributes = Stream.concat(Stream.of(DefaultResourceAddDescriptionProvider.INDEX), attributes);
-            }
-            OperationDefinition addDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD, this.descriptor.getResourceDescriptionResolver())
-                    .setParameters(attributes.toArray(AttributeDefinition[]::new))
-                    .setDescriptionProvider(new DefaultResourceAddDescriptionProvider(registration, this.descriptor.getResourceDescriptionResolver(), ordered))
-                    .setStability(registration.getStability())
-                    .withFlag(this.descriptor.getAddOperationRestartFlag())
-                    .build();
-            registration.registerOperationHandler(addDefinition, this.descriptor.getAddOperationTransformation().apply(new AddResourceOperationStepHandler(this.descriptor)));
+            if (!registration.isRuntimeOnly()) {
+                // Register add resource operation handler
+                boolean ordered = registration.isOrderedChildResource();
+                Stream<AttributeDefinition> attributes = registration.getAttributes(PathAddress.EMPTY_ADDRESS).values().stream()
+                        .filter(AttributeAccess.Storage.CONFIGURATION) // Ignore runtime attributes
+                        .map(AttributeAccess::getAttributeDefinition)
+                        .filter(Predicate.not(AttributeDefinition::isResourceOnly)) // Ignore resource-only attributes
+                        ;
+                if (ordered) {
+                    attributes = Stream.concat(Stream.of(DefaultResourceAddDescriptionProvider.INDEX), attributes);
+                }
+                OperationDefinition addDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD, this.descriptor.getResourceDescriptionResolver())
+                        .setParameters(attributes.toArray(AttributeDefinition[]::new))
+                        .setDescriptionProvider(new DefaultResourceAddDescriptionProvider(registration, this.descriptor.getResourceDescriptionResolver(), ordered))
+                        .setStability(registration.getStability())
+                        .withFlag(this.descriptor.getAddOperationRestartFlag())
+                        .build();
+                registration.registerOperationHandler(addDefinition, this.descriptor.getOperationTransformation(ModelDescriptionConstants.ADD).apply(new AddResourceOperationStepHandler(this.descriptor)));
 
-            // Register remove resource operation handler
-            OperationDefinition removeDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.REMOVE, this.descriptor.getResourceDescriptionResolver())
-                    .setDescriptionProvider(new DefaultResourceRemoveDescriptionProvider(this.descriptor.getResourceDescriptionResolver()))
-                    .setStability(registration.getStability())
-                    .withFlag(this.descriptor.getRemoveOperationRestartFlag())
-                    .build();
-            registration.registerOperationHandler(removeDefinition, this.descriptor.getResourceOperationTransformation().apply(new RemoveResourceOperationStepHandler(this.descriptor)));
+                // Register remove resource operation handler
+                OperationDefinition removeDefinition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.REMOVE, this.descriptor.getResourceDescriptionResolver())
+                        .setDescriptionProvider(new DefaultResourceRemoveDescriptionProvider(this.descriptor.getResourceDescriptionResolver()))
+                        .setStability(registration.getStability())
+                        .withFlag(this.descriptor.getRemoveOperationRestartFlag())
+                        .build();
+                registration.registerOperationHandler(removeDefinition, this.descriptor.getOperationTransformation(ModelDescriptionConstants.REMOVE).apply(new RemoveResourceOperationStepHandler(this.descriptor)));
+            }
 
             // Override global operations with transformed operations, if necessary
             for (Map.Entry<OperationDefinition, OperationStepHandler> entry : GLOBAL_OPERATIONS.entrySet()) {
+                OperationDefinition definition = entry.getKey();
                 OperationStepHandler handler = entry.getValue();
                 // Only override global operation handlers for non-identity transformations
-                OperationStepHandler transformedHandler = this.descriptor.getResourceOperationTransformation().apply(handler);
+                OperationStepHandler transformedHandler = this.descriptor.getOperationTransformation(definition.getName()).apply(handler);
                 if (handler != transformedHandler) {
-                    registration.registerOperationHandler(entry.getKey(), transformedHandler);
+                    registration.registerOperationHandler(definition, transformedHandler);
                 }
             }
         }
