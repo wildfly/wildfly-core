@@ -3645,10 +3645,10 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 478, value = "Unable to create command based CredentialSource for credential reference.")
     OperationFailedException unableToBuildCommandCredentialSource(@Cause Throwable throwable);
 
-    @Message(id = 479, value = "Attribute '%s' at resource '%s' with unresolved value '%s' cannot be resolved using the non-security-sensitive sources resolution supported by the 'resolve' parameter. Response will report the unresolved value.")
+    @Message(id = 479, value = "Attribute '%s' at resource '%s' with unresolved value '%s' cannot be resolved using the non-security-sensitive resolution sources supported by the 'resolve' parameter. Response will report the unresolved value.")
     String attributeUnresolvableUsingSimpleResolution(String attribute, String address, ModelNode unresolved);
 
-    @Message(id = 480, value = "Expression '%s' cannot be resolved using the non-security-sensitive sources resolution supported by the '%s' operation. Response will report the unresolved value.")
+    @Message(id = 480, value = "Expression '%s' cannot be resolved using the non-security-sensitive resolution sources supported by the '%s' operation. Response will report the unresolved value.")
     String expressionUnresolvableUsingSimpleResolution(ModelNode unresolved, String opName);
 
     @LogMessage(level = WARN)
