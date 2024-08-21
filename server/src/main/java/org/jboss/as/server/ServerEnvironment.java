@@ -1119,7 +1119,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     @Override
     protected void setProcessName(String processName) {
         if (processName != null) {
-            if (primordialProperties.contains(SERVER_NAME)) {
+            if (primordialProperties.containsKey(SERVER_NAME)) {
                 // User specified both -Djboss.server.name and a standalone.xml <server name="xxx"/> value.
                 // Log a WARN
                 String rawServerProp = WildFlySecurityManager.getPropertyPrivileged(SERVER_NAME, serverName);
@@ -1128,7 +1128,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             serverName = processName;
             WildFlySecurityManager.setPropertyPrivileged(SERVER_NAME, serverName);
             processNameSet = true;
-            if (!primordialProperties.contains(NODE_NAME)) {
+            if (!primordialProperties.containsKey(NODE_NAME)) {
                 nodeName = serverName;
                 WildFlySecurityManager.setPropertyPrivileged(NODE_NAME, nodeName);
             }
