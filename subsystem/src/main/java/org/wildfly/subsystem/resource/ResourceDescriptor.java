@@ -549,7 +549,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          * @deprecated Use {@link #requireChildResources(Set)} instead.
          */
-        @Deprecated(forRemoval = true)
+        @Deprecated(forRemoval = true, since = "26.0.0")
         default <P extends Supplier<PathElement>> C provideRequiredChildren(Collection<P> providers) {
             return this.requireChildResources(providers.stream().map(Supplier::get).map(ResourceRegistration::of).collect(Collectors.toUnmodifiableSet()));
         }
@@ -560,7 +560,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          * @deprecated Use {@link #requireSingletonChildResources(Set)} instead.
          */
-        @Deprecated(forRemoval = true)
+        @Deprecated(forRemoval = true, since = "26.0.0")
         default <P extends Supplier<PathElement>> C provideRequiredSingletonChildren(Collection<P> providers) {
             return this.requireSingletonChildResources(providers.stream().map(Supplier::get).map(ResourceRegistration::of).collect(Collectors.toUnmodifiableSet()));
         }
