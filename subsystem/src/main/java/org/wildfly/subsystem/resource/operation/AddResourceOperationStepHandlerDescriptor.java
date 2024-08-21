@@ -28,7 +28,7 @@ public interface AddResourceOperationStepHandlerDescriptor extends OperationStep
      * @return a collection of resource paths
      * @deprecated Superseded by {@link #getRequiredChildResources()}.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0.0")
     default Set<PathElement> getRequiredChildren() {
         return this.getRequiredChildResources().keySet();
     }
@@ -47,7 +47,7 @@ public interface AddResourceOperationStepHandlerDescriptor extends OperationStep
      * @return a collection of resource paths
      * @deprecated Superseded by {@link #getRequiredSingletonChildResources()
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0.0")
     default Set<PathElement> getRequiredSingletonChildren() {
         return this.getRequiredSingletonChildResources().keySet();
     }
