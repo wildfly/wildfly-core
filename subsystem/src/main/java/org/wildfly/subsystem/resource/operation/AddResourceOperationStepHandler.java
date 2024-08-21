@@ -20,6 +20,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -66,7 +67,7 @@ public class AddResourceOperationStepHandler extends AbstractAddStepHandler impl
             @SuppressWarnings("unchecked")
             AddResourceOperationStepHandlerDescriptor parentDescriptor = ((DescribedOperationStepHandler<AddResourceOperationStepHandlerDescriptor>) parentHandler).getDescriptor();
 
-            if (parentDescriptor.getRequiredChildren().contains(path)) {
+            if (parentDescriptor.getRequiredChildResources().containsKey(path)) {
                 if (context.readResourceFromRoot(parentAddress, false).hasChild(path)) {
                     // If we are a required child resource of our parent, we need to remove the auto-created resource first
                     context.addStep(Util.createRemoveOperation(address), context.getRootResourceRegistration().getOperationHandler(address, ModelDescriptionConstants.REMOVE), OperationContext.Stage.MODEL);
@@ -74,7 +75,7 @@ public class AddResourceOperationStepHandler extends AbstractAddStepHandler impl
                     return;
                 }
             }
-            for (PathElement requiredPath : parentDescriptor.getRequiredSingletonChildren()) {
+            for (PathElement requiredPath : parentDescriptor.getRequiredSingletonChildResources().keySet()) {
                 String requiredPathKey = requiredPath.getKey();
                 if (requiredPath.getKey().equals(path.getKey())) {
                     Set<String> childrenNames = context.readResourceFromRoot(parentAddress, false).getChildrenNames(requiredPathKey);
@@ -183,8 +184,8 @@ public class AddResourceOperationStepHandler extends AbstractAddStepHandler impl
         }
 
         // Auto-create required child resources as necessary
-        addRequiredChildren(context, this.descriptor.getRequiredChildren(), Resource::hasChild);
-        addRequiredChildren(context, this.descriptor.getRequiredSingletonChildren(), AddResourceOperationStepHandler::hasChildren);
+        addRequiredChildren(context, this.descriptor.getRequiredChildResources().values(), Resource::hasChild);
+        addRequiredChildren(context, this.descriptor.getRequiredSingletonChildResources().values(), AddResourceOperationStepHandler::hasChildren);
 
         // Don't leave model undefined
         if (!model.isDefined()) {
@@ -196,7 +197,7 @@ public class AddResourceOperationStepHandler extends AbstractAddStepHandler impl
         return resource.hasChildren(path.getKey());
     }
 
-    private static void addRequiredChildren(OperationContext context, Collection<PathElement> paths, BiPredicate<Resource, PathElement> present) {
+    private static void addRequiredChildren(OperationContext context, Collection<ResourceRegistration> childResources, BiPredicate<Resource, PathElement> present) {
         OperationStepHandler addIfAbsentHandler = new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -208,8 +209,10 @@ public class AddResourceOperationStepHandler extends AbstractAddStepHandler impl
                 }
             }
         };
-        for (PathElement path : paths) {
-            context.addStep(Util.createAddOperation(context.getCurrentAddress().append(path)), addIfAbsentHandler, OperationContext.Stage.MODEL);
+        for (ResourceRegistration childResource : childResources) {
+            if (context.enables(childResource)) {
+                context.addStep(Util.createAddOperation(context.getCurrentAddress().append(childResource.getPathElement())), addIfAbsentHandler, OperationContext.Stage.MODEL);
+            }
         }
     }
 

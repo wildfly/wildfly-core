@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -23,6 +24,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -159,8 +161,8 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         private final Map<RuntimeCapability<?>, BiPredicate<OperationContext, Resource>> capabilities;
         private final Map<AttributeDefinition, OperationStepHandler> readWriteAttributes = new HashMap<>();
         private final Iterable<? extends AttributeDefinition> readOnlyAttributes;
-        private final Set<PathElement> requiredChildren;
-        private final Set<PathElement> requiredSingletonChildren;
+        private final Map<PathElement, ResourceRegistration> requiredChildren;
+        private final Map<PathElement, ResourceRegistration> requiredSingletonChildren;
         private final Map<AttributeDefinition, AttributeTranslation> attributeTranslations;
         private final Set<ResourceCapabilityReferenceRecorder<?>> resourceCapabilityReferences;
         private final Map<String, UnaryOperator<OperationStepHandler>> operationTransformers;
@@ -254,12 +256,12 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         }
 
         @Override
-        public Set<PathElement> getRequiredChildren() {
+        public Map<PathElement, ResourceRegistration> getRequiredChildResources() {
             return this.requiredChildren;
         }
 
         @Override
-        public Set<PathElement> getRequiredSingletonChildren() {
+        public Map<PathElement, ResourceRegistration> getRequiredSingletonChildResources() {
             return this.requiredSingletonChildren;
         }
 
@@ -395,9 +397,31 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * Defines a required child of this resource.  Required children will be automatically added, if no child resource exists with the specified path.
          * @param path the path of the required child resource
          * @return a reference to this configurator
+         * @deprecated Superseded by {@link #requireChildResource(ResourceRegistration)}.
          */
+        @Deprecated(forRemoval = true, since = "26.0.0")
         default C requireChild(PathElement path) {
-            return this.requireChildren(Set.of(path));
+            return this.requireChildResources(Set.of(ResourceRegistration.of(path)));
+        }
+
+        /**
+         * Defines a set of required children of this resource.  Required children will be automatically added, if no child resource exists with the specified path.
+         * @param paths a set of paths of the required child resources
+         * @return a reference to this configurator
+         * @deprecated Superseded by {@link #requireChildResources(Set)}.
+         */
+        @Deprecated(forRemoval = true, since = "26.0.0")
+        default C requireChildren(Set<PathElement> paths) {
+            return this.requireChildResources(paths.stream().map(ResourceRegistration::of).collect(Collectors.toUnmodifiableSet()));
+        }
+
+        /**
+         * Defines a required child of this resource.  Required children will be automatically added, if no child resource exists with the specified path.
+         * @param path the path of the required child resource
+         * @return a reference to this configurator
+         */
+        default C requireChildResource(ResourceRegistration child) {
+            return this.requireChildResources(Set.of(child));
         }
 
         /**
@@ -405,15 +429,37 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @param paths a set of paths of the required child resources
          * @return a reference to this configurator
          */
-        C requireChildren(Set<PathElement> paths);
+        C requireChildResources(Set<? extends ResourceRegistration> children);
+
+        /**
+         * Defines a required singleton child of this resource.  Required singleton children will be automatically added, if no child resource exists with the same path key.
+         * @param path the path of the required singleton child resource
+         * @return a reference to this configurator
+         * @deprecated Superseded by {@link #requireSingletonChildResource(ResourceRegistration)}.
+         */
+        @Deprecated(forRemoval = true, since = "26.0.0")
+        default C requireSingletonChild(PathElement path) {
+            return this.requireSingletonChildResources(Set.of(ResourceRegistration.of(path)));
+        }
+
+        /**
+         * Defines a set of required singleton children of this resource.  Required singleton children will be automatically added, if no child resource exists with the same path key.
+         * @param paths a set of paths of the required singleton child resources
+         * @return a reference to this configurator
+         * @deprecated Superseded by {@link #requireSingletonChildResources(Set)}.
+         */
+        @Deprecated(forRemoval = true, since = "26.0.0")
+        default C requireSingletonChild(Set<PathElement> paths) {
+            return this.requireSingletonChildResources(paths.stream().map(ResourceRegistration::of).collect(Collectors.toUnmodifiableSet()));
+        }
 
         /**
          * Defines a required singleton child of this resource.  Required singleton children will be automatically added, if no child resource exists with the same path key.
          * @param path the path of the required singleton child resource
          * @return a reference to this configurator
          */
-        default C requireSingletonChild(PathElement path) {
-            return this.requireSingletonChildren(Set.of(path));
+        default C requireSingletonChildResource(ResourceRegistration path) {
+            return this.requireSingletonChildResources(Set.of(path));
         }
 
         /**
@@ -421,7 +467,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @param paths a set of paths of the required singleton child resources
          * @return a reference to this configurator
          */
-        C requireSingletonChildren(Set<PathElement> paths);
+        C requireSingletonChildResources(Set<? extends ResourceRegistration> paths);
 
         /**
          * Adds a capability reference that records a requirement for this resource.
@@ -529,15 +575,23 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * Defines a set of required children of this resource.  Required children will be automatically added, if no child resource exists with the specified path.
          * @param providers a set of providers of the required child resource paths
          * @return a reference to this configurator
+         * @deprecated Use {@link #requireChildResources(Set)} instead.
          */
-        <P extends Supplier<PathElement>> C provideRequiredChildren(Collection<P> providers);
+        @Deprecated(forRemoval = true, since = "26.0.0")
+        default <P extends Supplier<PathElement>> C provideRequiredChildren(Collection<P> providers) {
+            return this.requireChildResources(providers.stream().map(Supplier::get).map(ResourceRegistration::of).collect(Collectors.toUnmodifiableSet()));
+        }
 
         /**
          * Defines a set of required singleton children of this resource.  Required singleton children will be automatically added, if no child resource exists with the same path key.
          * @param providers a set of providers of the required singleton child resource paths
          * @return a reference to this configurator
+         * @deprecated Use {@link #requireSingletonChildResources(Set)} instead.
          */
-        <P extends Supplier<PathElement>> C provideRequiredSingletonChildren(Collection<P> providers);
+        @Deprecated(forRemoval = true, since = "26.0.0")
+        default <P extends Supplier<PathElement>> C provideRequiredSingletonChildren(Collection<P> providers) {
+            return this.requireSingletonChildResources(providers.stream().map(Supplier::get).map(ResourceRegistration::of).collect(Collectors.toUnmodifiableSet()));
+        }
     }
 
     /**
@@ -569,8 +623,8 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         private Collection<AttributeDefinition> modelOnlyAttributes = List.of();
         private Collection<AttributeDefinition> readOnlyAttributes = List.of();
         private Map<AttributeDefinition, OperationStepHandler> customAttributes = Map.of();
-        private Set<PathElement> requiredChildren = Set.of();
-        private Set<PathElement> requiredSingletonChildren = Set.of();
+        private Map<PathElement, ResourceRegistration> requiredChildren = Map.of();
+        private Map<PathElement, ResourceRegistration> requiredSingletonChildren = Map.of();
         private Map<AttributeDefinition, AttributeTranslation> attributeTranslations = Map.of();
         private Set<ResourceCapabilityReferenceRecorder<?>> resourceCapabilityReferences = Set.of();
         private Map<String, UnaryOperator<OperationStepHandler>> operationTransformers = Map.of();
@@ -655,14 +709,14 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         }
 
         @Override
-        public C requireChildren(Set<PathElement> paths) {
-            this.requiredChildren = this.requiredChildren.isEmpty() ? Set.copyOf(paths) : concat(this.requiredChildren, paths.stream());
+        public C requireChildResources(Set<? extends ResourceRegistration> children) {
+            this.requiredChildren = this.requiredChildren.isEmpty() ? children.stream().collect(Collectors.toMap(ResourceRegistration::getPathElement, Function.identity())) : concat(this.requiredChildren, children.stream().map(child -> Map.entry(child.getPathElement(), child)));
             return this.self();
         }
 
         @Override
-        public C requireSingletonChildren(Set<PathElement> paths) {
-            this.requiredSingletonChildren = this.requiredSingletonChildren.isEmpty() ? Set.copyOf(paths) : concat(this.requiredSingletonChildren, paths.stream());
+        public C requireSingletonChildResources(Set<? extends ResourceRegistration> children) {
+            this.requiredSingletonChildren = this.requiredSingletonChildren.isEmpty() ? children.stream().collect(Collectors.toMap(ResourceRegistration::getPathElement, Function.identity())) : concat(this.requiredSingletonChildren, children.stream().map(child -> Map.entry(child.getPathElement(), child)));
             return this.self();
         }
 
@@ -724,18 +778,6 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         @Override
         public <P extends Supplier<RuntimeCapability<?>>> C provideCapabilities(Collection<P> providers, BiPredicate<OperationContext, Resource> filter) {
             this.capabilities = concat(this.capabilities, stream(providers), filter);
-            return this.self();
-        }
-
-        @Override
-        public <P extends Supplier<PathElement>> C provideRequiredChildren(Collection<P> providers) {
-            this.requiredChildren = concat(this.requiredChildren, stream(providers));
-            return this.self();
-        }
-
-        @Override
-        public <P extends Supplier<PathElement>>C provideRequiredSingletonChildren(Collection<P> providers) {
-            this.requiredSingletonChildren = concat(this.requiredSingletonChildren, stream(providers));
             return this.self();
         }
 

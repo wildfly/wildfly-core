@@ -5,6 +5,8 @@
 
 package org.jboss.as.controller;
 
+import java.util.Objects;
+
 import org.jboss.as.version.Stability;
 
 /**
@@ -32,12 +34,7 @@ public interface ResourceRegistration extends Feature {
      * @return a resource registration
      */
     static ResourceRegistration of(PathElement path) {
-        return new ResourceRegistration() {
-            @Override
-            public PathElement getPathElement() {
-                return path;
-            }
-        };
+        return (path != null) ? new DefaultResourceRegistration(path) : DefaultResourceRegistration.ROOT;
     }
 
     /**
@@ -47,16 +44,42 @@ public interface ResourceRegistration extends Feature {
      * @return a resource registration
      */
     static ResourceRegistration of(PathElement path, Stability stability) {
-        return new ResourceRegistration() {
-            @Override
-            public PathElement getPathElement() {
-                return path;
-            }
-
+        return (path != null) || (stability != DefaultResourceRegistration.ROOT.getStability()) ? new DefaultResourceRegistration(path) {
             @Override
             public Stability getStability() {
                 return stability;
             }
-        };
+        } : DefaultResourceRegistration.ROOT;
+    }
+
+    class DefaultResourceRegistration implements ResourceRegistration {
+        static final ResourceRegistration ROOT = new DefaultResourceRegistration(null);
+        private final PathElement path;
+
+        DefaultResourceRegistration(PathElement path) {
+            this.path = path;
+        }
+
+        @Override
+        public PathElement getPathElement() {
+            return this.path;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(this.path);
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (!(object instanceof ResourceRegistration)) return false;
+            ResourceRegistration registration = (ResourceRegistration) object;
+            return Objects.equals(this.getPathElement(), registration.getPathElement()) && Objects.equals(this.getStability(), registration.getStability());
+        }
+
+        @Override
+        public String toString() {
+            return Objects.toString(this.path);
+        }
     }
 }
