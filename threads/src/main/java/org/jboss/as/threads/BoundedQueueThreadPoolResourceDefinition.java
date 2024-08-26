@@ -8,25 +8,20 @@ package org.jboss.as.threads;
 import static org.jboss.as.threads.CommonAttributes.BLOCKING_BOUNDED_QUEUE_THREAD_POOL;
 import static org.jboss.as.threads.CommonAttributes.BOUNDED_QUEUE_THREAD_POOL;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.msc.service.ServiceName;
-
-import java.util.Arrays;
-import java.util.Collection;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.msc.service.ServiceName;
 
 /**
  * {@link org.jboss.as.controller.ResourceDefinition} for a bounded queue thread pool resource.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class BoundedQueueThreadPoolResourceDefinition extends PersistentResourceDefinition {
+public class BoundedQueueThreadPoolResourceDefinition extends SimpleResourceDefinition {
     public static final BoundedQueueThreadPoolResourceDefinition BLOCKING = create(true, false);
     public static final BoundedQueueThreadPoolResourceDefinition NON_BLOCKING = create(false, false);
     private final BoundedQueueThreadPoolMetricsHandler metricsHandler;
@@ -110,11 +105,6 @@ public class BoundedQueueThreadPoolResourceDefinition extends PersistentResource
         if (registerRuntimeOnly) {
             metricsHandler.registerAttributes(resourceRegistration);
         }
-    }
-
-    @Override
-    public Collection<AttributeDefinition> getAttributes() {
-        return Arrays.asList(writeHandler.attributes);
     }
 
     public boolean isBlocking() {

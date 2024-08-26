@@ -5,7 +5,6 @@
 package org.jboss.as.threads;
 
 
-
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.OperationContext;
@@ -25,9 +24,8 @@ public class BoundedQueueThreadPoolWriteAttributeHandler extends ThreadsWriteAtt
     private final ServiceName serviceNameBase;
     private final RuntimeCapability capability;
 
-    public  BoundedQueueThreadPoolWriteAttributeHandler(boolean blocking, final RuntimeCapability capability, ServiceName serviceNameBase) {
-        super(blocking ? BoundedQueueThreadPoolAdd.BLOCKING_ATTRIBUTES : BoundedQueueThreadPoolAdd.NON_BLOCKING_ATTRIBUTES,
-                BoundedQueueThreadPoolAdd.RW_ATTRIBUTES);
+    public BoundedQueueThreadPoolWriteAttributeHandler(boolean blocking, final RuntimeCapability capability, ServiceName serviceNameBase) {
+        super(blocking ? BoundedQueueThreadPoolAdd.BLOCKING_ATTRIBUTES : BoundedQueueThreadPoolAdd.NON_BLOCKING_ATTRIBUTES);
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;
     }
