@@ -220,7 +220,7 @@ public final class Main {
 
                     int idx = arg.indexOf('=');
                     if (idx == arg.length() - 1) {
-                        STDERR.println(ServerLogger.ROOT_LOGGER.noArgValue(arg));
+                        STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
                         usage(productConfig);
                         return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
@@ -272,7 +272,7 @@ public final class Main {
                     startModeSet = true;
                     int idx = arg.indexOf('=');
                     if (idx == arg.length() - 1) {
-                        STDERR.println(ServerLogger.ROOT_LOGGER.noArgValue(arg));
+                        STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
                         usage(productConfig);
                         return new ServerEnvironmentWrapper(ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
@@ -295,7 +295,7 @@ public final class Main {
                 } else if (arg.startsWith(CommandLineConstants.GRACEFUL_STARTUP)) {
                     int idx = arg.indexOf('=');
                     if (idx == arg.length() - 1) {
-                        STDERR.println(ServerLogger.ROOT_LOGGER.noArgValue(arg));
+                        STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
                         usage(productConfig);
                         return new ServerEnvironmentWrapper(ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
