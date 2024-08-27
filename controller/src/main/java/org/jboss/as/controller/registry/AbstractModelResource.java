@@ -274,7 +274,9 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
 
         @Override
         public boolean hasChildren() {
-            return ! children().isEmpty();
+            synchronized (children) {
+                return ! children.isEmpty();
+            }
         }
 
         @Override
