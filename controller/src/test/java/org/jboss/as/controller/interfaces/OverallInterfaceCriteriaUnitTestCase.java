@@ -64,7 +64,7 @@ public class OverallInterfaceCriteriaUnitTestCase {
 
         Map<NetworkInterface, Set<InetAddress>> correct = new HashMap<NetworkInterface, Set<InetAddress>>();
         for (NetworkInterface ni : loopbackInterfaces) {
-            if (ni.isUp()) {
+            if (ni.isUp() && allCandidates.containsKey(ni)) {
                 correct.put(ni, getRightTypeAddresses(allCandidates.get(ni)));
             }
         }
