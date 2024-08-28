@@ -87,7 +87,6 @@ import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.authz.RoleMapper;
 import org.wildfly.security.manager.WildFlySecurityManager;
-
 /**
  * A {@link ResourceDefinition} for a single domain.
  *
@@ -443,7 +442,14 @@ class DomainDefinition extends SimpleResourceDefinition {
                         }
                     }
                 }
-
+                // rls debug
+                if (outflowIdentities != null) {
+                    for (int i=0; i < outflowIdentities.length; i++) {
+                        SecurityIdentity si = outflowIdentities[i];
+                        ROOT_LOGGER.debug("## DomainDefinition.outflow SecurityIdentity: ("
+                        + i +")  " + si.toString());
+                    }
+                }
                 return outflowIdentities;
             }
         });
@@ -451,11 +457,16 @@ class DomainDefinition extends SimpleResourceDefinition {
 
     static SecurityIdentity[] performOutflow(SecurityIdentity identity, boolean outflowAnonymous, Set<SecurityDomain> outflowDomains) {
         List<SecurityIdentity> outflowIdentities = new ArrayList<>(outflowDomains.size());
+        int cnt = 0;  // rls debug
         for (SecurityDomain d : outflowDomains) {
+            ROOT_LOGGER.debug("## DomainDefinition.performOutflow  SecurityDomain: ("
+            +(cnt++)+") "+d.toString()+"  outflowAnonymous: " + outflowAnonymous);
             try(ServerAuthenticationContext sac = d.createNewAuthenticationContext()) {
                 if (sac.importIdentity(identity)) {
+                    ROOT_LOGGER.debug("## DomainDefinition.performOutflow  importIdentity: TRUE");
                     outflowIdentities.add(sac.getAuthorizedIdentity());
                 } else if (outflowAnonymous) {
+                    ROOT_LOGGER.debug("## DomainDefinition.performOutflow  outflowAnonymous: " + outflowAnonymous);
                     outflowIdentities.add(d.getAnonymousSecurityIdentity());
                 }
             } catch (RealmUnavailableException e) {
