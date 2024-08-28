@@ -446,7 +446,7 @@ class DomainDefinition extends SimpleResourceDefinition {
                 if (outflowIdentities != null) {
                     for (int i=0; i < outflowIdentities.length; i++) {
                         SecurityIdentity si = outflowIdentities[i];
-                        ROOT_LOGGER.debug("## DomainDefinition.outflow SecurityIdentity: ("
+                        ROOT_LOGGER.debug("### DomainDefinition.outflow SecurityIdentity: ("
                         + i +")  " + si.toString());
                     }
                 }
