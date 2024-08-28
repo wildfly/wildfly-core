@@ -433,7 +433,6 @@ public final class ServerService extends AbstractControllerService {
             }
             String message = ServerLogger.ROOT_LOGGER.unsuccessfulBoot(String.join(" ", messages));
             bootstrapListener.bootFailure(new Exception(message, cause));
-            cause.printStackTrace();
             SystemExiter.logAndExit(new SystemExiter.ExitLogger() {
                 @Override
                 public void logExit() {
