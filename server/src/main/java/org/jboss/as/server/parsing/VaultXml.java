@@ -16,7 +16,6 @@ import java.util.List;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
@@ -32,11 +31,6 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class VaultXml {
-
-    @Deprecated
-    void parseVault(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace namespace, final List<ModelNode> list) throws XMLStreamException {
-        parseVault(reader, address, namespace.getUriString(), list);
-    }
 
     void parseVault(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs, final List<ModelNode> list) throws XMLStreamException {
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {

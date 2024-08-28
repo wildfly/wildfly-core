@@ -70,11 +70,6 @@ public final class ParseUtils {
         throw unexpectedElement(reader);
     }
 
-    @Deprecated
-    public static Element nextElement(XMLExtendedStreamReader reader, Namespace namespace) throws XMLStreamException {
-        return nextElement(reader, namespace.getUriString());
-    }
-
     /**
      * Get an exception reporting an unexpected XML element.
      * @param reader the stream reader
@@ -323,11 +318,6 @@ public final class ParseUtils {
         if (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             throw unexpectedElement(reader);
         }
-    }
-
-    @Deprecated
-    public static void requireNamespace(final XMLExtendedStreamReader reader, final Namespace namespace) throws XMLStreamException {
-        requireNamespace(reader, namespace.getUriString());
     }
 
     /**
