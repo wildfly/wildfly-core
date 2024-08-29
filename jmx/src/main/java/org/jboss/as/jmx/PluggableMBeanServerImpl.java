@@ -919,7 +919,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
                 //This could perhaps be handled better but there isn't really a lot we can do apart from log an error.
                 JmxLogger.ROOT_LOGGER.errorUnregisteringMBeanWithBadCalculatedName(e, registeredName);
             }
-            throw JmxLogger.ROOT_LOGGER.badDomainInCalclulatedObjectNameException(registeredName);
+            throw new RuntimeOperationsException(JmxLogger.ROOT_LOGGER.badDomainInCalculatedObjectNameException(registeredName));
         }
 
         return createdInstance;

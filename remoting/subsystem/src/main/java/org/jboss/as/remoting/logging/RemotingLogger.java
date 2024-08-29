@@ -8,6 +8,7 @@ package org.jboss.as.remoting.logging;
 import static org.jboss.logging.Logger.Level.INFO;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.net.BindException;
 
 import org.jboss.as.controller.OperationFailedException;
@@ -32,7 +33,7 @@ public interface RemotingLogger extends BasicLogger {
     /**
      * A logger with a category of the package name.
      */
-    RemotingLogger ROOT_LOGGER = Logger.getMessageLogger(RemotingLogger.class, "org.jboss.as.remoting");
+    RemotingLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), RemotingLogger.class, "org.jboss.as.remoting");
 
     @LogMessage(level = INFO)
     @Message(id = 1, value = "Listening on %s")

@@ -16,6 +16,7 @@ import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Set;
 
 /**
@@ -28,9 +29,9 @@ public interface CoreManagementLogger extends BasicLogger {
     /**
      * A logger with a category of the package name.
      */
-    CoreManagementLogger ROOT_LOGGER = Logger.getMessageLogger(CoreManagementLogger.class, "org.wildfly.extension.core.management");
+    CoreManagementLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), CoreManagementLogger.class, "org.wildfly.extension.core.management");
 
-    CoreManagementLogger UNSUPPORTED_ANNOTATION_LOGGER = Logger.getMessageLogger(CoreManagementLogger.class, "org.wildfly.annotation.unsupported");
+    CoreManagementLogger UNSUPPORTED_ANNOTATION_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), CoreManagementLogger.class, "org.wildfly.annotation.unsupported");
 
 //    @Message(id = 1, value = "The resource %s wasn't working properly and has been removed.")
 //    String removedOutOfOrderResource(final String address);

@@ -12,6 +12,7 @@ import static org.jboss.logging.Logger.Level.WARN;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UTFDataFormatException;
+import java.lang.invoke.MethodHandles;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.Set;
@@ -36,32 +37,32 @@ public interface ProcessLogger extends BasicLogger {
     /**
      * The root logger with a category of the package.
      */
-    ProcessLogger ROOT_LOGGER = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.process");
+    ProcessLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ProcessLogger.class, "org.jboss.as.process");
 
     /**
      * A logger with the category {@code org.jboss.as.process-controller.client}.
      */
-    ProcessLogger CLIENT_LOGGER = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.process-controller.client");
+    ProcessLogger CLIENT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ProcessLogger.class, "org.jboss.as.process-controller.client");
 
     /**
      * A logger with the category {@code org.jboss.as.process.protocol}
      */
-    ProcessLogger PROTOCOL_LOGGER = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.process.protocol");
+    ProcessLogger PROTOCOL_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ProcessLogger.class, "org.jboss.as.process.protocol");
 
     /**
      * A logger with the category {@code org.jboss.as.process.protocol.client}
      */
-    ProcessLogger PROTOCOL_CLIENT_LOGGER = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.protocol.client");
+    ProcessLogger PROTOCOL_CLIENT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ProcessLogger.class, "org.jboss.as.protocol.client");
 
     /**
      * A logger with the category {@code org.jboss.as.process.protocol.client}
      */
-    ProcessLogger PROTOCOL_CONNECTION_LOGGER = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.protocol.connection");
+    ProcessLogger PROTOCOL_CONNECTION_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ProcessLogger.class, "org.jboss.as.protocol.connection");
 
     /**
      * A logger with the category {@code org.jboss.as.process-controller.server}.
      */
-    ProcessLogger SERVER_LOGGER = Logger.getMessageLogger(ProcessLogger.class, "org.jboss.as.process-controller.server");
+    ProcessLogger SERVER_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ProcessLogger.class, "org.jboss.as.process-controller.server");
 
     /**
      * Logs a warning message indicating an attempt to reconnect a non-existent process.

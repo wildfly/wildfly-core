@@ -5,6 +5,8 @@
 
 package org.wildfly.extension.discovery;
 
+import java.lang.invoke.MethodHandles;
+
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.MessageLogger;
@@ -14,5 +16,5 @@ import org.jboss.logging.annotations.MessageLogger;
  */
 @MessageLogger(projectCode = "WFDISCEXT", length = 5)
 interface Messages extends BasicLogger {
-    Messages log = Logger.getMessageLogger(Messages.class, "org.wildfly.extension.discovery");
+    Messages log = Logger.getMessageLogger(MethodHandles.lookup(), Messages.class, "org.wildfly.extension.discovery");
 }

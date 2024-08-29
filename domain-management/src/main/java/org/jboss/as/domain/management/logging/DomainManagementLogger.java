@@ -9,6 +9,7 @@ import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.security.GeneralSecurityException;
 import java.util.Collection;
 import java.util.Set;
@@ -44,12 +45,12 @@ public interface DomainManagementLogger extends BasicLogger {
     /**
      * A logger with a category of the package name.
      */
-    DomainManagementLogger ROOT_LOGGER = Logger.getMessageLogger(DomainManagementLogger.class, "org.jboss.as.domain.management");
+    DomainManagementLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), DomainManagementLogger.class, "org.jboss.as.domain.management");
 
     /**
      * A logger with category specifically for logging per request security related messages.
      */
-    DomainManagementLogger SECURITY_LOGGER = Logger.getMessageLogger(DomainManagementLogger.class, "org.jboss.as.domain.management.security");
+    DomainManagementLogger SECURITY_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), DomainManagementLogger.class, "org.jboss.as.domain.management.security");
 
     /**
      * Logs a warning message indicating the user and password were found in the properties file.

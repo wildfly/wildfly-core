@@ -5,6 +5,7 @@
 
 package org.wildfly.core.instmgr.logging;
 
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.zip.ZipException;
@@ -24,7 +25,7 @@ import org.wildfly.installationmanager.ManifestVersion;
 @MessageLogger(projectCode = "WFLYIM", length = 4)
 public interface InstMgrLogger extends BasicLogger {
 
-    InstMgrLogger ROOT_LOGGER = Logger.getMessageLogger(InstMgrLogger.class, "org.wildfly.core.installationmanager");
+    InstMgrLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), InstMgrLogger.class, "org.wildfly.core.installationmanager");
 
     @Message(id = 1, value = "There is an installation prepared and ready to be applied. The current prepared installation can be discarded by using the 'clean' operation.")
     OperationFailedException serverAlreadyPrepared();

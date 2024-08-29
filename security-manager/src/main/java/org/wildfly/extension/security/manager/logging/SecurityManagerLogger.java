@@ -5,6 +5,7 @@
 
 package org.wildfly.extension.security.manager.logging;
 
+import java.lang.invoke.MethodHandles;
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
@@ -26,7 +27,7 @@ import org.jboss.logging.annotations.Param;
 @MessageLogger(projectCode = "WFLYSM", length = 4)
 public interface SecurityManagerLogger extends BasicLogger {
 
-    SecurityManagerLogger ROOT_LOGGER = Logger.getMessageLogger(SecurityManagerLogger.class, "org.wildfly.extension.security.manager");
+    SecurityManagerLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), SecurityManagerLogger.class, "org.wildfly.extension.security.manager");
 
 //    @LogMessage(level = INFO)
 //    @Message(id = 1, value = "Installing the WildFly Security Manager")
