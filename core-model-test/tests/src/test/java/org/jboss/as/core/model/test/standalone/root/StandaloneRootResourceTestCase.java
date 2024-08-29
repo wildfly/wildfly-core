@@ -22,7 +22,7 @@ import org.jboss.as.controller.operations.common.NamespaceRemoveHandler;
 import org.jboss.as.controller.operations.common.SchemaLocationAddHandler;
 import org.jboss.as.controller.operations.common.SchemaLocationRemoveHandler;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.controller.parsing.Namespace;
+import org.jboss.as.controller.parsing.ManagementSchemas;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.KernelServicesBuilder;
@@ -91,7 +91,7 @@ public class StandaloneRootResourceTestCase extends AbstractCoreModelTest {
 
     @Test
     public void testNameSetInXml() throws Exception {
-        String originalXml = "<server xmlns=\"" + Namespace.CURRENT.getUriString() + "\" name=\"testing\"/>";
+        String originalXml = "<server xmlns=\"" + ManagementSchemas.CURRENT + "\" name=\"testing\"/>";
         KernelServices kernelServices = createKernelServicesBuilder()
                 .setXml(originalXml)
                 .build();
@@ -107,7 +107,7 @@ public class StandaloneRootResourceTestCase extends AbstractCoreModelTest {
 
     @Test
     public void testNoNameSetInXml() throws Exception {
-        String originalXml = "<server xmlns=\"" + Namespace.CURRENT.getUriString() + "\"/>";
+        String originalXml = "<server xmlns=\"" + ManagementSchemas.CURRENT + "\"/>";
         KernelServices kernelServices = createKernelServicesBuilder()
                 .setXml(originalXml)
                 .build();

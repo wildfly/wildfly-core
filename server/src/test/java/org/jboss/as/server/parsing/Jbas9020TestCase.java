@@ -4,12 +4,12 @@
  */
 package org.jboss.as.server.parsing;
 
-import org.jboss.as.controller.parsing.Namespace;
+import org.jboss.as.controller.parsing.ManagementXmlSchema;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Test;
 
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 import java.io.StringReader;
@@ -23,7 +23,6 @@ import static org.junit.Assert.assertEquals;
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
 public class Jbas9020TestCase {
-    private static final String namespace = Namespace.DOMAIN_1_7.getUriString();
 
     @Test
     public void testContent() throws Exception {
@@ -36,10 +35,16 @@ public class Jbas9020TestCase {
                 "    </deployments>" +
                 "</server>";
         final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
-        final StandaloneXml parser = new StandaloneXml(null, null, null, null);
+
         final List<ModelNode> operationList = new ArrayList<ModelNode>();
         final XMLMapper mapper = XMLMapper.Factory.create();
-        mapper.registerRootElement(new QName(namespace, "server"), parser);
+
+        final StandaloneXmlSchemas standaloneXmlSchemas = new StandaloneXmlSchemas(Stability.DEFAULT, null, null, null);
+        final ManagementXmlSchema parser = standaloneXmlSchemas.getCurrent();
+        mapper.registerRootElement(parser.getQualifiedName(), parser);
+        for (ManagementXmlSchema current : standaloneXmlSchemas.getAdditional()) {
+            mapper.registerRootElement(current.getQualifiedName(), current);
+        }
         mapper.parseDocument(operationList, reader);
         final ModelNode content = operationList.get(1).get("content");
         assertArrayEquals(new byte[] { 0x12, 0x34 }, content.get(0).get("hash").asBytes());
@@ -56,12 +61,17 @@ public class Jbas9020TestCase {
                 "    </deployments>" +
                 "</server>";
         final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
-        final StandaloneXml parser = new StandaloneXml(null, null, null, null);
+
         final List<ModelNode> operationList = new ArrayList<ModelNode>();
         final XMLMapper mapper = XMLMapper.Factory.create();
-        mapper.registerRootElement(new QName(namespace, "server"), parser);
+
+        final StandaloneXmlSchemas standaloneXmlSchemas = new StandaloneXmlSchemas(Stability.DEFAULT, null, null, null);
+        final ManagementXmlSchema parser = standaloneXmlSchemas.getCurrent();
+        mapper.registerRootElement(parser.getQualifiedName(), parser);
+        for (ManagementXmlSchema current : standaloneXmlSchemas.getAdditional()) {
+            mapper.registerRootElement(current.getQualifiedName(), current);
+        }
         mapper.parseDocument(operationList, reader);
-        System.out.println(operationList.get(1));
         final ModelNode content = operationList.get(1).get("content");
         assertEquals(true, content.get(0).get("archive").asBoolean());
         assertEquals("${jboss.home}/content/welcome.jar", content.get(0).get("path").asString());
@@ -78,10 +88,16 @@ public class Jbas9020TestCase {
                 "    </deployments>" +
                 "</server>";
         final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
-        final StandaloneXml parser = new StandaloneXml(null, null, null, null);
+
         final List<ModelNode> operationList = new ArrayList<ModelNode>();
         final XMLMapper mapper = XMLMapper.Factory.create();
-        mapper.registerRootElement(new QName(namespace, "server"), parser);
+
+        final StandaloneXmlSchemas standaloneXmlSchemas = new StandaloneXmlSchemas(Stability.DEFAULT, null, null, null);
+        final ManagementXmlSchema parser = standaloneXmlSchemas.getCurrent();
+        mapper.registerRootElement(parser.getQualifiedName(), parser);
+        for (ManagementXmlSchema current : standaloneXmlSchemas.getAdditional()) {
+            mapper.registerRootElement(current.getQualifiedName(), current);
+        }
         mapper.parseDocument(operationList, reader);
         final ModelNode content = operationList.get(1).get("content");
         assertEquals(false, content.get(0).get("archive").asBoolean());

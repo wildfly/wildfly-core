@@ -20,6 +20,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
+import static org.jboss.as.controller.parsing.ParseUtils.isXmlNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.nextElement;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
@@ -47,7 +48,6 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.DeferredExtensionContext;
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
@@ -64,6 +64,7 @@ import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
 /**
@@ -78,16 +79,18 @@ final class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDeleg
     private final ExtensionHandler extensionHandler;
     private final StandaloneXml.ParsingOption[] parsingOptions;
     private AuditLogXml auditLogDelegate;
-    private final Namespace namespace;
+    private final IntVersion version;
+    private final String namespace;
     private final DeferredExtensionContext deferredExtensionContext;
 
-    StandaloneXml_Legacy(ExtensionHandler extensionHandler, final Namespace namespace, DeferredExtensionContext deferredExtensionContext, StandaloneXml.ParsingOption... parsingOptions) {
+    StandaloneXml_Legacy(ExtensionHandler extensionHandler, final IntVersion version, final String namespace, DeferredExtensionContext deferredExtensionContext, StandaloneXml.ParsingOption... parsingOptions) {
         super(new ServerSocketBindingsXml());
         this.extensionHandler = extensionHandler;
         this.deferredExtensionContext = deferredExtensionContext;
         this.parsingOptions = parsingOptions;
         accessControlXml = AccessControlXml.newInstance(namespace);
-        auditLogDelegate = AuditLogXml.newInstance(namespace, false);
+        auditLogDelegate = AuditLogXml.newInstance(version, false);
+        this.version = version;
         this.namespace = namespace;
     }
 
@@ -102,28 +105,11 @@ final class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDeleg
             throw unexpectedElement(reader);
         }
 
-        Namespace readerNS = Namespace.forUri(reader.getNamespaceURI());
-        switch (readerNS) {
-            case DOMAIN_1_0:
-            case DOMAIN_1_1:
-            case DOMAIN_1_2:
-            case DOMAIN_1_3:
-            case DOMAIN_1_4:
-            case DOMAIN_1_5:
-            case DOMAIN_1_6:
-                throw unsupportedNamespace(reader);
-            case DOMAIN_1_7:
-            case DOMAIN_1_8:
-            case DOMAIN_2_0:
-            case DOMAIN_2_1:
-            case DOMAIN_2_2:
-            case DOMAIN_3_0:
-                readServerElement_1_7(readerNS, reader, address, operationList);
-                break;
-            default:
-                // This should not be reachable as the namespace should have been validated by the caller.
-                throw unexpectedElement(reader);
+        IntVersion cutOff = new IntVersion(1,7);
+        if (version.compareTo(cutOff) < 0) {
+            throw unsupportedNamespace(reader);
         }
+        readServerElement_1_7(reader, address, operationList);
 
         if (ServerLogger.ROOT_LOGGER.isDebugEnabled()) {
             long elapsed = System.currentTimeMillis() - start;
@@ -139,7 +125,7 @@ final class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDeleg
      * @param list    the list of boot operations to which any new operations should be added
      * @throws XMLStreamException if a parsing error occurs
      */
-    private void readServerElement_1_7(final Namespace namespace, final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
+    private void readServerElement_1_7(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
             throws XMLStreamException {
 
         parseNamespaces(reader, address, list);
@@ -149,38 +135,33 @@ final class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDeleg
         // attributes
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
-            switch (Namespace.forUri(reader.getAttributeNamespace(i))) {
-                case NONE: {
-                    final String value = reader.getAttributeValue(i);
-                    final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-                    switch (attribute) {
-                        case NAME: {
-                            serverName = parseAttributeValue(ServerRootResourceDefinition.NAME, value, reader);
-                            break;
-                        }
-                        default:
-                            throw unexpectedAttribute(reader, i);
+            if (isNoNamespaceAttribute(reader, i)) {
+                final String value = reader.getAttributeValue(i);
+                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                switch (attribute) {
+                    case NAME: {
+                        serverName = parseAttributeValue(ServerRootResourceDefinition.NAME, value, reader);
+                        break;
                     }
-                    break;
+                    default:
+                        throw unexpectedAttribute(reader, i);
                 }
-                case XML_SCHEMA_INSTANCE: {
-                    switch (Attribute.forName(reader.getAttributeLocalName(i))) {
-                        case SCHEMA_LOCATION: {
-                            parseSchemaLocations(reader, address, list, i);
-                            break;
-                        }
-                        case NO_NAMESPACE_SCHEMA_LOCATION: {
-                            // todo, jeez
-                            break;
-                        }
-                        default: {
-                            throw unexpectedAttribute(reader, i);
-                        }
+            } else if (isXmlNamespaceAttribute(reader, i)) {
+                switch (Attribute.forName(reader.getAttributeLocalName(i))) {
+                    case SCHEMA_LOCATION: {
+                        parseSchemaLocations(reader, address, list, i);
+                        break;
                     }
-                    break;
+                    case NO_NAMESPACE_SCHEMA_LOCATION: {
+                        // todo, jeez
+                        break;
+                    }
+                    default: {
+                        throw unexpectedAttribute(reader, i);
+                    }
                 }
-                default:
-                    throw unexpectedAttribute(reader, i);
+            } else {
+                throw unexpectedAttribute(reader, i);
             }
         }
 
@@ -209,7 +190,7 @@ final class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDeleg
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, false);
+            ManagementXml managementXml = ManagementXml.newInstance(version, namespace, this, false);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }
@@ -222,7 +203,7 @@ final class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDeleg
         // Interfaces
         final Set<String> interfaceNames = new HashSet<String>();
         if (element == Element.INTERFACES) {
-            parseInterfaces(reader, interfaceNames, address, namespace, list, true);
+            parseInterfaces(reader, interfaceNames, address, version, namespace, list, true);
             element = nextElement(reader, namespace);
         }
         // Single socket binding group
@@ -254,7 +235,7 @@ final class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDeleg
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case NATIVE_INTERFACE: {
-                    switch (namespace.getMajorVersion()) {
+                    switch (version.major()) {
                         case 1:
                             parseManagementInterface1_7(reader, address, false, list);
                             break;
@@ -265,7 +246,7 @@ final class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDeleg
                     break;
                 }
                 case HTTP_INTERFACE: {
-                    switch (namespace.getMajorVersion()) {
+                    switch (version.major()) {
                         case 1:
                             parseManagementInterface1_7(reader, address, true, list);
                             break;
@@ -462,7 +443,7 @@ final class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDeleg
         final ModelNode addOp = Util.getEmptyOperation(ADD, operationAddress);
 
         // Handle attributes
-        switch (namespace.getMajorVersion()) {
+        switch (version.major()) {
             case 2:
                 if (http) {
                     parseHttpManagementInterfaceAttributes2_0(reader, addOp);

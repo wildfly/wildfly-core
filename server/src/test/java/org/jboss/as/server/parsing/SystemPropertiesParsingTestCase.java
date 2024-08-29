@@ -10,7 +10,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
@@ -18,7 +17,8 @@ import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.parsing.Namespace;
+import org.jboss.as.controller.parsing.ManagementXmlSchema;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.After;
@@ -34,7 +34,6 @@ import org.mockito.Mockito;
  */
 public class SystemPropertiesParsingTestCase {
 
-    private static final String namespace = Namespace.DOMAIN_8_0.getUriString();
     private ControllerLogger mockedLogger;
     private ControllerLogger realLogger;
 
@@ -82,12 +81,18 @@ public class SystemPropertiesParsingTestCase {
                     + "        <property name=\"org.jboss.as.server.parsing.test\" value=\"other-value\"/>\n"
                     + "    </system-properties>\n"
                     + "</server>";
+            final List<ModelNode> operationList = new ArrayList<>();
             final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
             final ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(ProcessType.STANDALONE_SERVER).build();
-            final StandaloneXml parser = new StandaloneXml(null, null, extensionRegistry);
-            final List<ModelNode> operationList = new ArrayList<>();
+            final StandaloneXmlSchemas standaloneXmlSchemas = new StandaloneXmlSchemas(Stability.DEFAULT, null, null, extensionRegistry);
+
             final XMLMapper mapper = XMLMapper.Factory.create();
-            mapper.registerRootElement(new QName(namespace, "server"), parser);
+            final ManagementXmlSchema parser = standaloneXmlSchemas.getCurrent();
+            mapper.registerRootElement(parser.getQualifiedName(), parser);
+            for (ManagementXmlSchema current : standaloneXmlSchemas.getAdditional()) {
+                mapper.registerRootElement(current.getQualifiedName(), current);
+            }
+
             mapper.parseDocument(operationList, reader);
             // assert the method is called only once for test
             Mockito.verify(mockedLogger, Mockito.times(1)).systemPropertyAlreadyExist(Mockito.anyString());

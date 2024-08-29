@@ -18,7 +18,7 @@ import javax.xml.namespace.QName;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.parsing.Namespace;
+import org.jboss.as.controller.parsing.ManagementXmlSchema;
 import org.jboss.as.controller.persistence.BackupXmlConfigurationPersister;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
@@ -29,8 +29,9 @@ import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.controller.persistence.XmlConfigurationPersister;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.as.host.controller.parsing.DomainXml;
-import org.jboss.as.host.controller.parsing.HostXml;
+import org.jboss.as.host.controller.parsing.DomainXmlSchemas;
+import org.jboss.as.host.controller.parsing.HostXmlSchemas;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
 import org.jboss.staxmapper.XMLElementReader;
@@ -56,13 +57,16 @@ public class ConfigurationPersisterFactory {
                 defaultHostname = environment.getRunningModeControl().getReloadHostName();
             }
         }
-        HostXml hostXml = new HostXml(defaultHostname, environment.getRunningModeControl().getRunningMode(),
-                environment.isUseCachedDc(), Module.getBootModuleLoader(), executorService, hostExtensionRegistry);
-        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(file, new QName(Namespace.CURRENT.getUriString(), "host"), hostXml, hostXml, false);
-        for (Namespace namespace : Namespace.domainValues()) {
-            if (!namespace.equals(Namespace.CURRENT)) {
-                persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "host"), hostXml);
-            }
+        Stability stability = hostExtensionRegistry.getStability();
+
+        HostXmlSchemas hostXmlSchemas = new HostXmlSchemas(stability, defaultHostname,
+            environment.getRunningModeControl().getRunningMode(), environment.isUseCachedDc(),
+            Module.getBootModuleLoader(), executorService, hostExtensionRegistry);
+        ManagementXmlSchema currentHostSchema = hostXmlSchemas.getCurrent();
+
+        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(file, currentHostSchema.getQualifiedName(), currentHostSchema, currentHostSchema, false);
+        for (ManagementXmlSchema additionalHostSchema : hostXmlSchemas.getAdditional()) {
+            persister.registerAdditionalRootElement(additionalHostSchema.getQualifiedName(), additionalHostSchema);
         }
         hostExtensionRegistry.setWriterRegistry(persister);
         return persister;
@@ -70,7 +74,9 @@ public class ConfigurationPersisterFactory {
 
     // domain.xml
     public static ExtensibleConfigurationPersister createDomainXmlConfigurationPersister(final ConfigurationFile file, ExecutorService executorService, ExtensionRegistry extensionRegistry, final HostControllerEnvironment environment) {
-        DomainXml domainXml = new DomainXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
+        Stability stability = extensionRegistry.getStability();
+        DomainXmlSchemas domainXmlSchemas = new DomainXmlSchemas(stability, Module.getBootModuleLoader(), executorService, extensionRegistry);
+        ManagementXmlSchema domainXml = domainXmlSchemas.getCurrent();
 
         boolean suppressLoad = false;
         ConfigurationFile.InteractionPolicy policy = file.getInteractionPolicy();
@@ -84,11 +90,9 @@ public class ConfigurationPersisterFactory {
             suppressLoad = true;
         }
 
-        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(file, new QName(Namespace.CURRENT.getUriString(), "domain"), domainXml, domainXml, suppressLoad);
-        for (Namespace namespace : Namespace.domainValues()) {
-            if (!namespace.equals(Namespace.CURRENT)) {
-                persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "domain"), domainXml);
-            }
+        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(file, domainXml.getQualifiedName(), domainXml, domainXml, suppressLoad);
+        for (ManagementXmlSchema additionalDomainSchema : domainXmlSchemas.getAdditional()) {
+            persister.registerAdditionalRootElement(additionalDomainSchema.getQualifiedName(), additionalDomainSchema);
         }
         extensionRegistry.setWriterRegistry(persister);
         return persister;
@@ -96,14 +100,15 @@ public class ConfigurationPersisterFactory {
 
     // --backup
     public static ExtensibleConfigurationPersister createRemoteBackupDomainXmlConfigurationPersister(final File configDir, ExecutorService executorService, ExtensionRegistry extensionRegistry) {
-        DomainXml domainXml = new DomainXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
+        Stability stability = extensionRegistry.getStability();
+        DomainXmlSchemas domainXmlSchemas = new DomainXmlSchemas(stability, Module.getBootModuleLoader(), executorService, extensionRegistry);
+        ManagementXmlSchema domainXml = domainXmlSchemas.getCurrent();
+
         File bootFile = new File(configDir, CACHED_DOMAIN_XML_BOOTFILE);
         File file = new File(configDir, CACHED_DOMAIN_XML);
-        BackupRemoteDomainXmlPersister persister = new BackupRemoteDomainXmlPersister(file, bootFile, new QName(Namespace.CURRENT.getUriString(), "domain"), domainXml, domainXml);
-        for (Namespace namespace : Namespace.domainValues()) {
-            if (!namespace.equals(Namespace.CURRENT)) {
-                persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "domain"), domainXml);
-            }
+        BackupRemoteDomainXmlPersister persister = new BackupRemoteDomainXmlPersister(file, bootFile, domainXml.getQualifiedName(), domainXml, domainXml);
+        for (ManagementXmlSchema additionalDomainSchema : domainXmlSchemas.getAdditional()) {
+            persister.registerAdditionalRootElement(additionalDomainSchema.getQualifiedName(), additionalDomainSchema);
         }
         extensionRegistry.setWriterRegistry(persister);
         return persister;
@@ -116,7 +121,10 @@ public class ConfigurationPersisterFactory {
 
     // slave=true
     public static ExtensibleConfigurationPersister createTransientDomainXmlConfigurationPersister(ExecutorService executorService, ExtensionRegistry extensionRegistry) {
-        DomainXml domainXml = new DomainXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
+        Stability stability = extensionRegistry.getStability();
+        DomainXmlSchemas domainXmlSchemas = new DomainXmlSchemas(stability, Module.getBootModuleLoader(), executorService, extensionRegistry);
+        ManagementXmlSchema domainXml = domainXmlSchemas.getCurrent();
+
         ExtensibleConfigurationPersister persister = new NullConfigurationPersister(domainXml);
         extensionRegistry.setWriterRegistry(persister);
         return persister;

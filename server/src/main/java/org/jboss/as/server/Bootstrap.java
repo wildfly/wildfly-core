@@ -16,13 +16,14 @@ import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorize
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.parsing.Namespace;
+import org.jboss.as.controller.parsing.ManagementXmlSchema;
 import org.jboss.as.controller.persistence.BackupXmlConfigurationPersister;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
-import org.jboss.as.server.controller.git.GitConfigurationPersister;
 import org.jboss.as.controller.persistence.XmlConfigurationPersister;
-import org.jboss.as.server.parsing.StandaloneXml;
+import org.jboss.as.server.controller.git.GitConfigurationPersister;
+import org.jboss.as.server.parsing.StandaloneXmlSchemas;
+import org.jboss.as.version.Stability;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.ServiceActivator;
@@ -195,20 +196,22 @@ public interface Bootstrap {
                         if (runningModeControl.isReloaded()) {
                             configurationFile.resetBootFile(runningModeControl.isUseCurrentConfig(), runningModeControl.getAndClearNewBootFileName());
                         }
-                        QName rootElement = new QName(Namespace.CURRENT.getUriString(), "server");
-                        StandaloneXml parser = new StandaloneXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
+
+                        Stability stability = serverEnvironment.getStability();
+                        StandaloneXmlSchemas standaloneXmlSchemas = new StandaloneXmlSchemas(stability, Module.getBootModuleLoader(), executorService, extensionRegistry);
+                        ManagementXmlSchema current = standaloneXmlSchemas.getCurrent();
+                        QName rootElement = current.getQualifiedName();
+
                         XmlConfigurationPersister persister;
                         if (configurationFile.useGit()) {
-                            persister = new GitConfigurationPersister(serverEnvironment.getGitRepository(), configurationFile, rootElement, parser, parser,
+                            persister = new GitConfigurationPersister(serverEnvironment.getGitRepository(), configurationFile, rootElement, current, current,
                                     runningModeControl.isReloaded());
                         } else {
-                            persister = new BackupXmlConfigurationPersister(configurationFile, rootElement, parser, parser,
+                            persister = new BackupXmlConfigurationPersister(configurationFile, rootElement, current, current,
                                     runningModeControl.isReloaded(), serverEnvironment.getLaunchType() == ServerEnvironment.LaunchType.EMBEDDED);
                         }
-                        for (Namespace namespace : Namespace.domainValues()) {
-                            if (!namespace.equals(Namespace.CURRENT)) {
-                                persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "server"), parser);
-                            }
+                        for (ManagementXmlSchema schema : standaloneXmlSchemas.getAdditional()) {
+                            persister.registerAdditionalRootElement(schema.getQualifiedName(), schema);
                         }
                         extensionRegistry.setWriterRegistry(persister);
                         return persister;

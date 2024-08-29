@@ -9,6 +9,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SCHEMA_LOCATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.parsing.ParseUtils.invalidAttributeValue;
+import static org.jboss.as.controller.parsing.XmlConstants.XML_SCHEMA_NAMESPACE;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -31,6 +32,7 @@ import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
@@ -114,7 +116,7 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>> {
             }
         }
         if (b.length() > 0) {
-            writer.writeAttribute(Namespace.XML_SCHEMA_INSTANCE.getUriString(), Attribute.SCHEMA_LOCATION.getLocalName(),
+            writer.writeAttribute(XML_SCHEMA_NAMESPACE, Attribute.SCHEMA_LOCATION.getLocalName(),
                     b.toString());
         }
     }
@@ -127,18 +129,17 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>> {
         }
 
         boolean wroteXsd = false;
-        final String xsdUri = Namespace.XML_SCHEMA_INSTANCE.getUriString();
         if (hasNamespaces) {
             for (final Property property : modelNode.get(NAMESPACES).asPropertyList()) {
                 final String uri = property.getValue().asString();
                 writer.writeNamespace(property.getName(), uri);
-                if (!wroteXsd && xsdUri.equals(uri)) {
+                if (!wroteXsd && XML_SCHEMA_NAMESPACE.equals(uri)) {
                     wroteXsd = true;
                 }
             }
         }
         if (needXsd && !wroteXsd) {
-            writer.writeNamespace("xsd", xsdUri);
+            writer.writeNamespace("xsd", XML_SCHEMA_NAMESPACE);
         }
     }
 
@@ -146,19 +147,45 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>> {
         pathsXml.writePaths(writer, node, namedPath);
     }
 
-    protected void parsePaths(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list,
+    @Deprecated
+    protected void parsePaths(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace namespace, final List<ModelNode> list,
+            final boolean requirePath) throws XMLStreamException {
+        parsePaths(reader, address, namespace.getUriString(), list, requirePath);
+    }
+
+    protected void parsePaths(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs, final List<ModelNode> list,
             final boolean requirePath) throws XMLStreamException {
         pathsXml.parsePaths(reader, address, expectedNs, list, requirePath);
     }
 
-    protected void parseSystemProperties(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs,
+    @Deprecated
+    protected void parseSystemProperties(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace namespace,
+            final List<ModelNode> updates, boolean standalone) throws XMLStreamException {
+        parseSystemProperties(reader, address, namespace.getUriString(), updates, standalone);
+    }
+    protected void parseSystemProperties(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs,
             final List<ModelNode> updates, boolean standalone) throws XMLStreamException {
         systemPropertiesXml.parseSystemProperties(reader, address, expectedNs, updates, standalone);
     }
 
+    @Deprecated
     protected void parseInterfaces(final XMLExtendedStreamReader reader, final Set<String> names, final ModelNode address,
-            final Namespace expectedNs, final List<ModelNode> list, final boolean checkSpecified) throws XMLStreamException {
-        interfacesXml.parseInterfaces(reader, names, address, expectedNs, list, checkSpecified);
+            final Namespace namespace, final List<ModelNode> list, final boolean checkSpecified) throws XMLStreamException {
+        String namespaceUri = namespace.getUriString();
+        String versionString = namespaceUri.substring(namespaceUri.lastIndexOf(':') + 1);
+        String[] versionSegments = versionString.split(".");
+        int[] versionInts = new int[versionSegments.length];
+        for (int i = 0; i < versionSegments.length; i++) {
+            versionInts[i] = Integer.parseInt(versionSegments[i]);
+        }
+        IntVersion version = new IntVersion(versionInts);
+
+        parseInterfaces(reader, names, address, version, namespace.getUriString(), list, checkSpecified);
+    }
+
+    protected void parseInterfaces(final XMLExtendedStreamReader reader, final Set<String> names, final ModelNode address,
+            final IntVersion version, final String expectedNs, final List<ModelNode> list, final boolean checkSpecified) throws XMLStreamException {
+        interfacesXml.parseInterfaces(reader, names, address, version, expectedNs, list, checkSpecified);
     }
 
     protected void parseSocketBindingGroupRef(final XMLExtendedStreamReader reader, final ModelNode addOperation,
@@ -178,20 +205,22 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>> {
         return socketBindingsXml.parseOutboundSocketBinding(reader, interfaces, address, updates);
     }
 
-
-
-
-    public void parseDeployments(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs,
+    public void parseDeployments(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs,
             final List<ModelNode> list, final Set<Attribute> allowedAttributes, final Set<Element> allowedElements,
             boolean validateUniqueRuntimeNames) throws XMLStreamException {
         deploymentsXml.parseDeployments(reader, address, expectedNs, list, allowedAttributes, allowedElements, validateUniqueRuntimeNames);
     }
 
-    protected void parseDeploymentOverlays(final XMLExtendedStreamReader reader, final Namespace namespace, final ModelNode baseAddress, final List<ModelNode> list, final boolean allowContent, final boolean allowDeployment) throws XMLStreamException {
+    protected void parseDeploymentOverlays(final XMLExtendedStreamReader reader, final String namespace, final ModelNode baseAddress, final List<ModelNode> list, final boolean allowContent, final boolean allowDeployment) throws XMLStreamException {
         deploymentOverlaysXml.parseDeploymentOverlays(reader, namespace, baseAddress, list, allowContent, allowDeployment);
     }
 
-    protected void parseVault(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    @Deprecated
+    protected void parseVault(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace namespace, final List<ModelNode> list) throws XMLStreamException {
+        parseVault(reader, address, namespace.getUriString(), list);
+    }
+
+    protected void parseVault(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs, final List<ModelNode> list) throws XMLStreamException {
         vaultXml.parseVault(reader, address, expectedNs, list);
     }
 

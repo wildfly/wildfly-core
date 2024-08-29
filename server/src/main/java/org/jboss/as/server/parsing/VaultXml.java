@@ -33,7 +33,12 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
  */
 class VaultXml {
 
-    void parseVault(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    @Deprecated
+    void parseVault(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace namespace, final List<ModelNode> list) throws XMLStreamException {
+        parseVault(reader, address, namespace.getUriString(), list);
+    }
+
+    void parseVault(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs, final List<ModelNode> list) throws XMLStreamException {
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, expectedNs);
             final Element element = Element.forName(reader.getLocalName());

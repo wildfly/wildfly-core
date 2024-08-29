@@ -32,7 +32,7 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.domain.HostControllerClient;
 import org.jboss.as.server.mgmt.domain.HostControllerConnectionService;
 import org.jboss.as.server.mgmt.domain.ServerBootOperationsService;
-import org.jboss.as.server.parsing.StandaloneXml;
+import org.jboss.as.server.parsing.StandaloneXmlSchemas;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
@@ -141,7 +141,8 @@ public final class ServerStartTask implements ServerTask, Serializable, ObjectIn
         final Bootstrap.ConfigurationPersisterFactory configurationPersisterFactory = new Bootstrap.ConfigurationPersisterFactory() {
             @Override
             public ExtensibleConfigurationPersister createConfigurationPersister(ServerEnvironment serverEnvironment, ExecutorService executorService) {
-                ExtensibleConfigurationPersister persister = new AbstractConfigurationPersister(new StandaloneXml(configuration.getModuleLoader(), executorService, extensionRegistry)) {
+                StandaloneXmlSchemas standaloneXmlSchemas = new StandaloneXmlSchemas(serverEnvironment.getStability(), configuration.getModuleLoader(), executorService, extensionRegistry);
+                ExtensibleConfigurationPersister persister = new AbstractConfigurationPersister(standaloneXmlSchemas.getCurrent()) {
 
                     private final PersistenceResource pr = new PersistenceResource() {
 

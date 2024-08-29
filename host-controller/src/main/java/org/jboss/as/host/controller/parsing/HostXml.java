@@ -5,8 +5,6 @@
 
 package org.jboss.as.host.controller.parsing;
 
-import static org.jboss.as.controller.parsing.Namespace.CURRENT;
-
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -15,12 +13,11 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.parsing.ExtensionXml;
-import org.jboss.as.controller.parsing.Namespace;
+import org.jboss.as.controller.parsing.ManagementXmlReaderWriter;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.ModuleLoader;
-import org.jboss.staxmapper.XMLElementReader;
-import org.jboss.staxmapper.XMLElementWriter;
+import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -31,7 +28,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author <a href="mailto:jperkins@jboss.com">James R. Perkins</a>
  */
-public final class HostXml implements XMLElementReader<List<ModelNode>>, XMLElementWriter<ModelMarshallingContext> {
+public final class HostXml implements ManagementXmlReaderWriter {
 
     private final String defaultHostControllerName;
     private final RunningMode runningMode;
@@ -49,29 +46,28 @@ public final class HostXml implements XMLElementReader<List<ModelNode>>, XMLElem
     }
 
     @Override
-    public void readElement(final XMLExtendedStreamReader reader, final List<ModelNode> operationList)
+    public void readElement(final XMLExtendedStreamReader reader, final IntVersion version, final String namespaceUri, final List<ModelNode> operationList)
             throws XMLStreamException {
-        Namespace readerNS = Namespace.forUri(reader.getNamespaceURI());
-        switch (readerNS.getMajorVersion()) {
+        switch (version.major()) {
             case 1:
             case 2:
             case 3:
-                new HostXml_Legacy(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
+                new HostXml_Legacy(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, version, namespaceUri).readElement(reader, operationList);
                 break;
             case 4:
-                new HostXml_4(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
+                new HostXml_4(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, version, namespaceUri).readElement(reader, operationList);
                 break;
             case 5:
-                new HostXml_5(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
+                new HostXml_5(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, version, namespaceUri).readElement(reader, operationList);
                 break;
             case 6:
             case 7:
             case 8:
             case 9:
-                new HostXml_6(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
+                new HostXml_6(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, version, namespaceUri).readElement(reader, operationList);
                 break;
             case 10:
-                new HostXml_10(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
+                new HostXml_10(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, version, namespaceUri).readElement(reader, operationList);
                 break;
             case 11:
             case 12:
@@ -80,21 +76,21 @@ public final class HostXml implements XMLElementReader<List<ModelNode>>, XMLElem
             case 15:
             case 16:
             case 17:
-                new HostXml_11(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
+                new HostXml_11(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, version, namespaceUri).readElement(reader, operationList);
                 break;
             case 18:
             case 19:
-                new HostXml_18(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
+                new HostXml_18(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, version, namespaceUri).readElement(reader, operationList);
                 break;
             default:
-                new HostXml_20(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
+                new HostXml_20(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, version, namespaceUri).readElement(reader, operationList);
         }
     }
 
     @Override
-    public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
+    public void writeContent(final XMLExtendedStreamWriter writer, final IntVersion version, final String namespaceUri, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new HostXml_20(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, CURRENT).writeContent(writer, context);
+        new HostXml_20(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, version, namespaceUri).writeContent(writer, context);
     }
 
 }

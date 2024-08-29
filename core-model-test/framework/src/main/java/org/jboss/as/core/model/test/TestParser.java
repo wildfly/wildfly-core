@@ -4,8 +4,12 @@
  */
 package org.jboss.as.core.model.test;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.xml.namespace.QName;
@@ -14,13 +18,15 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.parsing.Namespace;
+import org.jboss.as.controller.parsing.ManagementSchemas;
+import org.jboss.as.controller.parsing.ManagementXmlSchema;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
-import org.jboss.as.host.controller.parsing.DomainXml;
-import org.jboss.as.host.controller.parsing.HostXml;
+import org.jboss.as.host.controller.parsing.DomainXmlSchemas;
+import org.jboss.as.host.controller.parsing.HostXmlSchemas;
 import org.jboss.as.model.test.ModelTestParser;
-import org.jboss.as.server.parsing.StandaloneXml;
+import org.jboss.as.server.parsing.StandaloneXmlSchemas;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
@@ -44,37 +50,113 @@ public class TestParser implements ModelTestParser {
         this.writer = writer;
     }
 
-    public static TestParser create(ExtensionRegistry registry, XMLMapper xmlMapper, TestModelType type) {
+    private static int getModelMajorVersion() {
+        try {
+            Class<?> versionClass = Class.forName("org.jboss.as.version.Version");
+            Field majorVersionField = versionClass.getDeclaredField("MANAGEMENT_MAJOR_VERSION");
+
+            return  majorVersionField.getInt(null);
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to obtain the major version of the model.", e);
+        }
+    }
+
+    private static TestParser createLegacy(ExtensionRegistry registry, XMLMapper xmlMapper, TestModelType type) throws Exception {
+
         TestParser testParser;
         String root;
+
+        // Common Classes
+        Class<?> moduleLoaderClass = Class.forName("org.jboss.modules.ModuleLoader");
+        Class<?> executorServiceClass = ExecutorService.class;
+        Class<?> extensionRegistryClass = Class.forName("org.jboss.as.controller.extension.ExtensionRegistry");
+
+        Object xmlParser = null;
         if (type == TestModelType.STANDALONE) {
-            StandaloneXml standaloneXml = new StandaloneXml(null, Executors.newCachedThreadPool(), registry);
-            testParser = new TestParser(type, standaloneXml, standaloneXml);
+            Class<?> standaloneXmlClass = Class.forName("org.jboss.as.server.parsing.StandaloneXml");
+
+            Constructor<?> standaloneXmlConstructor = standaloneXmlClass.getConstructor(moduleLoaderClass,
+                executorServiceClass, extensionRegistryClass);
+
+            xmlParser = standaloneXmlConstructor.newInstance(null, Executors.newCachedThreadPool(), registry);
+
             root = "server";
         } else if (type == TestModelType.DOMAIN) {
-            DomainXml domainXml = new DomainXml(null, Executors.newCachedThreadPool(), registry);
-            testParser = new TestParser(type, domainXml, domainXml);
+            Class<?> domainXmlClass = Class.forName("org.jboss.as.host.controller.parsing.DomainXml");
+
+            Constructor<?> domainXmlConstructor = domainXmlClass.getConstructor(moduleLoaderClass,
+                executorServiceClass, extensionRegistryClass);
+
+            xmlParser = domainXmlConstructor.newInstance(null, Executors.newCachedThreadPool(), registry);
+
             root = "domain";
         } else if (type == TestModelType.HOST) {
-            HostXml hostXml = new HostXml("primary", RunningMode.NORMAL, false, null, Executors.newCachedThreadPool(), registry);
-            testParser = new TestParser(type, hostXml, hostXml);
+            Class<?> hostXmlClass = Class.forName("org.jboss.as.host.controller.parsing.HostXml");
+            Class<?> runningModeClass = Class.forName("org.jboss.as.controller.RunningMode");
+
+            Constructor<?> hostXmlConstructor = hostXmlClass.getConstructor(String.class, runningModeClass, boolean.class,
+                moduleLoaderClass, executorServiceClass, extensionRegistryClass);
+
+            xmlParser = hostXmlConstructor.newInstance("primary", RunningMode.NORMAL, false, null, Executors.newCachedThreadPool(), registry);
+
             root = "host";
         } else {
             throw new IllegalArgumentException("Unknown type " + type);
         }
 
+        testParser = new TestParser(type, (XMLElementReader<List<ModelNode>>) xmlParser,
+                (XMLElementWriter<ModelMarshallingContext>) xmlParser);
 
-        try {
-            for (Namespace ns : Namespace.ALL_NAMESPACES) {
-                xmlMapper.registerRootElement(new QName(ns.getUriString(), root), testParser);
-            }
-        } catch (NoSuchFieldError e) {
-            //7.1.2 does not have the ALL_NAMESPACES field
-            xmlMapper.registerRootElement(new QName(Namespace.DOMAIN_1_0.getUriString(), root), testParser);
-            xmlMapper.registerRootElement(new QName(Namespace.DOMAIN_1_1.getUriString(), root), testParser);
-            xmlMapper.registerRootElement(new QName(Namespace.DOMAIN_1_2.getUriString(), root), testParser);
+
+        Class<?> namespaceClass = Class.forName("org.jboss.as.controller.parsing.Namespace");
+        Field allNamespacesField = namespaceClass.getDeclaredField("ALL_NAMESPACES");
+        Object[] allNamespaces = (Object[]) allNamespacesField.get(null);
+        Method getUriStringMethod = namespaceClass.getMethod("getUriString");
+
+        for (Object ns : allNamespaces) {
+
+            xmlMapper.registerRootElement(new QName(getUriStringMethod.invoke(ns).toString(), root), testParser);
         }
+
         return testParser;
+    }
+
+    private static TestParser createFrom27(ExtensionRegistry registry, XMLMapper xmlMapper, TestModelType type) {
+        Stability stability = Stability.DEFAULT;
+
+        ManagementSchemas schemas;
+        if (type == TestModelType.STANDALONE) {
+            schemas = new StandaloneXmlSchemas(stability, null, Executors.newCachedThreadPool(), registry);
+        } else if (type == TestModelType.DOMAIN) {
+            schemas = new DomainXmlSchemas(stability, null, Executors.newCachedThreadPool(), registry);
+        } else if (type == TestModelType.HOST) {
+            schemas = new HostXmlSchemas(stability, "primary", RunningMode.NORMAL, false, null, Executors.newCachedThreadPool(), registry);
+        } else {
+            throw new IllegalArgumentException("Unknown type " + type);
+        }
+
+        ManagementXmlSchema schema = schemas.getCurrent();
+        TestParser testParser = new TestParser(type, schema, schema);
+
+        xmlMapper.registerRootElement(schema.getQualifiedName(), testParser);
+
+        for (ManagementXmlSchema additional : schemas.getAdditional()) {
+            xmlMapper.registerRootElement(additional.getQualifiedName(), testParser);
+        }
+
+        return testParser;
+    }
+
+
+    public static TestParser create(ExtensionRegistry registry, XMLMapper xmlMapper, TestModelType type) {
+        if (getModelMajorVersion() < 27) {
+            try {
+                return createLegacy(registry, xmlMapper, type);
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to create the parser", e);
+            }
+        }
+        return createFrom27(registry, xmlMapper, type);
     }
 
     void addModelWriteSanitizer(ModelWriteSanitizer writeSanitizer) {

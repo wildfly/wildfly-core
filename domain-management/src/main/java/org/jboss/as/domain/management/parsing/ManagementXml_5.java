@@ -24,7 +24,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.domain.management.LegacyConfigurationChangeResourceDefinition;
 import org.jboss.as.domain.management.access.AccessIdentityResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -41,12 +40,12 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
  */
 final class ManagementXml_5 implements ManagementXml {
 
-    private final Namespace namespace;
+    private final String namespace;
     private final ManagementXmlDelegate delegate;
     private final boolean domainConfiguration;
 
 
-    ManagementXml_5(final Namespace namespace, final ManagementXmlDelegate delegate, final boolean domainConfiguration) {
+    ManagementXml_5(final String namespace, final ManagementXmlDelegate delegate, final boolean domainConfiguration) {
         this.namespace = namespace;
         this.delegate = delegate;
         this.domainConfiguration = domainConfiguration;

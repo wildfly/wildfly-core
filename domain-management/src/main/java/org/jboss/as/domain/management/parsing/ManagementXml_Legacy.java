@@ -19,8 +19,8 @@ import java.util.List;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.dmr.ModelNode;
+import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
 /**
@@ -36,12 +36,13 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
  */
 final class ManagementXml_Legacy implements ManagementXml {
 
-    private final Namespace namespace;
+    private final IntVersion version;
+    private final String namespace;
     private final ManagementXmlDelegate delegate;
     private final boolean domainConfiguration;
 
-
-    ManagementXml_Legacy(final Namespace namespace, final ManagementXmlDelegate delegate, final boolean domainConfiguration) {
+    ManagementXml_Legacy(final IntVersion version, final String namespace, final ManagementXmlDelegate delegate, final boolean domainConfiguration) {
+        this.version = version;
         this.namespace = namespace;
         this.delegate = delegate;
         this.domainConfiguration = domainConfiguration;
@@ -50,16 +51,11 @@ final class ManagementXml_Legacy implements ManagementXml {
     @Override
     public void parseManagement(final XMLExtendedStreamReader reader, final ModelNode address,
             final List<ModelNode> list, boolean requireNativeInterface) throws XMLStreamException {
-        switch (namespace) {
-            case DOMAIN_1_0:
-            case DOMAIN_1_1:
-            case DOMAIN_1_2:
-            case DOMAIN_1_3:
-            case DOMAIN_1_4:
-                parseManagement_1_0(reader, address, list, requireNativeInterface);
-                break;
-            default:
-                parseManagement_1_5(reader, address, list, requireNativeInterface);
+        IntVersion cutOff = new IntVersion(1,5);
+        if (version.compareTo(cutOff) < 0) {
+            parseManagement_1_0(reader, address, list, requireNativeInterface);
+        } else {
+            parseManagement_1_5(reader, address, list, requireNativeInterface);
         }
     }
 

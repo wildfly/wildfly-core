@@ -252,7 +252,7 @@ public class CoreModelTestDelegate {
             throw new RuntimeException(e);
         }
 
-        //Work around known problem where the recursice :read-resource on legacy controllers in ModelVersion < 1.4.0
+        //Work around known problem where the recursive :read-resource on legacy controllers in ModelVersion < 1.4.0
         //incorrectly does not propagate include-defaults=true when recursing
         //https://issues.jboss.org/browse/AS7-6077
         removeDefaultAttributesWronglyShowingInRecursiveReadResource(modelVersion, legacyServices, legacyModel);

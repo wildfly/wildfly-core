@@ -5,8 +5,6 @@
 
 package org.jboss.as.server.parsing;
 
-import static org.jboss.as.controller.parsing.Namespace.CURRENT;
-
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -16,13 +14,12 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.parsing.DeferredExtensionContext;
 import org.jboss.as.controller.parsing.ExtensionXml;
-import org.jboss.as.controller.parsing.Namespace;
+import org.jboss.as.controller.parsing.ManagementXmlReaderWriter;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.ModuleLoader;
-import org.jboss.staxmapper.XMLElementReader;
-import org.jboss.staxmapper.XMLElementWriter;
+import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -32,7 +29,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public final class StandaloneXml implements XMLElementReader<List<ModelNode>>, XMLElementWriter<ModelMarshallingContext> {
+public final class StandaloneXml implements ManagementXmlReaderWriter {
 
     public enum ParsingOption {
         /**
@@ -77,28 +74,27 @@ public final class StandaloneXml implements XMLElementReader<List<ModelNode>>, X
     }
 
     @Override
-    public void readElement(final XMLExtendedStreamReader reader, final List<ModelNode> operationList)
+    public void readElement(final XMLExtendedStreamReader reader, final IntVersion version, final String namespaceUri, final List<ModelNode> operationList)
             throws XMLStreamException {
-        Namespace readerNS = Namespace.forUri(reader.getNamespaceURI());
-        switch (readerNS.getMajorVersion()) {
+        switch (version.major()) {
             case 1:
             case 2:
             case 3:
-                new StandaloneXml_Legacy(extensionHandler, readerNS, deferredExtensionContext, parsingOptions)
+                new StandaloneXml_Legacy(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions)
                         .readElement(reader, operationList);
                 break;
             case 4:
-                new StandaloneXml_4(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
+                new StandaloneXml_4(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
             case 5:
-                new StandaloneXml_5(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
+                new StandaloneXml_5(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
             case 6:
             case 7:
             case 8:
             case 9:
             case 10:
-                new StandaloneXml_6(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
+                new StandaloneXml_6(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
             case 11:
             case 12:
@@ -107,19 +103,17 @@ public final class StandaloneXml implements XMLElementReader<List<ModelNode>>, X
             case 15:
             case 16:
             case 17:
-                new StandaloneXml_11(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
+                new StandaloneXml_11(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
-            case 18:
-            case 19:
             default:
-                new StandaloneXml_18(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
+                new StandaloneXml_18(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
         }
     }
 
     @Override
-    public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
+    public void writeContent(final XMLExtendedStreamWriter writer, final IntVersion version, final String namespaceUri, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new StandaloneXml_18(extensionHandler, CURRENT, deferredExtensionContext, parsingOptions).writeContent(writer, context);
+        new StandaloneXml_18(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).writeContent(writer, context);
     }
 
     class DefaultExtensionHandler implements ExtensionHandler {
@@ -133,7 +127,7 @@ public final class StandaloneXml implements XMLElementReader<List<ModelNode>>, X
         }
 
         @Override
-        public void parseExtensions(XMLExtendedStreamReader reader, ModelNode address, Namespace namespace, List<ModelNode> list) throws XMLStreamException {
+        public void parseExtensions(XMLExtendedStreamReader reader, ModelNode address, String namespace, List<ModelNode> list) throws XMLStreamException {
             extensionXml.parseExtensions(reader, address, namespace, list);
         }
 

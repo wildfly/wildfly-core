@@ -32,7 +32,6 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
@@ -50,7 +49,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 class DeploymentOverlaysXml {
 
-    void parseDeploymentOverlays(final XMLExtendedStreamReader reader, final Namespace namespace, final ModelNode baseAddress, final List<ModelNode> list, final boolean allowContent, final boolean allowDeployment) throws XMLStreamException {
+    void parseDeploymentOverlays(final XMLExtendedStreamReader reader, final String namespace, final ModelNode baseAddress, final List<ModelNode> list, final boolean allowContent, final boolean allowDeployment) throws XMLStreamException {
         requireNoAttributes(reader);
 
         while (reader.nextTag() != END_ELEMENT) {

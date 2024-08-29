@@ -51,7 +51,6 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.access.ApplicationClassificationConfigResourceDefinition;
@@ -75,13 +74,13 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 public class AccessControlXml {
 
-    private final Namespace namespace;
+    private final String namespace;
 
-    private AccessControlXml(final Namespace namespace) {
+    private AccessControlXml(final String namespace) {
         this.namespace = namespace;
     }
 
-    public static AccessControlXml newInstance(Namespace namespace) {
+    public static AccessControlXml newInstance(String namespace) {
         return new AccessControlXml(namespace);
     }
 

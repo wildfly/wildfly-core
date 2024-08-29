@@ -3794,4 +3794,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 513, value = "The XML namespace of %s is no longer supported.")
     XMLStreamException unsupportedNamespace(QName name, @Param Location location);
 
+    @Message(id = 514, value = "Management namespace %s is not enabled by the current stability level")
+    XMLStreamException unstableManagementNamespace(String namespaceURI);
+
 }

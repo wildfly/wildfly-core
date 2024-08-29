@@ -28,10 +28,10 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.host.controller.model.jvm.JvmAttributes;
 import org.jboss.dmr.ModelNode;
+import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -43,9 +43,9 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 public class JvmXml {
 
-    public static void parseJvm(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final Namespace expectedNs, final List<ModelNode> updates,
-            final Set<String> jvmNames, final boolean server) throws XMLStreamException {
-        switch (expectedNs.getMajorVersion()) {
+    public static void parseJvm(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final IntVersion version,
+            final String expectedNs, final List<ModelNode> updates, final Set<String> jvmNames, final boolean server) throws XMLStreamException {
+        switch (version.major()) {
             case 1:
             case 2:
                 parseJvm_1_0(reader, parentAddress, expectedNs, updates, jvmNames, server);
@@ -130,7 +130,7 @@ public class JvmXml {
 
         return name;
     }
-    private static void parseJvm_1_0(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final Namespace expectedNs, final List<ModelNode> updates,
+    private static void parseJvm_1_0(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final String expectedNs, final List<ModelNode> updates,
             final Set<String> jvmNames, final boolean server) throws XMLStreamException {
 
         ModelNode addOp = Util.createAddOperation();
@@ -195,7 +195,7 @@ public class JvmXml {
         }
     }
 
-    private static void parseJvm_3_0(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final Namespace expectedNs, final List<ModelNode> updates,
+    private static void parseJvm_3_0(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final String expectedNs, final List<ModelNode> updates,
             final Set<String> jvmNames, final boolean server) throws XMLStreamException {
         ModelNode addOp = Util.createAddOperation();
 
@@ -267,7 +267,7 @@ public class JvmXml {
         }
     }
 
-    public static ModelNode parseEnvironmentVariables(final XMLExtendedStreamReader reader, final Namespace expectedNs, ModelNode addOp) throws XMLStreamException {
+    public static ModelNode parseEnvironmentVariables(final XMLExtendedStreamReader reader, final String expectedNs, ModelNode addOp) throws XMLStreamException {
         final ModelNode properties = new ModelNode();
         while (reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, expectedNs);
@@ -515,7 +515,7 @@ public class JvmXml {
         requireNoContent(reader);
     }
 
-    private static void parseJvmOptions(final XMLExtendedStreamReader reader, final Namespace expectedNs, final ModelNode addOp)
+    private static void parseJvmOptions(final XMLExtendedStreamReader reader, final String expectedNs, final ModelNode addOp)
             throws XMLStreamException {
 
         ModelNode options = new ModelNode();
