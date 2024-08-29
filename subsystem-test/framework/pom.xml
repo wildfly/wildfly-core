@@ -12,7 +12,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-subsystem-test-parent</artifactId>
-        <version>26.0.0.Beta3</version>
+        <version>26.0.0.Beta4-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-subsystem-test-framework</artifactId>
