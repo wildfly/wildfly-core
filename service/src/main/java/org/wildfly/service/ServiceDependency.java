@@ -6,6 +6,7 @@ package org.wildfly.service;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -17,6 +18,23 @@ import org.jboss.msc.service.ServiceName;
  * @author Paul Ferraro
  */
 public interface ServiceDependency<V> extends Dependency<ServiceBuilder<?>, V> {
+
+    @Override
+    default ServiceDependency<V> andThen(Consumer<? super ServiceBuilder<?>> after) {
+        Objects.requireNonNull(after);
+        return new ServiceDependency<>() {
+            @Override
+            public void accept(ServiceBuilder<?> builder) {
+                ServiceDependency.this.accept(builder);
+                after.accept(builder);
+            }
+
+            @Override
+            public V get() {
+                return ServiceDependency.this.get();
+            }
+        };
+    }
 
     @Override
     default <R> ServiceDependency<R> map(Function<V, R> mapper) {

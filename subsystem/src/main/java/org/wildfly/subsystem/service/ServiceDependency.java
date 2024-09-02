@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -26,6 +27,23 @@ import org.wildfly.service.descriptor.UnaryServiceDescriptor;
  * @author Paul Ferraro
  */
 public interface ServiceDependency<V> extends Dependency<RequirementServiceBuilder<?>, V> {
+
+    @Override
+    default ServiceDependency<V> andThen(Consumer<? super RequirementServiceBuilder<?>> after) {
+        Objects.requireNonNull(after);
+        return new ServiceDependency<>() {
+            @Override
+            public void accept(RequirementServiceBuilder<?> builder) {
+                ServiceDependency.this.accept(builder);
+                after.accept(builder);
+            }
+
+            @Override
+            public V get() {
+                return ServiceDependency.this.get();
+            }
+        };
+    }
 
     @Override
     default <R> ServiceDependency<R> map(Function<V, R> mapper) {

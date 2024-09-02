@@ -20,6 +20,23 @@ import org.wildfly.common.function.Functions;
  */
 public interface Dependency<B extends ServiceBuilder<?>, V> extends Consumer<B>, Supplier<V> {
 
+    @Override
+    default Dependency<B, V> andThen(Consumer<? super B> after) {
+        Objects.requireNonNull(after);
+        return new Dependency<>() {
+            @Override
+            public void accept(B builder) {
+                Dependency.this.accept(builder);
+                after.accept(builder);
+            }
+
+            @Override
+            public V get() {
+                return Dependency.this.get();
+            }
+        };
+    }
+
     /**
      * Returns a dependency whose value is the result of applying the specified mapping function.
      * @param <R> the mapped value type
