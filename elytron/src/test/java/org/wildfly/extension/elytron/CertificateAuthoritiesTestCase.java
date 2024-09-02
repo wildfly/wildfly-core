@@ -41,7 +41,6 @@ import org.junit.Test;
 import org.mockserver.integration.ClientAndServer;
 import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.x500.cert.acme.AcmeAccount;
-
 import org.wildfly.security.x500.cert.acme.CertificateAuthority;
 
 
@@ -346,7 +345,6 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
         addCertificateAuthorityWithoutStagingUrl();
         addCertificateAuthorityAccountWithCustomCA("account8v2");
         server = setupTestGetMetadataAllValuesSet();
-        AcmeAccount acmeAccount = getAcmeAccount();
         try {
             ModelNode operation = new ModelNode();
             operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
@@ -371,7 +369,6 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
         addCertificateAuthorityWithoutStagingUrl();
         addCertificateAuthorityAccountWithCustomCA("account8v2");
         server = setupTestGetMetadataSomeValuesSet();
-        AcmeAccount acmeAccount = getAcmeAccount();
         try {
             ModelNode operation = new ModelNode();
             operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
@@ -394,7 +391,6 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
         addCertificateAuthorityWithoutStagingUrl();
         addCertificateAuthorityAccountWithCustomCA("account8v2");
         server = setupTestGetMetadataNoValuesSet();
-        AcmeAccount acmeAccount = getAcmeAccount();
         try {
             ModelNode operation = new ModelNode();
             operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
