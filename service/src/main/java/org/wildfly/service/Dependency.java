@@ -4,6 +4,8 @@
  */
 package org.wildfly.service;
 
+import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -18,6 +20,12 @@ import org.wildfly.common.function.Functions;
  */
 public interface Dependency<B extends ServiceBuilder<?>, V> extends Consumer<B>, Supplier<V> {
 
+    /**
+     * Returns a dependency whose value is the result of applying the specified mapping function.
+     * @param <R> the mapped value type
+     * @param mapper a mapping function
+     * @return a dependency whose value is the result of applying the specified mapping function.
+     */
     default <R> Dependency<B, R> map(Function<V, R> mapper) {
         return new Dependency<>() {
             @Override
@@ -28,6 +36,32 @@ public interface Dependency<B extends ServiceBuilder<?>, V> extends Consumer<B>,
             @Override
             public R get() {
                 return mapper.apply(Dependency.this.get());
+            }
+        };
+    }
+
+    /**
+     * Returns a dependency that combines this dependency with the specified dependency, whose value is determined by the specified mapping function.
+     * @param <T> the other dependency type
+     * @param <R> the mapped value type
+     * @param dependency another dependency
+     * @param mapper a mapping function
+     * @return a dependency that combines this dependency with the specified dependency, whose value is determined by the specified mapping function.
+     * @throws NullPointerException if {@code dependency} or {@code mapper} were null.
+     */
+    default <T, R> Dependency<B, R> combine(Dependency<B, T> dependency, BiFunction<V, T, R> mapper) {
+        Objects.requireNonNull(dependency);
+        Objects.requireNonNull(mapper);
+        return new Dependency<>() {
+            @Override
+            public void accept(B builder) {
+                Dependency.this.accept(builder);
+                dependency.accept(builder);
+            }
+
+            @Override
+            public R get() {
+                return mapper.apply(Dependency.this.get(), dependency.get());
             }
         };
     }

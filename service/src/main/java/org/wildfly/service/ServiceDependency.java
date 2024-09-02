@@ -5,6 +5,7 @@
 package org.wildfly.service;
 
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -28,6 +29,24 @@ public interface ServiceDependency<V> extends Dependency<ServiceBuilder<?>, V> {
             @Override
             public R get() {
                 return mapper.apply(ServiceDependency.this.get());
+            }
+        };
+    }
+
+    @Override
+    default <T, R> ServiceDependency<R> combine(Dependency<ServiceBuilder<?>, T> dependency, BiFunction<V, T, R> mapper) {
+        Objects.requireNonNull(dependency);
+        Objects.requireNonNull(mapper);
+        return new ServiceDependency<>() {
+            @Override
+            public void accept(ServiceBuilder<?> builder) {
+                ServiceDependency.this.accept(builder);
+                dependency.accept(builder);
+            }
+
+            @Override
+            public R get() {
+                return mapper.apply(ServiceDependency.this.get(), dependency.get());
             }
         };
     }
