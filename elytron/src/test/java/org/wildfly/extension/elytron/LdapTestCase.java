@@ -4,36 +4,9 @@
  */
 package org.wildfly.extension.elytron;
 
-import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.subsystem.test.AbstractSubsystemTest;
-import org.jboss.as.subsystem.test.KernelServices;
-import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.wildfly.common.function.ExceptionSupplier;
-import org.wildfly.common.iteration.ByteIterator;
-import org.wildfly.common.iteration.CodePointIterator;
-import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
-import org.wildfly.security.auth.principal.NamePrincipal;
-import org.wildfly.security.auth.server.ModifiableRealmIdentity;
-import org.wildfly.security.auth.server.ModifiableSecurityRealm;
-import org.wildfly.security.auth.server.RealmIdentity;
-import org.wildfly.security.evidence.PasswordGuessEvidence;
-import org.wildfly.security.evidence.X509PeerCertificateChainEvidence;
-import org.wildfly.security.authz.Attributes;
-import org.wildfly.security.x500.cert.BasicConstraintsExtension;
-import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
-import org.wildfly.security.x500.cert.X509CertificateBuilder;
-
-import javax.naming.NamingException;
-import javax.naming.directory.DirContext;
-import javax.net.ssl.KeyManager;
-import javax.security.auth.x500.X500Principal;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.InputStream;
@@ -61,8 +34,38 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import javax.naming.NamingException;
+import javax.naming.directory.DirContext;
+import javax.net.ssl.KeyManager;
+import javax.security.auth.x500.X500Principal;
+
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.subsystem.test.AbstractSubsystemTest;
+import org.jboss.as.subsystem.test.KernelServices;
+import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.common.iteration.ByteIterator;
+import org.wildfly.common.iteration.CodePointIterator;
+import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
+import org.wildfly.security.auth.principal.NamePrincipal;
+import org.wildfly.security.auth.server.ModifiableRealmIdentity;
+import org.wildfly.security.auth.server.ModifiableSecurityRealm;
+import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.authz.Attributes;
+import org.wildfly.security.evidence.PasswordGuessEvidence;
+import org.wildfly.security.evidence.X509PeerCertificateChainEvidence;
+import org.wildfly.security.x500.cert.BasicConstraintsExtension;
+import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
+import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 /**
  * Tests of LDAP related components (excluded from their natural TestCases to prevent repeated LDAP starting)
@@ -164,6 +167,20 @@ public class LdapTestCase extends AbstractSubsystemTest {
             }
             Assert.fail("Failed to boot, no reason provided");
         }
+    }
+
+    @Test
+    public void testWriteAttributeRDNIdentifier() {
+        PathAddress ldapAddress = PathAddress.pathAddress("subsystem", "elytron").append(ElytronDescriptionConstants.LDAP_REALM, "LdapRealm");
+
+        ModelNode identityMapping = new ModelNode();
+        identityMapping.get(ElytronDescriptionConstants.RDN_IDENTIFIER).set("cn");
+
+        ModelNode operation = Util.getWriteAttributeOperation(ldapAddress, ElytronDescriptionConstants.IDENTITY_MAPPING, identityMapping);
+        assertSuccess(services.executeOperation(operation));
+
+        ModelNode resource = services.executeOperation(Util.getReadResourceOperation(ldapAddress)).get(ClientConstants.RESULT);
+        assertEquals("cn", resource.get(ElytronDescriptionConstants.IDENTITY_MAPPING).get(ElytronDescriptionConstants.RDN_IDENTIFIER).asString());
     }
 
     @Test
