@@ -4,7 +4,9 @@
  */
 package org.wildfly.service;
 
+import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
@@ -42,6 +44,18 @@ public interface ServiceDependency<V> extends Dependency<ServiceBuilder<?>, V> {
     }
 
     /**
+     * Returns a pseudo-dependency whose {@link #get()} returns the value from the specified supplier.
+     * @param <V> the value type
+     * @param supplier a service value supplier
+     * @return a service dependency
+     * @throws NullPointerException if {@code supplier} was null
+     */
+    static <V> ServiceDependency<V> from(Supplier<V> supplier) {
+        Objects.requireNonNull(supplier);
+        return new SuppliedServiceDependency<>(supplier);
+    }
+
+    /**
      * Returns a dependency on the service with the specified name.
      * @param <V> the dependency type
      * @param name a service name
@@ -56,6 +70,12 @@ public interface ServiceDependency<V> extends Dependency<ServiceBuilder<?>, V> {
 
         SimpleServiceDependency(V value) {
             super(value);
+        }
+    }
+
+    class SuppliedServiceDependency<V> extends SuppliedDependency<ServiceBuilder<?>, V> implements ServiceDependency<V> {
+        SuppliedServiceDependency(Supplier<V> supplier) {
+            super(supplier);
         }
     }
 

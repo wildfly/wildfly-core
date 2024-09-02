@@ -51,6 +51,25 @@ public interface Dependency<B extends ServiceBuilder<?>, V> extends Consumer<B>,
         }
     }
 
+    class SuppliedDependency<B extends ServiceBuilder<?>, V> implements Dependency<B, V> {
+
+        private final Supplier<V> supplier;
+
+        protected SuppliedDependency(Supplier<V> supplier) {
+            this.supplier = supplier;
+        }
+
+        @Override
+        public V get() {
+            return this.supplier.get();
+        }
+
+        @Override
+        public void accept(B builder) {
+            // Nothing to register
+        }
+    }
+
     abstract class AbstractDependency<B extends ServiceBuilder<?>, V> implements Dependency<B, V>, Function<B, Supplier<V>> {
 
         private volatile Supplier<V> supplier = Functions.constantSupplier(null);
