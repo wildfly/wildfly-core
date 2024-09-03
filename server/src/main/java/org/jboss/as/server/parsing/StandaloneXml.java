@@ -105,15 +105,19 @@ public final class StandaloneXml implements ManagementXmlReaderWriter {
             case 17:
                 new StandaloneXml_11(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
-            default:
+            case 18:
+            case 19:
                 new StandaloneXml_18(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
+                break;
+            default:
+                new StandaloneXml_20(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
         }
     }
 
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final IntVersion version, final String namespaceUri, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new StandaloneXml_18(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).writeContent(writer, context);
+        new StandaloneXml_20(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).writeContent(writer, context);
     }
 
     class DefaultExtensionHandler implements ExtensionHandler {
