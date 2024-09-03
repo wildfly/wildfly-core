@@ -1093,6 +1093,36 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="backlog" type="xs:int" use="optional" default="50">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The maximum number of pending connections on the socket.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="no-request-timeout" type="xs:int" use="optional" default="60000">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The maximum time in milliseconds a connection can be idle without a HTTP request before it is closed.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="connection-high-water" type="xs:int" use="optional" default="100">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The maximum number of connections that can be open at any one time.
+
+                            Once reached no further connections will be accepted until the count reduces to the connection-low-water level.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="connection-low-water" type="xs:int" use="optional" default="75">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The number of connections that the open count must reduce to before the connection-high-water level is reset.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

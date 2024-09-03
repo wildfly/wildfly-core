@@ -145,7 +145,8 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         final Supplier<SSLContext> scSupplier = sslContext != null ? builder.requiresCapability(SSL_CONTEXT_CAPABILITY, SSLContext.class, sslContext) : null;
         final UndertowHttpManagementService service = new UndertowHttpManagementService(hmConsumer, lrSupplier, mcSupplier, null, null, null, ibSupplier, sibSupplier,
                 rpSupplier, xwSupplier, eSupplier, hafSupplier, scSupplier, port, securePort, commonPolicy.getAllowedOrigins(), consoleMode,
-                Functions.constantSupplier(environment.getProductConfig().getConsoleSlot()), commonPolicy.getConstantHeaders(), caSupplier);
+                Functions.constantSupplier(environment.getProductConfig().getConsoleSlot()), commonPolicy.getConstantHeaders(), caSupplier,
+                commonPolicy.getBacklog(), commonPolicy.getNoRequestTimeoutMs(), commonPolicy.getConnectionHighWater(), commonPolicy.getConnectionLowWater());
         builder.setInstance(service);
         builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE).install();
 

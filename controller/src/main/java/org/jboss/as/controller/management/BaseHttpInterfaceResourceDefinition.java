@@ -44,6 +44,7 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -181,8 +182,37 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
+    public static final SimpleAttributeDefinition BACKLOG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.BACKLOG, ModelType.INT, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(50))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setStability(Stability.COMMUNITY)
+            .build();
+
+    public static final SimpleAttributeDefinition NO_REQUEST_TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NO_REQUEST_TIMEOUT, ModelType.INT, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(60000))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setStability(Stability.COMMUNITY)
+            .build();
+
+    public static final SimpleAttributeDefinition CONNECTION_HIGH_WATER = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CONNECTION_HIGH_WATER, ModelType.INT, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(100))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setStability(Stability.COMMUNITY)
+            .build();
+
+    public static final SimpleAttributeDefinition CONNECTION_LOW_WATER = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CONNECTION_LOW_WATER, ModelType.INT, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(75))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setStability(Stability.COMMUNITY)
+            .build();
+
     protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { HTTP_AUTHENTICATION_FACTORY, SSL_CONTEXT, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED,
-                                                                                                     HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS, CONSTANT_HEADERS};
+                                                                                                     HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS, CONSTANT_HEADERS,
+                                                                                                     BACKLOG, NO_REQUEST_TIMEOUT, CONNECTION_HIGH_WATER, CONNECTION_LOW_WATER };
 
     /**
      * @param parameters

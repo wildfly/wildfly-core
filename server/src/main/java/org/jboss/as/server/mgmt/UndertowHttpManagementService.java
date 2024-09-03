@@ -100,6 +100,11 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final Supplier<ConsoleAvailability> consoleAvailabilitySupplier;
     private final Supplier<SecurityDomain> virtualSecurityDomainSupplier;
     private final Supplier<HttpServerAuthenticationMechanismFactory> virtualMechanismFactorySupplier;
+    // Resource Constraints
+    private final Integer backlog;
+    private final Integer noRequestTimeout;
+    private final Integer connectionHighWater;
+    private final Integer connectionLowWater;
 
     private ManagementHttpServer serverManagement;
     private SocketBindingManager socketBindingManager;
@@ -192,6 +197,9 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         }
     };
 
+    // These constructors are getting large and unwieldly, but where we use builders we end up triggering more classes to be loaded
+    // as well as more objects on the heap for a resource that generally comes up once at server start.
+
     public UndertowHttpManagementService(final Consumer<HttpManagement> httpManagementConsumer,
                                          final Supplier<ListenerRegistry> listenerRegistrySupplier,
                                          final Supplier<ModelController> modelControllerSupplier,
@@ -211,11 +219,16 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                                          final ConsoleMode consoleMode,
                                          final Supplier<String> consoleSlot,
                                          final Map<String, List<Header>> constantHeaders,
-                                         final Supplier<ConsoleAvailability> consoleAvailabilitySupplier) {
+                                         final Supplier<ConsoleAvailability> consoleAvailabilitySupplier,
+                                         final Integer backlog,
+                                         final Integer noRequestTimeout,
+                                         final Integer connectionHighWater,
+                                         final Integer connectionLowWater) {
         this(httpManagementConsumer, listenerRegistrySupplier, modelControllerSupplier, socketBindingSupplier,
                 secureSocketBindingSupplier, socketBindingManagerSupplier, interfaceBindingSupplier, secureInterfaceBindingSupplier,
                 requestProcessorSupplier, workerSupplier, executorSupplier, httpAuthFactorySupplier, sslContextSupplier, port, securePort,
-                allowedOrigins, consoleMode, consoleSlot, constantHeaders, consoleAvailabilitySupplier, null, null);
+                allowedOrigins, consoleMode, consoleSlot, constantHeaders, consoleAvailabilitySupplier, null, null,
+                backlog, noRequestTimeout, connectionHighWater, connectionLowWater);
     }
 
     public UndertowHttpManagementService(final Consumer<HttpManagement> httpManagementConsumer,
@@ -239,7 +252,11 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                                          final Map<String, List<Header>> constantHeaders,
                                          final Supplier<ConsoleAvailability> consoleAvailabilitySupplier,
                                          final Supplier<SecurityDomain> virtualSecurityDomainSupplier,
-                                         final Supplier<HttpServerAuthenticationMechanismFactory> virtualMechanismFactorySupplier) {
+                                         final Supplier<HttpServerAuthenticationMechanismFactory> virtualMechanismFactorySupplier,
+                                         final Integer backlog,
+                                         final Integer noRequestTimeout,
+                                         final Integer connectionHighWater,
+                                         final Integer connectionLowWater) {
         this.httpManagementConsumer = httpManagementConsumer;
         this.listenerRegistrySupplier = listenerRegistrySupplier;
         this.modelControllerSupplier = modelControllerSupplier;
@@ -262,6 +279,10 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         this.consoleAvailabilitySupplier = consoleAvailabilitySupplier;
         this.virtualSecurityDomainSupplier = virtualSecurityDomainSupplier;
         this.virtualMechanismFactorySupplier = virtualMechanismFactorySupplier;
+        this.backlog = backlog;
+        this.noRequestTimeout = noRequestTimeout;
+        this.connectionHighWater = connectionHighWater;
+        this.connectionLowWater = connectionLowWater;
     }
 
     /**
@@ -345,10 +366,14 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
             }
         }
 
-        final Integer backlog = Integer.getInteger(BACKLOG_PROPERTY, 50);
-        final Integer connectionHighWater = Integer.getInteger(CONNECTION_HIGH_WATER_PROPERTY, 100);
-        final Integer connectionLowWater = Integer.getInteger(CONNECTION_LOW_WATER_PROPERTY, 75);
-        final Integer noRequestTimeout = Integer.getInteger(NO_REQUEST_TIMEOUT_PROPERTY, 60000);
+        /*
+         * System properties take priority for those that already use them, by using the incoming value the defaults now
+         * come from the resource definition.
+         */
+        final Integer backlog = Integer.getInteger(BACKLOG_PROPERTY, this.backlog);
+        final Integer connectionHighWater = Integer.getInteger(CONNECTION_HIGH_WATER_PROPERTY, this.connectionHighWater);
+        final Integer connectionLowWater = Integer.getInteger(CONNECTION_LOW_WATER_PROPERTY, this.connectionLowWater);
+        final Integer noRequestTimeout = Integer.getInteger(NO_REQUEST_TIMEOUT_PROPERTY, this.noRequestTimeout);
 
         try {
             ManagementHttpServer.Builder serverManagementBuilder = ManagementHttpServer.builder()

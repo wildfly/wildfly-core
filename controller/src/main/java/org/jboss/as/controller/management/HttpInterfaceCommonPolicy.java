@@ -77,6 +77,34 @@ public interface HttpInterfaceCommonPolicy {
      */
     Map<String, List<Header>> getConstantHeaders();
 
+    /**
+     * Get the maximum number of pending connections that can be queued before the server starts to reject connections.
+     *
+     * @return the maximum number of pending connections that can be queued before the server starts to reject connections.
+     */
+    int getBacklog();
+
+    /**
+     * Get the maximum time in milliseconds that a connection can be idle without receiving a HTTP request before it is closed.
+     *
+     * @return the maximum time in milliseconds that a connection can be idle without receiving a HTTP request before it is closed.
+     */
+    int getNoRequestTimeoutMs();
+
+    /**
+     * Get the maximum number of connections that can be open before the interface stops accepting new connections.
+     *
+     * @return the maximum number of connections that can be open before the interface stops accepting new connections.
+     */
+    int getConnectionHighWater();
+
+    /**
+     * Gets the connection count that must be reached before the server starts to accept new connections again.
+     *
+     * @return the connection count that must be reached before the server starts to accept new connections again.
+     */
+    int getConnectionLowWater();
+
     static class Header {
         final String name;
         final String value;
