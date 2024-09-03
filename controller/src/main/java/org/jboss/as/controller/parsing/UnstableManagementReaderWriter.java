@@ -11,6 +11,7 @@ import java.util.List;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
+import org.jboss.as.controller.xml.VersionedNamespace;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.IntVersion;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
@@ -30,14 +31,14 @@ class UnstableManagementReaderWriter implements ManagementXmlReaderWriter {
     }
 
     @Override
-    public void readElement(XMLExtendedStreamReader reader, final IntVersion version, final String namespaceUri, List<ModelNode> value) throws XMLStreamException {
+    public void readElement(XMLExtendedStreamReader reader, final VersionedNamespace<IntVersion, ManagementXmlSchema> namespace, List<ModelNode> value) throws XMLStreamException {
         throw ROOT_LOGGER.unstableManagementNamespace(reader.getNamespaceURI());
     }
 
     @Override
-    public void writeContent(XMLExtendedStreamWriter streamWriter, final IntVersion version, final String namespaceUri, ModelMarshallingContext value)
+    public void writeContent(XMLExtendedStreamWriter streamWriter, final VersionedNamespace<IntVersion, ManagementXmlSchema> namespace, ModelMarshallingContext value)
             throws XMLStreamException {
-                throw ROOT_LOGGER.unstableManagementNamespace(namespaceUri);
+                throw ROOT_LOGGER.unstableManagementNamespace(namespace.getUri());
     }
 
 }

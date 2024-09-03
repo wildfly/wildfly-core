@@ -15,8 +15,10 @@ import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.parsing.DeferredExtensionContext;
 import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.ManagementXmlReaderWriter;
+import org.jboss.as.controller.parsing.ManagementXmlSchema;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
+import org.jboss.as.controller.xml.VersionedNamespace;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.staxmapper.IntVersion;
@@ -74,8 +76,11 @@ public final class StandaloneXml implements ManagementXmlReaderWriter {
     }
 
     @Override
-    public void readElement(final XMLExtendedStreamReader reader, final IntVersion version, final String namespaceUri, final List<ModelNode> operationList)
+    public void readElement(final XMLExtendedStreamReader reader, final VersionedNamespace<IntVersion, ManagementXmlSchema> namespace, final List<ModelNode> operationList)
             throws XMLStreamException {
+        final IntVersion version = namespace.getVersion();
+        final String namespaceUri = namespace.getUri();
+
         switch (version.major()) {
             case 1:
             case 2:
@@ -115,8 +120,12 @@ public final class StandaloneXml implements ManagementXmlReaderWriter {
     }
 
     @Override
-    public void writeContent(final XMLExtendedStreamWriter writer, final IntVersion version, final String namespaceUri, final ModelMarshallingContext context)
+    public void writeContent(final XMLExtendedStreamWriter writer, final VersionedNamespace<IntVersion, ManagementXmlSchema> namespace, final ModelMarshallingContext context)
             throws XMLStreamException {
+
+        final IntVersion version = namespace.getVersion();
+        final String namespaceUri = namespace.getUri();
+
         new StandaloneXml_20(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).writeContent(writer, context);
     }
 
