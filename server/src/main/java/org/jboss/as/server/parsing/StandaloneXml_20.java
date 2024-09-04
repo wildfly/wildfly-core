@@ -9,6 +9,8 @@ import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHORIZATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONNECTION_HIGH_WATER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONNECTION_LOW_WATER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
@@ -22,6 +24,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_REMOTING_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NO_REQUEST_TIMEOUT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ORGANIZATION;
@@ -62,10 +65,12 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.DeferredExtensionContext;
 import org.jboss.as.controller.parsing.Element;
+import org.jboss.as.controller.parsing.ManagementXmlSchema;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
+import org.jboss.as.controller.xml.VersionedNamespace;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.parsing.AccessControlXml;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
@@ -77,6 +82,7 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.HttpManagementResourceDefinition;
 import org.jboss.as.server.mgmt.NativeManagementResourceDefinition;
 import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -97,16 +103,18 @@ final class StandaloneXml_20 extends CommonXml implements ManagementXmlDelegate 
     private final StandaloneXml.ParsingOption[] parsingOptions;
     private final IntVersion version;
     private final String namespace;
+    private final Stability stability;
     private AuditLogXml auditLogDelegate;
     private ExtensionHandler extensionHandler;
     private final DeferredExtensionContext deferredExtensionContext;
 
-    StandaloneXml_20(ExtensionHandler extensionHandler, IntVersion version, String namespaceUri, DeferredExtensionContext deferredExtensionContext, StandaloneXml.ParsingOption... options) {
+    StandaloneXml_20(ExtensionHandler extensionHandler, final VersionedNamespace<IntVersion, ManagementXmlSchema> namespace, DeferredExtensionContext deferredExtensionContext, StandaloneXml.ParsingOption... options) {
         super(new SocketBindingsXml.ServerSocketBindingsXml());
         this.extensionHandler = extensionHandler;
-        this.version = version;
-        this.namespace = namespaceUri;
-        this.accessControlXml = AccessControlXml.newInstance(namespace);
+        this.version = namespace.getVersion();
+        this.namespace = namespace.getUri();
+        this.stability = namespace.getStability();
+        this.accessControlXml = AccessControlXml.newInstance(this.namespace);
         this.auditLogDelegate = AuditLogXml.newInstance(version, false);
         this.deferredExtensionContext = deferredExtensionContext;
         this.parsingOptions = options;
@@ -272,6 +280,42 @@ final class StandaloneXml_20 extends CommonXml implements ManagementXmlDelegate 
                     }
                     case ALLOWED_ORIGINS: {
                         HttpManagementResourceDefinition.ALLOWED_ORIGINS.getParser().parseAndSetParameter(HttpManagementResourceDefinition.ALLOWED_ORIGINS, value, addOp, reader);
+                        break;
+                    }
+                    case BACKLOG: {
+                        // Can't pull the Stability level from the attribute definition as to move would mean a new major version of the schema.
+                        if (stability.enables(Stability.COMMUNITY)) {
+                            HttpManagementResourceDefinition.BACKLOG.parseAndSetParameter(value, addOp, reader);
+                        } else {
+                            throw unexpectedAttribute(reader, i);
+                        }
+                        break;
+                    }
+                    case NO_REQUEST_TIMEOUT: {
+                        // Can't pull the Stability level from the attribute definition as to move would mean a new major version of the schema.
+                        if (stability.enables(Stability.COMMUNITY)) {
+                            HttpManagementResourceDefinition.NO_REQUEST_TIMEOUT.parseAndSetParameter(value, addOp, reader);
+                        } else {
+                            throw unexpectedAttribute(reader, i);
+                        }
+                        break;
+                    }
+                    case CONNECTION_HIGH_WATER: {
+                        // Can't pull the Stability level from the attribute definition as to move would mean a new major version of the schema.
+                        if (stability.enables(Stability.COMMUNITY)) {
+                            HttpManagementResourceDefinition.CONNECTION_HIGH_WATER.parseAndSetParameter(value, addOp, reader);
+                        } else {
+                            throw unexpectedAttribute(reader, i);
+                        }
+                        break;
+                    }
+                    case CONNECTION_LOW_WATER: {
+                        // Can't pull the Stability level from the attribute definition as to move would mean a new major version of the schema.
+                        if (stability.enables(Stability.COMMUNITY)) {
+                            HttpManagementResourceDefinition.CONNECTION_LOW_WATER.parseAndSetParameter(value, addOp, reader);
+                        } else {
+                            throw unexpectedAttribute(reader, i);
+                        }
                         break;
                     }
                     default:
@@ -929,6 +973,12 @@ final class StandaloneXml_20 extends CommonXml implements ManagementXmlDelegate 
         HttpManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
+        if (stability.enables(Stability.COMMUNITY)) {
+            HttpManagementResourceDefinition.BACKLOG.marshallAsAttribute(protocol, writer);
+            HttpManagementResourceDefinition.NO_REQUEST_TIMEOUT.marshallAsAttribute(protocol, writer);
+            HttpManagementResourceDefinition.CONNECTION_HIGH_WATER.marshallAsAttribute(protocol, writer);
+            HttpManagementResourceDefinition.CONNECTION_LOW_WATER.marshallAsAttribute(protocol, writer);
+        }
 
         HttpManagementResourceDefinition.ALLOWED_ORIGINS.getMarshaller().marshallAsAttribute(
                 HttpManagementResourceDefinition.ALLOWED_ORIGINS, protocol, true, writer);

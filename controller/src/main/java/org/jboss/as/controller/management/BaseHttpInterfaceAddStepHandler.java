@@ -96,13 +96,10 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
             }
         }
 
-        // TODO - Double check, if these are not supported we still want to fall back to their default values.
         final int backlog = BaseHttpInterfaceResourceDefinition.BACKLOG.resolveModelAttribute(context, model).asInt();
         final int noRequestTimeout = BaseHttpInterfaceResourceDefinition.NO_REQUEST_TIMEOUT.resolveModelAttribute(context, model).asInt();
         final int connectionHighWater = BaseHttpInterfaceResourceDefinition.CONNECTION_HIGH_WATER.resolveModelAttribute(context, model).asInt();
         final int connectionLowWater = BaseHttpInterfaceResourceDefinition.CONNECTION_LOW_WATER.resolveModelAttribute(context, model).asInt();
-        ROOT_LOGGER.debugf("Resource Constraints backlog=%d, noRequestTimeout=%d, connectionHighWater=%d, connectionLowWater=%d",
-            backlog, noRequestTimeout, connectionHighWater, connectionLowWater);
         List<ServiceName> requiredServices = installServices(context, new HttpInterfaceCommonPolicy() {
 
             @Override

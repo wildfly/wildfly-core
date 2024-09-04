@@ -77,10 +77,12 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.ExtensionXml;
+import org.jboss.as.controller.parsing.ManagementXmlSchema;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
+import org.jboss.as.controller.xml.VersionedNamespace;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
 import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
@@ -101,6 +103,7 @@ import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.server.parsing.CommonXml;
 import org.jboss.as.server.parsing.SocketBindingsXml;
 import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -126,18 +129,20 @@ final class HostXml_20 extends CommonXml implements ManagementXmlDelegate {
     private final ExtensionXml extensionXml;
     private final IntVersion version;
     private final String namespace;
+    private final Stability stability;
 
     HostXml_20(String defaultHostControllerName, RunningMode runningMode, boolean isCachedDC,
-               final ExtensionRegistry extensionRegistry, final ExtensionXml extensionXml, final IntVersion version,
-               final String namespaceUri) {
+               final ExtensionRegistry extensionRegistry, final ExtensionXml extensionXml,
+               final VersionedNamespace<IntVersion, ManagementXmlSchema> namespace) {
         super(new SocketBindingsXml.HostSocketBindingsXml());
-        this.namespace = namespaceUri;
+        this.namespace = namespace.getUri();
+        this.version = namespace.getVersion();
         this.auditLogDelegate = AuditLogXml.newInstance(version, true);
         this.defaultHostControllerName = defaultHostControllerName;
         this.runningMode = runningMode;
         this.isCachedDc = isCachedDC;
         this.extensionRegistry = extensionRegistry;
-        this.version = version;
+        this.stability = namespace.getStability();
         this.extensionXml = extensionXml;
     }
 
@@ -394,6 +399,42 @@ final class HostXml_20 extends CommonXml implements ManagementXmlDelegate {
                     }
                     case ALLOWED_ORIGINS: {
                         HttpManagementResourceDefinition.ALLOWED_ORIGINS.getParser().parseAndSetParameter(HttpManagementResourceDefinition.ALLOWED_ORIGINS, value, addOp, reader);
+                        break;
+                    }
+                    case BACKLOG: {
+                        // Can't pull the Stability level from the attribute definition as to move would mean a new major version of the schema.
+                        if (stability.enables(Stability.COMMUNITY)) {
+                            HttpManagementResourceDefinition.BACKLOG.parseAndSetParameter(value, addOp, reader);
+                        } else {
+                            throw unexpectedAttribute(reader, i);
+                        }
+                        break;
+                    }
+                    case NO_REQUEST_TIMEOUT: {
+                        // Can't pull the Stability level from the attribute definition as to move would mean a new major version of the schema.
+                        if (stability.enables(Stability.COMMUNITY)) {
+                            HttpManagementResourceDefinition.NO_REQUEST_TIMEOUT.parseAndSetParameter(value, addOp, reader);
+                        } else {
+                            throw unexpectedAttribute(reader, i);
+                        }
+                        break;
+                    }
+                    case CONNECTION_HIGH_WATER: {
+                        // Can't pull the Stability level from the attribute definition as to move would mean a new major version of the schema.
+                        if (stability.enables(Stability.COMMUNITY)) {
+                            HttpManagementResourceDefinition.CONNECTION_HIGH_WATER.parseAndSetParameter(value, addOp, reader);
+                        } else {
+                            throw unexpectedAttribute(reader, i);
+                        }
+                        break;
+                    }
+                    case CONNECTION_LOW_WATER: {
+                        // Can't pull the Stability level from the attribute definition as to move would mean a new major version of the schema.
+                        if (stability.enables(Stability.COMMUNITY)) {
+                            HttpManagementResourceDefinition.CONNECTION_LOW_WATER.parseAndSetParameter(value, addOp, reader);
+                        } else {
+                            throw unexpectedAttribute(reader, i);
+                        }
                         break;
                     }
                     default:
@@ -1711,9 +1752,15 @@ final class HostXml_20 extends CommonXml implements ManagementXmlDelegate {
         HttpManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.ALLOWED_ORIGINS.getMarshaller().marshallAsAttribute(
-                HttpManagementResourceDefinition.ALLOWED_ORIGINS, protocol, true, writer);
+        HttpManagementResourceDefinition.ALLOWED_ORIGINS, protocol, true, writer);
         HttpManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
+        if (stability.enables(Stability.COMMUNITY)) {
+            HttpManagementResourceDefinition.BACKLOG.marshallAsAttribute(protocol, writer);
+            HttpManagementResourceDefinition.NO_REQUEST_TIMEOUT.marshallAsAttribute(protocol, writer);
+            HttpManagementResourceDefinition.CONNECTION_HIGH_WATER.marshallAsAttribute(protocol, writer);
+            HttpManagementResourceDefinition.CONNECTION_LOW_WATER.marshallAsAttribute(protocol, writer);
+        }
 
         if (HttpManagementResourceDefinition.HTTP_UPGRADE.isMarshallable(protocol)) {
             writer.writeEmptyElement(Element.HTTP_UPGRADE.getLocalName());

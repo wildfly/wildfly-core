@@ -252,6 +252,9 @@ public class ManagementHttpServer {
             }
         }
 
+        ROOT_LOGGER.debugf("Resource Constraints backlog=%d, noRequestTimeout=%d, connectionHighWater=%d, connectionLowWater=%d",
+            builder.backlog, builder.noRequestTimeout, builder.connectionHighWater, builder.connectionLowWater);
+
         final OptionMap undertowOptions;
         if (builder.noRequestTimeout != null) {
             undertowOptions = OptionMap.create(UndertowOptions.NO_REQUEST_TIMEOUT, builder.noRequestTimeout);
