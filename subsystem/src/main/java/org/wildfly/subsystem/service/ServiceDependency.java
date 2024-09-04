@@ -6,6 +6,7 @@ package org.wildfly.subsystem.service;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -49,6 +50,18 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
     @SuppressWarnings("unchecked")
     static <T> ServiceDependency<T> of(T value) {
         return (value != null) ? new SimpleServiceDependency<>(value) : (ServiceDependency<T>) SimpleServiceDependency.NULL;
+    }
+
+    /**
+     * Returns a pseudo-dependency whose {@link #get()} returns the value from the specified supplier.
+     * @param <V> the value type
+     * @param factory a service value supplier
+     * @return a service dependency
+     * @throws NullPointerException if {@code supplier} was null
+     */
+    static <V> ServiceDependency<V> from(Supplier<V> supplier) {
+        Objects.requireNonNull(supplier);
+        return new SuppliedServiceDependency<>(supplier);
     }
 
     /**
@@ -219,6 +232,12 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
 
         SimpleServiceDependency(V value) {
             super(value);
+        }
+    }
+
+    class SuppliedServiceDependency<V> extends SuppliedDependency<RequirementServiceBuilder<?>, V> implements ServiceDependency<V> {
+        SuppliedServiceDependency(Supplier<V> supplier) {
+            super(supplier);
         }
     }
 
