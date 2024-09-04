@@ -47,6 +47,7 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
 
     @Override
     default <R> ServiceDependency<R> map(Function<V, R> mapper) {
+        Objects.requireNonNull(mapper);
         return new ServiceDependency<>() {
             @Override
             public void accept(RequirementServiceBuilder<?> builder) {
@@ -115,8 +116,10 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
      * Wraps a {@link org.wildfly.service.ServiceDependency} as a {@link ServiceDependency}.
      * @param <T> the dependency type
      * @return a service dependency
+     * @throws NullPointerException if {@code dependency} was null
      */
     static <T> ServiceDependency<T> from(org.wildfly.service.ServiceDependency<T> dependency) {
+        Objects.requireNonNull(dependency);
         return new ServiceDependency<>() {
             @Override
             public void accept(RequirementServiceBuilder<?> builder) {

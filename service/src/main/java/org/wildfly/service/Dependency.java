@@ -42,8 +42,10 @@ public interface Dependency<B extends ServiceBuilder<?>, V> extends Consumer<B>,
      * @param <R> the mapped value type
      * @param mapper a mapping function
      * @return a dependency whose value is the result of applying the specified mapping function.
+     * @throws NullPointerException if {@code mapper} was null
      */
     default <R> Dependency<B, R> map(Function<V, R> mapper) {
+        Objects.requireNonNull(mapper);
         return new Dependency<>() {
             @Override
             public void accept(B builder) {

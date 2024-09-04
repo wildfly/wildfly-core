@@ -38,6 +38,7 @@ public interface ServiceDependency<V> extends Dependency<ServiceBuilder<?>, V> {
 
     @Override
     default <R> ServiceDependency<R> map(Function<V, R> mapper) {
+        Objects.requireNonNull(mapper);
         return new ServiceDependency<>() {
             @Override
             public void accept(ServiceBuilder<?> builder) {
