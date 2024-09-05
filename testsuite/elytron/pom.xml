@@ -396,42 +396,6 @@
                                 </goals>
                                 <phase>none</phase>
                             </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.wildfly.plugins</groupId>
-                        <artifactId>wildfly-jar-maven-plugin</artifactId>
-                        <configuration>
-                            <hollowJar>true</hollowJar>
-                            <record-state>false</record-state>
-                            <log-time>${galleon.log.time}</log-time>
-                            <offline>true</offline>
-                            <plugin-options>
-                                <jboss-maven-dist/>
-                                <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
-                            </plugin-options>
-                            <feature-packs>
-                                <feature-pack>
-                                    <groupId>org.wildfly.core</groupId>
-                                    <artifactId>wildfly-core-galleon-pack</artifactId>
-                                    <!--<artifactId>wildfly-core-galleon-pack</artifactId>-->
-                                    <version>${project.version}</version>
-                                    <!-- Specifically include patching -->
-                                    <included-packages>
-                                        <name>org.jboss.as.patching.cli</name>
-                                    </included-packages>
-                                    <excluded-packages>
-                                        <name>product.conf</name>
-                                    </excluded-packages>
-                                </feature-pack>
-                            </feature-packs>
-                            <layers>
-                                <layer>core-server</layer>
-                                <layer>core-tools</layer>
-                                <layer>deployment-scanner</layer>
-                            </layers>
-                        </configuration>
-                        <executions>
                             <!-- Provision a server with the core functionality we will provide in OpenShift images -->
                             <execution>
                                 <id>bootable-jar-packaging</id>
@@ -440,14 +404,47 @@
                                 </goals>
                                 <phase>compile</phase>
                                 <configuration>
-                                    <output-file-name>test-wildfly.jar</output-file-name>
-                                    <cli-sessions>
+                                    <overwrite-provisioned-server>true</overwrite-provisioned-server>
+                                    <bootableJar>true</bootableJar>
+                                    <skipDeployment>true</skipDeployment>
+                                    <bootableJarName>test-wildfly.jar</bootableJarName>
+                                    <record-provisioning-state>false</record-provisioning-state>
+                                    <log-provisioning-time>${galleon.log.time}</log-provisioning-time>
+                                    <offline-provisioning>true</offline-provisioning>
+                                    <packaging-scripts>
                                         <cli-session>
-                                            <script-files>
+                                            <javaOpts>
+                                                <opt>-Dmaven.repo.local=${settings.localRepository}</opt>
+                                            </javaOpts>
+                                            <scripts>
                                                 <script>${ts.config.elytron.cli.no.embedded}</script>
-                                            </script-files>
+                                            </scripts>
                                         </cli-session>
-                                    </cli-sessions>
+                                    </packaging-scripts>
+                                    <galleon-options>
+                                        <jboss-maven-dist/>
+                                        <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                                    </galleon-options>
+                                    <feature-packs>
+                                        <feature-pack>
+                                            <groupId>org.wildfly.core</groupId>
+                                            <artifactId>wildfly-core-galleon-pack</artifactId>
+                                            <!--<artifactId>wildfly-core-galleon-pack</artifactId>-->
+                                            <version>${project.version}</version>
+                                            <!-- Specifically include patching -->
+                                            <included-packages>
+                                                <name>org.jboss.as.patching.cli</name>
+                                            </included-packages>
+                                            <excluded-packages>
+                                                <name>product.conf</name>
+                                            </excluded-packages>
+                                        </feature-pack>
+                                    </feature-packs>
+                                    <layers>
+                                        <layer>core-server</layer>
+                                        <layer>core-tools</layer>
+                                        <layer>deployment-scanner</layer>
+                                    </layers>
                                 </configuration>
                             </execution>
                             <!-- execution with elytron configuration done at runtime -->
@@ -458,8 +455,37 @@
                                 </goals>
                                 <phase>compile</phase>
                                 <configuration>
-                                    <bootable-jar-build-artifacts>bootable-jar-build-artifacts-runtime</bootable-jar-build-artifacts>
-                                    <output-file-name>test-wildfly-runtime.jar</output-file-name>
+                                    <overwrite-provisioned-server>true</overwrite-provisioned-server>
+                                    <bootableJar>true</bootableJar>
+                                    <skipDeployment>true</skipDeployment>
+                                    <bootableJarName>test-wildfly-runtime.jar</bootableJarName>
+                                    <record-provisioning-state>false</record-provisioning-state>
+                                    <log-provisioning-time>${galleon.log.time}</log-provisioning-time>
+                                    <offline-provisioning>true</offline-provisioning>
+                                    <galleon-options>
+                                        <jboss-maven-dist/>
+                                        <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                                    </galleon-options>
+                                    <feature-packs>
+                                        <feature-pack>
+                                            <groupId>org.wildfly.core</groupId>
+                                            <artifactId>wildfly-core-galleon-pack</artifactId>
+                                            <!--<artifactId>wildfly-core-galleon-pack</artifactId>-->
+                                            <version>${project.version}</version>
+                                            <!-- Specifically include patching -->
+                                            <included-packages>
+                                                <name>org.jboss.as.patching.cli</name>
+                                            </included-packages>
+                                            <excluded-packages>
+                                                <name>product.conf</name>
+                                            </excluded-packages>
+                                        </feature-pack>
+                                    </feature-packs>
+                                    <layers>
+                                        <layer>core-server</layer>
+                                        <layer>core-tools</layer>
+                                        <layer>deployment-scanner</layer>
+                                    </layers>
                                 </configuration>
                             </execution>
                         </executions>

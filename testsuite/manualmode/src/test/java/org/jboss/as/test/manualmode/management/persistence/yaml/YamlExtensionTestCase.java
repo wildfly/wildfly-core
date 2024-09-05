@@ -85,7 +85,7 @@ public class YamlExtensionTestCase {
     private ServerController container;
 
     private static final Path jbossHome = System.getProperty("ts.bootable") != null ? Path.of(WildFlySecurityManager.getPropertyPrivileged("basedir", "."),
-            "target" , "bootable-jar-build-artifacts", "wildfly") : Path.of(WildFlySecurityManager.getPropertyPrivileged("jboss.home", "toto"));
+            "target" , "server") : Path.of(WildFlySecurityManager.getPropertyPrivileged("jboss.home", "toto"));
     private static final Path basedir = jbossHome.resolve("standalone");
     private static Path markerDirectory;
     private static Path testYaml;

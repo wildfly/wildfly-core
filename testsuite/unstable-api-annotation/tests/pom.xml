@@ -196,13 +196,6 @@
                                 </goals>
                                 <phase>none</phase>
                             </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.wildfly.plugins</groupId>
-                        <artifactId>wildfly-jar-maven-plugin</artifactId>
-                        <executions>
-                            <!-- Provision a server with the core functionality we will provide in OpenShift images -->
                             <execution>
                                 <id>bootable-jar-packaging</id>
                                 <goals>
@@ -210,15 +203,17 @@
                                 </goals>
                                 <phase>compile</phase>
                                 <configuration>
-                                    <output-file-name>test-wildfly.jar</output-file-name>
-                                    <hollowJar>true</hollowJar>
-                                    <record-state>false</record-state>
-                                    <log-time>${galleon.log.time}</log-time>
-                                    <offline>true</offline>
-                                    <plugin-options>
+                                    <overwrite-provisioned-server>true</overwrite-provisioned-server>
+                                    <bootableJar>true</bootableJar>
+                                    <skipDeployment>true</skipDeployment>
+                                    <bootableJarName>test-wildfly.jar</bootableJarName>
+                                    <record-provisioning-state>false</record-provisioning-state>
+                                    <log-provisioning-time>${galleon.log.time}</log-provisioning-time>
+                                    <offline-provisioning>true</offline-provisioning>
+                                    <galleon-options>
                                         <jboss-maven-dist/>
                                         <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
-                                    </plugin-options>
+                                    </galleon-options>
                                     <feature-packs>
                                         <feature-pack>
                                             <groupId>org.wildfly.core</groupId>
