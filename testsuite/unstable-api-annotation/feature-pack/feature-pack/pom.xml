@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-testsuite-unstable-api-annotation-feature-pack-parent</artifactId>
-        <version>25.0.2.Final</version>
+        <version>25.0.3.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-testsuite-unstable-api-annotation-feature-pack</artifactId>

@@ -12,7 +12,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-subsystem-test-parent</artifactId>
-        <version>25.0.2.Final</version>
+        <version>25.0.3.Final-SNAPSHOT</version>
     </parent>
     <!--
       Just here for the tests module to include as an optional dependency to avoid picking up
