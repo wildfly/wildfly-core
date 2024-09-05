@@ -7,6 +7,8 @@ package org.wildfly.subsystem.service;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -27,7 +29,25 @@ import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 public interface ServiceDependency<V> extends Dependency<RequirementServiceBuilder<?>, V> {
 
     @Override
+    default ServiceDependency<V> andThen(Consumer<? super RequirementServiceBuilder<?>> after) {
+        Objects.requireNonNull(after);
+        return new ServiceDependency<>() {
+            @Override
+            public void accept(RequirementServiceBuilder<?> builder) {
+                ServiceDependency.this.accept(builder);
+                after.accept(builder);
+            }
+
+            @Override
+            public V get() {
+                return ServiceDependency.this.get();
+            }
+        };
+    }
+
+    @Override
     default <R> ServiceDependency<R> map(Function<V, R> mapper) {
+        Objects.requireNonNull(mapper);
         return new ServiceDependency<>() {
             @Override
             public void accept(RequirementServiceBuilder<?> builder) {
@@ -37,6 +57,24 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
             @Override
             public R get() {
                 return mapper.apply(ServiceDependency.this.get());
+            }
+        };
+    }
+
+    @Override
+    default <T, R> ServiceDependency<R> combine(Dependency<RequirementServiceBuilder<?>, T> dependency, BiFunction<V, T, R> mapper) {
+        Objects.requireNonNull(dependency);
+        Objects.requireNonNull(mapper);
+        return new ServiceDependency<>() {
+            @Override
+            public void accept(RequirementServiceBuilder<?> builder) {
+                ServiceDependency.this.accept(builder);
+                dependency.accept(builder);
+            }
+
+            @Override
+            public R get() {
+                return mapper.apply(ServiceDependency.this.get(), dependency.get());
             }
         };
     }
@@ -78,8 +116,10 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
      * Wraps a {@link org.wildfly.service.ServiceDependency} as a {@link ServiceDependency}.
      * @param <T> the dependency type
      * @return a service dependency
+     * @throws NullPointerException if {@code dependency} was null
      */
     static <T> ServiceDependency<T> from(org.wildfly.service.ServiceDependency<T> dependency) {
+        Objects.requireNonNull(dependency);
         return new ServiceDependency<>() {
             @Override
             public void accept(RequirementServiceBuilder<?> builder) {
