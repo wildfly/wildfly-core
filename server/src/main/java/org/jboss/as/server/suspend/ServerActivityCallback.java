@@ -12,7 +12,7 @@ package org.jboss.as.server.suspend;
  * @author Stuart Douglas
  * @deprecated To be removed without replacement.
  */
-@Deprecated(forRemoval = true)
+@Deprecated(forRemoval = true, since = "26.0.0")
 public interface ServerActivityCallback {
 
     /**

@@ -310,7 +310,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
      * @throws IllegalArgumentException if {@code activity} is {@code null} of if its
      *                                  {@link ServerActivity#getExecutionGroup() getExecutionGroup()} method
      *                                  returns a value outside of that method's documented legal range.
-     * @deprecated Superseded by {@link #addActivity(SuspendableActivity)}.
+     * @deprecated Superseded by {@link #registerActivity(SuspendableActivity)}.
      */
     @Deprecated(forRemoval = true)
     public void registerActivity(final ServerActivity activity) {
@@ -318,7 +318,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
     }
 
     /**
-     * @deprecated Superseded by {@link #removeActivity(SuspendableActivity)}.
+     * @deprecated Superseded by {@link #unregisterActivity(SuspendableActivity)}.
      */
     @Deprecated(forRemoval = true)
     public void unRegisterActivity(final ServerActivity activity) {

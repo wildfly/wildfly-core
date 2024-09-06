@@ -146,7 +146,7 @@ public class RequestController implements Service<RequestController>, Suspendabl
      * @param listener The listener that will be notified when the pause is complete
      * @deprecated Superseded by {@link #pauseDeployment(String)}.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0.0")
     public void pauseDeployment(final String deployment, org.jboss.as.server.suspend.ServerActivityCallback listener) {
         this.pauseDeployment(deployment).whenComplete((ignore, exception) -> listener.done());
     }

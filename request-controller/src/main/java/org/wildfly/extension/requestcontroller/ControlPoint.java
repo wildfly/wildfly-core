@@ -96,7 +96,7 @@ public class ControlPoint {
      * If individual control point tracking is not enabled then the listener will be invoked straight away
      *
      * @param requestCountListener The listener to invoke
-     * @deprecated Superseded by {@link #pause(CompletionStage)}
+     * @deprecated Superseded by {@link #pause()}.
      */
     @Deprecated(forRemoval = true)
     public void pause(org.jboss.as.server.suspend.ServerActivityCallback requestCountListener) {

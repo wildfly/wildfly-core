@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Stuart Douglas
  * @deprecated To be removed without replacement
  */
-@Deprecated(forRemoval = true)
+@Deprecated(forRemoval = true, since = "26.0.0")
 public class CountingRequestCountCallback implements ServerActivityCallback {
 
     private final AtomicInteger count;
