@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<host name="primary" xmlns="urn:jboss:domain:community:20.0">
+
+    <management>
+        <management-interfaces>
+            <http-interface http-authentication-factory="management-http" allowed-origins="http://www.example.com http://localhost"
+                backlog="44" connection-high-water="111" connection-low-water="77" no-request-timeout="66666">
+                <http-upgrade enabled="true" sasl-authentication-factory="management-sasl" />
+                <socket interface="management" port="${jboss.management.http.port:9990}"/>
+            </http-interface>
+        </management-interfaces>
+    </management>
+
+    <interfaces>
+        <interface name="management">
+            <inet-address value="${jboss.bind.address.management:127.0.0.1}"/>
+        </interface>
+    </interfaces>
+
+</host>

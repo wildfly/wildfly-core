@@ -106,7 +106,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     TestModelControllerService(ProcessType processType, RunningModeControl runningModeControl, StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
             TestModelType type, ModelInitializer modelInitializer, TestDelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState, ExtensionRegistry extensionRegistry,
             CapabilityRegistry capabilityRegistry, RuntimeExpressionResolver expressionResolver) {
-        super(processType, runningModeControl, null, persister, validateOpsFilter, rootResourceDefinition, processState,
+        super(processType, extensionRegistry.getStability(), runningModeControl, null, persister, validateOpsFilter, rootResourceDefinition, processState,
                 expressionResolver, capabilityRegistry);
         this.type = type;
         this.runningModeControl = runningModeControl;

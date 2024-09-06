@@ -185,14 +185,14 @@ public abstract class ModelTestModelControllerService extends AbstractController
     /**
      * This is the constructor to use for current core model tests
      */
-    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+    protected ModelTestModelControllerService(final ProcessType processType, final Stability stability, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
                                               final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
                                               final DelegatingResourceDefinition rootResourceDefinition, final ControlledProcessState processState,
                                               final ExpressionResolver expressionResolver, final CapabilityRegistry capabilityRegistry) {
         super(null,
                 null,
                 processType,
-                Stability.DEFAULT,
+                stability,
                 runningModeControl,
                 persister,
                 processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition,

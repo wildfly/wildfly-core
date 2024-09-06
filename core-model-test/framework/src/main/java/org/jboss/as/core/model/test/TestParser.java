@@ -121,9 +121,7 @@ public class TestParser implements ModelTestParser {
         return testParser;
     }
 
-    private static TestParser createFrom27(ExtensionRegistry registry, XMLMapper xmlMapper, TestModelType type) {
-        Stability stability = Stability.DEFAULT;
-
+    private static TestParser createFrom27(Stability stability, ExtensionRegistry registry, XMLMapper xmlMapper, TestModelType type) {
         ManagementSchemas schemas;
         if (type == TestModelType.STANDALONE) {
             schemas = new StandaloneXmlSchemas(stability, null, Executors.newCachedThreadPool(), registry);
@@ -149,6 +147,10 @@ public class TestParser implements ModelTestParser {
 
 
     public static TestParser create(ExtensionRegistry registry, XMLMapper xmlMapper, TestModelType type) {
+        return create(Stability.DEFAULT, registry, xmlMapper, type);
+    }
+
+    public static TestParser create(Stability stability, ExtensionRegistry registry, XMLMapper xmlMapper, TestModelType type) {
         if (getModelMajorVersion() < 27) {
             try {
                 return createLegacy(registry, xmlMapper, type);
@@ -156,7 +158,7 @@ public class TestParser implements ModelTestParser {
                 throw new IllegalStateException("Failed to create the parser", e);
             }
         }
-        return createFrom27(registry, xmlMapper, type);
+        return createFrom27(stability, registry, xmlMapper, type);
     }
 
     void addModelWriteSanitizer(ModelWriteSanitizer writeSanitizer) {
