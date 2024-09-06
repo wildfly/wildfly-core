@@ -217,13 +217,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
      */
     @Deprecated(forRemoval = true)
     public void suspend(long timeoutMillis) {
-        if (timeoutMillis == 0) {
-            ServerLogger.ROOT_LOGGER.suspendingServer();
-        } else if (timeoutMillis > 0) {
-            ServerLogger.ROOT_LOGGER.suspendingServer(timeoutMillis);
-        } else {
-            ServerLogger.ROOT_LOGGER.suspendingServerWithNoTimeout();
-        }
+        ServerLogger.ROOT_LOGGER.suspendingServer(timeoutMillis, TimeUnit.MILLISECONDS);
         CompletableFuture<Void> suspend = this.suspend(Context.RUNNING).toCompletableFuture();
         if (timeoutMillis >= 0) {
             suspend.completeOnTimeout(null, timeoutMillis, TimeUnit.MILLISECONDS);

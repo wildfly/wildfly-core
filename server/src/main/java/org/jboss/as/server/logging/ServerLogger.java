@@ -20,6 +20,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.Attributes;
 import java.util.zip.ZipException;
 
@@ -1092,6 +1093,21 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 210, value = "Server is already paused")
     IllegalStateException serverAlreadyPaused();
+
+    /**
+     * Logs the appropriate suspend message based on the specified suspend timeout.
+     * @param timeout the timeout value
+     * @param unit the timeout unit
+     */
+    default void suspendingServer(long timeout, TimeUnit unit) {
+        if (timeout > 0) {
+            ServerLogger.ROOT_LOGGER.suspendingServer(TimeUnit.MILLISECONDS.convert(timeout, unit));
+        } else if (timeout < 0) {
+            ServerLogger.ROOT_LOGGER.suspendingServerWithNoTimeout();
+        } else {
+            ServerLogger.ROOT_LOGGER.suspendingServer();
+        }
+    }
 
     @LogMessage(level = INFO)
     @Message(id = 211, value = "Suspending server with %d ms timeout.")

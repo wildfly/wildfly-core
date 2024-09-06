@@ -148,6 +148,7 @@ public class ServerShutdownHandler implements OperationStepHandler {
                             //to stop new requests being accepted as it is shutting down
                             final ShutdownAction shutdown = new ShutdownAction(getOperationName(operation), restart, performInstallation);
                             final ServerSuspendController suspendController = ServerShutdownHandler.this.suspendController;
+                            ServerLogger.ROOT_LOGGER.suspendingServer(seconds, TimeUnit.SECONDS);
                             CompletableFuture<Void> suspend = suspendController.suspend(ServerSuspendController.Context.SHUTDOWN).toCompletableFuture();
                             if (seconds >= 0) {
                                 suspend.completeOnTimeout(null, seconds, TimeUnit.SECONDS);

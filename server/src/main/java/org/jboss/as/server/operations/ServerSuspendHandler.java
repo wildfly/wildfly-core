@@ -59,6 +59,7 @@ public class ServerSuspendHandler implements OperationStepHandler {
             @Override
             public void execute(final OperationContext context, ModelNode operation) throws OperationFailedException {
                 final ServerSuspendController suspendController = ServerSuspendHandler.this.suspendController;
+                ServerLogger.ROOT_LOGGER.suspendingServer(seconds, TimeUnit.SECONDS);
                 CompletableFuture<Void> suspend = suspendController.suspend(ServerSuspendController.Context.RUNNING).toCompletableFuture();
                 if (seconds >= 0) {
                     suspend.completeOnTimeout(null, seconds, TimeUnit.SECONDS);

@@ -285,11 +285,12 @@ final class BootstrapImpl implements Bootstrap {
         private void suspend(ServiceContainer sc) {
             ServerSuspendController suspendController = this.suspendController;
             if ((suspendController != null) && !sc.isShutdownComplete()) {
-                long timeoutSeconds = getSuspendTimeout();
+                long millis = TimeUnit.MILLISECONDS.convert(getSuspendTimeout(), TimeUnit.SECONDS);
+                ServerLogger.ROOT_LOGGER.suspendingServer(millis, TimeUnit.MILLISECONDS);
                 CompletableFuture<Void> suspend = suspendController.suspend(ServerSuspendController.Context.SHUTDOWN).toCompletableFuture();
-                if (timeoutSeconds >= 0) {
+                if (millis >= 0) {
                     // If necessary we'll wait 500 ms longer for it in the off chance a gc or something delays things
-                    suspend.completeOnTimeout(null, TimeUnit.MILLISECONDS.convert(timeoutSeconds, TimeUnit.SECONDS) + 500, TimeUnit.MILLISECONDS);
+                    suspend.completeOnTimeout(null, millis + 500, TimeUnit.MILLISECONDS);
                 }
                 suspend.join();
             }
