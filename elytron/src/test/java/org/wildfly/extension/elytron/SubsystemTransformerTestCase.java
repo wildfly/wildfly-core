@@ -61,6 +61,8 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT, "SNIwithCaret")),
                         new FailedOperationTransformationConfig.NewAttributesConfig(ElytronDescriptionConstants.HOST_CONTEXT_MAP)
                 )
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXT, "dcsc")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.PROPERTIES_REALM, "PropertiesRealmEncodingCharset")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM, "FilesystemRealmEncodingCharset")),
