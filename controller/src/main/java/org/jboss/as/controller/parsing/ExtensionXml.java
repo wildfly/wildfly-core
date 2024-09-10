@@ -72,11 +72,6 @@ public class ExtensionXml {
         }
     }
 
-    @Deprecated
-    public void parseExtensions(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace namespace, final List<ModelNode> list) throws XMLStreamException {
-        parseExtensions(reader, address, namespace.getUriString(), list);
-    }
-
     public void parseExtensions(final XMLExtendedStreamReader reader, final ModelNode address, final String expectedNs, final List<ModelNode> list)
             throws XMLStreamException {
         DeferredExtensionContext ctx = this.deferredExtensionContext;
