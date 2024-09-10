@@ -7,6 +7,7 @@ package org.jboss.as.controller;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -181,9 +182,10 @@ public interface ResourceDefinition extends ResourceRegistration {
      * @param registration the resource registration
      * @param descriptionResolver the resource description resolver
      * @return a builder instance
+     * @throws NullPointerException if {@code registration} or {@code descriptionResolver} were null
      */
     static Builder builder(ResourceRegistration registration, ResourceDescriptionResolver descriptionResolver) {
-        return new MinimalBuilder(registration, descriptionResolver);
+        return builder(registration, descriptionResolver, null);
     }
 
     /**
@@ -192,9 +194,12 @@ public interface ResourceDefinition extends ResourceRegistration {
      * @param descriptionResolver a resolver of model descriptions for this resource
      * @param deprecation the model that deprecates this resource
      * @return a builder instance
+     * @throws NullPointerException if {@code registration} or {@code descriptionResolver} were null
      */
     static Builder builder(ResourceRegistration registration, ResourceDescriptionResolver descriptionResolver, SubsystemModel deprecation) {
-        return new MinimalBuilder(registration, descriptionResolver, new DeprecationData(deprecation.getVersion()));
+        Objects.requireNonNull(registration);
+        Objects.requireNonNull(descriptionResolver);
+        return new MinimalBuilder(registration, descriptionResolver, (deprecation != null) ? new DeprecationData(deprecation.getVersion()) : null);
     }
 
     /**
@@ -202,8 +207,11 @@ public interface ResourceDefinition extends ResourceRegistration {
      * @param registration the resource registration
      * @param descriptionProvider provides model descriptions for this resource
      * @return a builder instance
+     * @throws NullPointerException if {@code registration} or {@code descriptionProvider} were null
      */
     static Builder builder(ResourceRegistration registration, DescriptionProvider descriptionProvider) {
+        Objects.requireNonNull(registration);
+        Objects.requireNonNull(descriptionProvider);
         return new MinimalBuilder(registration, descriptionProvider);
     }
 
@@ -378,15 +386,6 @@ public interface ResourceDefinition extends ResourceRegistration {
      * Minimal builder of a {@link ResourceDefinition}.
      */
     static class MinimalBuilder extends AbstractConfigurator<Builder> implements Builder {
-
-        MinimalBuilder(ResourceRegistration registration, ResourceDescriptionResolver resolver) {
-            super(registration, new Function<>() {
-                @Override
-                public DescriptionProvider apply(ImmutableManagementResourceRegistration registration) {
-                    return new DefaultResourceDescriptionProvider(registration, resolver);
-                }
-            });
-        }
 
         MinimalBuilder(ResourceRegistration registration, ResourceDescriptionResolver resolver, DeprecationData deprecation) {
             super(registration, new Function<>() {
