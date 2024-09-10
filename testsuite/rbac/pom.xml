@@ -321,8 +321,7 @@
                                     <feature-packs>
                                         <feature-pack>
                                             <groupId>org.wildfly.core</groupId>
-                                            <artifactId>wildfly-core-galleon-pack</artifactId>
-                                            <!--<artifactId>wildfly-core-galleon-pack</artifactId>-->
+                                            <artifactId>wildfly-core-galleon-pack</artifactId>                                            
                                             <version>${project.version}</version>
                                             <inherit-configs>false</inherit-configs>
                                             <inherit-packages>false</inherit-packages>
@@ -405,8 +404,7 @@
                                     <feature-packs>
                                         <feature-pack>
                                             <groupId>org.wildfly.core</groupId>
-                                            <artifactId>wildfly-core-galleon-pack</artifactId>
-                                            <!--<artifactId>wildfly-core-galleon-pack</artifactId>-->
+                                            <artifactId>wildfly-core-galleon-pack</artifactId>                                            
                                             <version>${project.version}</version>
                                             <!-- Specifically include patching -->
                                             <included-packages>
