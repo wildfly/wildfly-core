@@ -26,7 +26,7 @@ import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.suspend.OperationListener;
-import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.as.server.suspend.ServerSuspendController;
 import org.wildfly.extension.core.management.client.Process.RunningMode;
 import org.wildfly.extension.core.management.client.Process.RunningState;
 import org.wildfly.extension.core.management.client.Process.RuntimeConfigurationState;
@@ -145,7 +145,7 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
         sendNotification(notification);
     }
 
-    public static void registerMBean(ProcessStateNotifier processStateNotifier, SuspendController suspendController, RunningModeControl runningModeControl, boolean isServer) {
+    public static void registerMBean(ProcessStateNotifier processStateNotifier, ServerSuspendController suspendController, RunningModeControl runningModeControl, boolean isServer) {
         try {
             final ObjectName name = new ObjectName(OBJECT_NAME);
             final MBeanServer server = ManagementFactory.getPlatformMBeanServer();
@@ -169,18 +169,14 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
 
                     @Override
                     public void cancelled() {
-                        if(mbean.getRunningState() == RunningState.STARTING) {
+                        if (mbean.getRunningState() == RunningState.STARTING) {
                             mbean.setRunningState(RunningState.STARTING, RunningState.SUSPENDED);
                         }
                         if (mbean.getRunningMode() == RunningMode.NORMAL) {
                             mbean.setRunningState(mbean.getRunningState(), RunningState.NORMAL);
                         } else {
-                            mbean.setRunningState(mbean.getRunningState(),RunningState.ADMIN_ONLY);
+                            mbean.setRunningState(mbean.getRunningState(), RunningState.ADMIN_ONLY);
                         }
-                    }
-
-                    @Override
-                    public void timeout() {
                     }
                 });
             } else {

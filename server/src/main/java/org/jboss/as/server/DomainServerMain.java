@@ -18,6 +18,7 @@ import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.concurrent.CompletionStage;
 
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.process.ExitCodes;
@@ -26,6 +27,7 @@ import org.jboss.as.process.stdin.Base64InputStream;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.domain.HostControllerClient;
 import org.jboss.as.server.mgmt.domain.HostControllerConnectionService;
+import org.jboss.as.server.operations.ServerDomainProcessShutdownHandler;
 import org.jboss.logmanager.Level;
 import org.jboss.logmanager.handlers.ConsoleHandler;
 import org.jboss.marshalling.ByteInput;
@@ -175,17 +177,13 @@ public final class DomainServerMain {
 
         // Once the input stream is cut off, shut down
         // We may be attempting a graceful shutdown, in which case we need to wait
-        final ServiceContainer container;
+        CompletionStage<Void> suspendStage = ServerDomainProcessShutdownHandler.SUSPEND_STAGE.get();
         try {
-            container = containerFuture.get();
-            ServiceController<?> controller = container.getService(GracefulShutdownService.SERVICE_NAME);
-            if(controller != null) {
-                ((GracefulShutdownService)controller.getValue()).awaitSuspend();
+            if (suspendStage != null) {
+                suspendStage.toCompletableFuture().join();
             }
-        } catch (InterruptedException ie) {
-            // ignore this and exit
-        } catch (Throwable  t) {
-            t.printStackTrace();
+        } catch (Throwable e) {
+            e.printStackTrace();
         } finally {
             if (caught == null) {
                 SystemExiter.logAndExit(ServerLogger.ROOT_LOGGER::shuttingDownInResponseToProcessControllerSignal, ExitCodes.NORMAL);
@@ -193,7 +191,6 @@ public final class DomainServerMain {
                 SystemExiter.abort(ExitCodes.FAILED);
             }
         }
-        throw new IllegalStateException(); // not reached
     }
 
     /**

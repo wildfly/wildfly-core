@@ -7,7 +7,9 @@ package org.wildfly.extension.requestcontroller;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.server.suspend.ServerActivityCallback;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 
 /**
@@ -26,7 +28,7 @@ import java.util.concurrent.Executor;
 public class ControlPoint {
 
     private static final AtomicIntegerFieldUpdater<ControlPoint> activeRequestCountUpdater = AtomicIntegerFieldUpdater.newUpdater(ControlPoint.class, "activeRequestCount");
-    private static final AtomicReferenceFieldUpdater<ControlPoint, ServerActivityCallback> listenerUpdater = AtomicReferenceFieldUpdater.newUpdater(ControlPoint.class, ServerActivityCallback.class, "listener");
+    private static final AtomicReferenceFieldUpdater<ControlPoint, CompletableFuture> pauseUpdater = AtomicReferenceFieldUpdater.newUpdater(ControlPoint.class, CompletableFuture.class, "pauseFuture");
 
     private final RequestController controller;
     private final String deployment;
@@ -45,7 +47,7 @@ public class ControlPoint {
     private volatile boolean paused = false;
 
     @SuppressWarnings("unused")
-    private volatile ServerActivityCallback listener = null;
+    private volatile CompletableFuture<Void> pauseFuture = null;
 
     /**
      * The number of services that are using this entry point.
@@ -69,23 +71,36 @@ public class ControlPoint {
     }
 
     /**
+     * Pause the current entry point returning a stage that completes when all current requests have completed.
+     *
+     * If individual control point tracking is not enabled then a completed stage is returned.
+     */
+    public CompletionStage<Void> pause() {
+        if (paused) {
+            throw ServerLogger.ROOT_LOGGER.serverAlreadyPaused();
+        }
+        this.paused = true;
+        CompletableFuture<Void> pause = new CompletableFuture<>();
+        pauseUpdater.set(this, pause);
+        if (activeRequestCountUpdater.get(this) == 0) {
+            if (pauseUpdater.compareAndSet(this, pause, null)) {
+                pause.complete(null);
+            }
+        }
+        return pause;
+    }
+
+    /**
      * Pause the current entry point, and invoke the provided listener when all current requests have finished.
      *
      * If individual control point tracking is not enabled then the listener will be invoked straight away
      *
      * @param requestCountListener The listener to invoke
+     * @deprecated Superseded by {@link #pause()}.
      */
-    public void pause(ServerActivityCallback requestCountListener) {
-        if (paused) {
-            throw ServerLogger.ROOT_LOGGER.serverAlreadyPaused();
-        }
-        this.paused = true;
-        listenerUpdater.set(this, requestCountListener);
-        if (activeRequestCountUpdater.get(this) == 0) {
-            if (listenerUpdater.compareAndSet(this, requestCountListener, null)) {
-                requestCountListener.done();
-            }
-        }
+    @Deprecated(forRemoval = true)
+    public void pause(org.jboss.as.server.suspend.ServerActivityCallback requestCountListener) {
+        this.pause().whenComplete((ignore, exception) -> requestCountListener.done());
     }
 
     /**
@@ -93,9 +108,10 @@ public class ControlPoint {
      */
     public void resume() {
         this.paused = false;
-        ServerActivityCallback listener = listenerUpdater.get(this);
-        if (listener != null) {
-            listenerUpdater.compareAndSet(this, listener, null);
+        CompletableFuture<Void> pause = pauseUpdater.get(this);
+        if (pause != null) {
+            pauseUpdater.compareAndSet(this, pause, null);
+            pause.cancel(false);
         }
     }
 
@@ -162,10 +178,10 @@ public class ControlPoint {
         if (trackIndividualControlPoints) {
             int result = activeRequestCountUpdater.decrementAndGet(this);
             if (paused && result == 0) {
-                ServerActivityCallback listener = listenerUpdater.get(this);
-                if (listener != null) {
-                    if (listenerUpdater.compareAndSet(this, listener, null)) {
-                        listener.done();
+                CompletableFuture<Void> pause = pauseUpdater.get(this);
+                if (pause != null) {
+                    if (pauseUpdater.compareAndSet(this, pause, null)) {
+                        pause.complete(null);
                     }
                 }
             }

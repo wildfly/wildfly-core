@@ -7,13 +7,13 @@ package org.jboss.as.server.operations;
 
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
-import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.SUSPEND_TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.renameTimeoutToSuspendTimeout;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -22,11 +22,9 @@ import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
-import org.jboss.as.server.suspend.OperationListener;
-import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.suspend.ServerSuspendController;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceRegistry;
 
 /**
  * Handler that suspends server operations
@@ -35,13 +33,17 @@ import org.jboss.msc.service.ServiceRegistry;
  */
 public class ServerSuspendHandler implements OperationStepHandler {
 
-    public static final ServerSuspendHandler INSTANCE = new ServerSuspendHandler();
-
     public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.SUSPEND,
                 ServerDescriptions.getResourceDescriptionResolver(RUNNING_SERVER))
             .setParameters(TIMEOUT, SUSPEND_TIMEOUT)
             .setRuntimeOnly()
             .build();
+
+    private final ServerSuspendController suspendController;
+
+    public ServerSuspendHandler(ServerSuspendController suspendController) {
+        this.suspendController = suspendController;
+    }
 
     /**
      * {@inheritDoc}
@@ -51,53 +53,20 @@ public class ServerSuspendHandler implements OperationStepHandler {
         // Acquire the controller lock to prevent new write ops and wait until current ones are done
         context.acquireControllerLock();
         renameTimeoutToSuspendTimeout(operation);
-        final int timeout = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt();
+        int seconds = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt();
 
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(final OperationContext context, ModelNode operation) throws OperationFailedException {
-                final ServiceRegistry registry = context.getServiceRegistry(false);
-                ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(JBOSS_SUSPEND_CONTROLLER);
-                final SuspendController suspendController = suspendControllerServiceController.getValue();
-
-                final CountDownLatch latch = new CountDownLatch(1);
-                final AtomicBoolean cancelled = new AtomicBoolean();
-
-                OperationListener operationListener = new OperationListener() {
-                    @Override
-                    public void suspendStarted() {
-
-                    }
-
-                    @Override
-                    public void complete() {
-                        suspendController.removeListener(this);
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void cancelled() {
-                        suspendController.removeListener(this);
-                        cancelled.set(true);
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void timeout() {
-                        suspendController.removeListener(this);
-                        latch.countDown();
-                    }
-                };
-                suspendController.addListener(operationListener);
-                suspendController.suspend(timeout > 0 ?  timeout * 1000 : timeout);
-                if(timeout != 0 && suspendController.getState() != SuspendController.State.SUSPENDED) {
-                    try {
-                        latch.await();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+                final ServerSuspendController suspendController = ServerSuspendHandler.this.suspendController;
+                ServerLogger.ROOT_LOGGER.suspendingServer(seconds, TimeUnit.SECONDS);
+                CompletableFuture<Void> suspend = suspendController.suspend(ServerSuspendController.Context.RUNNING).toCompletableFuture();
+                if (seconds >= 0) {
+                    suspend.completeOnTimeout(null, seconds, TimeUnit.SECONDS);
                 }
-                if(cancelled.get()) {
+                try {
+                    suspend.join();
+                } catch (CancellationException e) {
                     context.setRollbackOnly();
                 }
                 context.completeStep(new RollbackHandler(suspendController));
@@ -108,16 +77,17 @@ public class ServerSuspendHandler implements OperationStepHandler {
 
     private static final class RollbackHandler implements OperationContext.ResultHandler {
 
-        private final SuspendController controller;
+        private final ServerSuspendController controller;
 
-        private RollbackHandler(SuspendController controller) {
+        private RollbackHandler(ServerSuspendController controller) {
             this.controller = controller;
         }
 
         @Override
         public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-            if(resultAction == OperationContext.ResultAction.ROLLBACK) {
-                controller.resume();
+            if (resultAction == OperationContext.ResultAction.ROLLBACK) {
+                ServerLogger.ROOT_LOGGER.resumingServer();
+                this.controller.resume(ServerSuspendController.Context.RUNNING).toCompletableFuture().join();
             }
         }
     }

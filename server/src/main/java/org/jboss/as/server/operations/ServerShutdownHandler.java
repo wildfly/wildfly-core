@@ -10,7 +10,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
-import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.SUSPEND_TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.renameTimeoutToSuspendTimeout;
@@ -21,6 +20,9 @@ import java.io.FileReader;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.Properties;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.controller.ControlledProcessState;
@@ -41,13 +43,9 @@ import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.SystemExiter;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.server.suspend.OperationListener;
-import org.jboss.as.server.suspend.SuspendController;
-import org.jboss.as.server.suspend.SuspendController.State;
+import org.jboss.as.server.suspend.ServerSuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceRegistry;
 
 /**
  * Handler that shuts down the standalone server.
@@ -74,13 +72,14 @@ public class ServerShutdownHandler implements OperationStepHandler {
             .setRuntimeOnly()
             .build();
 
-
     private final ControlledProcessState processState;
     private final ServerEnvironment environment;
+    private final ServerSuspendController suspendController;
 
-    public ServerShutdownHandler(ControlledProcessState processState, ServerEnvironment serverEnvironment) {
+    public ServerShutdownHandler(ControlledProcessState processState, ServerEnvironment serverEnvironment, ServerSuspendController suspendController) {
         this.processState = processState;
         this.environment = serverEnvironment;
+        this.suspendController = suspendController;
     }
 
     /**
@@ -90,7 +89,7 @@ public class ServerShutdownHandler implements OperationStepHandler {
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         renameTimeoutToSuspendTimeout(operation);
         final boolean restart = RESTART.resolveModelAttribute(context, operation).asBoolean();
-        final int timeout = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt(); //in seconds, need to convert to ms
+        final int seconds = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt();
         final boolean performInstallation = PERFORM_INSTALLATION.resolveModelAttribute(context, operation).asBoolean();
 
         // Verify the candidate server is prepared
@@ -148,39 +147,17 @@ public class ServerShutdownHandler implements OperationStepHandler {
                             //even if the timeout is zero we still pause the server
                             //to stop new requests being accepted as it is shutting down
                             final ShutdownAction shutdown = new ShutdownAction(getOperationName(operation), restart, performInstallation);
-                            final ServiceRegistry registry = context.getServiceRegistry(false);
-                            final ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(JBOSS_SUSPEND_CONTROLLER);
-                            final SuspendController suspendController = suspendControllerServiceController.getValue();
-                            if (suspendController.getState() == State.SUSPENDED) {
-                                // WFCORE-4935 if server is already in suspend, don't register any listener, just shut it down
+                            final ServerSuspendController suspendController = ServerShutdownHandler.this.suspendController;
+                            ServerLogger.ROOT_LOGGER.suspendingServer(seconds, TimeUnit.SECONDS);
+                            CompletableFuture<Void> suspend = suspendController.suspend(ServerSuspendController.Context.SHUTDOWN).toCompletableFuture();
+                            if (seconds >= 0) {
+                                suspend.completeOnTimeout(null, seconds, TimeUnit.SECONDS);
+                            }
+                            try {
+                                suspend.join();
                                 shutdown.shutdown();
-                            } else {
-                                OperationListener listener = new OperationListener() {
-                                    @Override
-                                    public void suspendStarted() {
-
-                                    }
-
-                                    @Override
-                                    public void complete() {
-                                        suspendController.removeListener(this);
-                                        shutdown.shutdown();
-                                    }
-
-                                    @Override
-                                    public void cancelled() {
-                                        suspendController.removeListener(this);
-                                        shutdown.cancel();
-                                    }
-
-                                    @Override
-                                    public void timeout() {
-                                        suspendController.removeListener(this);
-                                        shutdown.shutdown();
-                                    }
-                                };
-                                suspendController.addListener(listener);
-                                suspendController.suspend(timeout > 0 ? timeout * 1000 : timeout);
+                            } catch (CancellationException e) {
+                                shutdown.cancel();
                             }
                         }
                     }

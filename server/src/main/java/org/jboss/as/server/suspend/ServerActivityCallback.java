@@ -10,7 +10,9 @@ package org.jboss.as.server.suspend;
  * suspend controller know that all requests have finished.
  *
  * @author Stuart Douglas
+ * @deprecated To be removed without replacement.
  */
+@Deprecated(forRemoval = true, since = "26.0.0")
 public interface ServerActivityCallback {
 
     /**

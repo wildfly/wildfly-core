@@ -21,6 +21,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.Attributes;
 import java.util.zip.ZipException;
 
@@ -38,7 +39,7 @@ import org.jboss.as.server.deployment.MountType;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.deployment.module.ExtensionListEntry;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.server.suspend.ServerActivity;
+import org.jboss.as.server.suspend.SuspendableActivity;
 import org.jboss.as.version.Stability;
 import org.jboss.invocation.proxy.MethodIdentifier;
 import org.jboss.logging.BasicLogger;
@@ -1094,6 +1095,21 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 210, value = "Server is already paused")
     IllegalStateException serverAlreadyPaused();
 
+    /**
+     * Logs the appropriate suspend message based on the specified suspend timeout.
+     * @param timeout the timeout value
+     * @param unit the timeout unit
+     */
+    default void suspendingServer(long timeout, TimeUnit unit) {
+        if (timeout > 0) {
+            ServerLogger.ROOT_LOGGER.suspendingServer(TimeUnit.MILLISECONDS.convert(timeout, unit));
+        } else if (timeout < 0) {
+            ServerLogger.ROOT_LOGGER.suspendingServerWithNoTimeout();
+        } else {
+            ServerLogger.ROOT_LOGGER.suspendingServer();
+        }
+    }
+
     @LogMessage(level = INFO)
     @Message(id = 211, value = "Suspending server with %d ms timeout.")
     void suspendingServer(long timeoutMillis);
@@ -1111,7 +1127,7 @@ public interface ServerLogger extends BasicLogger {
 
     @LogMessage(level = ERROR)
     @Message(id = 215, value = "Failed to resume activity %s. To resume normal operation it is recommended that you restart the server.")
-    void failedToResume(ServerActivity activity, @Cause Exception cause);
+    void failedToResume(SuspendableActivity activity, @Cause Throwable cause);
 
     @LogMessage(level = ERROR)
     @Message(id = 216, value = "Error cleaning obsolete content %s ")

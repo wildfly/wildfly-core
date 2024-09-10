@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jboss.as.server.suspend.ServerSuspendController;
 import org.junit.Test;
 
 public class WFCORE4967_TestCase {
@@ -33,7 +34,7 @@ public class WFCORE4967_TestCase {
         threads.forEach(Thread::start);
         // wait until all above threads ready to fire rc.requestComplete() together with bellow rc.resume()
         latch.await();
-        rc.resume();
+        rc.resume(ServerSuspendController.Context.RUNNING);
 
         for (Thread t : threads) {
             t.join();
@@ -49,8 +50,7 @@ public class WFCORE4967_TestCase {
 
     private RequestController suspendedRCWithQueuedTasks(int i, Runnable whenExecuted) {
         RequestController requestController = new RequestController(false, () -> null);
-        requestController.suspended(() -> {
-        });
+        requestController.suspend(ServerSuspendController.Context.RUNNING);
 
         for (int taskNo = 0; taskNo < TASKS_QTY; taskNo++) {
             requestController.queueTask(null, null, task -> whenExecuted.run(), 0, null, false, false);

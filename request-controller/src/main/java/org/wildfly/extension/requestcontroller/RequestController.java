@@ -11,17 +11,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
-import org.jboss.as.server.suspend.CountingRequestCountCallback;
-import org.jboss.as.server.suspend.ServerActivity;
-import org.jboss.as.server.suspend.ServerActivityCallback;
-import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.as.server.suspend.ServerResumeContext;
+import org.jboss.as.server.suspend.ServerSuspendContext;
+import org.jboss.as.server.suspend.SuspendableActivity;
+import org.jboss.as.server.suspend.SuspendableActivityRegistry;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
@@ -40,12 +45,12 @@ import org.wildfly.extension.requestcontroller.logging.RequestControllerLogger;
  *
  * @author Stuart Douglas
  */
-public class RequestController implements Service<RequestController>, ServerActivity {
+public class RequestController implements Service<RequestController>, SuspendableActivity {
 
     static final ServiceName SERVICE_NAME = RequestControllerRootDefinition.REQUEST_CONTROLLER_CAPABILITY.getCapabilityServiceName();
 
     private static final AtomicIntegerFieldUpdater<RequestController> activeRequestCountUpdater = AtomicIntegerFieldUpdater.newUpdater(RequestController.class, "activeRequestCount");
-    private static final AtomicReferenceFieldUpdater<RequestController, ServerActivityCallback> listenerUpdater = AtomicReferenceFieldUpdater.newUpdater(RequestController.class, ServerActivityCallback.class, "listener");
+    private static final AtomicReferenceFieldUpdater<RequestController, CompletableFuture> suspendUpdater = AtomicReferenceFieldUpdater.newUpdater(RequestController.class, CompletableFuture.class, "suspend");
 
     private volatile int maxRequestCount = -1;
 
@@ -56,57 +61,82 @@ public class RequestController implements Service<RequestController>, ServerActi
     private final Map<ControlPointIdentifier, ControlPoint> entryPoints = new HashMap<>();
 
     @SuppressWarnings("unused")
-    private volatile ServerActivityCallback listener = null;
+    private volatile CompletableFuture<Void> suspend = null;
 
     private final boolean trackIndividualControlPoints;
-    private final Supplier<SuspendController> suspendController;
+    private final Supplier<SuspendableActivityRegistry> registry;
 
-    public RequestController(boolean trackIndividualControlPoints, Supplier<SuspendController> suspendControllerSupplier) {
+    public RequestController(boolean trackIndividualControlPoints, Supplier<SuspendableActivityRegistry> registry) {
         this.trackIndividualControlPoints = trackIndividualControlPoints;
-        this.suspendController = suspendControllerSupplier;
-    }
-
-    @Override
-    public void preSuspend(ServerActivityCallback listener) {
-        listener.done();
+        this.registry = registry;
     }
 
     private Timer timer;
 
     private final Deque<QueuedTask> taskQueue = new LinkedBlockingDeque<>();
 
-    /**
-     * Pause the controller. All existing requests will have a chance to finish, and once all requests are
-     * finished the provided listener will be invoked.
-     * <p/>
-     * While the container is paused no new requests will be accepted.
-     *
-     * @param requestCountListener The listener that will be notified when all requests are done
-     */
-    public synchronized void suspended(ServerActivityCallback requestCountListener) {
+    @Override
+    public CompletionStage<Void> suspend(ServerSuspendContext context) {
         this.paused = true;
-        listenerUpdater.set(this, requestCountListener);
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        suspendUpdater.set(this, result);
 
         if (activeRequestCountUpdater.get(this) == 0) {
-            if (listenerUpdater.compareAndSet(this, requestCountListener, null)) {
-                requestCountListener.done();
+            if (suspendUpdater.compareAndSet(this, result, null)) {
+                result.complete(null);
             }
         }
+        return result;
     }
 
-    /**
-     * Unpause the server, allowing it to resume normal operations
-     */
     @Override
-    public synchronized void resume() {
+    public CompletionStage<Void> resume(ServerResumeContext context) {
         this.paused = false;
-        ServerActivityCallback listener = listenerUpdater.get(this);
-        if (listener != null) {
-            listenerUpdater.compareAndSet(this, listener, null);
+        CompletableFuture<Void> suspend = suspendUpdater.get(this);
+        if (suspend != null) {
+            suspendUpdater.compareAndSet(this, suspend, null);
+            suspend.cancel(false);
         }
         while (!taskQueue.isEmpty() && (activeRequestCount < maxRequestCount || maxRequestCount < 0)) {
             runQueuedTask(false);
         }
+        return SuspendableActivity.COMPLETED;
+    }
+
+    /**
+     * Pauses control points matching the specified predicate.
+     *
+     * @param filter a control point filter
+     * @return a stage that will complete when the deployments matching the specified predicate are paused.
+     */
+    private synchronized CompletionStage<Void> pause(Predicate<ControlPoint> filter) {
+        List<ControlPoint> controlPoints = this.entryPoints.values().stream().filter(filter).collect(Collectors.toUnmodifiableList());
+        if (controlPoints.isEmpty()) return SuspendableActivity.COMPLETED;
+        AtomicInteger count = new AtomicInteger(controlPoints.size());
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        for (ControlPoint controlPoint : controlPoints) {
+            controlPoint.pause().whenComplete(new BiConsumer<>() {
+                @Override
+                public void accept(Void ignore, Throwable exception) {
+                    if (exception != null) {
+                        result.completeExceptionally(exception);
+                    } else if (count.decrementAndGet() == 0) {
+                        result.complete(null);
+                    }
+                }
+            });
+        }
+        return result;
+    }
+
+    /**
+     * Pauses a given deployment
+     *
+     * @param deployment The deployment to pause
+     * @return a stage that completes when all control points for the the specified deployment have paused.
+     */
+    public CompletionStage<Void> pauseDeployment(final String deployment) {
+        return this.pause(new DeploymentFilter(deployment));
     }
 
     /**
@@ -114,20 +144,19 @@ public class RequestController implements Service<RequestController>, ServerActi
      *
      * @param deployment The deployment to pause
      * @param listener The listener that will be notified when the pause is complete
+     * @deprecated Superseded by {@link #pauseDeployment(String)}.
      */
-    public synchronized void pauseDeployment(final String deployment, ServerActivityCallback listener) {
-        final List<ControlPoint> eps = new ArrayList<ControlPoint>();
-        for (ControlPoint ep : entryPoints.values()) {
-            if (ep.getDeployment().equals(deployment)) {
-                if(!ep.isPaused()) {
-                    eps.add(ep);
-                }
-            }
-        }
-        CountingRequestCountCallback realListener = new CountingRequestCountCallback(eps.size(), listener);
-        for (ControlPoint ep : eps) {
-            ep.pause(realListener);
-        }
+    @Deprecated(forRemoval = true, since = "26.0.0")
+    public void pauseDeployment(final String deployment, org.jboss.as.server.suspend.ServerActivityCallback listener) {
+        this.pauseDeployment(deployment).whenComplete((ignore, exception) -> listener.done());
+    }
+
+    /**
+     * Resumes the control points matching the specified predicate.
+     * @param filter a control point filter
+     */
+    private synchronized void resume(Predicate<ControlPoint> filter) {
+        this.entryPoints.values().stream().filter(filter).forEach(ControlPoint::resume);
     }
 
     /**
@@ -135,38 +164,30 @@ public class RequestController implements Service<RequestController>, ServerActi
      *
      * @param deployment The deployment to resume
      */
-    public synchronized void resumeDeployment(final String deployment) {
-        for (ControlPoint ep : entryPoints.values()) {
-            if (ep.getDeployment().equals(deployment)) {
-                ep.resume();
-            }
-        }
+    public void resumeDeployment(final String deployment) {
+        this.resume(new DeploymentFilter(deployment));
     }
 
     /**
      * Pauses a given entry point. This can be used to stop all requests though a given mechanism, e.g. all web requests
      *
-     * @param controlPoint The control point
-     * @param listener   The listener
+     * @param controlPoint the entry point to pause
+     * @return a stage that completes when all control points for the specified entry point have paused.
      */
-    public synchronized void pauseControlPoint(final String controlPoint, ServerActivityCallback listener) {
-        final List<ControlPoint> eps = new ArrayList<ControlPoint>();
-        for (ControlPoint ep : entryPoints.values()) {
-            if (ep.getEntryPoint().equals(controlPoint)) {
-                if(!ep.isPaused()) {
-                    eps.add(ep);
-                }
-            }
-        }
-        if(eps.isEmpty()) {
-            if(listener != null) {
-                listener.done();
-            }
-        }
-        CountingRequestCountCallback realListener = new CountingRequestCountCallback(eps.size(), listener);
-        for (ControlPoint ep : eps) {
-            ep.pause(realListener);
-        }
+    public CompletionStage<Void> pauseControlPoint(final String entryPoint) {
+        return this.pause(new EntryPointFilter(entryPoint));
+    }
+
+    /**
+     * Pauses a given entry point. This can be used to stop all requests though a given mechanism, e.g. all web requests
+     *
+     * @param entryPoint the entry point to pause
+     * @param listener   The listener
+     * @deprecated Superseded by {@link #pauseControlPoint(String)}
+     */
+    @Deprecated(forRemoval = true)
+    public void pauseControlPoint(final String entryPoint, org.jboss.as.server.suspend.ServerActivityCallback listener) {
+        this.pauseControlPoint(entryPoint).whenComplete((ignore, exception) -> listener.done());
     }
 
     /**
@@ -174,12 +195,8 @@ public class RequestController implements Service<RequestController>, ServerActi
      *
      * @param entryPoint The entry point
      */
-    public synchronized void resumeControlPoint(final String entryPoint) {
-        for (ControlPoint ep : entryPoints.values()) {
-            if (ep.getEntryPoint().equals(entryPoint)) {
-                ep.resume();
-            }
-        }
+    public void resumeControlPoint(final String entryPoint) {
+        this.resume(new EntryPointFilter(entryPoint));
     }
 
     public synchronized RequestControllerState getState() {
@@ -225,10 +242,10 @@ public class RequestController implements Service<RequestController>, ServerActi
         int result = activeRequestCountUpdater.decrementAndGet(this);
         if (paused) {
             if (paused && result == 0) {
-                ServerActivityCallback listener = listenerUpdater.get(this);
-                if (listener != null) {
-                    if (listenerUpdater.compareAndSet(this, listener, null)) {
-                        listener.done();
+                CompletableFuture<Void> suspend = suspendUpdater.get(this);
+                if (suspend != null) {
+                    if (suspendUpdater.compareAndSet(this, suspend, null)) {
+                        suspend.complete(null);
                     }
                 }
             }
@@ -302,13 +319,13 @@ public class RequestController implements Service<RequestController>, ServerActi
 
     @Override
     public void start(StartContext startContext) throws StartException {
-        suspendController.get().registerActivity(this);
+        this.registry.get().registerActivity(this);
         timer = new Timer();
     }
 
     @Override
     public void stop(StopContext stopContext) {
-        suspendController.get().unRegisterActivity(this);
+        this.registry.get().registerActivity(this);
         timer.cancel();
         timer = null;
         while (!taskQueue.isEmpty()) {
@@ -476,4 +493,29 @@ public class RequestController implements Service<RequestController>, ServerActi
         }
     }
 
+    private static class DeploymentFilter implements Predicate<ControlPoint> {
+        private final String deployment;
+
+        DeploymentFilter(String deployment) {
+            this.deployment = deployment;
+        }
+
+        @Override
+        public boolean test(ControlPoint controlPoint) {
+            return controlPoint.getDeployment().equals(this.deployment);
+        }
+    }
+
+    private static class EntryPointFilter implements Predicate<ControlPoint> {
+        private final String entryPoint;
+
+        EntryPointFilter(String entryPoint) {
+            this.entryPoint = entryPoint;
+        }
+
+        @Override
+        public boolean test(ControlPoint controlPoint) {
+            return controlPoint.getEntryPoint().equals(this.entryPoint);
+        }
+    }
 }

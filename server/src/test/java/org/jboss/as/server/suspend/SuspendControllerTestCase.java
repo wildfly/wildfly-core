@@ -13,10 +13,11 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Unit tests of {@link SuspendController}.
+ * Unit tests of {@link ServerSuspendController}.
  */
 public class SuspendControllerTestCase {
 
@@ -34,7 +35,9 @@ public class SuspendControllerTestCase {
 
     private void serverActivityCallbackOrderTest(CounterActivity... activities) {
         SuspendController testee = new SuspendController();
+        Assert.assertSame(ServerSuspendController.State.SUSPENDED, testee.getState());
         testee.resume();
+        Assert.assertSame(ServerSuspendController.State.RUNNING, testee.getState());
 
         NavigableSet<CounterActivity> activitySet = new TreeSet<>();
         for (CounterActivity activity : activities) {
@@ -42,8 +45,11 @@ public class SuspendControllerTestCase {
             activitySet.add(activity);
         }
 
+        Assert.assertSame(ServerSuspendController.State.RUNNING, testee.getState());
         testee.suspend(-1);
+        Assert.assertSame(ServerSuspendController.State.SUSPENDED, testee.getState());
         testee.resume();
+        Assert.assertSame(ServerSuspendController.State.RUNNING, testee.getState());
 
         orderCheck(activitySet);
 
@@ -55,8 +61,11 @@ public class SuspendControllerTestCase {
             }
         }
 
+        Assert.assertSame(ServerSuspendController.State.RUNNING, testee.getState());
         testee.suspend(-1);
+        Assert.assertSame(ServerSuspendController.State.SUSPENDED, testee.getState());
         testee.resume();
+        Assert.assertSame(ServerSuspendController.State.RUNNING, testee.getState());
 
         orderCheck(activitySet);
     }

@@ -5,157 +5,297 @@
 
 package org.jboss.as.server.suspend;
 
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.NavigableMap;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.TreeMap;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.msc.service.Service;
-import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
-import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.Assert;
+import org.wildfly.common.function.Functions;
 
 /**
- * The graceful shutdown controller. This class co-ordinates the graceful shutdown and pause/resume of a
- * servers operations.
- * <p/>
- * <p/>
- * In most cases this work is delegated to the request controller subsystem.
- * however for workflows that do not correspond directly to a request model a {@link ServerActivity} instance
- * can be registered directly with this controller.
- *
+ * Orchestrates suspending and resuming of registered server activity.
+ * Registered server activity is organized into groups sharing the same suspend priority.
+ * Server suspension happens in two phases: prepare + suspend.
+ * <ol>
+ * <li>Set state to {@code State#PRE_SUSPEND}</li>
+ * <li>Iterate over activity groups in priority order (from first to last). For each group:
+ *  <ol>
+ *  <li>Create prepare stages for each registered server activity</li>
+ *  <li>Once all prepare stages within priority group have complete, move on to next priority group</li>
+ *  </ol>
+ * </li>
+ * <li>Set state to {@code State#SUSPENDING}</li>
+ * <li>Iterate over activity groups in priority order (from first to last). For each group:
+ *  <ol>
+ *  <li>Create suspend stages for each registered server activity</li>
+ *  <li>Once all suspend stages within priority group have complete, move on to next priority group</li>
+ *  </ol>
+ * </li>
+ * <li>Set state to {@code State#SUSPENDED}</li>
+ * </ol>
+ * Resuming the suspended server happens in one phase:
+ * <ol>
+ * <li>Iterate over activity groups in reverse priority order (from last to first). For each group:
+ *  <ol>
+ *  <li>Create resume stages for each registered server activity</li>
+ *  <li>Once all resume stages within priority group have complete, move on to next priority group</li>
+ *  </ol>
+ * </li>
+ * <li>Set state to {@code State#RUNNING}</li>
+ * </ol>
  * @author Stuart Douglas
+ * @author Paul Ferraro
  */
-public class SuspendController implements Service<SuspendController> {
+public class SuspendController implements ServerSuspendController, SuspendableActivityRegistry {
+    private static final Supplier<List<SuspendableActivity>> FACTORY = CopyOnWriteArrayList::new;
 
-    /**
-     * Timer that handles the timeout. We create it on pause, rather than leaving it hanging round.
-     */
-    private Timer timer;
+    // Server activity groups in suspend priority order (max -> min)
+    // Initialized as an unmodifiable list of empty activity lists
+    private final List<List<SuspendableActivity>> activityGroups = Stream.generate(FACTORY).limit(SuspendPriority.LAST.ordinal() + 1).collect(Collectors.toUnmodifiableList());
+    // Index of activity priorities
+    private final Map<SuspendableActivity, SuspendPriority> priorities = Collections.synchronizedMap(new IdentityHashMap<>());
 
-    private State state = State.SUSPENDED;
+    private final List<OperationListener> listeners = new CopyOnWriteArrayList<>();
 
-    private final NavigableMap<Integer, List<ServerActivity>> activitiesByGroup = new TreeMap<>();
+    private volatile State state = State.SUSPENDED;
 
-    private final List<OperationListener> operationListeners = new ArrayList<>();
-
-    private final InjectedValue<NotificationHandlerRegistry> notificationHandlerRegistry = new InjectedValue<>();
-
-    private int groupsCount;
-
-    private boolean startSuspended;
-
-    private final ServerActivityCallback listener = this::activityPaused;
-
-    public SuspendController() {
-        this.startSuspended = false;
+    @Override
+    public void reset() {
+        this.state = State.SUSPENDED;
     }
 
-    public void setStartSuspended(boolean startSuspended) {
-        //TODO: it is not very clear what this boolean stands for now.
-        this.startSuspended = startSuspended;
-        state = State.SUSPENDED;
-    }
-
-    public synchronized void suspend(long timeoutMillis) {
-        if(state == State.SUSPENDED) {
-            return;
+    @Override
+    public CompletionStage<Void> suspend(ServerSuspendContext context) {
+        if (this.state == State.SUSPENDED) {
+            return SuspendableActivity.COMPLETED;
         }
-        if (timeoutMillis > 0) {
-            ServerLogger.ROOT_LOGGER.suspendingServer(timeoutMillis);
-        } else if (timeoutMillis < 0) {
-            ServerLogger.ROOT_LOGGER.suspendingServerWithNoTimeout();
-        } else {
-            ServerLogger.ROOT_LOGGER.suspendingServer();
-        }
-        state = State.PRE_SUSPEND;
-        //we iterate a copy, in case a listener tries to register a new listener
-        for(OperationListener listener: new ArrayList<>(operationListeners)) {
+        this.state = State.PRE_SUSPEND;
+        for (OperationListener listener: this.listeners) {
             listener.suspendStarted();
         }
-        groupsCount = activitiesByGroup.size();
-        if (groupsCount == 0) {
-            handlePause();
-        } else {
-            // Set up the logic that will handle the 'suspended' calls when all the preSuspend calls have reported 'done'
-            CountingRequestCountCallback preSuspendGroupCallBack = new CountingRequestCountCallback(groupsCount, () -> {
-                state = State.SUSPENDING;
-                processGroups(activitiesByGroup.values().iterator(), (executionGroup, cb) -> {
-                    for (ServerActivity activity : executionGroup) {
-                        // TODO considering making this concurrent by passing this call as a task to an executor.
-                        // This would allow each activity a "fair" share of the timeout budget
-                        // Alternatively we could iterate executionGroup in reverse (LIFO) order.
-                        // But the executionGroups themselves already provide an ability for that kind of ordering
-                        activity.suspended(cb);
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        // Prepare activity groups in priority order, i.e. first -> last
+        this.phaseStage(this.activityGroups, SuspendableActivity::prepare, context, Functions.discardingBiConsumer()).whenComplete((ignored, prepareException) -> {
+            if (prepareException != null) {
+                result.completeExceptionally(prepareException);
+            } else {
+                this.state = State.SUSPENDING;
+                // Suspend activity groups in priority order, i.e. first -> last order
+                this.phaseStage(this.activityGroups, SuspendableActivity::suspend, context, Functions.discardingBiConsumer()).whenComplete((ignore, suspendException) -> {
+                    if (suspendException != null) {
+                        result.completeExceptionally(suspendException);
+                    } else {
+                        this.state = State.SUSPENDED;
+                        result.complete(null);
+                        for (OperationListener listener: this.listeners) {
+                            listener.complete();
+                        }
                     }
-                }, SuspendController.this.listener);
-            });
-
-            // Invoke the preSuspend calls
-            processGroups(activitiesByGroup.values().iterator(), (executionGroup, cb) -> {
-                for (ServerActivity activity : executionGroup) {
-                    // TODO see the 'suspended' section comment above re possible concurrent or LIFO execution
-                    activity.preSuspend(cb);
-                }
-            }, preSuspendGroupCallBack);
-
-            if (timeoutMillis > 0) {
-                timer = new Timer();
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        timeout();
-                    }
-                }, timeoutMillis);
-            } else if (timeoutMillis == 0) {
-                timeout();
+                });
             }
-        }
+        });
+        return result;
     }
 
+    @Override
+    public CompletionStage<Void> resume(ServerResumeContext context) {
+        if (this.state == State.RUNNING) {
+            return SuspendableActivity.COMPLETED;
+        }
+        // Resume activity groups in reverse priority order, i.e. last -> first
+        CompletionStage<Void> resumeStage = this.phaseStage(this::resumeIterator, SuspendableActivity::resume, context, ServerLogger.ROOT_LOGGER::failedToResume);
+        resumeStage.whenComplete((ignore, exception) -> {
+            if (exception == null) {
+                this.state = State.RUNNING;
+                for (OperationListener listener: this.listeners) {
+                    listener.cancelled();
+                }
+            }
+        });
+        return resumeStage;
+    }
+
+    private Iterator<List<SuspendableActivity>> resumeIterator() {
+        return reverseIterator(this.activityGroups);
+    }
+
+    /**
+     * Returns the stage for a suspend/resume phase.
+     * @param <C> the stage context type
+     * @param activityGroups the activity groups in a given iteration order
+     * @param phase a function for this phase.
+     * @param context the phase context
+     * @param exceptionHandler handles exceptions thrown by the phase function
+     * @return a completion stage for this phase of the suspend/resume process
+     */
+    private <C> CompletionStage<Void> phaseStage(Iterable<List<SuspendableActivity>> activityGroups, BiFunction<SuspendableActivity, C, CompletionStage<Void>> phase, C context, BiConsumer<SuspendableActivity, Throwable> exceptionHandler) {
+        // Final stage will complete after all activity for all groups has completed
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        // Counter used to determine when to complete final stage
+        AtomicInteger counter = new AtomicInteger(this.activityGroups.size());
+        BiConsumer<Void, Throwable> groupCompleter = new BiConsumer<>() {
+            @Override
+            public void accept(Void ignore, Throwable exception) {
+                if (exception != null) {
+                    result.completeExceptionally(exception);
+                } else if (counter.decrementAndGet() == 0) {
+                    result.complete(null);
+                }
+            }
+        };
+        // Iterate over activity groups (in the order dictated by the caller)
+        for (List<SuspendableActivity> group : activityGroups) {
+            List<SuspendableActivity> activities = List.copyOf(group);
+            if (activities.isEmpty()) {
+                // There are no activities for this group, complete immediately
+                groupCompleter.accept(null, null);
+            } else {
+                // Stage for this group will complete after all activity stages complete
+                CompletableFuture<Void> groupStage = new CompletableFuture<>();
+                groupStage.whenComplete(groupCompleter);
+                // Counter used to determine when to complete group stage
+                AtomicInteger groupCounter = new AtomicInteger(activities.size());
+                for (SuspendableActivity activity : activities) {
+                    BiConsumer<Void, Throwable> activityCompleter = new BiConsumer<>() {
+                        @Override
+                        public void accept(Void ignore, Throwable exception) {
+                            if (exception != null) {
+                                try {
+                                    exceptionHandler.accept(activity, exception);
+                                } finally {
+                                    groupStage.completeExceptionally(exception);
+                                }
+                            } else if (groupCounter.decrementAndGet() == 0) {
+                                groupStage.complete(null);
+                            }
+                        }
+                    };
+                    try {
+                        phase.apply(activity, context).whenComplete(activityCompleter);
+                    } catch (Throwable e) {
+                        activityCompleter.accept(null, e);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @deprecated Superseded by {@link #resume(ServerResumeContext)}.
+     */
+    @Deprecated(forRemoval = true)
     public void nonGracefulStart() {
-        resume(false);
+        this.resume(Context.STARTUP).toCompletableFuture().join();
     }
 
+    /**
+     * @deprecated Superseded by {@link #resume(ServerResumeContext)}.
+     */
+    @Deprecated(forRemoval = true)
     public void resume() {
-        resume(true);
+        this.resume(Context.RUNNING).toCompletableFuture().join();
     }
 
-    private synchronized void resume(boolean gracefulStart) {
-        if (state == State.RUNNING) {
-            return;
+    /**
+     * @deprecated Superseded by {@link #suspend(ServerSuspendContext)} using {@link CompletableFuture#completeOnTimeout(Object, long, TimeUnit)}.
+     */
+    @Deprecated(forRemoval = true)
+    public void suspend(long timeoutMillis) {
+        ServerLogger.ROOT_LOGGER.suspendingServer(timeoutMillis, TimeUnit.MILLISECONDS);
+        CompletableFuture<Void> suspend = this.suspend(Context.RUNNING).toCompletableFuture();
+        if (timeoutMillis >= 0) {
+            suspend.completeOnTimeout(null, timeoutMillis, TimeUnit.MILLISECONDS);
         }
-        if (!gracefulStart) {
-            ServerLogger.ROOT_LOGGER.startingNonGraceful();
-        } else {
-            ServerLogger.ROOT_LOGGER.resumingServer();
-        }
+        suspend.join();
+    }
 
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
-        }
-        for (OperationListener listener : new ArrayList<>(operationListeners)) {
-            listener.cancelled();
-        }
-        for (List<ServerActivity> executionGroup : activitiesByGroup.descendingMap().values()) {
-            for (ServerActivity activity : executionGroup) {
-                try {
-                    activity.resume();
-                } catch (Exception e) {
-                    ServerLogger.ROOT_LOGGER.failedToResume(activity, e);
+    private static <E> Iterator<E> reverseIterator(List<E> list) {
+        ListIterator<E> iterator = list.listIterator(list.size());
+        return new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return iterator.hasPrevious();
+            }
+
+            @Override
+            public E next() {
+                return iterator.previous();
+            }
+
+            @Override
+            public void remove() {
+                iterator.remove();
+            }
+
+            @Override
+            public void forEachRemaining(Consumer<? super E> action) {
+                while (this.hasNext()) {
+                    action.accept(this.next());
                 }
             }
+        };
+    }
+
+    @Override
+    public void registerActivity(SuspendableActivity activity, SuspendPriority priority) {
+        Assert.checkNotNullParam("activity", activity);
+        Assert.checkNotNullParam("priority", priority);
+        if ((priority.ordinal() < SuspendPriority.FIRST.ordinal()) || (priority.ordinal() > SuspendPriority.LAST.ordinal())) {
+            throw new IllegalArgumentException(String.valueOf(priority.ordinal()));
         }
-        state = State.RUNNING;
+        if (this.priorities.putIfAbsent(activity, priority) == null) {
+            this.activityGroups.get(priority.ordinal()).add(activity);
+            if (this.state != State.RUNNING) {
+                // if the activity is added when we are not running we just immediately suspend it
+                // this should only happen at boot, so there should be no outstanding requests anyway
+                // note that this means there is no execution group grouping of these calls.
+                activity.suspend(Context.STARTUP).toCompletableFuture().join();
+            }
+        }
+    }
+
+    @Override
+    public void unregisterActivity(SuspendableActivity activity) {
+        SuspendPriority priority = this.priorities.remove(activity);
+        if (priority != null) {
+            this.activityGroups.get(priority.ordinal()).remove(activity);
+        }
+    }
+
+    @Override
+    public State getState() {
+        return this.state;
+    }
+
+    @Override
+    public void addListener(OperationListener listener) {
+        this.listeners.add(listener);
+    }
+
+    @Override
+    public void removeListener(OperationListener listener) {
+        this.listeners.remove(listener);
+    }
+
+    @Deprecated(forRemoval = true)
+    public void setStartSuspended(boolean startSuspended) {
+        this.reset();
     }
 
     /**
@@ -164,115 +304,18 @@ public class SuspendController implements Service<SuspendController> {
      * @throws IllegalArgumentException if {@code activity} is {@code null} of if its
      *                                  {@link ServerActivity#getExecutionGroup() getExecutionGroup()} method
      *                                  returns a value outside of that method's documented legal range.
+     * @deprecated Superseded by {@link #registerActivity(SuspendableActivity)}.
      */
-    public synchronized void registerActivity(final ServerActivity activity) {
-        Assert.checkNotNullParam("activity", activity);
-        Assert.checkMinimumParameter("activity.getExecutionGroup()", ServerActivity.LOWEST_EXECUTION_GROUP, activity.getExecutionGroup());
-        Assert.checkMaximumParameter("activity.getExecutionGroup()", ServerActivity.HIGHEST_EXECUTION_GROUP, activity.getExecutionGroup());
-        List<ServerActivity> executionGroup = this.activitiesByGroup.computeIfAbsent(activity.getExecutionGroup(), ArrayList::new);
-        executionGroup.add(activity);
-        if(state != State.RUNNING) {
-            //if the activity is added when we are not running we just immediately suspend it
-            //this should only happen at boot, so there should be no outstanding requests anyway
-            // note that this means there is no execution group grouping of these calls.
-            activity.suspended(() -> {
-
-            });
-        }
+    @Deprecated(forRemoval = true)
+    public void registerActivity(final ServerActivity activity) {
+        this.registerActivity(activity, SuspendPriority.of(activity.getExecutionGroup()));
     }
 
-    public synchronized void unRegisterActivity(final ServerActivity activity) {
-        List<ServerActivity> executionGroup = activitiesByGroup.get(activity.getExecutionGroup());
-        if (executionGroup != null) {
-            executionGroup.remove(activity);
-            if (executionGroup.isEmpty()) {
-                activitiesByGroup.remove(activity.getExecutionGroup());
-            }
-        }
-    }
-
-    @Override
-    public synchronized void start(StartContext startContext) throws StartException {
-        if(startSuspended) {
-            ServerLogger.AS_ROOT_LOGGER.startingServerSuspended();
-        }
-    }
-
-    @Override
-    public synchronized void stop(StopContext stopContext) {
-    }
-
-    public State getState() {
-        return state;
-    }
-
-    private synchronized void activityPaused() {
-        --groupsCount;
-        handlePause();
-    }
-
-    private void handlePause() {
-        if (groupsCount == 0) {
-            state = State.SUSPENDED;
-            if (timer != null) {
-                timer.cancel();
-                timer = null;
-            }
-
-            for(OperationListener listener: new ArrayList<>(operationListeners)) {
-                listener.complete();
-            }
-        }
-    }
-
-    private synchronized void timeout() {
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
-        }
-        for(OperationListener listener: new ArrayList<>(operationListeners)) {
-            listener.timeout();
-        }
-    }
-
-
-    public synchronized void addListener(final OperationListener listener) {
-        operationListeners.add(listener);
-    }
-
-    public synchronized void removeListener(final OperationListener listener) {
-        operationListeners.remove(listener);
-    }
-
-    @Override
-    public SuspendController getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
-    }
-
-    public InjectedValue<NotificationHandlerRegistry> getNotificationHandlerRegistry() {
-        return notificationHandlerRegistry;
-    }
-
-    private void processGroups(Iterator<List<ServerActivity>> iterator,
-                               BiConsumer<List<ServerActivity>, ServerActivityCallback> groupFunction,
-                               ServerActivityCallback groupsCallback) {
-        // Take the first element from the iterator and apply the groupFunction, with a callback that
-        // calls this again to take the next element when all activities from the current element are done.
-        // When no elements are left, tell the groupsCallback we are done.
-        if (iterator.hasNext()) {
-            List<ServerActivity> activityList = iterator.next();
-            CountingRequestCountCallback cb = new CountingRequestCountCallback(activityList.size(), () -> {
-                processGroups(iterator, groupFunction, groupsCallback);
-                groupsCallback.done();
-            });
-            groupFunction.accept(activityList, cb);
-        }
-    }
-
-    public enum State {
-        RUNNING,
-        PRE_SUSPEND,
-        SUSPENDING,
-        SUSPENDED
+    /**
+     * @deprecated Superseded by {@link #unregisterActivity(SuspendableActivity)}.
+     */
+    @Deprecated(forRemoval = true)
+    public void unRegisterActivity(final ServerActivity activity) {
+        this.unregisterActivity(activity);
     }
 }
