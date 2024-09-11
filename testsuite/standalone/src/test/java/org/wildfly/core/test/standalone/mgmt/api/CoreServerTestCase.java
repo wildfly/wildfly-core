@@ -101,7 +101,7 @@ public class CoreServerTestCase {
         }
         final String jbossHome;
         if (Boolean.getBoolean("ts.bootable")) {
-            jbossHome = WildFlySecurityManager.getPropertyPrivileged("basedir", ".") + separatorChar + "target" + separatorChar + "bootable-jar-build-artifacts" + separatorChar + "wildfly";
+            jbossHome = WildFlySecurityManager.getPropertyPrivileged("basedir", ".") + separatorChar + "target" + separatorChar + "server";
         } else {
             jbossHome = WildFlySecurityManager.getPropertyPrivileged("jboss.home", ".");
         }
