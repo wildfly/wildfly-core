@@ -17,9 +17,9 @@ import org.jboss.dmr.ModelType;
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
-public final class StringListAttributeDefinition extends PrimitiveListAttributeDefinition {
+public class StringListAttributeDefinition extends PrimitiveListAttributeDefinition {
 
-    private StringListAttributeDefinition(Builder builder) {
+    protected <B extends ListAttributeDefinition.Builder<B, A>, A extends ListAttributeDefinition> StringListAttributeDefinition(ListAttributeDefinition.Builder<B, A> builder) {
         super(builder, ModelType.STRING);
     }
 
@@ -91,14 +91,12 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
         }
 
         public Builder(final StringListAttributeDefinition basis) {
-            this(basis.getName(), basis);
+            super(basis);
         }
 
         @Override
         public StringListAttributeDefinition build() {
             return new StringListAttributeDefinition(this);
         }
-
     }
-
 }
