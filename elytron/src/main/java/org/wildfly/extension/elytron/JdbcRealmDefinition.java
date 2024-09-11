@@ -19,7 +19,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.nio.charset.Charset;
-import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,8 +32,10 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
@@ -43,11 +44,12 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.CharsetValidator;
-import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
+import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.inject.InjectionException;
@@ -455,7 +457,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
     }
 
     interface PasswordMapperObjectDefinition {
-        PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException, InvalidKeyException;
+        PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException;
     }
 
     static class AttributeMappingObjectDefinition {
@@ -592,6 +594,13 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
         }
 
         @Override
+        protected void populateModel(OperationContext context, ModelNode operation, Resource resource)
+                throws OperationFailedException {
+            super.populateModel(context, operation, resource);
+            context.addStep(new JdbcRealmDefinitionValidation(), Stage.MODEL);
+        }
+
+        @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
                 throws OperationFailedException {
             ServiceTarget serviceTarget = context.getServiceTarget();
@@ -653,6 +662,26 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
         }
     }
 
+    private static class JdbcRealmDefinitionValidation implements OperationStepHandler {
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+
+            ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS, false).getModel();
+            List<ModelNode> queries = model.get(PrincipalQueryAttributes.PRINCIPAL_QUERIES_7_0.getName()).asList();
+
+            for (ModelNode modelNode : queries) {
+                long mappersCount = modelNode.keys().stream()
+                        .filter(PrincipalQueryAttributes.SUPPORTED_PASSWORD_MAPPERS::containsKey).count();
+
+                // We need to make sure that the principal-query has only one mapper
+                if (mappersCount > 1) {
+                    throw ROOT_LOGGER.jdbcRealmOnlySingleKeyMapperAllowed();
+                }
+            }
+        }
+    }
+
     private static KeyMapper resolveKeyMappers(OperationContext context, ModelNode authenticationQueryNode) throws OperationFailedException {
         KeyMapper keyMapper = null;
 
@@ -669,17 +698,10 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 continue;
             }
 
-            if (keyMapper != null) {
-                throw ROOT_LOGGER.jdbcRealmOnlySingleKeyMapperAllowed();
-            }
-
-            try {
-                keyMapper = mapperResource.toPasswordKeyMapper(context, propertyNode);
-            } catch (InvalidKeyException e) {
-                throw new OperationFailedException("Invalid key type.", e);
-            }
+            keyMapper = mapperResource.toPasswordKeyMapper(context, propertyNode);
         }
 
         return keyMapper;
     }
+
 }
