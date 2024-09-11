@@ -15,6 +15,15 @@ import org.jboss.dmr.ModelType;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class LongRangeValidator extends ModelTypeValidator implements MinMaxValidator {
+    /**
+     * Validates that a parameter is a long greater than or equal to zero.
+     */
+    public static final ParameterValidator NON_NEGATIVE = new LongRangeValidator(0L);
+    /**
+     * Validates that a parameter is a long greater than zero.
+     */
+    public static final ParameterValidator POSITIVE = new LongRangeValidator(1L);
+
     protected final long min;
     protected final long max;
 

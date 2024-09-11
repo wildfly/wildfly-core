@@ -136,13 +136,13 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         .setValidator(NOT_NULL_STRING_LENGTH_ONE_VALIDATOR)
         .build();
     public static final SimpleAttributeDefinition MANAGEMENT_MAJOR_VERSION = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION, ModelType.INT, false)
-        .setValidator(new IntRangeValidator(1))
+        .setValidator(IntRangeValidator.POSITIVE)
         .build();
     public static final SimpleAttributeDefinition MANAGEMENT_MINOR_VERSION = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.MANAGEMENT_MINOR_VERSION, ModelType.INT, false)
-        .setValidator(new IntRangeValidator(0))
+        .setValidator(IntRangeValidator.NON_NEGATIVE)
         .build();
     public static final SimpleAttributeDefinition MANAGEMENT_MICRO_VERSION = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.MANAGEMENT_MICRO_VERSION, ModelType.INT, false)
-        .setValidator(new IntRangeValidator(0))
+        .setValidator(IntRangeValidator.NON_NEGATIVE)
         .build();
     public static final SimpleAttributeDefinition PROCESS_TYPE = SimpleAttributeDefinitionBuilder.create(ServerDescriptionConstants.PROCESS_TYPE, ModelType.STRING)
             .setStorageRuntime()

@@ -31,7 +31,7 @@ class MemoryPoolMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHan
     private final ParametersValidator usageValidator = new ParametersValidator();
 
     private MemoryPoolMXBeanAttributeHandler() {
-        usageValidator.registerValidator(ModelDescriptionConstants.VALUE, new LongRangeValidator(0));
+        usageValidator.registerValidator(ModelDescriptionConstants.VALUE, LongRangeValidator.NON_NEGATIVE);
     }
 
     @Override
