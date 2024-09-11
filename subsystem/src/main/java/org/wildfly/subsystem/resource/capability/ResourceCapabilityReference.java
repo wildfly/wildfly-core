@@ -4,6 +4,7 @@
  */
 package org.wildfly.subsystem.resource.capability;
 
+import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -22,17 +23,19 @@ import org.jboss.dmr.ModelNode;
 import org.wildfly.service.descriptor.BinaryServiceDescriptor;
 import org.wildfly.service.descriptor.NullaryServiceDescriptor;
 import org.wildfly.service.descriptor.QuaternaryServiceDescriptor;
-import org.wildfly.service.descriptor.ServiceDescriptor;
 import org.wildfly.service.descriptor.TernaryServiceDescriptor;
 import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 import org.wildfly.subsystem.resource.ResourceModelResolver;
+import org.wildfly.subsystem.resource.ResourceResolver;
+import org.wildfly.subsystem.resource.SimpleResource;
+import org.wildfly.subsystem.service.ServiceDependency;
 
 /**
  * A {@link CapabilityReference} specialization that records requirements of a resource, rather than an attribute.
  * @param <T> the requirement type
  * @author Paul Ferraro
  */
-public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
+public interface ResourceCapabilityReference<T> extends CapabilityReference<T>, ResourceModelResolver<ServiceDependency<T>> {
 
     /**
      * Returns the resolver of the requirement name from a path address.
@@ -70,7 +73,7 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
      * @param requirement the requirement of the specified capability
      */
     static <T> Builder<T> builder(RuntimeCapability<Void> capability, NullaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, ResourceCapabilityServiceDescriptorReference.EMPTY_RESOLVER);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), ResourceCapabilityServiceDescriptorReference.EMPTY_RESOLVER);
     }
 
     /**
@@ -80,7 +83,7 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
      * @param requirement the requirement of the specified capability
      */
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, UnaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, UnaryCapabilityNameResolver.DEFAULT);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), UnaryCapabilityNameResolver.DEFAULT);
     }
 
     /**
@@ -91,7 +94,7 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
      * @param requirementNameResolver function for resolving the dynamic components of the requirement name
      */
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, BinaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, BinaryCapabilityNameResolver.PARENT_CHILD);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), BinaryCapabilityNameResolver.PARENT_CHILD);
     }
 
     /**
@@ -102,7 +105,7 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
      * @param requirementNameResolver function for resolving the dynamic components of the requirement name
      */
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, TernaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, TernaryCapabilityNameResolver.GRANDPARENT_PARENT_CHILD);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), TernaryCapabilityNameResolver.GRANDPARENT_PARENT_CHILD);
     }
 
     /**
@@ -113,7 +116,7 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
      * @param requirementNameResolver function for resolving the dynamic components of the requirement name
      */
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, QuaternaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, QuaternaryCapabilityNameResolver.GREATGRANDPARENT_GRANDPARENT_PARENT_CHILD);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), QuaternaryCapabilityNameResolver.GREATGRANDPARENT_GRANDPARENT_PARENT_CHILD);
     }
 
     interface Builder<T> {
@@ -124,7 +127,8 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
          * @return a reference to this builder
          */
         default Builder<T> when(AttributeDefinition attribute, Predicate<ModelNode> predicate) {
-            return this.when(attribute::resolveModelAttribute, predicate);
+            ResourceModelResolver<ModelNode> resolver = attribute::resolveModelAttribute;
+            return this.when(resolver, predicate);
         }
 
         /**
@@ -133,7 +137,7 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
          * @param predicate conditionally determines whether to require this capability, depending on the resolve value
          * @return a reference to this builder
          */
-        <V> Builder<T> when(ResourceModelResolver<V> resolver, Predicate<V> predicate);
+        <V> Builder<T> when(ResourceResolver<V> resolver, Predicate<V> predicate);
 
         /**
          * Builds the configured capability reference recorder.
@@ -153,12 +157,12 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
 
     static class DefaultBuilder<T> implements NaryBuilder<T> {
         private final RuntimeCapability<Void> capability;
-        private final ServiceDescriptor<T> requirement;
+        private final NaryServiceDescriptor<T> requirement;
 
         private Function<PathAddress, String[]> requirementNameResolver;
         private BiPredicate<OperationContext, Resource> predicate = ResourceCapabilityServiceDescriptorReference.ALWAYS;
 
-        DefaultBuilder(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement, Function<PathAddress, String[]> defaultRequirementNameResolver) {
+        DefaultBuilder(RuntimeCapability<Void> capability, NaryServiceDescriptor<T> requirement, Function<PathAddress, String[]> defaultRequirementNameResolver) {
             this.capability = capability;
             this.requirement = requirement;
             this.requirementNameResolver = defaultRequirementNameResolver;
@@ -171,12 +175,12 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
         }
 
         @Override
-        public <V> Builder<T> when(ResourceModelResolver<V> resolver, Predicate<V> predicate) {
+        public <V> Builder<T> when(ResourceResolver<V> resolver, Predicate<V> predicate) {
             this.predicate = new BiPredicate<>() {
                 @Override
                 public boolean test(OperationContext context, Resource resource) {
                     try {
-                        return predicate.test(resolver.resolve(context, resource.getModel()));
+                        return predicate.test(resolver.resolve(context, resource));
                     } catch (OperationFailedException e) {
                         // OFE would be due to an expression that can't be resolved right now (OperationContext.Stage.MODEL).
                         // Very unlikely an expression is used and that it uses a resolution source not available in MODEL.
@@ -196,7 +200,7 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
     abstract class AbstractResourceCapabilityServiceDescriptorReference<T> extends AbstractServiceDescriptorReference<T> implements org.wildfly.subsystem.resource.capability.ResourceCapabilityReference<T> {
         private final Function<PathAddress, String[]> requirementNameResolver;
 
-        public AbstractResourceCapabilityServiceDescriptorReference(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement, Function<PathAddress, String[]> requirementNameResolver) {
+        public AbstractResourceCapabilityServiceDescriptorReference(RuntimeCapability<Void> capability, NaryServiceDescriptor<T> requirement, Function<PathAddress, String[]> requirementNameResolver) {
             super(capability, requirement);
             this.requirementNameResolver = requirementNameResolver;
         }
@@ -225,14 +229,28 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
 
         private final BiPredicate<OperationContext, Resource> predicate;
 
-        ResourceCapabilityServiceDescriptorReference(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement, Function<PathAddress, String[]> requirementNameResolver, BiPredicate<OperationContext, Resource> predicate) {
+        ResourceCapabilityServiceDescriptorReference(RuntimeCapability<Void> capability, NaryServiceDescriptor<T> requirement, Function<PathAddress, String[]> requirementNameResolver, BiPredicate<OperationContext, Resource> predicate) {
             super(capability, requirement, requirementNameResolver);
             this.predicate = predicate;
         }
 
         @Override
-        public String[] resolve(OperationContext context, Resource resource, String value) {
-            return this.getRequirementNameResolver().apply(context.getCurrentAddress());
+        public ServiceDependency<T> resolve(OperationContext context, Resource resource) throws OperationFailedException {
+            if (this.predicate.test(context, resource)) {
+                Map.Entry<String, String[]> resolved = this.resolve(context, resource, "");
+                return ServiceDependency.on(resolved.getKey(), this.getRequirement().getType(), resolved.getValue());
+            }
+            return ServiceDependency.empty();
+        }
+
+        @Override
+        public ServiceDependency<T> resolve(OperationContext context, ModelNode model) throws OperationFailedException {
+            return this.resolve(context, new SimpleResource(model));
+        }
+
+        @Override
+        public Map.Entry<String, String[]> resolve(OperationContext context, Resource resource, String value) {
+            return this.getRequirement().resolve(this.getRequirementNameResolver().apply(context.getCurrentAddress()));
         }
 
         @Override
@@ -250,8 +268,8 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T> {
         }
 
         private String resolveRequirementName(OperationContext context) {
-            String[] segments = this.resolve(context, null, null);
-            return (segments.length > 0) ? RuntimeCapability.buildDynamicCapabilityName(this.getBaseRequirementName(), segments) : this.getBaseRequirementName();
+            Map.Entry<String, String[]> resolved = this.resolve(context, null, "");
+            return (resolved.getValue().length > 0) ? RuntimeCapability.buildDynamicCapabilityName(resolved.getKey(), resolved.getValue()) : resolved.getKey();
         }
     }
 }

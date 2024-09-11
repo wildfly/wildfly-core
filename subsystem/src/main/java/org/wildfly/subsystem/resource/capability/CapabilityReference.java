@@ -7,6 +7,7 @@ package org.wildfly.subsystem.resource.capability;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
@@ -53,7 +54,7 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder, Cap
      * @param requirement the requirement of the specified capability
      */
     static <T> Builder<T> builder(RuntimeCapability<Void> capability, UnaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement));
     }
 
     /**
@@ -63,7 +64,7 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder, Cap
      * @param requirement the requirement of the specified capability
      */
     static <T> ParentPathProvider<T> builder(RuntimeCapability<Void> capability, BinaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement));
     }
 
     /**
@@ -73,7 +74,7 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder, Cap
      * @param requirement the requirement of the specified capability
      */
     static <T> GrandparentPathProvider<T> builder(RuntimeCapability<Void> capability, TernaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement));
     }
 
     /**
@@ -83,7 +84,7 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder, Cap
      * @param requirement the requirement of the specified capability
      */
     static <T> GreatGrandparentPathProvider<T> builder(RuntimeCapability<Void> capability, QuaternaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement));
     }
 
     interface Builder<T> {
@@ -188,11 +189,11 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder, Cap
         private static final UnaryOperator<String> CHILD_REQUIREMENT_PATTERN_SEGMENT_RESOLVER = UnaryOperator.identity();
 
         private final RuntimeCapability<Void> capability;
-        private final ServiceDescriptor<T> requirement;
+        private final NaryServiceDescriptor<T> requirement;
         private final List<RequirementNameSegmentResolver> requirementNameSegmentResolvers = new ArrayList<>(4);
         private final List<UnaryOperator<String>> requirementPatternSegmentResolvers= new ArrayList<>(4);
 
-        DefaultBuilder(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement) {
+        DefaultBuilder(RuntimeCapability<Void> capability, NaryServiceDescriptor<T> requirement) {
             this.capability = capability;
             this.requirement = requirement;
         }
@@ -244,7 +245,7 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder, Cap
                 @Override
                 public String resolve(OperationContext context, Resource resource, String value) {
                     try {
-                        return attribute.resolveModelAttribute(context, resource.getModel()).asString();
+                        return attribute.resolveModelAttribute(context, resource.getModel()).asStringOrNull();
                     } catch (OperationFailedException e) {
                         throw new IllegalArgumentException(e);
                     }
@@ -290,9 +291,9 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder, Cap
     abstract class AbstractServiceDescriptorReference<T> implements CapabilityReference<T> {
 
         private final RuntimeCapability<Void> capability;
-        private final ServiceDescriptor<T> requirement;
+        private final NaryServiceDescriptor<T> requirement;
 
-        AbstractServiceDescriptorReference(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement) {
+        AbstractServiceDescriptorReference(RuntimeCapability<Void> capability, NaryServiceDescriptor<T> requirement) {
             this.capability = capability;
             this.requirement = requirement;
         }
@@ -303,7 +304,7 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder, Cap
         }
 
         @Override
-        public ServiceDescriptor<T> getRequirement() {
+        public NaryServiceDescriptor<T> getRequirement() {
             return this.requirement;
         }
 
@@ -327,20 +328,20 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder, Cap
         private final List<RequirementNameSegmentResolver> requirementNameSegmentResolvers;
         private final List<UnaryOperator<String>> requirementPatternSegmentResolvers;
 
-        ServiceDescriptorReference(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement, List<RequirementNameSegmentResolver> requirementNameSegmentResolvers, List<UnaryOperator<String>> requirementPatternSegmentResolvers) {
+        ServiceDescriptorReference(RuntimeCapability<Void> capability, NaryServiceDescriptor<T> requirement, List<RequirementNameSegmentResolver> requirementNameSegmentResolvers, List<UnaryOperator<String>> requirementPatternSegmentResolvers) {
             super(capability, requirement);
             this.requirementNameSegmentResolvers = List.copyOf(requirementNameSegmentResolvers);
             this.requirementPatternSegmentResolvers = List.copyOf(requirementPatternSegmentResolvers);
         }
 
         @Override
-        public String[] resolve(OperationContext context, Resource resource, String value) {
+        public Map.Entry<String, String[]> resolve(OperationContext context, Resource resource, String value) {
             String[] segments = new String[this.requirementNameSegmentResolvers.size()];
             ListIterator<RequirementNameSegmentResolver> resolvers = this.requirementNameSegmentResolvers.listIterator();
             while (resolvers.hasNext()) {
                 segments[resolvers.nextIndex()] = resolvers.next().resolve(context, resource, value);
             }
-            return segments;
+            return this.getRequirement().resolve(segments);
         }
 
         @Override
@@ -366,7 +367,8 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder, Cap
         }
 
         private String resolveRequirementName(OperationContext context, Resource resource, String value) {
-            return RuntimeCapability.buildDynamicCapabilityName(this.getBaseRequirementName(), this.resolve(context, resource, value));
+            Map.Entry<String, String[]> resolved = this.resolve(context, resource, value);
+            return (resolved.getValue().length > 0) ? RuntimeCapability.buildDynamicCapabilityName(resolved.getKey(), resolved.getValue()) : resolved.getKey();
         }
 
         @Override

@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.capability.BinaryCapabilityNameResolver;
 import org.jboss.as.controller.capability.QuaternaryCapabilityNameResolver;
@@ -21,9 +22,9 @@ import org.jboss.dmr.ModelNode;
 import org.wildfly.service.descriptor.BinaryServiceDescriptor;
 import org.wildfly.service.descriptor.NullaryServiceDescriptor;
 import org.wildfly.service.descriptor.QuaternaryServiceDescriptor;
-import org.wildfly.service.descriptor.ServiceDescriptor;
 import org.wildfly.service.descriptor.TernaryServiceDescriptor;
 import org.wildfly.service.descriptor.UnaryServiceDescriptor;
+import org.wildfly.subsystem.service.ServiceDependency;
 
 /**
  * A {@link CapabilityReference} specialization that records requirements of a resource, rather than an attribute.
@@ -41,7 +42,7 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
      */
     @Deprecated(forRemoval = true, since = "26.0.0")
     static <T> Builder<T> builder(RuntimeCapability<Void> capability, NullaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, ResourceCapabilityReference.ResourceCapabilityServiceDescriptorReference.EMPTY_RESOLVER);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), ResourceCapabilityReference.ResourceCapabilityServiceDescriptorReference.EMPTY_RESOLVER);
     }
 
     /**
@@ -53,7 +54,7 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
      */
     @Deprecated(forRemoval = true, since = "26.0.0")
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, UnaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, UnaryCapabilityNameResolver.DEFAULT);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), UnaryCapabilityNameResolver.DEFAULT);
     }
 
     /**
@@ -66,7 +67,7 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
      */
     @Deprecated(forRemoval = true, since = "26.0.0")
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, BinaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, BinaryCapabilityNameResolver.PARENT_CHILD);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), BinaryCapabilityNameResolver.PARENT_CHILD);
     }
 
     /**
@@ -79,7 +80,7 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
      */
     @Deprecated(forRemoval = true, since = "26.0.0")
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, TernaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, TernaryCapabilityNameResolver.GRANDPARENT_PARENT_CHILD);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), TernaryCapabilityNameResolver.GRANDPARENT_PARENT_CHILD);
     }
 
     /**
@@ -92,7 +93,7 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
      */
     @Deprecated(forRemoval = true, since = "26.0.0")
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, QuaternaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement, QuaternaryCapabilityNameResolver.GREATGRANDPARENT_GRANDPARENT_PARENT_CHILD);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), QuaternaryCapabilityNameResolver.GREATGRANDPARENT_GRANDPARENT_PARENT_CHILD);
     }
 
     @Deprecated(forRemoval = true, since = "26.0.0")
@@ -128,7 +129,7 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
     @Deprecated(forRemoval = true, since = "26.0.0")
     static class DefaultBuilder<T> extends ResourceCapabilityReference.DefaultBuilder<T> implements NaryBuilder<T> {
 
-        DefaultBuilder(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement, Function<PathAddress, String[]> defaultRequirementNameResolver) {
+        DefaultBuilder(RuntimeCapability<Void> capability, NaryServiceDescriptor<T> requirement, Function<PathAddress, String[]> defaultRequirementNameResolver) {
             super(capability, requirement, defaultRequirementNameResolver);
         }
 
@@ -157,6 +158,11 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
         ResourceCapabilityServiceDescriptorReference(ResourceCapabilityReference<T> reference) {
             super(reference);
             this.reference = reference;
+        }
+
+        @Override
+        public ServiceDependency<T> resolve(OperationContext context, ModelNode model) throws OperationFailedException {
+            return this.reference.resolve(context, model);
         }
 
         @Override

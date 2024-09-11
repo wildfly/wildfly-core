@@ -5,6 +5,7 @@
 
 package org.wildfly.subsystem.resource.capability;
 
+import java.util.Map;
 import java.util.function.Function;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -35,7 +36,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
      */
     @Deprecated(forRemoval = true, since = "26.0.0")
     static <T> Builder<T> builder(RuntimeCapability<Void> capability, UnaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement));
     }
 
     /**
@@ -47,7 +48,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
      */
     @Deprecated(forRemoval = true, since = "26.0.0")
     static <T> ParentPathProvider<T> builder(RuntimeCapability<Void> capability, BinaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement));
     }
 
     /**
@@ -59,7 +60,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
      */
     @Deprecated(forRemoval = true, since = "26.0.0")
     static <T> GrandparentPathProvider<T> builder(RuntimeCapability<Void> capability, TernaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement));
     }
 
     /**
@@ -71,7 +72,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
      */
     @Deprecated(forRemoval = true, since = "26.0.0")
     static <T> GreatGrandparentPathProvider<T> builder(RuntimeCapability<Void> capability, QuaternaryServiceDescriptor<T> requirement) {
-        return new DefaultBuilder<>(capability, requirement);
+        return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement));
     }
 
     @Deprecated(forRemoval = true, since = "26.0.0")
@@ -188,7 +189,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
     @Deprecated(forRemoval = true, since = "26.0.0")
     class DefaultBuilder<T> extends CapabilityReference.DefaultBuilder<T> implements GreatGrandparentPathProvider<T>, GrandparentPathProvider<T>, ParentPathProvider<T>, Builder<T> {
 
-        DefaultBuilder(RuntimeCapability<Void> capability, ServiceDescriptor<T> requirement) {
+        DefaultBuilder(RuntimeCapability<Void> capability, NaryServiceDescriptor<T> requirement) {
             super(capability, requirement);
         }
 
@@ -243,7 +244,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
         }
 
         @Override
-        public String[] resolve(OperationContext context, Resource resource, String value) {
+        public Map.Entry<String, String[]> resolve(OperationContext context, Resource resource, String value) {
             return this.reference.resolve(context, resource, value);
         }
 
