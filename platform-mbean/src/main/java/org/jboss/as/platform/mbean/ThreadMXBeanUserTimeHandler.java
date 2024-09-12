@@ -36,7 +36,7 @@ public class ThreadMXBeanUserTimeHandler implements OperationStepHandler {
     private final ParametersValidator validator = new ParametersValidator();
 
     private ThreadMXBeanUserTimeHandler() {
-        validator.registerValidator(PlatformMBeanConstants.ID, new LongRangeValidator(1));
+        validator.registerValidator(PlatformMBeanConstants.ID, LongRangeValidator.POSITIVE);
     }
 
     @Override

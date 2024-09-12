@@ -15,6 +15,15 @@ import org.jboss.dmr.ModelType;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class IntRangeValidator extends ModelTypeValidator implements MinMaxValidator {
+    /**
+     * Validates that a parameter is an integer greater than or equal to zero.
+     */
+    public static final ParameterValidator NON_NEGATIVE = new IntRangeValidator(0);
+    /**
+     * Validates that a parameter is an integer greater than zero.
+     */
+    public static final ParameterValidator POSITIVE = new IntRangeValidator(1);
+
     protected final int min;
     protected final int max;
 

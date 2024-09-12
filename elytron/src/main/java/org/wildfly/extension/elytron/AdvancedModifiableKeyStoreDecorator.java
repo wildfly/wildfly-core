@@ -210,7 +210,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
 
         static final SimpleAttributeDefinition VALIDITY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VALIDITY, ModelType.LONG, true)
                 .setAllowExpression(true)
-                .setValidator(new LongRangeValidator(1L))
+                .setValidator(LongRangeValidator.POSITIVE)
                 .setDefaultValue(new ModelNode(90))
                 .build();
 
@@ -918,7 +918,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
     static class ShouldRenewCertificateHandler extends ElytronRuntimeOnlyHandler {
         static final SimpleAttributeDefinition EXPIRATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.EXPIRATION, ModelType.LONG, true)
                 .setAllowExpression(true)
-                .setValidator(new LongRangeValidator(1L))
+                .setValidator(LongRangeValidator.POSITIVE)
                 .setDefaultValue(new ModelNode(30))
                 .build();
 

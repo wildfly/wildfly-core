@@ -60,28 +60,28 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
 
     static final OptionAttributeDefinition WORKER_TASK_CORE_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_CORE_THREADS, Options.WORKER_TASK_CORE_THREADS)
             .setDefaultValue(new ModelNode(2))
-            .setValidator(new IntRangeValidator(0))
+            .setValidator(IntRangeValidator.NON_NEGATIVE)
             .setAllowExpression(true)
             .build();
 
     static final OptionAttributeDefinition WORKER_TASK_MAX_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_MAX_THREADS, Options.WORKER_TASK_MAX_THREADS)
-            .setValidator(new IntRangeValidator(0))
+            .setValidator(IntRangeValidator.NON_NEGATIVE)
             .setAllowExpression(true)
             .build();
     static final OptionAttributeDefinition WORKER_TASK_KEEPALIVE = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_KEEPALIVE, Options.WORKER_TASK_KEEPALIVE)
             .setDefaultValue(new ModelNode(60_000))
-            .setValidator(new IntRangeValidator(0))
+            .setValidator(IntRangeValidator.NON_NEGATIVE)
             .setAllowExpression(true)
             .build();
     static final OptionAttributeDefinition STACK_SIZE = new OptionAttributeDefinition.Builder(Constants.STACK_SIZE, Options.STACK_SIZE)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setDefaultValue(ModelNode.ZERO_LONG)
-            .setValidator(new LongRangeValidator(0L))
+            .setValidator(LongRangeValidator.NON_NEGATIVE)
             .setAllowExpression(true)
             .build();
     static final OptionAttributeDefinition WORKER_IO_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_IO_THREADS, Options.WORKER_IO_THREADS)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
-            .setValidator(new IntRangeValidator(0))
+            .setValidator(IntRangeValidator.NON_NEGATIVE)
             .setAllowExpression(true)
             .build();
 

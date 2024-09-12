@@ -41,7 +41,7 @@ public class ThreadMXBeanThreadInfoHandler implements OperationStepHandler {
     private final ParametersValidator validator = new ParametersValidator();
 
     private ThreadMXBeanThreadInfoHandler() {
-        validator.registerValidator(PlatformMBeanConstants.ID, new LongRangeValidator(1));
+        validator.registerValidator(PlatformMBeanConstants.ID, LongRangeValidator.POSITIVE);
         validator.registerValidator(PlatformMBeanConstants.MAX_DEPTH, new IntRangeValidator(1, Integer.MAX_VALUE, true, false));
     }
 

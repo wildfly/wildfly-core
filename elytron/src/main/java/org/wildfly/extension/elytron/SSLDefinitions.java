@@ -307,14 +307,14 @@ class SSLDefinitions {
 
     static final SimpleAttributeDefinition MAXIMUM_CERT_PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, ModelType.INT, true)
             .setAllowExpression(true)
-            .setValidator(new IntRangeValidator(1))
+            .setValidator(IntRangeValidator.POSITIVE)
             .setRestartAllServices()
             .build();
 
     @Deprecated
     static final SimpleAttributeDefinition MAXIMUM_CERT_PATH_CRL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, ModelType.INT, true)
             .setAllowExpression(true)
-            .setValidator(new IntRangeValidator(1))
+            .setValidator(IntRangeValidator.POSITIVE)
             .setDeprecated(ModelVersion.create(8))
             .setRestartAllServices()
             .build();

@@ -46,7 +46,7 @@ public class ThreadMXBeanThreadInfosHandler implements OperationStepHandler {
     private final ParametersValidator lockedValidator = new ParametersValidator();
 
     private ThreadMXBeanThreadInfosHandler() {
-        idsValidator.registerValidator(PlatformMBeanConstants.IDS, new ListValidator(new LongRangeValidator(1)));
+        idsValidator.registerValidator(PlatformMBeanConstants.IDS, new ListValidator(LongRangeValidator.POSITIVE));
         depthValidator.registerValidator(PlatformMBeanConstants.MAX_DEPTH, new IntRangeValidator(1, Integer.MAX_VALUE, false, false));
         lockedValidator.registerValidator(PlatformMBeanConstants.LOCKED_MONITORS, new ModelTypeValidator(ModelType.BOOLEAN));
         lockedValidator.registerValidator(PlatformMBeanConstants.LOCKED_SYNCHRONIZERS, new ModelTypeValidator(ModelType.BOOLEAN));

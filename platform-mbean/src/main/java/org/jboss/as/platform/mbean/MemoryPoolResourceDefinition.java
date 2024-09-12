@@ -48,7 +48,7 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.BYTES)
-            .setValidator(new IntRangeValidator(0))
+            .setValidator(IntRangeValidator.NON_NEGATIVE)
             .build();
 
     private static AttributeDefinition USAGE_THRESHOLD_EXCEEDED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.USAGE_THRESHOLD_EXCEEDED, ModelType.BOOLEAN, true)
@@ -79,7 +79,7 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.BYTES)
-            .setValidator(new IntRangeValidator(0))
+            .setValidator(IntRangeValidator.NON_NEGATIVE)
             .build();
 
     private static AttributeDefinition COLLECTION_USAGE_THRESHOLD_SUPPORTED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_USAGE_THRESHOLD_SUPPORTED, ModelType.BOOLEAN, false)
