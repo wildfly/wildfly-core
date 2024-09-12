@@ -20,7 +20,8 @@ public enum ModelTestControllerVersion {
     //EAP releases
     EAP_7_4_0("7.4.0.GA-redhat-00005", true, "23.0.0", "15.0.2.Final-redhat-00001", "7.4.0"),
     EAP_8_0_0("8.0.0.GA-redhat-00011", true, "29.0.0", "21.0.5.Final-redhat-00001", "8.0.0"),
-    EAP_XP_4("4.0.0.GA-redhat-00003", true, "23.0.0", "15.0.26.Final-redhat-00001", "xp4");
+    EAP_XP_4("4.0.0.GA-redhat-00003", true, "23.0.0", "15.0.26.Final-redhat-00001", "xp4"),
+    EAP_XP_5("5.0.0.GA-redhat-00005", true, "29.0.0", "21.0.5.Final-redhat-00001", "xp5");
 
     private final String mavenGavVersion;
     private final String testControllerVersion;
