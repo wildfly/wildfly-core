@@ -7,12 +7,18 @@ package org.wildfly.subsystem.resource;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
 /**
  * Resolves a value from a resource model.
  */
-public interface ResourceModelResolver<T> {
+public interface ResourceModelResolver<T> extends ResourceResolver<T> {
+
+    @Override
+    default T resolve(OperationContext context, Resource resource) throws OperationFailedException {
+        return this.resolve(context, resource.getModel());
+    }
 
     /**
      * Resolves a value from the specified resource model, using the specified operation context.

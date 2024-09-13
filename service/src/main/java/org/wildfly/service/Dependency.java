@@ -85,6 +85,23 @@ public interface Dependency<B extends ServiceBuilder<?>, V> extends Consumer<B>,
         };
     }
 
+    /**
+     * Indicates whether this dependency will never provide a value.
+     * @return true, if this dependency will not provide a value, false otherwise.
+     */
+    default boolean isEmpty() {
+        return false;
+    }
+
+    /**
+     * Indicates whether this dependency will provide a value.
+     * This method is the direct inverse of {@link #isEmpty()}.
+     * @return true, if this dependency will provide a value, false otherwise.
+     */
+    default boolean isPresent() {
+        return !this.isEmpty();
+    }
+
     class SimpleDependency<B extends ServiceBuilder<?>, V> implements Dependency<B, V> {
 
         private final V value;
@@ -96,6 +113,11 @@ public interface Dependency<B extends ServiceBuilder<?>, V> extends Consumer<B>,
         @Override
         public V get() {
             return this.value;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return this.value == null;
         }
 
         @Override

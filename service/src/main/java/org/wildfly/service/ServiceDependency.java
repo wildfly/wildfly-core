@@ -71,21 +71,30 @@ public interface ServiceDependency<V> extends Dependency<ServiceBuilder<?>, V> {
     }
 
     /**
+     * Returns an empty pseudo-dependency whose {@link #get()} returns null.
+     * @param <V> the value type
+     * @return an empty service dependency
+     */
+    @SuppressWarnings("unchecked")
+    static <V> ServiceDependency<V> empty() {
+        return (ServiceDependency<V>) SimpleServiceDependency.EMPTY;
+    }
+
+    /**
      * Returns a pseudo-dependency whose {@link #get()} returns the specified value.
      * @param <V> the value type
      * @param value a service value
-     * @return a service dependency
+     * @return a pseudo-dependency whose {@link #get()} returns the specified value.
      */
-    @SuppressWarnings("unchecked")
     static <V> ServiceDependency<V> of(V value) {
-        return (value != null) ? new SimpleServiceDependency<>(value) : (ServiceDependency<V>) SimpleServiceDependency.NULL;
+        return (value != null) ? new SimpleServiceDependency<>(value) : empty();
     }
 
     /**
      * Returns a pseudo-dependency whose {@link #get()} returns the value from the specified supplier.
      * @param <V> the value type
      * @param supplier a service value supplier
-     * @return a service dependency
+     * @return a pseudo-dependency whose {@link #get()} returns the value from the specified supplier.
      * @throws NullPointerException if {@code supplier} was null
      */
     static <V> ServiceDependency<V> from(Supplier<V> supplier) {
@@ -100,11 +109,11 @@ public interface ServiceDependency<V> extends Dependency<ServiceBuilder<?>, V> {
      * @return a service dependency
      */
     static <V> ServiceDependency<V> on(ServiceName name) {
-        return (name != null) ? new DefaultServiceDependency<>(name) : of(null);
+        return (name != null) ? new DefaultServiceDependency<>(name) : empty();
     }
 
     class SimpleServiceDependency<V> extends SimpleDependency<ServiceBuilder<?>, V> implements ServiceDependency<V> {
-        static final ServiceDependency<Object> NULL = new SimpleServiceDependency<>(null);
+        static final ServiceDependency<Object> EMPTY = new SimpleServiceDependency<>(null);
 
         SimpleServiceDependency(V value) {
             super(value);

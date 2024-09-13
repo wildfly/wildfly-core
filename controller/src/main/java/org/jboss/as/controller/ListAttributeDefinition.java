@@ -210,7 +210,11 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
         }
 
         public Builder(ListAttributeDefinition basis) {
-            super(basis);
+            this(basis.getName(), basis);
+        }
+
+        public Builder(String attributeName, ListAttributeDefinition basis) {
+            super(attributeName, basis);
             this.elementValidator = basis.getElementValidator();
         }
 

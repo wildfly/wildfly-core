@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.wildfly.subsystem.resource.capabilty;
+package org.wildfly.subsystem.resource.capability;
 
 import static org.mockito.Mockito.*;
 
@@ -26,12 +26,11 @@ import org.wildfly.service.descriptor.BinaryServiceDescriptor;
 import org.wildfly.service.descriptor.NullaryServiceDescriptor;
 import org.wildfly.service.descriptor.TernaryServiceDescriptor;
 import org.wildfly.service.descriptor.UnaryServiceDescriptor;
-import org.wildfly.subsystem.resource.capability.CapabilityReferenceRecorder;
 
 /**
- * Unit test for {@link CapabilityReferenceRecorder}.
+ * Unit test for {@link CapabilityReference}.
  */
-public class CapabilityReferenceRecorderTestCase {
+public class CapabilityReferenceTestCase {
 
     @Test
     public void testUnary() {
@@ -39,11 +38,12 @@ public class CapabilityReferenceRecorderTestCase {
         NullaryServiceDescriptor<Object> descriptor = NullaryServiceDescriptor.of("capability", Object.class);
         RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(descriptor).build();
         UnaryServiceDescriptor<Object> requirement = UnaryServiceDescriptor.of("requirement", Object.class);
-        CapabilityReferenceRecorder<Object> recorder = CapabilityReferenceRecorder.builder(capability, requirement).build();
+        CapabilityReference<Object> recorder = CapabilityReference.builder(capability, requirement).build();
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
-        Assert.assertSame(requirement, recorder.getRequirement());
+        Assert.assertSame(requirement.getName(), recorder.getRequirement().getName());
+        Assert.assertSame(requirement.getType(), recorder.getRequirement().getType());
         Assert.assertEquals(requirement.getName(), recorder.getBaseRequirementName());
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
@@ -97,11 +97,12 @@ public class CapabilityReferenceRecorderTestCase {
         UnaryServiceDescriptor<Object> descriptor = UnaryServiceDescriptor.of("capability", Object.class);
         RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(descriptor).build();
         UnaryServiceDescriptor<Object> requirement = UnaryServiceDescriptor.of("requirement", Object.class);
-        CapabilityReferenceRecorder<Object> recorder = CapabilityReferenceRecorder.builder(capability, requirement).build();
+        CapabilityReference<Object> recorder = CapabilityReference.builder(capability, requirement).build();
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
-        Assert.assertSame(requirement, recorder.getRequirement());
+        Assert.assertSame(requirement.getName(), recorder.getRequirement().getName());
+        Assert.assertSame(requirement.getType(), recorder.getRequirement().getType());
         Assert.assertEquals(requirement.getName(), recorder.getBaseRequirementName());
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
@@ -159,11 +160,12 @@ public class CapabilityReferenceRecorderTestCase {
         NullaryServiceDescriptor<Object> descriptor = NullaryServiceDescriptor.of("capability", Object.class);
         RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(descriptor).build();
         BinaryServiceDescriptor<Object> requirement = BinaryServiceDescriptor.of("requirement", Object.class);
-        CapabilityReferenceRecorder<Object> recorder = CapabilityReferenceRecorder.builder(capability, requirement).withParentAttribute(parentAttribute).build();
+        CapabilityReference<Object> recorder = CapabilityReference.builder(capability, requirement).withParentAttribute(parentAttribute).build();
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
-        Assert.assertSame(requirement, recorder.getRequirement());
+        Assert.assertSame(requirement.getName(), recorder.getRequirement().getName());
+        Assert.assertSame(requirement.getType(), recorder.getRequirement().getType());
         Assert.assertEquals(requirement.getName(), recorder.getBaseRequirementName());
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
@@ -174,6 +176,7 @@ public class CapabilityReferenceRecorderTestCase {
         Resource resource = mock(Resource.class);
 
         doReturn(address).when(context).getCurrentAddress();
+        doReturn(resource).when(context).readResource(PathAddress.EMPTY_ADDRESS, false);
         doReturn(model).when(resource).getModel();
         doAnswer(invocation -> invocation.getArgument(0)).when(context).resolveExpressions(any());
 
@@ -222,11 +225,12 @@ public class CapabilityReferenceRecorderTestCase {
         NullaryServiceDescriptor<Object> descriptor = NullaryServiceDescriptor.of("capability", Object.class);
         RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(descriptor).build();
         BinaryServiceDescriptor<Object> requirement = BinaryServiceDescriptor.of("requirement", Object.class);
-        CapabilityReferenceRecorder<Object> recorder = CapabilityReferenceRecorder.builder(capability, requirement).withParentPath(PathElement.pathElement("component")).build();
+        CapabilityReference<Object> recorder = CapabilityReference.builder(capability, requirement).withParentPath(PathElement.pathElement("component")).build();
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
-        Assert.assertSame(requirement, recorder.getRequirement());
+        Assert.assertSame(requirement.getName(), recorder.getRequirement().getName());
+        Assert.assertSame(requirement.getType(), recorder.getRequirement().getType());
         Assert.assertEquals(requirement.getName(), recorder.getBaseRequirementName());
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
@@ -284,11 +288,12 @@ public class CapabilityReferenceRecorderTestCase {
         NullaryServiceDescriptor<Object> descriptor = NullaryServiceDescriptor.of("capability", Object.class);
         RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(descriptor).build();
         TernaryServiceDescriptor<Object> requirement = TernaryServiceDescriptor.of("requirement", Object.class);
-        CapabilityReferenceRecorder<Object> recorder = CapabilityReferenceRecorder.builder(capability, requirement).withGrandparentPath(PathElement.pathElement("component"), PathAddress::getLastElement).withParentAttribute(parentAttribute).build();
+        CapabilityReference<Object> recorder = CapabilityReference.builder(capability, requirement).withGrandparentPath(PathElement.pathElement("component"), PathAddress::getLastElement).withParentAttribute(parentAttribute).build();
 
         Assert.assertSame(capability, recorder.getDependent());
         Assert.assertEquals(capability.getName(), recorder.getBaseDependentName());
-        Assert.assertSame(requirement, recorder.getRequirement());
+        Assert.assertSame(requirement.getName(), recorder.getRequirement().getName());
+        Assert.assertSame(requirement.getType(), recorder.getRequirement().getType());
         Assert.assertEquals(requirement.getName(), recorder.getBaseRequirementName());
 
         PathAddress address = PathAddress.pathAddress(PathElement.pathElement("subsystem", "test"), PathElement.pathElement("component", "foo"));
@@ -299,6 +304,7 @@ public class CapabilityReferenceRecorderTestCase {
         Resource resource = mock(Resource.class);
 
         doReturn(address).when(context).getCurrentAddress();
+        doReturn(resource).when(context).readResource(PathAddress.EMPTY_ADDRESS, false);
         doAnswer(invocation -> invocation.getArgument(0)).when(context).resolveExpressions(any());
         doReturn(model).when(resource).getModel();
 
