@@ -15,7 +15,6 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.msc.service.DelegatingServiceTarget;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
@@ -80,45 +79,34 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
             }
         };
 
-        // If a builder was previously attached, reattach to the new deployment unit instance and build the initial phase using that builder
+        // If a transformer was previously attached, reattach to the new deployment unit instance and transform the ServiceTarget for the initial phase using that transformer
         if (this.serviceTargetTransformer != null) {
             this.deploymentUnit.putAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_SERVICE_TARGET_TRANSFORMER, this.serviceTargetTransformer);
-            // TODO Remove this after WildFly migrates away from DeploymentUnitPhaseBuilder
-            this.deploymentUnit.putAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER, new DeploymentUnitPhaseBuilder() {
-                @Override
-                public <T> ServiceBuilder<T> build(ServiceTarget target, ServiceName name, Service<T> service) {
-                    return AbstractDeploymentUnitService.this.serviceTargetTransformer.apply(target).addService(name, service);
-                }
-            });
             Set<AttachmentKey<?>> initialAttachmentKeys = this.getDeploymentUnitAttachmentKeys();
             Runnable uninstaller = new Runnable() {
                 @Override
                 public void run() {
                     // Cleanup any deployment unit attachments that were not properly removed during DUP undeploy
                     for (AttachmentKey<?> key : AbstractDeploymentUnitService.this.getDeploymentUnitAttachmentKeys()) {
-                        if (! initialAttachmentKeys.contains(key)) {
+                        if (!initialAttachmentKeys.contains(key)) {
                             AbstractDeploymentUnitService.this.deploymentUnit.removeAttachment(key);
                         }
                     }
                 }
             };
-            // TODO Use legacy service installation until DeploymentUnitPhaseBuilder migration is complete
-            this.serviceTargetTransformer.apply(target).addService(this.deploymentUnit.getServiceName().append("installer"), new org.jboss.msc.service.Service<Void>() {
-                    @Override
-                    public void start(StartContext context) throws StartException {
-                        installer.accept(context);
-                    }
+            ServiceBuilder<?> builder = this.serviceTargetTransformer.apply(target).addService();
+            builder.provides(this.deploymentUnit.getServiceName().append("installer"));
+            builder.setInstance(new org.jboss.msc.Service() {
+                @Override
+                public void start(StartContext context) throws StartException {
+                    installer.accept(context);
+                }
 
-                    @Override
-                    public void stop(StopContext context) {
-                        uninstaller.run();
-                    }
-
-                    @Override
-                    public Void getValue() {
-                        return null;
-                    }
-                }).install();
+                @Override
+                public void stop(StopContext context) {
+                    uninstaller.run();
+                }
+            }).install();
         } else {
             installer.accept(context);
         }
@@ -145,23 +133,6 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         }
         // Retain any attached builder across restarts
         this.serviceTargetTransformer = this.deploymentUnit.getAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_SERVICE_TARGET_TRANSFORMER);
-        if (this.serviceTargetTransformer == null) {
-            // TODO Remove this after WildFly migrates away from DeploymentUnitPhaseBuilder
-            DeploymentUnitPhaseBuilder builder = this.deploymentUnit.getAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER);
-            if (builder != null) {
-                this.serviceTargetTransformer = new UnaryOperator<>() {
-                    @Override
-                    public ServiceTarget apply(ServiceTarget target) {
-                        return new DelegatingServiceTarget(target) {
-                            @Override
-                            public <T> ServiceBuilder<T> addService(ServiceName name, Service<T> service) {
-                                return builder.build(target, name, service);
-                            }
-                        };
-                    }
-                };
-            }
-        }
         //clear up all attachments
         for (AttachmentKey<?> key : this.getDeploymentUnitAttachmentKeys()) {
             deploymentUnit.removeAttachment(key);

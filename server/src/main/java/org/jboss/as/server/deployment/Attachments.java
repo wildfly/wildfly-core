@@ -80,13 +80,6 @@ public final class Attachments {
     public static final AttachmentKey<UnaryOperator<ServiceTarget>> DEPLOYMENT_UNIT_PHASE_SERVICE_TARGET_TRANSFORMER = AttachmentKey.create(UnaryOperator.class);
 
     /**
-     * A builder used to install a deployment phase
-     * @deprecated Use {@link #DEPLOYMENT_UNIT_PHASE_SERVICE_TARGET_TRANSFORMER} instead
-     */
-    @Deprecated(forRemoval = true)
-    public static final AttachmentKey<DeploymentUnitPhaseBuilder> DEPLOYMENT_UNIT_PHASE_BUILDER = AttachmentKey.create(DeploymentUnitPhaseBuilder.class);
-
-    /**
      * A function which will be used to expand expressions within spec descriptors
      */
     public static final AttachmentKey<Function<String, String>> SPEC_DESCRIPTOR_EXPR_EXPAND_FUNCTION = AttachmentKey.create(Function.class);
