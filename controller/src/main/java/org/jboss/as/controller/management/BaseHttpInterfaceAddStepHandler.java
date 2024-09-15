@@ -5,6 +5,7 @@
 
 package org.jboss.as.controller.management;
 
+import static org.jboss.as.controller.logging.ControllerLogger.DEPRECATED_LOGGER;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -29,6 +31,12 @@ import org.xnio.OptionMap.Builder;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfaceAddStepHandler {
+
+    private static final String PROPERTY_BASE = "org.wildfly.management.";
+    private static final String BACKLOG_PROPERTY = PROPERTY_BASE + "backlog";
+    private static final String CONNECTION_HIGH_WATER_PROPERTY = PROPERTY_BASE + "connection-high-water";
+    private static final String CONNECTION_LOW_WATER_PROPERTY = PROPERTY_BASE + "connection-low-water";
+    private static final String NO_REQUEST_TIMEOUT_PROPERTY = PROPERTY_BASE + "no-request-timeout";
 
     protected static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.http-authentication-factory";
     protected static final String SASL_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.sasl-authentication-factory";
@@ -96,10 +104,10 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
             }
         }
 
-        final int backlog = BaseHttpInterfaceResourceDefinition.BACKLOG.resolveModelAttribute(context, model).asInt();
-        final int noRequestTimeout = BaseHttpInterfaceResourceDefinition.NO_REQUEST_TIMEOUT.resolveModelAttribute(context, model).asInt();
-        final int connectionHighWater = BaseHttpInterfaceResourceDefinition.CONNECTION_HIGH_WATER.resolveModelAttribute(context, model).asInt();
-        final int connectionLowWater = BaseHttpInterfaceResourceDefinition.CONNECTION_LOW_WATER.resolveModelAttribute(context, model).asInt();
+        final int backlog = resolveIntProperty(BACKLOG_PROPERTY, BaseHttpInterfaceResourceDefinition.BACKLOG, context, model);
+        final int noRequestTimeout = resolveIntProperty(NO_REQUEST_TIMEOUT_PROPERTY, BaseHttpInterfaceResourceDefinition.NO_REQUEST_TIMEOUT, context, model);
+        final int connectionHighWater = resolveIntProperty(CONNECTION_HIGH_WATER_PROPERTY, BaseHttpInterfaceResourceDefinition.CONNECTION_HIGH_WATER, context, model);
+        final int connectionLowWater = resolveIntProperty(CONNECTION_LOW_WATER_PROPERTY, BaseHttpInterfaceResourceDefinition.CONNECTION_LOW_WATER, context, model);
         List<ServiceName> requiredServices = installServices(context, new HttpInterfaceCommonPolicy() {
 
             @Override
@@ -171,4 +179,17 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
 
     protected abstract List<ServiceName> installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException;
 
+    private static int resolveIntProperty(final String systemProperty, final AttributeDefinition attributeDefinition,
+                                    final OperationContext context, final ModelNode model) throws OperationFailedException {
+        if (System.getProperty(systemProperty) != null) {
+            if (context.enables(attributeDefinition)) {
+                // Log a warning if the system property is used and the attribute is enabled at the current stability level.
+                DEPRECATED_LOGGER.systemPropertyDeprecated(systemProperty, attributeDefinition.getName(), context.getCurrentAddress().toCLIStyleString());
+            }
+            return Integer.parseInt(System.getProperty(systemProperty));
+        }
+
+        // This is fine if not enabled as we still get the default returned.
+        return attributeDefinition.resolveModelAttribute(context, model).asInt();
+    }
 }

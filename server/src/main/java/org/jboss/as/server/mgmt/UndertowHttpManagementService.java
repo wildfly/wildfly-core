@@ -72,12 +72,6 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     public static final String JBOSS_REMOTING = "jboss-remoting";
     public static final String MANAGEMENT_ENDPOINT = "management-endpoint";
 
-    private static final String PROPERTY_BASE = "org.wildfly.management.";
-    private static final String BACKLOG_PROPERTY = PROPERTY_BASE + "backlog";
-    private static final String CONNECTION_HIGH_WATER_PROPERTY = PROPERTY_BASE + "connection-high-water";
-    private static final String CONNECTION_LOW_WATER_PROPERTY = PROPERTY_BASE + "connection-low-water";
-    private static final String NO_REQUEST_TIMEOUT_PROPERTY = PROPERTY_BASE + "no-request-timeout";
-
     private final Consumer<HttpManagement> httpManagementConsumer;
     private final Supplier<ListenerRegistry> listenerRegistrySupplier;
     private final Supplier<ModelController> modelControllerSupplier;
@@ -365,15 +359,6 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                 listenerRegistrySupplier.get().addListener(listener);
             }
         }
-
-        /*
-         * System properties take priority for those that already use them, by using the incoming value the defaults now
-         * come from the resource definition.
-         */
-        final Integer backlog = Integer.getInteger(BACKLOG_PROPERTY, this.backlog);
-        final Integer connectionHighWater = Integer.getInteger(CONNECTION_HIGH_WATER_PROPERTY, this.connectionHighWater);
-        final Integer connectionLowWater = Integer.getInteger(CONNECTION_LOW_WATER_PROPERTY, this.connectionLowWater);
-        final Integer noRequestTimeout = Integer.getInteger(NO_REQUEST_TIMEOUT_PROPERTY, this.noRequestTimeout);
 
         try {
             ManagementHttpServer.Builder serverManagementBuilder = ManagementHttpServer.builder()
