@@ -127,7 +127,7 @@
         <version.jacoco.plugin>0.8.10</version.jacoco.plugin>
         <version.org.jboss.galleon>6.0.3.Final</version.org.jboss.galleon>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
-        <version.org.wildfly.galleon-plugins>7.1.2.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>7.1.3.Final-SNAPSHOT</version.org.wildfly.galleon-plugins>
         <version.org.eclipse.m2e.lifecycle-mapping>1.0.0</version.org.eclipse.m2e.lifecycle-mapping>
         <!-- wildfly-maven-plugin-->
         <version.wildfly.plugin>5.0.1.Final</version.wildfly.plugin>
@@ -1331,12 +1331,6 @@
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-cli</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-cli</artifactId>
-                <version>${project.version}</version>
-                <classifier>client</classifier>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
