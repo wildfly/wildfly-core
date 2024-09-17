@@ -59,6 +59,51 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.wildfly.galleon-plugins</groupId>
+                <artifactId>wildfly-galleon-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>org.jboss.as.cli.CommandLineMain</mainClass>
+                    <manifestEntries>
+                        <Multi-Release>true</Multi-Release>
+                        <!-- Use sharable JPMS settings declared in the root pom -->
+                        <Add-Exports>${embedding.jar.jpms.exports}</Add-Exports>
+                        <Add-Opens>${embedding.jar.jpms.opens}</Add-Opens>
+                    </manifestEntries>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>generate-shaded-descriptor</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>assemble</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>assembly.xml</descriptor>
+                            </descriptors>
+                            <recompressZippedFiles>true</recompressZippedFiles>
+                            <finalName>${project.build.finalName}-shaded</finalName>
+                            <appendAssemblyId>true</appendAssemblyId>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <workDirectory>${project.build.directory}/assembly/work</workDirectory>
+                            <tarLongFileMode>gnu</tarLongFileMode>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <executions>

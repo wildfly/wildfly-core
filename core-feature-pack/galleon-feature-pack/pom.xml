@@ -26,6 +26,8 @@
         <common.resources.directory>${basedir}/../common/src/main/resources</common.resources.directory>
         <ee-10-api.resources.directory>${basedir}/../ee-10-api/src/main/resources</ee-10-api.resources.directory>
         <galleon-common.resources.directory>${basedir}/../galleon-common/src/main/resources</galleon-common.resources.directory>
+        <galleon-cli-shaded.resources.directory>${basedir}/../../cli/target/resources</galleon-cli-shaded.resources.directory>
+        <galleon-elytron-tools-shaded.resources.directory>${basedir}/../../elytron-tool-wrapper/target/resources</galleon-elytron-tools-shaded.resources.directory>
     </properties>
 
     <dependencies>
@@ -171,6 +173,36 @@
                             <resources>
                                 <resource>
                                     <directory>${galleon-common.resources.directory}</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-galleon-cli-shaded-resources</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/resources</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${galleon-cli-shaded.resources.directory}</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-galleon-elytron-tools-shaded-resources</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/resources</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${galleon-elytron-tools-shaded.resources.directory}</directory>
                                 </resource>
                             </resources>
                         </configuration>
