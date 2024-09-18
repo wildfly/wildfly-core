@@ -188,7 +188,7 @@
         <version.junit>4.13.2</version.junit>
         <version.org.aesh>2.4</version.org.aesh>
         <version.org.aesh-extensions>1.8</version.org.aesh-extensions>
-        <version.org.aesh-readline>2.2</version.org.aesh-readline>
+        <version.org.aesh-readline>2.3</version.org.aesh-readline>
         <version.org.apache.ds>2.0.0.AM27</version.org.apache.ds>
         <version.org.apache.directory.api>2.1.7</version.org.apache.directory.api>
         <version.org.apache.kerby>2.0.3</version.org.apache.kerby>
