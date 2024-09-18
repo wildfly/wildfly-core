@@ -1334,6 +1334,12 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-cli</artifactId>
+                <version>${project.version}</version>
+                <classifier>client</classifier>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-controller</artifactId>
                 <version>${project.version}</version>
             </dependency>
