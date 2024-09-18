@@ -38,6 +38,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
@@ -191,6 +192,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
 
     public static final SimpleAttributeDefinition NO_REQUEST_TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NO_REQUEST_TIMEOUT, ModelType.INT, true)
             .setAllowExpression(true)
+            .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
             .setDefaultValue(new ModelNode(60000))
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setStability(Stability.COMMUNITY)
