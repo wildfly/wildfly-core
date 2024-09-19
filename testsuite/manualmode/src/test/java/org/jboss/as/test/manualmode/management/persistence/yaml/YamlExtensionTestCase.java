@@ -47,6 +47,7 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
+import org.jboss.as.test.shared.AssumeTestGroupUtil;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -312,7 +313,7 @@ public class YamlExtensionTestCase {
 
     @Test
     public void testSimpleYamlWithCliBootOps() throws Exception {
-        Assume.assumeTrue("Boot CLI script can be used on only in admin-only mode which is no valid for bootable jar.", System.getProperty("ts.bootable") == null);
+        AssumeTestGroupUtil.assumeNotBootableJar();
         StringBuilder sb = new StringBuilder();
         sb.append(" -D" + AdditionalBootCliScriptInvoker.MARKER_DIRECTORY_PROPERTY + "=").append(markerDirectory.toAbsolutePath());
         sb.append(" -D" + AdditionalBootCliScriptInvoker.CLI_SCRIPT_PROPERTY + "=").append(cliScript.toAbsolutePath());
@@ -330,6 +331,7 @@ public class YamlExtensionTestCase {
 
     @Test
     public void testYamlChangesAppliedInAdminOnlyModeWithoutBootCliScript() throws Exception {
+        AssumeTestGroupUtil.assumeNotBootableJar();
         container.start(null, null, Server.StartMode.ADMIN_ONLY, System.out, false, null, null, null, null, new Path[]{testYaml});
         Assert.assertEquals("Yaml changes to configuration were persisted to xml. This should never happen as it's in read-only mode.", expectedXml, readConfigAsXml());
     }
@@ -535,6 +537,7 @@ public class YamlExtensionTestCase {
 
     @Test
     public void testYamlChangesSurviveReload() throws Exception {
+        AssumeTestGroupUtil.assumeNotBootableJar();
         container.startYamlExtension(new Path[]{testYaml});
         Assert.assertEquals("Yaml changes to configuration were persisted to xml. This should never happen as it's in read-only mode.", expectedXml, readConfigAsXml());
         // read model and verify that test.yml changes are there

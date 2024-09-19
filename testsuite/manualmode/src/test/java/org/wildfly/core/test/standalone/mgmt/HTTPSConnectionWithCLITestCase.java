@@ -77,7 +77,7 @@ public class HTTPSConnectionWithCLITestCase {
     @BeforeClass
     public static void prepareServer() throws Exception {
 
-        containerController.startInAdminMode();
+        containerController.start();
 
         serverResourcesSetup.setup(containerController.getClient());
 
