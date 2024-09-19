@@ -2,9 +2,7 @@
  * Copyright The WildFly Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-
 package org.jboss.as.test.integration.domain.suites;
-
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -25,47 +23,33 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 
-
 import org.apache.commons.io.IOUtils;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
-import org.jboss.as.version.Stability;
+import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
+import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.dmr.ModelNode;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.wildfly.test.stability.StabilityDomainSetupSnapshotRestoreTasks;
 
 /**
  * Test of various read-config-as-xml-file against the domain controller.
  *
  * @author Emmanuel Hugonnet (c) 2022 Red Hat, Inc.
  */
-public class ManagementReadXmlCommunityTestCase extends ManagementReadXmlTestCase{
-    static StabilityDomainSetupSnapshotRestoreTasks tasks;
+public class ManagementReadXmlAsFileTestCase extends ManagementReadXmlTestCase {
 
     @BeforeClass
     public static void setupDomain() throws Exception {
-        testSupport = DomainTestSuite.createSupport(ManagementReadXmlCommunityTestCase.class.getSimpleName());
-        tasks = new StabilityDomainSetupSnapshotRestoreTasks(Stability.COMMUNITY, testSupport);
-        tasks.setup();
         ManagementReadXmlTestCase.setupDomain();
-    }
-
-    @AfterClass
-    public static void tearDownDomain() throws Exception {
-        if (tasks != null) {
-            tasks.tearDown();
-        }
-        ManagementReadXmlTestCase.tearDownDomain();
+        testSupport = DomainTestSuite.createSupport(ManagementReadXmlAsFileTestCase.class.getSimpleName());
     }
 
     @Test
     public void testDomainReadConfigAsXmlFile() throws Exception {
-
         DomainClient domainClient = domainPrimaryLifecycleUtil.getDomainClient();
         ModelNode request = new ModelNode();
         request.get(OP).set("read-config-as-xml-file");
@@ -79,6 +63,20 @@ public class ManagementReadXmlCommunityTestCase extends ManagementReadXmlTestCas
         Path result = new File("target", "result-domain.xml").toPath();
         Files.write(result, Collections.singletonList(xml));
         Assert.assertEquals(expectedXml, xml);
+    }
+
+    @Test
+    public void testDomainReadConfigAsXmlFileWithCli() throws Exception {
+        WildFlyManagedConfiguration config = domainPrimaryLifecycleUtil.getConfiguration();
+        try (CLIWrapper cli = new CLIWrapper(config.getHostControllerManagementAddress(), config.getHostControllerManagementPort(), true)) {
+            Path result = new File("target", "result-domain-cli.xml").toPath();
+            cli.sendLine("attachment save --operation=:read-config-as-xml-file  --file=" + result.toString());
+            String expectedXml = loadXMLConfigurationFile(Paths.get(domainPrimaryLifecycleUtil.getConfiguration().getDomainConfigFile()));
+            Path expected = new File("target", "expected-domain.xml").toPath();
+            Files.write(expected, Collections.singletonList(expectedXml));
+            Assert.assertEquals(expectedXml, Files.readString(result));
+            cli.quit();
+        }
     }
 
     @Test
@@ -110,6 +108,29 @@ public class ManagementReadXmlCommunityTestCase extends ManagementReadXmlTestCas
     }
 
     @Test
+    public void testHostReadConfigAsXmlFileWithCli() throws Exception {
+        WildFlyManagedConfiguration config = domainPrimaryLifecycleUtil.getConfiguration();
+        try (CLIWrapper cli = new CLIWrapper(config.getHostControllerManagementAddress(), config.getHostControllerManagementPort(), true)) {
+            String expectedXml =  loadXMLHostConfigurationFile(Paths.get(domainPrimaryLifecycleUtil.getConfiguration().getHostConfigFile()), "primary");
+            Path expected = new File("target", "expected-primary.xml").toPath();
+            Files.write(expected, Collections.singletonList(expectedXml));
+            Path result = new File("target", "result-primary-cli.xml").toPath();
+            cli.sendLine("attachment save --operation=/host=primary/:read-config-as-xml-file  --file=" + result.toString());
+            Assert.assertEquals(expectedXml, Files.readString(result));
+            cli.quit();
+        }
+        try (CLIWrapper cli = new CLIWrapper(config.getHostControllerManagementAddress(), config.getHostControllerManagementPort(), true)) {
+            Path result = new File("target", "result-secondary-cli.xml").toPath();
+            cli.sendLine("attachment save --operation=/host=secondary/:read-config-as-xml-file  --file=" + result.toString());
+            String expectedXml = loadXMLHostConfigurationFile(Paths.get(domainSecondaryLifecycleUtil.getConfiguration().getHostConfigFile()), "secondary");
+            Path expected = new File("target", "expected-secondary.xml").toPath();
+            Files.write(expected, Collections.singletonList(expectedXml));
+            Assert.assertEquals(expectedXml, Files.readString(result));
+            cli.quit();
+        }
+    }
+
+    @Test
     public void testServerReadConfigAsXmlFile() throws Exception {
 
         DomainClient domainClient = domainPrimaryLifecycleUtil.getDomainClient();
@@ -137,6 +158,26 @@ public class ManagementReadXmlCommunityTestCase extends ManagementReadXmlTestCas
         result = new File("target", "result-main-three.xml").toPath();
         Files.write(result, Collections.singletonList(xml));
         Assert.assertEquals(expectedXml, xml);
+    }
+
+    @Test
+    public void testServerReadConfigAsXmlFileWithCli() throws Exception {
+        WildFlyManagedConfiguration config = domainPrimaryLifecycleUtil.getConfiguration();
+        try (CLIWrapper cli = new CLIWrapper(config.getHostControllerManagementAddress(), config.getHostControllerManagementPort(), true)) {
+            Path result = new File("target", "result-main-one-cli.xml").toPath();
+            cli.sendLine("attachment save --operation=/host=primary/server=main-one:read-config-as-xml-file  --file=" + result.toString());
+            Path expected = new File("target").toPath().resolve("test-classes").resolve("expected-main-one.xml");
+            String expectedXml = readFileAsString(expected).replaceAll(System.lineSeparator(), "\n");
+            Files.write(new File("target", "expected-main-one.xml").toPath(), Collections.singletonList(expectedXml));
+            Assert.assertEquals(expectedXml, Files.readString(result));
+
+            result = new File("target", "result-main-three-cli.xml").toPath();
+            cli.sendLine("attachment save --operation=/host=secondary/server=main-three:read-config-as-xml-file  --file=" + result.toString());
+            expected = new File("target").toPath().resolve("test-classes").resolve("expected-main-three.xml");
+            expectedXml = readFileAsString(expected).replaceAll(System.lineSeparator(), "\n");
+            Files.write(new File("target", "expected-main-one.xml").toPath(), Collections.singletonList(expectedXml));
+            Assert.assertEquals(expectedXml, Files.readString(result));
+        }
     }
 
     private static String validateOperationResponse(OperationResponse response) throws IOException {

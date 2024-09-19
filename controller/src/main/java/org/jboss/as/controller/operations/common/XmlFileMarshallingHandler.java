@@ -9,6 +9,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUI
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.UUID;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -18,7 +19,6 @@ import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraint
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
-import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -36,7 +36,6 @@ public class XmlFileMarshallingHandler extends AbstractXmlMarshallingHandler {
             .setReplyParameters(new SimpleAttributeDefinitionBuilder(UUID, ModelType.STRING, false).build())
             .setReadOnly()
             .setRuntimeOnly()
-            .setStability(Stability.COMMUNITY)
             .build();
 
     public XmlFileMarshallingHandler(final ConfigurationPersister configPersister) {
