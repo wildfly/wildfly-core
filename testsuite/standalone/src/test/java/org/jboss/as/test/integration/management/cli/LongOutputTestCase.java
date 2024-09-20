@@ -94,7 +94,7 @@ public class LongOutputTestCase {
         sb = new StringBuilder();
         // tests can  manipulate with jboss.cli.config system property thus we need  keep have original value so
         // it can be restored in @After phase
-        originalCliConfig = WildFlySecurityManager.getPropertyPrivileged("jboss.cli.config", "");
+        originalCliConfig = WildFlySecurityManager.getPropertyPrivileged("jboss.cli.config", null);
     }
 
     private void setupConsole(OutputPaging outputPaging) throws Exception {
@@ -214,7 +214,11 @@ public class LongOutputTestCase {
         IOUtil.close(consoleReader);
 
         // return back original value for jboss.cli.config property
-        WildFlySecurityManager.setPropertyPrivileged("jboss.cli.config", originalCliConfig);
+        if (originalCliConfig == null) {
+            WildFlySecurityManager.clearPropertyPrivileged("jboss.cli.config");
+        } else {
+            WildFlySecurityManager.setPropertyPrivileged("jboss.cli.config", originalCliConfig);
+        }
     }
 
     private void afterTest() throws Exception {
