@@ -66,6 +66,7 @@ public class ModelDescriptionConstants {
     public static final String AUTHENTICATION_CONTEXT = "authentication-context";
     public static final String AUTHORIZATION = "authorization";
     public static final String AUTO_START = "auto-start";
+    public static final String BACKLOG = "backlog";
     public static final String BASE_DN = "base-dn";
     public static final String BASE_ROLE = "base-role";
     public static final String BLOCKING = "blocking";
@@ -94,6 +95,8 @@ public class ModelDescriptionConstants {
     public static final String COMPLEX_ATTRIBUTE = "complex-attribute";
     public static final String COMPOSITE = "composite";
     public static final String CONFIGURATION_CHANGES="configuration-changes";
+    public static final String CONNECTION_HIGH_WATER = "connection-high-water";
+    public static final String CONNECTION_LOW_WATER = "connection-low-water";
     public static final String CONSTRAINT = "constraint";
     public static final String CONCURRENT_GROUPS = "concurrent-groups";
     public static final String CONFIGURED_APPLICATION = "configured-application";
@@ -325,6 +328,7 @@ public class ModelDescriptionConstants {
     public static final String NETWORK = "network";
     public static final String NILLABLE = "nillable";
     public static final String NIL_SIGNIFICANT = "nil-significant";
+    public static final String NO_REQUEST_TIMEOUT = "no-request-timeout";
     public static final String NORMAL = "normal";
     public static final String NOT = "not";
     public static final String NOTIFICATION = "notification";

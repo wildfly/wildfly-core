@@ -621,7 +621,7 @@
                                         
                                         <!-- admin mode -->
                                         <exclude>org.wildfly.core.test.standalone.mgmt.HTTPSManagementInterfaceTestCase</exclude>
-                                        <exclude>org.wildfly.core.test.standalone.mgmt.HTTPSManagementInterfacePKCS12TestCase</exclude>
+                                        <exclude>org.wildfly.core.test.standalone.mgmt.ManagementInterfaceResourcesTestCase</exclude>
                                         <!-- start /stop, and install extension before start -->
                                         <exclude>org.wildfly.core.test.standalone.mgmt.PreparedResponseTestCase</exclude>
                                         

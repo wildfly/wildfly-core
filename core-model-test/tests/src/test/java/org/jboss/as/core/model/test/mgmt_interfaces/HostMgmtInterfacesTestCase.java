@@ -8,6 +8,7 @@ import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.as.model.test.ModelTestUtils;
+import org.jboss.as.version.Stability;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,8 +30,18 @@ public class HostMgmtInterfacesTestCase extends AbstractCoreModelTest {
         testConfiguration("host_empty_allowed_origins.xml");
     }
 
+    @Test
+    public void testResourceConstraints_Community() throws Exception {
+        // Test for https://issues.redhat.com/browse/WFCORE-6830
+        testConfiguration("host_resource_constraints_community.xml", Stability.COMMUNITY);
+    }
+
     private void testConfiguration(String fileName) throws Exception {
-        KernelServices kernelServices = createKernelServicesBuilder(TestModelType.HOST)
+        testConfiguration(fileName, Stability.DEFAULT);
+    }
+
+    private void testConfiguration(String fileName, Stability stability) throws Exception {
+        KernelServices kernelServices = createKernelServicesBuilder(TestModelType.HOST, stability)
                 .setXmlResource(fileName)
                 .validateDescription()
                 .build();

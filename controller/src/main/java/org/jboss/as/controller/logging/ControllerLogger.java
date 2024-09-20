@@ -3798,4 +3798,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 514, value = "Management namespace %s is not enabled by the current stability level")
     XMLStreamException unstableManagementNamespace(String namespaceURI);
 
+    @LogMessage(level = INFO)
+    @Message(id = 515, value = "The system property '%s' is deprecated and may be removed in a future version, " +
+        "attribute '%s' on resource '%s' should be used instead.")
+    void systemPropertyDeprecated(String systemProperty, String attribute, String address);
 }

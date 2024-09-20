@@ -8,6 +8,7 @@ import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.as.model.test.ModelTestUtils;
+import org.jboss.as.version.Stability;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,8 +30,18 @@ public class StandaloneMgmtInterfacesTestCase extends AbstractCoreModelTest {
         testConfiguration("standalone_empty_allowed_origins.xml");
     }
 
+    @Test
+    public void testResourceConstraints_Community() throws Exception {
+        // Test for https://issues.redhat.com/browse/WFCORE-6830
+        testConfiguration("standalone_resource_constraints_community.xml", Stability.COMMUNITY);
+    }
+
     public void testConfiguration(String fileName) throws Exception {
-        KernelServices kernelServices = createKernelServicesBuilder(TestModelType.STANDALONE)
+        testConfiguration(fileName, Stability.DEFAULT);
+    }
+
+    public void testConfiguration(String fileName, Stability stability) throws Exception {
+        KernelServices kernelServices = createKernelServicesBuilder(TestModelType.STANDALONE, stability)
                 .setXmlResource(fileName)
                 .validateDescription()
                 .build();

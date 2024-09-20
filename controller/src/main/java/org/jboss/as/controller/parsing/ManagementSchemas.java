@@ -56,6 +56,7 @@ public abstract class ManagementSchemas {
         VERSION_18(18),
         VERSION_19(19),
         VERSION_20(20),
+        VERSION_20_COMMUNITY(20, Stability.COMMUNITY),
         ;
 
         private final int majorVersion;
@@ -64,6 +65,10 @@ public abstract class ManagementSchemas {
 
         Version(final int majorVersion) {
             this(majorVersion, 0);
+        }
+
+        Version(final int majorVersion, final Stability stability) {
+            this(majorVersion, 0, stability);
         }
 
         Version(final int majorVersion, final int minorVersion) {

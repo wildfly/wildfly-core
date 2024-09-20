@@ -438,14 +438,16 @@ public class CoreModelTestDelegate {
         ExtensionRegistry extensionRegistry;
         private final Map<ModelNode, Map<String, Set<String>>> attributeDescriptors = new HashMap<>();
         private Map<ModelNode, Map<String, Map<String, Set<String>>>> operationParameterDescriptors = new HashMap<>();
+        private final Stability stability;
 
 
         KernelServicesBuilderImpl(TestModelType type, Stability stability) {
             this.type = type;
+            this.stability = stability;
             this.processType = type == TestModelType.HOST || type == TestModelType.DOMAIN ? ProcessType.HOST_CONTROLLER : ProcessType.STANDALONE_SERVER;
             runningModeControl = type == TestModelType.HOST ? new HostRunningModeControl(RunningMode.ADMIN_ONLY, RestartMode.HC_ONLY) : new RunningModeControl(RunningMode.ADMIN_ONLY);
             extensionRegistry = ExtensionRegistry.builder(this.processType).withRunningModeControl(this.runningModeControl).withStability(stability).build();
-            testParser = TestParser.create(extensionRegistry, xmlMapper, type);
+            testParser = TestParser.create(stability, extensionRegistry, xmlMapper, type);
         }
 
 

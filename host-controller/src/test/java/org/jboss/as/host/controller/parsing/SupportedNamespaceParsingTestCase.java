@@ -10,11 +10,13 @@ import static org.junit.Assert.fail;
 
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.controller.parsing.ManagementXmlSchema;
@@ -22,6 +24,8 @@ import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.projectodd.vdx.core.XMLStreamValidationException;
 
 /**
@@ -29,6 +33,7 @@ import org.projectodd.vdx.core.XMLStreamValidationException;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
+@RunWith(Parameterized.class)
 public class SupportedNamespaceParsingTestCase {
 
     private static final String TEMPLATE = "<?xml version='1.0' encoding='UTF-8'?>" +
@@ -48,9 +53,20 @@ public class SupportedNamespaceParsingTestCase {
                                                                     "urn:jboss:domain:1.5",
                                                                     "urn:jboss:domain:1.6");
 
+    private final Stability testStability;
+
+    public SupportedNamespaceParsingTestCase(Stability testStability) {
+        this.testStability = testStability;
+    }
+
+    @Parameterized.Parameters
+    public static Iterable<Stability> stabilityLevels() {
+        return Arrays.asList(Stability.DEFAULT, Stability.COMMUNITY, Stability.PREVIEW, Stability.EXPERIMENTAL);
+    }
+
     @Test
     public void testNamespaceHandling() throws Exception {
-        HostXmlSchemas xmlSchemas = new HostXmlSchemas(Stability.DEFAULT, "primary", null, false, null, null, null);
+        HostXmlSchemas xmlSchemas = new HostXmlSchemas(testStability, "primary", null, false, null, null, null);
         Set<ManagementXmlSchema> schemas = new HashSet<>();
         schemas.add(xmlSchemas.getCurrent());
         schemas.addAll(xmlSchemas.getAdditional());
@@ -72,9 +88,16 @@ public class SupportedNamespaceParsingTestCase {
                 } catch (XMLStreamValidationException e) {
                     assertTrue("Expected error should be WFLYCTL0513" , e.getMessage().contains("WFLYCTL0513"));
                 }
-            } else {
-                // We expect no error if supported.
+            } else if (testStability.enables(current.getStability())) {
+                // We expect no error if supported
                 mapper.parseDocument(operationList, reader);
+            } else {
+                try {
+                    mapper.parseDocument(operationList, reader);
+                    fail(String.format("Parsing expected to fail due to unsupported stability level %s", currentNamespace));
+                } catch (XMLStreamException e) {
+                    assertTrue("Expected error should be WFLYCTL0514" , e.getMessage().contains("WFLYCTL0514"));
+                }
             }
         }
     }
