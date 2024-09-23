@@ -87,7 +87,9 @@ public abstract class StabilityServerSetupSnapshotRestoreTasks implements Server
 
     @Override
     public void tearDown(ManagementClient managementClient) throws Exception {
-        snapshot.close();
+        if (snapshot != null) {
+            snapshot.close();
+        }
     }
 
     private boolean checkReloadEnhancedOperationIsAvailable(ManagementClient managementClient) throws Exception {
