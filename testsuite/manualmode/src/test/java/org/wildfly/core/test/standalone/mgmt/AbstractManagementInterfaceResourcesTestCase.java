@@ -39,6 +39,11 @@ public abstract class AbstractManagementInterfaceResourcesTestCase {
     @Inject
     protected static ServerController controller;
 
+    @Test
+    public void testNothing() throws Exception {
+        runTest(60000, () -> {});
+    }
+
     /**
      * Test that the management interface will not accept new connections when the number of active connections reaches the
      * high water mark.  After the number of open connections has been reduced to the low watermark it will test that connections
