@@ -2,7 +2,7 @@ WildFly Core
 ============
 https://wildfly.org
 
-This project provides the core runtime that is used by the Wildfly application server. This includes:
+This project provides the core runtime that is used by the WildFly application server. This includes:
 
 * Modular class loading.
 * Unified management, including domain mode.
