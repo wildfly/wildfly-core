@@ -419,7 +419,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
 
         private synchronized void initialize(final String hostName, final ModelNode hostInfo, final ManagementRequestContext<RegistrationContext> responseChannel) {
             this.hostName = hostName;
-            this.hostInfo = HostInfo.fromModelNode(hostInfo, domainHostExcludeRegistry, domainController.getLocalHostInfo().getProductConfig());
+            this.hostInfo = HostInfo.fromModelNode(hostInfo, domainHostExcludeRegistry);
             this.responseChannel = responseChannel;
         }
 

@@ -150,7 +150,7 @@ public class ProductConfig implements Serializable {
         this.name = productName;
         this.version = productVersion;
         this.consoleSlot = consoleSlot;
-        this.defaultStability = Stability.DEFAULT;
+        this.defaultStability = Stability.COMMUNITY;
         this.stabilities = EnumSet.of(this.defaultStability);
         this.banner = null;
     }
