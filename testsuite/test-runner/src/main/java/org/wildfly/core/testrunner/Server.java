@@ -187,6 +187,9 @@ public class Server {
             CommandBuilder cbuilder = null;
             boolean needNormalModeCheck = false;
             if (isBootableJar) {
+                if (this.startMode != StartMode.NORMAL) {
+                    throw new IllegalStateException("Bootable JAR only supports StartMode.NORMAL, however " + this.startMode + " was requested.");
+                }
                 final Path bootableJarPath = Paths.get(bootableJar);
                 if (Files.notExists(bootableJarPath) || Files.isDirectory(bootableJarPath)) {
                     throw new IllegalStateException("Cannot find: " + bootableJar);

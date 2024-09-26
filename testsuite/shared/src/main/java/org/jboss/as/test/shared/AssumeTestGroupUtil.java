@@ -103,4 +103,13 @@ public final class AssumeTestGroupUtil {
     private AssumeTestGroupUtil() {
         // prevent instantiation
     }
+
+    public static void assumeNotBootableJar() {
+        assumeCondition("Some tests cannot run in Bootable JAR packaging",
+                () -> !isBootableJar());
+    }
+
+    public static boolean isBootableJar() {
+        return System.getProperty("ts.bootable") != null;
+    }
 }

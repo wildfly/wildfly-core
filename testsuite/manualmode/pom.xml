@@ -406,7 +406,7 @@
                             <execution>
                                 <id>server-provisioning</id>
                                 <goals>
-                                    <goal>provisioning</goal>
+                                    <goal>provision</goal>
                                 </goals>
                                 <phase>none</phase>
                             </execution>
@@ -504,7 +504,7 @@
                             <execution>
                                 <id>server-provisioning</id>
                                 <goals>
-                                    <goal>provisioning</goal>
+                                    <goal>provision</goal>
                                 </goals>
                                 <phase>none</phase>
                             </execution>
@@ -572,12 +572,14 @@
                                     <excludes>
                                         <!-- No domain mode support -->
                                         <exclude>org.jboss.as.test.manualmode.management.cli.CLIEmbedHostControllerTestCase.java</exclude>
-                                        <!-- multiple server start, admin mode, ... -->
-                                        <exclude>org.jboss.as.test.manualmode.auditlog.*TestCase.java</exclude>
-                                        <exclude>org.jboss.as.test.manualmode.auditlog.*Test.java</exclude>
-                                        <exclude>org.jboss.as.test.manualmode.adminonly.auditlog.*TestCase.java</exclude>
-                                        <exclude>org.jboss.as.test.manualmode.cli.boot.ops.*TestCase.java</exclude>
+
+                                        <exclude>org.jboss.as.test.manualmode.auditlog.AuditLogBootingLogTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.auditlog.AuditLogFieldsOfLogTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.auditlog.AuditLogBootingSyslogTestCase</exclude>
+
+                                        <!-- suspend mode -->
                                         <exclude>org.jboss.as.test.manualmode.suspend.*TestCase.java</exclude>
+
                                         <!-- restart the server -->
                                         <exclude>org.jboss.as.test.manualmode.deployment.DeploymentScannerRedeploymentTestCase</exclude>
                                         <exclude>org.jboss.as.test.manualmode.deployment.DeploymentScannerUnitTestCase</exclude>
@@ -599,6 +601,7 @@
                                         
                                         <exclude>org.jboss.as.test.manualmode.management.cli.ManagementOpTimeoutTestCase</exclude>
                                         <exclude>org.jboss.as.test.manualmode.management.cli.ShutdownTestCase</exclude>
+
                                         <!-- access to module to cleanup but don't exist after stop -->
                                         <exclude>org.jboss.as.test.manualmode.management.cli.CustomVaultInCLITestCase</exclude>
                                         <exclude>org.jboss.as.test.manualmode.management.cli.CommandTimeoutHandlerTestCase</exclude>
@@ -620,8 +623,10 @@
                                         <exclude>org.jboss.as.test.manualmode.expressions.CredentialStoreExpressionsTestCase</exclude>
                                         
                                         <!-- admin mode -->
-                                        <exclude>org.wildfly.core.test.standalone.mgmt.HTTPSManagementInterfaceTestCase</exclude>
                                         <exclude>org.wildfly.core.test.standalone.mgmt.ManagementInterfaceResourcesTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.adminonly.auditlog.*TestCase.java</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.cli.boot.ops.CliBootOperationsTestCase.java</exclude>
+
                                         <!-- start /stop, and install extension before start -->
                                         <exclude>org.wildfly.core.test.standalone.mgmt.PreparedResponseTestCase</exclude>
                                         
