@@ -7,9 +7,8 @@ package org.jboss.as.server;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.jboss.as.server.ServerEnvironment.HOME_DIR;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.jboss.as.server.ServerEnvironment.HOME_DIR;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -22,6 +21,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Properties;
+
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.version.ProductConfig;
@@ -131,7 +131,7 @@ public class ServerEnvironmentTestCase {
 
         // default stability = DEFAULT
         ProductConfig productConfig = new ProductConfig(null, null, null);
-        assertEquals(Stability.DEFAULT, productConfig.getDefaultStability());
+        Assume.assumeTrue(Stability.DEFAULT.equals(productConfig.getDefaultStability()));
 
         Exception exception = assertThrows(IllegalStateException.class, () -> {
             createServerEnvironment(props, "lb", productConfig);

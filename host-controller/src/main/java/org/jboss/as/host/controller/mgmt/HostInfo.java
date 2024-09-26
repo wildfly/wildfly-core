@@ -96,12 +96,12 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         return info;
     }
 
-    public static HostInfo fromModelNode(final ModelNode hostInfo, ProductConfig productConfig) {
-        return fromModelNode(hostInfo, null, productConfig);
+    public static HostInfo fromModelNode(final ModelNode hostInfo) {
+        return fromModelNode(hostInfo, null);
     }
 
-    public static HostInfo fromModelNode(final ModelNode hostInfo, DomainHostExcludeRegistry hostIgnoreRegistry, ProductConfig productConfig) {
-        return new HostInfo(hostInfo, hostIgnoreRegistry, productConfig);
+    public static HostInfo fromModelNode(final ModelNode hostInfo, DomainHostExcludeRegistry hostIgnoreRegistry) {
+        return new HostInfo(hostInfo, hostIgnoreRegistry);
     }
 
     private final String hostName;
@@ -122,7 +122,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
     // GuardedBy this
     private ReadMasterDomainModelUtil.RequiredConfigurationHolder requiredConfigurationHolder;
 
-    private HostInfo(final ModelNode hostInfo, DomainHostExcludeRegistry hostIgnoreRegistry, ProductConfig productConfig) {
+    private HostInfo(final ModelNode hostInfo, DomainHostExcludeRegistry hostIgnoreRegistry) {
         hostName = hostInfo.require(NAME).asString();
         releaseVersion = hostInfo.require(RELEASE_VERSION).asString();
         releaseCodeName = hostInfo.require(RELEASE_CODENAME).asString();
@@ -134,7 +134,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         remoteConnectionId = hostInfo.hasDefined(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID)
                 ? hostInfo.get(RemoteDomainConnectionService.DOMAIN_CONNECTION_ID).asLong() : null;
         // Legacy hosts may return null - if so, assume default stability per our ProductConfig
-        this.stability = Optional.ofNullable(hostInfo.get(ModelDescriptionConstants.STABILITY).asStringOrNull()).map(Stability::valueOf).orElse(productConfig.getDefaultStability());
+        this.stability = Optional.ofNullable(hostInfo.get(ModelDescriptionConstants.STABILITY).asStringOrNull()).map(Stability::valueOf).orElse(Stability.DEFAULT);
 
         Set<String> domainIgnoredExtensions = null;
         Set<String> domainActiveServerGroups = null;

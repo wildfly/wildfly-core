@@ -860,7 +860,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
                             HostInfo.createLocalHostHostInfo(hostControllerInfo,
                                     cfg,
                                     ignoredDomainResourceRegistry,
-                                    hostResource), cfg);
+                                    hostResource));
             final SyncDomainModelOperationHandler handler =
                     new SyncDomainModelOperationHandler(hostInfo, parameters);
             context.addStep(syncOperation, handler, OperationContext.Stage.MODEL, true);

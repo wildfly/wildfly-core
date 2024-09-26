@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
@@ -150,8 +151,10 @@ public class ProductConfig implements Serializable {
         this.name = productName;
         this.version = productVersion;
         this.consoleSlot = consoleSlot;
-        this.defaultStability = Stability.DEFAULT;
-        this.stabilities = EnumSet.of(this.defaultStability);
+        this.defaultStability = Stability.COMMUNITY;
+        this.stabilities = EnumSet.allOf(Stability.class).stream()
+                .filter(this.defaultStability::enables)
+                .collect(Collectors.toUnmodifiableSet());
         this.banner = null;
     }
 

@@ -502,7 +502,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                  * This value does not require locking during use, as {@link org.jboss.as.host.controller.mgmt.HostInfo createLocalHostHostInfo()} uses
                  * '/domain-controller', which is read-only, and '/core-service=ignored-resources/ignored-resource-type' which has handlers on
                  * add, remove and write-attribute that will place the host into reload-required.
-                 * @return
+                 * @return A ModelNode containing the metadata of the local Host Controller
                  */
                 @Override
                 public ModelNode createLocalHostInfo() {
@@ -517,7 +517,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                 @Override
                 public boolean applyDomainModel(final List<ModelNode> bootOperations) {
                     // Apply the model..
-                    final HostInfo info = HostInfo.fromModelNode(createLocalHostInfo(), null, productConfig);
+                    final HostInfo info = HostInfo.fromModelNode(createLocalHostInfo(), null);
                     return applyRemoteDomainModel(bootOperations, info);
                 }
 
