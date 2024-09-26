@@ -264,7 +264,7 @@ public class DomainLifecycleUtil implements AutoCloseable {
                 commandBuilder.setProcessControllerAddress(configuration.getHostControllerManagementAddress());
             }
             Stability stability = this.configuration.getStability();
-            if (stability != Stability.DEFAULT) {
+            if (stability != null) {
                 commandBuilder.setStability(stability.toString());
             }
             // the process working dir
