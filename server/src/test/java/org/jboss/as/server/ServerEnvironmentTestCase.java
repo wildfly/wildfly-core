@@ -25,6 +25,8 @@ import java.util.Properties;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.version.ProductConfig;
+import org.jboss.as.version.Stability;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -107,6 +109,7 @@ public class ServerEnvironmentTestCase {
 
         // default stability = COMMUNITY
         ProductConfig productConfig = ProductConfig.fromFilesystemSlot(null, "", props);
+        Assume.assumeTrue(Stability.COMMUNITY.equals(productConfig.getDefaultStability()));
 
         ServerEnvironment serverEnvironment = createServerEnvironment(props, null, productConfig);
         assertThat(serverEnvironment.getServerConfigurationFile().getBootFile().getName(), is("standalone.xml"));
@@ -128,6 +131,8 @@ public class ServerEnvironmentTestCase {
 
         // default stability = DEFAULT
         ProductConfig productConfig = new ProductConfig(null, null, null);
+        assertEquals(Stability.DEFAULT, productConfig.getDefaultStability());
+
         Exception exception = assertThrows(IllegalStateException.class, () -> {
             createServerEnvironment(props, "lb", productConfig);
         });
