@@ -101,7 +101,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
             LinkedHashMap<String, AttributeDefinition> attrs = new LinkedHashMap<>();
             for (AttributeDefinition ad : builder.attributeList) {
                 attrs.put(ad.getXmlName(), ad);
-                AttributeParser ap = ad.getParser();
+                AttributeParser ap = builder.attributeParsers.getOrDefault(ad.getXmlName(), ad.getParser());
                 if (ap != null && ap.isParseAsElement()) {
                     attributeElements.put(ap.getXmlName(ad), ad);
                 }
@@ -205,7 +205,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
                 if (element || attributeGroups.contains(localName)) {
                     if (element) {
                         AttributeDefinition ad = attributeElements.get(localName);
-                        ad.getParser().parseElement(ad, reader, op);
+                        getAttributeParser(ad).parseElement(ad, reader, op);
                         final String newLocalName = reader.getLocalName();
                         if (attributeGroups.contains(newLocalName)) {
                             parseGroup(reader, op, wildcard);
@@ -240,7 +240,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             AttributeDefinition ad = groupAttrs.get(reader.getLocalName());
             if (ad != null) {
-                ad.getParser().parseElement(ad, reader, op);
+                getAttributeParser(ad).parseElement(ad, reader, op);
             } else {
                 throw ParseUtils.unexpectedElement(reader);
             }
@@ -257,7 +257,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
                 name = value;
             } else if (attributes.containsKey(attributeName)) {
                 AttributeDefinition def = attributes.get(attributeName);
-                AttributeParser parser = attributeParsers.getOrDefault(attributeName, def.getParser());
+                AttributeParser parser = getAttributeParser(def);
                 assert parser != null;
                 parser.parseAndSetParameter(def, value, op, reader);
             } else {
@@ -273,11 +273,10 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
                 do {
                     AttributeDefinition ad = attributeElements.get(reader.getLocalName());
                     if (ad != null) {
-                        AttributeParser parser = attributeParsers.getOrDefault(ad.getXmlName(), ad.getParser());
-                        parser.parseElement(ad, reader, op);
+                        getAttributeParser(ad).parseElement(ad, reader, op);
                     } else {
                         childAlreadyRead = true;
-                        return name;  //this means we only have children left, return so child handling logic can take over
+                        return name;  //this possibly means we only have children left, return so child handling logic can take over
                     }
                     childAlreadyRead = true;
                 } while (!reader.getLocalName().equals(originalStartElement) && reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT);
@@ -324,7 +323,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
                     if (child != null) {
                         child.parse(reader, parentAddress, list);
                     } else if ((elementAd = attributeElements.get(localName)) != null) {
-                        elementAd.getParser().parseElement(elementAd, reader, op);
+                        getAttributeParser(elementAd).parseElement(elementAd, reader, op);
                     } else if ((child = customChildParsers.get(localName)) != null) {
                         child.parse(reader, parentAddress, list);
                     } else {
@@ -475,6 +474,10 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         }
     }
 
+    private AttributeParser getAttributeParser(AttributeDefinition ad) {
+        return attributeParsers.getOrDefault(ad.getXmlName(), ad.getParser());
+    }
+
     private void marshallAttributes(XMLExtendedStreamWriter writer, ModelNode model, Collection<AttributeDefinition> attributes, String group) throws XMLStreamException {
         boolean started = false;
 
@@ -482,7 +485,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         List<AttributeDefinition> sortedAds = new ArrayList<>(attributes.size());
         List<AttributeDefinition> elementAds = null;
         for (AttributeDefinition ad : attributes) {
-            if (ad.getParser().isParseAsElement()) {
+            if (getAttributeParser(ad).isParseAsElement()) {
                 if (elementAds == null) {
                     elementAds = new ArrayList<>();
                 }

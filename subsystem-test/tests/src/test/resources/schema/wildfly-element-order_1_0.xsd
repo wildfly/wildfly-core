@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="urn:wildfly:element-order:1.0"
+            xmlns="urn:wildfly:element-order:1.0"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified"
+            version="1.0">
+
+    <xs:element name="subsystem" type="subsystem"/>
+
+    <xs:complexType name="subsystem">
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element name="group" type="group"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="group">
+        <xs:all>
+            <xs:element name="attribute" type="xs:token"/>
+            <xs:element name="attribute2" type="xs:token"/>
+            <xs:element name="child" type="child" />
+            <xs:element name="child2" type="child" />
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="child">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+</xs:schema>
