@@ -9,6 +9,9 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.jboss.as.server.ServerEnvironment.HOME_DIR;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -115,14 +118,21 @@ public class ServerEnvironmentTestCase {
         assertThat(serverEnvironment.getServerConfigurationFile().getBootFile().getName(), is("custom.xml"));
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testAliasNotWorkingInDefaultStability() {
+    @Test
+    public void testAliasNotWorkingInDefaultStability() throws IOException {
         Properties props = new Properties();
+        Path standaloneDir = homeDir.resolve("standalone");
+        Files.createDirectories(standaloneDir.resolve("configuration"));
+        Files.createFile(standaloneDir.resolve("configuration").resolve("standalone-load-balancer.xml"));
         props.put(HOME_DIR, homeDir.toAbsolutePath().toString());
 
         // default stability = DEFAULT
         ProductConfig productConfig = new ProductConfig(null, null, null);
-        createServerEnvironment(props, "lb", productConfig);
+        Exception exception = assertThrows(IllegalStateException.class, () -> {
+            createServerEnvironment(props, "lb", productConfig);
+        });
+        String expectedMessage = "WFLYCTL0215:";
+        assertTrue(String.format("We expect message with ID " + expectedMessage + ", however message %s was thrown.", exception.getMessage()), exception.getMessage().startsWith(expectedMessage));
     }
 
     private ServerEnvironment createServerEnvironment(Properties props, String serverConfig, ProductConfig productConfig) {
