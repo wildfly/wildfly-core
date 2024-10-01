@@ -52,14 +52,16 @@ public class ManagementReadXmlAsFileTestCase extends ManagementReadXmlTestCase {
     public void testDomainReadConfigAsXmlFile() throws Exception {
         DomainClient domainClient = domainPrimaryLifecycleUtil.getDomainClient();
         ModelNode request = new ModelNode();
+        request.get(OP).set("write-config");
+        request.get(OP_ADDR).setEmptyList();
+        domainClient.execute(request);
+        String expectedXml = loadXMLConfigurationFile( new File(domainPrimaryLifecycleUtil.getConfiguration().getDomainDirectory()).toPath().resolve("configuration").resolve("testing-domain-standard.xml"));
+
+        request = new ModelNode();
         request.get(OP).set("read-config-as-xml-file");
         request.get(OP_ADDR).setEmptyList();
-
         OperationResponse opResponse = domainClient.executeOperation(Operation.Factory.create(request), OperationMessageHandler.DISCARD);
         String xml = validateOperationResponse(opResponse);
-        String expectedXml = loadXMLConfigurationFile(Paths.get(domainPrimaryLifecycleUtil.getConfiguration().getDomainConfigFile()));
-        Path expected = new File("target", "expected-domain.xml").toPath();
-        Files.write(expected, Collections.singletonList(expectedXml));
         Path result = new File("target", "result-domain.xml").toPath();
         Files.write(result, Collections.singletonList(xml));
         Assert.assertEquals(expectedXml, xml);
@@ -69,9 +71,12 @@ public class ManagementReadXmlAsFileTestCase extends ManagementReadXmlTestCase {
     public void testDomainReadConfigAsXmlFileWithCli() throws Exception {
         WildFlyManagedConfiguration config = domainPrimaryLifecycleUtil.getConfiguration();
         try (CLIWrapper cli = new CLIWrapper(config.getHostControllerManagementAddress(), config.getHostControllerManagementPort(), true)) {
+            cli.sendLine(":write-config");
+
             Path result = new File("target", "result-domain-cli.xml").toPath();
             cli.sendLine("attachment save --operation=:read-config-as-xml-file  --file=" + result.toString());
-            String expectedXml = loadXMLConfigurationFile(Paths.get(domainPrimaryLifecycleUtil.getConfiguration().getDomainConfigFile()));
+            Path expectedXmlPath = Paths.get(domainPrimaryLifecycleUtil.getConfiguration().getDomainDirectory()).resolve("configuration").resolve("testing-domain-standard.xml");
+            String expectedXml = loadXMLConfigurationFile(expectedXmlPath);
             Path expected = new File("target", "expected-domain.xml").toPath();
             Files.write(expected, Collections.singletonList(expectedXml));
             Assert.assertEquals(expectedXml, Files.readString(result));
@@ -81,25 +86,37 @@ public class ManagementReadXmlAsFileTestCase extends ManagementReadXmlTestCase {
 
     @Test
     public void testHostReadConfigAsXmlFile() throws Exception {
-
         DomainClient domainClient = domainPrimaryLifecycleUtil.getDomainClient();
         ModelNode request = new ModelNode();
+        request.get(OP).set("write-config");
+        request.get(OP_ADDR).setEmptyList().add(HOST, "primary");
+        domainClient.execute(request);
+        Path expectedXmlPath = Paths.get(domainPrimaryLifecycleUtil.getConfiguration().getDomainDirectory()).resolve("configuration").resolve("testing-host-primary.xml");
+        String expectedXml = loadXMLConfigurationFile(expectedXmlPath);
+
+        request = new ModelNode();
         request.get(OP).set("read-config-as-xml-file");
         request.get(OP_ADDR).setEmptyList().add(HOST, "primary");
-
         OperationResponse opResponse = domainClient.executeOperation(Operation.Factory.create(request), OperationMessageHandler.DISCARD);
         String xml = validateOperationResponse(opResponse);
-        String expectedXml = loadXMLHostConfigurationFile(Paths.get(domainPrimaryLifecycleUtil.getConfiguration().getHostConfigFile()), "primary");
         Path expected = new File("target", "expected-primary.xml").toPath();
         Files.write(expected, Collections.singletonList(expectedXml));
         Path result = new File("target", "result-primary.xml").toPath();
         Files.write(result, Collections.singletonList(xml));
         Assert.assertEquals(expectedXml, xml);
 
+        request = new ModelNode();
+        request.get(OP).set("write-config");
+        request.get(OP_ADDR).setEmptyList().add(HOST, "secondary");
+        domainClient.execute(request);
+        expectedXmlPath = Paths.get(domainSecondaryLifecycleUtil.getConfiguration().getDomainDirectory()).resolve("configuration").resolve("testing-host-secondary.xml");
+        expectedXml = loadXMLConfigurationFile(expectedXmlPath);
+
+        request = new ModelNode();
+        request.get(OP).set("read-config-as-xml-file");
         request.get(OP_ADDR).setEmptyList().add(HOST, "secondary");
         opResponse = domainClient.executeOperation(Operation.Factory.create(request), OperationMessageHandler.DISCARD);
         xml = validateOperationResponse(opResponse);
-        expectedXml = loadXMLHostConfigurationFile(Paths.get(domainSecondaryLifecycleUtil.getConfiguration().getHostConfigFile()), "secondary");
         expected = new File("target", "expected-secondary.xml").toPath();
         Files.write(expected, Collections.singletonList(expectedXml));
         result = new File("target", "result-secondary.xml").toPath();
@@ -111,20 +128,20 @@ public class ManagementReadXmlAsFileTestCase extends ManagementReadXmlTestCase {
     public void testHostReadConfigAsXmlFileWithCli() throws Exception {
         WildFlyManagedConfiguration config = domainPrimaryLifecycleUtil.getConfiguration();
         try (CLIWrapper cli = new CLIWrapper(config.getHostControllerManagementAddress(), config.getHostControllerManagementPort(), true)) {
-            String expectedXml =  loadXMLHostConfigurationFile(Paths.get(domainPrimaryLifecycleUtil.getConfiguration().getHostConfigFile()), "primary");
-            Path expected = new File("target", "expected-primary.xml").toPath();
-            Files.write(expected, Collections.singletonList(expectedXml));
+            cli.sendLine("/host=primary/:write-config");
+            Path expectedXmlPath = Paths.get(domainPrimaryLifecycleUtil.getConfiguration().getDomainDirectory()).resolve("configuration").resolve("testing-host-primary.xml");
+            String expectedXml = loadXMLConfigurationFile(expectedXmlPath);
             Path result = new File("target", "result-primary-cli.xml").toPath();
             cli.sendLine("attachment save --operation=/host=primary/:read-config-as-xml-file  --file=" + result.toString());
             Assert.assertEquals(expectedXml, Files.readString(result));
             cli.quit();
         }
         try (CLIWrapper cli = new CLIWrapper(config.getHostControllerManagementAddress(), config.getHostControllerManagementPort(), true)) {
+            cli.sendLine("/host=secondary/:write-config");
             Path result = new File("target", "result-secondary-cli.xml").toPath();
             cli.sendLine("attachment save --operation=/host=secondary/:read-config-as-xml-file  --file=" + result.toString());
-            String expectedXml = loadXMLHostConfigurationFile(Paths.get(domainSecondaryLifecycleUtil.getConfiguration().getHostConfigFile()), "secondary");
-            Path expected = new File("target", "expected-secondary.xml").toPath();
-            Files.write(expected, Collections.singletonList(expectedXml));
+            Path expectedXmlPath = Paths.get(domainSecondaryLifecycleUtil.getConfiguration().getDomainDirectory()).resolve("configuration").resolve("testing-host-secondary.xml");
+            String expectedXml = loadXMLConfigurationFile(expectedXmlPath);
             Assert.assertEquals(expectedXml, Files.readString(result));
             cli.quit();
         }

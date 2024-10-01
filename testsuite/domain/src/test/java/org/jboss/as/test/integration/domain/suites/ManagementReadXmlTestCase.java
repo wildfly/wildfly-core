@@ -52,6 +52,7 @@ public class ManagementReadXmlTestCase {
 
     @BeforeClass
     public static void setupDomain() throws Exception {
+        DomainTestSuite.stopSupport();
         testSupport = DomainTestSuite.createSupport(ManagementReadXmlTestCase.class.getSimpleName());
         domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
         domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
@@ -150,15 +151,20 @@ public class ManagementReadXmlTestCase {
 
     @Test
     public void testDomainReadConfigAsXml() throws Exception {
-
-        DomainClient domainClient = domainPrimaryLifecycleUtil.getDomainClient();
         ModelNode request = new ModelNode();
+        request.get(OP).set("write-config");
+        request.get(OP_ADDR).setEmptyList();
+        DomainClient domainClient = domainPrimaryLifecycleUtil.getDomainClient();
+        ModelNode response = domainClient.execute(request);
+        validateResponse(response, true);
+        Path expectedXmlPath = Paths.get(domainPrimaryLifecycleUtil.getConfiguration().getDomainDirectory()).resolve("configuration").resolve("testing-domain-standard.xml");
+
+        request = new ModelNode();
         request.get(OP).set("read-config-as-xml");
         request.get(OP_ADDR).setEmptyList();
-
-        ModelNode response = domainClient.execute(request);
+        response = domainClient.execute(request);
         String xml = validateResponse(response, true).asString().replace('\'', '\"');
-        String expectedXml = loadXMLConfigurationFile(Paths.get(domainPrimaryLifecycleUtil.getConfiguration().getDomainConfigFile()));
+        String expectedXml = loadXMLConfigurationFile(expectedXmlPath);
         Assert.assertEquals(expectedXml, xml);
     }
 
@@ -167,18 +173,33 @@ public class ManagementReadXmlTestCase {
 
         DomainClient domainClient = domainPrimaryLifecycleUtil.getDomainClient();
         ModelNode request = new ModelNode();
+        request.get(OP).set("write-config");
+        request.get(OP_ADDR).setEmptyList().add(HOST, "primary");
+        ModelNode response = domainClient.execute(request);
+        validateResponse(response, true);
+        Path expectedXmlPath = Paths.get(domainPrimaryLifecycleUtil.getConfiguration().getDomainDirectory()).resolve("configuration").resolve("testing-host-primary.xml");
+
+        request = new ModelNode();
         request.get(OP).set("read-config-as-xml");
         request.get(OP_ADDR).setEmptyList().add(HOST, "primary");
-
-        ModelNode response = domainClient.execute(request);
+        response = domainClient.execute(request);
         String xml = validateResponse(response, true).asString().replace('\'', '\"');
-        String expectedXml = loadXMLHostConfigurationFile(Paths.get(domainPrimaryLifecycleUtil.getConfiguration().getHostConfigFile()), "primary");
+        String expectedXml = loadXMLConfigurationFile(expectedXmlPath);
         Assert.assertEquals(expectedXml, xml);
 
+        request = new ModelNode();
+        request.get(OP_ADDR).setEmptyList().add(HOST, "secondary");
+        request.get(OP).set("write-config");
+        response = domainClient.execute(request);
+        validateResponse(response, true);
+        expectedXmlPath = Paths.get(domainSecondaryLifecycleUtil.getConfiguration().getDomainDirectory()).resolve("configuration").resolve("testing-host-secondary.xml");
+
+        request = new ModelNode();
+        request.get(OP).set("read-config-as-xml");
         request.get(OP_ADDR).setEmptyList().add(HOST, "secondary");
         response = domainClient.execute(request);
         xml = validateResponse(response, true).asString().replace('\'', '\"');
-        expectedXml = loadXMLHostConfigurationFile(Paths.get(domainSecondaryLifecycleUtil.getConfiguration().getHostConfigFile()), "secondary");
+        expectedXml = loadXMLConfigurationFile(expectedXmlPath);
         Assert.assertEquals(expectedXml, xml);
     }
 
@@ -230,11 +251,5 @@ public class ManagementReadXmlTestCase {
                             .replaceAll("(?m)^[ \t]*\n?\n", "")
                             .trim();
         }
-    }
-
-    protected static String loadXMLHostConfigurationFile(Path file, String hostName) throws Exception {
-        return loadXMLConfigurationFile(file)
-                .replace(hostName + "\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"", hostName + "\"")
-                .trim();
     }
 }
