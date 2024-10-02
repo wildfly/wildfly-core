@@ -9,6 +9,8 @@ import static org.jboss.as.controller.client.helpers.Operations.createAddress;
 import static org.jboss.as.controller.client.helpers.Operations.createWriteAttributeOperation;
 import static org.jboss.as.test.integration.management.util.ServerReload.executeReloadAndWaitForCompletion;
 
+import java.util.logging.Logger;
+
 import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
@@ -19,12 +21,13 @@ import org.wildfly.test.stability.StabilityServerSetupSnapshotRestoreTasks;
 
 /**
  * Test case to test resource limits and clean up of management interface connections.
- *
+ * <p>
  * This test case uses attributes defined directly on the HTTP management interface resource for configuration.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class ManagementInterfaceResourcesCommunityTestCase extends AbstractManagementInterfaceResourcesTestCase {
+    protected static final Logger LOG = Logger.getLogger(ManagementInterfaceResourcesCommunityTestCase.class.getName());
 
     /*
     * Attribute names
@@ -45,14 +48,14 @@ public class ManagementInterfaceResourcesCommunityTestCase extends AbstractManag
         try {
             task.setup(client);
             test.run();
-            controller.reload();
         } finally {
+            controller.reload();
             task.tearDown(client);
             controller.stop();
         }
     }
 
-    class ManagementInterfaceSetUpTask extends StabilityServerSetupSnapshotRestoreTasks.Community {
+    static class ManagementInterfaceSetUpTask extends StabilityServerSetupSnapshotRestoreTasks.Community {
 
         private final int noRequestTimeout;
 
@@ -77,5 +80,10 @@ public class ManagementInterfaceResourcesCommunityTestCase extends AbstractManag
             managementClient.executeForResult(writeOp);
         }
 
+    }
+
+    @Override
+    Logger log() {
+        return LOG;
     }
 }

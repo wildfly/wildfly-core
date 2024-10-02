@@ -33,9 +33,6 @@ import jakarta.inject.Inject;
 @RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public abstract class AbstractManagementInterfaceResourcesTestCase {
-    protected static final Logger LOG = Logger.getLogger(ManagementInterfaceResourcesTestCase.class.getName());
-
-
     @Inject
     protected static ServerController controller;
 
@@ -54,20 +51,21 @@ public abstract class AbstractManagementInterfaceResourcesTestCase {
         runTest(60000, () -> {
             String mgmtAddress = TestSuiteEnvironment.getServerAddress();
             int mgmtPort = TestSuiteEnvironment.getServerPort();
-            LOG.info(mgmtAddress + ":" + mgmtPort);
+            log().info(mgmtAddress + ":" + mgmtPort);
             SocketAddress targetAddress = new InetSocketAddress(mgmtAddress, mgmtPort);
 
             int socketsOpened = 0;
             boolean oneFailed = false;
             Socket[] sockets = new Socket[9];
-            for (int i = 0 ; i < 9 ; i++) {
-                LOG.info("Opening socket " + i + " socketsOpened=" + socketsOpened);
+            for (int i = 0; i < 9; i++) {
+                log().info("Opening socket " + i + " socketsOpened=" + socketsOpened);
                 try {
                     sockets[i] = new Socket();
                     sockets[i].connect(targetAddress, 5000);
+                    assertTrue("Socket is connected.", sockets[i].isConnected());
                     socketsOpened++;
                 } catch (IOException e) {
-                    LOG.log(Level.SEVERE, "Probably an expected exception trying to open a new connection", e);
+                    log().log(Level.SEVERE, "Probably an expected exception trying to open a new connection", e);
                     assertTrue("Less sockets than low watermark opened.", socketsOpened > 3);
                     oneFailed = true;
                 }
@@ -75,7 +73,7 @@ public abstract class AbstractManagementInterfaceResourcesTestCase {
             assertTrue("Opening of one socket was expected to fail.", oneFailed);
 
             // Now close the connections and we should be able to connect again.
-            for (int i = 0 ; i < socketsOpened ; i++) {
+            for (int i = 0; i < socketsOpened; i++) {
                 sockets[i].close();
             }
 
@@ -96,14 +94,15 @@ public abstract class AbstractManagementInterfaceResourcesTestCase {
             int socketsOpened = 0;
             boolean oneFailed = false;
             Socket[] sockets = new Socket[9];
-            for (int i = 0 ; i < 9 ; i++) {
-                LOG.info("Opening socket " + i + " socketsOpened=" + socketsOpened);
+            for (int i = 0; i < 9; i++) {
+                log().info("Opening socket " + i + " socketsOpened=" + socketsOpened);
                 try {
                     sockets[i] = new Socket();
                     sockets[i].connect(targetAddress, 5000);
+                    assertTrue("Socket is connected.", sockets[i].isConnected());
                     socketsOpened++;
                 } catch (IOException e) {
-                    LOG.log(Level.SEVERE, "Probably an expected exception trying to open a new connection", e);
+                    log().log(Level.SEVERE, "Probably an expected exception trying to open a new connection", e);
                     assertTrue("Less sockets than low watermark opened.", socketsOpened > 3);
                     oneFailed = true;
                 }
@@ -121,7 +120,7 @@ public abstract class AbstractManagementInterfaceResourcesTestCase {
             goodSocket.close();
 
             // Clean up remaining sockets
-            for (int i = 0 ; i < socketsOpened ; i++) {
+            for (int i = 0; i < socketsOpened; i++) {
                 sockets[i].close();
             }
         });
@@ -129,4 +128,5 @@ public abstract class AbstractManagementInterfaceResourcesTestCase {
 
     protected abstract void runTest(int noRequestTimeout, ExceptionRunnable<Exception> test) throws Exception;
 
+    abstract Logger log();
 }

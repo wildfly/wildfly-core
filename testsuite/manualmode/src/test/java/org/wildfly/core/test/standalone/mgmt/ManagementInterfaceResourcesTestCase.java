@@ -5,17 +5,20 @@
 
 package org.wildfly.core.test.standalone.mgmt;
 
+import java.util.logging.Logger;
+
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.wildfly.common.function.ExceptionRunnable;
 
 /**
  * Test case to test resource limits and clean up of management interface connections.
- *
+ * <p>
  * This test case uses system properties for configuration.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class ManagementInterfaceResourcesTestCase extends AbstractManagementInterfaceResourcesTestCase {
+    protected static final Logger LOG = Logger.getLogger(ManagementInterfaceResourcesTestCase.class.getName());
 
     /*
      * System Properties
@@ -56,4 +59,8 @@ public class ManagementInterfaceResourcesTestCase extends AbstractManagementInte
         }
     }
 
+    @Override
+    Logger log() {
+        return LOG;
+    }
 }
