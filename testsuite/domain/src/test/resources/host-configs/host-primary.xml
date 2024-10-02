@@ -4,9 +4,7 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<host xmlns="urn:jboss:domain:community:20.0"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="urn:jboss:domain:community:20.0 wildfly-config_community_20_0.xsd"
+<host xmlns="urn:jboss:domain:20.0"
       name="primary" organization="core-primary">
 
     <extensions>
@@ -135,7 +133,7 @@
 
     <profile>
         <subsystem xmlns="urn:jboss:domain:core-management:1.0"/>
-        <subsystem xmlns="urn:wildfly:elytron:community:18.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+        <subsystem xmlns="urn:wildfly:elytron:18.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
             <providers>
                 <aggregate-providers name="combined-providers">
                     <providers name="elytron"/>

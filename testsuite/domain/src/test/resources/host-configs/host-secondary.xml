@@ -4,10 +4,7 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<host xmlns="urn:jboss:domain:community:20.0"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="urn:jboss:domain:community:20.0 wildfly-config_community_20_0.xsd"
-      name="secondary">
+<host xmlns="urn:jboss:domain:20.0" name="secondary">
 
     <extensions>
         <extension module="org.jboss.as.jmx"/>
@@ -116,7 +113,7 @@
 
 
     <profile>
-        <subsystem xmlns="urn:wildfly:elytron:community:18.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+        <subsystem xmlns="urn:wildfly:elytron:18.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
             <authentication-client>
                 <!-- corresponding secret: <secret value="c2xhdmVfdXMzcl9wYXNzd29yZA==" /> -->
                 <authentication-configuration name="secondaryHostAConfiguration"  authentication-name="secondary" realm="ManagementRealm" sasl-mechanism-selector="DIGEST-MD5">
