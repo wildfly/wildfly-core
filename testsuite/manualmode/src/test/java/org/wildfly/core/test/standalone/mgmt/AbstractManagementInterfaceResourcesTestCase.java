@@ -62,6 +62,7 @@ public abstract class AbstractManagementInterfaceResourcesTestCase {
                 try {
                     sockets[i] = new Socket();
                     sockets[i].connect(targetAddress, 5000);
+                    sockets[i].setSoLinger(true, 0);
                     assertTrue("Socket is connected.", sockets[i].isConnected());
                     socketsOpened++;
                 } catch (IOException e) {
@@ -99,6 +100,7 @@ public abstract class AbstractManagementInterfaceResourcesTestCase {
                 try {
                     sockets[i] = new Socket();
                     sockets[i].connect(targetAddress, 5000);
+                    sockets[i].setSoLinger(true, 0);
                     assertTrue("Socket is connected.", sockets[i].isConnected());
                     socketsOpened++;
                 } catch (IOException e) {
