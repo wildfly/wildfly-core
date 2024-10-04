@@ -47,7 +47,7 @@ public class ProvisioningConsistencyTestCase {
     private static final Path INSTALLATION_METADATA = CHANNEL_INSTALLATION.resolve(INSTALLATION);
     private static final Path PROVISIONING_XML = CHANNEL_INSTALLATION.resolve(PROVISIONING);
     private static final Path SOURCE_HOME = JBOSS_HOME.getParent().getParent().getParent().getParent();
-    private static final Path DIST_INSTALLATION = SOURCE_HOME.resolve("dist").resolve("target").resolve(getDistDir());
+    private static final Path DIST_INSTALLATION = SOURCE_HOME.resolve(System.getProperty("dist.output.dir"));
 
     private static Path resolveJBossHome() {
         try {
@@ -55,10 +55,6 @@ public class ProvisioningConsistencyTestCase {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static String getDistDir() {
-        return "wildfly-core-dist-" + System.getProperty("standard.dist.version");
     }
 
     private static File getDistFile(Path channelPath, boolean exists, boolean directory, List<String> errors) {
