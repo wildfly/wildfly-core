@@ -609,6 +609,7 @@ public class YamlExtensionTestCase {
 
     @Test
     public void testPostStartCLIChangesToModelDoNotSurviveRestart() throws Exception {
+        AssumeTestGroupUtil.assumeNotBootableJar();
         container.startYamlExtension(new Path[]{testYaml});
         Assert.assertEquals("Yaml changes to configuration were persisted to xml. This should never happen as it's in read-only mode.", expectedXml, readConfigAsXml());
         // read model and verify that test.yml changes are there
