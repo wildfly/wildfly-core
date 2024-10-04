@@ -97,7 +97,7 @@ public class WildFlyManagedConfiguration {
 
     private boolean rewriteConfigFiles = true;
 
-    private Stability stability = Stability.DEFAULT;
+    private Stability stability;
 
     public WildFlyManagedConfiguration(String jbossHome) {
         if (jbossHome != null) {
