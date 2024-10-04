@@ -33,6 +33,7 @@
         </dependency>
     </dependencies>
     <build>
+        <finalName>${server.output.dir.prefix}-${wildfly.core.release.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.jboss.galleon</groupId>
@@ -44,7 +45,7 @@
                             <goal>provision</goal>
                         </goals>
                         <configuration>
-                            <install-dir>${basedir}/target/${project.build.finalName}</install-dir>
+                            <install-dir>${project.build.directory}/${project.build.finalName}</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
@@ -73,7 +74,6 @@
                 </property>
             </activation>
             <build>
-                <finalName>${server.output.dir.prefix}-${wildfly.core.release.version}</finalName>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>

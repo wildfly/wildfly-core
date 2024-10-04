@@ -30,7 +30,7 @@
     </dependencies>
 
     <build>
-        <finalName>${server.output.dir.prefix}-${project.version}</finalName>
+        <finalName>${server.output.dir.prefix}-${wildfly.core.release.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.jboss.galleon</groupId>

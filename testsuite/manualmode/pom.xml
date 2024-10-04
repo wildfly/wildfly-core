@@ -294,7 +294,7 @@
                                 <javax.net.ssl.keyStore>${basedir}/target/test-classes/ssl/jbossClient.keystore</javax.net.ssl.keyStore>
                                 <javax.net.ssl.trustStorePassword>clientPassword</javax.net.ssl.trustStorePassword>
                                 <javax.net.ssl.keyStorePassword>clientPassword</javax.net.ssl.keyStorePassword>
-                                <standard.dist.version>${project.version}</standard.dist.version>
+                                <dist.output.dir>${wildfly.dist.output.dir}</dist.output.dir>
                             </systemPropertyVariables>
                             <environmentVariables>
                                 <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
