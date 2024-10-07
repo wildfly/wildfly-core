@@ -181,7 +181,8 @@ public class ResolveExpressionAttributesTestCase extends AbstractElytronSubsyste
     }
 
     private void testJdbcRealm() {
-        ModelNode jdbcRealm = serverModel.get(ElytronDescriptionConstants.JDBC_REALM).get("JdbcRealm").get(ElytronDescriptionConstants.PRINCIPAL_QUERY).get(0);
+
+        ModelNode jdbcRealm = serverModel.get(ElytronDescriptionConstants.JDBC_REALM).get("JdbcRealmBcrypt").get(ElytronDescriptionConstants.PRINCIPAL_QUERY).get(0);
 
         // Bcrypt password mapper
         ModelNode mapper = jdbcRealm.get(ElytronDescriptionConstants.BCRYPT_MAPPER);
@@ -192,15 +193,18 @@ public class ResolveExpressionAttributesTestCase extends AbstractElytronSubsyste
         assertEquals("hex", getValue(mapper, ElytronDescriptionConstants.SALT_ENCODING));
 
         // Clear password mapper
+        jdbcRealm = serverModel.get(ElytronDescriptionConstants.JDBC_REALM).get("JdbcRealmClearPassword").get(ElytronDescriptionConstants.PRINCIPAL_QUERY).get(0);
         mapper = jdbcRealm.get(ElytronDescriptionConstants.CLEAR_PASSWORD_MAPPER);
         assertEquals("2", getValue(mapper, ElytronDescriptionConstants.PASSWORD_INDEX));
 
         // Simple digest password mapper
+        jdbcRealm = serverModel.get(ElytronDescriptionConstants.JDBC_REALM).get("JdbcRealmSimple").get(ElytronDescriptionConstants.PRINCIPAL_QUERY).get(0);
         mapper = jdbcRealm.get(ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER);
         assertEquals("2", getValue(mapper, ElytronDescriptionConstants.PASSWORD_INDEX));
         assertEquals("hex", getValue(mapper, ElytronDescriptionConstants.HASH_ENCODING));
 
         // Salted simple digest password mapper
+        jdbcRealm = serverModel.get(ElytronDescriptionConstants.JDBC_REALM).get("JdbcRealmSalted").get(ElytronDescriptionConstants.PRINCIPAL_QUERY).get(0);
         mapper = jdbcRealm.get(ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER);
         assertEquals("2", getValue(mapper, ElytronDescriptionConstants.PASSWORD_INDEX));
         assertEquals("3", getValue(mapper, ElytronDescriptionConstants.SALT_INDEX));
@@ -209,6 +213,7 @@ public class ResolveExpressionAttributesTestCase extends AbstractElytronSubsyste
         assertEquals("hex", getValue(mapper, ElytronDescriptionConstants.SALT_ENCODING));
 
         // Scram password mapper
+        jdbcRealm = serverModel.get(ElytronDescriptionConstants.JDBC_REALM).get("JdbcScram").get(ElytronDescriptionConstants.PRINCIPAL_QUERY).get(0);
         mapper = jdbcRealm.get(ElytronDescriptionConstants.SCRAM_MAPPER);
         assertEquals("2", getValue(mapper, ElytronDescriptionConstants.PASSWORD_INDEX));
         assertEquals("3", getValue(mapper, ElytronDescriptionConstants.SALT_INDEX));
@@ -217,6 +222,7 @@ public class ResolveExpressionAttributesTestCase extends AbstractElytronSubsyste
         assertEquals("hex", getValue(mapper, ElytronDescriptionConstants.SALT_ENCODING));
 
         // Modular crypt mapper
+        jdbcRealm = serverModel.get(ElytronDescriptionConstants.JDBC_REALM).get("JdbcRealmModular").get(ElytronDescriptionConstants.PRINCIPAL_QUERY).get(0);
         mapper = jdbcRealm.get(ElytronDescriptionConstants.MODULAR_CRYPT_MAPPER);
         assertEquals("2", getValue(mapper, ElytronDescriptionConstants.PASSWORD_INDEX));
     }
