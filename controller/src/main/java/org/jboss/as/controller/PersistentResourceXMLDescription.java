@@ -440,7 +440,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
                 writer.writeEndElement();
             }
         } else {
-            final boolean empty = attributeGroups.isEmpty() && children.isEmpty();
+            final boolean empty = attributeGroups.isEmpty() && children.isEmpty() && attributeElements.isEmpty();
             if (useValueAsElementName) {
                 writeStartElement(writer, namespaceURI, getPathElement().getValue());
             } else if (isSubsystem) {
