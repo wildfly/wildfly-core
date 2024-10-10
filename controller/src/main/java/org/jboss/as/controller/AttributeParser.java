@@ -89,7 +89,7 @@ public abstract class AttributeParser {
     }
 
     public void parseElement(final AttributeDefinition attribute, final XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
-
+        throw new UnsupportedOperationException();
     }
 
     public String getXmlName(final AttributeDefinition attribute){

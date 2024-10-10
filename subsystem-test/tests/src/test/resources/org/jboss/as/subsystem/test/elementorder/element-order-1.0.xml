@@ -1,0 +1,20 @@
+<subsystem xmlns="urn:wildfly:element-order:1.0">
+    <group name="attrs-before-children">
+        <attribute>abc</attribute>
+        <attribute2>cdef</attribute2>
+        <child name="ijk"/>
+        <child2 name="mnop"/>
+    </group>
+    <group name="children-before-attrs">
+        <child name="abc"/>
+        <child2 name="cdef"/>
+        <attribute>ijk</attribute>
+        <attribute2>mnop</attribute2>
+    </group>
+    <group name="mixed">
+        <child name="abc"/>
+        <attribute2>cdef</attribute2>
+        <child2 name="ijk"/>
+        <attribute>mnop</attribute>
+    </group>
+</subsystem>
