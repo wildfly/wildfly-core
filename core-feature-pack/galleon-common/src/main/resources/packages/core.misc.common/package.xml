@@ -10,5 +10,7 @@
         <package name="LICENSE.txt"/>
         <package name="README.txt"/>
         <package name="copyright.txt"/>
+        <!-- required in all cases, used during provisioning time -->
+        <package name="org.wildfly.core.wildfly-cli.shaded"/>
     </dependencies>
 </package-spec>
