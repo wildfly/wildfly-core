@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.FeatureRegistry;
 
 
 /**
@@ -34,7 +35,7 @@ import org.jboss.as.controller.AttributeDefinition;
  * @author Emanuel Muckenhuber
  * @author Kabir Khan
  */
-public interface BaseAttributeTransformationDescriptionBuilder<T extends BaseAttributeTransformationDescriptionBuilder<?>> {
+public interface BaseAttributeTransformationDescriptionBuilder<T extends BaseAttributeTransformationDescriptionBuilder<?>> extends FeatureRegistry {
 
     /**
      * Adds a RejectAttributeChecker. More than one reject checker can be used for an attribute, and the RejectAttributeCheckers
@@ -106,7 +107,9 @@ public interface BaseAttributeTransformationDescriptionBuilder<T extends BaseAtt
      * @param discardedAttributes the attributes to check
      * @return this builder
      */
-    T setDiscard(DiscardAttributeChecker discardChecker, AttributeDefinition...discardedAttributes);
+    default T setDiscard(DiscardAttributeChecker discardChecker, AttributeDefinition... discardedAttributes) {
+        return this.setDiscard(discardChecker, List.of(discardedAttributes));
+    }
 
     /**
      * Sets the DiscardChecker to be used to check if an attribute should be discarded. Only one discard checker can be used

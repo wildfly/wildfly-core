@@ -12,10 +12,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Locale;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
@@ -23,7 +27,9 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
@@ -41,40 +47,58 @@ import org.jboss.as.controller.transform.TransformationTargetImpl;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.controller.transform.TransformersSubRegistration;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 /**
  * @author Emanuel Muckenhuber
  */
+@RunWith(Parameterized.class)
 public class BasicResourceTestCase {
+    @Parameterized.Parameters
+    public static Iterable<Stability> parameters() {
+        return EnumSet.allOf(Stability.class);
+    }
 
-    private static PathElement PATH = PathElement.pathElement("toto", "testSubsystem");
-    private static PathElement DISCARD = PathElement.pathElement("discard");
-    private static PathElement DYNAMIC = PathElement.pathElement("dynamic");
-    private static PathElement DYNAMIC_REDIRECT_ORIGINAL = PathElement.pathElement("dynamic-redirect-original");
-    private static PathElement DYNAMIC_REDIRECT_NEW = PathElement.pathElement("dynamic-redirect-new");
+    private static final PathElement PATH = PathElement.pathElement("toto", "testSubsystem");
+    private static final AttributeDefinition COMMUNITY_SUBSYSTEM_ATTRIBUTE = new SimpleAttributeDefinitionBuilder("community", ModelType.BOOLEAN).setRequired(false).setDefaultValue(ModelNode.TRUE).setStability(Stability.COMMUNITY).build();
+    private static final Collection<ResourceRegistration> DISCARDED_RESOURCES = EnumSet.allOf(Stability.class).stream().map(stability -> ResourceRegistration.of(PathElement.pathElement(stability.name()), stability)).collect(Collectors.toList());
+    private static final PathElement DISCARD = PathElement.pathElement("discard");
+    private static final PathElement DYNAMIC = PathElement.pathElement("dynamic");
+    private static final PathElement DYNAMIC_REDIRECT_ORIGINAL = PathElement.pathElement("dynamic-redirect-original");
+    private static final PathElement DYNAMIC_REDIRECT_NEW = PathElement.pathElement("dynamic-redirect-new");
+    private static final ResourceRegistration FOO_RESOURCE = ResourceRegistration.of(PathElement.pathElement("child", "foo"), Stability.COMMUNITY);
+    private static final AttributeDefinition FOO_ATTRIBUTE = new SimpleAttributeDefinitionBuilder("preview-attribute", ModelType.BOOLEAN).setRequired(false).setDefaultValue(ModelNode.TRUE).setStability(Stability.PREVIEW).build();
+    private static final ResourceRegistration FOO_BAR_RESOURCE = ResourceRegistration.of(PathElement.pathElement("grandchild", "bar"), Stability.PREVIEW);
+    private static final AttributeDefinition FOO_BAR_ATTRIBUTE = new SimpleAttributeDefinitionBuilder("experimental-attribute", ModelType.BOOLEAN).setRequired(false).setDefaultValue(ModelNode.TRUE).setStability(Stability.EXPERIMENTAL).build();
 
-    private static PathElement CONFIGURATION_TEST = PathElement.pathElement("configuration", "test");
-    private static PathElement TEST_CONFIGURATION = PathElement.pathElement("test", "configuration");
+    private static final PathElement CONFIGURATION_TEST = PathElement.pathElement("configuration", "test");
+    private static final PathElement TEST_CONFIGURATION = PathElement.pathElement("test", "configuration");
 
-    private static PathElement SETTING_DIRECTORY = PathElement.pathElement("setting", "directory");
-    private static PathElement DIRECTORY_SETTING = PathElement.pathElement("directory", "setting");
+    private static final PathElement SETTING_DIRECTORY = PathElement.pathElement("setting", "directory");
+    private static final PathElement DIRECTORY_SETTING = PathElement.pathElement("directory", "setting");
 
-    private Resource resourceRoot = Resource.Factory.create();
-    private TransformerRegistry registry = TransformerRegistry.Factory.create();
-    private ManagementResourceRegistration resourceRegistration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(ROOT);
+    private final Resource resourceRoot = Resource.Factory.create();
+    private final TransformerRegistry registry;
+    private final ManagementResourceRegistration resourceRegistration;
 
-    private static final TransformationDescription description;
+    private final TransformationDescription description;
 
-    static {
-        // Build
-        final ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(PATH);
+    public BasicResourceTestCase(Stability stability) {
+        this.resourceRegistration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER, stability).createRegistration(ROOT);
+        this.registry = TransformerRegistry.Factory.create(stability);
+        final ResourceTransformationDescriptionBuilder builder = this.registry.createResourceTransformationDescriptionBuilder(PATH);
+
+        DISCARDED_RESOURCES.forEach(builder::discardChildResource);
 
         builder.getAttributeBuilder()
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(COMMUNITY_SUBSYSTEM_ATTRIBUTE.getDefaultValue()), COMMUNITY_SUBSYSTEM_ATTRIBUTE)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, COMMUNITY_SUBSYSTEM_ATTRIBUTE)
                 .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, "test")
                 .setValueConverter(AttributeConverter.Factory.createHardCoded(ModelNode.TRUE), "othertest")
                 .end();
@@ -181,16 +205,18 @@ public class BasicResourceTestCase {
                 .getAttributeBuilder().addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, "test-config").end()
                 .addChildRedirection(SETTING_DIRECTORY, DIRECTORY_SETTING);
 
-        // Register at the server root
-        description = builder.build();
-    }
+        builder.addChildResource(FOO_RESOURCE).getAttributeBuilder()
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(FOO_ATTRIBUTE.getDefaultValue()), FOO_ATTRIBUTE)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, FOO_ATTRIBUTE)
+                .end()
+                .addChildResource(FOO_BAR_RESOURCE).getAttributeBuilder()
+                        .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(FOO_BAR_ATTRIBUTE.getDefaultValue()), FOO_BAR_ATTRIBUTE)
+                        .addRejectCheck(RejectAttributeChecker.DEFINED, FOO_BAR_ATTRIBUTE)
+                        .end();
 
-    @Before
-    public void setUp() {
-        // Cleanup
-        resourceRoot = Resource.Factory.create();
-        registry = TransformerRegistry.Factory.create();
-        resourceRegistration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(ROOT);
+        // Register at the server root
+        this.description = builder.build();
+
         // test
         final Resource toto = Resource.Factory.create();
         toto.getModel().get("test").set("onetwothree");
@@ -238,7 +264,30 @@ public class BasicResourceTestCase {
         resourceAttr.getModel().get("test-attribute").set("test");
         attrResource.registerChild(PathElement.pathElement("resource-attribute", "test"), resourceAttr);
 
-        //
+        for (ResourceRegistration discardedResource : DISCARDED_RESOURCES) {
+            if (this.resourceRegistration.enables(discardedResource)) {
+                toto.registerChild(PathElement.pathElement(discardedResource.getPathElement().getKey(), "discard"), Resource.Factory.create());
+            }
+        }
+
+        if (this.resourceRegistration.enables(COMMUNITY_SUBSYSTEM_ATTRIBUTE)) {
+            toto.getModel().get(COMMUNITY_SUBSYSTEM_ATTRIBUTE.getName()).set(COMMUNITY_SUBSYSTEM_ATTRIBUTE.getDefaultValue());
+        }
+        if (this.resourceRegistration.enables(FOO_RESOURCE)) {
+            Resource foo = Resource.Factory.create();
+            toto.registerChild(FOO_RESOURCE.getPathElement(), foo);
+            if (this.resourceRegistration.enables(FOO_ATTRIBUTE)) {
+                foo.getModel().get(FOO_ATTRIBUTE.getName()).set(FOO_ATTRIBUTE.getDefaultValue());
+            }
+            if (this.resourceRegistration.enables(FOO_BAR_RESOURCE)) {
+                Resource bar = Resource.Factory.create();
+                foo.registerChild(FOO_BAR_RESOURCE.getPathElement(), bar);
+                if (this.resourceRegistration.enables(FOO_BAR_ATTRIBUTE)) {
+                    bar.getModel().get(FOO_BAR_ATTRIBUTE.getName()).set(FOO_BAR_ATTRIBUTE.getDefaultValue());
+                }
+            }
+        }
+
         resourceRoot.registerChild(PATH, toto);
 
         // Register the description
@@ -286,6 +335,29 @@ public class BasicResourceTestCase {
         Assert.assertFalse(attResourceModel.get("test-resource").isDefined());  // check that the resource got removed
         Assert.assertTrue(attResourceModel.hasDefined("test-attribute"));
         Assert.assertTrue(attResource.hasChild(PathElement.pathElement("resource", "test")));
+
+        for (ResourceRegistration discardedResource : DISCARDED_RESOURCES) {
+            if (this.resourceRegistration.enables(discardedResource)) {
+                Assert.assertFalse(toto.hasChild(discardedResource.getPathElement()));
+            }
+        }
+        if (this.resourceRegistration.enables(COMMUNITY_SUBSYSTEM_ATTRIBUTE)) {
+            Assert.assertFalse(model.hasDefined(COMMUNITY_SUBSYSTEM_ATTRIBUTE.getName()));
+        }
+        if (this.resourceRegistration.enables(FOO_RESOURCE)) {
+            Assert.assertTrue(toto.hasChild(FOO_RESOURCE.getPathElement()));
+            Resource foo = toto.getChild(FOO_RESOURCE.getPathElement());
+            if (this.resourceRegistration.enables(FOO_ATTRIBUTE)) {
+                Assert.assertFalse(foo.getModel().hasDefined(FOO_ATTRIBUTE.getName()));
+                if (this.resourceRegistration.enables(FOO_BAR_RESOURCE)) {
+                    Assert.assertTrue(foo.hasChild(FOO_BAR_RESOURCE.getPathElement()));
+                    Resource bar = foo.getChild(FOO_BAR_RESOURCE.getPathElement());
+                    if (this.resourceRegistration.enables(FOO_BAR_ATTRIBUTE)) {
+                        Assert.assertFalse(bar.getModel().hasDefined(FOO_BAR_ATTRIBUTE.getName()));
+                    }
+                }
+            }
+        }
     }
 
     @Test

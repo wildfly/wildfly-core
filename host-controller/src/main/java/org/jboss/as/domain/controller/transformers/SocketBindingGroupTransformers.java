@@ -6,10 +6,10 @@
 package org.jboss.as.domain.controller.transformers;
 
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createBuilderFromCurrent;
-import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createChainFromCurrent;
 
 import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilderFactory;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
@@ -23,9 +23,8 @@ import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefin
  */
 class SocketBindingGroupTransformers {
 
-    static ChainedTransformationDescriptionBuilder buildTransformerChain() {
-        ChainedTransformationDescriptionBuilder chainedBuilder =
-                createChainFromCurrent(AbstractSocketBindingGroupResourceDefinition.PATH);
+    static ChainedTransformationDescriptionBuilder buildTransformerChain(ChainedTransformationDescriptionBuilderFactory factory) {
+        ChainedTransformationDescriptionBuilder chainedBuilder = factory.createChainedTransformationDescriptionBuilder(AbstractSocketBindingGroupResourceDefinition.PATH);
 
         ResourceTransformationDescriptionBuilder builder =
                 createBuilderFromCurrent(chainedBuilder, KernelAPIVersion.VERSION_1_8);

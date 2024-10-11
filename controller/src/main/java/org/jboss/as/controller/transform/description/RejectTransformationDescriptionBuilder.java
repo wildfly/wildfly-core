@@ -8,16 +8,16 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.PathAddressTransformer;
 import org.jboss.as.controller.transform.ResourceTransformer;
+import org.jboss.as.version.Stability;
 
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class RejectTransformationDescriptionBuilder extends AbstractTransformationDescriptionBuilder implements TransformationDescriptionBuilder {
+public class RejectTransformationDescriptionBuilder extends AbstractTransformationDescriptionBuilder {
 
-    protected RejectTransformationDescriptionBuilder(PathElement pathElement) {
-        super(pathElement, PathAddressTransformer.DEFAULT, ResourceTransformer.DEFAULT,
-                OperationTransformer.DEFAULT, null);
+    protected RejectTransformationDescriptionBuilder(Stability stability, PathElement pathElement) {
+        super(stability, pathElement, PathAddressTransformer.DEFAULT, ResourceTransformer.DEFAULT, OperationTransformer.DEFAULT, null);
     }
 
     @Override
@@ -25,5 +25,4 @@ public class RejectTransformationDescriptionBuilder extends AbstractTransformati
         final AttributeTransformationDescriptionBuilderImpl.AttributeTransformationDescriptionBuilderRegistry empty = new AttributeTransformationDescriptionBuilderImpl.AttributeTransformationDescriptionBuilderRegistry();
         return buildDefault(DiscardPolicy.REJECT_AND_WARN, true, empty);
     }
-
 }
