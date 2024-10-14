@@ -40,7 +40,7 @@ public class OverallInterfaceCriteriaUnitTestCase {
     @Test
     public void testBasic() throws Exception {
 
-        Assume.assumeFalse(allCandidates.size() < 1);
+        Assume.assumeFalse(allCandidates.isEmpty());
 
         Map.Entry<NetworkInterface, Set<InetAddress>> correct = allCandidates.entrySet().iterator().next();
 
@@ -60,7 +60,7 @@ public class OverallInterfaceCriteriaUnitTestCase {
     @Test
     public void testMultipleCriteria() throws Exception {
 
-        Assume.assumeFalse(nonLoopBackInterfaces.size() < 1 || loopbackInterfaces.size() < 1);
+        Assume.assumeFalse(nonLoopBackInterfaces.isEmpty() || loopbackInterfaces.isEmpty());
 
         Map<NetworkInterface, Set<InetAddress>> correct = new HashMap<NetworkInterface, Set<InetAddress>>();
         for (NetworkInterface ni : loopbackInterfaces) {
@@ -69,7 +69,7 @@ public class OverallInterfaceCriteriaUnitTestCase {
             }
         }
 
-        Assume.assumeFalse(correct.size() == 0);
+        Assume.assumeFalse(correct.isEmpty());
 
         Set<InterfaceCriteria> criterias = new HashSet<InterfaceCriteria>();
         criterias.add(UpInterfaceCriteria.INSTANCE);
@@ -89,11 +89,11 @@ public class OverallInterfaceCriteriaUnitTestCase {
     @Test
     public void testMultipleMatches() throws Exception {
 
-        Assume.assumeFalse(allCandidates.size() < 1);
+        Assume.assumeFalse(allCandidates.isEmpty());
 
         Map<NetworkInterface, Set<InetAddress>> correct = new HashMap<NetworkInterface, Set<InetAddress>>();
         for (NetworkInterface ni : allInterfaces) {
-            if (ni.isUp()) {
+            if (ni.isUp() && allCandidates.containsKey(ni)) {
                 correct.put(ni, getRightTypeAddresses(allCandidates.get(ni)));
             }
         }
@@ -115,7 +115,7 @@ public class OverallInterfaceCriteriaUnitTestCase {
     @Test
     public void testNoMatch() throws Exception {
 
-        Assume.assumeFalse(loopbackInterfaces.size() < 1);
+        Assume.assumeFalse(loopbackInterfaces.isEmpty());
 
         for (NetworkInterface nic : allCandidates.keySet()) {
             Assume.assumeFalse("bogus".equals(nic.getName()));
@@ -134,8 +134,8 @@ public class OverallInterfaceCriteriaUnitTestCase {
     /** WFCORE-2626 */
     @Test
     public void testInetAddressDuplicates() throws Exception {
-        Assume.assumeFalse(loopbackInterfaces.size() < 1);
-        Assume.assumeFalse(nonLoopBackInterfaces.size() < 1);
+        Assume.assumeFalse(loopbackInterfaces.isEmpty());
+        Assume.assumeFalse(nonLoopBackInterfaces.isEmpty());
 
         // Build up a fake candidate set where the same addresses appear associated with 2 NICs, one up, one down
         // This simulates an environment with multiple NICs with the same address configured
@@ -150,7 +150,7 @@ public class OverallInterfaceCriteriaUnitTestCase {
                 down = nic;
             } else if (addresses == null && nic.isUp()) {
                 Set<InetAddress> nicAddresses = allCandidates.get(nic);
-                if (nicAddresses.size() > 0) {
+                if (!nicAddresses.isEmpty()) {
                     addresses = nicAddresses;
                     up = nic;
                 }
