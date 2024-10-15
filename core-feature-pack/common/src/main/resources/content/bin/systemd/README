@@ -1,13 +1,13 @@
-= How to configure WildFly as a Systemd service
+= How to configure WildFly as a systemd service
 
-The following steps describe the process to configure WildFly as a Systemd service.
-You can use the provided wildfly-[standalone,domain].service file as a template for your own Systemd Unit File.
+The following steps describe the process to configure WildFly as a systemd service.
+You can use the provided wildfly-[standalone,domain].service file as a template for your own systemd unit file.
 It can be adjusted to your needs, for example, you can manually change the user that runs the service,
 the location of the WildFly installation, logs, etc.
-Alternatively, you can use the generate_systemd_unit.sh script to automatically generate a new Systemd Unit File
+Alternatively, you can use the generate_systemd_unit.sh script to automatically generate a new systemd unit file
 using this server installation as the WildFly home.
 
-If you want to install WildFly as a Systemd service from scratch as a Systemd service, follow the steps below.
+If you want to install WildFly as a systemd service from scratch as a systemd service, follow the steps below.
 
 == Install WildFly and initialize the WILDFLY_HOME variable
 
