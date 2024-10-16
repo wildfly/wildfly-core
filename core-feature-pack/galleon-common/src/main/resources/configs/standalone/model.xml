@@ -27,5 +27,8 @@
 
         <package name="org.wildfly.bootable-jar" optional="true"/>
         <package name="org.wildfly.embedded"/>
+        <!-- Unstable API Annotation Index -->
+        <package name="org.wildfly._internal.unstable-api-annotation-index" optional="true" valid-for-stability="preview" />
+        <package name="org.wildfly.unstable.annotation.api.indexer" optional="true" valid-for-stability="preview" />
     </packages>
 </config>

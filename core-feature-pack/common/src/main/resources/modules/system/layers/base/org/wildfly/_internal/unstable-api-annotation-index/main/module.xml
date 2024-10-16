@@ -9,6 +9,7 @@
 
     <properties>
         <property name="jboss.api" value="private"/>
+        <property name="jboss.stability" value="preview"/>
     </properties>
 
     <resources>
