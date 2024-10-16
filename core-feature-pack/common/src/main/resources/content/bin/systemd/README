@@ -1,0 +1,81 @@
+= How to configure WildFly as a systemd service
+
+The following steps describe the process to configure WildFly as a systemd service.
+You can use the provided wildfly-[standalone,domain].service file as a template for your own systemd unit file.
+It can be adjusted to your needs, for example, you can manually change the user that runs the service,
+the location of the WildFly installation, logs, etc.
+Alternatively, you can use the generate_systemd_unit.sh script to automatically generate a new systemd unit file
+using this server installation as the WildFly home.
+
+If you want to install WildFly as a systemd service from scratch as a systemd service, follow the steps below.
+
+== Install WildFly and initialize the WILDFLY_HOME variable
+
+    # unzip -d /opt wildfly-34.0.0.Final.zip
+    # ln -s /opt/wildfly-34.0.0.Final /opt/wildfly
+    # WILDFLY_HOME=/opt/wildfly
+
+== Standalone or Domain mode ?
+
+   # MODE=standalone
+
+== Create a wildfly user and group
+
+    # groupadd -r wildfly
+    # useradd -r -g wildfly -d "${WILDFLY_HOME}" -s /sbin/nologin wildfly
+
+== Configure systemd
+
+    # cd "${WILDFLY_HOME}/bin/systemd"
+    # cp "wildfly-${MODE}.conf" /etc/sysconfig/
+    # cp "wildfly-${MODE}.service" $(pkg-config systemd --variable=systemdsystemunitdir)
+    # chown -R wildfly:wildfly "${WILDFLY_HOME}"/
+    # chmod +x "${WILDFLY_HOME}/bin/systemd/launch.sh"
+    # systemctl daemon-reload
+
+=== If SELinux is enabled, you need to set the appropriate context for the launch.sh script:
+
+    # sudo chcon -R -t bin_t "${WILDFLY_HOME}/"
+    # sudo semanage fcontext -a -t systemd_unit_file_t '${WILDFLY_HOME}(/.*)?'
+
+== Start and enable WildFly
+
+    # systemctl start "wildfly-${MODE}.service"
+    # systemctl enable "wildfly-${MODE}.service"
+
+== Check the status of WildFly
+
+    # systemctl status "wildfly-${MODE}.service"
+
+
+
+= How to remove WildFly as a systemd service
+
+== Standalone or Domain mode ?
+
+   # MODE=standalone
+
+== Stop and disable WildFly
+
+    # systemctl stop "wildfly-${MODE}.service"
+    # systemctl disable "wildfly-${MODE}.service"
+
+== If you are using SELinux, remove the custom context added
+
+    sudo semanage fcontext -d '${WILDFLY_HOME}(/.*)?'
+
+== Remove WildFly systemd service
+
+    # rm -f "$(pkg-config systemd --variable=systemdsystemunitdir)/wildfly-${MODE}.service"
+    # rm -f "/etc/sysconfig/wildfly-${MODE}.conf"
+    # systemctl daemon-reload
+
+== Remove WildFly installation
+
+    # rm -rf $(readlink "${WILDFLY_HOME}")
+    # rm -rf "${WILDFLY_HOME}"
+
+== Remove WildFly user and group
+
+    # userdel wildfly
+    # groupdel wildfly
