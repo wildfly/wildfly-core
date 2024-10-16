@@ -1864,4 +1864,26 @@ public class Util {
         return stringWriter.toString();
     }
 
+    public static boolean isServerInReadOnlyMode(CommandContext ctx) {
+        final ModelControllerClient client = ctx.getModelControllerClient();
+        final ModelNode operation = new ModelNode();
+        ModelNode result;
+        ModelNode address = operation.get("address");
+
+        address.add("core-service", "server-environment");
+        operation.get(Util.OPERATION).set(Util.READ_RESOURCE);
+        operation.get(Util.INCLUDE_RUNTIME).set(true);
+
+        try {
+            result = client.execute(operation);
+            if (isSuccess(result)) {
+                ModelNode serverEnv = result.get("result");
+                return serverEnv.get("read-only").asBoolean();
+            }
+        } catch (Exception e) {
+        }
+        return false;
+
+    }
+
 }
