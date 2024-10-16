@@ -17,5 +17,9 @@
         <!-- required by default configuration-->
         <package name="org.wildfly.extension.elytron.jaas-realm"/>
         <package name="org.wildfly.openssl"/>
+        <!-- In case the feature-pack containing this package is constrained at build time
+             to a level that doesn't imply 'community', this package will be not packaged inside the feature-pack.
+             'valid-for-stability' attribute allows to keep this dependency that will be ignored at provisioning time. -->
+        <package name="org.wildfly.security.elytron-dynamic-ssl" optional="true" valid-for-stability="community"/>
     </packages>
 </layer-spec>
