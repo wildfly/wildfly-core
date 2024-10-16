@@ -57,19 +57,52 @@
                 <scram-mapper algorithm="scram-sha-512" password-index="1" salt-index="2" iteration-count-index="10000"/>
             </principal-query>
         </jdbc-realm>
-        <jdbc-realm name="JdbcRealm">
+        <jdbc-realm name="JdbcScram">
+            <principal-query sql="SELECT" data-source="ExampleDS">
+                <scram-mapper password-index="${exp.password:2}" salt-index="${exp.salt:3}" iteration-count-index="${exp.iteration:4}" hash-encoding="${exp.encoding:hex}" salt-encoding="${exp.encoding:hex}" algorithm="${exp.algorithm:scram-sha-1}"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcRealmBcrypt">
+            <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
+                <attribute-mapping>
+                    <attribute index="1" to="role"/>
+                </attribute-mapping>
+                <bcrypt-mapper password-index="${exp.password:2}" salt-index="${exp.salt:3}" iteration-count-index="${exp.iteration:4}" hash-encoding="${exp.encoding:hex}" salt-encoding="${exp.encoding:hex}"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcRealmClearPassword">
             <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
                 <attribute-mapping>
                     <attribute index="1" to="role"/>
                 </attribute-mapping>
                 <clear-password-mapper password-index="${exp.password:2}"/>
-                <bcrypt-mapper password-index="${exp.password:2}" salt-index="${exp.salt:3}" iteration-count-index="${exp.iteration:4}" hash-encoding="${exp.encoding:hex}" salt-encoding="${exp.encoding:hex}"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcRealmSalted">
+            <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
+                <attribute-mapping>
+                    <attribute index="1" to="role"/>
+                </attribute-mapping>
                 <salted-simple-digest-mapper password-index="${exp.password:2}" salt-index="${exp.salt:3}" algorithm="${exp.algo:password-salt-digest-sha-1}" hash-encoding="${exp.encoding:hex}" salt-encoding="${exp.encoding:hex}"/>
-                <simple-digest-mapper password-index="${exp.password:2}" hash-encoding="${exp.encoding:hex}" algorithm="simple-digest-sha-1"/>
-                <scram-mapper password-index="${exp.password:2}" salt-index="${exp.salt:3}" iteration-count-index="${exp.iteration:4}" hash-encoding="${exp.encoding:hex}" salt-encoding="${exp.encoding:hex}" algorithm="${exp.algorithm:scram-sha-1}"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcRealmSimple">
+            <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
+                <attribute-mapping>
+                    <attribute index="1" to="role"/>
+                </attribute-mapping>
+                 <simple-digest-mapper password-index="${exp.password:2}" hash-encoding="${exp.encoding:hex}" algorithm="simple-digest-sha-1"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcRealmModular">
+            <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
+                <attribute-mapping>
+                    <attribute index="1" to="role"/>
+                </attribute-mapping>
                 <modular-crypt-mapper password-index="${exp.password:2}"/>
             </principal-query>
         </jdbc-realm>
+        
         <properties-realm name="PropRealm" groups-attribute="${exp.groups:groups}">
             <users-properties path="users-hashed.properties" relative-to="jboss.server.config.dir" digest-realm-name="${exp.digest.realm:FileRealm}" plain-text="${exp.plain:false}"/>
         </properties-realm>
