@@ -39,6 +39,7 @@ import org.wildfly.core.instmgr.logging.InstMgrLogger;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.Repository;
+import org.wildfly.installationmanager.TrustCertificate;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 
@@ -86,6 +87,12 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
             .setRequired(true)
             .build();
 
+    private static final AttributeDefinition KEY_ID = new SimpleAttributeDefinitionBuilder(InstMgrConstants.CERT_KEY_ID, ModelType.STRING)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setRequired(true)
+            .build();
+
     private static final AttributeDefinition MANIFEST_GAV = new SimpleAttributeDefinitionBuilder(InstMgrConstants.MANIFEST_GAV, ModelType.STRING)
             .setAlternatives(InstMgrConstants.MANIFEST_URL)
             .setStorageRuntime()
@@ -115,11 +122,23 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
             .setSuffix("channel")
             .build();
 
+    private static final ObjectTypeAttributeDefinition CERTIFICATE = ObjectTypeAttributeDefinition.create("certificate", KEY_ID)
+//            .setValidator(new ChannelValidator())
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setRequired(true)
+            .setSuffix("certificate")
+            .build();
+
     private static final AttributeDefinition CHANNELS = ObjectListAttributeDefinition.Builder.of(InstMgrConstants.CHANNELS, CHANNEL)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
 
+    private static final AttributeDefinition CERTIFICATES = ObjectListAttributeDefinition.Builder.of("certificates", CERTIFICATE)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .build();
     public static PathElement getPath(String name) {
         return PathElement.pathElement(CORE_SERVICE, name);
     }
@@ -167,11 +186,21 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
 
         InstMgrCustomPatchRemoveHandler customPatchRemoveHandler = new InstMgrCustomPatchRemoveHandler(imService, imf);
         resourceRegistration.registerOperationHandler(customPatchRemoveHandler.DEFINITION, customPatchRemoveHandler);
+
+        InstMgrCertificateParseHandler certificateParseHandler = new InstMgrCertificateParseHandler(imService, imf);
+        resourceRegistration.registerOperationHandler(InstMgrCertificateParseHandler.DEFINITION, certificateParseHandler);
+
+        InstMgrCertificateImportHandler certificateImportHandler = new InstMgrCertificateImportHandler(imService, imf);
+        resourceRegistration.registerOperationHandler(InstMgrCertificateImportHandler.DEFINITION, certificateImportHandler);
+
+        InstMgrCertificateRemoveHandler certificateRemoveHandler = new InstMgrCertificateRemoveHandler(imService, imf);
+        resourceRegistration.registerOperationHandler(InstMgrCertificateRemoveHandler.DEFINITION, certificateRemoveHandler);
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadWriteAttribute(CHANNELS, new ReadHandler(), new WriteHandler());
+        resourceRegistration.registerReadOnlyAttribute(CERTIFICATES, new CertReadHandler());
     }
 
     private class WriteHandler implements OperationStepHandler {
@@ -362,6 +391,40 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
                     }
                 }
             }
+        }
+    }
+
+    private class CertReadHandler implements OperationStepHandler {
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            context.addStep(new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    try {
+                        final ModelNode result = context.getResult();
+                        Path serverHome = imService.getHomeDir();
+
+                        MavenOptions mavenOptions = new MavenOptions(null, false);
+                        InstallationManager installationManager = imf.create(serverHome, mavenOptions);
+
+                        ModelNode mCertificates = new ModelNode().addEmptyList();
+                        Collection<TrustCertificate> trustedCertificates = installationManager.listCA();
+                        for (TrustCertificate tc : trustedCertificates) {
+                            ModelNode entry = new ModelNode();
+                            entry.get(InstMgrConstants.CERT_KEY_ID).set(tc.getKeyID());
+                            entry.get(InstMgrConstants.CERT_FINGERPRINT).set(tc.getFingerprint());
+                            entry.get(InstMgrConstants.CERT_DESCRIPTION).set(tc.getDescription());
+                            entry.get(InstMgrConstants.CERT_STATUS).set(tc.getStatus());
+                            mCertificates.add(entry);
+                        }
+                        result.set(mCertificates);
+                    } catch (RuntimeException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }, OperationContext.Stage.RUNTIME);
         }
     }
 }

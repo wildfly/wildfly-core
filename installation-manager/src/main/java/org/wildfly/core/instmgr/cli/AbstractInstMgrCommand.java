@@ -61,6 +61,10 @@ public abstract class AbstractInstMgrCommand implements Command<CLICommandInvoca
      * @throws CommandException If the operation was not success or an error occurred.
      */
     protected ModelNode executeOp(CommandContext ctx, String host) throws CommandException {
+        return executeOp(buildOperation(), ctx, host);
+    }
+
+    protected ModelNode executeOp(Operation request, CommandContext ctx, String host) throws CommandException {
         if (host != null && !ctx.isDomainMode()) {
             throw new CommandException("The --host option is not available in the current context. "
                     + "Connection to the controller might be unavailable or not running in domain mode.");
@@ -75,7 +79,6 @@ public abstract class AbstractInstMgrCommand implements Command<CLICommandInvoca
             address = createStandalone();
         }
 
-        final Operation request = buildOperation();
         request.getOperation().get(ADDRESS).set(address.toModelNode());
 
         ModelNode response;
