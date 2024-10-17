@@ -121,14 +121,7 @@ public class AdditionalInitialization extends AdditionalParsers implements Featu
      * @return the additional initialization
      */
     public static AdditionalInitialization withCapabilities(final String... capabilities) {
-        return new ManagementAdditionalInitialization() {
-
-            @Override
-            protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
-                super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
-                registerCapabilities(capabilityRegistry, capabilities);
-            }
-        };
+        return withCapabilities(Stability.DEFAULT, capabilities);
     }
 
     /**
@@ -136,13 +129,25 @@ public class AdditionalInitialization extends AdditionalParsers implements Featu
      * the given {@link org.jboss.as.controller.capability.RuntimeCapability capabilities} registered, making it
      * possible for subsystems under test to require them. No runtime API will be available, but that should not
      * be needed for a {@link org.jboss.as.controller.RunningMode#ADMIN_ONLY} test.
-     *
+     * @param schema a subsystem schema
      * @param capabilities the capabilities
      * @return the additional initialization
      */
     public static <S extends SubsystemSchema<S>> AdditionalInitialization withCapabilities(S schema, String... capabilities) {
-        return new ManagementAdditionalInitialization(schema) {
+        return withCapabilities(schema.getStability(), capabilities);
+    }
 
+    /**
+     * Creates a {@link org.jboss.as.subsystem.test.AdditionalInitialization.ManagementAdditionalInitialization} with
+     * the given {@link org.jboss.as.controller.capability.RuntimeCapability capabilities} registered, making it
+     * possible for subsystems under test to require them. No runtime API will be available, but that should not
+     * be needed for a {@link org.jboss.as.controller.RunningMode#ADMIN_ONLY} test.
+     * @param stability the stability level of the test process
+     * @param capabilities the capabilities
+     * @return the additional initialization
+     */
+    public static <S extends SubsystemSchema<S>> AdditionalInitialization withCapabilities(Stability stability, String... capabilities) {
+        return new ManagementAdditionalInitialization(stability) {
             @Override
             protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
                 super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
