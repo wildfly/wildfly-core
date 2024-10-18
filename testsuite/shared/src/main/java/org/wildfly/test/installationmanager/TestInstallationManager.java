@@ -5,10 +5,13 @@
 
 package org.wildfly.test.installationmanager;
 
+import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -20,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -49,6 +53,7 @@ public class TestInstallationManager implements InstallationManager {
     public static List<Repository> findUpdatesRepositories;
     public static List<ArtifactChange> findUpdatesChanges;
     public static List<Repository> prepareUpdatesRepositories;
+    private static List<TrustCertificate> lstTrustCertificates;
     public static Path prepareUpdatesTargetDir;
 
     public static List<Repository> prepareRevertRepositories;
@@ -161,6 +166,10 @@ public class TestInstallationManager implements InstallationManager {
                     installedVersions.add(new ManifestVersion(name, description, channel.getManifestUrl().get().toString(), ManifestVersion.Type.URL));
                 }
             }
+
+            // certificates sample data
+            lstTrustCertificates = new ArrayList<>();
+            lstTrustCertificates.add(new TrustCertificate("abcd", "abcd1234", "Test Cert", "TRUSTED"));
 
             initialized = true;
         }
@@ -293,17 +302,50 @@ public class TestInstallationManager implements InstallationManager {
 
     @Override
     public void acceptTrustedCertificates(InputStream certificate) throws Exception {
+        final TrustCertificate trustCertificate = parseCA(certificate);
 
+        lstTrustCertificates.add(trustCertificate);
     }
 
     @Override
     public void revokeTrustedCertificate(String keyID) throws Exception {
+        final Optional<TrustCertificate> cert = lstTrustCertificates.stream()
+                .filter(c -> c.getKeyID().equals(keyID))
+                .findFirst();
 
+        cert.ifPresent(trustCertificate -> lstTrustCertificates.remove(trustCertificate));
     }
 
     @Override
     public Collection<TrustCertificate> listCA() throws Exception {
-        return null;
+        return Collections.unmodifiableCollection(lstTrustCertificates);
+    }
+
+    @Override
+    public TrustCertificate parseCA(InputStream certificate) throws Exception {
+        String keyId = null;
+        String fingerprint = null;
+        String description = null;
+        try(BufferedReader reader = new BufferedReader(new InputStreamReader(certificate))) {
+            while (reader.ready()) {
+                final String[] line = reader.readLine().split(":");
+                switch (line[0]) {
+                    case "key-id":
+                        keyId = line[1];
+                        break;
+                    case "fingerprint":
+                        fingerprint = line[1];
+                        break;
+                    case "description":
+                        description = line[1];
+                        break;
+                    default:
+                        throw new RuntimeException("Unknown line: " + line[0]);
+                }
+            }
+        }
+
+        return new TrustCertificate(keyId, fingerprint, description, "TRUSTED");
     }
 
     public static void zipDir(Path inputFile, Path target) throws IOException {

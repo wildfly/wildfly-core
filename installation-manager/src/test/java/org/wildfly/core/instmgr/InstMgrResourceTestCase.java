@@ -17,6 +17,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+import static org.wildfly.core.instmgr.InstMgrConstants.CERT_DESCRIPTION;
+import static org.wildfly.core.instmgr.InstMgrConstants.CERT_FILE;
+import static org.wildfly.core.instmgr.InstMgrConstants.CERT_FINGERPRINT;
+import static org.wildfly.core.instmgr.InstMgrConstants.CERT_KEY_ID;
+import static org.wildfly.core.instmgr.InstMgrConstants.CERT_STATUS;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,7 +70,9 @@ import org.jboss.msc.service.StabilityMonitor;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.wildfly.installationmanager.ArtifactChange;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.ChannelChange;
@@ -85,6 +92,9 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     static final Path JBOSS_HOME = TARGET_DIR.resolve("InstMgrResourceTestCase").normalize().toAbsolutePath();
     static final Path JBOSS_CONTROLLER_TEMP_DIR = JBOSS_HOME.resolve("temp");
     static final Path INSTALLATION_MANAGER_PROPERTIES = JBOSS_HOME.resolve("bin").resolve("installation-manager.properties");
+
+    @Rule
+    public TemporaryFolder temp = new TemporaryFolder();
 
     @Before
     public void setupController() throws InterruptedException, IOException {
@@ -355,6 +365,111 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
                 getCauseLogFailure(failed.get(FAILURE_DESCRIPTION).asString(), expectedCode),
                 failed.get(FAILURE_DESCRIPTION).asString().startsWith(expectedCode)
         );
+    }
+
+    @Test
+    public void testReadCertificates() throws Exception {
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(READ_RESOURCE_OPERATION, pathElements);
+        op.get(INCLUDE_RUNTIME).set(true);
+
+        ModelNode result = executeForResult(op);
+        Assert.assertTrue(result.isDefined());
+
+        // validate the result:
+        List<ModelNode> certs = result.get(InstMgrConstants.CERTIFICATES).asListOrEmpty();
+        Assert.assertEquals(1, certs.size());
+
+        // First Channel
+        ModelNode cert = certs.get(0);
+        Assert.assertEquals("abcd", cert.get(CERT_KEY_ID).asString());
+        Assert.assertEquals("abcd1234", cert.get(CERT_FINGERPRINT).asString());
+        Assert.assertEquals("Test Cert", cert.get(CERT_DESCRIPTION).asString());
+        Assert.assertEquals("TRUSTED", cert.get(CERT_STATUS).asString());
+    }
+
+    @Test
+    public void testRemoveCertificate() throws Exception {
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrCertificateRemoveHandler.OPERATION_NAME, pathElements);
+        op.get(INCLUDE_RUNTIME).set(true);
+        op.get(CERT_KEY_ID).set("abcd");
+
+        executeForResult(op);
+
+        // verify there are no certificates now
+        pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode listOp = Util.createEmptyOperation(READ_RESOURCE_OPERATION, pathElements);
+        listOp.get(INCLUDE_RUNTIME).set(true);
+
+        ModelNode result = executeForResult(listOp);
+        Assert.assertTrue(result.isDefined());
+
+        // validate the result is an empty list:
+        List<ModelNode> certs = result.get(InstMgrConstants.CERTIFICATES).asListOrEmpty();
+        Assert.assertEquals(0, certs.size());
+    }
+
+    @Test
+    public void testAddCertificate() throws Exception {
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrCertificateImportHandler.OPERATION_NAME, pathElements);
+        op.get(INCLUDE_RUNTIME).set(true);
+        op.get(CERT_FILE).set(0);
+        final OperationBuilder builder = OperationBuilder.create(op);
+        final File file = temp.newFile("test.crt");
+        Files.writeString(file.toPath(), "key-id:efgh\nfingerprint:efgh5678\ndescription:Another Cert");
+        builder.addFileAsAttachment(file);
+
+        executeForResult(builder.build());
+
+        // verify there are two certificates now
+        pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode listOp = Util.createEmptyOperation(READ_RESOURCE_OPERATION, pathElements);
+        listOp.get(INCLUDE_RUNTIME).set(true);
+
+        ModelNode result = executeForResult(listOp);
+        Assert.assertTrue(result.isDefined());
+
+        // validate the result has two elements:
+        List<ModelNode> certs = result.get(InstMgrConstants.CERTIFICATES).asListOrEmpty();
+        Assert.assertEquals(2, certs.size());
+
+        // First Channel
+        ModelNode cert = certs.get(0);
+        Assert.assertEquals("abcd", cert.get(CERT_KEY_ID).asString());
+        Assert.assertEquals("abcd1234", cert.get(CERT_FINGERPRINT).asString());
+        Assert.assertEquals("Test Cert", cert.get(CERT_DESCRIPTION).asString());
+        Assert.assertEquals("TRUSTED", cert.get(CERT_STATUS).asString());
+
+        // Second Channel
+        cert = certs.get(1);
+        Assert.assertEquals("efgh", cert.get(CERT_KEY_ID).asString());
+        Assert.assertEquals("efgh5678", cert.get(CERT_FINGERPRINT).asString());
+        Assert.assertEquals("Another Cert", cert.get(CERT_DESCRIPTION).asString());
+        Assert.assertEquals("TRUSTED", cert.get(CERT_STATUS).asString());
+    }
+
+    @Test
+    public void testParseCertificate() throws Exception {
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrCertificateParseHandler.OPERATION_NAME, pathElements);
+        op.get(INCLUDE_RUNTIME).set(true);
+        op.get(CERT_FILE).set(0);
+        final OperationBuilder builder = OperationBuilder.create(op);
+        final File file = temp.newFile("test.crt");
+        Files.writeString(file.toPath(), "key-id:efgh\nfingerprint:efgh5678\ndescription:Another Cert");
+        builder.addFileAsAttachment(file);
+
+        ModelNode result = executeForResult(builder.build());
+        Assert.assertTrue(result.isDefined());
+
+        // validate the result is a new cert:
+        ModelNode cert = result.asObject();
+        Assert.assertEquals("efgh", cert.get(CERT_KEY_ID).asString());
+        Assert.assertEquals("efgh5678", cert.get(CERT_FINGERPRINT).asString());
+        Assert.assertEquals("Another Cert", cert.get(CERT_DESCRIPTION).asString());
+        Assert.assertEquals("TRUSTED", cert.get(CERT_STATUS).asString());
     }
 
     @Test
