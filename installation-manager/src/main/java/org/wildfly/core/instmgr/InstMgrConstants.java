@@ -15,6 +15,12 @@ public interface InstMgrConstants {
     Path PREPARED_SERVER_SUBPATH = Paths.get("installation-manager")
             .resolve("prepared-server");
 
+    String CERT_DESCRIPTION = "description";
+    String CERT_FINGERPRINT = "fingerprint";
+    String CERT_KEY_ID = "key-id";
+    String CERT_STATUS = "status";
+    String CERT_FILE = "cert-file";
+    String CERTIFICATES = "certificates";
     String CHANNEL = "channel";
     String CHANNELS = "channels";
     String CHANNEL_NAME = "name";
