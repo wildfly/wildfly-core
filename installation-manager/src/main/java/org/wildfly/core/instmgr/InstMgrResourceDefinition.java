@@ -195,6 +195,9 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
 
         InstMgrCertificateRemoveHandler certificateRemoveHandler = new InstMgrCertificateRemoveHandler(imService, imf);
         resourceRegistration.registerOperationHandler(InstMgrCertificateRemoveHandler.DEFINITION, certificateRemoveHandler);
+
+        InstMgrUnacceptedCertificateHandler unacceptedcertificateHandler = new InstMgrUnacceptedCertificateHandler(imService, imf);
+        resourceRegistration.registerOperationHandler(InstMgrUnacceptedCertificateHandler.DEFINITION, unacceptedcertificateHandler);
     }
 
     @Override
@@ -408,7 +411,7 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
                         InstallationManager installationManager = imf.create(serverHome, mavenOptions);
 
                         ModelNode mCertificates = new ModelNode().addEmptyList();
-                        Collection<TrustCertificate> trustedCertificates = installationManager.listCA();
+                        Collection<TrustCertificate> trustedCertificates = installationManager.listTrustedCertificates();
                         for (TrustCertificate tc : trustedCertificates) {
                             ModelNode entry = new ModelNode();
                             entry.get(InstMgrConstants.CERT_KEY_ID).set(tc.getKeyID());

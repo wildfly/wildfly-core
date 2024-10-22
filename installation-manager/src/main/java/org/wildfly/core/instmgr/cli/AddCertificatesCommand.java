@@ -34,6 +34,14 @@ public class AddCertificatesCommand extends AbstractInstMgrCommand {
     @Option(name = "non-interactive")
     private boolean nonInteractive;
 
+    public AddCertificatesCommand() {
+    }
+
+    public AddCertificatesCommand(File certFile, boolean nonInteractive) {
+        this.certFile = certFile;
+        this.nonInteractive = nonInteractive;
+    }
+
     @Override
     protected Operation buildOperation() {
         final ModelNode op = new ModelNode();

@@ -5,15 +5,12 @@
 
 package org.wildfly.core.instmgr;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
-import static org.wildfly.core.instmgr.InstMgrConstants.CERT_DESCRIPTION;
-import static org.wildfly.core.instmgr.InstMgrConstants.CERT_FINGERPRINT;
-import static org.wildfly.core.instmgr.InstMgrConstants.CERT_KEY_ID;
-import static org.wildfly.core.instmgr.InstMgrConstants.CERT_STATUS;
+import static org.wildfly.core.instmgr.InstMgrConstants.CERT_FILE;
 
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.Collection;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -26,22 +23,21 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.installationmanager.MavenOptions;
-import org.wildfly.installationmanager.TrustCertificate;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
+import org.xnio.streams.Streams;
 
 /**
  * Operation handler to get the history of the installation manager changes, either artifacts or configuration metadata as
  * channel changes.
  */
-public class InstMgrCertificateParseHandler extends InstMgrOperationStepHandler {
-    public static final String OPERATION_NAME = "certificate-parse";
+public class InstMgrUnacceptedCertificateHandler extends InstMgrOperationStepHandler {
+    public static final String OPERATION_NAME = "unaccepted-certificates";
 
-    protected static final AttributeDefinition CERT_FILE = SimpleAttributeDefinitionBuilder.create(InstMgrConstants.CERT_FILE, ModelType.INT)
+    protected static final AttributeDefinition OFFLINE = SimpleAttributeDefinitionBuilder.create(InstMgrConstants.OFFLINE, ModelType.BOOLEAN)
             .setStorageRuntime()
-            .setRequired(true)
-            .addArbitraryDescriptor(FILESYSTEM_PATH, ModelNode.TRUE)
-            .addArbitraryDescriptor(ATTACHED_STREAMS, ModelNode.TRUE)
+            .setDefaultValue(ModelNode.FALSE)
+            .setRequired(false)
             .build();
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, InstMgrResolver.RESOLVER)
@@ -49,10 +45,10 @@ public class InstMgrCertificateParseHandler extends InstMgrOperationStepHandler 
             .setReplyType(ModelType.OBJECT)
             .setRuntimeOnly()
             .setReplyValueType(ModelType.OBJECT)
-            .addParameter(CERT_FILE)
+            .addParameter(OFFLINE)
             .build();
 
-    InstMgrCertificateParseHandler(InstMgrService imService, InstallationManagerFactory imf) {
+    InstMgrUnacceptedCertificateHandler(InstMgrService imService, InstallationManagerFactory imf) {
         super(imService, imf);
     }
 
@@ -62,20 +58,30 @@ public class InstMgrCertificateParseHandler extends InstMgrOperationStepHandler 
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 try {
-                    Path serverHome = imService.getHomeDir();
-                    MavenOptions mavenOptions = new MavenOptions(null, false);
-                    InstallationManager installationManager = imf.create(serverHome, mavenOptions);
+                    final Path serverHome = imService.getHomeDir();
+                    final Path controllerTempDir = imService.getControllerTempDir();
+                    final boolean offline = OFFLINE.resolveModelAttribute(context, operation).asBoolean();
+                    final MavenOptions mavenOptions = new MavenOptions(null, offline);
+                    final InstallationManager installationManager = imf.create(serverHome, mavenOptions);
 
-                    try (InputStream is = context.getAttachmentStream(CERT_FILE.resolveModelAttribute(context, operation).asInt())) {
-                        TrustCertificate tc = installationManager.parseCertificate(is);
+                    final Collection<InputStream> downloadedCerts = installationManager.downloadRequiredCertificates();
 
-                        ModelNode entry = new ModelNode();
-                        entry.get(CERT_KEY_ID).set(tc.getKeyID());
-                        entry.get(CERT_FINGERPRINT).set(tc.getFingerprint());
-                        entry.get(CERT_DESCRIPTION).set(tc.getDescription());
-                        entry.get(CERT_STATUS).set(tc.getStatus());
-                        context.getResult().set(entry);
+                    final ModelNode mCertificates = new ModelNode().addEmptyList();
+                    int i=0;
+                    for (InputStream is : downloadedCerts) {
+                        final Path certFile = controllerTempDir.resolve("required-cert-" + i++ + ".crt");
+                        try (FileOutputStream fos = new FileOutputStream(certFile.toFile())) {
+                            Streams.copyStream(is, fos);
+                            is.close();
+                        }
+
+                        final ModelNode entry = new ModelNode();
+                        entry.get(CERT_FILE).set(certFile.toAbsolutePath().toString());
+                        mCertificates.add(entry);
                     }
+
+                    final ModelNode result = context.getResult();
+                    result.set(mCertificates);
                 } catch (OperationFailedException | RuntimeException e) {
                     throw e;
                 } catch (Exception e) {

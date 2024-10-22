@@ -11,10 +11,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.wildfly.core.instmgr.InstMgrConstants.CERT_DESCRIPTION;
@@ -1543,6 +1546,21 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
                 getCauseLogFailure(failed.get(FAILURE_DESCRIPTION).asString(), expectedCode),
                 failed.get(FAILURE_DESCRIPTION).asString().startsWith(expectedCode)
         );
+    }
+
+    @Test
+    public void downloadUnacceptedCertificates() throws IOException {
+        TestInstallationManager.initialize();
+
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrUnacceptedCertificateHandler.OPERATION_NAME, pathElements);
+
+        ModelNode rsp = getController().execute(op, null, null, null);
+        Assert.assertEquals(SUCCESS, rsp.get(OUTCOME).asString());
+
+        final String certText = Files.readString(Path.of(rsp.get(RESULT).asList().get(0).get(CERT_FILE).asString()));
+
+        Assert.assertEquals("test cert", certText);
     }
 
     /**

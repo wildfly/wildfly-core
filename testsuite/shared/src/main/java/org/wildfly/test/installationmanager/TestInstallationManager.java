@@ -6,14 +6,15 @@
 package org.wildfly.test.installationmanager;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -302,7 +303,7 @@ public class TestInstallationManager implements InstallationManager {
 
     @Override
     public void acceptTrustedCertificates(InputStream certificate) throws Exception {
-        final TrustCertificate trustCertificate = parseCA(certificate);
+        final TrustCertificate trustCertificate = parseCertificate(certificate);
 
         lstTrustCertificates.add(trustCertificate);
     }
@@ -317,12 +318,12 @@ public class TestInstallationManager implements InstallationManager {
     }
 
     @Override
-    public Collection<TrustCertificate> listCA() throws Exception {
+    public Collection<TrustCertificate> listTrustedCertificates() throws Exception {
         return Collections.unmodifiableCollection(lstTrustCertificates);
     }
 
     @Override
-    public TrustCertificate parseCA(InputStream certificate) throws Exception {
+    public TrustCertificate parseCertificate(InputStream certificate) throws Exception {
         String keyId = null;
         String fingerprint = null;
         String description = null;
@@ -346,6 +347,13 @@ public class TestInstallationManager implements InstallationManager {
         }
 
         return new TrustCertificate(keyId, fingerprint, description, "TRUSTED");
+    }
+
+    @Override
+    public Collection<InputStream> downloadRequiredCertificates() throws Exception {
+        final String cert = "test cert";
+        final ByteArrayInputStream bais = new ByteArrayInputStream(cert.getBytes(StandardCharsets.UTF_8));
+        return List.of(bais);
     }
 
     public static void zipDir(Path inputFile, Path target) throws IOException {
