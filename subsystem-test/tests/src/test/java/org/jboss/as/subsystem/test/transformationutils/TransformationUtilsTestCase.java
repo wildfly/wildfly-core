@@ -220,8 +220,6 @@ public class TransformationUtilsTestCase extends AbstractSubsystemTest {
         ModelTestUtils.compare(expected, model);
     }
 
-    //////////
-
     @Test
     public void testNoChildNoAttrReg_EmptySubsystemIsDefined_exclUndefined() throws Exception {
         List<ModelNode> operations = new ArrayList<>();
@@ -364,18 +362,6 @@ public class TransformationUtilsTestCase extends AbstractSubsystemTest {
 
         ModelTestUtils.compare(expected, model);
     }
-
-//    @Test
-//    public void testChildRegEmptySubsystemIsDefined() throws Exception {
-//        List<ModelNode> operations = new ArrayList<>();
-//        operations.add(Util.createAddOperation(SUBSYSTEM_ADDR));
-//        TransformationUtilsExtension.Builder builder = TransformationUtilsExtension.createBuilder();
-//        builder.
-//
-//        ModelNode model = runAndReadSubsystemModel(, operations);
-//
-//        Assert.assertTrue(model.isDefined());
-//    }
 
     private ModelNode runAndReadSubsystemModel(TransformationUtilsExtension.Builder builder, List<ModelNode> bootOps, boolean includeUndefined) throws Exception {
         TransformationUtilsTestCase.includeUndefined = includeUndefined;
