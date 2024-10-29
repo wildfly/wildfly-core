@@ -96,10 +96,6 @@ class TransformationUtils {
             }
             allFields.remove(name);
         }
-        if (!value.isDefined() && model.isDefined() && reg.getChildAddresses(PathAddress.EMPTY_ADDRESS).isEmpty()) {
-            value.setEmptyObject();
-        }
-        res.writeModel(value);
 
         for (String childType : reg.getChildNames(PathAddress.EMPTY_ADDRESS)) {
             if (model.hasDefined(childType)) {
@@ -112,6 +108,12 @@ class TransformationUtils {
             }
             allFields.remove(childType);
         }
+
+        if (!value.isDefined() && model.isDefined() && (reg.getChildAddresses(PathAddress.EMPTY_ADDRESS).isEmpty() || res.getChildTypes().isEmpty())) {
+            value.setEmptyObject();
+        }
+        res.writeModel(value);
+
 
         if (!allFields.isEmpty()){
             throw ControllerLogger.ROOT_LOGGER.modelFieldsNotKnown(allFields, startAddress.append(fullPath));
