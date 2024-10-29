@@ -13,6 +13,7 @@ import java.util.zip.ZipException;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
+import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
@@ -105,6 +106,11 @@ public interface InstMgrLogger extends BasicLogger {
     @Message(id = 25, value = "Cannot report installation channels: '%s'")
     void failedToFindInstallationChannels(Exception failure);
 
+    @Message(id = 26, value = "One of the signatures in the update is signed by an unknown public key '%s'. Please import the key using import operation and try again.")
+    OperationFailedException componentSignedWithUnknownCertificate(String keyID, @Cause Throwable cause);
+
+    @Message(id = 27, value = "You cannot use the '%s' option with the '%s' option because they are mutually exclusive.")
+    OperationFailedException mutuallyExclusiveOptions(String optionName1, String optionName2);
     ////////////////////////////////////////////////
     // Messages without IDs
 

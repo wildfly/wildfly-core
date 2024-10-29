@@ -179,8 +179,7 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
                 } catch (OperationFailedException | RuntimeException e) {
                     throw e;
                 } catch (MissingSignatureException e) {
-                    throw new OperationFailedException(String.format("One of the signatures in the update is signed by an unknown public key %s. Please import the key using import operation and try again.",
-                            e.getDescription()), e);
+                    throw InstMgrLogger.ROOT_LOGGER.componentSignedWithUnknownCertificate(e.getDescription(), e);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

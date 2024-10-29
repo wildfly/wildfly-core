@@ -84,6 +84,7 @@ public class ModelDescriptionConstants {
     public static final String CAPABILITY_REFERENCE = "capability-reference";
     public static final String CAPABILITY_REFERENCE_PATTERN_ELEMENTS = "capability-reference-pattern-elements";
     public static final String CAPABILITY_REGISTRY = "capability-registry";
+    public static final String CERTIFICATE_INFO = "certificate-info";
     public static final String CHILD_TYPE = "child-type";
     public static final String CHILDREN = "children";
     public static final String CLASSIFICATION = "classification";

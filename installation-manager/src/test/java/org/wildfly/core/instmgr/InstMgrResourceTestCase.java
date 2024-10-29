@@ -20,6 +20,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+import static org.wildfly.core.instmgr.InstMgrConstants.CERTIFICATE_CONTENT;
 import static org.wildfly.core.instmgr.InstMgrConstants.CERT_DESCRIPTION;
 import static org.wildfly.core.instmgr.InstMgrConstants.CERT_FILE;
 import static org.wildfly.core.instmgr.InstMgrConstants.CERT_FINGERPRINT;
@@ -1558,9 +1559,11 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         ModelNode rsp = getController().execute(op, null, null, null);
         Assert.assertEquals(SUCCESS, rsp.get(OUTCOME).asString());
 
-        final String certText = Files.readString(Path.of(rsp.get(RESULT).asList().get(0).get(CERT_FILE).asString()));
+        final String certText = rsp.get(RESULT).asList().get(0).get(CERTIFICATE_CONTENT).asString();
 
-        Assert.assertEquals("test cert", certText);
+        Assert.assertEquals("key-id:abcd\n" +
+                "fingerprint:abcd1234\n" +
+                "description:Missing Cert", certText);
     }
 
     /**

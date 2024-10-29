@@ -122,8 +122,7 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
             .setSuffix("channel")
             .build();
 
-    private static final ObjectTypeAttributeDefinition CERTIFICATE = ObjectTypeAttributeDefinition.create("certificate", KEY_ID)
-//            .setValidator(new ChannelValidator())
+    private static final ObjectTypeAttributeDefinition CERTIFICATE = ObjectTypeAttributeDefinition.create(InstMgrConstants.CERTIFICATE, KEY_ID)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setRequired(true)

@@ -5,9 +5,10 @@
 
 package org.wildfly.core.instmgr.cli;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CERTIFICATE_INFO;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.wildfly.core.instmgr.InstMgrConstants.CERT_FILE;
+import static org.wildfly.core.instmgr.InstMgrConstants.CERTIFICATE_CONTENT;
 import static org.wildfly.core.instmgr.InstMgrConstants.OFFLINE;
 
 import java.io.File;
@@ -16,7 +17,6 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.aesh.command.CommandDefinition;
 import org.aesh.command.CommandException;
@@ -34,7 +34,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
-import org.wildfly.core.instmgr.InstMgrCertificateParseHandler;
+import org.wildfly.core.instmgr.InstMgrCertificateImportHandler;
 import org.wildfly.core.instmgr.InstMgrConstants;
 import org.wildfly.core.instmgr.InstMgrUnacceptedCertificateHandler;
 
@@ -80,9 +80,9 @@ public class UpdateCommand extends AbstractInstMgrCommand {
         final Boolean optUseDefaultLocalCache = cmdParser.hasProperty("--" + USE_DEFAULT_LOCAL_CACHE_OPTION) ? useDefaultLocalCache : null;
 
         // call the download handler
-        Collection<Path> pendingCertificates = getPendingCertificates(ctx);
+        Collection<ModelNode> pendingCertificates = getPendingCertificates(ctx);
         // call the import handler
-        if (!importPendingCertificates(pendingCertificates, ctx, commandInvocation)) {
+        if (!pendingCertificates.isEmpty() && !importPendingCertificates(pendingCertificates, ctx, commandInvocation)) {
             return CommandResult.SUCCESS;
         }
 
@@ -164,15 +164,15 @@ public class UpdateCommand extends AbstractInstMgrCommand {
         return CommandResult.SUCCESS;
     }
 
-    private boolean importPendingCertificates(Collection<Path> pendingCertificates, CommandContext ctx, CLICommandInvocation commandInvocation) throws CommandException, InterruptedException {
+    private boolean importPendingCertificates(Collection<ModelNode> pendingCertificates, CommandContext ctx, CLICommandInvocation commandInvocation) throws CommandException, InterruptedException {
         commandInvocation.println("The update is configured to verify the integrity of updated components, but following certificates need to be trusted:");
 
-        for (Path pendingCertificate : pendingCertificates) {
-            final ModelNode modelNode = this.executeOp(buildParseOperation(pendingCertificate), ctx, this.host).get(RESULT);
+        for (ModelNode pendingCertificate : pendingCertificates) {
+            final ModelNode certificateInfo = pendingCertificate.get(CERTIFICATE_INFO);
 
-            commandInvocation.println("key-id: " + modelNode.get(InstMgrConstants.CERT_KEY_ID));
-            commandInvocation.println("fingerprint: " + modelNode.get(InstMgrConstants.CERT_FINGERPRINT));
-            commandInvocation.println("description: " + modelNode.get(InstMgrConstants.CERT_DESCRIPTION));
+            commandInvocation.println("key-id: " + certificateInfo.get(InstMgrConstants.CERT_KEY_ID));
+            commandInvocation.println("fingerprint: " + certificateInfo.get(InstMgrConstants.CERT_FINGERPRINT));
+            commandInvocation.println("description: " + certificateInfo.get(InstMgrConstants.CERT_DESCRIPTION));
             commandInvocation.println("");
 
         }
@@ -180,8 +180,8 @@ public class UpdateCommand extends AbstractInstMgrCommand {
         if ("y".equals(input)) {
             commandInvocation.print("Importing a trusted certificate");
 
-            for (Path pendingCertificate : pendingCertificates) {
-                new AddCertificatesCommand(pendingCertificate.toFile(), false).executeOp(ctx, this.host);
+            for (ModelNode pendingCertificate : pendingCertificates) {
+                this.executeOp(buildImportOperation(pendingCertificate.get(CERTIFICATE_CONTENT).asString()), ctx, host);
             }
 
             return true;
@@ -191,18 +191,17 @@ public class UpdateCommand extends AbstractInstMgrCommand {
         }
     }
 
-    protected Operation buildParseOperation(Path pendingCertificate) {
+    protected Operation buildImportOperation(String certificateContent) {
         final ModelNode op = new ModelNode();
         final OperationBuilder operationBuilder = OperationBuilder.create(op);
 
-        op.get(OP).set(InstMgrCertificateParseHandler.DEFINITION.getName());
-        op.get(CERT_FILE).set(0);
-        operationBuilder.addFileAsAttachment(pendingCertificate.toFile());
+        op.get(OP).set(InstMgrCertificateImportHandler.DEFINITION.getName());
+        op.get(CERTIFICATE_CONTENT).set(certificateContent);
 
         return operationBuilder.build();
     }
 
-    private Collection<Path> getPendingCertificates(CommandContext ctx) throws CommandException {
+    private Collection<ModelNode> getPendingCertificates(CommandContext ctx) throws CommandException {
         if (confirm || dryRun) {
             // skip the check in non-interactive runs because the certificate cannot be accepted either way
             // the update will fail if certificate is required and will print error message
@@ -216,11 +215,8 @@ public class UpdateCommand extends AbstractInstMgrCommand {
 
         final ModelNode modelNode = executeOp(OperationBuilder.create(op).build(), ctx, this.host);
 
-        final List<ModelNode> paths = modelNode.get(RESULT).asListOrEmpty();
-        return paths.stream()
-                .map(n->n.get(CERT_FILE).asString())
-                .map(Path::of)
-                .collect(Collectors.toList());
+        // certificate-content & certificate-info
+        return modelNode.get(RESULT).asListOrEmpty();
     }
 
     private void printListUpdatesResult(CLICommandInvocation commandInvocation, List<ModelNode> changesMn) {

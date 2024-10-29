@@ -59,7 +59,7 @@ public class AddCertificatesCommand extends AbstractInstMgrCommand {
         final OperationBuilder operationBuilder = OperationBuilder.create(op);
 
         op.get(OP).set(InstMgrCertificateParseHandler.DEFINITION.getName());
-        op.get("cert-file").set(0);
+        op.get(CERT_FILE).set(0);
         operationBuilder.addFileAsAttachment(certFile);
 
         return operationBuilder.build();
@@ -76,14 +76,14 @@ public class AddCertificatesCommand extends AbstractInstMgrCommand {
         commandInvocation.println("fingerprint: " + modelNode.get(InstMgrConstants.CERT_FINGERPRINT));
         commandInvocation.println("description: " + modelNode.get(InstMgrConstants.CERT_DESCRIPTION));
 
-        final String input = commandInvocation.inputLine(new Prompt(String.format("Import this certificate y/N")));
+        final String input = commandInvocation.inputLine(new Prompt("Import this certificate y/N"));
         if (nonInteractive || "y".equals(input)) {
             commandInvocation.print("Importing a trusted certificate");
+
+            this.executeOp(ctx, this.host);
         } else {
             commandInvocation.print("Importing canceled.");
         }
-
-        this.executeOp(ctx, this.host);
 
         return CommandResult.SUCCESS;
     }

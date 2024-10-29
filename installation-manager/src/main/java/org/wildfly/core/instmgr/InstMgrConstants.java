@@ -20,6 +20,8 @@ public interface InstMgrConstants {
     String CERT_KEY_ID = "key-id";
     String CERT_STATUS = "status";
     String CERT_FILE = "cert-file";
+    String CERTIFICATE = "certificate";
+    String CERTIFICATE_CONTENT = "certificate-content";
     String CERTIFICATES = "certificates";
     String CHANNEL = "channel";
     String CHANNELS = "channels";

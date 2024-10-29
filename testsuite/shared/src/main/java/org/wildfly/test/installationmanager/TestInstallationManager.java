@@ -351,7 +351,7 @@ public class TestInstallationManager implements InstallationManager {
 
     @Override
     public Collection<InputStream> downloadRequiredCertificates() throws Exception {
-        final String cert = "test cert";
+        final String cert = "key-id:abcd\nfingerprint:abcd1234\ndescription:Missing Cert";
         final ByteArrayInputStream bais = new ByteArrayInputStream(cert.getBytes(StandardCharsets.UTF_8));
         return List.of(bais);
     }

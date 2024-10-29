@@ -31,8 +31,7 @@ import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 
 /**
- * Operation handler to get the history of the installation manager changes, either artifacts or configuration metadata as
- * channel changes.
+ * Operation handler to parse the certificate file and read the certificate information. Expects am ASCII-armored PGP public key.
  */
 public class InstMgrCertificateParseHandler extends InstMgrOperationStepHandler {
     public static final String OPERATION_NAME = "certificate-parse";
@@ -67,9 +66,9 @@ public class InstMgrCertificateParseHandler extends InstMgrOperationStepHandler 
                     InstallationManager installationManager = imf.create(serverHome, mavenOptions);
 
                     try (InputStream is = context.getAttachmentStream(CERT_FILE.resolveModelAttribute(context, operation).asInt())) {
-                        TrustCertificate tc = installationManager.parseCertificate(is);
+                        final TrustCertificate tc = installationManager.parseCertificate(is);
 
-                        ModelNode entry = new ModelNode();
+                        final ModelNode entry = new ModelNode();
                         entry.get(CERT_KEY_ID).set(tc.getKeyID());
                         entry.get(CERT_FINGERPRINT).set(tc.getFingerprint());
                         entry.get(CERT_DESCRIPTION).set(tc.getDescription());

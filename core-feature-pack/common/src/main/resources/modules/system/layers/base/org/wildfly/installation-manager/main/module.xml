@@ -25,5 +25,6 @@
         <module name="org.jboss.as.domain-http-interface" />
         <module name="org.jboss.modules" />
         <module name="org.wildfly.security.manager" />
+        <module name="org.jboss.xnio"/>
     </dependencies>
 </module>

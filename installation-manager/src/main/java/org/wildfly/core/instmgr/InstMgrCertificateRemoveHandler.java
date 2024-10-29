@@ -24,8 +24,9 @@ import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 
 /**
- * Operation handler to get the history of the installation manager changes, either artifacts or configuration metadata as
- * channel changes.
+ * Operation handler to remove one of imported component certificates. The certificate is identified by it's ID (in hex format).
+ * Once the certificate is removed, the user will have to re-import it to apply and updates including a component
+ * signed by that certificate.
  */
 public class InstMgrCertificateRemoveHandler extends InstMgrOperationStepHandler {
     public static final String OPERATION_NAME = "certificate-remove";
