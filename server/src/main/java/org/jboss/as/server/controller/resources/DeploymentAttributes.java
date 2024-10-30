@@ -395,6 +395,7 @@ public class DeploymentAttributes {
     /** Return type for the upload-deployment-xxx operaions */
     private static final SimpleAttributeDefinition UPLOAD_HASH_REPLY = SimpleAttributeDefinitionBuilder.create(CONTENT_HASH)
             .setRequired(true)
+            .setAlternatives()
             .build();
 
 
