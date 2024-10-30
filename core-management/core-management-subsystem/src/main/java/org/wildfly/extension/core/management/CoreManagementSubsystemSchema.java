@@ -17,8 +17,8 @@ import java.util.EnumSet;
 import java.util.Map;
 
 /**
- * Parser and Marshaller for core-management subsystem.
- *
+ * Parser and Marshaller for the core-management subsystem.
+ * <p/>
  * <em>All resources and attributes must be listed explicitly and not through any collections.</em>
  * This ensures that if the resource definitions change in later version (e.g. a new attribute is added),
  * this will have no impact on parsing this specific version of the subsystem.
@@ -67,6 +67,13 @@ public enum CoreManagementSubsystemSchema implements PersistentSubsystemSchema<C
                         .addAttribute(ProcessStateListenerResourceDefinition.PROPERTIES)
                         .addAttribute(ProcessStateListenerResourceDefinition.TIMEOUT)
                         .build());
+        builder.addChild(
+                factory.builder(VirtualThreadPinningResourceDefinition.RESOURCE_REGISTRATION)
+                        .addAttribute(VirtualThreadPinningResourceDefinition.START_MODE)
+                        .addAttribute(VirtualThreadPinningResourceDefinition.LOG_LEVEL)
+                        .addAttribute(VirtualThreadPinningResourceDefinition.MAX_STACK_DEPTH)
+                        .build()
+        );
         return builder.build();
     }
 }

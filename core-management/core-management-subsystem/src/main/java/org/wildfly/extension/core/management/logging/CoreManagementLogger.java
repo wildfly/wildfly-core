@@ -7,6 +7,7 @@ package org.wildfly.extension.core.management.logging;
 
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.INFO;
+import static org.jboss.logging.Logger.Level.WARN;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.logging.BasicLogger;
@@ -17,6 +18,7 @@ import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 
 import java.lang.invoke.MethodHandles;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 /**
@@ -30,6 +32,7 @@ public interface CoreManagementLogger extends BasicLogger {
      * A logger with a category of the package name.
      */
     CoreManagementLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), CoreManagementLogger.class, "org.wildfly.extension.core.management");
+    CoreManagementLogger VIRTUAL_THREAD_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), CoreManagementLogger.class, "org.wildfly.extension.core.management.virtual-thread-pinning");
 
     CoreManagementLogger UNSUPPORTED_ANNOTATION_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), CoreManagementLogger.class, "org.wildfly.annotation.unsupported");
 
@@ -85,5 +88,16 @@ public interface CoreManagementLogger extends BasicLogger {
     @LogMessage(level = INFO)
     @Message(id = 16, value = "%d")
     void testOutputNumberOfClassesScanned(int number);
+
+    @LogMessage(level = INFO)
+    @Message(id = 17, value = "Virtual thread pinning reporting is not available. It requires Java SE 21 or later; current SE version is %s")
+    void virtualThreadsUnsupported(int seFeatureVersion);
+
+    @LogMessage(level = WARN)
+    @Message(id = 18, value = "Virtual thread pinning reporting is not available. It requires the presence of the jdk.jfr module in the Java SE runtime.")
+    void virtualThreadPinningNotificationUnsupported();
+
+    @Message(id = 19, value = "A carrier thread was pinned by thread %s for %d ms starting at %s with stacktrace: %s")
+    String threadPinningDetected(String thread, long duration, LocalDateTime startTime, String stackTrace);
 
 }

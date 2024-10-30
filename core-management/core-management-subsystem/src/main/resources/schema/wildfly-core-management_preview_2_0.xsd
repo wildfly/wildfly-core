@@ -103,6 +103,63 @@
                         </xs:attribute>
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="thread-pinning-recorder" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Monitors the JVM for occurrences of virtual threads pinning their carrier thread,
+                            logging such occurrences and recording their number and duration.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="start-mode" default="on-demand">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Controls what should trigger the start of monitoring:
+
+                                    on-demand -- Monitoring will only start if some JBoss MSC service depends on
+                                                 the 'org.wildfly.extension.core-management.virtual-thread-pinning'
+                                                 capability, thus indicating that some server-controlled functionality
+                                                 is using virtual threads.
+                                    always    -- Monitoring will always be started if the Java SE version is 21 or later.
+
+                                    N.B. Monitoring will never be started if the server is running on a Java SE
+                                    version before SE 21.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:token">
+                                    <xs:enumeration value="on-demand"/>
+                                    <xs:enumeration value="always"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="log-level" default="WARN">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Level at which to log occurrences of thread pinning
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:token">
+                                    <xs:enumeration value="FATAL"/>
+                                    <xs:enumeration value="ERROR"/>
+                                    <xs:enumeration value="WARN"/>
+                                    <xs:enumeration value="INFO"/>
+                                    <xs:enumeration value="DEBUG"/>
+                                    <xs:enumeration value="TRACE"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="max-stack-depth" type="xs:integer" default="20">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Maximum number of stack trace frames from the virtual thread that caused the pinning
+                                    to log when a pinning event occurs. A value of '-1' means there is no limit.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
             </xs:all>
         </xs:complexType>
     </xs:element>

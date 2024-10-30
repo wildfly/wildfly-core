@@ -6,4 +6,5 @@
     <configuration-changes max-history="10"/>
     <unstable-api-annotations level="LOG"/>
     <process-state-listener name="x" class="org.acme.foo.MyClass" module="org.acme.foo"/>
+    <thread-pinning-recorder start-mode="${expr.start-mode:always}" log-level="${expr.log-level:ERROR}" max-stack-depth="${expr.max-stack-depth:10}"/>
 </subsystem>
