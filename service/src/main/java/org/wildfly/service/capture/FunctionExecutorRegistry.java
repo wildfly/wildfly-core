@@ -12,9 +12,9 @@ package org.wildfly.service.capture;
  */
 public interface FunctionExecutorRegistry<K, V> {
     /**
-     * Returns the executor for the specified key.
+     * Returns the executor for the specified key, if one exists.
      * @param key a registry key
-     * @return an executor, or null, if no such executor exists in the registry
+     * @return the executor for the specified key, or null, if no such executor exists in the registry
      */
     FunctionExecutor<V> getExecutor(K key);
 }

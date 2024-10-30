@@ -32,7 +32,7 @@ public interface FunctionExecutor<V> {
     }
 
     /**
-     * Executes the given function.
+     * Executes the specified function, using a value provided by an associated {@link ValueRegistry}.
      * @param <R> the return type
      * @param <E> the exception type
      * @param function a function to execute
