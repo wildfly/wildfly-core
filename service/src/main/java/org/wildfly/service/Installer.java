@@ -5,14 +5,20 @@
 package org.wildfly.service;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.jboss.msc.Service;
+import org.jboss.msc.service.LifecycleEvent;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
@@ -79,6 +85,27 @@ public interface Installer<ST extends ServiceTarget> {
          * @return a reference to this builder
          */
         B asActive();
+
+        /**
+         * Configures the specified task to be run after the installed service is started.
+         * @param task a task to execute upon service start
+         * @return a reference to this builder
+         */
+        B onStart(Runnable task);
+
+        /**
+         * Configures the specified task to be run after the installed service is stopped.
+         * @param task a task to execute upon service stop
+         * @return a reference to this builder
+         */
+        B onStop(Runnable task);
+
+        /**
+         * Configures the specified task to be run upon removal of the installed service.
+         * @param task a task to execute upon service removal
+         * @return a reference to this builder
+         */
+        B onRemove(Runnable task);
 
         /**
          * Builds a service installer.
@@ -164,7 +191,14 @@ public interface Installer<ST extends ServiceTarget> {
          * @return a service factory
          */
         Function<SB, Service> getServiceFactory();
-     }
+
+        /**
+         * Returns tasks to be run per lifecycle event.
+         * The returned map is either fully populated, or an empty map, if this service has no lifecycle tasks.
+         * @return a potentially empty map of tasks to be run per lifecycle event.
+         */
+        Map<LifecycleEvent, Collection<Runnable>> getLifecycleTasks();
+    }
 
     /**
      * Generic abstract installer implementation that installs a {@link UnaryService}.
@@ -180,18 +214,30 @@ public interface Installer<ST extends ServiceTarget> {
         private final ServiceController.Mode mode;
         private final Consumer<DSB> dependency;
         private final Function<SB, Service> serviceFactory;
+        private final Map<LifecycleEvent, Collection<Runnable>> lifecycleTasks;
 
         protected DefaultInstaller(Installer.Configuration<SB, DSB> config, Function<ST, SB> serviceBuilderFactory) {
             this.serviceBuilderFactory = serviceBuilderFactory;
             this.serviceFactory = config.getServiceFactory();
             this.mode = config.getInitialMode();
             this.dependency = config.getDependency();
+            this.lifecycleTasks = config.getLifecycleTasks();
         }
 
         @Override
         public ServiceController<?> install(ST target) {
             SB builder = this.serviceBuilderFactory.apply(target);
             this.dependency.accept(builder);
+            // N.B. map of tasks is either empty or fully populated
+            if (!this.lifecycleTasks.isEmpty()) {
+                Map<LifecycleEvent, Collection<Runnable>> tasks = this.lifecycleTasks;
+                builder.addListener(new LifecycleListener() {
+                    @Override
+                    public void handleEvent(ServiceController<?> controller, LifecycleEvent event) {
+                        tasks.get(event).forEach(Runnable::run);
+                    }
+                });
+            }
             return builder.setInstance(this.serviceFactory.apply(builder)).setInitialMode(this.mode).install();
         }
     }
@@ -199,6 +245,7 @@ public interface Installer<ST extends ServiceTarget> {
     abstract class AbstractBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends DSB, DSB extends ServiceBuilder<?>> implements Installer.Builder<B, I, ST, DSB>, Installer.Configuration<SB, DSB> {
         private volatile ServiceController.Mode mode = ServiceController.Mode.ON_DEMAND;
         private volatile Consumer<DSB> dependency = Functions.discardingConsumer();
+        private volatile Map<LifecycleEvent, List<Runnable>> lifecycleTasks = Map.of();
 
         protected abstract B builder();
 
@@ -221,6 +268,43 @@ public interface Installer<ST extends ServiceTarget> {
         }
 
         @Override
+        public B onStart(Runnable task) {
+            return this.onEvent(LifecycleEvent.UP, task);
+        }
+
+        @Override
+        public B onStop(Runnable task) {
+            return this.onEvent(LifecycleEvent.DOWN, task);
+        }
+
+        @Override
+        public B onRemove(Runnable task) {
+            return this.onEvent(LifecycleEvent.REMOVED, task);
+        }
+
+        private B onEvent(LifecycleEvent event, Runnable task) {
+            if (this.lifecycleTasks.isEmpty()) {
+                // Create EnumMap lazily, when needed
+                this.lifecycleTasks = new EnumMap<>(LifecycleEvent.class);
+                for (LifecycleEvent e : EnumSet.allOf(LifecycleEvent.class)) {
+                    this.lifecycleTasks.put(e, (e == event) ? List.of(task) : List.of());
+                }
+            } else {
+                List<Runnable> tasks = this.lifecycleTasks.get(event);
+                if (tasks.isEmpty()) {
+                    this.lifecycleTasks.put(event, List.of(task));
+                } else {
+                    if (tasks.size() == 1) {
+                        tasks = new LinkedList<>(tasks);
+                        this.lifecycleTasks.put(event, tasks);
+                    }
+                    tasks.add(task);
+                }
+            }
+            return this.builder();
+        }
+
+        @Override
         public Mode getInitialMode() {
             return this.mode;
         }
@@ -228,6 +312,17 @@ public interface Installer<ST extends ServiceTarget> {
         @Override
         public Consumer<DSB> getDependency() {
             return this.dependency;
+        }
+
+        @Override
+        public Map<LifecycleEvent, Collection<Runnable>> getLifecycleTasks() {
+            // Return empty map or fully unmodifiable copy
+            if (this.lifecycleTasks.isEmpty()) return Map.of();
+            Map<LifecycleEvent, Collection<Runnable>> result = new EnumMap<>(LifecycleEvent.class);
+            for (Map.Entry<LifecycleEvent, List<Runnable>> entry : this.lifecycleTasks.entrySet()) {
+                result.put(entry.getKey(), List.copyOf(entry.getValue()));
+            }
+            return Collections.unmodifiableMap(result);
         }
     }
 
