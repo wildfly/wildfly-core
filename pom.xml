@@ -133,7 +133,7 @@
         <version.wildfly.plugin>5.0.1.Final</version.wildfly.plugin>
         <!-- plugins related to wildfly build and tooling -->
         <version.org.wildfly.component-matrix-plugin>1.0.3.Final</version.org.wildfly.component-matrix-plugin>
-        <version.org.wildfly.licenses.plugin>2.4.1.Final</version.org.wildfly.licenses.plugin>
+        <version.org.wildfly.licenses.plugin>2.4.2.Final</version.org.wildfly.licenses.plugin>
         <version.versions.plugin>2.5</version.versions.plugin>
         <version.xml.plugin>1.1.0</version.xml.plugin>
         <wildfly.build.output.dir>build/target/${server.output.dir.prefix}-${wildfly.core.release.version}</wildfly.build.output.dir>
