@@ -8,6 +8,8 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.persistence.xml.ResourceXMLElement;
+import org.jboss.as.controller.persistence.xml.SubsystemResourceXMLSchema;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
@@ -15,10 +17,17 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
  * Defines a versioned schema for a subsystem defined via a {@link PersistentResourceXMLDescription}.
  * @author Paul Ferraro
  * @param <S> the schema type
+ * @deprecated Superseded by {@link SubsystemResourceXMLSchema}.
  */
-public interface PersistentSubsystemSchema<S extends PersistentSubsystemSchema<S>> extends SubsystemSchema<S> {
+@Deprecated(forRemoval = true)
+public interface PersistentSubsystemSchema<S extends PersistentSubsystemSchema<S>> extends SubsystemResourceXMLSchema<S> {
 
     PersistentResourceXMLDescription getXMLDescription();
+
+    @Override
+    default ResourceXMLElement getSubsystemResourceXMLElement() {
+        return this.getXMLDescription().getXMLElement();
+    }
 
     @Override
     default void readElement(XMLExtendedStreamReader reader, List<ModelNode> value) throws XMLStreamException {
