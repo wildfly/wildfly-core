@@ -55,7 +55,7 @@ public class WildFlyManagedConfiguration {
 
     private String modulePath = System.getProperty("module.path");
 
-    private String javaVmArguments = System.getProperty("server.jvm.args", "-Xmx512m -XX:MaxMetaspaceSize=256m");
+    private String javaVmArguments = System.getProperty("server.jvm.args", "-Xmx512m");
 
     private int startupTimeoutInSeconds = TimeoutUtil.adjust(120);
 

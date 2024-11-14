@@ -144,7 +144,6 @@ public class RespawnTestCase {
         TestSuiteEnvironment.getIpv6Args(args);
         args.add("-Xms64m");
         args.add("-Xmx512m");
-        args.add("-XX:MaxMetaspaceSize=256m");
         String cliJvmArgs = System.getProperty("cli.jvm.args");
         if (cliJvmArgs != null && !cliJvmArgs.trim().isEmpty()) {
             args.addAll(Arrays.asList(cliJvmArgs.split("\\s+")));

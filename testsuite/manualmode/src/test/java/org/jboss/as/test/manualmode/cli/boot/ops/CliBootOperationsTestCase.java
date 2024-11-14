@@ -39,7 +39,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 @ServerControl(manual = true)
 public class CliBootOperationsTestCase {
     // Taken from org.wildfly.core.testrunner.Server
-    private static final String DEFAULT_JVM_ARGS =  "-Xmx512m -XX:MaxMetaspaceSize=256m";
+    private static final String DEFAULT_JVM_ARGS =  "-Xmx512m";
 
     @Inject
     protected ServerController container;

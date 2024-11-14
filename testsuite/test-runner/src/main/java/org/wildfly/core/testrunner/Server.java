@@ -71,7 +71,7 @@ public class Server {
 
     private final String jbossHome = System.getProperty("jboss.home", System.getenv("JBOSS_HOME"));
     private final String modulePath = System.getProperty("module.path");
-    private final String jvmArgs = System.getProperty("jvm.args", "-Xmx512m -XX:MaxMetaspaceSize=256m");
+    private final String jvmArgs = System.getProperty("jvm.args", "-Xmx512m");
     private final String jbossArgs = System.getProperty("jboss.args");
     private final String javaHome = System.getProperty("java.home", System.getenv("JAVA_HOME"));
     //Use this when specifying an older java to be used for running the server
