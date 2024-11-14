@@ -214,6 +214,7 @@
                         <include>org/jboss/as/test/integration/domain/secondaryreconnect/*TestCase.java</include>
                         <include>org/jboss/as/test/integration/domain/management/*TestCase.java</include>
                         <include>org/jboss/as/test/integration/domain/elytron/*TestCase.java</include>
+                        <include>org/jboss/as/test/integration/domain/installationmanager/*TestCase.java</include>
                     </includes>
                 </configuration>
             </plugin>
