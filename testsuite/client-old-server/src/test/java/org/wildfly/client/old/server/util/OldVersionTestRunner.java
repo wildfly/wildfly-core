@@ -233,7 +233,7 @@ public class OldVersionTestRunner extends Suite {
                 }
                 System.setProperty(LEGACY_JAVA_HOME, jdkHome);
 
-                System.setProperty("jvm.args", "-Xmx512m -XX:MaxMetaspaceSize=256m");
+                System.setProperty("jvm.args", "-Xmx512m");
             } else {
                 System.clearProperty(LEGACY_JAVA_HOME);
             }

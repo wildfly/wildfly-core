@@ -44,7 +44,7 @@ if not "x%JAVA_OPTS%" == "x" (
 
 if "x%JBOSS_JAVA_SIZING%" == "x" (
     rem # JVM memory allocation pool parameters - modify as appropriate.
-    set "JBOSS_JAVA_SIZING=-Xms64M -Xmx512M -XX:MaxMetaspaceSize=256m"
+    set "JBOSS_JAVA_SIZING=-Xms64M -Xmx512M"
 )
 set "JAVA_OPTS=%JBOSS_JAVA_SIZING%"
 
