@@ -42,9 +42,12 @@ public class CommandBuilderTest {
     @Test
     public void testJBossModulesBuilder() {
         // Set up a standalone command builder
-        final JBossModulesCommandBuilder commandBuilder = JBossModulesCommandBuilder.of(WILDFLY_HOME, "org.jboss.as.launcher.test")
-                .addJavaOption("-Djava.security.manager")
-                .addJavaOption("-Djava.net.preferIPv4Stack=true")
+        final JBossModulesCommandBuilder commandBuilder = JBossModulesCommandBuilder.of(WILDFLY_HOME, "org.jboss.as.launcher.test");
+        if (Runtime.version().feature() < 24) {
+            // [WFCORE-7064] Setting SM is not allowed on JDK24+
+            commandBuilder.addJavaOption("-Djava.security.manager");
+        }
+        commandBuilder.addJavaOption("-Djava.net.preferIPv4Stack=true")
                 .addJavaOption("-Djava.net.preferIPv4Stack=false")
                 .addModuleOption("-javaagent:test-agent1.jar")
                 .addServerArgument("--server=test");
@@ -52,7 +55,8 @@ public class CommandBuilderTest {
         // Get all the commands
         List<String> commands = commandBuilder.buildArguments();
 
-        Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
+        // [WFCORE-7064] Setting SM is not allowed on JDK24+
+        if (Runtime.version().feature() < 24) Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
 
         Assert.assertTrue("Missing jboss-modules.jar", commands.stream().anyMatch(entry -> entry.matches("-javaagent:.*jboss-modules.jar$")));
         Assert.assertTrue("Missing test-agent1.jar", commands.contains("-javaagent:test-agent1.jar"));
@@ -81,9 +85,12 @@ public class CommandBuilderTest {
                 .setAdminOnly()
                 .setBindAddressHint("0.0.0.0")
                 .setDebug(true, 5005)
-                .setServerConfiguration("standalone-full.xml")
-                .addJavaOption("-Djava.security.manager")
-                .addJavaOption("-Djava.net.preferIPv4Stack=true")
+                .setServerConfiguration("standalone-full.xml");
+        if (Runtime.version().feature() < 24) {
+            // [WFCORE-7064] Setting SM is not allowed on JDK24+
+            commandBuilder.addJavaOption("-Djava.security.manager");
+        }
+        commandBuilder.addJavaOption("-Djava.net.preferIPv4Stack=true")
                 .addJavaOption("-Djava.net.preferIPv4Stack=false")
                 .addModuleOption("-javaagent:test-agent1.jar")
                 .setBindAddressHint("management", "0.0.0.0");
@@ -101,7 +108,8 @@ public class CommandBuilderTest {
 
         Assert.assertTrue("Missing server configuration file override", commands.contains("-c=standalone-full.xml"));
 
-        Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
+        // [WFCORE-7064] Setting SM is not allowed on JDK24+
+        if (Runtime.version().feature() < 24) Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
 
         Assert.assertTrue("Missing jboss-modules.jar", commands.stream().anyMatch(entry -> entry.matches("-javaagent:.*jboss-modules.jar$")));
         Assert.assertTrue("Missing test-agent1.jar", commands.contains("-javaagent:test-agent1.jar"));
@@ -134,9 +142,12 @@ public class CommandBuilderTest {
                 .setInstallDir(Paths.get("foo"))
                 .setInstallDir(Paths.get("bar"))
                 .setBindAddressHint("0.0.0.0")
-                .setDebug(true, 5005)
-                .addJavaOption("-Djava.security.manager")
-                .addJavaOption("-Djava.net.preferIPv4Stack=true")
+                .setDebug(true, 5005);
+        if (Runtime.version().feature() < 24) {
+            // [WFCORE-7064] Setting SM is not allowed on JDK24+
+            commandBuilder.addJavaOption("-Djava.security.manager");
+        }
+        commandBuilder.addJavaOption("-Djava.net.preferIPv4Stack=true")
                 .addJavaOption("-Djava.net.preferIPv4Stack=false")
                 .setBindAddressHint("management", "0.0.0.0")
                 .setYamlFiles(Path.of("bad.yml"))
@@ -200,9 +211,12 @@ public class CommandBuilderTest {
                 .setBindAddressHint("0.0.0.0")
                 .setMasterAddressHint("0.0.0.0")
                 .setDomainConfiguration("domain.xml")
-                .setHostConfiguration("host.xml")
-                .addProcessControllerJavaOption("-Djava.security.manager")
-                .setBindAddressHint("management", "0.0.0.0");
+                .setHostConfiguration("host.xml");
+        if (Runtime.version().feature() < 24) {
+            // [WFCORE-7064] Setting SM is not allowed on JDK24+
+            commandBuilder.addProcessControllerJavaOption("-Djava.security.manager");
+        }
+        commandBuilder.setBindAddressHint("management", "0.0.0.0");
 
         // Get all the commands
         List<String> commands = commandBuilder.buildArguments();
@@ -217,7 +231,8 @@ public class CommandBuilderTest {
 
         Assert.assertTrue("Missing server configuration file override", commands.contains("-c=domain.xml"));
 
-        Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
+        // [WFCORE-7064] Setting SM is not allowed on JDK24+
+        if (Runtime.version().feature() < 24) Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
 
         // If we're using Java 9+ ensure the modular JDK options were added
         testModularJvmArguments(commands, 2);

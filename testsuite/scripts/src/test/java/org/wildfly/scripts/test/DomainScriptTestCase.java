@@ -38,7 +38,7 @@ public class DomainScriptTestCase extends ScriptTestCase {
 
     @Parameterized.Parameters
     public static Collection<Object> data() {
-        return List.of(Map.of(), Map.of("SECMGR", "true"));
+        return List.of(Map.of(), Map.of("SECMGR", SECMGR_VALUE));
     }
 
     @Override

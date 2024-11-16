@@ -28,7 +28,8 @@ class Jvm {
     private static final String JAVA_EXE;
     private static final Path JAVA_HOME;
     private static final boolean MODULAR_JVM = true;
-    private static final boolean ENHANCED_SECURITY_MANAGER = Runtime.version().feature() >= 12;
+    // [WFCORE-7064] Setting SM is not allowed on JDK24+
+    private static final boolean ENHANCED_SECURITY_MANAGER = Runtime.version().feature() >= 12 && Runtime.version().feature() < 24;
 
     static {
         String exe = "java";
@@ -180,6 +181,8 @@ class Jvm {
      * @return {@code true} if this is a modular environment
      */
     private static boolean hasEnhancedSecurityManager(final Path javaHome) {
+        // [WFCORE-7064] Setting SM is not allowed on JDK24+
+        if (Runtime.version().feature() > 24) return false;
         final List<String> cmd = new ArrayList<>();
         cmd.add(resolveJavaCommand(javaHome));
         cmd.add("-Djava.security.manager=allow");

@@ -42,6 +42,8 @@ import org.wildfly.common.test.ServerHelper;
  */
 public abstract class ScriptTestCase {
 
+    // [WFCORE-7064] Setting SM is not allowed on JDK24+
+    static final String SECMGR_VALUE = Runtime.version().feature() < 24 ? "true" : "false";
     static final Map<String, String> MAVEN_JAVA_OPTS = new LinkedHashMap<>();
 
     private final String scriptBaseName;

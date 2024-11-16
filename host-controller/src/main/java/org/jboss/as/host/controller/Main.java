@@ -212,7 +212,8 @@ public final class Main {
         String modulePath = null;
 
         // Note the java.security.manager property shouldn't be set, but we'll check to ensure the security manager should be enabled
-        boolean securityManagerEnabled = System.getSecurityManager() != null || isJavaSecurityManagerConfigured(hostSystemProperties);
+        // [WFCORE-7064] Setting SM is not allowed on JDK24+
+        boolean securityManagerEnabled = Runtime.version().feature() < 24 && (System.getSecurityManager() != null || isJavaSecurityManagerConfigured(hostSystemProperties));
 
         final int argsLength = args.length;
         for (int i = 0; i < argsLength; i++) {

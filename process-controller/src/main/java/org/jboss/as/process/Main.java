@@ -244,7 +244,8 @@ public final class Main {
     }
 
     private static boolean isJavaSecurityManagerConfigured(final String arg) {
-        return arg.startsWith("-Djava.security.manager")
+        // [WFCORE-7064] Setting SM is not allowed on JDK24+
+        return Runtime.version().feature() < 24 && arg.startsWith("-Djava.security.manager")
                 && !"-Djava.security.manager=allow".equals(arg)
                 && !"-Djava.security.manager=disallow".equals(arg);
     }

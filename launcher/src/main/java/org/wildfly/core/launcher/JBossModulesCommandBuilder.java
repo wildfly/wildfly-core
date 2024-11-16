@@ -690,6 +690,7 @@ public class JBossModulesCommandBuilder implements CommandBuilder {
     }
 
     static boolean isJavaSecurityManagerConfigured(final Argument argument) {
-        return !ALLOW_VALUE.equals(argument.getValue()) && !DISALLOW_VALUE.equals(argument.getValue());
+        // [WFCORE-7064] Setting SM is not allowed on JDK24+
+        return Runtime.version().feature() < 24 && !ALLOW_VALUE.equals(argument.getValue()) && !DISALLOW_VALUE.equals(argument.getValue());
     }
 }
