@@ -356,8 +356,6 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testSslServiceAuthTLS13() throws Throwable {
-        Assume.assumeTrue("Skipping testSslServiceAuthTLS13, test is not being run on JDK 11+.",
-                JdkUtils.getJavaSpecVersion() >= 11);
         testCommunication("ServerSslContextTLS13", "ClientSslContextTLS13", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
                 "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", "TLS_AES_256_GCM_SHA384", true);
     }
@@ -453,8 +451,6 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testSslServiceAuthProtocolMismatch() throws Throwable {
-        Assume.assumeTrue("Skipping testSslServiceAuthProtocolMismatch, test is not being run on JDK 11+.",
-                JdkUtils.getJavaSpecVersion() >= 11);
         try {
             testCommunication("ServerSslContextTLS12Only", "ClientSslContextTLS13Only", false, "",
                     "", "");
@@ -465,8 +461,6 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testSslServiceAuthCipherSuiteMismatch() throws Throwable {
-        Assume.assumeTrue("Skipping testSslServiceAuthCipherSuiteMismatch, test is not being run on JDK 11+.",
-                JdkUtils.getJavaSpecVersion() >= 11);
         try {
             testCommunication("ServerSslContextTLS13Only", "ClientSslContextTLS13Only", false, "",
                     "", "");
@@ -670,7 +664,6 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     private void testCommunication(String serverContextName, String clientContextName, boolean defaultClient, String expectedServerPrincipal, String expectedClientPrincipal, String expectedCipherSuite, boolean tls13Test, Map<String, String[]> protocolChecker) throws Throwable{
-        boolean testSessions = ! (JdkUtils.getJavaSpecVersion() >= 11); // session IDs are essentially obsolete in TLSv1.3
         SSLContext serverContext = getSslContext(serverContextName);
         SSLContext clientContext = defaultClient ? SSLContext.getDefault() : getSslContext(clientContextName);
         ServerSocket listeningSocket;
@@ -717,9 +710,6 @@ public class TlsTestCase extends AbstractSubsystemTest {
         try {
             Assert.assertArrayEquals(new byte[]{0x12, 0x34}, serverFuture.get());
             Assert.assertArrayEquals(new byte[]{0x56, 0x78}, clientFuture.get());
-            if (testSessions) {
-                testSessionsReading(serverContextName, clientContextName, expectedServerPrincipal, expectedClientPrincipal);
-            }
             if (expectedCipherSuite != null) {
                 Assert.assertEquals(expectedCipherSuite, serverSocket.getSession().getCipherSuite());
                 Assert.assertEquals(expectedCipherSuite, clientSocket.getSession().getCipherSuite());

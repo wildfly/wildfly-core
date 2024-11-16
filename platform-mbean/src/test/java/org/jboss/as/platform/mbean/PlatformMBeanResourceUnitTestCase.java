@@ -151,24 +151,6 @@ public class PlatformMBeanResourceUnitTestCase {
     }
 
     @Test
-    public void testBufferPoolMXBean() throws IOException {
-        if (PlatformMBeanUtil.JVM_MAJOR_VERSION < 7) {
-            ModelNode op = getOperation(READ_RESOURCE_DESCRIPTION_OPERATION, "buffer-pool", null);
-            executeOp(op, true);
-            op = getOperation(READ_RESOURCE_OPERATION, "buffer-pool", null);
-            executeOp(op, true);
-            return;
-        }
-
-        // TODO (jrp) - This test is broken.
-        // Notes from IRC.
-        // it's reading the parent BufferPoolMXBean resource (which is empty except for children for each of the named BufferPoolMXBean)
-        // it should be reading one of the children
-        // DescribedResource describedResource = basicResourceTest("buffer-pool", null);
-        // TODO validate values
-    }
-
-    @Test
     public void testClassLoadingMXBean() throws IOException {
         DescribedResource describedResource = basicResourceTest("class-loading", null);
 
