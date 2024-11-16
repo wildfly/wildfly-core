@@ -54,7 +54,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
                 Map.of(),
                 Map.of("GC_LOG", "true"),
                 Map.of("MODULE_OPTS", "-javaagent:logging-agent-tests.jar=" + LoggingAgent.DEBUG_ARG),
-                Map.of("SECMGR", "true")
+                Map.of("SECMGR", SECMGR_VALUE)
         );
     }
 
