@@ -128,7 +128,7 @@ class MapperParser {
             .addAttribute(PrincipalTransformerDefinitions.MATCH)
             .build();
 
-   private PersistentResourceXMLDescription casePrincipalTransformerParser = PersistentResourceXMLDescription.builder(PrincipalTransformerDefinitions.getCasePrincipalTransformerDefinition().getPathElement())
+    private PersistentResourceXMLDescription casePrincipalTransformerParser = PersistentResourceXMLDescription.builder(PrincipalTransformerDefinitions.getCasePrincipalTransformerDefinition().getPathElement())
            .addAttribute(PrincipalTransformerDefinitions.UPPER_CASE)
            .build();
 
@@ -396,7 +396,6 @@ class MapperParser {
                 .addChild(aggregateEvidenceDecoderParser)
                 .addChild(sourceAddressRoleDecoderParser)
                 .addChild(aggregateRoleDecoderParser)
-                .addChild(regexPrincipalTransformerParser)
                 .build();
     }
 
