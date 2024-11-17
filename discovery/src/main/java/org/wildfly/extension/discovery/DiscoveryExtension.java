@@ -5,6 +5,7 @@
 
 package org.wildfly.extension.discovery;
 
+import org.wildfly.common.function.Functions;
 import org.wildfly.subsystem.SubsystemConfiguration;
 import org.wildfly.subsystem.SubsystemExtension;
 import org.wildfly.subsystem.SubsystemPersistence;
@@ -17,6 +18,6 @@ import org.wildfly.subsystem.SubsystemPersistence;
 public class DiscoveryExtension extends SubsystemExtension<DiscoverySubsystemSchema> {
 
     public DiscoveryExtension() {
-        super(SubsystemConfiguration.of(DiscoverySubsystemRegistrar.NAME, DiscoverySubsystemModel.CURRENT, DiscoverySubsystemRegistrar::new), SubsystemPersistence.of(DiscoverySubsystemSchema.CURRENT));
+        super(SubsystemConfiguration.of(DiscoverySubsystemResourceRegistrar.INSTANCE, DiscoverySubsystemModel.CURRENT, Functions.constantSupplier(DiscoverySubsystemResourceRegistrar.INSTANCE)), SubsystemPersistence.of(DiscoverySubsystemSchema.CURRENT));
     }
 }
