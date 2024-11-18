@@ -620,7 +620,7 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
         Assert.assertTrue(Files.exists(primaryPrepareServerDir) && Files.isDirectory(primaryPrepareServerDir));
         Assert.assertTrue(primaryPrepareServerDir + " does not contain the expected file marker",
-                Files.list(primaryPrepareServerDir).allMatch(p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
+                directoryOnlyContains(primaryPrepareServerDir, p -> primaryPrepareServerDir.relativize(p).toString().startsWith("server-prepare-marker-")));
     }
 
     @Test
