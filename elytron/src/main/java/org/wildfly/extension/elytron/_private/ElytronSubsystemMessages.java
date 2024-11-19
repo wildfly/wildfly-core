@@ -341,6 +341,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 49, value = "Entry is not defined.")
     StartException jaasEntryNotDefined();
 
+    @Message(id = 50, value = "The realm is not available. You can't flush the cache.")
+    OperationFailedException cachedRealmServiceNotAvailable();
+
     /*
      * Credential Store Section.
      */
