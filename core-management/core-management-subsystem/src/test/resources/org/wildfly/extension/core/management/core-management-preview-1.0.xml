@@ -5,5 +5,10 @@
 <subsystem xmlns="urn:jboss:domain:core-management:preview:1.0">
     <configuration-changes max-history="10"/>
     <unstable-api-annotations level="LOG"/>
-    <process-state-listener name="x" class="org.acme.foo.MyClass" module="org.acme.foo"/>
+    <process-state-listener name="x" class="org.acme.foo.MyClass" module="org.acme.foo" timeout="${process.timeout:5000}">
+        <properties>
+            <property name="foo" value="true"/>
+            <property name="bar" value="${bar.prop:2}"/>
+        </properties>
+    </process-state-listener>
 </subsystem>
