@@ -5,9 +5,17 @@
 
 package org.wildfly.core.instmgr.cli;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CERTIFICATE_INFO;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.wildfly.core.instmgr.InstMgrConstants.CERTIFICATE_CONTENT;
+import static org.wildfly.core.instmgr.InstMgrConstants.OFFLINE;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.aesh.command.CommandDefinition;
@@ -23,9 +31,12 @@ import org.jboss.as.cli.impl.aesh.cmd.HeadersConverter;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
+import org.wildfly.core.instmgr.InstMgrCertificateImportHandler;
 import org.wildfly.core.instmgr.InstMgrConstants;
+import org.wildfly.core.instmgr.InstMgrUnacceptedCertificateHandler;
 
 @CommandDefinition(name = "update", description = "Apply the latest available patches on a server instance.", activator = InstMgrActivator.class)
 public class UpdateCommand extends AbstractInstMgrCommand {
@@ -67,6 +78,13 @@ public class UpdateCommand extends AbstractInstMgrCommand {
         ParsedCommandLine cmdParser = ctx.getParsedCommandLine();
         final Boolean optNoResolveLocalCache = cmdParser.hasProperty("--" + NO_RESOLVE_LOCAL_CACHE_OPTION) ? noResolveLocalCache : null;
         final Boolean optUseDefaultLocalCache = cmdParser.hasProperty("--" + USE_DEFAULT_LOCAL_CACHE_OPTION) ? useDefaultLocalCache : null;
+
+        // call the download handler
+        Collection<ModelNode> pendingCertificates = getPendingCertificates(ctx);
+        // call the import handler
+        if (!pendingCertificates.isEmpty() && !importPendingCertificates(pendingCertificates, ctx, commandInvocation)) {
+            return CommandResult.SUCCESS;
+        }
 
         ListUpdatesAction.Builder listUpdatesCmdBuilder = new ListUpdatesAction.Builder()
                 .setNoResolveLocalCache(optNoResolveLocalCache)
@@ -144,6 +162,61 @@ public class UpdateCommand extends AbstractInstMgrCommand {
         }
 
         return CommandResult.SUCCESS;
+    }
+
+    private boolean importPendingCertificates(Collection<ModelNode> pendingCertificates, CommandContext ctx, CLICommandInvocation commandInvocation) throws CommandException, InterruptedException {
+        commandInvocation.println("The update is configured to verify the integrity of updated components, but following certificates need to be trusted:");
+
+        for (ModelNode pendingCertificate : pendingCertificates) {
+            final ModelNode certificateInfo = pendingCertificate.get(CERTIFICATE_INFO);
+
+            commandInvocation.println("key-id: " + certificateInfo.get(InstMgrConstants.CERT_KEY_ID));
+            commandInvocation.println("fingerprint: " + certificateInfo.get(InstMgrConstants.CERT_FINGERPRINT));
+            commandInvocation.println("description: " + certificateInfo.get(InstMgrConstants.CERT_DESCRIPTION));
+            commandInvocation.println("");
+
+        }
+        final String input = commandInvocation.inputLine(new Prompt("Import these certificates y/N "));
+        if ("y".equals(input)) {
+            commandInvocation.print("Importing a trusted certificate");
+
+            for (ModelNode pendingCertificate : pendingCertificates) {
+                this.executeOp(buildImportOperation(pendingCertificate.get(CERTIFICATE_CONTENT).asString()), ctx, host);
+            }
+
+            return true;
+        } else {
+            commandInvocation.print("Importing canceled.");
+            return false;
+        }
+    }
+
+    protected Operation buildImportOperation(String certificateContent) {
+        final ModelNode op = new ModelNode();
+        final OperationBuilder operationBuilder = OperationBuilder.create(op);
+
+        op.get(OP).set(InstMgrCertificateImportHandler.DEFINITION.getName());
+        op.get(CERTIFICATE_CONTENT).set(certificateContent);
+
+        return operationBuilder.build();
+    }
+
+    private Collection<ModelNode> getPendingCertificates(CommandContext ctx) throws CommandException {
+        if (confirm || dryRun) {
+            // skip the check in non-interactive runs because the certificate cannot be accepted either way
+            // the update will fail if certificate is required and will print error message
+            return Collections.emptyList();
+        }
+
+        final ModelNode op = new ModelNode();
+
+        op.get(OP).set(InstMgrUnacceptedCertificateHandler.DEFINITION.getName());
+        op.get(OFFLINE).set(offline);
+
+        final ModelNode modelNode = executeOp(OperationBuilder.create(op).build(), ctx, this.host);
+
+        // certificate-content & certificate-info
+        return modelNode.get(RESULT).asListOrEmpty();
     }
 
     private void printListUpdatesResult(CLICommandInvocation commandInvocation, List<ModelNode> changesMn) {

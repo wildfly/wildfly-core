@@ -5,31 +5,41 @@
 
 package org.wildfly.test.installationmanager;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.wildfly.installationmanager.ArtifactChange;
+import org.wildfly.installationmanager.CandidateType;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.ChannelChange;
+import org.wildfly.installationmanager.FileConflict;
 import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.InstallationChanges;
 import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.OperationNotAvailableException;
 import org.wildfly.installationmanager.Repository;
+import org.wildfly.installationmanager.TrustCertificate;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.OsShell;
 
@@ -44,6 +54,7 @@ public class TestInstallationManager implements InstallationManager {
     public static List<Repository> findUpdatesRepositories;
     public static List<ArtifactChange> findUpdatesChanges;
     public static List<Repository> prepareUpdatesRepositories;
+    private static List<TrustCertificate> lstTrustCertificates;
     public static Path prepareUpdatesTargetDir;
 
     public static List<Repository> prepareRevertRepositories;
@@ -119,10 +130,10 @@ public class TestInstallationManager implements InstallationManager {
 
             // History sample data
             history = new HashMap<>();
-            history.put("update", new HistoryResult("update", Instant.now(), "update", "update description"));
-            history.put("install", new HistoryResult("install", Instant.now(), "install", "install description"));
-            history.put("rollback", new HistoryResult("rollback", Instant.now(), "rollback", "rollback description"));
-            history.put("config_change", new HistoryResult("config_change", Instant.now(), "config_change", "config_change description"));
+            history.put("update", new HistoryResult("update", Instant.now(), "update", "update description", Collections.emptyList()));
+            history.put("install", new HistoryResult("install", Instant.now(), "install", "install description", Collections.emptyList()));
+            history.put("rollback", new HistoryResult("rollback", Instant.now(), "rollback", "rollback description", Collections.emptyList()));
+            history.put("config_change", new HistoryResult("config_change", Instant.now(), "config_change", "config_change description", Collections.emptyList()));
 
             // List Updates sample Data
 
@@ -156,6 +167,10 @@ public class TestInstallationManager implements InstallationManager {
                     installedVersions.add(new ManifestVersion(name, description, channel.getManifestUrl().get().toString(), ManifestVersion.Type.URL));
                 }
             }
+
+            // certificates sample data
+            lstTrustCertificates = new ArrayList<>();
+            lstTrustCertificates.add(new TrustCertificate("abcd", "abcd1234", "Test Cert", "TRUSTED"));
 
             initialized = true;
         }
@@ -267,8 +282,78 @@ public class TestInstallationManager implements InstallationManager {
     }
 
     @Override
+    public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
+        return scriptHome + APPLY_UPDATE_BASE_GENERATED_COMMAND + candidatePath.toString();
+    }
+
+    @Override
+    public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
+        return scriptHome + APPLY_REVERT_BASE_GENERATED_COMMAND + candidatePath.toString();
+    }
+
+    @Override
     public Collection<ManifestVersion> getInstalledVersions() throws Exception {
         return installedVersions;
+    }
+
+    @Override
+    public Collection<FileConflict> verifyCandidate(Path candidatePath, CandidateType candidateType) throws Exception {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public void acceptTrustedCertificates(InputStream certificate) throws Exception {
+        final TrustCertificate trustCertificate = parseCertificate(certificate);
+
+        lstTrustCertificates.add(trustCertificate);
+    }
+
+    @Override
+    public void revokeTrustedCertificate(String keyID) throws Exception {
+        final Optional<TrustCertificate> cert = lstTrustCertificates.stream()
+                .filter(c -> c.getKeyID().equals(keyID))
+                .findFirst();
+
+        cert.ifPresent(trustCertificate -> lstTrustCertificates.remove(trustCertificate));
+    }
+
+    @Override
+    public Collection<TrustCertificate> listTrustedCertificates() throws Exception {
+        return Collections.unmodifiableCollection(lstTrustCertificates);
+    }
+
+    @Override
+    public TrustCertificate parseCertificate(InputStream certificate) throws Exception {
+        String keyId = null;
+        String fingerprint = null;
+        String description = null;
+        try(BufferedReader reader = new BufferedReader(new InputStreamReader(certificate))) {
+            while (reader.ready()) {
+                final String[] line = reader.readLine().split(":");
+                switch (line[0]) {
+                    case "key-id":
+                        keyId = line[1];
+                        break;
+                    case "fingerprint":
+                        fingerprint = line[1];
+                        break;
+                    case "description":
+                        description = line[1];
+                        break;
+                    default:
+                        throw new RuntimeException("Unknown line: " + line[0]);
+                }
+            }
+        }
+
+        return new TrustCertificate(keyId, fingerprint, description, "TRUSTED");
+    }
+
+    @Override
+    public Collection<InputStream> downloadRequiredCertificates() throws Exception {
+        final String cert = "key-id:abcd\nfingerprint:abcd1234\ndescription:Missing Cert";
+        final ByteArrayInputStream bais = new ByteArrayInputStream(cert.getBytes(StandardCharsets.UTF_8));
+        return List.of(bais);
     }
 
     public static void zipDir(Path inputFile, Path target) throws IOException {

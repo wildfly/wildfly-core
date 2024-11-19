@@ -26,6 +26,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.core.instmgr.logging.InstMgrLogger;
 import org.wildfly.installationmanager.MavenOptions;
+import org.wildfly.installationmanager.MissingSignatureException;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
@@ -147,6 +148,8 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
                     throw new OperationFailedException(e.getLocalizedMessage());
                 } catch (OperationFailedException | RuntimeException e) {
                     throw e;
+                } catch (MissingSignatureException e) {
+                    throw InstMgrLogger.ROOT_LOGGER.componentSignedWithUnknownCertificate(e.getDescription(), e);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

@@ -21,7 +21,10 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
         ChannelEditCommand.class,
         ChannelRemoveCommand.class,
         CustomPatchUploadCommand.class,
-        CustomPatchRemoveCommand.class
+        CustomPatchRemoveCommand.class,
+        ListCertificatesCommand.class,
+        AddCertificatesCommand.class,
+        RemoveCertificatesCommand.class
 }, activator = InstMgrActivator.class)
 public class InstMgrGroupCommand implements Command<CLICommandInvocation> {
     public static final String COMMAND_NAME = "installer";
