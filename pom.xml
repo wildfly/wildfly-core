@@ -241,6 +241,7 @@
         <version.org.wildfly.common>1.7.0.Final</version.org.wildfly.common>
         <version.org.wildfly.discovery>1.3.0.Final</version.org.wildfly.discovery>
         <version.org.wildfly.installation-manager.installation-manager-api>1.0.3.Final</version.org.wildfly.installation-manager.installation-manager-api>
+        <version.org.wildfly.launcher>1.0.0.Beta1</version.org.wildfly.launcher>
         <version.org.wildfly.legacy.test>8.0.2.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.openssl>2.2.5.Final</version.org.wildfly.openssl>
         <version.org.wildfly.openssl.natives>2.2.2.Final</version.org.wildfly.openssl.natives>
@@ -283,7 +284,6 @@
         <module>installation-manager</module>
         <module>io</module>
         <module>jmx</module>
-        <module>launcher</module>
         <module>model-test</module>
         <module>network</module>
         <module>patching</module>
@@ -1549,11 +1549,6 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-launcher</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-jar-runtime</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1679,6 +1674,11 @@
                 <groupId>org.wildfly.galleon-plugins</groupId>
                 <artifactId>wildfly-config-gen</artifactId>
                 <version>${version.org.wildfly.galleon-plugins}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.launcher</groupId>
+                <artifactId>wildfly-launcher</artifactId>
+                <version>${version.org.wildfly.launcher}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.legacy.test</groupId>

@@ -49,16 +49,16 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-launcher</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-network</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.launcher</groupId>
+            <artifactId>wildfly-launcher</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.logmanager</groupId>

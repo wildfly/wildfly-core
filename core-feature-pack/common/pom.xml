@@ -829,11 +829,6 @@
 
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-launcher</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-jar-runtime</artifactId>
         </dependency>
 
@@ -850,6 +845,11 @@
         <dependency>
             <groupId>org.wildfly.discovery</groupId>
             <artifactId>wildfly-discovery-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.launcher</groupId>
+            <artifactId>wildfly-launcher</artifactId>
         </dependency>
 
         <dependency>

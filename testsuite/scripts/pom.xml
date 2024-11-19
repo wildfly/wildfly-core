@@ -28,6 +28,13 @@
         <test.log.file>${project.build.directory}${file.separator}test.log</test.log.file>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.wildfly.launcher</groupId>
+            <artifactId>wildfly-launcher</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <!-- Create a test agent for the BootWithAgentTestCase -->
