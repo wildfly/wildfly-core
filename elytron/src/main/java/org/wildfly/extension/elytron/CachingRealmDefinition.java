@@ -17,6 +17,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
@@ -30,7 +31,6 @@ import org.jboss.dmr.ModelType;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
@@ -117,7 +117,7 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
             ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(realmName, createService(cacheableRealm, maxEntries, maxAge, cacheableRealmValue));
 
             addRealmDependency(context, serviceBuilder, cacheableRealm, cacheableRealmValue);
-            commonDependencies(serviceBuilder).setInitialMode(Mode.ACTIVE).install();
+            commonDependencies(serviceBuilder).setInitialMode(context.getRunningMode() == RunningMode.ADMIN_ONLY ? ServiceController.Mode.LAZY : ServiceController.Mode.ACTIVE).install();
         }
 
         private TrivialService<SecurityRealm> createService(String realmName, int maxEntries, long maxAge, InjectedValue<SecurityRealm> injector) {
@@ -170,6 +170,9 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
             RuntimeCapability<Void> runtimeCapability = SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(currentAddress.getLastElement().getValue());
             ServiceName realmName = runtimeCapability.getCapabilityServiceName();
             ServiceController<SecurityRealm> serviceController = getRequiredService(serviceRegistry, realmName, SecurityRealm.class);
+            if(serviceController.getState() != ServiceController.State.UP) {
+                throw ElytronSubsystemMessages.ROOT_LOGGER.cachedRealmServiceNotAvailable();
+            }
             CachingSecurityRealm securityRealm = CachingSecurityRealm.class.cast(serviceController.getValue());
             securityRealm.removeAllFromCache();
         }
