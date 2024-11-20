@@ -30,7 +30,7 @@
         <module name="org.wildfly.extension.core-management-client"/>
         <module name="org.wildfly.security.elytron-private"/>
         <module name="org.wildfly.service"/>
-        <module name="org.wildfly.unstable.annotation.api.indexer"/>
-        <module name="org.wildfly._internal.unstable-api-annotation-index"/>
+        <module name="org.wildfly.unstable.annotation.api.indexer" optional="true"/>
+        <module name="org.wildfly._internal.unstable-api-annotation-index" optional="true"/>
     </dependencies>
 </module>

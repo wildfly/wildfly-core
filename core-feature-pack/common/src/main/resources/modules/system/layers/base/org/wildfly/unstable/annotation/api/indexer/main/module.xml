@@ -8,6 +8,7 @@
 <module xmlns="urn:jboss:module:1.9" name="org.wildfly.unstable.annotation.api.indexer">
     <properties>
         <property name="jboss.api" value="private"/>
+        <property name="jboss.stability" value="preview"/>
     </properties>
 
     <resources>
