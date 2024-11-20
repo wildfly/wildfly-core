@@ -43,7 +43,7 @@ public class WorkerServerDefinition extends SimpleResourceDefinition {
     static final ModelNode NO_METRICS = new ModelNode(IOLogger.ROOT_LOGGER.noMetrics());
 
     WorkerServerDefinition() {
-        super(new Parameters(PATH, IOSubsystemRegistrar.RESOLVER.createChildResolver(PathElement.pathElement(WorkerResourceDefinition.PATH.getKey(), PATH.getKey())))
+        super(new Parameters(PATH, IOSubsystemResourceDefinitionRegistrar.RESOLVER.createChildResolver(PathElement.pathElement(WorkerResourceDefinition.PATH.getKey(), PATH.getKey())))
                 .setRuntime());
     }
 
