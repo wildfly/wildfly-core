@@ -11,10 +11,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
-import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.SubsystemRegistration;
+import org.jboss.as.controller.SubsystemResourceRegistration;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ParentResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.SubsystemResourceDescriptionResolver;
@@ -38,28 +37,27 @@ import org.xnio.XnioWorker;
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
  */
-class IOSubsystemRegistrar implements SubsystemResourceDefinitionRegistrar, ResourceServiceConfigurator {
+class IOSubsystemResourceDefinitionRegistrar implements SubsystemResourceDefinitionRegistrar, ResourceServiceConfigurator {
 
-    static final String NAME = "io";
-    static final PathElement PATH = SubsystemResourceDefinitionRegistrar.pathElement(NAME);
-    static final ParentResourceDescriptionResolver RESOLVER = new SubsystemResourceDescriptionResolver(NAME, IOSubsystemRegistrar.class);
-
-    static final RuntimeCapability<Void> MAX_THREADS_CAPABILITY = RuntimeCapability.Builder.of(IOServiceDescriptor.MAX_THREADS).build();
+    static final SubsystemResourceRegistration REGISTRATION = SubsystemResourceRegistration.of("io");
+    static final ParentResourceDescriptionResolver RESOLVER = new SubsystemResourceDescriptionResolver(REGISTRATION.getName(), IOSubsystemResourceDefinitionRegistrar.class);
 
     static final RuntimeCapability<Void> DEFAULT_WORKER_CAPABILITY = RuntimeCapability.Builder.of(IOServiceDescriptor.DEFAULT_WORKER).build();
-
-    static final ModelNode LEGACY_DEFAULT_WORKER = new ModelNode("default");
 
     static final CapabilityReferenceAttributeDefinition<XnioWorker> DEFAULT_WORKER = new CapabilityReferenceAttributeDefinition.Builder<>("default-worker", CapabilityReference.builder(DEFAULT_WORKER_CAPABILITY, IOServiceDescriptor.NAMED_WORKER).build())
             .setRequired(false)
             .build();
+
+    static final RuntimeCapability<Void> MAX_THREADS_CAPABILITY = RuntimeCapability.Builder.of(IOServiceDescriptor.MAX_THREADS).build();
+
+    static final ModelNode LEGACY_DEFAULT_WORKER = new ModelNode("default");
 
     // Tracks max-threads for all workers
     private final AtomicInteger maxThreads = new AtomicInteger();
 
     @Override
     public ManagementResourceRegistration register(SubsystemRegistration parent, ManagementResourceRegistrationContext context) {
-        ManagementResourceRegistration registration = parent.registerSubsystemModel(ResourceDefinition.builder(ResourceRegistration.of(PATH), RESOLVER).build());
+        ManagementResourceRegistration registration = parent.registerSubsystemModel(ResourceDefinition.builder(REGISTRATION, RESOLVER).build());
 
         ResourceDescriptor descriptor = ResourceDescriptor.builder(RESOLVER)
                 .addAttributes(List.of(DEFAULT_WORKER))

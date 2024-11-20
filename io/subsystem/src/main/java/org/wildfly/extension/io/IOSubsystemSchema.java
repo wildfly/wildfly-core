@@ -6,22 +6,24 @@
 package org.wildfly.extension.io;
 
 import java.util.List;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
+import java.util.Map;
 
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PersistentResourceXMLDescription;
-import org.jboss.as.controller.PersistentSubsystemSchema;
 import org.jboss.as.controller.SubsystemSchema;
+import org.jboss.as.controller.ResourceRegistration;
+import org.jboss.as.controller.persistence.xml.ResourceXMLChoice;
+import org.jboss.as.controller.persistence.xml.ResourceXMLParticleFactory;
+import org.jboss.as.controller.persistence.xml.SubsystemResourceRegistrationXMLElement;
+import org.jboss.as.controller.persistence.xml.SubsystemResourceXMLSchema;
+import org.jboss.as.controller.persistence.xml.NamedResourceRegistrationXMLElement;
+import org.jboss.as.controller.persistence.xml.ResourceRegistrationXMLElement;
 import org.jboss.as.controller.xml.VersionedNamespace;
-import org.jboss.dmr.ModelNode;
+import org.jboss.as.controller.xml.XMLCardinality;
 import org.jboss.staxmapper.IntVersion;
-import org.wildfly.io.OptionAttributeDefinition;
 
 /**
  * Enumerates the supported schemas of the IO subsystem.
  */
-public enum IOSubsystemSchema implements PersistentSubsystemSchema<IOSubsystemSchema> {
+public enum IOSubsystemSchema implements SubsystemResourceXMLSchema<IOSubsystemSchema> {
     VERSION_1_1(1, 1), // WildFly 8.1 - 10.1
     VERSION_2_0(2, 0), // WildFly 11 - 12
     VERSION_3_0(3, 0), // WildFly 13 - 31
@@ -29,10 +31,11 @@ public enum IOSubsystemSchema implements PersistentSubsystemSchema<IOSubsystemSc
     ;
     static final IOSubsystemSchema CURRENT = VERSION_4_0;
 
+    private final ResourceXMLParticleFactory factory = ResourceXMLParticleFactory.newInstance(this);
     private final VersionedNamespace<IntVersion, IOSubsystemSchema> namespace;
 
     IOSubsystemSchema(int major, int minor) {
-        this.namespace = SubsystemSchema.createLegacySubsystemURN(IOSubsystemRegistrar.NAME, new IntVersion(major, minor));
+        this.namespace = SubsystemSchema.createLegacySubsystemURN(IOSubsystemResourceDefinitionRegistrar.REGISTRATION.getName(), new IntVersion(major, minor));
     }
 
     @Override
@@ -41,32 +44,42 @@ public enum IOSubsystemSchema implements PersistentSubsystemSchema<IOSubsystemSc
     }
 
     @Override
-    public PersistentResourceXMLDescription getXMLDescription() {
-        PersistentResourceXMLDescription.Factory factory = PersistentResourceXMLDescription.factory(this);
-        PersistentResourceXMLDescription.Builder builder = factory.builder(IOSubsystemRegistrar.PATH);
+    public SubsystemResourceRegistrationXMLElement getSubsystemXMLElement() {
+        SubsystemResourceRegistrationXMLElement.Builder builder = this.factory.subsystemElement(IOSubsystemResourceDefinitionRegistrar.REGISTRATION);
         if (this.since(VERSION_4_0)) {
-            builder.addAttribute(IOSubsystemRegistrar.DEFAULT_WORKER);
+            builder.addAttribute(IOSubsystemResourceDefinitionRegistrar.DEFAULT_WORKER);
         } else {
-            builder.setAdditionalOperationsGenerator(new PersistentResourceXMLDescription.AdditionalOperationsGenerator() {
-                @Override
-                public void additionalOperations(PathAddress address, ModelNode addOperation, List<ModelNode> operations) {
-                    // Apply "magic" default worker referenced by other subsystems
-                    addOperation.get(IOSubsystemRegistrar.DEFAULT_WORKER.getName()).set(IOSubsystemRegistrar.LEGACY_DEFAULT_WORKER);
-                }
-            });
+            // Apply "magic" default worker referenced by other subsystems
+            builder.withDefaultValues(Map.of(IOSubsystemResourceDefinitionRegistrar.DEFAULT_WORKER, IOSubsystemResourceDefinitionRegistrar.LEGACY_DEFAULT_WORKER));
         }
+        ResourceXMLChoice content = this.factory.choice().withCardinality(XMLCardinality.Unbounded.REQUIRED)
+                .addElement(this.workerElement())
+                .addElement(this.bufferPoolElement())
+                .build();
+        return builder.withContent(content).build();
+    }
 
-        Stream<OptionAttributeDefinition> workerAttributes = Stream.of(WorkerResourceDefinition.ATTRIBUTES);
-        if (!this.since(VERSION_3_0)) {
-            workerAttributes = workerAttributes.filter(Predicate.not(WorkerResourceDefinition.WORKER_TASK_CORE_THREADS::equals));
+    private ResourceRegistrationXMLElement workerElement() {
+        NamedResourceRegistrationXMLElement.Builder builder = this.factory.namedElement(ResourceRegistration.of(WorkerResourceDefinition.PATH))
+                .addAttributes(List.of(WorkerResourceDefinition.WORKER_IO_THREADS, WorkerResourceDefinition.WORKER_TASK_KEEPALIVE, WorkerResourceDefinition.WORKER_TASK_MAX_THREADS, WorkerResourceDefinition.STACK_SIZE));
+        if (this.since(VERSION_3_0)) {
+            builder.addAttribute(WorkerResourceDefinition.WORKER_TASK_CORE_THREADS);
         }
-        PersistentResourceXMLDescription.Builder workerBuilder = factory.builder(WorkerResourceDefinition.PATH).addAttributes(workerAttributes);
         if (this.since(VERSION_2_0)) {
-            workerBuilder.addChild(factory.builder(OutboundBindAddressResourceDefinition.PATH).addAttributes(OutboundBindAddressResourceDefinition.ATTRIBUTES.stream()).build());
+            builder.withContent(this.factory.choice().withCardinality(XMLCardinality.Unbounded.OPTIONAL).addElement(this.outboundBindAddressElement()).build());
         }
+        return builder.build();
+    }
 
-        return builder.addChild(workerBuilder.build())
-                .addChild(factory.builder(BufferPoolResourceDefinition.PATH).addAttributes(BufferPoolResourceDefinition.ATTRIBUTES.stream()).build())
+    private ResourceRegistrationXMLElement outboundBindAddressElement() {
+        return this.factory.namedElement(ResourceRegistration.of(OutboundBindAddressResourceDefinition.PATH))
+                .addAttributes(OutboundBindAddressResourceDefinition.ATTRIBUTES)
+                .build();
+    }
+
+    private ResourceRegistrationXMLElement bufferPoolElement() {
+        return this.factory.namedElement(ResourceRegistration.of(BufferPoolResourceDefinition.PATH))
+                .addAttributes(BufferPoolResourceDefinition.ATTRIBUTES)
                 .build();
     }
 }
