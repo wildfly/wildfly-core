@@ -45,6 +45,7 @@ import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.MapAttributeDefinition;
 import org.jboss.as.controller.ObjectMapAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
+import org.jboss.as.controller.ParallelBootOperationStepHandler;
 import org.jboss.as.controller.ParsedBootOp;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
@@ -160,13 +161,29 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
         }
         MGMT_OP_LOGGER.debug("We are applying YAML files to the configuration");
         Map<PathAddress, ParsedBootOp> xmlOperations = new HashMap<>();
+        ParsedBootOp parallelBootOp = null;
         for (ParsedBootOp op : postExtensionOps) {
-            if (op.getChildOperations().isEmpty()) {
+            List<ModelNode> childOperations = op.getChildOperations();
+            if (childOperations.isEmpty()) {
                 xmlOperations.put(op.getAddress(), op);
             } else {
-                for (ModelNode childOp : op.getChildOperations()) {
-                    ParsedBootOp subOp = new ParsedBootOp(childOp, null);
-                    xmlOperations.put(subOp.getAddress(), subOp);
+                if (op.handler instanceof ParallelBootOperationStepHandler) {
+                    /* We need to createa new  ParsedBootOp so that the handler number of childOperations is different from the number of childOperation of the handler and thus the handler will be properly updated.
+                     * @see ModelCOntrollerImpl.boot(final List<ModelNode> bootList, final OperationMessageHandler handler, final OperationTransactionControl control,
+                     *                               final boolean rollbackOnRuntimeFailure, MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider,
+                     *                               final boolean skipModelValidation, final boolean partialModel, final ConfigurationExtension configExtension)
+                     */
+                    parallelBootOp = new ParsedBootOp(op, op.handler);
+                    for (ModelNode childOp : childOperations) {
+                        ParsedBootOp subOp = new ParsedBootOp(childOp, null);
+                        xmlOperations.put(subOp.getAddress(), subOp);
+                        parallelBootOp.addChildOperation(subOp);
+                    }
+                } else {
+                    for (ModelNode childOp : childOperations) {
+                        ParsedBootOp subOp = new ParsedBootOp(childOp, null);
+                        xmlOperations.put(subOp.getAddress(), subOp);
+                    }
                 }
             }
         }
@@ -176,6 +193,21 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
         for (Map.Entry<String, Object> deployment : deployments.entrySet()) {
             processUnmanagedDeployments(rootRegistration, deployment, xmlOperations, postExtensionOps);
         }
+        List<ParsedBootOp> reorderedList = new ArrayList<>(postExtensionOps.size());
+        for (ParsedBootOp op : postExtensionOps) {
+            if (parallelBootOp != null && op.getAddress().size() > 0 && "subsystem".equals(op.getAddress().getElement(0).getKey())) {
+                //The new operations created from the YAML are added to the parallel boot operation enclosing all the subsystem operations
+                parallelBootOp.addChildOperation(op);
+            } else if (op.handler instanceof ParallelBootOperationStepHandler) {
+                //The parallel boot operation is added to the list
+                reorderedList.add(parallelBootOp);
+            } else {
+                //The new operations created from the YAML are added to the list of operations (if they haven't already be added in a subsystem enclosing operation).
+                reorderedList.add(op);
+            }
+        }
+        postExtensionOps.clear();
+        postExtensionOps.addAll(reorderedList);
         this.configs.clear();
         needReload = true;
     }
@@ -424,7 +456,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
             }
         }
         for (AttributeDefinition def : operationEntry.getOperationDefinition().getParameters()) {
-            if (def != null && ! attributeNames.contains(def.getName())) {
+            if (def != null && !attributeNames.contains(def.getName())) {
                 if (!def.isResourceOnly()) {
                     attributes.add(def);
                 }
