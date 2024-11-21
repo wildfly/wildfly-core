@@ -402,6 +402,7 @@ public class DeploymentAttributes {
     //Upload deployment bytes definitions
     public static final AttributeDefinition BYTES_NOT_NULL = SimpleAttributeDefinitionBuilder.create(DeploymentAttributes.CONTENT_BYTES)
             .setRequired(true)
+            .setAlternatives()
             .build();
     public static final OperationDefinition UPLOAD_BYTES_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.UPLOAD_DEPLOYMENT_BYTES, DEPLOYMENT_RESOLVER)
             .setParameters(BYTES_NOT_NULL)
@@ -421,6 +422,7 @@ public class DeploymentAttributes {
     public static final AttributeDefinition URL_NOT_NULL = SimpleAttributeDefinitionBuilder.create(DeploymentAttributes.CONTENT_URL)
             .setRequired(true)
             .addArbitraryDescriptor(WEB_URL, ModelNode.TRUE)
+            .setAlternatives()
             .build();
     public static final OperationDefinition UPLOAD_URL_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.UPLOAD_DEPLOYMENT_URL, DEPLOYMENT_RESOLVER)
             .setParameters(URL_NOT_NULL)
@@ -439,6 +441,7 @@ public class DeploymentAttributes {
     //Upload deployment stream definition
     public static final AttributeDefinition INPUT_STREAM_INDEX_NOT_NULL = SimpleAttributeDefinitionBuilder.create(DeploymentAttributes.CONTENT_INPUT_STREAM_INDEX)
             .setRequired(true)
+            .setAlternatives()
             .build();
     //public static Map<String, AttributeDefinition> UPLOAD_INPUT_STREAM_INDEX_ATTRIBUTES = Collections.singletonMap(INPUT_STREAM_INDEX_NOT_NULL.getName(), INPUT_STREAM_INDEX_NOT_NULL);
     public static final OperationDefinition UPLOAD_STREAM_ATTACHMENT_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.UPLOAD_DEPLOYMENT_STREAM, DEPLOYMENT_RESOLVER)
