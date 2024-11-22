@@ -45,10 +45,13 @@ public class LauncherTestCase {
     @Test
     public void testStandaloneWithAgent() throws Exception {
         final StandaloneCommandBuilder builder = StandaloneCommandBuilder.of(ServerHelper.JBOSS_HOME)
-                .addJavaOptions(ServerHelper.DEFAULT_SERVER_JAVA_OPTS)
-                .setUseSecurityManager(parseProperty("security.manager"))
-                // Add the test logging agent to the jboss-modules arguments
-                .addModuleOption("-javaagent:" + ServerHelper.JBOSS_HOME.resolve("logging-agent-tests.jar") + "=" + LoggingAgent.DEBUG_ARG);
+                .addJavaOptions(ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
+        // [WFCORE-7064] Setting SM is not allowed on JDK24+
+        if (Runtime.version().feature() < 24) {
+            builder.setUseSecurityManager(parseProperty("security.manager"));
+        }
+        // Add the test logging agent to the jboss-modules arguments
+        builder.addModuleOption("-javaagent:" + ServerHelper.JBOSS_HOME.resolve("logging-agent-tests.jar") + "=" + LoggingAgent.DEBUG_ARG);
 
         final String localRepo = System.getProperty("maven.repo.local");
         if (localRepo != null) {
@@ -85,8 +88,11 @@ public class LauncherTestCase {
     @Test
     public void testDomainServerWithAgent() throws Exception {
         final DomainCommandBuilder builder = DomainCommandBuilder.of(ServerHelper.JBOSS_HOME)
-                .addHostControllerJavaOptions(ServerHelper.DEFAULT_SERVER_JAVA_OPTS)
-                .setUseSecurityManager(parseProperty("security.manager"));
+                .addHostControllerJavaOptions(ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
+        // [WFCORE-7064] Setting SM is not allowed on JDK24+
+        if (Runtime.version().feature() < 24) {
+            builder.setUseSecurityManager(parseProperty("security.manager"));
+        }
 
         final String localRepo = System.getProperty("maven.repo.local");
         if (localRepo != null) {
