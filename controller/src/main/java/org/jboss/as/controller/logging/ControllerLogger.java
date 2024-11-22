@@ -3802,4 +3802,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 515, value = "The system property '%s' is deprecated and may be removed in a future version, " +
         "attribute '%s' on resource '%s' should be used instead.")
     void systemPropertyDeprecated(String systemProperty, String attribute, String address);
+
+    @Message(id = 516, value = "Parameter %s specifies an invalid module name: %s")
+    OperationFailedException invalidModuleNameParameter(String parameterName, String moduleName);
 }
