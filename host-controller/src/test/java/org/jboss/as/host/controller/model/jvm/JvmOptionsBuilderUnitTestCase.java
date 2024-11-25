@@ -139,11 +139,7 @@ public class JvmOptionsBuilderUnitTestCase {
         element.getJvmOptions().addOption("--illegal-access=warn");
         List<String> command = new ArrayList<String>();
         FACTORY.addOptions(element, command);
-        if (JvmElement.getJVMMajorVersion() < 9) {
-            Assert.assertEquals(0, command.size());
-        } else {
-            Assert.assertEquals(4, command.size());
-        }
+        Assert.assertEquals(4, command.size());
     }
 
     @Test
