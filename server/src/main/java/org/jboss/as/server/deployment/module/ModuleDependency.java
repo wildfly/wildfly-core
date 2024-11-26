@@ -38,7 +38,7 @@ public final class ModuleDependency implements Serializable {
         private Builder(ModuleLoader moduleLoader, String moduleName) {
             this.moduleLoader = moduleLoader;
             //noinspection deprecation
-            this.identifier = ModuleIdentifier.create(moduleName);
+            this.identifier = ModuleIdentifier.fromString(moduleName);
         }
 
         /**
@@ -149,7 +149,7 @@ public final class ModuleDependency implements Serializable {
      * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
      */
     public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
-        this(moduleLoader, ModuleIdentifier.create(identifier), optional, export, importServices, userSpecified, null);
+        this(moduleLoader, ModuleIdentifier.fromString(identifier), optional, export, importServices, userSpecified, null);
     }
 
     /**
@@ -167,7 +167,7 @@ public final class ModuleDependency implements Serializable {
      */
     @Deprecated(forRemoval = true)
     public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified, String reason) {
-        this(moduleLoader, ModuleIdentifier.create(identifier), optional, export, importServices, userSpecified, reason);
+        this(moduleLoader, ModuleIdentifier.fromString(identifier), optional, export, importServices, userSpecified, reason);
     }
 
     /**

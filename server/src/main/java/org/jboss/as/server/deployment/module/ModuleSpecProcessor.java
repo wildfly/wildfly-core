@@ -281,7 +281,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
 
         ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
         for (final String aliasName : moduleSpecification.getModuleAliases()) {
-            final ModuleIdentifier alias = ModuleIdentifier.create(aliasName);
+            final ModuleIdentifier alias = ModuleIdentifier.fromString(aliasName);
             final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(alias);
             final ModuleSpec spec = ModuleSpec.buildAlias(aliasName, moduleIdentifier.getName()).create();
 
