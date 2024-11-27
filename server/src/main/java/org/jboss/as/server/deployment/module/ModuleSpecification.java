@@ -402,7 +402,7 @@ public class ModuleSpecification extends SimpleAttachable {
      */
     @Deprecated(forRemoval = true)
     public List<ModuleIdentifier> getAliases() {
-        return aliases.stream().map(ModuleIdentifier::create).collect(Collectors.toList());
+        return aliases.stream().map(ModuleIdentifier::fromString).collect(Collectors.toList());
     }
 
     /**
@@ -461,7 +461,7 @@ public class ModuleSpecification extends SimpleAttachable {
      */
     @Deprecated(forRemoval = true)
     public Set<ModuleIdentifier> getNonexistentExcludedDependencies() {
-        return getFictitiousExcludedDependencies().stream().map(ModuleIdentifier::create).collect(Collectors.toSet());
+        return getFictitiousExcludedDependencies().stream().map(ModuleIdentifier::fromString).collect(Collectors.toSet());
     }
 
     /**
