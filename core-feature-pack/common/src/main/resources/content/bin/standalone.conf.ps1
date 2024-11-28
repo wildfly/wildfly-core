@@ -39,7 +39,7 @@ if (-Not $JAVA_OPTS) {
     $JAVA_OPTS = @()
 
     if (-Not(test-path env:JBOSS_JAVA_SIZING)) {
-        $env:JBOSS_JAVA_SIZING = "-Xms64M -Xmx512M -XX:MetaspaceSize=96M"
+        $env:JBOSS_JAVA_SIZING = "-Xms64M -Xmx512M"
     }
     $JAVA_OPTS += String-To-Array($env:JBOSS_JAVA_SIZING)
 

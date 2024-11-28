@@ -117,7 +117,7 @@
 
 
         <!-- Common surefire properties. -->
-        <surefire.memory.args>-Xmx512m -XX:MetaspaceSize=128m</surefire.memory.args>
+        <surefire.memory.args>-Xmx512m</surefire.memory.args>
         <surefire.jpda.args></surefire.jpda.args>
         <as.debug.port>8787</as.debug.port>
         <surefire.jvm.args>${surefire.memory.args} ${modular.jdk.args} ${modular.jdk.props} -Djboss.dist=${jboss.dist} ${surefire.jacoco.args} -Djava.io.tmpdir=${project.build.directory}</surefire.jvm.args>
