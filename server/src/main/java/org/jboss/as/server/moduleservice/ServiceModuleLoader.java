@@ -128,9 +128,19 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
         }
     }
 
+    /**
+     * @deprecated Use {@link ServiceModuleLoader#findModule(String)}
+     */
+    @Deprecated(forRemoval = true)
     @SuppressWarnings("unchecked")
     @Override
     public ModuleSpec findModule(ModuleIdentifier identifier) throws ModuleLoadException {
+        return findModule(identifier.toString());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public ModuleSpec findModule(String identifier) throws ModuleLoadException {
         ServiceController<ModuleDefinition> controller = (ServiceController<ModuleDefinition>) serviceContainer.getService(moduleSpecServiceName(identifier));
         if (controller == null) {
             ServerLogger.MODULE_SERVICE_LOGGER.debugf("Could not load module '%s' as corresponding module spec service '%s' was not found", identifier, identifier);
@@ -193,18 +203,38 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
      *
      * @param identifier The module identifier
      * @return The service name of the ModuleSpec service
+     * @deprecated Use {@link ServiceModuleLoader#moduleSpecServiceName(String)}
      */
+    @Deprecated(forRemoval = true)
     public static ServiceName moduleSpecServiceName(ModuleIdentifier identifier) {
+        return moduleSpecServiceName(identifier.toString());
+    }
+
+    /**
+     * Returns the corresponding ModuleSpec service name for the given module.
+     *
+     * @param identifier The module identifier string
+     * @return The service name of the ModuleSpec service
+     */
+    public static ServiceName moduleSpecServiceName(String identifier) {
         if (!isDynamicModule(identifier)) {
             throw ServerLogger.ROOT_LOGGER.missingModulePrefix(identifier, MODULE_PREFIX);
         }
-        return MODULE_SPEC_SERVICE_PREFIX.append(identifier.getName()).append(identifier.getSlot());
+        return MODULE_SPEC_SERVICE_PREFIX.append(identifier);
     }
 
+    /**
+     * @deprecated Use {@link ServiceModuleLoader#installModuleResolvedService(ServiceTarget, String)}
+     */
+    @Deprecated(forRemoval = true)
     public static void installModuleResolvedService(ServiceTarget serviceTarget, ModuleIdentifier identifier) {
+        installModuleResolvedService(serviceTarget, identifier.toString());
+    }
+
+    public static void installModuleResolvedService(ServiceTarget serviceTarget, String identifier) {
         final ServiceName sn = ServiceModuleLoader.moduleResolvedServiceName(identifier);
         final ServiceBuilder<?> sb = serviceTarget.addService(sn);
-        final Consumer<ModuleIdentifier> moduleIdConsumer = sb.provides(sn);
+        final Consumer<String> moduleIdConsumer = sb.provides(sn);
         sb.requires(moduleSpecServiceName(identifier));
         final org.jboss.msc.Service resolvedService = org.jboss.msc.Service.newInstance(moduleIdConsumer, identifier);
         sb.setInstance(resolvedService);
@@ -220,19 +250,45 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
      *
      * @param identifier The module identifier
      * @return The service name of the ModuleSpec service
+     * @deprecated Use {@link ServiceModuleLoader#moduleResolvedServiceName(String)}
      */
+    @Deprecated(forRemoval = true)
     public static ServiceName moduleResolvedServiceName(ModuleIdentifier identifier) {
+        return moduleResolvedServiceName(identifier.toString());
+    }
+
+    /**
+     * Returns the corresponding module resolved service name for the given module.
+     *
+     * The module resolved service is basically a latch that prevents the module from being loaded
+     * until all the transitive dependencies that it depends upon have have their module spec services
+     * come up.
+     *
+     * @param identifier The module identifier string
+     * @return The service name of the ModuleSpec service
+     */
+    public static ServiceName moduleResolvedServiceName(String identifier) {
         if (!isDynamicModule(identifier)) {
             throw ServerLogger.ROOT_LOGGER.missingModulePrefix(identifier, MODULE_PREFIX);
         }
-        return MODULE_RESOLVED_SERVICE_PREFIX.append(identifier.getName()).append(identifier.getSlot());
+        return MODULE_RESOLVED_SERVICE_PREFIX.append(identifier);
+    }
+
+    /**
+     * Returns true if the module identifier is a dynamic module that will be loaded by this module loader
+     *
+     * @deprecated Use {@link ServiceModuleLoader#isDynamicModule(String)}
+     */
+    @Deprecated(forRemoval = true)
+    public static boolean isDynamicModule(ModuleIdentifier identifier) {
+        return isDynamicModule(identifier.toString());
     }
 
     /**
      * Returns true if the module identifier is a dynamic module that will be loaded by this module loader
      */
-    public static boolean isDynamicModule(ModuleIdentifier identifier) {
-        return identifier.getName().startsWith(MODULE_PREFIX);
+    public static boolean isDynamicModule(String identifier) {
+        return identifier.startsWith(MODULE_PREFIX);
     }
 
     /**
@@ -240,11 +296,23 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
      *
      * @param identifier The module identifier
      * @return The service name of the ModuleLoadService service
+     * @deprecated Use {@link ServiceModuleLoader#moduleServiceName(String)}
      */
+    @Deprecated(forRemoval = true)
     public static ServiceName moduleServiceName(ModuleIdentifier identifier) {
-        if (!identifier.getName().startsWith(MODULE_PREFIX)) {
+        return moduleServiceName(identifier.toString());
+    }
+
+    /**
+     * Returns the corresponding ModuleLoadService service name for the given module.
+     *
+     * @param identifier The module identifier string
+     * @return The service name of the ModuleLoadService service
+     */
+    public static ServiceName moduleServiceName(String identifier) {
+        if (!identifier.startsWith(MODULE_PREFIX)) {
             throw ServerLogger.ROOT_LOGGER.missingModulePrefix(identifier, MODULE_PREFIX);
         }
-        return MODULE_SERVICE_PREFIX.append(identifier.getName()).append(identifier.getSlot());
+        return MODULE_SERVICE_PREFIX.append(identifier);
     }
 }
