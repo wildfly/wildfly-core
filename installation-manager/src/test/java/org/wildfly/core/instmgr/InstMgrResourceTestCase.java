@@ -97,7 +97,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
             prop.setProperty(InstMgrCandidateStatus.INST_MGR_STATUS_KEY, InstMgrCandidateStatus.Status.CLEAN.name());
             prop.store(out, null);
         }
-        super.setupController();
+        super.setupController(()->pathManagerService);
     }
 
     @After

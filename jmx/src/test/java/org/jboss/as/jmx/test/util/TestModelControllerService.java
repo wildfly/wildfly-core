@@ -9,6 +9,7 @@ import java.util.ServiceLoader;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.ControlledProcessState;
@@ -26,6 +27,9 @@ import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
+import org.jboss.as.version.Stability;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 
@@ -36,6 +40,8 @@ import org.jboss.msc.service.StartException;
  */
 public abstract class TestModelControllerService extends AbstractControllerService {
 
+    protected static final Supplier<PathManager> DEFAULT_PATH_MANAGER = () -> new PathManagerService() {
+    };
     private final ControlledProcessState processState;
     final AtomicBoolean state = new AtomicBoolean(true);
     private final ProcessType processType;
@@ -43,9 +49,15 @@ public abstract class TestModelControllerService extends AbstractControllerServi
 
     protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                          final ResourceDefinition rootResourceDefinition, final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer) {
-        super(processType, new RunningModeControl(RunningMode.NORMAL), configurationPersister, processState, rootResourceDefinition,
-                null, ExpressionResolver.TEST_RESOLVER, auditLogger, authorizer == null ? new DelegatingConfigurableAuthorizer() : authorizer,
-                        new ManagementSecurityIdentitySupplier(), new CapabilityRegistry(true));
+        super(null,
+                null,
+                processType, Stability.DEFAULT, new RunningModeControl(RunningMode.NORMAL),
+                configurationPersister,
+                processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
+                auditLogger, authorizer == null ? new DelegatingConfigurableAuthorizer() : authorizer,
+                new ManagementSecurityIdentitySupplier(),
+                new CapabilityRegistry(true), null,
+                DEFAULT_PATH_MANAGER);
         this.processState = processState;
         this.processType = processType;
     }

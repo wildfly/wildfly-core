@@ -7,6 +7,7 @@ package org.wildfly.core.instmgr;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -22,11 +23,13 @@ import org.jboss.as.controller.management.Capabilities;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathEntry;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.core.instmgr.logging.InstMgrLogger;
 import org.wildfly.installationmanager.InstallationManagerFinder;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 
@@ -39,17 +42,23 @@ import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 public final class InstMgrInitialization implements ModelControllerServiceInitialization {
 
     @Override
-    public void initializeStandalone(ServiceTarget target, ManagementModel managementModel, ProcessType processType) {
+    public void initializeStandalone(ServiceTarget target, ManagementModel managementModel, ProcessType processType, PathManager pathManager) {
         if (processType == ProcessType.EMBEDDED_SERVER) {
             return;
         }
 
+        final PathEntry pathEntry = pathManager.getPathEntry("jboss.home.dir");
+
         Optional<InstallationManagerFactory> im = InstallationManagerFinder.reloadAndFind();
         if (im.isPresent()) {
             final InstallationManagerFactory imf = im.get();
-            final InstMgrService imService = createImService(target, imf);
-            managementModel.getRootResource().registerChild(InstMgrResourceDefinition.getPath(InstMgrConstants.TOOL_NAME), PlaceholderResource.INSTANCE);
-            managementModel.getRootResourceRegistration().registerSubModel(new InstMgrResourceDefinition(imf, imService));
+            if (imf.isManagedInstallation(Path.of(pathEntry.resolvePath()))) {
+                final InstMgrService imService = createImService(target, imf);
+                managementModel.getRootResource().registerChild(InstMgrResourceDefinition.getPath(InstMgrConstants.TOOL_NAME), PlaceholderResource.INSTANCE);
+                managementModel.getRootResourceRegistration().registerSubModel(new InstMgrResourceDefinition(imf, imService));
+            } else {
+                InstMgrLogger.ROOT_LOGGER.debug("The server installation is missing installation manager metadata. Disabling installation-manager integration.");
+            }
         }
     }
 
@@ -59,7 +68,7 @@ public final class InstMgrInitialization implements ModelControllerServiceInitia
     }
 
     @Override
-    public void initializeHost(ServiceTarget target, ManagementModel managementModel, String hostName, ProcessType processType) {
+    public void initializeHost(ServiceTarget target, ManagementModel managementModel, String hostName, ProcessType processType, PathManager pathManager) {
         if (processType == ProcessType.EMBEDDED_HOST_CONTROLLER) {
             return;
         }
@@ -76,10 +85,16 @@ public final class InstMgrInitialization implements ModelControllerServiceInitia
                 // real hostname yet.
                 return;
             }
+
+            final PathEntry pathEntry = pathManager.getPathEntry("jboss.home.dir");
             final InstallationManagerFactory imf = im.get();
-            final InstMgrService imService = createImService(target, imf);
-            hostResource.registerChild(InstMgrResourceDefinition.getPath(InstMgrConstants.TOOL_NAME), PlaceholderResource.INSTANCE);
-            hostRegistration.registerSubModel(new InstMgrResourceDefinition(imf, imService));
+            if (imf.isManagedInstallation(Path.of(pathEntry.resolvePath()))) {
+                final InstMgrService imService = createImService(target, imf);
+                hostResource.registerChild(InstMgrResourceDefinition.getPath(InstMgrConstants.TOOL_NAME), PlaceholderResource.INSTANCE);
+                hostRegistration.registerSubModel(new InstMgrResourceDefinition(imf, imService));
+            } else {
+                InstMgrLogger.ROOT_LOGGER.debug("The server installation is missing installation manager metadata. Disabling installation-manager integration.");
+            }
         }
     }
 

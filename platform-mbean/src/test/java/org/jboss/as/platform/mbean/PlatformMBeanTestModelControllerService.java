@@ -6,6 +6,7 @@
 package org.jboss.as.platform.mbean;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.ControlledProcessState;
@@ -28,6 +29,9 @@ import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
+import org.jboss.as.version.Stability;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 
@@ -38,6 +42,8 @@ import org.jboss.msc.service.StartException;
  */
 public class PlatformMBeanTestModelControllerService extends AbstractControllerService {
 
+    protected static final Supplier<PathManager> DEFAULT_PATH_MANAGER = () -> new PathManagerService() {
+    };
     final CountDownLatch latch = new CountDownLatch(2);
 
     /**
@@ -45,9 +51,12 @@ public class PlatformMBeanTestModelControllerService extends AbstractControllerS
      *
      */
     protected PlatformMBeanTestModelControllerService() {
-        super(ProcessType.EMBEDDED_SERVER, new RunningModeControl(RunningMode.NORMAL), new NullConfigurationPersister(), new ControlledProcessState(true),
-        ResourceBuilder.Factory.create(PathElement.pathElement("root"),NonResolvingResourceDescriptionResolver.INSTANCE).build(), null, ExpressionResolver.TEST_RESOLVER,
-        AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), new CapabilityRegistry(true));
+        super(null, null, ProcessType.EMBEDDED_SERVER, Stability.DEFAULT,
+                new RunningModeControl(RunningMode.NORMAL), new NullConfigurationPersister(),
+                new ControlledProcessState(true), ResourceBuilder.Factory.create(PathElement.pathElement("root"),
+                NonResolvingResourceDescriptionResolver.INSTANCE).build(), null, ExpressionResolver.TEST_RESOLVER,
+                AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(),
+                new CapabilityRegistry(true), null, DEFAULT_PATH_MANAGER);
     }
 
     @Override

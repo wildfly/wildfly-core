@@ -177,6 +177,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private final CapabilityRegistry capabilityRegistry;
     private final ConfigurationExtension configExtension;
     private volatile ModelControllerClientFactory clientFactory;
+    protected final Supplier<PathManager> pathManagerSupplier;
 
     /**
      * Construct a new instance.
@@ -200,7 +201,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
                                         final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
         this(null, null, processType, Stability.DEFAULT, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
-                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, null);
+                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, null, null);
     }
 
     /**
@@ -229,7 +230,36 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                         final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension) {
         this(executorService, instabilityListener, processType, Stability.DEFAULT, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
-                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, configExtension);
+                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, configExtension, null);
+    }
+
+    /**
+     * Construct a new instance.
+     *
+     * @param processType             the type of process being controlled
+     * @param stability               the stability level of the controlled process
+     * @param runningModeControl      the controller of the process' running mode
+     * @param configurationPersister  the configuration persister
+     * @param processState            the controlled process state
+     * @param rootResourceDefinition  the root resource definition
+     * @param prepareStep             the prepare step to prepend to operation execution
+     * @param expressionResolver      the expression resolver
+     * @param auditLogger             the audit logger
+     * @param authorizer              handles authorization
+     * @param capabilityRegistry      the capability registry
+     */
+    @Deprecated
+    protected AbstractControllerService(final Supplier<ExecutorService> executorService,
+                                        final Supplier<ControllerInstabilityListener> instabilityListener,
+                                        final ProcessType processType, Stability stability, final RunningModeControl runningModeControl,
+                                        final ConfigurationPersister configurationPersister,
+                                        final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
+                                        final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
+                                        final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
+                                        final ManagementSecurityIdentitySupplier securityIdentitySupplier,
+                                        final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension) {
+        this(executorService, instabilityListener, processType, stability, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
+                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, configExtension, null);
     }
 
     /**
@@ -255,9 +285,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
                                         final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
                                         final ManagementSecurityIdentitySupplier securityIdentitySupplier,
-                                        final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension) {
+                                        final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension,
+                                        final Supplier<PathManager> pathManagerSupplier) {
         this(executorService, instabilityListener, processType, stability, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
-                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, configExtension);
+                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, configExtension, pathManagerSupplier);
     }
 
     private AbstractControllerService(final Supplier<ExecutorService> executorService,
@@ -267,7 +298,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                       final ResourceDefinition rootResourceDefinition, final DescriptionProvider rootDescriptionProvider,
                                       final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver, final ManagedAuditLogger auditLogger,
                                       final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
-                                      final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension) {
+                                      final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension,
+                                      final Supplier<PathManager> pathManagerSupplier) {
         assert rootDescriptionProvider == null : "description provider cannot be used anymore";
         assert rootResourceDefinition != null : "Null root resource definition";
         assert expressionResolver != null : "Null expressionResolver";
@@ -276,6 +308,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         assert securityIdentitySupplier != null : "Null securityIdentitySupplier";
         assert capabilityRegistry != null : "Null capabilityRegistry";
         assert stability != null : "Null stability";
+        assert pathManagerSupplier != null;
         this.executorService = executorService;
         this.instabilityListener = instabilityListener;
         this.processType = processType;
@@ -292,6 +325,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         this.bootErrorCollector = new BootErrorCollector();
         this.capabilityRegistry = capabilityRegistry.createShadowCopy(); //create shadow copy of proper registry so changes can only be visible by .publish()
         this.configExtension = configExtension;
+        this.pathManagerSupplier = pathManagerSupplier;
     }
 
     @Override
@@ -698,10 +732,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
                     assert !processType.isHostController() || hostName != null;
                     for (ModelControllerServiceInitialization init : sl) {
                         if (processType.isHostController()) {
-                            init.initializeHost(context.getServiceTarget(), managementModel, hostName, processType);
+                            init.initializeHost(context.getServiceTarget(), managementModel, hostName, processType, pathManagerSupplier.get());
                             init.initializeDomain(context.getServiceTarget(), managementModel);
                         } else {
-                            init.initializeStandalone(context.getServiceTarget(), managementModel, processType);
+                            init.initializeStandalone(context.getServiceTarget(), managementModel, processType, pathManagerSupplier.get());
 
                         }
                     }

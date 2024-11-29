@@ -17,9 +17,7 @@ import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessState.State;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationDefinition;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.ResourceBuilder;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
@@ -30,7 +28,9 @@ import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.persistence.ConfigurationExtension;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
-import org.jboss.as.controller.persistence.NullConfigurationPersister;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
+import org.jboss.as.version.Stability;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 
@@ -46,45 +46,33 @@ public abstract class TestModelControllerService extends AbstractControllerServi
     private final CountDownLatch latch = new CountDownLatch(2);
     private final CapabilityRegistry capabilityRegistry;
 
-    protected TestModelControllerService() {
-        this(ProcessType.EMBEDDED_SERVER, new NullConfigurationPersister(), new ControlledProcessState(true));
-    }
-
-    protected TestModelControllerService(ProcessType processType) {
-        this(processType, new NullConfigurationPersister(), new ControlledProcessState(true));
-    }
-
-    protected TestModelControllerService(ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState) {
-        this(processType, configurationPersister, processState,
-                ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build());
-    }
-
-    protected TestModelControllerService(final ConfigurationPersister configurationPersister, final ControlledProcessState processState) {
-        this(ProcessType.EMBEDDED_SERVER, configurationPersister, processState,
-                ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build());
-    }
-
     protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
-                                         final ResourceDefinition rootResourceDefinition) {
-        this(processType, configurationPersister, processState, rootResourceDefinition, new CapabilityRegistry(processType.isServer()));
+                                         final ResourceDefinition rootResourceDefinition, final Supplier<PathManager> pathManagerSupplier) {
+        this(processType, configurationPersister, processState, rootResourceDefinition, new CapabilityRegistry(processType.isServer()),
+                pathManagerSupplier);
     }
 
     protected TestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, Supplier<ExecutorService> executorService,
                                          final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                          final ResourceDefinition rootResourceDefinition) {
-        this(processType, runningModeControl,executorService, configurationPersister, processState, rootResourceDefinition, new CapabilityRegistry(processType.isServer()), null);
+        this(processType, runningModeControl,executorService, configurationPersister, processState, rootResourceDefinition, new CapabilityRegistry(processType.isServer()), null,
+                () -> new PathManagerService() {});
     }
 
     protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
-                                         final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry) {
-        this(processType, new RunningModeControl(RunningMode.NORMAL), null, configurationPersister, processState, rootResourceDefinition, capabilityRegistry, null);
+                                         final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry,
+                                         final Supplier<PathManager> pathManagerSupplier) {
+        this(processType, new RunningModeControl(RunningMode.NORMAL), null, configurationPersister, processState, rootResourceDefinition, capabilityRegistry, null,
+                pathManagerSupplier);
     }
 
     protected TestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, Supplier<ExecutorService> executorService,
                                          final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
-                                         final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension) {
-        super(executorService, null, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
-                AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), capabilityRegistry, configExtension);
+                                         final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry,
+                                         final ConfigurationExtension configExtension, final Supplier<PathManager> pathManagerSupplier) {
+        super(executorService, null, processType, Stability.DEFAULT, runningModeControl, configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
+                AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), capabilityRegistry, configExtension,
+                pathManagerSupplier);
         this.processState = processState;
         this.capabilityRegistry = capabilityRegistry;
     }

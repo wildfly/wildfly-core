@@ -18,6 +18,7 @@ public class TestInstallationManagerFactory implements InstallationManagerFactor
     public static InstallationManager installationManager;
     public static Path installationDir;
     public static MavenOptions mavenOptions;
+    public static boolean validInstallation = true;
 
     @Override
     public InstallationManager create(Path installationDir, MavenOptions mavenOptions) throws Exception {
@@ -30,5 +31,10 @@ public class TestInstallationManagerFactory implements InstallationManagerFactor
     @Override
     public String getName() {
         return "test";
+    }
+
+    @Override
+    public boolean isManagedInstallation(Path installationDir) {
+        return validInstallation;
     }
 }

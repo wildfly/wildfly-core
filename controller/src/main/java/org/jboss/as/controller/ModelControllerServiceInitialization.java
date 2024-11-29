@@ -5,6 +5,7 @@
 
 package org.jboss.as.controller;
 
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.msc.service.ServiceTarget;
 
 /**
@@ -20,8 +21,9 @@ public interface ModelControllerServiceInitialization {
      * @param target the service target
      * @param managementModel the management model
      * @param processType The ProcessType used to identify what type of server we are running in.
+     * @param pathManager The PathManager for the running server
      */
-    void initializeStandalone(ServiceTarget target, ManagementModel managementModel, ProcessType processType);
+    void initializeStandalone(ServiceTarget target, ManagementModel managementModel, ProcessType processType, PathManager pathManager);
 
     /**
      * Initialize the domain controller.
@@ -37,7 +39,8 @@ public interface ModelControllerServiceInitialization {
      * @param managementModel the management model
      * @param hostName the name of the host
      * @param processType The ProcessType that to identify what type of server we are running in.
+     * @param pathManager The PathManager for the running server
      */
-    void initializeHost(ServiceTarget target, ManagementModel managementModel, String hostName, ProcessType processType);
+    void initializeHost(ServiceTarget target, ManagementModel managementModel, String hostName, ProcessType processType, PathManager pathManager);
 
 }

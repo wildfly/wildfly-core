@@ -10,6 +10,7 @@ import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -29,7 +30,7 @@ public class ManagementModelIntegration implements ModelControllerServiceInitial
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("jmx", "management", "integration");
 
     @Override
-    public void initializeStandalone(ServiceTarget target, ManagementModel managementModel, ProcessType processType) {
+    public void initializeStandalone(ServiceTarget target, ManagementModel managementModel, ProcessType processType, PathManager pathManager) {
         ManagementModelProvider provider =
                 new ManagementModelProvider(new ResourceAndRegistration(managementModel));
         target.addService(SERVICE_NAME, provider).setInitialMode(ServiceController.Mode.ON_DEMAND).install();
@@ -41,7 +42,7 @@ public class ManagementModelIntegration implements ModelControllerServiceInitial
     }
 
     @Override
-    public void initializeHost(ServiceTarget target, ManagementModel managementModel, String hostName, ProcessType processType) {
+    public void initializeHost(ServiceTarget target, ManagementModel managementModel, String hostName, ProcessType processType, PathManager pathManager) {
         // not relevant to host controller;
         ManagementModelProvider provider =
                 new ManagementModelProvider(new ResourceAndRegistration(managementModel));
