@@ -16,6 +16,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELEASE_CODENAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELEASE_VERSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WILDCARD;
 
 import java.util.Collections;
@@ -74,7 +75,7 @@ public class ReadPrimaryDomainModelHandlerTestCase {
         Assert.assertEquals("value", original.get("profile", "not-ignored", "subsystem", "thingy", "attr").asString());
         Assert.assertEquals("value", original.get("profile", "ignored", "subsystem", "thingy", "attr").asString());
 
-
+        ProductConfig productConfig = new ProductConfig("name", "version", "slot");
         ModelNode hostInfo = new ModelNode();
         hostInfo.get(NAME).set("kabirs-macbook-pro.local");
         hostInfo.get(RELEASE_VERSION).set("8.0.0.Alpha1-SNAPSHOT");
@@ -88,9 +89,10 @@ public class ReadPrimaryDomainModelHandlerTestCase {
         hostInfo.get(IGNORED_RESOURCES, EXTENSION, NAMES).add("ignored");
         hostInfo.get(IGNORE_UNUSED_CONFIG).set(false);
         hostInfo.get(INITIAL_SERVER_GROUPS).setEmptyObject();
+        hostInfo.get(STABILITY).set(productConfig.getDefaultStability().name());
         hostInfo.get("domain-connection-id").set(1361470170404L);
 
-        Resource transformedResource = transformResource(registry, resourceRoot, resourceRegistration, HostInfo.fromModelNode(hostInfo, new ProductConfig("name", "version", "slot")));
+        Resource transformedResource = transformResource(registry, resourceRoot, resourceRegistration, HostInfo.fromModelNode(hostInfo));
         ModelNode transformed = Resource.Tools.readModel(transformedResource);
 
         Assert.assertEquals("value", transformed.get("extension", "not-ignored", "attr").asString());
