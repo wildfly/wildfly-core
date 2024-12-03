@@ -90,13 +90,13 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
         }
         CompletableFuture<Void> result = new CompletableFuture<>();
         // Prepare activity groups in priority order, i.e. first -> last
-        this.phaseStage(this.activityGroups, SuspendableActivity::prepare, context, Functions.discardingBiConsumer()).whenComplete((ignored, prepareException) -> {
+        phaseStage(this.activityGroups, SuspendableActivity::prepare, context, Functions.discardingBiConsumer()).whenComplete((ignored, prepareException) -> {
             if (prepareException != null) {
                 result.completeExceptionally(prepareException);
             } else {
                 this.state = State.SUSPENDING;
                 // Suspend activity groups in priority order, i.e. first -> last order
-                this.phaseStage(this.activityGroups, SuspendableActivity::suspend, context, Functions.discardingBiConsumer()).whenComplete((ignore, suspendException) -> {
+                phaseStage(this.activityGroups, SuspendableActivity::suspend, context, Functions.discardingBiConsumer()).whenComplete((ignore, suspendException) -> {
                     if (suspendException != null) {
                         result.completeExceptionally(suspendException);
                     } else {
@@ -118,7 +118,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
             return SuspendableActivity.COMPLETED;
         }
         // Resume activity groups in reverse priority order, i.e. last -> first
-        CompletionStage<Void> resumeStage = this.phaseStage(this::resumeIterator, SuspendableActivity::resume, context, ServerLogger.ROOT_LOGGER::failedToResume);
+        CompletionStage<Void> resumeStage = phaseStage(this::resumeIterator, SuspendableActivity::resume, context, ServerLogger.ROOT_LOGGER::failedToResume);
         resumeStage.whenComplete((ignore, exception) -> {
             if (exception == null) {
                 this.state = State.RUNNING;
@@ -143,56 +143,58 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
      * @param exceptionHandler handles exceptions thrown by the phase function
      * @return a completion stage for this phase of the suspend/resume process
      */
-    private <C> CompletionStage<Void> phaseStage(Iterable<List<SuspendableActivity>> activityGroups, BiFunction<SuspendableActivity, C, CompletionStage<Void>> phase, C context, BiConsumer<SuspendableActivity, Throwable> exceptionHandler) {
+    private static <C> CompletionStage<Void> phaseStage(Iterable<List<SuspendableActivity>> activityGroups, BiFunction<SuspendableActivity, C, CompletionStage<Void>> phase, C context, BiConsumer<SuspendableActivity, Throwable> exceptionHandler) {
         // Final stage will complete after all activity for all groups has completed
         CompletableFuture<Void> result = new CompletableFuture<>();
-        // Counter used to determine when to complete final stage
-        AtomicInteger counter = new AtomicInteger(this.activityGroups.size());
+        // Iterate over activity groups (in the order dictated by the caller)
+        Iterator<List<SuspendableActivity>> groups = activityGroups.iterator();
         BiConsumer<Void, Throwable> groupCompleter = new BiConsumer<>() {
             @Override
             public void accept(Void ignore, Throwable exception) {
                 if (exception != null) {
                     result.completeExceptionally(exception);
-                } else if (counter.decrementAndGet() == 0) {
+                } else if (!groups.hasNext()) {
+                    // No more groups
                     result.complete(null);
-                }
-            }
-        };
-        // Iterate over activity groups (in the order dictated by the caller)
-        for (List<SuspendableActivity> group : activityGroups) {
-            List<SuspendableActivity> activities = List.copyOf(group);
-            if (activities.isEmpty()) {
-                // There are no activities for this group, complete immediately
-                groupCompleter.accept(null, null);
-            } else {
-                // Stage for this group will complete after all activity stages complete
-                CompletableFuture<Void> groupStage = new CompletableFuture<>();
-                groupStage.whenComplete(groupCompleter);
-                // Counter used to determine when to complete group stage
-                AtomicInteger groupCounter = new AtomicInteger(activities.size());
-                for (SuspendableActivity activity : activities) {
-                    BiConsumer<Void, Throwable> activityCompleter = new BiConsumer<>() {
-                        @Override
-                        public void accept(Void ignore, Throwable exception) {
-                            if (exception != null) {
-                                try {
-                                    exceptionHandler.accept(activity, exception);
-                                } finally {
-                                    groupStage.completeExceptionally(exception);
+                } else {
+                    // Create stage for next group
+                    List<SuspendableActivity> activities = List.copyOf(groups.next());
+                    CompletableFuture<Void> groupStage = new CompletableFuture<>();
+                    // Reuse groupCompleter instance as completion handler
+                    groupStage.whenComplete(this);
+                    if (activities.isEmpty()) {
+                        // No activities, complete immediately
+                        groupStage.complete(null);
+                    } else {
+                        // Counter used to determine when all activities have complete
+                        AtomicInteger activityCounter = new AtomicInteger(activities.size());
+                        for (SuspendableActivity activity : activities) {
+                            BiConsumer<Void, Throwable> activityCompleter = new BiConsumer<>() {
+                                @Override
+                                public void accept(Void ignore, Throwable exception) {
+                                    if (exception != null) {
+                                        try {
+                                            exceptionHandler.accept(activity, exception);
+                                        } finally {
+                                            groupStage.completeExceptionally(exception);
+                                        }
+                                    } else if (activityCounter.decrementAndGet() == 0) {
+                                        // All activities of group have completed
+                                        groupStage.complete(null);
+                                    }
                                 }
-                            } else if (groupCounter.decrementAndGet() == 0) {
-                                groupStage.complete(null);
+                            };
+                            try {
+                                phase.apply(activity, context).whenComplete(activityCompleter);
+                            } catch (Throwable e) {
+                                activityCompleter.accept(null, e);
                             }
                         }
-                    };
-                    try {
-                        phase.apply(activity, context).whenComplete(activityCompleter);
-                    } catch (Throwable e) {
-                        activityCompleter.accept(null, e);
                     }
                 }
             }
-        }
+        };
+        groupCompleter.accept(null, null);
         return result;
     }
 
