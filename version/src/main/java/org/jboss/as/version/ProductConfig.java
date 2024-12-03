@@ -223,7 +223,7 @@ public class ProductConfig implements Serializable {
     }
 
     private void setSystemProperties(final Properties propConfProps, final Map providedProperties) {
-        if (propConfProps.size() == 0) {
+        if (propConfProps.isEmpty()) {
             return;
         }
 
