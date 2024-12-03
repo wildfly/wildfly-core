@@ -160,13 +160,14 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
                     // Create stage for next group
                     List<SuspendableActivity> activities = List.copyOf(groups.next());
                     CompletableFuture<Void> groupStage = new CompletableFuture<>();
+                    // Reuse groupCompleter instance as completion handler
                     groupStage.whenComplete(this);
                     if (activities.isEmpty()) {
                         // No activities, complete immediately
                         groupStage.complete(null);
                     } else {
-                        // Counter used to determine when to complete group stage
-                        AtomicInteger groupCounter = new AtomicInteger(activities.size());
+                        // Counter used to determine when all activities have complete
+                        AtomicInteger activityCounter = new AtomicInteger(activities.size());
                         for (SuspendableActivity activity : activities) {
                             BiConsumer<Void, Throwable> activityCompleter = new BiConsumer<>() {
                                 @Override
@@ -177,7 +178,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
                                         } finally {
                                             groupStage.completeExceptionally(exception);
                                         }
-                                    } else if (groupCounter.decrementAndGet() == 0) {
+                                    } else if (activityCounter.decrementAndGet() == 0) {
                                         // All activities of group have completed
                                         groupStage.complete(null);
                                     }
