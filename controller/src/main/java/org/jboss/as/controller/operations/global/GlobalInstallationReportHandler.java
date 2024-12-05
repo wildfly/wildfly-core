@@ -66,6 +66,7 @@ public class GlobalInstallationReportHandler extends GlobalOperationHandlers.Abs
     public static final String PRODUCT_HOME = "product-home";
     public static final String PRODUCT_INSTALLATION_DATE = "installation-date";
     public static final String PRODUCT_LAST_UPDATE = "last-update-date";
+    public static final String PRODUCT_CHANNEL_VERSIONS = "channel-versions";
     public static final String STANDALONE_DOMAIN_IDENTIFIER = "standalone-or-domain-identifier";
     public static final String SUMMARY = "summary";
 
