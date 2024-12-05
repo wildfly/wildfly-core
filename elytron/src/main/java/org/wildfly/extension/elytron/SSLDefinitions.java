@@ -116,15 +116,12 @@ import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.security.auth.client.AuthenticationContext;
-import org.wildfly.security.dynamic.ssl.DynamicSSLContextImpl;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.MechanismConfigurationSelector;
 import org.wildfly.security.auth.server.RealmMapper;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.source.CredentialSource;
-import org.wildfly.security.dynamic.ssl.DynamicSSLContext;
-import org.wildfly.security.dynamic.ssl.DynamicSSLContextException;
 import org.wildfly.security.keystore.AliasFilter;
 import org.wildfly.security.keystore.FilteringKeyStore;
 import org.wildfly.security.password.interfaces.ClearPassword;
@@ -144,6 +141,7 @@ import org.wildfly.security.ssl.X509RevocationTrustManager;
 class SSLDefinitions {
 
     private static final BooleanSupplier IS_FIPS = getFipsSupplier();
+    private static final String ORG_WILDFLY_SECURITY_ELYTRON_DYNAMIC_SSL = "org.wildfly.security.elytron-dynamic-ssl";
 
     static final ServiceUtil<SSLContext> SERVER_SERVICE_UTIL = ServiceUtil.newInstance(SSL_CONTEXT_RUNTIME_CAPABILITY, ElytronDescriptionConstants.SERVER_SSL_CONTEXT, SSLContext.class);
     static final ServiceUtil<SSLContext> CLIENT_SERVICE_UTIL = ServiceUtil.newInstance(SSL_CONTEXT_RUNTIME_CAPABILITY, ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, SSLContext.class);
@@ -1226,13 +1224,18 @@ class SSLDefinitions {
     }
 
     private static ResourceDefinition createSSLContextDefinition(String pathKey, boolean server, AbstractAddStepHandler addHandler, AttributeDefinition[] attributes, boolean serverOrHostController, Stability stability) {
+        return createSSLContextDefinition(pathKey, server, addHandler, attributes, serverOrHostController, stability, null);
+    }
+
+    private static ResourceDefinition createSSLContextDefinition(String pathKey, boolean server, AbstractAddStepHandler addHandler, AttributeDefinition[] attributes, boolean serverOrHostController, Stability stability, String dependencyPackageName) {
 
         Builder builder = TrivialResourceDefinition.builder()
                 .setPathKey(pathKey)
                 .setAddHandler(addHandler)
                 .setAttributes(attributes)
                 .setRuntimeCapabilities(SSL_CONTEXT_RUNTIME_CAPABILITY)
-                .setStability(stability);
+                .setStability(stability)
+                .setDependencyPackageName(dependencyPackageName);
 
         if (serverOrHostController) {
             builder.addReadOnlyAttribute(ACTIVE_SESSION_COUNT, new SSLContextRuntimeHandler() {
@@ -1542,13 +1545,7 @@ class SSLDefinitions {
                 ServiceName acServiceName = context.getCapabilityServiceName(authenticationContextCapability, AuthenticationContext.class);
                 Supplier<AuthenticationContext> authenticationContextSupplier = serviceBuilder.requires(acServiceName);
 
-                return () -> {
-                    try {
-                        return new DynamicSSLContext(new DynamicSSLContextImpl(authenticationContextSupplier.get()));
-                    } catch (DynamicSSLContextException | GeneralSecurityException e) {
-                        throw new RuntimeException(e);
-                    }
-                };
+                return () -> DynamicSSLContextHelper.getDynamicSSLContextInstance(authenticationContextSupplier.get());
             }
 
             @Override
@@ -1564,7 +1561,7 @@ class SSLDefinitions {
             }
         };
 
-        return createSSLContextDefinition(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXT, false, add, attributes, false, Stability.COMMUNITY);
+        return createSSLContextDefinition(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXT, false, add, attributes, false, Stability.COMMUNITY, ORG_WILDFLY_SECURITY_ELYTRON_DYNAMIC_SSL);
     }
 
     private static Provider[] filterProviders(Provider[] all, String provider) {
