@@ -3,11 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.jboss.as.controller.operation.validation;
+package org.jboss.as.controller.operations.validation;
 
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.operations.validation.ModuleNameValidator;
-import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
