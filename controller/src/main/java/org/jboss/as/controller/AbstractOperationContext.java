@@ -1226,6 +1226,10 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
     @Override
     public final void reloadRequired() {
         if (processState.isReloadSupported()) {
+            if(isBooting()) {
+                MGMT_OP_LOGGER.debug("Server is booting so we didn't set the reload required flag");
+                return;
+            }
             activeStep.setRestartStamp(processState.setReloadRequired());
             activeStep.response.get(RESPONSE_HEADERS, OPERATION_REQUIRES_RELOAD).set(true);
             getManagementModel().getCapabilityRegistry().capabilityReloadRequired(activeStep.address,
@@ -1237,6 +1241,9 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
 
     @Override
     public final void restartRequired() {
+        if (isBooting()) {
+            return;
+        }
         activeStep.setRestartStamp(processState.setRestartRequired());
         activeStep.response.get(RESPONSE_HEADERS, OPERATION_REQUIRES_RESTART).set(true);
         getManagementModel().getCapabilityRegistry().capabilityRestartRequired(activeStep.address,
