@@ -25,6 +25,7 @@ public class ModuleNameValidatorTestCase {
         validator.validateParameter("valid", new ModelNode("org.jboss.modules:main"));
         validator.validateParameter("valid", new ModelNode("org.jboss.modules:1.9"));
         validator.validateParameter("escaped", new ModelNode("org.jboss.modules.foo\\:bar:main"));
+        validator.validateParameter("dash", new ModelNode("org.infinispan.hibernate-cache"));
 
         Assert.assertThrows(OperationFailedException.class, () -> validator.validateParameter("invalid", new ModelNode(".foo.bar")));
         Assert.assertThrows(OperationFailedException.class, () -> validator.validateParameter("invalid", new ModelNode("foo..bar")));

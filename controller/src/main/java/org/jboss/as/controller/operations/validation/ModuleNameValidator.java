@@ -20,7 +20,7 @@ import org.jboss.dmr.ModelType;
 public class ModuleNameValidator extends ModelTypeValidator {
     public static final ParameterValidator INSTANCE = new ModuleNameValidator();
     // Ensure module name is valid with filesystem module repository, permitting deprecated slot, if present
-    private static final Predicate<String> MODULE_NAME_TESTER = Pattern.compile("(?:^\\w+|\\w+\\.\\w+|\\w+\\Q\\:\\E\\w+)+(?:\\:(?:\\w+|\\w+\\.\\w+))?$").asMatchPredicate();
+    private static final Predicate<String> MODULE_NAME_TESTER = Pattern.compile("(?:^\\w+|\\w+[\\.\\-]\\w+|\\w+\\Q\\:\\E\\w+)+(?:\\:(?:\\w+|\\w+[\\.\\-]\\w+))?$").asMatchPredicate();
 
     private ModuleNameValidator() {
         super(ModelType.STRING);
