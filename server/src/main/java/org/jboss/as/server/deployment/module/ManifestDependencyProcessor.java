@@ -100,7 +100,7 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
                     deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, dependencyId);
                     if(dependencyLoader == deploymentModuleLoader && !additionalModules.contains(dependencyId)) {
                         //additional modules will not be created till much later, a dep on them would fail
-                        phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(dependencyId));
+                        phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(dependencyId.toString()));
                     }
                 }
 
