@@ -2,7 +2,7 @@
  * Copyright The WildFly Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package org.jboss.as.controller.operation.validation;
+package org.jboss.as.controller.operations.validation;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.ValueExpression;
