@@ -65,6 +65,7 @@ import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.authz.jacc.DelegatingPolicyContextHandler;
 import org.wildfly.security.authz.jacc.ElytronPolicyConfigurationFactory;
 import org.wildfly.security.authz.jacc.JaccDelegatingPolicy;
+import org.wildfly.security.authz.jacc.PolicyUtil;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -212,7 +213,7 @@ class PolicyDefinitions {
 
                     private PrivilegedAction<Void> setPolicyAction(Policy policy) {
                         return () -> {
-                            Policy.setPolicy(policy);
+                            PolicyUtil.setPolicy(policy);
                             return null;
                         };
                     }
@@ -226,7 +227,7 @@ class PolicyDefinitions {
                     }
 
                     private PrivilegedAction<Policy> getPolicyAction() {
-                        return Policy::getPolicy;
+                        return PolicyUtil::getPolicy;
                     }
                 };
             }
