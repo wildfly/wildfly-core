@@ -118,6 +118,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.ResourceProvider;
 import org.jboss.as.controller.remote.AbstractModelControllerOperationHandlerFactoryService;
 import org.jboss.as.controller.remote.ModelControllerOperationHandlerFactory;
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.domain.controller.DomainController;
@@ -287,13 +288,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
         final ServiceBuilder<?> sb = serviceTarget.addService(SERVICE_NAME);
         final Supplier<ExecutorService> esSupplier = sb.requires(HC_EXECUTOR_SERVICE_NAME);
+        final Supplier<PathManager> pathManagerSupplier = sb.requires(PATH_MANAGER_CAPABILITY.getCapabilityServiceName());
         final DomainModelControllerService service = new DomainModelControllerService(esSupplier, environment, runningModeControl, processState,
                 hostControllerInfo, contentRepository, hostProxies, serverProxies, prepareStepHandler,
                 ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DomainDelegatingResourceDefinition(),
-                hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, domainHostExcludeRegistry);
+                hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, domainHostExcludeRegistry,
+                pathManagerSupplier);
         sb.setInstance(service);
         sb.addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection);
-        sb.requires(PATH_MANAGER_CAPABILITY.getCapabilityServiceName()); // ensure this is up
         service.consoleAvailabilitySupplier = sb.requires(CONSOLE_AVAILABILITY_CAPABILITY.getCapabilityServiceName());
         sb.install();
 
@@ -321,9 +323,10 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final DelegatingConfigurableAuthorizer authorizer,
                                          final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                          final CapabilityRegistry capabilityRegistry,
-                                         final DomainHostExcludeRegistry domainHostExcludeRegistry) {
+                                         final DomainHostExcludeRegistry domainHostExcludeRegistry,
+                                         final Supplier<PathManager> pathManagerSupplier) {
         super(executorService, null, environment.getProcessType(), environment.getStability(), runningModeControl, null, processState,
-                rootResourceDefinition, prepareStepHandler, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, null);
+                rootResourceDefinition, prepareStepHandler, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, null, pathManagerSupplier);
         this.environment = environment;
         this.runningModeControl = runningModeControl;
         this.processState = processState;

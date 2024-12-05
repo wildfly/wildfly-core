@@ -25,6 +25,8 @@ import org.jboss.as.controller.access.management.ManagementSecurityIdentitySuppl
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.version.Stability;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -35,6 +37,8 @@ import org.jboss.msc.service.StartException;
  * @author <a href="mailto:yborgess@redhat.com">Yeray Borges</a>
  */
 public abstract class TestModelControllerService extends AbstractControllerService {
+    protected static final Supplier<PathManager> DEFAULT_PATH_MANAGER = () -> new PathManagerService() {
+    };
     private final CountDownLatch latch = new CountDownLatch(2);
     private final CapabilityRegistry capabilityRegistry;
 
@@ -56,7 +60,7 @@ public abstract class TestModelControllerService extends AbstractControllerServi
                                          final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                          final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry) {
         super(executorService, null, processType, stability, runningModeControl, configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
-                AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), capabilityRegistry, null);
+                AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), capabilityRegistry, null, DEFAULT_PATH_MANAGER);
         this.capabilityRegistry = capabilityRegistry;
     }
 

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.CapabilityRegistry;
@@ -43,6 +44,8 @@ import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
@@ -61,6 +64,8 @@ import org.junit.Assert;
 //TODO find better way to support legacy ModelTestModelControllerService without need for having all old methods still present on AbstractControllerService
 public abstract class ModelTestModelControllerService extends AbstractControllerService {
 
+    protected static final Supplier<PathManager> DEFAULT_PATH_MANAGER = () -> new PathManagerService() {
+    };
     private final CountDownLatch latch = new CountDownLatch(1);
     private final StringConfigurationPersister persister;
     private final TransformerRegistry transformerRegistry;
@@ -202,7 +207,8 @@ public abstract class ModelTestModelControllerService extends AbstractController
                 new DelegatingConfigurableAuthorizer(),
                 new ManagementSecurityIdentitySupplier(),
                 capabilityRegistry,
-                null);
+                null,
+                DEFAULT_PATH_MANAGER);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;
@@ -228,7 +234,8 @@ public abstract class ModelTestModelControllerService extends AbstractController
                 AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(),
                 new ManagementSecurityIdentitySupplier(),
                 capabilityRegistry,
-                null);
+                null,
+                DEFAULT_PATH_MANAGER);
         this.persister = persister;
         this.transformerRegistry = transformerRegistry;
         this.validateOpsFilter = validateOpsFilter;

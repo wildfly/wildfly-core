@@ -287,8 +287,11 @@ public class InterfaceManagementUnitTestCase {
 
 
         ModelControllerService(final ControlledProcessState processState, final StringConfigurationPersister persister, final ServerDelegatingResourceDefinition rootResourceDefinition) {
-            super(ProcessType.EMBEDDED_SERVER, new RunningModeControl(RunningMode.ADMIN_ONLY), persister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
-                    AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), new CapabilityRegistry(true));
+            super(null, null, ProcessType.EMBEDDED_SERVER, Stability.DEFAULT,
+                    new RunningModeControl(RunningMode.ADMIN_ONLY), persister, processState, rootResourceDefinition,
+                    null, ExpressionResolver.TEST_RESOLVER, AuditLogger.NO_OP_LOGGER,
+                    new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(),
+                    new CapabilityRegistry(true), null, ()->MOCK_PATH_MANAGER);
             this.persister = persister;
             this.processState = processState;
             this.rootResourceDefinition = rootResourceDefinition;

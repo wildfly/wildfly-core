@@ -31,8 +31,10 @@ import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.domain.controller.operations.ApplyExtensionsHandler;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -55,8 +57,10 @@ public abstract class TestModelControllerService extends AbstractControllerServi
                                          final ResourceDefinition rootResourceDefinition, final ManagedAuditLogger auditLogger,
                                          final AbstractControllerTestBase.DelegatingResourceDefinitionInitializer initializer,
                                          final CapabilityRegistry capabilityRegistry) {
-        super(processType, new RunningModeControl(RunningMode.NORMAL), configurationPersister, processState, rootResourceDefinition,
-                null, ExpressionResolver.TEST_RESOLVER, auditLogger, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), capabilityRegistry);
+        super(null, null, processType, Stability.DEFAULT, new RunningModeControl(RunningMode.NORMAL),
+                configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
+                auditLogger, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(),
+                capabilityRegistry, null, ()->new PathManagerService() {});
         this.processState = processState;
         internalExecutor = new InternalExecutor();
         this.initializer = initializer;

@@ -46,6 +46,7 @@ import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.Service;
@@ -183,10 +184,10 @@ public abstract class AbstractControllerTestBase {
         }
     }
 
-    public void setupController() throws InterruptedException, IOException {
+    public void setupController(Supplier<PathManager> pathManagerSupplier) throws InterruptedException, IOException {
         container = ServiceContainer.Factory.create("test");
         ServiceTarget target = container.subTarget();
-        ModelControllerService svc = createModelControllerService(processType, resourceDefinition);
+        ModelControllerService svc = createModelControllerService(processType, resourceDefinition, pathManagerSupplier);
         target.addService(ServiceName.of("ModelController")).setInstance(svc).install();
         svc.awaitStartup(30, TimeUnit.SECONDS);
         controller = svc.getValue();
@@ -208,8 +209,9 @@ public abstract class AbstractControllerTestBase {
         }
     }
 
-    protected ModelControllerService createModelControllerService(ProcessType processType, ResourceDefinition resourceDefinition) {
-        return new ModelControllerService(processType, resourceDefinition);
+    protected ModelControllerService createModelControllerService(ProcessType processType, ResourceDefinition resourceDefinition,
+                                                                  Supplier<PathManager> pathManagerSupplier) {
+        return new ModelControllerService(processType, resourceDefinition, pathManagerSupplier);
     }
 
     protected void addBootOperations(List<ModelNode> bootOperations) {
@@ -232,8 +234,8 @@ public abstract class AbstractControllerTestBase {
             );
         }
 
-        public ModelControllerService(final ProcessType processType, ResourceDefinition resourceDefinition) {
-            super(processType, new EmptyConfigurationPersister(), new ControlledProcessState(true), resourceDefinition);
+        public ModelControllerService(final ProcessType processType, ResourceDefinition resourceDefinition, Supplier<PathManager> pathManagerSupplier) {
+            super(processType, new EmptyConfigurationPersister(), new ControlledProcessState(true), resourceDefinition, pathManagerSupplier);
         }
 
         @Override

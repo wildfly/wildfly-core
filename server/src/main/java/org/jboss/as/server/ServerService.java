@@ -151,7 +151,6 @@ public final class ServerService extends AbstractControllerService {
     private final InjectedValue<ServiceModuleLoader> injectedModuleLoader = new InjectedValue<ServiceModuleLoader>();
 
     private final InjectedValue<ExternalModule> injectedExternalModule = new InjectedValue<>();
-    private final InjectedValue<PathManager> injectedPathManagerService = new InjectedValue<PathManager>();
 
     private final Bootstrap.Configuration configuration;
     private final BootstrapListener bootstrapListener;
@@ -184,10 +183,11 @@ public final class ServerService extends AbstractControllerService {
                           final OperationStepHandler prepareStep, final BootstrapListener bootstrapListener, final ServerDelegatingResourceDefinition rootResourceDefinition,
                           final RunningModeControl runningModeControl, final ManagedAuditLogger auditLogger,
                           final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
-                          final CapabilityRegistry capabilityRegistry, final ServerSuspendController suspendController, final RuntimeExpressionResolver expressionResolver) {
+                          final CapabilityRegistry capabilityRegistry, final ServerSuspendController suspendController, final RuntimeExpressionResolver expressionResolver,
+                          final Supplier<PathManager> pathManagerSupplier) {
         super(executorService, instabilityListener, getProcessType(configuration.getServerEnvironment()), getStability(configuration.getServerEnvironment()), runningModeControl, null, processState,
                 rootResourceDefinition, prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry,
-                configuration.getServerEnvironment().getConfigurationExtension());
+                configuration.getServerEnvironment().getConfigurationExtension(), pathManagerSupplier);
         this.configuration = configuration;
         this.bootstrapListener = bootstrapListener;
         this.processState = processState;
@@ -248,15 +248,15 @@ public final class ServerService extends AbstractControllerService {
         final Supplier<ExecutorService> esSupplier = allowMCE ? serviceBuilder.requires(MANAGEMENT_EXECUTOR) : null;
         final boolean isDomainEnv = configuration.getServerEnvironment().getLaunchType() == ServerEnvironment.LaunchType.DOMAIN;
         final Supplier<ControllerInstabilityListener> cilSupplier = isDomainEnv ? serviceBuilder.requires(HostControllerConnectionService.SERVICE_NAME) : null;
+        final Supplier<PathManager> pathManagerSupplier = serviceBuilder.requires(PATH_MANAGER_CAPABILITY.getCapabilityServiceName());
         ServerService service = new ServerService(esSupplier, cilSupplier, configuration, processState, null, bootstrapListener, new ServerDelegatingResourceDefinition(),
-                runningModeControl, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, suspendController, expressionResolver);
+                runningModeControl, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, suspendController, expressionResolver, pathManagerSupplier);
         serviceBuilder.setInstance(service);
         serviceBuilder.addDependency(DeploymentMountProvider.SERVICE_NAME,DeploymentMountProvider.class, service.injectedDeploymentRepository);
         serviceBuilder.addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, service.injectedContentRepository);
         serviceBuilder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER, ServiceModuleLoader.class, service.injectedModuleLoader);
         serviceBuilder.addDependency(EXTERNAL_MODULE_CAPABILITY.getCapabilityServiceName(), ExternalModule.class,
                 service.injectedExternalModule);
-        serviceBuilder.addDependency(PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), PathManager.class, service.injectedPathManagerService);
         serviceBuilder.requires(CONSOLE_AVAILABILITY_CAPABILITY.getCapabilityServiceName());
 
         serviceBuilder.install();
@@ -274,7 +274,7 @@ public final class ServerService extends AbstractControllerService {
                         extensibleConfigurationPersister, configuration.getServerEnvironment(), processState,
                         runningModeControl, configuration.getExtensionRegistry(),
                         getExecutorService() != null,
-                        (PathManagerService)injectedPathManagerService.getValue(),
+                        (PathManagerService)pathManagerSupplier.get(),
                         new DomainServerCommunicationServices.OperationIDUpdater() {
                             @Override
                             public void updateOperationID(final int operationID) {
@@ -477,7 +477,7 @@ public final class ServerService extends AbstractControllerService {
         rootResource.registerChild(PathElement.pathElement(ModelDescriptionConstants.CORE_SERVICE, ModelDescriptionConstants.CAPABILITY_REGISTRY), Resource.Factory.create());
         managementResource.registerChild(AccessAuthorizationResourceDefinition.PATH_ELEMENT, AccessAuthorizationResourceDefinition.createResource(authorizer.getWritableAuthorizerConfiguration()));
         rootResource.registerChild(ServerEnvironmentResourceDescription.RESOURCE_PATH, Resource.Factory.create());
-        ((PathManagerService)injectedPathManagerService.getValue()).addPathManagerResources(rootResource);
+        ((PathManagerService)pathManagerSupplier.get()).addPathManagerResources(rootResource);
 
         VersionModelInitializer.registerRootResource(rootResource, configuration.getServerEnvironment() != null ? configuration.getServerEnvironment().getProductConfig() : null);
 
