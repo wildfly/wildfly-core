@@ -533,8 +533,7 @@ class ModelControllerImpl implements ModelController {
                     // stop
                     break;
                 } else {
-                    if(parsedOp.handler instanceof ParallelBootOperationStepHandler &&
-                            ((ParallelBootOperationStepHandler)parsedOp.handler).getParsedBootOp().getChildOperations().size() != parsedOp.getChildOperations().size()) {
+                    if(parsedOp.isBootHandlerUpdateNeeded()) {
                         ParallelBootOperationStepHandler updatedHandler =  new ParallelBootOperationStepHandler(executorService, managementModel.get().getRootResourceRegistration(), processState, this, operationID, extraValidationStepHandler);
                         for(ModelNode childOp : parsedOp.getChildOperations()) {
                             updatedHandler.addSubsystemOperation(new ParsedBootOp(childOp));
