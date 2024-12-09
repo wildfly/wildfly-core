@@ -168,22 +168,21 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                 xmlOperations.put(op.getAddress(), op);
             } else {
                 if (op.handler instanceof ParallelBootOperationStepHandler) {
-                    /* We need to createa new  ParsedBootOp so that the handler number of childOperations is different from the number of childOperation of the handler and thus the handler will be properly updated.
-                     * @see ModelCOntrollerImpl.boot(final List<ModelNode> bootList, final OperationMessageHandler handler, final OperationTransactionControl control,
+                    /* We need to force the ParallelBootOperationStepHandler to be updated during the boot ( around line 536)
+                     * @see ModelControllerImpl.boot(final List<ModelNode> bootList, final OperationMessageHandler handler, final OperationTransactionControl control,
                      *                               final boolean rollbackOnRuntimeFailure, MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider,
                      *                               final boolean skipModelValidation, final boolean partialModel, final ConfigurationExtension configExtension)
                      */
-                    parallelBootOp = new ParsedBootOp(op, op.handler);
-                    for (ModelNode childOp : childOperations) {
-                        ParsedBootOp subOp = new ParsedBootOp(childOp, null);
-                        xmlOperations.put(subOp.getAddress(), subOp);
-                        parallelBootOp.addChildOperation(subOp);
+                    if (parallelBootOp == null) {
+                        op.bootHandlerUpdateNeeded();
+                        parallelBootOp = op;
+                    } else {
+                        MGMT_OP_LOGGER.multipleParallelBootOperation();
                     }
-                } else {
-                    for (ModelNode childOp : childOperations) {
-                        ParsedBootOp subOp = new ParsedBootOp(childOp, null);
-                        xmlOperations.put(subOp.getAddress(), subOp);
-                    }
+                }
+                for (ModelNode childOp : childOperations) {
+                    ParsedBootOp subOp = new ParsedBootOp(childOp, null);
+                    xmlOperations.put(subOp.getAddress(), subOp);
                 }
             }
         }
