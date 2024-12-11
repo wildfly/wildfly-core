@@ -1,0 +1,40 @@
+---
+wildfly-configuration:
+  extension:
+    org.jboss.as.failure:
+      module: org.jboss.as.failure
+  subsystem:
+    system-properties:
+      system-property:
+        aaa:
+          value: foo
+        bbb:
+          value: bar
+      system-property:
+        ccc:
+          value: test
+        value:
+          value: test
+    basics:
+      basic:
+        test:
+    properties:
+      property:
+        test-property:
+          props:
+            ip_ttl: '0'
+            tcp_ttl: '5'
+    classpaths:
+      classpath:
+        runtime:
+          complex-map:
+            main-class:
+              class-name: org.widlfly.test.Main
+              module: org.wildfly.test:main
+            test-class:
+              class-name: org.widlfly.test.MyTest
+              module: org.wildfly.test:main
+# User defined elements, must be ignored.
+org:
+  foo:
+    bar: true

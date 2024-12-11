@@ -1,0 +1,12 @@
+---
+wildfly-configuration:
+  extension:
+    org.jboss.as.failure:
+      module: org.jboss.as.failure
+  subsystem:
+    system-properties:
+      system-property:
+        aaa:
+          value: !undefine
+        bbb:
+          value: !undefine
