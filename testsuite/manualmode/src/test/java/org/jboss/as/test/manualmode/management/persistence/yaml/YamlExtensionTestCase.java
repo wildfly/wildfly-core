@@ -433,7 +433,7 @@ public class YamlExtensionTestCase {
         result = Operations.readResult(client.execute(Operations.createReadResourceOperation(PathAddress.pathAddress("subsystem", "elytron").toModelNode(), true)));
         Assert.assertEquals("Yaml operation to undefine disallowed-providers was not executed.", "undefined", result.get("disallowed-providers").asString());
         ModelNode permissions = result.get("permission-set").get("default-permissions").get("permissions");
-        Assert.assertEquals("Yaml change to port set mail-smtp outbound socket binding is wrong", "[{\"class-name\" => \"org.wildfly.security.auth.permission.LoginPermission\",\"module\" => \"org.wildfly.security.elytron-base\",\"target-name\" => \"*\"}]", permissions.asString());
+        Assert.assertEquals("Yaml change to set default permissions is wrong", "[{\"class-name\" => \"org.wildfly.security.auth.permission.LoginPermission\",\"module\" => \"org.wildfly.security.elytron-base\",\"target-name\" => \"*\"}]", permissions.asString());
     }
 
     @Test

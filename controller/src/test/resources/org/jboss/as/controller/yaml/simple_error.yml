@@ -1,0 +1,4 @@
+wildfly-configuration:
+    system-propety:
+      ccc:
+        value: test

@@ -1,0 +1,12 @@
+wildfly-configuration:
+    extension:
+      org.jboss.as.failure:
+        module: org.jboss.as.failure
+    list:
+      my-list:
+        strings:
+            - foo
+            - bar
+      my-list:
+        strings:
+            - test

@@ -3805,4 +3805,8 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 516, value = "Parameter %s specifies an invalid module name: %s")
     OperationFailedException invalidModuleNameParameter(String parameterName, String moduleName);
+
+    @LogMessage(level = WARN)
+    @Message(id = 517, value = "There are multiple Parallel Boot Operations.")
+    void multipleParallelBootOperation();
 }

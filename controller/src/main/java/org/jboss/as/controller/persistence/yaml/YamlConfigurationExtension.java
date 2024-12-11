@@ -15,6 +15,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
@@ -45,6 +46,7 @@ import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.MapAttributeDefinition;
 import org.jboss.as.controller.ObjectMapAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
+import org.jboss.as.controller.ParallelBootOperationStepHandler;
 import org.jboss.as.controller.ParsedBootOp;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
@@ -160,11 +162,20 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
         }
         MGMT_OP_LOGGER.debug("We are applying YAML files to the configuration");
         Map<PathAddress, ParsedBootOp> xmlOperations = new HashMap<>();
+        boolean paralleBoot = false;
         for (ParsedBootOp op : postExtensionOps) {
-            if (op.getChildOperations().isEmpty()) {
+            List<ModelNode> childOperations = op.getChildOperations();
+            if (childOperations.isEmpty()) {
                 xmlOperations.put(op.getAddress(), op);
             } else {
-                for (ModelNode childOp : op.getChildOperations()) {
+                if (op.handler instanceof ParallelBootOperationStepHandler) {
+                    if (!paralleBoot) {
+                        paralleBoot = true;
+                    } else {
+                        MGMT_OP_LOGGER.multipleParallelBootOperation();
+                    }
+                }
+                for (ModelNode childOp : childOperations) {
                     ParsedBootOp subOp = new ParsedBootOp(childOp, null);
                     xmlOperations.put(subOp.getAddress(), subOp);
                 }
@@ -176,8 +187,42 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
         for (Map.Entry<String, Object> deployment : deployments.entrySet()) {
             processUnmanagedDeployments(rootRegistration, deployment, xmlOperations, postExtensionOps);
         }
+        List<ParsedBootOp> reorderedList = new ArrayList<>(postExtensionOps.size());
+        //We need to find the parallel boot operation becaue it might have changed due to deletion of resource so we can't use the initial one.
+        ParsedBootOp parallelBootOp = null;
+        if (paralleBoot) {
+            for (ParsedBootOp op : postExtensionOps) {
+                if (op.handler instanceof ParallelBootOperationStepHandler) {
+                    if (parallelBootOp == null) {
+                        parallelBootOp = op;
+                        parallelBootOp.bootHandlerUpdateNeeded();
+                        break;
+                    }
+                }
+            }
+        }
+        for (ParsedBootOp op : postExtensionOps) {
+            // ModelControllerImpl doesn't include subsystem ops directly in the postExtensionsOps param in parallel boot.
+            // So, if postExtensionOps contains a subsystem op, it's because we've created it from YAML.
+            if (parallelBootOp != null && isSubsystemOperation(op)) {
+                //The new operations created from the YAML are added to the parallel boot operation enclosing all the subsystem operations
+                parallelBootOp.addChildOperation(op);
+            } else if (op.handler instanceof ParallelBootOperationStepHandler) {
+                //The parallel boot operation is added to the list
+                reorderedList.add(parallelBootOp);
+            } else {
+                //The new operations created from the YAML are added to the list of operations (if they haven't already be added in a subsystem enclosing operation).
+                reorderedList.add(op);
+            }
+        }
+        postExtensionOps.clear();
+        postExtensionOps.addAll(reorderedList);
         this.configs.clear();
         needReload = true;
+    }
+
+    private boolean isSubsystemOperation(ParsedBootOp op) {
+        return op.getAddress().size() > 0 && SUBSYSTEM.equals(op.getAddress().getElement(0).getKey());
     }
 
     @SuppressWarnings("unchecked")
@@ -424,7 +469,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
             }
         }
         for (AttributeDefinition def : operationEntry.getOperationDefinition().getParameters()) {
-            if (def != null && ! attributeNames.contains(def.getName())) {
+            if (def != null && !attributeNames.contains(def.getName())) {
                 if (!def.isResourceOnly()) {
                     attributes.add(def);
                 }

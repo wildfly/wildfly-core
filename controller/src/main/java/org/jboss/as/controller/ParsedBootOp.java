@@ -30,6 +30,7 @@ public class ParsedBootOp {
     public final OperationStepHandler handler;
     public final ModelNode response;
     private List<ModelNode> childOperations;
+    private boolean bootHandlerUpdateNeeded = false;
 
     ParsedBootOp(final ModelNode operation) {
         this(operation, null, new ModelNode());
@@ -83,6 +84,18 @@ public class ParsedBootOp {
     public PathAddress getAddress() {
         return address;
     }
+
+    public boolean isBootHandlerUpdateNeeded() {
+        return this.handler instanceof ParallelBootOperationStepHandler && bootHandlerUpdateNeeded;
+    }
+
+    /**
+     * Setting this will force the ParallelBootOperationStepHandler handdler to be updated on boot.
+     */
+    public void bootHandlerUpdateNeeded() {
+        this.bootHandlerUpdateNeeded = true;
+    }
+
 
     @Override
     public String toString() {
