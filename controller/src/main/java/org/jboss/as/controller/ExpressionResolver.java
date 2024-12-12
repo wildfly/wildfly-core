@@ -6,6 +6,7 @@ package org.jboss.as.controller;
 
 import java.util.regex.Pattern;
 
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.extension.ExpressionResolverExtension;
 import org.jboss.as.controller.extension.ResolverExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -23,9 +24,9 @@ public interface ExpressionResolver {
     Pattern EXPRESSION_PATTERN = Pattern.compile(".*\\$\\{.*}.*");
 
     /**
-     * Resolves any expressions in the passed in ModelNode.
-     *
-     * Expressions may represent system properties, vaulted date, or a custom format to be handled by an
+     * Resolves any expressions in the passed-in ModelNode.
+     * <p/>
+     * Expressions may represent system properties, environment variables or a custom format to be handled by an
      * {@link ExpressionResolverExtension} registered using the {@link ResolverExtensionRegistry}.
      *
      * @param node the ModelNode containing expressions.
@@ -47,12 +48,10 @@ public interface ExpressionResolver {
     ModelNode resolveExpressions(ModelNode node) throws OperationFailedException;
 
     /**
-     * Resolves any expressions in the passed in ModelNode.
-     *
-     * Expressions may represent system properties, vaulted date, or a custom format to be handled by an
+     * Resolves any expressions in the passed-in ModelNode.
+     * <p/>
+     * Expressions may represent system properties, environment variables or a custom format to be handled by an
      * {@link ExpressionResolverExtension} registered using the {@link ResolverExtensionRegistry}.
-     *
-     * For vaulted data the format is ${VAULT::vault_block::attribute_name::sharedKey}
      *
      * @param node the ModelNode containing expressions.
      * @param context the current {@code OperationContext} to provide additional contextual information.
@@ -72,6 +71,33 @@ public interface ExpressionResolver {
      * @throws ExpressionResolver.ExpressionResolutionServerException if some other internal expression resolution failure occurs.
      */
     default ModelNode resolveExpressions(ModelNode node, OperationContext context) throws OperationFailedException {
+        return resolveExpressions(node);
+    }
+
+    /**
+     * Resolves any expressions in the passed-in ModelNode.
+     * <p/>
+     * Expressions may represent system properties, environment variables or a custom format to be handled by an
+     * {@link ExpressionResolverExtension} registered using the {@link ResolverExtensionRegistry}.
+     *
+     * @param node the ModelNode containing expressions.
+     * @param capabilitySupport support object for accessing capability-backed APIs.
+     * @return a copy of the node with expressions resolved
+     *
+     * @throws ExpressionResolutionUserException if {@code expression} is a form understood by the resolver but in some
+     *                                             way is unacceptable. This should only be thrown due to flaws in the
+     *                                             provided {@code expression} or the configuration of resources used by
+     *                                             the resolver extension, which are 'user' problems>. It should not
+     *                                             be used for internal problems in the resolver extension. If a
+     *                                             if a security manager exists and its
+     *                                             {@link SecurityManager#checkPermission checkPermission} method doesn't
+     *                                             allow access to a relevant system property or environment variable,
+     *                                             an {@code ExpressionResolutionUserException} should be thrown
+     * @throws OperationFailedException if an {@link ExpressionResolverExtension} throws one from its
+     *            {@link ExpressionResolverExtension#initialize(OperationContext)} method.
+     * @throws ExpressionResolver.ExpressionResolutionServerException if some other internal expression resolution failure occurs.
+     */
+    default ModelNode resolveExpressions(ModelNode node, CapabilityServiceSupport capabilitySupport) throws OperationFailedException {
         return resolveExpressions(node);
     }
 
