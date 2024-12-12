@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.hamcrest.MatcherAssert;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.version.ProductConfig;
@@ -104,7 +105,9 @@ public class ManagedServerBootCmdFactoryTestCase {
     @Test
     public void testCreateConfiguration() throws UnknownHostException {
         System.out.println("createConfiguration");
-        ManagedServerBootCmdFactory instance = new ManagedServerBootCmdFactory("test-server", getDomainModel(), getHostModel(), getTestHostEnvironment(), ExpressionResolver.TEST_RESOLVER, false);
+        ManagedServerBootCmdFactory instance = new ManagedServerBootCmdFactory("test-server", getDomainModel(),
+                getHostModel(), getTestHostEnvironment(), ExpressionResolver.TEST_RESOLVER,
+                new CapabilityRegistry(false), false);
         ManagedServerBootConfiguration result = instance.createConfiguration();
         Assert.assertNotNull(result);
     }
@@ -120,7 +123,9 @@ public class ManagedServerBootCmdFactoryTestCase {
     @Test
     public void testGetServerLaunchCommand() throws UnknownHostException {
         System.out.println("getServerLaunchCommand");
-        ManagedServerBootCmdFactory instance = new ManagedServerBootCmdFactory("test-server", getDomainModel(), getHostModel(), getTestHostEnvironment(), ExpressionResolver.TEST_RESOLVER, false);
+        ManagedServerBootCmdFactory instance = new ManagedServerBootCmdFactory("test-server", getDomainModel(),
+                getHostModel(), getTestHostEnvironment(), ExpressionResolver.TEST_RESOLVER,
+                new CapabilityRegistry(false), false);
         List<String> result = instance.getServerLaunchCommand();
         MatcherAssert.assertThat(result.size(), is(notNullValue()));
         if (result.size() > 18) {

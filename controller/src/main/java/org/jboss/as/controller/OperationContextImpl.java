@@ -43,7 +43,6 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -1713,7 +1712,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     public CapabilityServiceSupport getCapabilityServiceSupport() {
         assert isControllingThread();
         assertCapabilitiesAvailable(currentStage);
-        return new CapabilityServiceSupportImpl(managementModel);
+        return new DefaultCapabilityServiceSupport(managementModel.getCapabilityRegistry());
     }
 
     @Override
@@ -2605,69 +2604,6 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private static class BooleanHolder {
         private boolean done = false;
-    }
-
-    private static class CapabilityServiceSupportImpl implements CapabilityServiceSupport {
-        private final ManagementModel managementModel;
-
-        private CapabilityServiceSupportImpl(ManagementModel managementModel) {
-            this.managementModel = managementModel;
-        }
-
-        @Override
-        public boolean hasCapability(String capabilityName) {
-            return managementModel.getCapabilityRegistry().hasCapability(capabilityName, CapabilityScope.GLOBAL);
-        }
-
-        @Override
-        public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) throws NoSuchCapabilityException {
-            try {
-                return managementModel.getCapabilityRegistry().getCapabilityRuntimeAPI(capabilityName, CapabilityScope.GLOBAL, apiType);
-            } catch (IllegalStateException e) {
-                throw new NoSuchCapabilityException(capabilityName);
-            }
-        }
-
-        @Override
-        public <T> T getCapabilityRuntimeAPI(String capabilityBaseName, String dynamicPart, Class<T> apiType) throws NoSuchCapabilityException {
-            String fullName = RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicPart);
-            return getCapabilityRuntimeAPI(fullName, apiType);
-        }
-
-        @Override
-        public <T> Optional<T> getOptionalCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) {
-            try {
-                return Optional.of(getCapabilityRuntimeAPI(capabilityName, apiType));
-            } catch (NoSuchCapabilityException e) {
-                return Optional.empty();
-            }
-        }
-
-        @Override
-        public <T> Optional<T> getOptionalCapabilityRuntimeAPI(String capabilityBaseName, String dynamicPart, Class<T> apiType) {
-            try {
-                return Optional.of(getCapabilityRuntimeAPI(capabilityBaseName, dynamicPart, apiType));
-            } catch (NoSuchCapabilityException e) {
-                return Optional.empty();
-            }
-        }
-
-        @Override
-        public ServiceName getCapabilityServiceName(String capabilityName) {
-            try {
-                return managementModel.getCapabilityRegistry().getCapabilityServiceName(capabilityName, CapabilityScope.GLOBAL, null);
-            } catch (IllegalStateException | IllegalArgumentException ignore) {
-                // ignore
-            }
-            ControllerLogger.ROOT_LOGGER.debugf("CapabilityServiceSupport: Parsing ServiceName for %s", capabilityName);
-            return ServiceNameFactory.parseServiceName(capabilityName);
-        }
-
-        @Override
-        public ServiceName getCapabilityServiceName(String capabilityBaseName, String ... dynamicPart) {
-            ServiceName name = getCapabilityServiceName(capabilityBaseName);
-            return (dynamicPart.length > 0) ? name.append(dynamicPart) : name;
-        }
     }
 
 

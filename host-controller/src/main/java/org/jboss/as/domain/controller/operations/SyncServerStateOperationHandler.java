@@ -109,12 +109,16 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
                             ManagedServerBootConfiguration startConfig =
                                     new ManagedServerBootCmdFactory(serverName, startRoot, startHostModel,
                                             parameters.getHostControllerEnvironment(),
-                                            parameters.getDomainController().getExpressionResolver(), false).createConfiguration();
+                                            parameters.getDomainController().getExpressionResolver(),
+                                            parameters.getDomainController().getCapabilityRegistry(),
+                                            false).createConfiguration();
 
                             ManagedServerBootConfiguration endConfig =
                                     new ManagedServerBootCmdFactory(serverName, endRoot, endHostModel,
                                             parameters.getHostControllerEnvironment(),
-                                            parameters.getDomainController().getExpressionResolver(), false).createConfiguration();
+                                            parameters.getDomainController().getExpressionResolver(),
+                                            parameters.getDomainController().getCapabilityRegistry(),
+                                            false).createConfiguration();
                             if (startConfig == null || !startConfig.compareServerLaunchCommand(endConfig)) {
                                 servers.put(serverName, SyncServerResultAction.RESTART_REQUIRED);
                             }

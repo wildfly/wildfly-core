@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.extension.ExpressionResolverExtension;
 import org.jboss.as.controller.ExpressionResolverImpl;
 import org.jboss.as.controller.OperationClientException;
@@ -41,8 +42,22 @@ public class RuntimeExpressionResolver extends ExpressionResolverImpl implements
 
     @Override
     protected void resolvePluggableExpression(ModelNode node, OperationContext context) throws OperationFailedException {
+        resolvePluggableExpression(node, context, null);
+    }
+
+    @Override
+    protected void resolvePluggableExpression(ModelNode node, CapabilityServiceSupport capabilitySupport) {
+        try {
+            resolvePluggableExpression(node, null, capabilitySupport);
+        } catch (OperationFailedException e) {
+            // OFE should only be thrown if 'context' is not null
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private void resolvePluggableExpression(ModelNode node, OperationContext context, CapabilityServiceSupport capabilitySupport) throws OperationFailedException {
         String expression = node.asString();
-        if (context != null && expression.length() > 3) {
+        if ((context != null || capabilitySupport != null) && expression.length() > 3) {
 
             // Cycle through all registered extensions until one returns a result.
             // Cache any exceptions (first of each type) so we can propagate them
@@ -55,8 +70,13 @@ public class RuntimeExpressionResolver extends ExpressionResolverImpl implements
             synchronized (extensions) {
                 Iterator<ExpressionResolverExtension> iter = extensions.iterator();
                 while (result == null && iter.hasNext()) {
+                    ExpressionResolverExtension extension = iter.next();
                     try {
-                        result = resolveExpression(expression, iter.next(), context);
+                        if (capabilitySupport != null) {
+                            result = extension.resolveExpression(expression, capabilitySupport);
+                        } else {
+                            result = resolveExpressionWithContext(expression, extension, context);
+                        }
                     } catch (OperationFailedException oe) {
                         if (ofe == null) {
                             ofe = oe;
@@ -88,8 +108,12 @@ public class RuntimeExpressionResolver extends ExpressionResolverImpl implements
         }
     }
 
-    private String resolveExpression(String expression, ExpressionResolverExtension resolver, OperationContext context) throws OperationFailedException {
-        resolver.initialize(context);
-        return resolver.resolveExpression(expression, context);
+    private String resolveExpressionWithContext(String expression, ExpressionResolverExtension resolver, OperationContext context) throws OperationFailedException {
+        if (context != null) {
+            resolver.initialize(context);
+            return resolver.resolveExpression(expression, context);
+        }
+        return null;
     }
+
 }

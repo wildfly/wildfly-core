@@ -94,6 +94,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.DefaultCapabilityServiceSupport;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -105,6 +106,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CON
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURED_REQUIRES_READ;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURED_REQUIRES_WRITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
+
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.operations.common.NamespaceAddHandler;
 import org.jboss.as.controller.operations.common.SchemaLocationAddHandler;
 import org.jboss.as.server.services.net.SocketBindingAddHandler;
@@ -184,7 +187,9 @@ public final class ManagedServerOperationsFactory {
         this.domainModel = domainModel;
         this.hostModel = hostModel;
         this.domainController = domainController;
-        ManagedServerBootCmdFactory.ManagedServerExprResolver managedServerExpResolver = new ManagedServerBootCmdFactory.ManagedServerExprResolver(expressionResolver, this.serverName);
+        CapabilityServiceSupport capabilityServiceSupport = new DefaultCapabilityServiceSupport(domainController.getCapabilityRegistry());
+        ManagedServerBootCmdFactory.ManagedServerExprResolver managedServerExpResolver =
+                new ManagedServerBootCmdFactory.ManagedServerExprResolver(expressionResolver, this.serverName, capabilityServiceSupport);
         this.serverModel = resolveExpressions(hostModel.require(SERVER_CONFIG).require(serverName), managedServerExpResolver, true);
 
         this.serverGroupName = serverModel.require(GROUP).asString();

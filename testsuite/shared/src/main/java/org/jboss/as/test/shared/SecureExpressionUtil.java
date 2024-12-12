@@ -97,6 +97,8 @@ public final class SecureExpressionUtil {
      * to reference the credential store. Imports the Elytron {@link SecretKey} that this class uses to
      * {@link #setupCredentialStoreExpressions(String, SecureExpressionData...) create credential store expressions}
      * into the credential store so it can use it to resolve those expressions.
+     * <p/>
+     * This variant calls the variant that takes a {@code PathAddress}, passing {@link PathAddress#EMPTY_ADDRESS}.
      *
      * @param client the client to use to invoke on the server's management layer. Cannot be {@code null}
      * @param storeName the name to use for the credential store and expression resolver. Cannot be {@code null}
@@ -105,11 +107,29 @@ public final class SecureExpressionUtil {
      * @throws Exception if a problem occurs
      */
     public static void setupCredentialStore(ManagementClient client, String storeName, String storeLocation) throws Exception {
+        setupCredentialStore(client, PathAddress.EMPTY_ADDRESS, storeName, storeLocation);
+    }
+
+    /**
+     * Uses the given management client to create an Elytron subsystem secret-key-credential store resource with the
+     * given {@code storeName}, as well as an expression encryption resource with a resolver with that name configured
+     * to reference the credential store. Imports the Elytron {@link SecretKey} that this class uses to
+     * {@link #setupCredentialStoreExpressions(String, SecureExpressionData...) create credential store expressions}
+     * into the credential store so it can use it to resolve those expressions.
+     *
+     * @param client the client to use to invoke on the server's management layer. Cannot be {@code null}
+     * @param baseAddress address of the Elytron subsystem resource's parent
+     * @param storeName the name to use for the credential store and expression resolver. Cannot be {@code null}
+     * @param storeLocation absolute path of the file to use to back the credential store. Cannot be {@code null}
+     *
+     * @throws Exception if a problem occurs
+     */
+    public static void setupCredentialStore(ManagementClient client, PathAddress baseAddress, String storeName, String storeLocation) throws Exception {
 
         cleanStore(storeLocation);
 
         // Add store
-        PathAddress storeAddress = SUBSYSTEM.append("secret-key-credential-store", storeName);
+        PathAddress storeAddress = baseAddress.append(SUBSYSTEM).append("secret-key-credential-store", storeName);
         ModelNode storeAdd = Util.createAddOperation(storeAddress);
         storeAdd.get("path").set(storeLocation);
         storeAdd.get("populate").set(false);
@@ -122,7 +142,7 @@ public final class SecureExpressionUtil {
         client.executeForResult(importKey);
 
         // Add expression-resolver
-        ModelNode exprsAdd = Util.createAddOperation(EXPRESSION_RESOLVER);
+        ModelNode exprsAdd = Util.createAddOperation(baseAddress.append(EXPRESSION_RESOLVER));
         ModelNode resolver = new ModelNode();
         resolver.get("name").set(storeName);
         resolver.get("credential-store").set(storeName);
@@ -142,11 +162,37 @@ public final class SecureExpressionUtil {
      * @throws Exception  if a problem occurs
      */
     public static void teardownCredentialStore(ManagementClient client, String storeName, String storeLocation) throws Exception {
+        teardownCredentialStore(client, PathAddress.EMPTY_ADDRESS, storeName, storeLocation,
+                () -> {
+                    try {
+                        ServerReload.reloadIfRequired(client.getControllerClient());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
+
+    /**
+     * Removes Elytron subsystem expression encryption and secret-key-credential store resources created by
+     * {@link #setupCredentialStore(ManagementClient, String, String)}.
+     * <p/>
+     * This variant calls the variant that takes a {@code PathAddress}, passing {@link PathAddress#EMPTY_ADDRESS}.
+     *
+     * @param client the client to use to invoke on the server's management layer. Cannot be {@code null}
+     * @param baseAddress address of the Elytron subsystem resource's parent
+     * @param storeName the name to use for the credential store and expression resolver. Cannot be {@code null}
+     * @param storeLocation location of the file that backs the credential store. Cannot be {@code null}
+     *
+     * @throws Exception  if a problem occurs
+     */
+    public static void teardownCredentialStore(ManagementClient client, PathAddress baseAddress,
+                                               String storeName, String storeLocation,
+                                               Runnable reloadFunction) throws Exception {
 
         UnsuccessfulOperationException toThrow = null;
         try {
             // Remove expression-resolver
-            client.executeForResult(Util.createRemoveOperation(EXPRESSION_RESOLVER));
+            client.executeForResult(Util.createRemoveOperation(baseAddress.append(EXPRESSION_RESOLVER)));
         } catch (UnsuccessfulOperationException uoe) {
             toThrow = uoe;
         } catch (RuntimeException re) {
@@ -154,7 +200,7 @@ public final class SecureExpressionUtil {
         } finally {
             try {
                 // Remove store
-                client.executeForResult(Util.createRemoveOperation(SUBSYSTEM.append("secret-key-credential-store", storeName)));
+                client.executeForResult(Util.createRemoveOperation(baseAddress.append(SUBSYSTEM).append("secret-key-credential-store", storeName)));
             } catch (UnsuccessfulOperationException uoe) {
                 if (toThrow == null) {
                     toThrow = uoe;
@@ -170,7 +216,9 @@ public final class SecureExpressionUtil {
             throw toThrow;
         }
 
-        ServerReload.reloadIfRequired(client.getControllerClient());
+        if (reloadFunction != null) {
+            reloadFunction.run();
+        }
 
         cleanStore(storeLocation);
     }
