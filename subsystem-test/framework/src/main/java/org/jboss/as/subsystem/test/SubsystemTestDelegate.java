@@ -114,7 +114,7 @@ final class SubsystemTestDelegate {
     private final Class<?> testClass;
     private final List<KernelServices> kernelServices = new ArrayList<>();
 
-    protected final String mainSubsystemName;
+    private final String mainSubsystemName;
     private final Extension mainExtension;
     private final Comparator<PathAddress> removeOrderComparator;
 
@@ -222,11 +222,14 @@ final class SubsystemTestDelegate {
 
         // Use ProcessType.HOST_CONTROLLER for this ExtensionRegistry so we don't need to provide
         // a PathManager via the ExtensionContext. All we need the Extension to do here is register the xml writers
-        ExtensionRegistry outputExtensionRegistry = ExtensionRegistry.builder(ProcessType.HOST_CONTROLLER).withStability(this.stability).build();
+        ExtensionRegistry outputExtensionRegistry = ExtensionRegistry.builder(ProcessType.HOST_CONTROLLER)
+                .withStability(this.stability)
+                .build();
+
         outputExtensionRegistry.setWriterRegistry(persister);
 
-        Extension extension = mainExtension.getClass().newInstance();
-        extension.initialize(outputExtensionRegistry.getExtensionContext("Test", MOCK_RESOURCE_REG, ExtensionRegistryType.SLAVE));
+        Extension extension = mainExtension.getClass().getDeclaredConstructor().newInstance();
+        extension.initialize(outputExtensionRegistry.getExtensionContext("Test", stability, MOCK_RESOURCE_REG, ExtensionRegistryType.SLAVE));
 
         ConfigurationPersister.PersistenceResource resource = persister.store(model, Collections.emptySet());
         resource.commit();
@@ -254,7 +257,7 @@ final class SubsystemTestDelegate {
     }
 
     /**
-     * Checks that the subystem resources can be removed, i.e. that people have registered
+     * Checks that the subsystem resources can be removed, i.e. that people have registered
      * working 'remove' operations for every 'add' level.
      *
      * @param kernelServices the kernel services used to access the controller
@@ -264,7 +267,7 @@ final class SubsystemTestDelegate {
     }
 
     /**
-     * Checks that the subystem resources can be removed, i.e. that people have registered
+     * Checks that the subsystem resources can be removed, i.e. that people have registered
      * working 'remove' operations for every 'add' level.
      *
      * @param kernelServices        the kernel services used to access the controller
@@ -430,7 +433,11 @@ final class SubsystemTestDelegate {
     }
 
     private ExtensionRegistry cloneExtensionRegistry(AdditionalInitialization additionalInit) {
-        final ExtensionRegistry clone = ExtensionRegistry.builder(additionalInit.getProcessType()).withRunningMode(additionalInit.getExtensionRegistryRunningMode()).withStability(additionalInit.getStability()).build();
+        final ExtensionRegistry clone = ExtensionRegistry.builder(additionalInit.getProcessType())
+                .withRunningMode(additionalInit.getExtensionRegistryRunningMode())
+                .withStability(additionalInit.getStability())
+                .build();
+
         for (String extension : extensionParsingRegistry.getExtensionModuleNames()) {
             ExtensionParsingContext epc = clone.getExtensionParsingContext(extension, null);
             for (Map.Entry<String, SubsystemInformation> entry : extensionParsingRegistry.getAvailableSubsystems(extension).entrySet()) {
@@ -546,7 +553,7 @@ final class SubsystemTestDelegate {
             bootOperationBuilder.validateNotAlreadyBuilt();
             List<ModelNode> bootOperations = bootOperationBuilder.build();
             AbstractKernelServicesImpl kernelServices = AbstractKernelServicesImpl.create(testClass, mainSubsystemName, additionalInit, ModelTestOperationValidatorFilter.createValidateAll(), cloneExtensionRegistry(additionalInit), bootOperations,
-                    testParser, mainExtension, null, legacyControllerInitializers.size() > 0, true);
+                    testParser, mainExtension, null, !legacyControllerInitializers.isEmpty(), true);
             SubsystemTestDelegate.this.kernelServices.add(kernelServices);
             validateDescriptionProviders(additionalInit, kernelServices);
             ImmutableManagementResourceRegistration subsystemReg = kernelServices.getRootRegistration().getSubModel(PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, mainSubsystemName)));
@@ -559,7 +566,7 @@ final class SubsystemTestDelegate {
             for (Map.Entry<ModelVersion, LegacyKernelServiceInitializerImpl> entry : legacyControllerInitializers.entrySet()) {
                 LegacyKernelServiceInitializerImpl legacyInitializer = entry.getValue();
 
-                List<ModelNode> transformedBootOperations = new ArrayList<ModelNode>();
+                List<ModelNode> transformedBootOperations = new ArrayList<>();
                 for (ModelNode op : bootOperations) {
 
                     TransformedOperation transformedOp = kernelServices.transformOperation(entry.getKey(), op);
@@ -619,8 +626,8 @@ final class SubsystemTestDelegate {
         private final AdditionalInitialization additionalInit;
         private final ModelTestControllerVersion testControllerVersion;
         private String extensionClassName;
-        private ModelVersion modelVersion;
-        private ChildFirstClassLoaderBuilder classLoaderBuilder;
+        private final ModelVersion modelVersion;
+        private final ChildFirstClassLoaderBuilder classLoaderBuilder;
         private ModelTestOperationValidatorFilter.Builder operationValidationExcludeBuilder;
         private boolean persistXml = true;
         private boolean skipReverseCheck;

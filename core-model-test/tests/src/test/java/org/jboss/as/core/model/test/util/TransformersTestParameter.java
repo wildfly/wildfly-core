@@ -46,6 +46,8 @@ public class TransformersTestParameter extends ClassloaderParameter {
         //we only test EAP 7.4 and newer
         data.add(new TransformersTestParameter(ModelVersion.create(16, 0, 0), ModelTestControllerVersion.EAP_7_4_0));
         data.add(new TransformersTestParameter(ModelVersion.create(22, 0, 0), ModelTestControllerVersion.EAP_8_0_0));
+        // Requires an update of the wildfly legacy test version
+        // data.add(new TransformersTestParameter(ModelVersion.create(24, 0, 0), ModelTestControllerVersion.WILDFLY_31_0_0));
         return data;
     }
 
