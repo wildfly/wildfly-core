@@ -733,7 +733,7 @@ public interface ServerLogger extends BasicLogger {
     IllegalStateException serviceModuleLoaderAlreadyStopped();
 
     @Message(id = 99, value = "'%s' cannot be loaded from a ServiceModuleLoader as its name does not start with '%s'")
-    IllegalArgumentException missingModulePrefix(ModuleIdentifier identifier, String prefix);
+    IllegalArgumentException missingModulePrefix(String name, String prefix);
 
     @Message(id = 100, value = "Failed to read '%s'")
     DeploymentUnitProcessingException failedToReadVirtualFile(VirtualFile file, @Cause IOException cause);
