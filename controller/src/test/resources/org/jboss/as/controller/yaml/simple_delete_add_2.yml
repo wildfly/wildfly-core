@@ -1,0 +1,12 @@
+wildfly-configuration:
+    subsystem:
+      system-properties:
+        system-property:
+          ccc:
+            value: test
+          bbb:
+            value: bar
+#User defined elements, must be ignored.
+org:
+    foo:
+        bar: true
