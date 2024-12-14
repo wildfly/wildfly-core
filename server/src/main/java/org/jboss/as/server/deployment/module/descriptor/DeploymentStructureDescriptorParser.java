@@ -244,7 +244,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         }
         // No more nested loop
         for (ModuleDependency dependency : moduleDependencies) {
-            String identifier = dependency.getIdentifier().getName();
+            String identifier = dependency.getIdentifier().toString();
             if (index.containsKey(identifier)) {
                 aliasDependencies.add(new ModuleDependency(dependency.getModuleLoader(), index.get(identifier).getModuleIdentifier(), dependency.isOptional(), dependency.isExport(), dependency.isImportServices(), dependency.isUserSpecified()));
             }
@@ -253,7 +253,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         ModuleAliasChecker.checkModuleAliasesForDependencies(moduleDependencies, MessageContext.JBOSS_DEPLOYMENT_STRUCTURE_CONTEXT, deploymentUnit.getName());
         moduleSpec.addUserDependencies(moduleDependencies);
         ModuleAliasChecker.checkModuleAliasesForExclusions(rootDeploymentSpecification.getExclusions(), MessageContext.JBOSS_DEPLOYMENT_STRUCTURE_CONTEXT, deploymentUnit.getName());
-        rootDeploymentSpecification.getExclusions().stream().map(ModuleIdentifier::getName).forEach(moduleSpec::addModuleExclusion);
+        rootDeploymentSpecification.getExclusions().stream().map(ModuleIdentifier::toString).forEach(moduleSpec::addModuleExclusion);
         moduleSpec.addAliases(rootDeploymentSpecification.getAliases());
         moduleSpec.addModuleSystemDependencies(rootDeploymentSpecification.getSystemDependencies());
         for (final ResourceRoot additionalResourceRoot : rootDeploymentSpecification.getResourceRoots()) {
@@ -279,7 +279,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         for (final ModuleIdentifier dependency : rootDeploymentSpecification.getAnnotationModules()) {
             ModuleIdentifier identifier = dependency;
             for (AdditionalModuleSpecification module : additionalModules.values()) {
-                if (module.getModuleAliases().contains(dependency.getName())) {
+                if (module.getModuleAliases().contains(dependency.toString())) {
                     identifier = module.getModuleIdentifier();
                     break;
                 }
