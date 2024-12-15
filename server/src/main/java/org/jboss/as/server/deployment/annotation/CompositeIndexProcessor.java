@@ -150,9 +150,9 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
     }
 
     private Map<ModuleIdentifier, DeploymentUnit> buildSubdeploymentDependencyMap(DeploymentUnit deploymentUnit) {
-        Set<ModuleIdentifier> depModuleIdentifiers = new HashSet<>();
+        Set<String> depModuleIdentifiers = new HashSet<>();
         for (ModuleDependency dep: deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION).getAllDependencies()) {
-            depModuleIdentifiers.add(dep.getIdentifier());
+            depModuleIdentifiers.add(dep.getDependencyModule());
         }
 
         DeploymentUnit top = deploymentUnit.getParent()==null?deploymentUnit:deploymentUnit.getParent();
@@ -161,7 +161,7 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
         if (subDeployments != null) {
             for (DeploymentUnit subDeployment : subDeployments) {
                 ModuleIdentifier moduleIdentifier = subDeployment.getAttachment(Attachments.MODULE_IDENTIFIER);
-                if (depModuleIdentifiers.contains(moduleIdentifier)) {
+                if (depModuleIdentifiers.contains(moduleIdentifier.toString())) {
                     res.put(moduleIdentifier, subDeployment);
                 }
             }
