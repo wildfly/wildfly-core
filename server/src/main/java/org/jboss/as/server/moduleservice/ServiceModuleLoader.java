@@ -247,7 +247,7 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
 
     /**
      * Returns the corresponding module resolved service name for the given module.
-     *
+     * <p/>
      * The module resolved service is basically a latch that prevents the module from being loaded
      * until all the transitive dependencies that it depends upon have have their module spec services
      * come up.

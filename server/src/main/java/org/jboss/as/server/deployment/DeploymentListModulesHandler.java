@@ -79,15 +79,15 @@ public class DeploymentListModulesHandler implements OperationStepHandler {
 
                     final ModelNode result = new ModelNode();
                     List<ModuleDependency> dependencies = moduleLoadService.getSystemDependencies();
-                    Collections.sort(dependencies, Comparator.comparing(p -> p.getIdentifier().toString()));
+                    Collections.sort(dependencies, Comparator.comparing(ModuleDependency::getDependencyModule));
                     result.get("system-dependencies").set(buildDependenciesInfo(dependencies, verbose));
 
                     dependencies = moduleLoadService.getLocalDependencies();
-                    Collections.sort(dependencies, Comparator.comparing(p -> p.getIdentifier().toString()));
+                    Collections.sort(dependencies, Comparator.comparing(ModuleDependency::getDependencyModule));
                     result.get("local-dependencies").set(buildDependenciesInfo(dependencies, verbose));
 
                     dependencies = moduleLoadService.getUserDependencies();
-                    Collections.sort(dependencies, Comparator.comparing(p -> p.getIdentifier().toString()));
+                    Collections.sort(dependencies, Comparator.comparing(ModuleDependency::getDependencyModule));
                     result.get("user-dependencies").set(buildDependenciesInfo(dependencies, verbose));
 
                     context.getResult().set(result);
@@ -100,8 +100,7 @@ public class DeploymentListModulesHandler implements OperationStepHandler {
         ModelNode deps = new ModelNode().setEmptyList();
         for (ModuleDependency dependency : dependencies) {
             ModelNode depData = new ModelNode();
-            ModuleIdentifier identifier = dependency.getIdentifier();
-            depData.get("name").set(identifier.toString());
+            depData.get("name").set(dependency.getDependencyModule());
             if (verbose) {
                 depData.get("optional").set(dependency.isOptional());
                 depData.get("export").set(dependency.isExport());
