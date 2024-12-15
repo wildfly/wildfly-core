@@ -94,6 +94,7 @@ import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.wildfly.common.xml.XMLInputFactoryUtil;
 import org.wildfly.legacy.test.spi.Version;
 
@@ -691,6 +692,7 @@ public class CoreModelTestDelegate {
         private ModelTestOperationValidatorFilter.Builder operationValidationExcludeFilterBuilder;
 
         LegacyKernelServicesInitializerImpl(ModelVersion modelVersion, ModelTestControllerVersion version) {
+            Assume.assumeFalse("This model controller version is ignored for this server.", version.isIgnored());
             this.classLoaderBuilder = new ChildFirstClassLoaderBuilder(version.isEap());
             this.modelVersion = modelVersion;
             this.testControllerVersion = version;

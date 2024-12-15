@@ -42,12 +42,15 @@ public enum ModelTestControllerVersion {
     private final String artifactIdPrefix;
     private final Map<String, ModelVersion> subsystemModelVersions = new LinkedHashMap<>();
     private final Stability stability;
+    private final boolean ignored;
 
     ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, String realVersionName) {
         this(mavenGavVersion, eap, testControllerVersion, null, realVersionName);
     }
-
     ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, String coreVersion, String realVersionName) {
+        this(mavenGavVersion, eap, testControllerVersion, coreVersion, realVersionName, false);
+    }
+    ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, String coreVersion, String realVersionName, boolean ignored) {
         this.mavenGavVersion = mavenGavVersion;
         this.testControllerVersion = testControllerVersion;
         this.eap = eap;
@@ -55,6 +58,7 @@ public enum ModelTestControllerVersion {
         this.validLegacyController = testControllerVersion != null;
         this.coreVersion = coreVersion == null? mavenGavVersion : coreVersion; //full == core
         this.realVersionName = realVersionName;
+        this.ignored = ignored;
         if (eap) {
             if (coreVersion != null) { //eap 7+ has core version defined
                 this.coreMavenGroupId = "org.wildfly.core";
@@ -169,5 +173,9 @@ public enum ModelTestControllerVersion {
 
     public Stability getStability() {
         return stability;
+    }
+
+    public boolean isIgnored() {
+        return ignored;
     }
 }

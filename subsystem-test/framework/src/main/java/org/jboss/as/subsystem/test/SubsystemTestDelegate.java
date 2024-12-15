@@ -28,6 +28,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -550,6 +551,7 @@ final class SubsystemTestDelegate {
         }
 
         public KernelServices build() throws Exception {
+
             bootOperationBuilder.validateNotAlreadyBuilt();
             List<ModelNode> bootOperations = bootOperationBuilder.build();
             AbstractKernelServicesImpl kernelServices = AbstractKernelServicesImpl.create(testClass, mainSubsystemName, additionalInit, ModelTestOperationValidatorFilter.createValidateAll(), cloneExtensionRegistry(additionalInit), bootOperations,
@@ -636,6 +638,7 @@ final class SubsystemTestDelegate {
         private OperationFixer reverseCheckOperationFixer = operation -> operation;
 
         public LegacyKernelServiceInitializerImpl(AdditionalInitialization additionalInit, ModelTestControllerVersion version, ModelVersion modelVersion) {
+            Assume.assumeFalse("This model controller version is ignored for this server.", version.isIgnored());
             this.classLoaderBuilder = new ChildFirstClassLoaderBuilder(version.isEap());
             this.additionalInit = additionalInit == null ? AdditionalInitialization.MANAGEMENT : additionalInit;
             this.testControllerVersion = version;
