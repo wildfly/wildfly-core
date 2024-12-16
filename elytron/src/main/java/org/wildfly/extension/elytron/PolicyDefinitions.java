@@ -199,7 +199,9 @@ class PolicyDefinitions {
                     }
 
                     private void setPolicy(Policy policy) {
-                        policy.refresh();
+                        if (policy != null) {
+                            policy.refresh();
+                        }
                         try {
                             if (WildFlySecurityManager.isChecking()) {
                                 AccessController.doPrivileged(setPolicyAction(policy));
