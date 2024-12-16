@@ -34,6 +34,9 @@ public class CleanupProcessor {
         final Path installDir = Paths.get(args[0]);
         final int retries = Integer.parseInt(args[1]);
         final Path cleanupMarker = installDir.resolve("wildfly-cleanup-marker");
+        if (Files.notExists(cleanupMarker)) {
+            return;
+        }
         int attempts = 1;
         while (attempts <= retries) {
             final boolean lastAttempt = attempts == retries;
@@ -51,6 +54,9 @@ public class CleanupProcessor {
     }
 
     private static void cleanup(final Path installDir, final Path cleanupMarker, final boolean log) throws IOException {
+        if (Files.notExists(cleanupMarker)) {
+            return;
+        }
         Files.walkFileTree(installDir, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
