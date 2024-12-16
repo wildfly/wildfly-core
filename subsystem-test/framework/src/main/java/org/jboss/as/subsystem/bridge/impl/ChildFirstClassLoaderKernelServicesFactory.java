@@ -5,6 +5,7 @@
 package org.jboss.as.subsystem.bridge.impl;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ModelVersion;
@@ -18,6 +19,7 @@ import org.jboss.as.subsystem.test.AbstractKernelServicesImpl;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.TestParser;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -36,6 +38,25 @@ public class ChildFirstClassLoaderKernelServicesFactory {
         }
 
         ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.DOMAIN_SERVER, new RunningModeControl(RunningMode.ADMIN_ONLY));
+        ModelTestParser testParser = new TestParser(mainSubsystemName, extensionRegistry);
+        return AbstractKernelServicesImpl.create(null, mainSubsystemName, additionalInit, validateOpsFilter,
+                extensionRegistry, bootOperations, testParser, extension, legacyModelVersion, false, persistXml);
+    }
+
+    public static KernelServices create(String mainSubsystemName, String extensionClassName, AdditionalInitialization additionalInit, ModelTestOperationValidatorFilter validateOpsFilter,
+                                        List<ModelNode> bootOperations, ModelVersion legacyModelVersion, boolean persistXml, String stabilityStr) throws Exception {
+        Objects.requireNonNull(additionalInit,"additionalInit is required");
+        Stability stability = Stability.fromString(stabilityStr);
+
+        Extension extension = (Extension) Class.forName(extensionClassName)
+                .getDeclaredConstructor()
+                .newInstance();
+
+        ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(ProcessType.DOMAIN_SERVER)
+                .withRunningMode(RunningMode.ADMIN_ONLY)
+                .withStability(stability)
+                .build();
+
         ModelTestParser testParser = new TestParser(mainSubsystemName, extensionRegistry);
         return AbstractKernelServicesImpl.create(null, mainSubsystemName, additionalInit, validateOpsFilter,
                 extensionRegistry, bootOperations, testParser, extension, legacyModelVersion, false, persistXml);

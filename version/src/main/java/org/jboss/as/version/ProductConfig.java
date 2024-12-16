@@ -147,10 +147,15 @@ public class ProductConfig implements Serializable {
 
     /** Solely for use in unit testing */
     public ProductConfig(final String productName, final String productVersion, final String consoleSlot) {
+        this(productName, productVersion, consoleSlot, Stability.DEFAULT);
+    }
+
+    /** Solely for use in unit testing */
+    public ProductConfig(final String productName, final String productVersion, final String consoleSlot, final Stability defaultStability) {
         this.name = productName;
         this.version = productVersion;
         this.consoleSlot = consoleSlot;
-        this.defaultStability = Stability.COMMUNITY;
+        this.defaultStability = defaultStability;
         this.stabilities = EnumSet.allOf(Stability.class).stream()
                 .filter(this.defaultStability::enables)
                 .collect(Collectors.toUnmodifiableSet());

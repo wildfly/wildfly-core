@@ -94,6 +94,7 @@ import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.wildfly.common.xml.XMLInputFactoryUtil;
 import org.wildfly.legacy.test.spi.Version;
 
@@ -446,7 +447,10 @@ public class CoreModelTestDelegate {
             this.stability = stability;
             this.processType = type == TestModelType.HOST || type == TestModelType.DOMAIN ? ProcessType.HOST_CONTROLLER : ProcessType.STANDALONE_SERVER;
             runningModeControl = type == TestModelType.HOST ? new HostRunningModeControl(RunningMode.ADMIN_ONLY, RestartMode.HC_ONLY) : new RunningModeControl(RunningMode.ADMIN_ONLY);
-            extensionRegistry = ExtensionRegistry.builder(this.processType).withRunningModeControl(this.runningModeControl).withStability(stability).build();
+            extensionRegistry = ExtensionRegistry.builder(this.processType)
+                    .withRunningModeControl(this.runningModeControl)
+                    .withStability(stability)
+                    .build();
             testParser = TestParser.create(stability, extensionRegistry, xmlMapper, type);
         }
 
@@ -680,6 +684,7 @@ public class CoreModelTestDelegate {
         private final ModelVersion modelVersion;
         private final List<LegacyModelInitializerEntry> modelInitializerEntries = new ArrayList<LegacyModelInitializerEntry>();
         private final ModelTestControllerVersion testControllerVersion;
+        private final Stability stability;
         private boolean dontUseBootOperations = false;
         private boolean skipReverseCheck;
         private ModelFixer reverseCheckMainModelFixer;
@@ -687,9 +692,11 @@ public class CoreModelTestDelegate {
         private ModelTestOperationValidatorFilter.Builder operationValidationExcludeFilterBuilder;
 
         LegacyKernelServicesInitializerImpl(ModelVersion modelVersion, ModelTestControllerVersion version) {
+            Assume.assumeFalse("This model controller version is ignored for this server.", version.isIgnored());
             this.classLoaderBuilder = new ChildFirstClassLoaderBuilder(version.isEap());
             this.modelVersion = modelVersion;
             this.testControllerVersion = version;
+            this.stability = version.getStability();
         }
 
         private LegacyControllerKernelServicesProxy install(AbstractKernelServicesImpl mainServices, ModelInitializer modelInitializer, ModelWriteSanitizer modelWriteSanitizer, List<String> contentRepositoryContents, List<ModelNode> bootOperations) throws Exception {
@@ -698,7 +705,7 @@ public class CoreModelTestDelegate {
             }
 
             if (!skipReverseCheck) {
-                bootCurrentVersionWithLegacyBootOperations(bootOperations, modelInitializer, modelWriteSanitizer, contentRepositoryContents, mainServices);
+                bootCurrentVersionWithLegacyBootOperations(bootOperations, modelInitializer, modelWriteSanitizer, contentRepositoryContents, mainServices, stability);
             }
 
             final ClassLoader legacyCl;
@@ -733,7 +740,7 @@ public class CoreModelTestDelegate {
             }
 
 
-            ScopedKernelServicesBootstrap scopedBootstrap = new ScopedKernelServicesBootstrap(legacyCl);
+            ScopedKernelServicesBootstrap scopedBootstrap = new ScopedKernelServicesBootstrap(legacyCl, stability);
             LegacyControllerKernelServicesProxy legacyServices = scopedBootstrap.createKernelServices(bootOperations, getOperationValidationFilter(), modelVersion, modelInitializerEntries);
 
             return legacyServices;
@@ -793,8 +800,9 @@ public class CoreModelTestDelegate {
             return this;
         }
 
-        private KernelServices bootCurrentVersionWithLegacyBootOperations(List<ModelNode> bootOperations, ModelInitializer modelInitializer, ModelWriteSanitizer modelWriteSanitizer, List<String> contentRepositoryHashes, KernelServices mainServices) throws Exception {
-            KernelServicesBuilder reverseServicesBuilder = createKernelServicesBuilder(TestModelType.DOMAIN, Stability.DEFAULT)
+        private KernelServices bootCurrentVersionWithLegacyBootOperations(List<ModelNode> bootOperations, ModelInitializer modelInitializer, ModelWriteSanitizer modelWriteSanitizer, List<String> contentRepositoryHashes, KernelServices mainServices, Stability stability) throws Exception {
+            testControllerVersion.getCoreVersion();
+            KernelServicesBuilder reverseServicesBuilder = createKernelServicesBuilder(TestModelType.DOMAIN, stability)
                 .setBootOperations(bootOperations)
                 .setModelInitializer(modelInitializer, modelWriteSanitizer);
             for (String hash : contentRepositoryHashes) {

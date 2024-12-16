@@ -30,6 +30,7 @@ import org.jboss.as.model.test.ModelTestControllerVersion;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
+import org.junit.AssumptionViolatedException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -66,6 +67,9 @@ public class DomainDeploymentTransformersTestCase extends AbstractCoreModelTest 
             KernelServices legacyServices = mainServices.getLegacyServices(modelVersion);
             Assert.assertTrue("Legacy services didn't boot for version " + modelVersion, legacyServices.isSuccessfulBoot());
             checkCoreModelTransformation(mainServices, modelVersion);
+        } catch (AssumptionViolatedException ex) {
+            // If the test is ignored, we want to propagate the exception
+            throw ex;
         } catch (Exception ex) {
             throw new RuntimeException("Error for version " + modelVersion + " " + ex.getMessage(), ex);
         }
@@ -86,10 +90,13 @@ public class DomainDeploymentTransformersTestCase extends AbstractCoreModelTest 
 
             List<ModelNode> operations = builder.parseXmlResource("domain-exploded-deployments.xml");
             //removing the ading of "management-client-content" => "rollout-plans
-            operations = operations.subList(0, operations.size() -2);
+            operations = operations.subList(0, operations.size() - 2);
             ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, operations, getConfig());
+        } catch (AssumptionViolatedException ex) {
+            // If the test is ignored, we want to propagate the exception
+            throw ex;
         } catch (Exception ex) {
-            throw new RuntimeException("Error for version " + modelVersion + " " + ex.getMessage(), ex);
+            throw new Exception("Error for version " + modelVersion + " " + ex.getMessage(), ex);
         }
     }
 

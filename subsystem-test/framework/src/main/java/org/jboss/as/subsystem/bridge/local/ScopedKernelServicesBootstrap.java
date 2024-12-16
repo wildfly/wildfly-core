@@ -14,6 +14,7 @@ import org.jboss.as.subsystem.bridge.impl.ChildFirstClassLoaderKernelServicesFac
 import org.jboss.as.subsystem.bridge.impl.ClassLoaderObjectConverterImpl;
 import org.jboss.as.subsystem.bridge.impl.LegacyControllerKernelServicesProxy;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -38,37 +39,68 @@ public class ScopedKernelServicesBootstrap {
     }
 
     private Object createChildClassLoaderKernelServices(String mainSubsystemName, String extensionClassName, AdditionalInitialization additionalInit, ModelTestOperationValidatorFilter validateOpsFilter,
-            List<ModelNode> bootOperations, ModelVersion legacyModelVersion, boolean persistXml){
+                                                        List<ModelNode> bootOperations, ModelVersion legacyModelVersion, boolean persistXml) {
         try {
+            Stability stability = additionalInit.getStability();
             Class<?> clazz = legacyChildFirstClassLoader.loadClass(ChildFirstClassLoaderKernelServicesFactory.class.getName());
 
-            Method m = clazz.getMethod("create",
-                    String.class,
-                    String.class,
-                    legacyChildFirstClassLoader.loadClass(AdditionalInitialization.class.getName()),
-                    legacyChildFirstClassLoader.loadClass(ModelTestOperationValidatorFilter.class.getName()),
-                    List.class,
-                    legacyChildFirstClassLoader.loadClass(ModelVersion.class.getName()),
-                    Boolean.TYPE);
+            List<Object> convertedBootOps = getConvertedBootOps(bootOperations);
 
-            List<Object> convertedBootOps = new ArrayList<Object>();
-            for (int i = 0 ; i < bootOperations.size() ; i++) {
-                ModelNode node = bootOperations.get(i);
-                if (node != null) {
-                    convertedBootOps.add(objectConverter.convertModelNodeToChildCl(node));
-                }
-            }
-
-            //Convert additional Init
             Object convertedAdditionalInit = objectConverter.convertAdditionalInitializationToChildCl(additionalInit);
             Object convertedModelVersion = objectConverter.convertModelVersionToChildCl(legacyModelVersion);
             Object convertedValidateOpsFilter = objectConverter.convertValidateOperationsFilterToChildCl(validateOpsFilter);
 
+            if (!Stability.DEFAULT.equals(stability)) {
+                Method m = clazz.getMethod("create",
+                        String.class,
+                        String.class,
+                        legacyChildFirstClassLoader.loadClass(AdditionalInitialization.class.getName()),
+                        legacyChildFirstClassLoader.loadClass(ModelTestOperationValidatorFilter.class.getName()),
+                        List.class,
+                        legacyChildFirstClassLoader.loadClass(ModelVersion.class.getName()),
+                        Boolean.TYPE,
+                        String.class);
 
-            return m.invoke(null, mainSubsystemName, extensionClassName, convertedAdditionalInit, convertedValidateOpsFilter, convertedBootOps, convertedModelVersion, persistXml);
+                return m.invoke(null,
+                        mainSubsystemName,
+                        extensionClassName,
+                        convertedAdditionalInit,
+                        convertedValidateOpsFilter,
+                        convertedBootOps,
+                        convertedModelVersion,
+                        persistXml,
+                        stability.toString());
+            } else {
+                Method m = clazz.getMethod("create",
+                        String.class,
+                        String.class,
+                        legacyChildFirstClassLoader.loadClass(AdditionalInitialization.class.getName()),
+                        legacyChildFirstClassLoader.loadClass(ModelTestOperationValidatorFilter.class.getName()),
+                        List.class,
+                        legacyChildFirstClassLoader.loadClass(ModelVersion.class.getName()),
+                        Boolean.TYPE);
 
+                return m.invoke(null,
+                        mainSubsystemName,
+                        extensionClassName,
+                        convertedAdditionalInit,
+                        convertedValidateOpsFilter,
+                        convertedBootOps,
+                        convertedModelVersion,
+                        persistXml);
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private List<Object> getConvertedBootOps(List<ModelNode> bootOperations) {
+        List<Object> convertedBootOps = new ArrayList<>();
+        for (ModelNode node : bootOperations) {
+            if (node != null) {
+                convertedBootOps.add(objectConverter.convertModelNodeToChildCl(node));
+            }
+        }
+        return convertedBootOps;
     }
 }
