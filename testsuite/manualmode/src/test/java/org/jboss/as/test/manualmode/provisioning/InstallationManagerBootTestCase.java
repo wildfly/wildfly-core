@@ -16,6 +16,7 @@ import jakarta.inject.Inject;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.test.module.util.TestModule;
+import org.jboss.as.test.shared.AssumeTestGroupUtil;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.logging.TestLogHandlerSetupTask;
 import org.jboss.shrinkwrap.api.asset.StringAsset;

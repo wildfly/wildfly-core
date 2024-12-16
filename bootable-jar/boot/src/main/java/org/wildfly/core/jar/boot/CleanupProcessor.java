@@ -15,11 +15,11 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.TimeUnit;
 
 /**
- * An entry point that expects a first parameter of an install directory and a second parameter of the number of retries
- * used to delete the install directory.
+ * An entry point that expects a first parameter of an install directory, a second parameter of the number of retries
+ * used to delete the install directory and finally the pid of the process that started it.
  * <p>
- * The retries are used for cases where a process may still have files locked and this process is executed before the
- * process has fully exited. A 0.5 second sleep will happen between each retry.
+ * The retries are used for cases where some un-expected errors occurs during deletion.
+ * A 0.5 second sleep will happen between each retry.
  * </p>
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -28,12 +28,23 @@ import java.util.concurrent.TimeUnit;
 public class CleanupProcessor {
 
     public static void main(final String[] args) throws Exception {
-        if (args == null || args.length != 2) {
-            throw new IllegalArgumentException("The path to the install directory and number of retires are required.");
+        if (args == null || args.length != 3) {
+            throw new IllegalArgumentException("The path to the install directory, number of retires and pid are required.");
         }
         final Path installDir = Paths.get(args[0]);
         final int retries = Integer.parseInt(args[1]);
+        final long pid = Long.parseLong(args[2]);
         final Path cleanupMarker = installDir.resolve("wildfly-cleanup-marker");
+        // An invalid case, do not attempt to delete an installation that has no marker.
+        if (Files.notExists(cleanupMarker)) {
+            return;
+        }
+        // Wait until the process that started this process is terminated.
+        // Starting the deletion of the installation during the other process shutdown
+        // has no guarantee that the installation will be fully cleaned up.
+        while (ProcessHandle.of(pid).isPresent()) {
+            TimeUnit.MILLISECONDS.sleep(500L);
+        }
         int attempts = 1;
         while (attempts <= retries) {
             final boolean lastAttempt = attempts == retries;
