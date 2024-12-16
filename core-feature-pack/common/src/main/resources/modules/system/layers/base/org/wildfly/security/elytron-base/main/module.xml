@@ -34,7 +34,6 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-credential-source-impl}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-credential-store}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-digest}"/>
-        <artifact name="${org.wildfly.security:wildfly-elytron-dynamic-ssl}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-encryption}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http-basic}"/>
@@ -112,5 +111,6 @@
         modules use the parser, they need to have visibility to this module.
         -->
         <module name="org.wildfly.client.config" export="true"/>
+        <module name="org.wildfly.security.elytron-dynamic-ssl" export="true" optional="true"/>
     </dependencies>
 </module>

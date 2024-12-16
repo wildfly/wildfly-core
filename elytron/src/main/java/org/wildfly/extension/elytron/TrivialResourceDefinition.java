@@ -23,6 +23,7 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.jboss.as.version.Stability;
 
 /**
@@ -36,10 +37,25 @@ final class TrivialResourceDefinition extends SimpleResourceDefinition {
     private final Map<OperationDefinition, OperationStepHandler> operations;
     private final Map<AttributeDefinition, OperationStepHandler> readOnlyAttributes;
     private final List<ResourceDefinition> children;
+    private final String dependencyPackageName;
+
+    TrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
+        this(pathKey, resourceDescriptionResolver, add, new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities, Stability.DEFAULT);
+    }
+
+    TrivialResourceDefinition(String pathKey, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
+        this(pathKey, ElytronExtension.getResourceDescriptionResolver(pathKey), add, new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities, Stability.DEFAULT);
+    }
+
+    private TrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AbstractRemoveStepHandler remove, AttributeDefinition[] attributes,
+                                      Map<AttributeDefinition, OperationStepHandler> readOnlyAttributes, Map<OperationDefinition, OperationStepHandler> operations, List<ResourceDefinition> children,
+                                      RuntimeCapability<?>[] runtimeCapabilities, Stability stability) {
+        this(pathKey, resourceDescriptionResolver, add, remove, attributes, readOnlyAttributes, operations, children, runtimeCapabilities, stability, null);
+    }
 
     private TrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AbstractRemoveStepHandler remove, AttributeDefinition[] attributes,
             Map<AttributeDefinition, OperationStepHandler> readOnlyAttributes, Map<OperationDefinition, OperationStepHandler> operations, List<ResourceDefinition> children,
-            RuntimeCapability<?>[] runtimeCapabilities, Stability stability) {
+            RuntimeCapability<?>[] runtimeCapabilities, Stability stability, String dependencyPackageName) {
         super(new Parameters(ResourceRegistration.of(PathElement.pathElement(pathKey), stability),
                 resourceDescriptionResolver)
             .setAddHandler(add)
@@ -52,14 +68,7 @@ final class TrivialResourceDefinition extends SimpleResourceDefinition {
         this.readOnlyAttributes = readOnlyAttributes;
         this.operations = operations;
         this.children = children;
-    }
-
-    TrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
-        this(pathKey, resourceDescriptionResolver, add, new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities, Stability.DEFAULT);
-    }
-
-    TrivialResourceDefinition(String pathKey, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
-        this(pathKey, ElytronExtension.getResourceDescriptionResolver(pathKey), add, new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities), attributes, null, null, null, runtimeCapabilities, Stability.DEFAULT);
+        this.dependencyPackageName = dependencyPackageName;
     }
 
     @Override
@@ -97,6 +106,13 @@ final class TrivialResourceDefinition extends SimpleResourceDefinition {
         }
     }
 
+    @Override
+    public void registerAdditionalRuntimePackages(ManagementResourceRegistration resourceRegistration) {
+        if (dependencyPackageName != null) {
+            resourceRegistration.registerAdditionalRuntimePackages(RuntimePackageDependency.required(dependencyPackageName));
+        }
+    }
+
     public AttributeDefinition[] getAttributes() {
         return attributes;
     }
@@ -117,6 +133,7 @@ final class TrivialResourceDefinition extends SimpleResourceDefinition {
         private RuntimeCapability<?>[] runtimeCapabilities;
         private List<ResourceDefinition> children;
         private Stability stability = Stability.DEFAULT;
+        private String dependencyPackageName;
 
         Builder() {}
 
@@ -189,11 +206,16 @@ final class TrivialResourceDefinition extends SimpleResourceDefinition {
             return this;
         }
 
+        Builder setDependencyPackageName(String dependencyPackageName) {
+            this.dependencyPackageName = dependencyPackageName;
+            return this;
+        }
+
         ResourceDefinition build() {
             ResourceDescriptionResolver resourceDescriptionResolver = this.resourceDescriptionResolver != null ? this.resourceDescriptionResolver : ElytronExtension.getResourceDescriptionResolver(pathKey);
             return new TrivialResourceDefinition(pathKey, resourceDescriptionResolver, addHandler,
                     removeHandler != null ? removeHandler : new TrivialCapabilityServiceRemoveHandler(addHandler, runtimeCapabilities),
-                    attributes, readOnlyAttributes, operations, children, runtimeCapabilities, stability);
+                    attributes, readOnlyAttributes, operations, children, runtimeCapabilities, stability, dependencyPackageName);
         }
 
     }
