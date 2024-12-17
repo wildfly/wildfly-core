@@ -282,8 +282,9 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
         for (final String aliasName : moduleSpecification.getModuleAliases()) {
             final ModuleIdentifier alias = ModuleIdentifier.fromString(aliasName);
+
             final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(alias.toString());
-            final ModuleSpec spec = ModuleSpec.buildAlias(aliasName, moduleIdentifier.getName()).create();
+            final ModuleSpec spec = ModuleSpec.buildAlias(aliasName, moduleIdentifier.toString()).create();
 
             HashSet<ModuleDependency> dependencies = new HashSet<>(moduleSpecification.getAllDependencies());
             //we need to add the module we are aliasing as a dependency, to make sure that it will be resolved
