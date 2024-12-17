@@ -8,6 +8,7 @@ package org.wildfly.extension.elytron;
 import static org.jboss.as.model.test.FailedOperationTransformationConfig.REJECTED_RESOURCE;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_4_0;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_8_0_0;
+import static org.jboss.as.model.test.ModelTestControllerVersion.WILDFLY_31_0_0;
 import static org.junit.Assert.assertTrue;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUST_MANAGER;
 
@@ -108,6 +109,11 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
     @Test
     public void testTransformerEAP800() throws Exception {
         testTransformation(EAP_8_0_0);
+    }
+
+    @Test
+    public void testTransformerWFLY31() throws Exception {
+        testTransformation(WILDFLY_31_0_0);
     }
 
     private KernelServices buildKernelServices(String xml, ModelTestControllerVersion controllerVersion, ModelVersion version, String... mavenResourceURLs) throws Exception {
