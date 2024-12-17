@@ -3809,4 +3809,24 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 517, value = "There are multiple Parallel Boot Operations.")
     void multipleParallelBootOperation();
+
+    @LogMessage(level = WARN)
+    @Message(id = 518, value = "Attribute '%2$s' of element '%1$s' is no longer supported and will be ignored")
+    void attributeIgnored(QName elementName, QName attributeName);
+
+    @LogMessage(level = WARN)
+    @Message(id = 519, value = "Element '%s' is no longer supported and will be ignored")
+    void elementIgnored(QName elementName);
+
+    @Message(id = 520, value = "Element '%s' already defines attribute: %s")
+    IllegalArgumentException duplicateAttributes(QName elementName, QName attributeName);
+
+    @Message(id = 521, value = "XML model group already defines element: %s")
+    IllegalArgumentException duplicateElements(QName elementName);
+
+    @Message(id = 522, value = "Element(s) '%s' occur(s) an insufficient number of times")
+    String minOccursNotReached(Set<QName> elements);
+
+    @Message(id = 523, value = "Element(s) '%s' occur(s) an excessive number of times")
+    String maxOccursExceeded(Set<QName> elements);
 }
