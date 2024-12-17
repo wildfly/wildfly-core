@@ -112,7 +112,7 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
         this.moduleDefinition = new ModuleDefinition(moduleIdentifier, Collections.emptySet(), moduleSpec);
 
 
-        ServiceModuleLoader.installModuleResolvedService(context.getChildTarget(), moduleIdentifier);
+        ServiceModuleLoader.installModuleResolvedService(context.getChildTarget(), moduleIdentifier.toString());
     }
 
     @Override

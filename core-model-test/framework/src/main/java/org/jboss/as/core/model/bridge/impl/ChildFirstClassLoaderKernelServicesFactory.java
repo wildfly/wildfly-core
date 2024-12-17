@@ -29,6 +29,7 @@ import org.jboss.as.core.model.test.TestParser;
 import org.jboss.as.host.controller.HostRunningModeControl;
 import org.jboss.as.host.controller.RestartMode;
 import org.jboss.as.model.test.ModelTestOperationValidatorFilter;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLMapper;
 
@@ -51,6 +52,28 @@ public class ChildFirstClassLoaderKernelServicesFactory {
 
         RunningModeControl runningModeControl = new HostRunningModeControl(RunningMode.ADMIN_ONLY, RestartMode.HC_ONLY);
         ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, runningModeControl);
+        return AbstractKernelServicesImpl.create(ProcessType.HOST_CONTROLLER, runningModeControl, validateOpsFilter, bootOperations, testParser, legacyModelVersion, type, modelInitializer, extensionRegistry, null);
+    }
+
+    public static KernelServices create(List<ModelNode> bootOperations, ModelTestOperationValidatorFilter validateOpsFilter, ModelVersion legacyModelVersion,
+                                        List<LegacyModelInitializerEntry> modelInitializerEntries, String stabilityStr) throws Exception {
+
+        Stability stability = Stability.fromString(stabilityStr);
+        TestModelType type = TestModelType.DOMAIN;
+        XMLMapper xmlMapper = XMLMapper.Factory.create();
+        TestParser testParser = TestParser.create(stability, null, xmlMapper, type);
+        ModelInitializer modelInitializer = null;
+        if (modelInitializerEntries != null && !modelInitializerEntries.isEmpty()) {
+            modelInitializer = new LegacyModelInitializer(modelInitializerEntries);
+        }
+
+        RunningModeControl runningModeControl = new HostRunningModeControl(RunningMode.ADMIN_ONLY, RestartMode.HC_ONLY);
+
+        ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(ProcessType.HOST_CONTROLLER)
+                .withRunningMode(runningModeControl.getRunningMode())
+                .withStability(stability)
+                .build();
+
         return AbstractKernelServicesImpl.create(ProcessType.HOST_CONTROLLER, runningModeControl, validateOpsFilter, bootOperations, testParser, legacyModelVersion, type, modelInitializer, extensionRegistry, null);
     }
 

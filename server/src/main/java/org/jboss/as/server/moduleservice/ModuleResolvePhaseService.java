@@ -65,7 +65,7 @@ public class ModuleResolvePhaseService implements Service<ModuleResolvePhaseServ
             if (spec != null) { //this can happen for optional dependencies
                 for (ModuleDependency dep : spec.getDependencies()) {
                     if (dep.isOptional()) continue; // we don't care about optional dependencies
-                    if (ServiceModuleLoader.isDynamicModule(dep.getIdentifier())) {
+                    if (ServiceModuleLoader.isDynamicModule(dep.getIdentifier().toString())) {
                         if (!alreadyResolvedModules.contains(dep.getIdentifier())) {
                             nextAlreadySeen.add(dep.getIdentifier());
                             nextPhaseIdentifiers.add(dep);
@@ -75,7 +75,7 @@ public class ModuleResolvePhaseService implements Service<ModuleResolvePhaseServ
             }
         }
         if (nextPhaseIdentifiers.isEmpty()) {
-            ServiceModuleLoader.installModuleResolvedService(startContext.getChildTarget(), moduleIdentifier);
+            ServiceModuleLoader.installModuleResolvedService(startContext.getChildTarget(), moduleIdentifier.toString());
         } else {
             installService(startContext.getChildTarget(), moduleIdentifier, phaseNumber + 1, nextPhaseIdentifiers, nextAlreadySeen);
         }
@@ -92,7 +92,7 @@ public class ModuleResolvePhaseService implements Service<ModuleResolvePhaseServ
         final ModuleResolvePhaseService nextPhaseService = new ModuleResolvePhaseService(moduleIdentifier, nextAlreadySeen, phaseNumber);
         ServiceBuilder<ModuleResolvePhaseService> builder = serviceTarget.addService(moduleSpecServiceName(moduleIdentifier, phaseNumber), nextPhaseService);
         for (ModuleDependency module : nextPhaseIdentifiers) {
-            builder.addDependency(ServiceModuleLoader.moduleSpecServiceName(module.getIdentifier()), ModuleDefinition.class, new Injector<ModuleDefinition>() {
+            builder.addDependency(ServiceModuleLoader.moduleSpecServiceName(module.getIdentifier().toString()), ModuleDefinition.class, new Injector<ModuleDefinition>() {
 
                 ModuleDefinition definition;
 
@@ -127,8 +127,8 @@ public class ModuleResolvePhaseService implements Service<ModuleResolvePhaseServ
     }
 
     public static ServiceName moduleSpecServiceName(ModuleIdentifier identifier, int phase) {
-        if (!ServiceModuleLoader.isDynamicModule(identifier)) {
-            throw ServerLogger.ROOT_LOGGER.missingModulePrefix(identifier, ServiceModuleLoader.MODULE_PREFIX);
+        if (!ServiceModuleLoader.isDynamicModule(identifier.toString())) {
+            throw ServerLogger.ROOT_LOGGER.missingModulePrefix(identifier.toString(), ServiceModuleLoader.MODULE_PREFIX);
         }
         return SERVICE_NAME.append(identifier.getName()).append(identifier.getSlot()).append("" + phase);
     }

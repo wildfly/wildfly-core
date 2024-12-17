@@ -9,19 +9,25 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.version.Stability;
 import org.wildfly.legacy.version.LegacyVersions;
 
 
+/**
+ * Represents the versions of the legacy controllers that are available for testing.
+ */
 public enum ModelTestControllerVersion {
-    //AS releases
-
+    // Release version under test
     MASTER (CurrentVersion.VERSION, false, null, "master" ),
 
     //EAP releases
     EAP_7_4_0("7.4.0.GA-redhat-00005", true, "23.0.0", "15.0.2.Final-redhat-00001", "7.4.0"),
     EAP_8_0_0("8.0.0.GA-redhat-00011", true, "29.0.0", "21.0.5.Final-redhat-00001", "8.0.0"),
     EAP_XP_4("4.0.0.GA-redhat-00003", true, "23.0.0", "15.0.26.Final-redhat-00001", "xp4"),
-    EAP_XP_5("5.0.0.GA-redhat-00005", true, "29.0.0", "21.0.5.Final-redhat-00001", "xp5");
+    EAP_XP_5("5.0.0.GA-redhat-00005", true, "29.0.0", "21.0.5.Final-redhat-00001", "xp5"),
+
+    //WildFly releases
+    WILDFLY_31_0_0("31.0.0.Final", false, "31.0.0", "23.0.1.Final", "wf31");
 
     private final String mavenGavVersion;
     private final String testControllerVersion;
@@ -35,18 +41,24 @@ public enum ModelTestControllerVersion {
     private final String realVersionName;
     private final String artifactIdPrefix;
     private final Map<String, ModelVersion> subsystemModelVersions = new LinkedHashMap<>();
+    private final Stability stability;
+    private final boolean ignored;
 
     ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, String realVersionName) {
         this(mavenGavVersion, eap, testControllerVersion, null, realVersionName);
     }
-
     ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, String coreVersion, String realVersionName) {
+        this(mavenGavVersion, eap, testControllerVersion, coreVersion, realVersionName, false);
+    }
+    ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, String coreVersion, String realVersionName, boolean ignored) {
         this.mavenGavVersion = mavenGavVersion;
         this.testControllerVersion = testControllerVersion;
         this.eap = eap;
+        this.stability = eap ? Stability.DEFAULT : Stability.COMMUNITY;
         this.validLegacyController = testControllerVersion != null;
         this.coreVersion = coreVersion == null? mavenGavVersion : coreVersion; //full == core
         this.realVersionName = realVersionName;
+        this.ignored = ignored;
         if (eap) {
             if (coreVersion != null) { //eap 7+ has core version defined
                 this.coreMavenGroupId = "org.wildfly.core";
@@ -159,4 +171,11 @@ public enum ModelTestControllerVersion {
 
     }
 
+    public Stability getStability() {
+        return stability;
+    }
+
+    public boolean isIgnored() {
+        return ignored;
+    }
 }

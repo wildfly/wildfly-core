@@ -95,7 +95,7 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
                             // now register a module spec service for this extension
                             // this makes it available for loading
                             ExternalModuleSpecService service = new ExternalModuleSpecService(moduleIdentifier, jar);
-                            ServiceName serviceName = ServiceModuleLoader.moduleSpecServiceName(moduleIdentifier);
+                            ServiceName serviceName = ServiceModuleLoader.moduleSpecServiceName(moduleIdentifier.toString());
                             ServiceBuilder sb = context.getChildTarget().addService(serviceName, service);
                             sb.requires(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX);
                             sb.setInitialMode(Mode.ON_DEMAND);

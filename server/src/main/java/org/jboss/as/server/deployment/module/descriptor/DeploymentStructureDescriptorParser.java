@@ -288,7 +288,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             // additional modules will not be created till much later, a dep on them would fail
             if (identifier.getName().startsWith(ServiceModuleLoader.MODULE_PREFIX) &&
                 !(additionalModules.containsKey(identifier) || isSubdeployment(identifier, deploymentUnit))) {
-                phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(identifier));
+                phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(identifier.toString()));
             }
         }
         moduleSpec.setLocalLast(rootDeploymentSpecification.isLocalLast());

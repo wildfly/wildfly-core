@@ -181,6 +181,60 @@ public abstract class ModelTestModelControllerService extends AbstractController
         this.runningModeControl = runningModeControl;
     }
 
+    /**
+     * This is the constructor to use for WildFly 31.0.0 core model tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, Stability stability, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                              final ResourceDefinition rootResourceDefinition, final ControlledProcessState processState,
+                                              final ExpressionResolver expressionResolver, final CapabilityRegistry capabilityRegistry, final Controller31x version) {
+        super(null,
+                null,
+                processType,
+                stability,
+                runningModeControl,
+                persister,
+                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition,
+                null,
+                expressionResolver,
+                AuditLogger.NO_OP_LOGGER,
+                new DelegatingConfigurableAuthorizer(),
+                new ManagementSecurityIdentitySupplier(),
+                capabilityRegistry,
+                null);
+
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
+    /**
+     * This is the constructor to use for WildFly 31.0.0 subsystem tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, Stability stability, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                              final ResourceDefinition resourceDefinition, final ExpressionResolver expressionResolver, final ControlledProcessState processState,
+                                              final CapabilityRegistry capabilityRegistry, final Controller31x version) {
+        super(null,
+                null,
+                processType,
+                stability,
+                runningModeControl,
+                persister,
+                processState == null ? new ControlledProcessState(true) : processState,
+                resourceDefinition, null,
+                expressionResolver != null ? expressionResolver : ExpressionResolver.TEST_RESOLVER,
+                AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(),
+                new ManagementSecurityIdentitySupplier(),
+                capabilityRegistry,
+                null);
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
 
     /**
      * This is the constructor to use for current core model tests
@@ -479,6 +533,12 @@ public abstract class ModelTestModelControllerService extends AbstractController
     public static class Controller29x {
         public static Controller29x INSTANCE = new Controller29x();
         private Controller29x() {
+        }
+    }
+
+    public static class Controller31x {
+        public static Controller31x INSTANCE = new Controller31x();
+        private Controller31x() {
         }
     }
 }

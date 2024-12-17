@@ -1242,6 +1242,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
     @Override
     public final void restartRequired() {
         if (isBooting()) {
+            MGMT_OP_LOGGER.debug("Server is booting so we didn't set the restart required flag");
             return;
         }
         activeStep.setRestartStamp(processState.setRestartRequired());

@@ -123,7 +123,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         for (final DeploymentUnit subDeployment : deploymentUnit.getAttachmentList(Attachments.SUB_DEPLOYMENTS)) {
             ModuleIdentifier moduleId = subDeployment.getAttachment(Attachments.MODULE_IDENTIFIER);
             if (moduleId != null) {
-                phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleSpecServiceName(moduleId));
+                phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleSpecServiceName(moduleId.toString()));
             }
         }
 
@@ -260,7 +260,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         specBuilder.setClassFileTransformer(delegatingClassTransformer);
         deploymentUnit.putAttachment(DelegatingClassTransformer.ATTACHMENT_KEY, delegatingClassTransformer);
         final ModuleSpec moduleSpec = specBuilder.create();
-        final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(moduleIdentifier);
+        final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(moduleIdentifier.toString());
 
         ModuleDefinition moduleDefinition = new ModuleDefinition(moduleIdentifier, new HashSet<>(moduleSpecification.getAllDependencies()), moduleSpec);
 
@@ -282,7 +282,8 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
         for (final String aliasName : moduleSpecification.getModuleAliases()) {
             final ModuleIdentifier alias = ModuleIdentifier.fromString(aliasName);
-            final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(alias);
+
+            final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(alias.toString());
             final ModuleSpec spec = ModuleSpec.buildAlias(aliasName, moduleIdentifier.toString()).create();
 
             HashSet<ModuleDependency> dependencies = new HashSet<>(moduleSpecification.getAllDependencies());

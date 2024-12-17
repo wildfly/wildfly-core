@@ -39,6 +39,7 @@ import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -80,6 +81,7 @@ import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.controller.resources.VersionModelInitializer;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.as.version.ProductConfig;
+import org.jboss.as.version.Stability;
 import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.StartContext;
@@ -102,6 +104,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     private final ControlledProcessState processState;
     private final ExtensionRegistry extensionRegistry;
     private final CapabilityRegistry capabilityRegistry;
+    private final Stability stability;
     private volatile Initializer initializer;
 
     TestModelControllerService(ProcessType processType, RunningModeControl runningModeControl, StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
@@ -110,6 +113,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
         super(processType, extensionRegistry.getStability(), runningModeControl, null, persister, validateOpsFilter, rootResourceDefinition, processState,
                 expressionResolver, capabilityRegistry);
         this.type = type;
+        this.stability = extensionRegistry.getStability();
         this.runningModeControl = runningModeControl;
         this.pathManagerService = type == TestModelType.STANDALONE ? new ServerPathManagerService(capabilityRegistry) : new HostPathManagerService(capabilityRegistry);
         this.modelInitializer = modelInitializer;
@@ -191,13 +195,15 @@ class TestModelControllerService extends ModelTestModelControllerService {
             throw new RuntimeException(e);
         }
         props.put(ServerEnvironment.JBOSS_SERVER_DEFAULT_CONFIG, "standalone.xml");
-        ProductConfig pc =  new ProductConfig("Test", Version.AS_VERSION, "main");
-        return new ServerEnvironment(null, props, new HashMap<String, String>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), pc, false);
+        props.put(ProcessEnvironment.STABILITY, this.stability.toString());
+
+        ProductConfig productConfig = new ProductConfig("Standalone-under-test", Version.AS_VERSION, "main", this.stability);
+        return new ServerEnvironment(null, props, new HashMap<>(), "standalone.xml", null, LaunchType.STANDALONE, runningModeControl.getRunningMode(), productConfig, false);
     }
 
     private HostControllerEnvironment createHostControllerEnvironment() {
         try {
-            Map<String, String> props = new HashMap<String, String>();
+            Map<String, String> props = new HashMap<>();
             File home = new File("target/jbossas");
             delete(home);
             home.mkdir();
@@ -230,7 +236,11 @@ class TestModelControllerService extends ModelTestModelControllerService {
             RunningMode initialRunningMode = runningModeControl.getRunningMode();
             boolean backupDomainFiles = false;
             boolean useCachedDc = false;
-            ProductConfig productConfig = ProductConfig.fromFilesystemSlot(null, "",  props);
+
+            props.put(ProcessEnvironment.STABILITY, this.stability.toString());
+
+            ProductConfig productConfig = new ProductConfig("HostController-under-test", Version.AS_VERSION, "main", this.stability);
+
             return new HostControllerEnvironment(props, isRestart, modulePath, processControllerAddress, processControllerPort,
                     hostControllerAddress, hostControllerPort, defaultJVM, domainConfig, initialDomainConfig, hostConfig, initialHostConfig,
                     initialRunningMode, backupDomainFiles, useCachedDc, productConfig);

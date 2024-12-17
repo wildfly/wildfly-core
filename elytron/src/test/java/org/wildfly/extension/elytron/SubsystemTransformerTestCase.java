@@ -111,9 +111,11 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
     }
 
     private KernelServices buildKernelServices(String xml, ModelTestControllerVersion controllerVersion, ModelVersion version, String... mavenResourceURLs) throws Exception {
-        KernelServicesBuilder builder = this.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT).setSubsystemXml(xml);
+        AdditionalInitialization additionalInitialization = AdditionalInitialization.fromModelTestControllerVersion(controllerVersion);
 
-        builder.createLegacyKernelServicesBuilder(AdditionalInitialization.MANAGEMENT, controllerVersion, version)
+        KernelServicesBuilder builder = this.createKernelServicesBuilder(additionalInitialization).setSubsystemXml(xml);
+
+        builder.createLegacyKernelServicesBuilder(additionalInitialization, controllerVersion, version)
                 .addMavenResourceURL(mavenResourceURLs)
                 .skipReverseControllerCheck()
                 .addParentFirstClassPattern("org.jboss.as.controller.logging.ControllerLogger*")
@@ -151,8 +153,8 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
         ModelVersion elytronVersion = controllerVersion.getSubsystemModelVersion(getMainSubsystemName());
 
         //Boot up empty controllers with the resources needed for the ops coming from the xml to work
-        KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.withCapabilities(
-                RuntimeCapability.buildDynamicCapabilityName(Capabilities.DATA_SOURCE_CAPABILITY_NAME, "ExampleDS")
+        KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.withCapabilities(controllerVersion.getStability(),
+                        RuntimeCapability.buildDynamicCapabilityName(Capabilities.DATA_SOURCE_CAPABILITY_NAME, "ExampleDS")
         ));
         builder.createLegacyKernelServicesBuilder(AdditionalInitialization.MANAGEMENT, controllerVersion, elytronVersion)
                 .addMavenResourceURL(controllerVersion.getCoreMavenGroupId() + ":wildfly-elytron-integration:" + controllerVersion.getCoreVersion())
