@@ -88,7 +88,7 @@ public final class ModuleExtensionListProcessor implements DeploymentUnitProcess
             dependency.addImportFilter(PathFilters.getMetaInfSubdirectoriesFilter(), true);
             dependency.addImportFilter(PathFilters.getMetaInfFilter(), true);
             moduleSpecification.addLocalDependency(dependency);
-            nextPhaseDeps.add(ServiceModuleLoader.moduleSpecServiceName(extension));
+            nextPhaseDeps.add(ServiceModuleLoader.moduleSpecServiceName(extension.toString()));
         }
 
 
@@ -107,7 +107,7 @@ public final class ModuleExtensionListProcessor implements DeploymentUnitProcess
                             if (extension != null) {
                                 moduleSpecification.addLocalDependency(new ModuleDependency(moduleLoader, extension, false, false,
                                         true, false));
-                                nextPhaseDeps.add(ServiceModuleLoader.moduleSpecServiceName(extension));
+                                nextPhaseDeps.add(ServiceModuleLoader.moduleSpecServiceName(extension.toString()));
                             } else {
                                 ServerLogger.DEPLOYMENT_LOGGER.cannotFindExtensionListEntry(entry, resourceRoot);
                             }
