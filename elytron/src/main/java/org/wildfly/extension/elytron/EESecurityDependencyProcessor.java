@@ -31,8 +31,8 @@ class EESecurityDependencyProcessor implements DeploymentUnitProcessor {
         final ModuleLoader moduleLoader = Module.getBootModuleLoader();
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
 
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, JACC_API, false, false, true, false));
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, AUTH_MESSAGE_API, false, false, true, false));
+        moduleSpecification.addSystemDependency(ModuleDependency.Builder.of(moduleLoader, JACC_API).setImportServices(true).build());
+        moduleSpecification.addSystemDependency(ModuleDependency.Builder.of(moduleLoader, AUTH_MESSAGE_API).setImportServices(true).build());
     }
 
 }
