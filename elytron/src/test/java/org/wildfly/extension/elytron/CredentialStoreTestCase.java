@@ -9,6 +9,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -28,7 +29,9 @@ import java.util.Set;
 
 import javax.crypto.SecretKey;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
@@ -52,6 +55,10 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
 
     private static final String CLEAR_TEXT = "Lorem ipsum dolor sit amet";
     private static final String CONFIGURATION = "credential-store.xml";
+
+    private static final PathAddress ROOT_ADDRESS = PathAddress.pathAddress(SUBSYSTEM, ElytronExtension.SUBSYSTEM_NAME);
+    private static final PathAddress CRED_STORE_ADDRESS = ROOT_ADDRESS.append(ElytronDescriptionConstants.CREDENTIAL_STORE, "test");
+    private static final PathAddress SECRET_KEY_CRED_STORE_128 = ROOT_ADDRESS.append(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, "test128");
 
     private KernelServices services = null;
 
@@ -89,6 +96,24 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
                 return null;
             }
         });
+    }
+
+    @Test
+    public void testWriteAttributeCreateCredentialStoreToFalse() {
+        ModelNode operation = Util.getWriteAttributeOperation(CRED_STORE_ADDRESS, ElytronDescriptionConstants.CREATE, false);
+        assertSuccess(services.executeOperation(operation));
+        assertEquals(false, readResource(CRED_STORE_ADDRESS).get(ElytronDescriptionConstants.CREATE).asBoolean());
+    }
+
+    @Test
+    public void testWriteAttributeKeySizeSecretKeyCredStoreTo192() {
+        ModelNode operation = Util.getWriteAttributeOperation(SECRET_KEY_CRED_STORE_128, ElytronDescriptionConstants.KEY_SIZE, 192);
+        assertSuccess(services.executeOperation(operation));
+        assertEquals(192, readResource(SECRET_KEY_CRED_STORE_128).get(ElytronDescriptionConstants.KEY_SIZE).asInt());
+    }
+
+    private ModelNode readResource(PathAddress address) {
+        return assertSuccess(services.executeOperation(Util.getReadResourceOperation(address))).get(ClientConstants.RESULT);
     }
 
     // Test Contents of dynamically initialised credential stores
