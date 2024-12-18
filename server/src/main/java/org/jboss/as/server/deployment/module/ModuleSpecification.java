@@ -14,6 +14,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -57,7 +58,7 @@ public class ModuleSpecification extends SimpleAttachable {
      * <p/>
      * User dependencies are not affected by exclusions.
      */
-    private final Set<ModuleDependency> userDependenciesSet = new HashSet<>();
+    private final Set<ModuleDependency> userDependenciesSet = new CopyOnWriteArraySet<>();
 
     private final List<ResourceLoaderSpec> resourceLoaders = new ArrayList<>();
 
@@ -163,12 +164,18 @@ public class ModuleSpecification extends SimpleAttachable {
      */
     public void removeUserDependencies(final Predicate<ModuleDependency> predicate) {
         Iterator<ModuleDependency> iter = userDependenciesSet.iterator();
-        while (iter.hasNext()) {
-            ModuleDependency md = iter.next();
+        Set<ModuleDependency> toRemove = null;
+        for (ModuleDependency md : userDependenciesSet) {
             if (predicate.test(md)) {
-                iter.remove();
-                resetDependencyLists();
+                if (toRemove == null) {
+                    toRemove = new HashSet<>();
+                }
+                toRemove.add(md);
             }
+        }
+        if (toRemove != null) {
+            userDependenciesSet.removeAll(toRemove);
+            resetDependencyLists();
         }
     }
 
