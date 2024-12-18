@@ -37,7 +37,7 @@ public class LoggingDependencyDeploymentProcessor implements DeploymentUnitProce
             try {
                 LoggingLogger.ROOT_LOGGER.tracef("Adding module '%s' to deployment '%s'", moduleId, deploymentUnit.getName());
                 moduleLoader.loadModule(moduleId);
-                moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, moduleId, false, false, moduleDep.isImportServices(), false));
+                moduleSpecification.addSystemDependency(ModuleDependency.Builder.of(moduleLoader, moduleId).setImportServices(moduleDep.isImportServices()).build());
             } catch (ModuleLoadException ex) {
                 LoggingLogger.ROOT_LOGGER.debugf("Module not found: %s", moduleId);
             }
