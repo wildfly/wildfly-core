@@ -43,7 +43,7 @@ public class ModuleSpecificationTestCase {
         return createModuleDependency(identifier, (String) null);
     }
     private static ModuleDependency createModuleDependency(String identifier, String reason) {
-        return new ModuleDependency(TEST_LOADER, identifier, false, false, true, false, reason);
+        return ModuleDependency.Builder.of(TEST_LOADER, identifier).setImportServices(true).setReason(reason).build();
     }
     private static ModuleDependency createModuleDependency(String identifier, PathFilter importFilter) {
         ModuleDependency dependency = createModuleDependency(identifier, (String) null);

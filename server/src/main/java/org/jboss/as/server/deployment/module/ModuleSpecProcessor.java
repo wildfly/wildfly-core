@@ -289,7 +289,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
 
             HashSet<ModuleDependency> dependencies = new HashSet<>(moduleSpecification.getAllDependencies());
             //we need to add the module we are aliasing as a dependency, to make sure that it will be resolved
-            dependencies.add(new ModuleDependency(moduleLoader, moduleIdentifier, false, false, false, false));
+            dependencies.add(ModuleDependency.Builder.of(moduleLoader, moduleIdentifier.toString()).build());
             ModuleDefinition moduleDefinition = new ModuleDefinition(alias, dependencies, spec);
 
             final ServiceBuilder sb = phaseContext.getServiceTarget().addService(moduleSpecServiceName);
