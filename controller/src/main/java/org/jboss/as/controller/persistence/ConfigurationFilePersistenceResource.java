@@ -9,6 +9,7 @@ import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Files;
 
 import org.jboss.dmr.ModelNode;
 
@@ -37,7 +38,7 @@ public class ConfigurationFilePersistenceResource extends AbstractFilePersistenc
 
         if ( FilePersistenceUtils.isParentFolderWritable(fileName) ){
             tempFileName = FilePersistenceUtils.createTempFile(fileName);
-        } else if (configurationFile.getConfigurationDir().canWrite()) {
+        } else if (Files.isWritable(configurationFile.getConfigurationDir().toPath())) {
             tempFileName = FilePersistenceUtils.createTempFile(configurationFile.getConfigurationDir(), fileName.getName());
         } else {
             tempFileName = FilePersistenceUtils.createTempFile(configurationFile.getConfigurationTmpDir(), fileName.getName());

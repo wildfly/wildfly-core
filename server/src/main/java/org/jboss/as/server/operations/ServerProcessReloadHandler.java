@@ -159,6 +159,7 @@ public class ServerProcessReloadHandler extends ServerEnvironmentAwareProcessRel
         if (serverConfig != null && !environment.getServerConfigurationFile().checkCanFindNewBootFile(serverConfig)) {
             throw ServerLogger.ROOT_LOGGER.serverConfigForReloadNotFound(serverConfig);
         }
+        ServerLogger.ROOT_LOGGER.warn("Reloading with config file " + serverConfig);
         return new ReloadContext<RunningModeControl>() {
 
             @Override
