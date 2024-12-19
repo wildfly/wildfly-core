@@ -12,7 +12,6 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 
 /**
@@ -22,7 +21,7 @@ import org.jboss.modules.ModuleLoader;
  */
 class DependencyProcessor implements DeploymentUnitProcessor {
 
-    private final ModuleIdentifier elytronIdentifier = ModuleIdentifier.create("org.wildfly.security.elytron");
+    private final String elytronModuleName = "org.wildfly.security.elytron";
 
     @Override
     public void deploy(DeploymentPhaseContext context) throws DeploymentUnitProcessingException {
@@ -30,7 +29,7 @@ class DependencyProcessor implements DeploymentUnitProcessor {
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = Module.getBootModuleLoader();
 
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, elytronIdentifier, false, false, true, false));
+        moduleSpecification.addSystemDependency(ModuleDependency.Builder.of(moduleLoader, elytronModuleName).setImportServices(true).build());
     }
 
 }
