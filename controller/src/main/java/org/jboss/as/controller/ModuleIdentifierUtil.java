@@ -4,6 +4,8 @@
  */
 package org.jboss.as.controller;
 
+import java.util.function.BiFunction;
+
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -21,32 +23,88 @@ public final class ModuleIdentifierUtil {
      * @return the canonical representation. Will not return @{code null}
      */
     public static String canonicalModuleIdentifier(String moduleSpec) {
+        return parseModuleIdentifier(moduleSpec, ModuleIdentifierUtil::canonicalModuleIdentifier);
+    }
+
+    /**
+     * Parses the given module identifier into name and optional slot elements, passing those to the given
+     * function and returning the result of that function.
+     * <p/>
+     * This variant does not {@link #canonicalModuleIdentifier(String) canonicalize} the given identifier.
+     *
+     * @param moduleIdentifier an  identifier for a module. Cannot be {@code null}
+     * @param function a function to apply to the module's name and optional slot. Cannot be {@code null}.
+     *                 The slot value passed to the function may be null if the identifier does not contain one.
+     * @return the value returned by {@code function}
+     * @param <R> the type returned by {@code function}
+     */
+    public static <R> R parseModuleIdentifier(String moduleIdentifier, BiFunction<String, String, R> function) {
+        return parseModuleIdentifier(moduleIdentifier, function, false, null);
+    }
+
+
+    /**
+     * Parses the given module identifier into name and optional slot elements, passing those to the given
+     * function and returning the result of that function.
+     * <p/>
+     *
+     * @param moduleIdentifier an identifier for a module. Cannot be {@code null}
+     * @param function a function to apply to the module's name and optional slot. Cannot be {@code null}.
+     *                 The slot value passed to the function may be null if the identifier does not contain one.
+     * @param canonicalize if {@code true} the identifier will be {@link #canonicalModuleIdentifier(String) canonicalized} before parsing
+     * @return the value returned by {@code function}
+     * @param <R> the type returned by {@code function}
+     */
+    public static <R> R parseModuleIdentifier(String moduleIdentifier, BiFunction<String, String, R> function, boolean canonicalize) {
+        return parseModuleIdentifier(moduleIdentifier, function, canonicalize, null);
+    }
+
+
+    /**
+     * Parses the given module identifier into name and optional slot elements, passing those to the given
+     * function and returning the result of that function.
+     * <p/>
+     *
+     * @param moduleIdentifier an identifier for a module. Cannot be {@code null}
+     * @param function a function to apply to the module's name and optional slot. Cannot be {@code null}.
+     *                 The slot value passed to the function may be null if the identifier does not contain one.
+     * @param canonicalize if {@code true} the identifier will be {@link #canonicalModuleIdentifier(String) canonicalized} before parsing
+     * @param defaultSlot  string to pass to {@code function} as the slot parameter if the identifier doesn't include a slot value. May be {@code null}
+     * @return the value returned by {@code function}
+     * @param <R> the type returned by {@code function}
+     */
+    public static <R> R parseModuleIdentifier(String moduleIdentifier, BiFunction<String, String, R> function,
+                                              boolean canonicalize, String defaultSlot) {
+        if (canonicalize) {
+            moduleIdentifier = canonicalModuleIdentifier(moduleIdentifier);
+        }
+
         // Note: this is taken from org.jboss.modules.ModuleIdentifier.fromString and lightly adapted.
 
-        if (moduleSpec == null) {
+        if (moduleIdentifier == null) {
             throw new IllegalArgumentException("Module specification is null");
-        } else if (moduleSpec.isEmpty()) {
+        } else if (moduleIdentifier.isEmpty()) {
             throw new IllegalArgumentException("Empty module specification");
         } else {
             StringBuilder b = new StringBuilder();
 
             int c;
             int i;
-            for(i = 0; i < moduleSpec.length(); i = moduleSpec.offsetByCodePoints(i, 1)) {
-                c = moduleSpec.codePointAt(i);
+            for(i = 0; i < moduleIdentifier.length(); i = moduleIdentifier.offsetByCodePoints(i, 1)) {
+                c = moduleIdentifier.codePointAt(i);
                 if (c == 92) {
                     b.appendCodePoint(c);
-                    i = moduleSpec.offsetByCodePoints(i, 1);
-                    if (i >= moduleSpec.length()) {
+                    i = moduleIdentifier.offsetByCodePoints(i, 1);
+                    if (i >= moduleIdentifier.length()) {
                         throw new IllegalArgumentException("Name has an unterminated escape");
                     }
 
-                    c = moduleSpec.codePointAt(i);
+                    c = moduleIdentifier.codePointAt(i);
                     b.appendCodePoint(c);
                 } else {
                     if (c == 58) {
-                        i = moduleSpec.offsetByCodePoints(i, 1);
-                        if (i == moduleSpec.length()) {
+                        i = moduleIdentifier.offsetByCodePoints(i, 1);
+                        if (i == moduleIdentifier.length()) {
                             throw new IllegalArgumentException("Slot is empty");
                         }
                         break;
@@ -58,16 +116,16 @@ public final class ModuleIdentifierUtil {
 
             String name = b.toString();
             b.setLength(0);
-            if (i >= moduleSpec.length()) {
-                return canonicalModuleIdentifier(name, null);
+            if (i >= moduleIdentifier.length()) {
+                return function.apply(name, defaultSlot);
             } else {
                 do {
-                    c = moduleSpec.codePointAt(i);
+                    c = moduleIdentifier.codePointAt(i);
                     b.appendCodePoint(c);
-                    i = moduleSpec.offsetByCodePoints(i, 1);
-                } while(i < moduleSpec.length());
+                    i = moduleIdentifier.offsetByCodePoints(i, 1);
+                } while(i < moduleIdentifier.length());
 
-                return canonicalModuleIdentifier(name, b.toString());
+                return function.apply(name, b.toString());
             }
         }
 
