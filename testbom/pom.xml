@@ -9,7 +9,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>27.0.0.Final-SNAPSHOT</version>
+        <version>27.0.0.Beta7-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-testbom</artifactId>
