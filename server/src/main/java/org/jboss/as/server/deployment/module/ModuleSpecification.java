@@ -130,12 +130,12 @@ public class ModuleSpecification extends SimpleAttachable {
     private final List<PermissionFactory> permissionFactories = new ArrayList<>();
 
     public void addSystemDependency(final ModuleDependency dependency) {
-        if (!exclusions.contains(dependency.getIdentifier().toString())) {
+        if (!exclusions.contains(dependency.getDependencyModule())) {
             if (systemDependenciesSet.add(dependency)) {
                 resetDependencyLists();
             }
         } else {
-            excludedDependencies.add(dependency.getIdentifier().toString());
+            excludedDependencies.add(dependency.getDependencyModule());
         }
     }
 
@@ -180,12 +180,12 @@ public class ModuleSpecification extends SimpleAttachable {
     }
 
     public void addLocalDependency(final ModuleDependency dependency) {
-        if (!exclusions.contains(dependency.getIdentifier().toString())) {
+        if (!exclusions.contains(dependency.getDependencyModule())) {
             if (this.localDependenciesSet.add(dependency)) {
                 resetDependencyLists();
             }
         } else {
-            excludedDependencies.add(dependency.getIdentifier().toString());
+            excludedDependencies.add(dependency.getDependencyModule());
         }
     }
 
@@ -234,7 +234,7 @@ public class ModuleSpecification extends SimpleAttachable {
         Iterator<ModuleDependency> it = systemDependenciesSet.iterator();
         while (it.hasNext()) {
             final ModuleDependency dep = it.next();
-            if (dep.getIdentifier().toString().equals(exclusion)) {
+            if (dep.getDependencyModule().equals(exclusion)) {
                 it.remove();
                 resetDependencyLists();
             }
@@ -242,7 +242,7 @@ public class ModuleSpecification extends SimpleAttachable {
         it = localDependenciesSet.iterator();
         while (it.hasNext()) {
             final ModuleDependency dep = it.next();
-            if (dep.getIdentifier().toString().equals(exclusion)) {
+            if (dep.getDependencyModule().equals(exclusion)) {
                 it.remove();
                 resetDependencyLists();
             }

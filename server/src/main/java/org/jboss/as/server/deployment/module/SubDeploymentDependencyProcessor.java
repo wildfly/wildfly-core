@@ -33,7 +33,7 @@ public class SubDeploymentDependencyProcessor implements DeploymentUnitProcessor
 
         final ModuleSpecification moduleSpec = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
-        final ModuleIdentifier moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER);
+        final String moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER).toString();
 
         if (deploymentUnit.getParent() != null) {
             final ModuleIdentifier parentModule = parent.getAttachment(Attachments.MODULE_IDENTIFIER);
@@ -55,14 +55,14 @@ public class SubDeploymentDependencyProcessor implements DeploymentUnitProcessor
         for (DeploymentUnit subDeployment : subDeployments) {
             final ModuleSpecification subModule = subDeployment.getAttachment(Attachments.MODULE_SPECIFICATION);
             if (!subModule.isPrivateModule() && (!parentModuleSpec.isSubDeploymentModulesIsolated() || subModule.isPublicModule())) {
-                ModuleIdentifier identifier = subDeployment.getAttachment(Attachments.MODULE_IDENTIFIER);
+                String identifier = subDeployment.getAttachment(Attachments.MODULE_IDENTIFIER).toString();
                 ModuleDependency dependency = new ModuleDependency(moduleLoader, identifier, false, false, true, false);
                 dependency.addImportFilter(PathFilters.acceptAll(), true);
                 accessibleModules.add(dependency);
             }
         }
         for (ModuleDependency dependency : accessibleModules) {
-            if (!dependency.getIdentifier().equals(moduleIdentifier)) {
+            if (!dependency.getDependencyModule().equals(moduleIdentifier)) {
                 moduleSpec.addLocalDependency(dependency);
             }
         }

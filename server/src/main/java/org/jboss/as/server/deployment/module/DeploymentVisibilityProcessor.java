@@ -26,26 +26,26 @@ public class DeploymentVisibilityProcessor implements DeploymentUnitProcessor {
     public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         final ModuleSpecification moduleSpec = deploymentUnit.getAttachment(org.jboss.as.server.deployment.Attachments.MODULE_SPECIFICATION);
-        final Map<ModuleIdentifier, DeploymentUnit> deployments = new HashMap<ModuleIdentifier, DeploymentUnit>();
+        final Map<String, DeploymentUnit> deployments = new HashMap<>();
         //local classes are always first
         deploymentUnit.addToAttachmentList(Attachments.ACCESSIBLE_SUB_DEPLOYMENTS, deploymentUnit);
         buildModuleMap(deploymentUnit, deployments);
 
         for (final ModuleDependency dependency : moduleSpec.getAllDependencies()) {
-            final DeploymentUnit sub = deployments.get(dependency.getIdentifier());
+            final DeploymentUnit sub = deployments.get(dependency.getDependencyModule());
             if (sub != null) {
                 deploymentUnit.addToAttachmentList(Attachments.ACCESSIBLE_SUB_DEPLOYMENTS, sub);
             }
         }
     }
 
-    private void buildModuleMap(final DeploymentUnit deploymentUnit, final Map<ModuleIdentifier, DeploymentUnit> modules) {
+    private void buildModuleMap(final DeploymentUnit deploymentUnit, final Map<String, DeploymentUnit> modules) {
         if (deploymentUnit.getParent() == null) {
             final List<DeploymentUnit> subDeployments = deploymentUnit.getAttachmentList(org.jboss.as.server.deployment.Attachments.SUB_DEPLOYMENTS);
             for (final DeploymentUnit sub : subDeployments) {
                 final ModuleIdentifier identifier = sub.getAttachment(org.jboss.as.server.deployment.Attachments.MODULE_IDENTIFIER);
                 if (identifier != null) {
-                    modules.put(identifier, sub);
+                    modules.put(identifier.toString(), sub);
                 }
             }
         } else {
@@ -54,14 +54,14 @@ public class DeploymentVisibilityProcessor implements DeploymentUnitProcessor {
             //add the parent description
             final ModuleIdentifier parentIdentifier = parent.getAttachment(org.jboss.as.server.deployment.Attachments.MODULE_IDENTIFIER);
             if (parentIdentifier != null) {
-                modules.put(parentIdentifier, parent);
+                modules.put(parentIdentifier.toString(), parent);
             }
 
             for (final DeploymentUnit sub : subDeployments) {
                 if (sub != deploymentUnit) {
                     final ModuleIdentifier identifier = sub.getAttachment(org.jboss.as.server.deployment.Attachments.MODULE_IDENTIFIER);
                     if (identifier != null) {
-                        modules.put(identifier, sub);
+                        modules.put(identifier.toString(), sub);
                     }
                 }
             }

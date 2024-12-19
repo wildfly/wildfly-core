@@ -66,7 +66,7 @@ public class ModuleAliasChecker {
      */
     public static void checkModuleAliasesForDependencies(List<ModuleDependency> dependencies, MessageContext context, String deploymentName) {
         for (ModuleDependency dependency : dependencies) {
-            String identifier = dependency.getIdentifier().toString();
+            String identifier = dependency.getDependencyModule();
             checkModuleAlias(context, deploymentName, identifier, false);
         }
     }
