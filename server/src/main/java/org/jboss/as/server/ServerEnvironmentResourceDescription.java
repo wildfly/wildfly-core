@@ -60,10 +60,11 @@ public class ServerEnvironmentResourceDescription extends SimpleResourceDefiniti
     static final AttributeDefinition PERMISSIBLE_STABILITY_LEVELS = new SimpleListAttributeDefinition.Builder("permissible-stability-levels", STABILITY)
             .setFlags(AttributeAccess.Flag.STORAGE_RUNTIME)
             .build();
+    public static final AttributeDefinition READ_ONLY = SimpleAttributeDefinitionBuilder.create("read-only", ModelType.BOOLEAN).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
 
     private static final AttributeDefinition[] SERVER_ENV_ATTRIBUTES = { BASE_DIR, CONFIG_DIR, CONFIG_FILE, CONTENT_DIR, DATA_DIR,
             DEPLOY_DIR, EXT_DIRS, HOME_DIR, HOST_NAME, INITIAL_RUNNING_MODE, LAUNCH_TYPE, LOG_DIR, NODE_NAME,
-            QUALIFIED_HOST_NAME, SERVER_NAME, TEMP_DIR, START_SUSPENDED, GRACEFUL_STARTUP, STABILITY, PERMISSIBLE_STABILITY_LEVELS };
+            QUALIFIED_HOST_NAME, SERVER_NAME, TEMP_DIR, START_SUSPENDED, GRACEFUL_STARTUP, READ_ONLY, STABILITY, PERMISSIBLE_STABILITY_LEVELS };
 
     private final ServerEnvironmentReadHandler osh;
 
@@ -175,6 +176,9 @@ public class ServerEnvironmentResourceDescription extends SimpleResourceDefiniti
             }
             if (equals(name, START_SUSPENDED)) {
                 result.set(environment.isStartSuspended());
+            }
+            if (equals(name, READ_ONLY)) {
+                result.set(environment.getServerConfigurationFile().getInteractionPolicy().isReadOnly());
             }
             if (equals(name, GRACEFUL_STARTUP)) {
                 result.set(environment.isStartGracefully());
