@@ -442,20 +442,22 @@ public final class BootableJar implements ShutdownHandler {
                 thread.setName("installation-cleaner");
                 return thread;
             });
-            final InstallationCleaner cleaner = new InstallationCleaner(environment, log);
-            executor.submit(cleaner);
             if (Files.exists(pidFile)) {
                 waitForShutdown();
             }
+            final InstallationCleaner cleaner = new InstallationCleaner(environment, log);
+            executor.submit(cleaner);
             executor.shutdown();
             try {
                 if (!executor.awaitTermination(environment.getTimeout(), TimeUnit.SECONDS)) {
                     // For some reason we've timed out. The deletion should likely be executing.
-                    // We can't start a new cleanup to force it. On Windows we would have the side effect to have 2 cleaner processes to
+                    // We can't start a new full cleanup to force it. On Windows we would have the side effect to have 2 cleaner processes to
                     // be executed, with the risk that a new installation has been installed and the new cleaner cleaning the new installation
                     log.cleanupTimeout(environment.getTimeout(), environment.getJBossHome());
+                    // This cleanup only runs if marker still exists.
+                    cleaner.cleanupTimeout();
                 }
-            } catch (InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
                 // The task has been interrupted, leaving
                 log.cleanupTimeout(environment.getTimeout(), environment.getJBossHome());
             }

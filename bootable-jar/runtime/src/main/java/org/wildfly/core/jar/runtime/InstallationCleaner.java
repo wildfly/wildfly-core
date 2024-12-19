@@ -35,6 +35,7 @@ class InstallationCleaner implements Runnable {
     private final BootableJarLogger logger;
     private final boolean newProcess;
     private final int retries;
+    private Process process;
 
     InstallationCleaner(final BootableEnvironment environment, final BootableJarLogger logger) {
         this.environment = environment;
@@ -45,28 +46,13 @@ class InstallationCleaner implements Runnable {
     }
 
     @Override
-    public void run() {
+    public synchronized void run() {
         // Clean up is not already in progress
         if (Files.notExists(cleanupMarker)) {
             try {
                 Files.createFile(cleanupMarker);
-                long timeout = environment.getTimeout() * 1000;
-                final Path pidFile = environment.getPidFile();
-                final long wait = 500L;
-                while (Files.exists(pidFile)) {
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(wait);
-                    } catch (InterruptedException ignore) {
-                        break;
-                    }
-                    timeout -= wait;
-                    if (timeout <= 0) {
-                        logger.cleanupTimeout(environment.getTimeout(), pidFile);
-                        break;
-                    }
-                }
                 cleanup();
-            } catch (IOException e) {
+            } catch (InterruptedException | IOException e) {
                 logger.failedToStartCleanupProcess(e, environment.getJBossHome());
             }
         }
@@ -83,7 +69,10 @@ class InstallationCleaner implements Runnable {
      *
      * @throws IOException if an error occurs deleting the directory
      */
-    void cleanup() throws IOException {
+    private void cleanup() throws InterruptedException, IOException {
+        if (Files.notExists(cleanupMarker)) {
+            return;
+        }
         if (newProcess) {
             try {
                 newProcess();
@@ -101,6 +90,23 @@ class InstallationCleaner implements Runnable {
             }
         } else {
             deleteDirectory();
+        }
+    }
+
+    // In case of timeout, we attempt to do a cleanup only if the cleanupMarker exists
+    synchronized void cleanupTimeout() throws IOException, InterruptedException {
+        if (Files.notExists(cleanupMarker)) {
+            return;
+        }
+        // In case we have a running process, kill it to avoid it to continue any cleanup.
+        if (newProcess && process != null) {
+            process.destroyForcibly();
+            process.waitFor(environment.getTimeout(), TimeUnit.SECONDS);
+            process = null;
+        }
+        // Do a last cleanup, in case the cleanupMarker still exists (could have been deleted by running process).
+        if (Files.exists(cleanupMarker)) {
+            cleanup();
         }
     }
 
@@ -136,7 +142,7 @@ class InstallationCleaner implements Runnable {
         });
     }
 
-    private void newProcess() throws IOException {
+    private void newProcess() throws IOException, InterruptedException {
         // Start a new process which will clean up the install directory. This is done in a new process in cases where
         // this process may hold locks on to resources that need to be cleaned up.
         final String[] cmd = {
@@ -153,7 +159,9 @@ class InstallationCleaner implements Runnable {
                 .redirectError(ProcessBuilder.Redirect.INHERIT)
                 .redirectOutput(ProcessBuilder.Redirect.INHERIT)
                 .directory(new File(System.getProperty("user.dir")));
-        builder.start();
+        process = builder.start();
+        process.waitFor(environment.getTimeout(), TimeUnit.SECONDS);
+        process.destroyForcibly();
     }
 
     private String getJavaCommand() {
