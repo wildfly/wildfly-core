@@ -37,9 +37,9 @@ public class UnstableApiAnnotationTestDependencyProcessor implements DeploymentU
         // Pull in dependencies needed by deployments in the subsystem
 
         // This is needed if running with a security manager, and seems to be needed by arquillian in all cases
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, "org.wildfly.security.manager", false, false, true, false));
+        moduleSpecification.addSystemDependency(ModuleDependency.Builder.of(moduleLoader, "org.wildfly.security.manager").setImportServices(true).build());
         moduleSpecification.addSystemDependency(
-                cdiDependency(new ModuleDependency(moduleLoader, "org.wildfly.core.test.extension.unstable-api-annotation-test-subsystem", false, false, true, false)));
+                cdiDependency(ModuleDependency.Builder.of(moduleLoader, "org.wildfly.core.test.extension.unstable-api-annotation-test-subsystem").setImportServices(true).build()));
     }
 
 
