@@ -25,6 +25,6 @@ public class DiscoverySubsystemTestCase extends AbstractSubsystemSchemaTest<Disc
     }
 
     public DiscoverySubsystemTestCase(DiscoverySubsystemSchema schema) {
-        super(DiscoverySubsystemRegistrar.NAME, new DiscoveryExtension(), schema, DiscoverySubsystemSchema.CURRENT);
+        super(DiscoverySubsystemResourceDescription.INSTANCE.getName(), new DiscoveryExtension(), schema, DiscoverySubsystemSchema.CURRENT);
     }
 }
