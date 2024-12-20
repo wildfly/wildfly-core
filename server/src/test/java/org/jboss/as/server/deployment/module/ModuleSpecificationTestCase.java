@@ -61,11 +61,11 @@ public class ModuleSpecificationTestCase {
         );
 
         // Removal consistency
-        ms.removeUserDependencies(md -> md.getIdentifier().toString().equals("a"));
+        ms.removeUserDependencies(md -> md.getDependencyModule().equals("a"));
         Set<ModuleDependency> userDepSet = ms.getUserDependenciesSet();
         assertEquals(INITIAL_DEPS.size() /* the initials, minus 'a', plus 'd'*/, userDepSet.size());
         for (ModuleDependency md : ALL_DEPS) {
-            boolean shouldFind = !md.getIdentifier().toString().equals("a");
+            boolean shouldFind = !md.getDependencyModule().equals("a");
             assertEquals(shouldFind, userDepSet.contains(md));
         }
         assertTrue(userDepSet.contains(DEP_D));
@@ -95,12 +95,12 @@ public class ModuleSpecificationTestCase {
     public void testModuleAliases() {
         ModuleSpecification ms = new ModuleSpecification();
         for (ModuleDependency dependency : ALL_DEPS) {
-            ms.addModuleAlias(dependency.getIdentifier().toString());
+            ms.addModuleAlias(dependency.getDependencyModule());
         }
         Set<String> aliases = ms.getModuleAliases();
         assertEquals(ALL_DEPS.size() - 1, aliases.size());
         for (ModuleDependency dep : INITIAL_DEPS) {
-            assertTrue(dep + " missing", aliases.contains(dep.getIdentifier().toString()));
+            assertTrue(dep + " missing", aliases.contains(dep.getDependencyModule()));
         }
     }
 
@@ -174,7 +174,7 @@ public class ModuleSpecificationTestCase {
         }
 
         // Test exclusions are treated as expected
-        ms.addModuleExclusion(DEP_D.getIdentifier().toString());
+        ms.addModuleExclusion(DEP_D.getDependencyModule());
         addConsumer.accept(ms, DEP_D);
         depSet = readFunction.apply(ms);
         assertEquals(ALL_DEPS.size() + (exclusionsSupported ? 0 : 1), depSet.size());
@@ -184,9 +184,9 @@ public class ModuleSpecificationTestCase {
         }
 
         // Check fictitious exclusion tracking
-        ms.addModuleExclusion(DEP_E.getIdentifier().toString());
+        ms.addModuleExclusion(DEP_E.getDependencyModule());
         Set<String> fictitious = ms.getFictitiousExcludedDependencies();
-        Set<String> expected = exclusionsSupported ? Set.of(DEP_E.getIdentifier().toString()) : Set.of(DEP_D.getIdentifier().toString(), DEP_E.getIdentifier().toString());
+        Set<String> expected = exclusionsSupported ? Set.of(DEP_E.getDependencyModule()) : Set.of(DEP_D.getDependencyModule(), DEP_E.getDependencyModule());
         assertEquals(expected, fictitious);
 
         return ms;

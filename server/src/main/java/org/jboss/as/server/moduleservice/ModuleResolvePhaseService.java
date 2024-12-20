@@ -34,9 +34,9 @@ public class ModuleResolvePhaseService implements Service<ModuleResolvePhaseServ
 
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("module", "resolve", "phase");
 
-    private final ModuleIdentifier moduleIdentifier;
+    private final String moduleIdentifier;
 
-    private final Set<ModuleIdentifier> alreadyResolvedModules;
+    private final Set<String> alreadyResolvedModules;
 
     private final int phaseNumber;
 
@@ -45,29 +45,23 @@ public class ModuleResolvePhaseService implements Service<ModuleResolvePhaseServ
      */
     private final Set<ModuleDefinition> moduleSpecs = Collections.synchronizedSet(new HashSet<ModuleDefinition>());
 
-    public ModuleResolvePhaseService(final ModuleIdentifier moduleIdentifier, final Set<ModuleIdentifier> alreadyResolvedModules, final int phaseNumber) {
+    private ModuleResolvePhaseService(final String moduleIdentifier, final Set<String> alreadyResolvedModules, final int phaseNumber) {
         this.moduleIdentifier = moduleIdentifier;
         this.alreadyResolvedModules = alreadyResolvedModules;
         this.phaseNumber = phaseNumber;
     }
 
-    public ModuleResolvePhaseService(final ModuleIdentifier moduleIdentifier) {
-        this.moduleIdentifier = moduleIdentifier;
-        this.alreadyResolvedModules = Collections.emptySet();
-        this.phaseNumber = 0;
-    }
-
     @Override
     public void start(final StartContext startContext) throws StartException {
         Set<ModuleDependency> nextPhaseIdentifiers = new HashSet<>();
-        final Set<ModuleIdentifier> nextAlreadySeen = new HashSet<>(alreadyResolvedModules);
+        final Set<String> nextAlreadySeen = new HashSet<>(alreadyResolvedModules);
         for (final ModuleDefinition spec : moduleSpecs) {
             if (spec != null) { //this can happen for optional dependencies
                 for (ModuleDependency dep : spec.getDependencies()) {
                     if (dep.isOptional()) continue; // we don't care about optional dependencies
-                    if (ServiceModuleLoader.isDynamicModule(dep.getIdentifier().toString())) {
-                        if (!alreadyResolvedModules.contains(dep.getIdentifier())) {
-                            nextAlreadySeen.add(dep.getIdentifier());
+                    if (ServiceModuleLoader.isDynamicModule(dep.getDependencyModule())) {
+                        if (!alreadyResolvedModules.contains(dep.getDependencyModule())) {
+                            nextAlreadySeen.add(dep.getDependencyModule());
                             nextPhaseIdentifiers.add(dep);
                         }
                     }
@@ -75,25 +69,25 @@ public class ModuleResolvePhaseService implements Service<ModuleResolvePhaseServ
             }
         }
         if (nextPhaseIdentifiers.isEmpty()) {
-            ServiceModuleLoader.installModuleResolvedService(startContext.getChildTarget(), moduleIdentifier.toString());
+            ServiceModuleLoader.installModuleResolvedService(startContext.getChildTarget(), moduleIdentifier);
         } else {
             installService(startContext.getChildTarget(), moduleIdentifier, phaseNumber + 1, nextPhaseIdentifiers, nextAlreadySeen);
         }
     }
 
     public static void installService(final ServiceTarget serviceTarget, final ModuleDefinition moduleDefinition) {
-        final ModuleResolvePhaseService nextPhaseService = new ModuleResolvePhaseService(moduleDefinition.getModuleIdentifier(), Collections.singleton(moduleDefinition.getModuleIdentifier()), 0);
+        String moduleIdentifier = moduleDefinition.getModuleIdentifier().toString();
+        final ModuleResolvePhaseService nextPhaseService = new ModuleResolvePhaseService(moduleIdentifier, Collections.singleton(moduleDefinition.getModuleIdentifier().toString()), 0);
         nextPhaseService.getModuleSpecs().add(moduleDefinition);
-        ServiceBuilder<ModuleResolvePhaseService> builder = serviceTarget.addService(moduleSpecServiceName(moduleDefinition.getModuleIdentifier(), 0), nextPhaseService);
+        ServiceBuilder<ModuleResolvePhaseService> builder = serviceTarget.addService(moduleResolvePhaseServiceName(moduleIdentifier, 0), nextPhaseService);
         builder.install();
     }
 
-    private static void installService(final ServiceTarget serviceTarget, final ModuleIdentifier moduleIdentifier, int phaseNumber, final Set<ModuleDependency> nextPhaseIdentifiers, final Set<ModuleIdentifier> nextAlreadySeen) {
+    private static void installService(final ServiceTarget serviceTarget, final String moduleIdentifier, int phaseNumber, final Set<ModuleDependency> nextPhaseIdentifiers, final Set<String> nextAlreadySeen) {
         final ModuleResolvePhaseService nextPhaseService = new ModuleResolvePhaseService(moduleIdentifier, nextAlreadySeen, phaseNumber);
-        ServiceBuilder<ModuleResolvePhaseService> builder = serviceTarget.addService(moduleSpecServiceName(moduleIdentifier, phaseNumber), nextPhaseService);
+        ServiceBuilder<ModuleResolvePhaseService> builder = serviceTarget.addService(moduleResolvePhaseServiceName(moduleIdentifier, phaseNumber), nextPhaseService);
         for (ModuleDependency module : nextPhaseIdentifiers) {
-            builder.addDependency(ServiceModuleLoader.moduleSpecServiceName(module.getIdentifier().toString()), ModuleDefinition.class, new Injector<ModuleDefinition>() {
-
+            builder.addDependency(ServiceModuleLoader.moduleSpecServiceName(module.getDependencyModule()), ModuleDefinition.class, new Injector<>() {
                 ModuleDefinition definition;
 
                 @Override
@@ -126,10 +120,16 @@ public class ModuleResolvePhaseService implements Service<ModuleResolvePhaseServ
         return moduleSpecs;
     }
 
+    /** @deprecated this method will be made private */
+    @Deprecated(forRemoval = true)
     public static ServiceName moduleSpecServiceName(ModuleIdentifier identifier, int phase) {
-        if (!ServiceModuleLoader.isDynamicModule(identifier.toString())) {
-            throw ServerLogger.ROOT_LOGGER.missingModulePrefix(identifier.toString(), ServiceModuleLoader.MODULE_PREFIX);
+        return moduleResolvePhaseServiceName(identifier.toString(), phase);
+    }
+
+    private static ServiceName moduleResolvePhaseServiceName(String identifier, int phase) {
+        if (!ServiceModuleLoader.isDynamicModule(identifier)) {
+            throw ServerLogger.ROOT_LOGGER.missingModulePrefix(identifier, ServiceModuleLoader.MODULE_PREFIX);
         }
-        return SERVICE_NAME.append(identifier.getName()).append(identifier.getSlot()).append("" + phase);
+        return SERVICE_NAME.append(identifier).append("" + phase);
     }
 }
