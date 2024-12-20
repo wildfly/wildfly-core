@@ -66,7 +66,10 @@ public class InstallationManagerBootTestCase {
     public static void removeTestModule() {
         if (testModule != null) {
             controller.stop();
-            testModule.remove();
+            // Bootable JAR fully delete the installation
+            if (!AssumeTestGroupUtil.isBootableJar()) {
+                testModule.remove();
+            }
         }
     }
 
