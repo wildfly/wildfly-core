@@ -29,6 +29,7 @@ public class ModuleIdentifierProcessor implements DeploymentUnitProcessor {
         final VirtualFile toplevelRoot = topLevelDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT).getRoot();
         final ModuleIdentifier moduleIdentifier = createModuleIdentifier(deploymentUnit.getName(), deploymentRoot, topLevelDeployment, toplevelRoot, deploymentUnit.getParent() == null);
         deploymentUnit.putAttachment(Attachments.MODULE_IDENTIFIER, moduleIdentifier);
+        deploymentUnit.putAttachment(Attachments.MODULE_NAME, moduleIdentifier.toString());
     }
 
     public static ModuleIdentifier createModuleIdentifier(final String deploymentUnitName, final ResourceRoot deploymentRoot, final DeploymentUnit topLevelDeployment, final VirtualFile toplevelRoot, final boolean topLevel) {
