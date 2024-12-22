@@ -21,7 +21,7 @@ import org.jboss.modules.ModuleIdentifier;
  */
 class ModuleStructureSpec {
 
-    private ModuleIdentifier moduleIdentifier;
+    private String moduleName;
     private final List<ModuleDependency> moduleDependencies = new ArrayList<ModuleDependency>();
     private final List<DependencySpec> systemDependencies = new ArrayList<DependencySpec>();
     private final List<ResourceRoot> resourceRoots = new ArrayList<ResourceRoot>();
@@ -43,12 +43,12 @@ class ModuleStructureSpec {
 
     private boolean localLast = false;
 
-    public ModuleIdentifier getModuleIdentifier() {
-        return moduleIdentifier;
+    public String getModuleName() {
+        return moduleName;
     }
 
-    public void setModuleIdentifier(ModuleIdentifier moduleIdentifier) {
-        this.moduleIdentifier = moduleIdentifier;
+    public void setModuleName(String moduleName) {
+        this.moduleName = moduleName;
     }
 
     public void addModuleDependency(ModuleDependency dependency) {

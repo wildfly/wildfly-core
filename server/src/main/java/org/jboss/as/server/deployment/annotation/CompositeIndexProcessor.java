@@ -53,18 +53,19 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
             return;
         }
         DeploymentUnit top = deploymentUnit.getParent() == null ? deploymentUnit : deploymentUnit.getParent();
-        Map<ModuleIdentifier, AdditionalModuleSpecification> additionalModuleSpecificationMap = new HashMap<>();
+        Map<String, AdditionalModuleSpecification> additionalModuleSpecificationMap = new HashMap<>();
         for(AdditionalModuleSpecification i : top.getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
-            additionalModuleSpecificationMap.put(i.getModuleIdentifier(), i);
+            additionalModuleSpecificationMap.put(i.getModuleName(), i);
         }
-        Map<ModuleIdentifier, CompositeIndex> additionalAnnotationIndexes = new HashMap<ModuleIdentifier, CompositeIndex>();
+        Map<String, CompositeIndex> additionalAnnotationIndexes = new HashMap<>();
         final List<ModuleIdentifier> additionalModuleIndexes = deploymentUnit.getAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES);
         final List<Index> indexes = new ArrayList<Index>();
 
-        Map<ModuleIdentifier, DeploymentUnit> subdeploymentDependencies = buildSubdeploymentDependencyMap(deploymentUnit);
+        Map<String, DeploymentUnit> subdeploymentDependencies = buildSubdeploymentDependencyMap(deploymentUnit);
 
         for (final ModuleIdentifier moduleIdentifier : additionalModuleIndexes) {
-            AdditionalModuleSpecification additional = additionalModuleSpecificationMap.get(moduleIdentifier);
+            String moduleName = moduleIdentifier.toString();
+            AdditionalModuleSpecification additional = additionalModuleSpecificationMap.get(moduleName);
             if(additional != null) {
                 // This module id refers to a deployment-specific module created based on a MANIFEST.MF Class-Path entry
                 // or jboss-deployment-structure.xml or equivalent jboss-all.xml content. Obtain indexes from its resources.
@@ -78,16 +79,16 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
                     }
                 }
                 if (!moduleIndexes.isEmpty()) {
-                    additionalAnnotationIndexes.put(moduleIdentifier, new CompositeIndex(moduleIndexes));
+                    additionalAnnotationIndexes.put(moduleName, new CompositeIndex(moduleIndexes));
                 }
-            } else if (subdeploymentDependencies.containsKey(moduleIdentifier)) {
+            } else if (subdeploymentDependencies.containsKey(moduleName)) {
                 // This module id refers to a subdeployment. Find the indices for its resources.
-                List<ResourceRoot> resourceRoots = subdeploymentDependencies.get(moduleIdentifier).getAttachment(Attachments.RESOURCE_ROOTS);
+                List<ResourceRoot> resourceRoots = subdeploymentDependencies.get(moduleName).getAttachment(Attachments.RESOURCE_ROOTS);
                 final List<ResourceRoot> allResourceRoots = new ArrayList<>();
                 if (resourceRoots != null) {
                     allResourceRoots.addAll(resourceRoots);
                 }
-                final ResourceRoot deploymentRoot = subdeploymentDependencies.get(moduleIdentifier).getAttachment(Attachments.DEPLOYMENT_ROOT);
+                final ResourceRoot deploymentRoot = subdeploymentDependencies.get(moduleName).getAttachment(Attachments.DEPLOYMENT_ROOT);
                 if (ModuleRootMarker.isModuleRoot(deploymentRoot)) {
                     allResourceRoots.add(deploymentRoot);
                 }
@@ -100,33 +101,31 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
                     }
                 }
                 if (!moduleIndexes.isEmpty()) {
-                    additionalAnnotationIndexes.put(moduleIdentifier, new CompositeIndex(moduleIndexes));
+                    additionalAnnotationIndexes.put(moduleName, new CompositeIndex(moduleIndexes));
                 }
             } else {
                 // This module id refers to a module external to the deployment. Get the indices from the support object.
                 CompositeIndex externalModuleIndexes;
                 AnnotationIndexSupport annotationIndexSupport = indexSupportRef.get();
                 if (annotationIndexSupport != null) {
-                    externalModuleIndexes = annotationIndexSupport.getAnnotationIndices(moduleIdentifier.toString(), moduleLoader);
+                    externalModuleIndexes = annotationIndexSupport.getAnnotationIndices(moduleName, moduleLoader);
                 } else {
                     // This implies the DeploymentUnitService was restarted after the original operation that held
                     // the strong ref to the AnnotationIndexSupport. So we can't benefit from caching. Just calculate
                     // the indices without worrying about caching.
-                    externalModuleIndexes = AnnotationIndexSupport.indexModule(moduleIdentifier.toString(), moduleLoader);
+                    externalModuleIndexes = AnnotationIndexSupport.indexModule(moduleName, moduleLoader);
                 }
                 indexes.addAll(externalModuleIndexes.indexes);
-                additionalAnnotationIndexes.put(moduleIdentifier, externalModuleIndexes);
+                additionalAnnotationIndexes.put(moduleName, externalModuleIndexes);
             }
         }
-        deploymentUnit.putAttachment(Attachments.ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE, additionalAnnotationIndexes);
-        // Attach an additional map keyed by name. Next release this key will be the only map attached.
-        Map<String, CompositeIndex> additionalIndexesByName = new HashMap<>(additionalAnnotationIndexes.size());
-        for (Map.Entry<ModuleIdentifier, CompositeIndex> entry : additionalAnnotationIndexes.entrySet()) {
-            additionalIndexesByName.put(entry.getKey().toString(), entry.getValue());
+        deploymentUnit.putAttachment(Attachments.ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE_NAME, Collections.unmodifiableMap(additionalAnnotationIndexes));
+        // For compatibility attach an additional map keyed by ModuleIdentifier. TODO remove this key and stop doing this.
+        Map<ModuleIdentifier, CompositeIndex> additionalIndexesByModId = new HashMap<>(additionalAnnotationIndexes.size());
+        for (Map.Entry<String, CompositeIndex> entry : additionalAnnotationIndexes.entrySet()) {
+            additionalIndexesByModId.put(ModuleIdentifier.fromString(entry.getKey()), entry.getValue());
         }
-        deploymentUnit.putAttachment(Attachments.ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE_NAME,
-                // This should have always been an immutable map
-                Collections.unmodifiableMap(additionalIndexesByName));
+        deploymentUnit.putAttachment(Attachments.ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE, additionalIndexesByModId);
 
         final List<ResourceRoot> allResourceRoots = new ArrayList<ResourceRoot>();
         final List<ResourceRoot> resourceRoots = deploymentUnit.getAttachmentList(Attachments.RESOURCE_ROOTS);
@@ -158,19 +157,19 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
         deploymentUnit.putAttachment(Attachments.COMPOSITE_ANNOTATION_INDEX, new CompositeIndex(indexes));
     }
 
-    private Map<ModuleIdentifier, DeploymentUnit> buildSubdeploymentDependencyMap(DeploymentUnit deploymentUnit) {
+    private Map<String, DeploymentUnit> buildSubdeploymentDependencyMap(DeploymentUnit deploymentUnit) {
         Set<String> depModuleIdentifiers = new HashSet<>();
         for (ModuleDependency dep: deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION).getAllDependencies()) {
             depModuleIdentifiers.add(dep.getDependencyModule());
         }
 
         DeploymentUnit top = deploymentUnit.getParent()==null?deploymentUnit:deploymentUnit.getParent();
-        Map<ModuleIdentifier, DeploymentUnit> res = new HashMap<>();
+        Map<String, DeploymentUnit> res = new HashMap<>();
         AttachmentList<DeploymentUnit> subDeployments = top.getAttachment(Attachments.SUB_DEPLOYMENTS);
         if (subDeployments != null) {
             for (DeploymentUnit subDeployment : subDeployments) {
-                ModuleIdentifier moduleIdentifier = subDeployment.getAttachment(Attachments.MODULE_IDENTIFIER);
-                if (depModuleIdentifiers.contains(moduleIdentifier.toString())) {
+                String moduleIdentifier = subDeployment.getAttachment(Attachments.MODULE_NAME);
+                if (depModuleIdentifiers.contains(moduleIdentifier)) {
                     res.put(moduleIdentifier, subDeployment);
                 }
             }

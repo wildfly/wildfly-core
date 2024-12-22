@@ -23,6 +23,7 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -296,7 +297,7 @@ public class JBossDeploymentStructureParser11 implements XMLElementReader<ParseR
             throw ServerLogger.ROOT_LOGGER.invalidModuleName(name);
         }
         final ModuleStructureSpec moduleSpecification = new ModuleStructureSpec();
-        moduleSpecification.setModuleIdentifier(ModuleIdentifier.create(name, slot));
+        moduleSpecification.setModuleName(ModuleIdentifierUtil.canonicalModuleIdentifier(name, slot));
         result.getAdditionalModules().add(moduleSpecification);
         parseModuleStructureSpec(result.getDeploymentUnit(), reader, moduleSpecification, result.getModuleLoader());
     }

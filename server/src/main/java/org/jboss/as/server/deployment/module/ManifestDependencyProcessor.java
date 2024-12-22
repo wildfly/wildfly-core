@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.jar.Manifest;
 
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -52,13 +53,13 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
         final List<ResourceRoot> allResourceRoots = DeploymentUtils.allResourceRoots(deploymentUnit);
         DeploymentUnit top = deploymentUnit.getParent() == null ? deploymentUnit : deploymentUnit.getParent();
 
-        final Set<ModuleIdentifier> additionalModules = new HashSet<>();
+        final Set<String> additionalModules = new HashSet<>();
         final List<AdditionalModuleSpecification> additionalModuleList = top.getAttachmentList(Attachments.ADDITIONAL_MODULES);
         // Must synchronize on list as subdeployments executing Phase.STRUCTURE may be concurrently modifying it
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (additionalModuleList) {
             for (AdditionalModuleSpecification i : additionalModuleList) {
-                additionalModules.add(i.getModuleIdentifier());
+                additionalModules.add(i.getModuleName());
             }
         }
         for (final ResourceRoot resourceRoot : allResourceRoots) {
@@ -84,23 +85,23 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
                 }
                 final String[] dependencyParts = trimmed.split(" ");
 
-                final ModuleIdentifier dependencyId = ModuleIdentifier.fromString(dependencyParts[0]);
+                final String dependencyId = ModuleIdentifierUtil.canonicalModuleIdentifier(dependencyParts[0]);
                 final boolean export = containsParam(dependencyParts, EXPORT_PARAM);
                 final boolean optional = containsParam(dependencyParts, OPTIONAL_PARAM);
                 final boolean services = containsParam(dependencyParts, SERVICES_PARAM);
                 final boolean annotations = containsParam(dependencyParts, ANNOTATIONS_PARAM);
                 final boolean metaInf = containsParam(dependencyParts, META_INF);
                 final ModuleLoader dependencyLoader;
-                if (dependencyId.getName().startsWith(ServiceModuleLoader.MODULE_PREFIX)) {
+                if (dependencyId.startsWith(ServiceModuleLoader.MODULE_PREFIX)) {
                     dependencyLoader = deploymentModuleLoader;
                 } else {
                     dependencyLoader = Module.getBootModuleLoader();
                 }
                 if(annotations) {
-                    deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, dependencyId);
+                    deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, ModuleIdentifier.fromString(dependencyId));
                     if(dependencyLoader == deploymentModuleLoader && !additionalModules.contains(dependencyId)) {
                         //additional modules will not be created till much later, a dep on them would fail
-                        phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(dependencyId.toString()));
+                        phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(dependencyId));
                     }
                 }
 
