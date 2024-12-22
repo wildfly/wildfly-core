@@ -9,6 +9,7 @@ import java.lang.ref.Reference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -118,6 +119,14 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
             }
         }
         deploymentUnit.putAttachment(Attachments.ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE, additionalAnnotationIndexes);
+        // Attach an additional map keyed by name. Next release this key will be the only map attached.
+        Map<String, CompositeIndex> additionalIndexesByName = new HashMap<>(additionalAnnotationIndexes.size());
+        for (Map.Entry<ModuleIdentifier, CompositeIndex> entry : additionalAnnotationIndexes.entrySet()) {
+            additionalIndexesByName.put(entry.getKey().toString(), entry.getValue());
+        }
+        deploymentUnit.putAttachment(Attachments.ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE_NAME,
+                // This should have always been an immutable map
+                Collections.unmodifiableMap(additionalIndexesByName));
 
         final List<ResourceRoot> allResourceRoots = new ArrayList<ResourceRoot>();
         final List<ResourceRoot> resourceRoots = deploymentUnit.getAttachmentList(Attachments.RESOURCE_ROOTS);
