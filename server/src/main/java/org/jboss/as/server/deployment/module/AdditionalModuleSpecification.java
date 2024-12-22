@@ -36,8 +36,14 @@ public class AdditionalModuleSpecification extends ModuleSpecification implement
         this.resourceRoots = new ArrayList<ResourceRoot>(resourceRoots);
     }
 
+    /** @deprecated use {@link #getModuleName()}  */
+    @Deprecated(forRemoval = true)
     public ModuleIdentifier getModuleIdentifier() {
         return moduleIdentifier;
+    }
+
+    public String getModuleName() {
+        return moduleIdentifier.toString();
     }
 
 
