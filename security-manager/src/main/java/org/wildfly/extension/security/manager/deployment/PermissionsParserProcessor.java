@@ -20,7 +20,6 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.module.ExpressionStreamReaderDelegate;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.security.PermissionFactory;
 import org.jboss.vfs.VirtualFile;
@@ -75,7 +74,7 @@ public class PermissionsParserProcessor implements DeploymentUnitProcessor {
         final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
-        final ModuleIdentifier moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER);
+        final String moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER).toString();
         final Function<String, String> wflyResolverFunc = deploymentUnit.getAttachment(Attachments.WFLY_DESCRIPTOR_EXPR_EXPAND_FUNCTION);
         final Function<String, String> specResolverFunc = deploymentUnit.getAttachment(Attachments.SPEC_DESCRIPTOR_EXPR_EXPAND_FUNCTION);
 
@@ -129,13 +128,13 @@ public class PermissionsParserProcessor implements DeploymentUnitProcessor {
      *
      * @param file               the {@link VirtualFile} that contains the permissions declarations.
      * @param loader             the {@link ModuleLoader} that is to be used by the factory to instantiate the permission.
-     * @param identifier         the {@link ModuleIdentifier} that is to be used by the factory to instantiate the permission.
+     * @param moduleName         the name of the module that is to be used by the factory to instantiate the permission.
      * @param exprExpandFunction A function which will be used, if provided, to expand any expressions (of the form of {@code ${foobar}})
      *                           in the content being parsed. This function can be null, in which case the content is processed literally.
      * @return a list of {@link PermissionFactory} objects representing the parsed permissions.
      * @throws DeploymentUnitProcessingException if an error occurs while parsing the permissions.
      */
-    private List<PermissionFactory> parsePermissions(final VirtualFile file, final ModuleLoader loader, final ModuleIdentifier identifier, final Function<String, String> exprExpandFunction)
+    private List<PermissionFactory> parsePermissions(final VirtualFile file, final ModuleLoader loader, final String moduleName, final Function<String, String> exprExpandFunction)
             throws DeploymentUnitProcessingException {
 
         InputStream inputStream = null;
@@ -143,7 +142,7 @@ public class PermissionsParserProcessor implements DeploymentUnitProcessor {
             inputStream = file.openStream();
             final XMLInputFactory inputFactory = XMLInputFactoryUtil.create();
             final ExpressionStreamReaderDelegate expressionStreamReaderDelegate = new ExpressionStreamReaderDelegate(inputFactory.createXMLStreamReader(inputStream), exprExpandFunction);
-            return PermissionsParser.parse(expressionStreamReaderDelegate, loader, identifier);
+            return PermissionsParser.parse(expressionStreamReaderDelegate, loader, moduleName);
         } catch (Exception e) {
             throw new DeploymentUnitProcessingException(e.getMessage(), e);
         } finally {
