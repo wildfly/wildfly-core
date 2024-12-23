@@ -27,6 +27,7 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.MountedDeploymentOverlay;
@@ -310,7 +311,7 @@ public class JBossDeploymentStructureParser13 implements XMLElementReader<ParseR
             throw ServerLogger.ROOT_LOGGER.invalidModuleName(name);
         }
         final ModuleStructureSpec moduleSpecification = new ModuleStructureSpec();
-        moduleSpecification.setModuleIdentifier(ModuleIdentifier.create(name, slot));
+        moduleSpecification.setModuleName(ModuleIdentifierUtil.canonicalModuleIdentifier(name, slot));
         result.getAdditionalModules().add(moduleSpecification);
         parseModuleStructureSpec(result.getDeploymentUnit(), reader, moduleSpecification, result.getModuleLoader());
     }
@@ -614,7 +615,7 @@ public class JBossDeploymentStructureParser13 implements XMLElementReader<ParseR
         if (!required.isEmpty()) {
             throw missingAttributes(reader.getLocation(), required);
         }
-        final ModuleIdentifier identifier = ModuleIdentifier.create(name, slot);
+        final String identifier = ModuleIdentifierUtil.canonicalModuleIdentifier(name, slot);
         final ModuleDependency dependency = new ModuleDependency(moduleLoader, identifier, optional, export,
                 services == Disposition.IMPORT, true);
         if(annotations) {

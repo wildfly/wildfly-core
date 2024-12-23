@@ -21,7 +21,7 @@ import org.jboss.modules.ModuleIdentifier;
  */
 class ModuleStructureSpec {
 
-    private ModuleIdentifier moduleIdentifier;
+    private String moduleName;
     private final List<ModuleDependency> moduleDependencies = new ArrayList<ModuleDependency>();
     private final List<DependencySpec> systemDependencies = new ArrayList<DependencySpec>();
     private final List<ResourceRoot> resourceRoots = new ArrayList<ResourceRoot>();
@@ -29,7 +29,7 @@ class ModuleStructureSpec {
     private final List<ModuleIdentifier> exclusions = new ArrayList<ModuleIdentifier>();
     private final List<String> classTransformers = new ArrayList<String>();
     private final List<ModuleIdentifier> aliases = new ArrayList<ModuleIdentifier>();
-    private final List<ModuleIdentifier> annotationModules = new ArrayList<ModuleIdentifier>();
+    private final List<String> annotationModules = new ArrayList<>();
 
     /**
      * Note that this being null is different to an empty list.
@@ -43,12 +43,12 @@ class ModuleStructureSpec {
 
     private boolean localLast = false;
 
-    public ModuleIdentifier getModuleIdentifier() {
-        return moduleIdentifier;
+    public String getModuleName() {
+        return moduleName;
     }
 
-    public void setModuleIdentifier(ModuleIdentifier moduleIdentifier) {
-        this.moduleIdentifier = moduleIdentifier;
+    public void setModuleName(String moduleName) {
+        this.moduleName = moduleName;
     }
 
     public void addModuleDependency(ModuleDependency dependency) {
@@ -83,11 +83,11 @@ class ModuleStructureSpec {
         return Collections.unmodifiableList(aliases);
     }
 
-    public void addAnnotationModule(final ModuleIdentifier dependency) {
+    public void addAnnotationModule(final String dependency) {
         annotationModules.add(dependency);
     }
 
-    public List<ModuleIdentifier> getAnnotationModules() {
+    public List<String> getAnnotationModules() {
         return Collections.unmodifiableList(annotationModules);
     }
 
