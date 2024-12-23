@@ -391,8 +391,8 @@ public class JBossDeploymentStructureParser10 implements XMLElementReader<ParseR
         if (!required.isEmpty()) {
             throw missingAttributes(reader.getLocation(), required);
         }
-        final ModuleIdentifier identifier = ModuleIdentifier.create(name, slot);
-        ModuleDependency dependency = ModuleDependency.Builder.of(moduleLoader, identifier.toString())
+        final String identifier = ModuleIdentifierUtil.canonicalModuleIdentifier(name, slot);
+        ModuleDependency dependency = ModuleDependency.Builder.of(moduleLoader, identifier)
                 .setOptional(optional).setExport(export).setImportServices(services == Disposition.IMPORT).setUserSpecified(true).build();
         specBuilder.addModuleDependency(dependency);
         while (reader.hasNext()) {

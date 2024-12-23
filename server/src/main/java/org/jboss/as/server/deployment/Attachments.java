@@ -199,10 +199,16 @@ public final class Attachments {
     /**
      * A list of modules for which annotation indexes should be prepared (or, in later phases, have been prepared).
      *
-     * @deprecated this will either be changed incompatibly (to provide a list of string) or removed altogether in the next WildFly Core major.
+     * @deprecated use {@link #ADDITIONAL_INDEX_MODULES}
      */
     @Deprecated(forRemoval = true)
     public static final AttachmentKey<AttachmentList<ModuleIdentifier>> ADDITIONAL_ANNOTATION_INDEXES = AttachmentKey.createList(ModuleIdentifier.class);
+
+    /**
+     * A list of modules for which annotation indexes should be prepared (or, in later phases, have been prepared).
+     *
+     */
+    public static final AttachmentKey<AttachmentList<String>> ADDITIONAL_INDEX_MODULES = AttachmentKey.createList(String.class);
 
     /**
      * Annotation indices, keyed by the identifier of the module from which they were obtained.

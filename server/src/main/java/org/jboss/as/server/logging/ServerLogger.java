@@ -189,7 +189,7 @@ public interface ServerLogger extends BasicLogger {
 
     @LogMessage(level = WARN)
     @Message(id = 17, value = "Annotations import option %s specified in jboss-deployment-structure.xml for additional module %s has been ignored. Additional modules cannot import annotations.")
-    void annotationImportIgnored(ModuleIdentifier annotationModuleId, String additionalModuleId);
+    void annotationImportIgnored(String annotationModuleId, String additionalModuleId);
 
     @LogMessage(level = WARN)
     @Message(id = 18, value = "Deployment \"%s\" is using a private module (\"%s\") which may be changed or removed in future versions without notice.")
