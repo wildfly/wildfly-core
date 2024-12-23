@@ -598,7 +598,7 @@ public class JBossDeploymentStructureParser11 implements XMLElementReader<ParseR
         if (!required.isEmpty()) {
             throw missingAttributes(reader.getLocation(), required);
         }
-        final ModuleIdentifier identifier = ModuleIdentifier.create(name, slot);
+        final String identifier = ModuleIdentifierUtil.canonicalModuleIdentifier(name, slot);
         final ModuleDependency dependency = new ModuleDependency(moduleLoader, identifier, optional, export,
                 services == Disposition.IMPORT, true);
         if(annotations) {
