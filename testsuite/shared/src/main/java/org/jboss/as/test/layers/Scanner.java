@@ -4,6 +4,7 @@
  */
 package org.jboss.as.test.layers;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -19,28 +20,46 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- *
  * @author jdenise@redhat.com
  */
 public class Scanner {
 
     public static Result scan(Path homePath, Path configFile) throws Exception {
         //Scan the modules present in an installation
-        Path modulePath = Paths.get(homePath.toString(), "modules/system/layers/base");
-        if (!Files.exists(modulePath)) {
-            throw new Exception("Invalid JBOSS Home");
+        List<Path> modulePaths = new ArrayList<>();
+        modulePaths.add(Paths.get(homePath.toString(), "modules/system/layers/base"));
+
+        File layersConfFile = homePath.resolve("modules").resolve("layers.conf").toFile();
+        if (layersConfFile.exists()) {
+            List<String> lines = Files.readAllLines(layersConfFile.toPath());
+            for (String line : lines) {
+                if (line.startsWith("layers=")) {
+                    String[] layers = line.substring("layers=".length()).split(",");
+                    for (String layer : layers) {
+                        modulePaths.add(Paths.get(homePath.toString(), "modules/system/layers", layer.trim()));
+                    }
+                }
+            }
         }
+
         Map<String, Set<String>> optionalDependencies = new TreeMap<>();
         List<Long> size = new ArrayList<>();
         size.add((long) 0);
+
+        Map<String, Set<String>> modulesReference = new HashMap<>();
+        Set<String> modules = new HashSet<>();
+        Set<String> aliases = new HashSet<>();
+
         Files.walkFileTree(homePath, new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
@@ -48,72 +67,77 @@ public class Scanner {
                 return FileVisitResult.CONTINUE;
             }
         });
-        Map<String, Set<String>> modulesReference = new HashMap<>();
-        Set<String> modules = new HashSet<>();
-        Set<String> aliases = new HashSet<>();
-        Files.walkFileTree(modulePath, new SimpleFileVisitor<>() {
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                            throws IOException {
 
-                        if (file.getFileName().toString().equals("module.xml")) {
-                            try {
-                                DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory
-                                        .newInstance();
-                                DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-                                Document document = documentBuilder.parse(file.toFile());
-                                Element elemAlias = (Element) document.getElementsByTagName("module-alias").item(0);
-                                if (elemAlias != null) {
-                                    // Track both the alias and the target, with the alias treated as a ref to target
-                                    String moduleName = elemAlias.getAttribute("name");
-                                    aliases.add(moduleName);
+        for (Path modulePath : modulePaths) {
+            if (!Files.exists(modulePath)) {
+                throw new Exception("Invalid JBOSS Home");
+            }
+
+            Files.walkFileTree(modulePath, new SimpleFileVisitor<>() {
+                        @Override
+                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                                throws IOException {
+
+                            if (file.getFileName().toString().equals("module.xml")) {
+                                try {
+                                    DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory
+                                            .newInstance();
+                                    DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+                                    Document document = documentBuilder.parse(file.toFile());
+                                    Element elemAlias = (Element) document.getElementsByTagName("module-alias").item(0);
+                                    if (elemAlias != null) {
+                                        // Track both the alias and the target, with the alias treated as a ref to target
+                                        String moduleName = elemAlias.getAttribute("name");
+                                        aliases.add(moduleName);
+                                        modules.add(moduleName);
+                                        modulesReference.computeIfAbsent(moduleName, k -> new HashSet<>());
+                                        String target = elemAlias.getAttribute("target-name");
+                                        Set<String> referencing = modulesReference.computeIfAbsent(target, k -> new HashSet<>());
+                                        referencing.add(moduleName);
+                                        return FileVisitResult.CONTINUE;
+                                    }
+                                    Element elem = (Element) document.getElementsByTagName("module").item(0);
+                                    if (elem == null) {
+                                        return FileVisitResult.CONTINUE;
+                                    }
+                                    String moduleName = elem.getAttribute("name");
                                     modules.add(moduleName);
-                                    modulesReference.computeIfAbsent(moduleName, k -> new HashSet<>());
-                                    String target = elemAlias.getAttribute("target-name");
-                                    Set<String> referencing = modulesReference.computeIfAbsent(target, k -> new HashSet<>());
-                                    referencing.add(moduleName);
-                                    return FileVisitResult.CONTINUE;
-                                }
-                                Element elem = (Element) document.getElementsByTagName("module").item(0);
-                                if (elem == null) {
-                                    return FileVisitResult.CONTINUE;
-                                }
-                                String moduleName = elem.getAttribute("name");
-                                modules.add(moduleName);
-                                Node n = document.getElementsByTagName("dependencies").item(0);
-                                Set<String> optionals = new TreeSet<>();
-                                if (n != null) {
-                                    NodeList deps = n.getChildNodes();
-                                    for (int i = 0; i < deps.getLength(); i++) {
-                                        if (deps.item(i).getNodeType() == Node.ELEMENT_NODE) {
-                                            Element element = (Element) deps.item(i);
-                                            if (element.getNodeName().equals("module")) {
-                                                String mod = element.getAttribute("name");
-                                                if (element.hasAttribute("optional")) {
-                                                    if (element.getAttribute("optional").equals("true")) {
-                                                        optionals.add(mod);
+                                    Node n = document.getElementsByTagName("dependencies").item(0);
+                                    Set<String> optionals = new TreeSet<>();
+                                    if (n != null) {
+                                        NodeList deps = n.getChildNodes();
+                                        for (int i = 0; i < deps.getLength(); i++) {
+                                            if (deps.item(i).getNodeType() == Node.ELEMENT_NODE) {
+                                                Element element = (Element) deps.item(i);
+                                                if (element.getNodeName().equals("module")) {
+                                                    String mod = element.getAttribute("name");
+                                                    if (element.hasAttribute("optional")) {
+                                                        if (element.getAttribute("optional").equals("true")) {
+                                                            optionals.add(mod);
+                                                        }
                                                     }
+                                                    Set<String> referencing = modulesReference.computeIfAbsent(mod, k -> new HashSet<>());
+                                                    referencing.add(moduleName);
                                                 }
-                                                Set<String> referencing = modulesReference.computeIfAbsent(mod, k -> new HashSet<>());
-                                                referencing.add(moduleName);
                                             }
                                         }
                                     }
+                                    optionalDependencies.put(moduleName, optionals);
+                                } catch (Exception ex) {
+                                    throw new IOException(ex);
                                 }
-                                optionalDependencies.put(moduleName, optionals);
-                            } catch (Exception ex) {
-                                throw new IOException(ex);
                             }
+                            return FileVisitResult.CONTINUE;
                         }
-                        return FileVisitResult.CONTINUE;
-                    }
 
-                    @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException e) {
-                        return FileVisitResult.CONTINUE;
+                        @Override
+                        public FileVisitResult postVisitDirectory(Path dir, IOException e) {
+                            return FileVisitResult.CONTINUE;
+                        }
                     }
-                }
-        );
+            );
+        }
+
         Map<String, Set<String>> missing = new TreeMap<>();
         // Retrieve all optional dependencies that have not been provisioned.
         for (Map.Entry<String, Set<String>> entry : optionalDependencies.entrySet()) {
@@ -170,24 +194,27 @@ public class Scanner {
             // the un-referenced modules are removed before iterating again all modules.
             mods.removeAll(notReferenced);
         }
-        // Compute all modules (size and names) reachable from each extension
-        List<Result.ExtensionResult> extensionResults = new ArrayList<>();
-        for (String ex : extensions) {
-            Set<String> deps = new TreeSet<>();
-            Set<String> seen = new HashSet<>();
-            List<Long> extSize = new ArrayList<>();
-            extSize.add((long) 0);
-            getDependencies(modulePath, ex, deps, seen, extSize);
-            deps.add(ex);
-            Set<String> unresolved = new TreeSet<>();
 
-            // Compute unresolved dependencies per extension.
-            for (String dep : deps) {
-                if (!modules.contains(dep)) {
-                    unresolved.add(dep);
+        List<Result.ExtensionResult> extensionResults = new ArrayList<>();
+        for (Path modulePath : modulePaths) {
+            // Compute all modules (size and names) reachable from each extension
+            for (String ex : extensions) {
+                Set<String> deps = new TreeSet<>();
+                Set<String> seen = new HashSet<>();
+                List<Long> extSize = new ArrayList<>();
+                extSize.add((long) 0);
+                getDependencies(modulePath, ex, deps, seen, extSize);
+                deps.add(ex);
+                Set<String> unresolved = new TreeSet<>();
+
+                // Compute unresolved dependencies per extension.
+                for (String dep : deps) {
+                    if (!modules.contains(dep)) {
+                        unresolved.add(dep);
+                    }
                 }
+                extensionResults.add(new Result.ExtensionResult(ex, extSize.get(0) / 1024, deps, unresolved));
             }
-            extensionResults.add(new Result.ExtensionResult(ex, extSize.get(0) / 1024, deps, unresolved));
         }
 
         return new Result(size.get(0) / 1024, modules, missing, allNotReferenced, aliases, extensionResults);
