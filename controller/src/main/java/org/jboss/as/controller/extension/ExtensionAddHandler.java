@@ -9,6 +9,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import java.util.Iterator;
 
 import org.jboss.as.controller.Extension;
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -58,7 +59,14 @@ public class ExtensionAddHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final String moduleName = context.getCurrentAddressValue();
+
+        // Require canonical module names
+        final String addressValue = context.getCurrentAddressValue();
+        final String moduleName = ModuleIdentifierUtil.canonicalModuleIdentifier(addressValue);
+        if (!addressValue.equals(moduleName)) {
+            throw new OperationFailedException(ControllerLogger.MGMT_OP_LOGGER.nonCanonicalExtensionName(addressValue, moduleName));
+        }
+
         final ExtensionResource resource = new ExtensionResource(moduleName, extensionRegistry);
 
         context.addResource(PathAddress.EMPTY_ADDRESS, resource);
