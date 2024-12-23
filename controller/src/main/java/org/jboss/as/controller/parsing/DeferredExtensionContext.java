@@ -20,7 +20,6 @@ import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.staxmapper.XMLMapper;
@@ -92,7 +91,7 @@ public class DeferredExtensionContext {
     private void loadModule(final String moduleName, final XMLMapper xmlMapper) throws XMLStreamException {
         // Register element handlers for this extension
         try {
-            final Module module = moduleLoader.loadModule(ModuleIdentifier.fromString(moduleName));
+            final Module module = moduleLoader.loadModule(moduleName);
             boolean initialized = false;
             for (final Extension extension : module.loadService(Extension.class)) {
                 ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(extension.getClass());

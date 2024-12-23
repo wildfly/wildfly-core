@@ -29,7 +29,6 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.modules.ModuleClassLoader;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 
@@ -102,9 +101,7 @@ class ExtensionsLoader {
      * Using the client, iterates through the available domain management model extensions
      * and tries to load CLI command handlers from their modules.
      *
-     * @param registry
      * @param address
-     * @param client
      */
     void loadHandlers(ControllerAddress address) throws CommandLineException, CommandLineParserException {
 
@@ -150,7 +147,7 @@ class ExtensionsLoader {
             if(!module.isDefined()) {
                 addError("Extension " + ext.getName() + " is missing module attribute");
             } else {
-                final ModuleIdentifier moduleId = ModuleIdentifier.fromString(module.asString());
+                final String moduleId = canonicalize(module.asString());
                 ModuleClassLoader cl;
                 try {
                     cl = moduleLoader.loadModule(moduleId).getClassLoader();
@@ -211,6 +208,12 @@ class ExtensionsLoader {
             default:
                 errors.add(msg);
         }
+    }
+
+    private static String canonicalize(String moduleName) {
+        // This isn't a full canonicalization, but extension module names are unlikely to be non-canonical
+        // in any way beyond maybe a trailing ":main". So just check for and strip any trailing ":main"
+        return moduleName.endsWith(":main") ? moduleName.substring(0, moduleName.length() - 5) : moduleName;
     }
 
     class ExtensionCommandsHandler extends CommandHandlerWithHelp {
