@@ -46,7 +46,6 @@ import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 
 /**
@@ -116,6 +115,8 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
             if (resourceAddress.size() == 1 && resourceAddress.getElement(0).getKey().equals(EXTENSION)) {
                 final String module = resourceAddress.getElement(0).getValue();
                 if (appliedExtensions.add(module)) {
+                    // We know 'module' is a canonical module name as the primary is our version or later
+                    // and we require canonical names for extension resources
                     initializeExtension(module, rootRegistration);
                     installedExtensions.put(module, resource);
                 }
@@ -195,7 +196,7 @@ public class ApplyExtensionsHandler implements OperationStepHandler {
 
     protected void initializeExtension(String module, ManagementResourceRegistration rootRegistration) throws OperationFailedException {
         try {
-            for (final Extension extension : Module.loadServiceFromCallerModuleLoader(ModuleIdentifier.fromString(module), Extension.class)) {
+            for (final Extension extension : Module.loadServiceFromCallerModuleLoader(module, Extension.class)) {
                 if (rootRegistration.enables(extension)) {
                     ClassLoader oldTccl = SecurityActions.setThreadContextClassLoader(extension.getClass());
                     try {

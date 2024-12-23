@@ -25,7 +25,6 @@ import org.jboss.as.controller.registry.OperationTransformerRegistry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 
 /**
@@ -61,7 +60,7 @@ public final class TransformerRegistry {
         try {
             SubsystemTransformerRegistration transformerRegistration = new SubsystemTransformerRegistrationImpl(name, subsystemVersion);
             if (Module.getCallerModule() != null) { //only register when running in modular environment, testsuite does its own loading
-                for (ExtensionTransformerRegistration registration : Module.loadServiceFromCallerModuleLoader(ModuleIdentifier.fromString(extensionModuleName), ExtensionTransformerRegistration.class)) {
+                for (ExtensionTransformerRegistration registration : Module.loadServiceFromCallerModuleLoader(extensionModuleName, ExtensionTransformerRegistration.class)) {
                     if (registration.getSubsystemName().equals(name)) { //to prevent registering transformers for different subsystems
                         registration.registerTransformers(transformerRegistration);
                     }
