@@ -31,7 +31,25 @@ import org.wildfly.extension.security.manager.logging.SecurityManagerLogger;
  */
 public class PermissionsParser {
 
+    // TODO remove this as soon as the full WF testsuite use of it is updated to use the string variant
+    /**
+     * @deprecated use {@link #parse(XMLStreamReader, ModuleLoader, String)}
+     */
+    @Deprecated(forRemoval = true)
     public static List<PermissionFactory> parse(final XMLStreamReader reader, final ModuleLoader loader, final ModuleIdentifier identifier)
+            throws XMLStreamException {
+        return parse(reader,loader, identifier.toString());
+    }
+
+    /**
+     * Parse the contents exposed by a reader into a list of {@link PermissionFactory} instances.
+     * @param reader reader of a {@code permissions.xml} or {@code jboss-permissions.xml} descriptor. Cannot be {@code null}.
+     * @param loader loader to use for loading permission classes. Cannot be {@code null}.
+     * @param moduleName canonical name of the module to use for loading permission classes. Cannot be {@code null}.
+     * @return a list of {@link PermissionFactory} instances
+     * @throws XMLStreamException if a parsing error occurs
+     */
+    public static List<PermissionFactory> parse(final XMLStreamReader reader, final ModuleLoader loader, final String moduleName)
             throws XMLStreamException {
 
         reader.require(XMLStreamConstants.START_DOCUMENT, null, null);
@@ -42,7 +60,7 @@ public class PermissionsParser {
                     Element element = Element.forName(reader.getLocalName());
                     switch (element) {
                         case PERMISSIONS: {
-                            return parsePermissions(reader, loader, identifier);
+                            return parsePermissions(reader, loader, moduleName);
                         }
                         default: {
                             throw unexpectedElement(reader);
@@ -57,7 +75,7 @@ public class PermissionsParser {
         throw unexpectedEndOfDocument(reader);
     }
 
-    private static List<PermissionFactory> parsePermissions(final XMLStreamReader reader, final ModuleLoader loader, final ModuleIdentifier identifier)
+    private static List<PermissionFactory> parsePermissions(final XMLStreamReader reader, final ModuleLoader loader, final String moduleName)
             throws XMLStreamException {
 
         List<PermissionFactory> factories = new ArrayList<PermissionFactory>();
@@ -98,7 +116,7 @@ public class PermissionsParser {
                     Element element = Element.forName(reader.getLocalName());
                     switch (element) {
                         case PERMISSION: {
-                            PermissionFactory factory = parsePermission(reader, loader, identifier);
+                            PermissionFactory factory = parsePermission(reader, loader, moduleName);
                             factories.add(factory);
                             break;
                         }
@@ -116,7 +134,7 @@ public class PermissionsParser {
         throw unexpectedEndOfDocument(reader);
     }
 
-    private static PermissionFactory parsePermission(final XMLStreamReader reader, final ModuleLoader loader, final ModuleIdentifier identifier)
+    private static PermissionFactory parsePermission(final XMLStreamReader reader, final ModuleLoader loader, final String moduleName)
             throws XMLStreamException {
 
         // permission element has no attributes.
@@ -136,7 +154,7 @@ public class PermissionsParser {
 
                     // build a permission and add it to the list.
                     PermissionFactory factory = new DeferredPermissionFactory(DeferredPermissionFactory.Type.DEPLOYMENT,
-                            loader, identifier.toString(), permissionClass, permissionName, permissionActions);
+                            loader, moduleName, permissionClass, permissionName, permissionActions);
                     return factory;
                 }
                 case XMLStreamConstants.START_ELEMENT: {

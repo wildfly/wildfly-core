@@ -22,7 +22,7 @@ public class ModuleDependencyUnitTestCase {
     public void testBasicBuilder() {
         ModuleDependency dep = ModuleDependency.Builder.of(TEST_LOADER, MODULE_NAME).build();
         assertEquals(TEST_LOADER, dep.getModuleLoader());
-        assertEquals(MODULE_NAME, dep.getIdentifier().getName());
+        assertEquals(MODULE_NAME, dep.getDependencyModule());
         assertFalse(dep.isExport());
         assertFalse(dep.isImportServices());
         assertFalse(dep.isOptional());
@@ -43,7 +43,7 @@ public class ModuleDependencyUnitTestCase {
                 .build();
 
         assertEquals(TEST_LOADER, dep.getModuleLoader());
-        assertEquals(MODULE_NAME, dep.getIdentifier().getName());
+        assertEquals(MODULE_NAME, dep.getDependencyModule());
         assertTrue(dep.isExport());
         assertTrue(dep.isImportServices());
         assertTrue(dep.isOptional());

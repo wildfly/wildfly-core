@@ -193,11 +193,11 @@ public interface ServerLogger extends BasicLogger {
 
     @LogMessage(level = WARN)
     @Message(id = 18, value = "Deployment \"%s\" is using a private module (\"%s\") which may be changed or removed in future versions without notice.")
-    void privateApiUsed(String deployment, ModuleIdentifier dependency);
+    void privateApiUsed(String deployment, String dependency);
 
     @LogMessage(level = WARN)
     @Message(id = 19, value = "Deployment \"%s\" is using an unsupported module (\"%s\") which may be changed or removed in future versions without notice.")
-    void unsupportedApiUsed(String deployment, ModuleIdentifier dependency);
+    void unsupportedApiUsed(String deployment, String dependency);
 
     @LogMessage(level = WARN)
     @Message(id = 20, value = "Exception occurred removing deployment content %s")
@@ -1153,7 +1153,7 @@ public interface ServerLogger extends BasicLogger {
 
     @LogMessage(level = WARN)
     @Message(id = 221, value = "Deployment \"%s\" is using a deprecated module (\"%s\") which may be removed in future versions without notice.")
-    void deprecatedApiUsed(String name, ModuleIdentifier id);
+    void deprecatedApiUsed(String name, String id);
 
     @Message(id = 222, value="Illegal permission name '%s'")
     IllegalArgumentException illegalPermissionName(String name);

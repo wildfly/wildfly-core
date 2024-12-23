@@ -121,8 +121,13 @@ public final class Attachments {
     public static final AttachmentKey<Manifest> MANIFEST = AttachmentKey.create(Manifest.class);
 
     /**
-     * Module identifiers for Class-Path information
+     * Module identifiers for Class-Path information.
+     * <p/>
+     * <strong>Note: This is only meant for use within the server kernel.</strong>
+     *
+     * @deprecated this will either be changed incompatibly (to provide a string) or removed altogether in the next WildFly Core major.
      */
+    @Deprecated(forRemoval = true)
     public static final AttachmentKey<AttachmentList<ModuleIdentifier>> CLASS_PATH_ENTRIES = AttachmentKey.createList(ModuleIdentifier.class);
 
     /**
@@ -191,9 +196,26 @@ public final class Attachments {
      */
     public static final AttachmentKey<AttachmentList<AdditionalModuleSpecification>> ADDITIONAL_MODULES = AttachmentKey.createList(AdditionalModuleSpecification.class);
 
+    /**
+     * A list of modules for which annotation indexes should be prepared (or, in later phases, have been prepared).
+     *
+     * @deprecated this will either be changed incompatibly (to provide a list of string) or removed altogether in the next WildFly Core major.
+     */
+    @Deprecated(forRemoval = true)
     public static final AttachmentKey<AttachmentList<ModuleIdentifier>> ADDITIONAL_ANNOTATION_INDEXES = AttachmentKey.createList(ModuleIdentifier.class);
 
+    /**
+     * Annotation indices, keyed by the identifier of the module from which they were obtained.
+     *
+     * @deprecated use {@link #ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE_NAME}
+     */
+    @Deprecated(forRemoval = true)
     public static final AttachmentKey<Map<ModuleIdentifier, CompositeIndex>> ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE = AttachmentKey.create(Map.class);
+
+    /**
+     * Annotation indices, keyed by the canonical name module from which they were obtained.
+     */
+    public static final AttachmentKey<Map<String, CompositeIndex>> ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE_NAME = AttachmentKey.create(Map.class);
 
     public static final AttachmentKey<Map<String, MountedDeploymentOverlay>> DEPLOYMENT_OVERLAY_LOCATIONS = AttachmentKey.create(Map.class);
 
@@ -237,8 +259,16 @@ public final class Attachments {
     //
     /**
      * The module identifier.
+     *
+     * @deprecated use {@link #MODULE_NAME}
      */
+    @Deprecated(forRemoval = true)
     public static final AttachmentKey<ModuleIdentifier> MODULE_IDENTIFIER = AttachmentKey.create(ModuleIdentifier.class);
+
+    /**
+     * The canonical name of the module.
+     */
+    public static final AttachmentKey<String> MODULE_NAME = AttachmentKey.create(String.class);
 
     //
     // MODULARIZE

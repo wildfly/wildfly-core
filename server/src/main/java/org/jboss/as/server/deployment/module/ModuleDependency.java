@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.filter.PathFilter;
@@ -23,8 +24,7 @@ public final class ModuleDependency implements Serializable {
 
     public static final class Builder {
         private final ModuleLoader moduleLoader;
-        @SuppressWarnings("deprecation")
-        private final ModuleIdentifier identifier;
+        private final String identifier;
         private boolean export;
         private boolean optional;
         private boolean importServices;
@@ -37,8 +37,7 @@ public final class ModuleDependency implements Serializable {
 
         private Builder(ModuleLoader moduleLoader, String moduleName) {
             this.moduleLoader = moduleLoader;
-            //noinspection deprecation
-            this.identifier = ModuleIdentifier.fromString(moduleName);
+            this.identifier = ModuleIdentifierUtil.canonicalModuleIdentifier(moduleName);
         }
 
         /**
@@ -66,7 +65,7 @@ public final class ModuleDependency implements Serializable {
         /**
          * Sets whether this dependency is optional.
          *
-         * @param optional {@code true} if the dependencys is optional
+         * @param optional {@code true} if the dependency is optional
          * @return this builder
          */
         public Builder setOptional(boolean optional) {
@@ -102,7 +101,7 @@ public final class ModuleDependency implements Serializable {
          * @return the {@code ModuleDependency}. Will not return {@code null}
          */
         public ModuleDependency build() {
-            return new ModuleDependency(moduleLoader, identifier, optional, export, importServices, userSpecified, reason);
+            return new ModuleDependency(moduleLoader, identifier, reason, optional, export, importServices, userSpecified);
         }
     }
 
@@ -126,17 +125,17 @@ public final class ModuleDependency implements Serializable {
     private static final long serialVersionUID = 2749276798703740853L;
 
     private final ModuleLoader moduleLoader;
-    private final ModuleIdentifier identifier;
+    private final String identifier;
     private final boolean export;
     private final boolean optional;
-    private final List<FilterSpecification> importFilters = new ArrayList<FilterSpecification>();
-    private final List<FilterSpecification> exportFilters = new ArrayList<FilterSpecification>();
+    private final List<FilterSpecification> importFilters = new ArrayList<>();
+    private final List<FilterSpecification> exportFilters = new ArrayList<>();
     private final boolean importServices;
     private final boolean userSpecified;
     private final String reason;
 
     // NOTE: this constructor isn't deprecated because it's used in over 100 places, and perhaps 40+ more if
-    // the uses of the equivalent c'tor taking ModuleIdentifier make a simple switch to this. Changing all that
+    // the uses of the equivalent constructor taking ModuleIdentifier make a simple switch to this. Changing all that
     // code to use the builder just to clear a deprecation warning is a simple way to introduce bugs.
     /**
      * Construct a new instance.
@@ -149,7 +148,7 @@ public final class ModuleDependency implements Serializable {
      * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
      */
     public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
-        this(moduleLoader, ModuleIdentifier.fromString(identifier), optional, export, importServices, userSpecified, null);
+        this(moduleLoader, ModuleIdentifierUtil.canonicalModuleIdentifier(identifier), null, optional, export, importServices, userSpecified);
     }
 
     /**
@@ -167,7 +166,7 @@ public final class ModuleDependency implements Serializable {
      */
     @Deprecated(forRemoval = true)
     public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified, String reason) {
-        this(moduleLoader, ModuleIdentifier.fromString(identifier), optional, export, importServices, userSpecified, reason);
+        this(moduleLoader, ModuleIdentifierUtil.canonicalModuleIdentifier(identifier), reason, optional, export, importServices, userSpecified);
     }
 
     /**
@@ -180,7 +179,7 @@ public final class ModuleDependency implements Serializable {
      * @param importServices  {@code true} if the dependent module should be able to load services from the dependency
      * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
      *
-     * @deprecated Use a {@link Builder} or @link ModuleDependency(ModuleLoader, String, boolean, boolean, boolean, boolean)}
+     * @deprecated Use a {@link Builder} or {@link ModuleDependency(ModuleLoader, String, boolean, boolean, boolean, boolean)}
      */
     @Deprecated(forRemoval = true)
     public ModuleDependency(final ModuleLoader moduleLoader, final ModuleIdentifier identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
@@ -202,6 +201,10 @@ public final class ModuleDependency implements Serializable {
      */
     @Deprecated(forRemoval = true)
     public ModuleDependency(final ModuleLoader moduleLoader, final ModuleIdentifier identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified, String reason) {
+        this(moduleLoader, identifier.toString(), reason, optional, export, importServices, userSpecified);
+    }
+
+    private ModuleDependency(final ModuleLoader moduleLoader, final String identifier, String reason, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
         this.identifier = identifier;
         this.optional = optional;
         this.export = export;
@@ -215,7 +218,18 @@ public final class ModuleDependency implements Serializable {
         return moduleLoader;
     }
 
+    /** @deprecated use {@link #getDependencyModule()} */
+    @Deprecated(forRemoval = true)
     public ModuleIdentifier getIdentifier() {
+        return ModuleIdentifier.fromString(identifier);
+    }
+
+    /**
+     * Gets the name of the module upon which there is a dependency.
+     *
+     * @return the {@link ModuleIdentifierUtil#canonicalModuleIdentifier(String) canonical form} of the name of module
+     */
+    public String getDependencyModule() {
         return identifier;
     }
 

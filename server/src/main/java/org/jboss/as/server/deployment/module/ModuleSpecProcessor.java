@@ -30,6 +30,7 @@ import org.jboss.as.server.moduleservice.ModuleLoadService;
 import org.jboss.as.server.moduleservice.ModuleResolvePhaseService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.DependencySpec;
+import org.jboss.modules.ModuleDependencySpecBuilder;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.ModuleSpec;
@@ -151,7 +152,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         module.addSystemDependencies(moduleSpecification.getSystemDependenciesSet());
         module.addLocalDependencies(moduleSpecification.getLocalDependenciesSet());
         for(ModuleDependency dep : moduleSpecification.getUserDependenciesSet()) {
-            if(!dep.getIdentifier().equals(module.getModuleIdentifier())) {
+            if(!dep.getDependencyModule().equals(module.getModuleIdentifier().toString())) {
                 module.addUserDependency(dep);
             }
         }
@@ -337,8 +338,13 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
                     }
                     exportFilter = exportBuilder.create();
                 }
-                final DependencySpec depSpec = DependencySpec.createModuleDependencySpec(importFilter, exportFilter, dependency
-                        .getModuleLoader(), dependency.getIdentifier(), dependency.isOptional());
+                final DependencySpec depSpec = new ModuleDependencySpecBuilder()
+                        .setModuleLoader(dependency.getModuleLoader())
+                        .setName(dependency.getDependencyModule())
+                        .setOptional(dependency.isOptional())
+                        .setImportFilter(importFilter)
+                        .setExportFilter(exportFilter)
+                        .build();
                 specBuilder.addDependency(depSpec);
                 logger.debugf("Adding dependency %s to module %s", dependency, specBuilder.getIdentifier());
             }
