@@ -112,7 +112,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
             }
         }
 
-        final ModuleIdentifier moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER);
+        final String moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_NAME);
         if (moduleIdentifier == null) {
             throw ServerLogger.ROOT_LOGGER.noModuleIdentifier(deploymentUnit.getName());
         }
@@ -134,7 +134,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
             for (final AdditionalModuleSpecification module : additionalModules) {
                 addAllDependenciesAndPermissions(moduleSpec, module);
                 List<ResourceRoot> roots = module.getResourceRoots();
-                ServiceName serviceName = createModuleService(phaseContext, deploymentUnit, roots, parentResourceRoots, module, module.getModuleIdentifier());
+                ServiceName serviceName = createModuleService(phaseContext, deploymentUnit, roots, parentResourceRoots, module, module.getModuleName());
                 phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, serviceName);
             }
         }
@@ -152,7 +152,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         module.addSystemDependencies(moduleSpecification.getSystemDependenciesSet());
         module.addLocalDependencies(moduleSpecification.getLocalDependenciesSet());
         for(ModuleDependency dep : moduleSpecification.getUserDependenciesSet()) {
-            if(!dep.getDependencyModule().equals(module.getModuleIdentifier().toString())) {
+            if(!dep.getDependencyModule().equals(module.getModuleName())) {
                 module.addUserDependency(dep);
             }
         }
@@ -199,7 +199,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
 
     private ServiceName createModuleService(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit,
                                             final List<ResourceRoot> resourceRoots, final List<ResourceRoot> parentResourceRoots,
-                                            final ModuleSpecification moduleSpecification, final ModuleIdentifier moduleIdentifier) throws DeploymentUnitProcessingException {
+                                            final ModuleSpecification moduleSpecification, final String moduleIdentifier) throws DeploymentUnitProcessingException {
         logger.debugf("Creating module: %s", moduleIdentifier);
         final ModuleSpec.Builder specBuilder = ModuleSpec.build(moduleIdentifier);
         for (final DependencySpec dep : moduleSpecification.getModuleSystemDependencies()) {
@@ -278,14 +278,14 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         return ModuleLoadService.install(phaseContext.getServiceTarget(), moduleIdentifier, dependencies, localDependencies, userDependencies);
     }
 
-    private void installAliases(final ModuleSpecification moduleSpecification, final ModuleIdentifier moduleIdentifier, final DeploymentUnit deploymentUnit, final DeploymentPhaseContext phaseContext) {
+    private void installAliases(final ModuleSpecification moduleSpecification, final String moduleIdentifier, final DeploymentUnit deploymentUnit, final DeploymentPhaseContext phaseContext) {
 
         ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
         for (final String aliasName : moduleSpecification.getModuleAliases()) {
             final ModuleIdentifier alias = ModuleIdentifier.fromString(aliasName);
 
             final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(alias.toString());
-            final ModuleSpec spec = ModuleSpec.buildAlias(aliasName, moduleIdentifier.toString()).create();
+            final ModuleSpec spec = ModuleSpec.buildAlias(aliasName, moduleIdentifier).create();
 
             HashSet<ModuleDependency> dependencies = new HashSet<>(moduleSpecification.getAllDependencies());
             //we need to add the module we are aliasing as a dependency, to make sure that it will be resolved
