@@ -16,8 +16,8 @@ public final class ServerEnvironmentWrapper {
         ERROR // problematic abort
     }
 
-    private ServerEnvironment serverEnvironment;
-    private ServerEnvironmentStatus serverEnvironmentStatus;
+    private final ServerEnvironment serverEnvironment;
+    private final ServerEnvironmentStatus serverEnvironmentStatus;
 
     private ServerEnvironmentWrapper(ServerEnvironment serverEnvironment, ServerEnvironmentStatus serverEnvironmentStatus) {
         this.serverEnvironment = serverEnvironment;

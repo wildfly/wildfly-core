@@ -73,6 +73,7 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.wildfly.core.embedded.spi.EmbeddedModelControllerClientFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -336,7 +337,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
             rootResourceRegistration.registerCapability(NOTIFICATION_REGISTRY_CAPABILITY);
             final ServiceName clientFactorySN = CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName();
             final ServiceBuilder<?> clientFactorySB = target.addService(clientFactorySN);
-            clientFactorySB.setInstance(new SimpleService(clientFactorySB.provides(clientFactorySN), clientFactory));
+            clientFactorySB.setInstance(new SimpleService(clientFactorySB.provides(clientFactorySN,
+                    EmbeddedModelControllerClientFactory.SERVICE_NAME), clientFactory));
             clientFactorySB.install();
             final ServiceName notifyRegistrySN = NOTIFICATION_REGISTRY_CAPABILITY.getCapabilityServiceName();
             final ServiceBuilder<?> notifyRegistrySB = target.addService(notifyRegistrySN);

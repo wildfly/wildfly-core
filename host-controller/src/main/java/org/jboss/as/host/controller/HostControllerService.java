@@ -42,10 +42,13 @@ import org.jboss.as.server.Services;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceActivator;
+import org.jboss.msc.service.ServiceActivatorContext;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -80,11 +83,13 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
     private final String authCode;
     private final CapabilityRegistry capabilityRegistry;
     private final ElapsedTime elapsedTime;
-    private volatile FutureServiceContainer futureContainer;
+    private final ServiceActivator[] extraServices;
+    private final FutureServiceContainer futureContainer;
     private volatile boolean everStopped;
 
     public HostControllerService(final HostControllerEnvironment environment, final HostRunningModeControl runningModeControl,
-                          final String authCode, final ControlledProcessState processState, FutureServiceContainer futureContainer) {
+                          final String authCode, final ControlledProcessState processState,
+                          final FutureServiceContainer futureContainer, ServiceActivator... extraServices) {
         this.environment = environment;
         this.runningModeControl = runningModeControl;
         this.authCode = authCode;
@@ -92,6 +97,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         this.elapsedTime = environment.getElapsedTime();
         this.futureContainer = futureContainer;
         this.capabilityRegistry = new CapabilityRegistry(false);
+        this.extraServices = extraServices;
     }
 
     public HostControllerService(final HostControllerEnvironment environment, final HostRunningModeControl runningModeControl,
@@ -197,6 +203,24 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
 
         DomainModelControllerService.addService(serviceTarget, environment, runningModeControl, processState,
                 bootstrapListener, hostPathManagerService, capabilityRegistry, THREAD_GROUP);
+
+        if (extraServices != null && extraServices.length > 0) {
+            final ServiceActivatorContext serviceActivatorContext = new ServiceActivatorContext() {
+                @Override
+                public ServiceTarget getServiceTarget() {
+                    return serviceTarget;
+                }
+
+                @Override
+                public ServiceRegistry getServiceRegistry() {
+                    return context.getController().getServiceContainer();
+                }
+            };
+
+            for(ServiceActivator activator : extraServices) {
+                activator.activate(serviceActivatorContext);
+            }
+        }
     }
 
     @Override

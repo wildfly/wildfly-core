@@ -21,16 +21,11 @@
     </resources>
 
     <dependencies>
-        <module name="java.desktop"/>
-        <module name="org.wildfly.security.elytron-private"/>
-        <module name="org.wildfly.common"/>
-        <module name="org.jboss.as.server"/>
-        <module name="org.jboss.as.controller"/>
+        <module name="java.desktop"/> <!-- for PropertyChangeListener -->
         <module name="org.jboss.as.controller-client"/>
-        <module name="org.jboss.as.host-controller"/>
+        <module name="org.jboss.as.host-controller" services="import"/>
+        <module name="org.jboss.as.server" services="import"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.modules"/>
-        <module name="org.jboss.stdio"/>
-        <module name="org.jboss.threads"/>
     </dependencies>
 </module>
