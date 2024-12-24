@@ -25,8 +25,8 @@ public enum IOSubsystemTransformationDescriptionFactory implements Function<Mode
         ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createSubsystemInstance();
         if (IOSubsystemModel.VERSION_6_0_0.requiresTransformation(version)) {
             builder.getAttributeBuilder()
-                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(IOSubsystemRegistrar.LEGACY_DEFAULT_WORKER), IOSubsystemRegistrar.DEFAULT_WORKER)
-                .addRejectCheck(RejectAttributeChecker.DEFINED, IOSubsystemRegistrar.DEFAULT_WORKER)
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(IOSubsystemResourceRegistrar.LEGACY_DEFAULT_WORKER), IOSubsystemResourceDescription.DEFAULT_WORKER)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, IOSubsystemResourceDescription.DEFAULT_WORKER)
                 .end();
         }
         return builder.build();

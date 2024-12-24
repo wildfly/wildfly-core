@@ -4,11 +4,12 @@
  */
 package org.wildfly.extension.discovery;
 
-import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ResourceDefinition;
-import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.dmr.ModelNode;
 import org.wildfly.discovery.spi.DiscoveryProvider;
 import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 import org.wildfly.subsystem.resource.ChildResourceDefinitionRegistrar;
@@ -17,34 +18,42 @@ import org.wildfly.subsystem.resource.ManagementResourceRegistrationContext;
 import org.wildfly.subsystem.resource.ResourceDescriptor;
 import org.wildfly.subsystem.resource.operation.ResourceOperationRuntimeHandler;
 import org.wildfly.subsystem.service.ResourceServiceConfigurator;
+import org.wildfly.subsystem.service.ResourceServiceInstaller;
+import org.wildfly.subsystem.service.capability.CapabilityServiceInstaller;
 
 /**
  * Abstract registrar for a discovery provider resource definition.
  * @author Paul Ferraro
  */
-public abstract class DiscoveryProviderRegistrar implements ChildResourceDefinitionRegistrar, ResourceServiceConfigurator {
+public class DiscoveryProviderResourceRegistrar implements ChildResourceDefinitionRegistrar, ResourceServiceConfigurator {
 
     // TODO Move this to an SPI module, when this capability acquires any consumers
     static final UnaryServiceDescriptor<DiscoveryProvider> DISCOVERY_PROVIDER_DESCRIPTOR = UnaryServiceDescriptor.of("org.wildfly.discovery.provider", DiscoveryProvider.class);
     static final RuntimeCapability<Void> DISCOVERY_PROVIDER_CAPABILITY = RuntimeCapability.Builder.of(DISCOVERY_PROVIDER_DESCRIPTOR).setAllowMultipleRegistrations(true).build();
 
-    private final ResourceRegistration registration;
-    private final ResourceDescriptor descriptor;
+    private final DiscoveryProviderResourceDescription description;
 
-    DiscoveryProviderRegistrar(PathElement path, ResourceDescriptor.Builder builder) {
-        this.registration = ResourceRegistration.of(path);
-        this.descriptor = builder.addCapability(DISCOVERY_PROVIDER_CAPABILITY)
-                .withRuntimeHandler(ResourceOperationRuntimeHandler.configureService(this))
-                .build();
+    DiscoveryProviderResourceRegistrar(DiscoveryProviderResourceDescription description) {
+        this.description = description;
     }
 
     @Override
     public ManagementResourceRegistration register(ManagementResourceRegistration parent, ManagementResourceRegistrationContext context) {
-        ResourceDefinition definition = ResourceDefinition.builder(this.registration, this.descriptor.getResourceDescriptionResolver()).build();
+        ResourceDescriptor descriptor = ResourceDescriptor.builder(DiscoverySubsystemResourceRegistrar.RESOLVER.createChildResolver(this.description.getPathElement()))
+                .addAttributes(this.description.getAttributes().toList())
+                .addCapability(DISCOVERY_PROVIDER_CAPABILITY)
+                .withRuntimeHandler(ResourceOperationRuntimeHandler.configureService(this))
+                .build();
+        ResourceDefinition definition = ResourceDefinition.builder(this.description, descriptor.getResourceDescriptionResolver()).build();
         ManagementResourceRegistration registration = parent.registerSubModel(definition);
 
-        ManagementResourceRegistrar.of(this.descriptor).register(registration);
+        ManagementResourceRegistrar.of(descriptor).register(registration);
 
         return registration;
+    }
+
+    @Override
+    public ResourceServiceInstaller configure(OperationContext context, ModelNode model) throws OperationFailedException {
+        return CapabilityServiceInstaller.builder(DiscoveryProviderResourceRegistrar.DISCOVERY_PROVIDER_CAPABILITY, this.description.resolve(context, model)).build();
     }
 }
