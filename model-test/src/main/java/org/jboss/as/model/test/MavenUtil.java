@@ -19,9 +19,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.maven.repository.internal.DefaultArtifactDescriptorReader;
+import org.apache.maven.repository.internal.DefaultModelCacheFactory;
 import org.apache.maven.repository.internal.DefaultVersionRangeResolver;
 import org.apache.maven.repository.internal.DefaultVersionResolver;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import org.apache.maven.repository.internal.ModelCacheFactory;
 import org.apache.maven.repository.internal.SnapshotMetadataGeneratorFactory;
 import org.apache.maven.repository.internal.VersionsMetadataGeneratorFactory;
 import org.eclipse.aether.AbstractRepositoryListener;
@@ -281,8 +283,6 @@ class MavenUtil {
             return this.session;
         }
         DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-
-
         LocalRepository localRepo = new LocalRepository(mavenSettings.getLocalRepository().toString());
         session.setLocalRepositoryManager(REPOSITORY_SYSTEM.newLocalRepositoryManager(session, localRepo));
 
@@ -295,6 +295,11 @@ class MavenUtil {
                 super.transferFailed(event);
             }
         });
+
+        // these properties are needed by Maven to correctly parse poms when resolving nested dependencies
+        session.setSystemProperty("java.version", System.getProperty("java.version"));
+        session.setSystemProperty("java.home", System.getProperty("java.home"));
+
         this.session = session;
         return session;
     }
@@ -312,11 +317,14 @@ class MavenUtil {
              */
 
         DefaultServiceLocator locator = new DefaultServiceLocator();
+
+
         locator.addService(ArtifactDescriptorReader.class, DefaultArtifactDescriptorReader.class);
         locator.addService(VersionResolver.class, DefaultVersionResolver.class);
         locator.addService(VersionRangeResolver.class, DefaultVersionRangeResolver.class);
         locator.addService(MetadataGeneratorFactory.class, SnapshotMetadataGeneratorFactory.class);
         locator.addService(MetadataGeneratorFactory.class, VersionsMetadataGeneratorFactory.class);
+        locator.addService(ModelCacheFactory.class, DefaultModelCacheFactory.class);
         locator.setErrorHandler(new MyErrorHandler());
 
         locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
