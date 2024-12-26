@@ -16,7 +16,9 @@ import java.util.concurrent.Future;
 
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.host.controller.HostControllerEnvironment;
+import org.jboss.as.host.controller.HostControllerEnvironmentWrapper;
 import org.jboss.as.host.controller.Main;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.server.ElapsedTime;
 import org.jboss.as.server.embedded.AbstractEmbeddedProcessBootstrap;
 import org.jboss.msc.service.ServiceActivator;
@@ -51,6 +53,10 @@ public final class HostEmbeddedProcessBootstrap extends AbstractEmbeddedProcessB
                                                       ServiceActivator... extraServices) throws Exception {
         // Determine the HostControllerEnvironment
         HostControllerEnvironment environment = createHostControllerEnvironment(configuration.getJBossHome(), configuration.getCmdArgs(), elapsedTime);
+        if (environment == null) {
+            // configuration.getCmdArgs() must have wanted --help or --version or the like
+            return null;
+        }
 
         final byte[] authBytes = new byte[16];
         new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
@@ -93,7 +99,14 @@ public final class HostEmbeddedProcessBootstrap extends AbstractEmbeddedProcessB
             if (value != null)
                 cmds.add("-D" + prop + "=" + value);
         }
-        return Main.determineEnvironment(cmds.toArray(new String[0]), elapsedTime, ProcessType.EMBEDDED_HOST_CONTROLLER).getHostControllerEnvironment();
+        HostControllerEnvironmentWrapper wrapper = Main.determineEnvironment(cmds.toArray(new String[0]), elapsedTime, ProcessType.EMBEDDED_HOST_CONTROLLER);
+        if (wrapper.getHostControllerEnvironmentStatus() == HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR) {
+            // I considered passing the cmdArgs to this, but I don't want to possibly leak anything sensitive.
+            // Main.determineEnvironment writes problems it finds to stdout so info is available that way.
+            throw HostControllerLogger.ROOT_LOGGER.cannotCreateHostControllerEnvironment();
+
+        }
+        return wrapper.getHostControllerEnvironment();
     }
 }
 

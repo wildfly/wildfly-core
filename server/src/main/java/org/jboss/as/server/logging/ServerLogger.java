@@ -1478,6 +1478,9 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = Logger.Level.ERROR)
     void embeddedProcessServicesUnavailable(int timeout, String unavailable);
 
+    @Message(id = 311, value = "Cannot create a ServerEnvironment for an embedded server")
+    IllegalStateException cannotCreateServerEnvironment();
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

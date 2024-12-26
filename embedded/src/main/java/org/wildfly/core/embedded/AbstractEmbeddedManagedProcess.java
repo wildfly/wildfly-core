@@ -65,8 +65,7 @@ abstract class AbstractEmbeddedManagedProcess implements EmbeddedManagedProcess 
                 EmbeddedProcessBootstrap bootstrap = loadEmbeddedProcessBootstrap();
                 embeddedProcess = bootstrap.startup(bootstrapConfiguration);
                 if (embeddedProcess == null) {
-                    // TODO before adding embedded-spi, why did we ignore Main.determineEnvironment not providing one?
-                    // This just continues that behavior
+                    // bootstrapConfiguration.getCmdArgs() must have wanted --help or --version or the like
                     return;
                 }
 

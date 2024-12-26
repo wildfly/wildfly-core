@@ -12,6 +12,8 @@ import org.jboss.as.server.Bootstrap;
 import org.jboss.as.server.ElapsedTime;
 import org.jboss.as.server.Main;
 import org.jboss.as.server.ServerEnvironment;
+import org.jboss.as.server.ServerEnvironmentWrapper;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceContainer;
 import org.wildfly.core.embedded.spi.EmbeddedProcessBootstrapConfiguration;
@@ -31,13 +33,20 @@ public final class StandaloneEmbeddedProcessBootstrap extends AbstractEmbeddedPr
 
 
         // Determine the ServerEnvironment
-        ServerEnvironment serverEnvironment = Main.determineEnvironment(configuration.getCmdArgs(),
+        ServerEnvironmentWrapper wrapper = Main.determineEnvironment(configuration.getCmdArgs(),
                 configuration.getSystemProperties(), configuration.getSystemEnv(),
-                ServerEnvironment.LaunchType.EMBEDDED, elapsedTime).getServerEnvironment();
+                ServerEnvironment.LaunchType.EMBEDDED, elapsedTime);
+        ServerEnvironment serverEnvironment = wrapper.getServerEnvironment();
         if (serverEnvironment == null) {
-            // Nothing to do
+            if (wrapper.getServerEnvironmentStatus() == ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR) {
+                // I considered passing the cmdArgs to this but I don't want to possibly leak anything sensitive.
+                // Main.determineEnvironment writes problems it finds to stdout so info is available that way.
+                throw ServerLogger.ROOT_LOGGER.cannotCreateServerEnvironment();
+            }
+            // else configuration.getCmdArgs() must have wanted --help or --version or the like
             return null;
         }
+
         Bootstrap bootstrap = Bootstrap.Factory.newInstance();
         try {
             Bootstrap.Configuration bootstrapConfiguration = new Bootstrap.Configuration(serverEnvironment);

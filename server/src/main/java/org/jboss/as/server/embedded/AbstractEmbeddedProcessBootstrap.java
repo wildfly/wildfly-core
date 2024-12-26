@@ -60,7 +60,7 @@ public abstract class AbstractEmbeddedProcessBootstrap implements EmbeddedProces
 
         Future<ServiceContainer> future = bootstrapEmbeddedProcess(elapsedTime, configuration, notifierCapture, clientFactoryCapture);
         if (future == null) {
-            // TODO why do we ignore this?
+            // configuration.getCmdArgs() must have wanted --help or --version or the like
             return null;
         }
 
@@ -114,7 +114,8 @@ public abstract class AbstractEmbeddedProcessBootstrap implements EmbeddedProces
      * @param elapsedTime tracker for elapsed time since embedded process 'start'. Cannot be {@code null}.
      * @param configuration configuration information for starting. Cannot be {@code null}.
      * @param extraServices activators for other services to start
-     * @return future from which the MSC service container can be obtained
+     * @return future from which the MSC service container can be obtained. May return {@code null} in the unusual
+     *         case of the configuration not looking for a running process (e.g. used a {@code --help} commmand argument.)
      * @throws Exception if one occurs
      */
     protected abstract Future<ServiceContainer> bootstrapEmbeddedProcess(ElapsedTime elapsedTime,

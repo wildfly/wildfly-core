@@ -1468,6 +1468,9 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 223, value = "%s stability level is only supported on Host Controllers with the same management major and minor version than the Domain Controller. Domain Controller version is %d.%d. Remote Host Controller version is %d.%d")
     OperationFailedException mixedDomainUnsupportedStability(Stability domainStability, int dcMajor, int dcMinor, int hcMajor, int hcMinor);
 
+    @Message(id = 224, value = "Cannot create a HostControllerEnvironment for an embedded host controller")
+    IllegalStateException cannotCreateHostControllerEnvironment();
+
     ////////////////////////////////////////////////
     //Messages without IDs
 
