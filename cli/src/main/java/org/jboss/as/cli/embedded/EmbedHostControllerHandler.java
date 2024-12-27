@@ -28,7 +28,6 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.modules.ModuleLoader;
@@ -90,7 +89,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
         result.removeExistingDomainConfig = new ArgumentWithoutValue(result, REMOVE_EXISTING_DOMAIN_CONFIG);
         result.emptyHostConfig = new ArgumentWithoutValue(result, EMPTY_HOST_CONFIG);
         result.removeExistingHostConfig = new ArgumentWithoutValue(result, REMOVE_EXISTING_HOST_CONFIG);
-        // TODO: Use ProductConfig.getStabilitySet()
+        // We must use our own Stability for tab completion choices as the client-side CLI can't depend on the server-side type
         result.stability = new ArgumentWithValue(result, new SimpleTabCompleter(EnumSet.allOf(Stability.class)), "--stability");
         return result;
     }

@@ -28,7 +28,6 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.modules.ModuleLoader;
@@ -81,7 +80,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
         result.removeExisting = new ArgumentWithoutValue(result, "--remove-existing");
         result.removeExisting.addRequiredPreceding(result.emptyConfig);
         result.timeout = new ArgumentWithValue(result, "--timeout");
-        // TODO: Use ProductConfig.getStabilitySet()
+        // We must use our own Stability for tab completion choices as the client-side CLI can't depend on the server-side type
         result.stability = new ArgumentWithValue(result, new SimpleTabCompleter(EnumSet.allOf(Stability.class)), "--stability");
 
         return result;
