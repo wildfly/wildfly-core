@@ -38,7 +38,6 @@ import org.jboss.vfs.VirtualFile;
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-@SuppressWarnings("deprecation")
 public final class Attachments {
 
     //
@@ -121,18 +120,8 @@ public final class Attachments {
     public static final AttachmentKey<Manifest> MANIFEST = AttachmentKey.create(Manifest.class);
 
     /**
-     * Module identifiers for Class-Path information.
-     * <p/>
-     * <strong>Note: This is only meant for use within the server kernel.</strong>
-     *
-     * @deprecated this will either be changed incompatibly (to provide a string) or removed altogether in the next WildFly Core major.
-     */
-    @Deprecated(forRemoval = true)
-    public static final AttachmentKey<AttachmentList<ModuleIdentifier>> CLASS_PATH_ENTRIES = AttachmentKey.createList(ModuleIdentifier.class);
-
-    /**
      * Resource roots for additional modules referenced via Class-Path.
-     *
+     * <p/>
      * These are attached to the resource root that actually defined the class path entry, and are used to transitively resolve
      * the annotation index for class path items.
      */
@@ -231,7 +220,7 @@ public final class Attachments {
 
     /**
      * A service target that can be used to install services outside the scope of the deployment.
-     *
+     * <p/>
      * These services will not be removed automatically on undeploy, so if this is used some other strategy must be used
      * to handle undeployment.
      */
@@ -296,7 +285,7 @@ public final class Attachments {
 
     /**
      * Sub deployments that are visible from this deployments module loader, in the order they are accessible.
-     *
+     * <p/>
      * This list includes the current deployment, which under normal circumstances will be the first item in the list
      */
     public static final AttachmentKey<AttachmentList<DeploymentUnit>> ACCESSIBLE_SUB_DEPLOYMENTS = AttachmentKey.createList(DeploymentUnit.class);

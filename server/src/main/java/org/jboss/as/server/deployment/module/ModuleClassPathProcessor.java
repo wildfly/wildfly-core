@@ -13,7 +13,6 @@ import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 
 /**
@@ -29,26 +28,26 @@ public final class ModuleClassPathProcessor implements DeploymentUnitProcessor {
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
 
         final ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
-        final AttachmentList<ModuleIdentifier> entries = deploymentUnit.getAttachment(Attachments.CLASS_PATH_ENTRIES);
+        final AttachmentList<String> entries = deploymentUnit.getAttachment(ManifestClassPathProcessor.CLASS_PATH_MODULES);
         if (entries != null) {
-            for (ModuleIdentifier entry : entries) {
+            for (String entry : entries) {
                 //class path items are always exported to make transitive dependencies work
-                moduleSpecification.addLocalDependency(ModuleDependency.Builder.of(moduleLoader, entry.toString()).setExport(true).setImportServices(true).build());
+                moduleSpecification.addLocalDependency(ModuleDependency.Builder.of(moduleLoader, entry).setExport(true).setImportServices(true).build());
             }
         }
 
         final List<AdditionalModuleSpecification> additionalModules = deploymentUnit.getAttachment(Attachments.ADDITIONAL_MODULES);
         if (additionalModules != null) {
             for (AdditionalModuleSpecification additionalModule : additionalModules) {
-                final AttachmentList<ModuleIdentifier> dependencies = additionalModule.getAttachment(Attachments.CLASS_PATH_ENTRIES);
+                final AttachmentList<String> dependencies = additionalModule.getAttachment(ManifestClassPathProcessor.CLASS_PATH_MODULES);
                 if (dependencies == null || dependencies.isEmpty()) {
                     continue;
                 }
                 // additional modules export any class-path entries
                 // this means that a module that references the additional module
                 // gets access to the transitive closure of its call-path entries
-                for (ModuleIdentifier entry : dependencies) {
-                    additionalModule.addLocalDependency(ModuleDependency.Builder.of(moduleLoader, entry.toString()).setExport(true).setImportServices(true).build());
+                for (String entry : dependencies) {
+                    additionalModule.addLocalDependency(ModuleDependency.Builder.of(moduleLoader, entry).setExport(true).setImportServices(true).build());
                 }
                 // add a dependency on the top ear itself for good measure
                 additionalModule.addLocalDependency(ModuleDependency.Builder.of(moduleLoader, deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER).toString()).setImportServices(true).build());
