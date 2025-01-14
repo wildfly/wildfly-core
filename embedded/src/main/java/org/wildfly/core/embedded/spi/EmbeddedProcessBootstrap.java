@@ -5,6 +5,8 @@
 
 package org.wildfly.core.embedded.spi;
 
+import java.util.Locale;
+
 /**
  * Service interface that standalone server or host controller bootstrap logic can implement
  * to allow their type of process to be bootstrapped in an embedded environment.
@@ -13,7 +15,11 @@ public interface EmbeddedProcessBootstrap {
 
     enum Type {
         STANDALONE_SERVER,
-        HOST_CONTROLLER
+        HOST_CONTROLLER;
+
+        public String getLogForm() {
+            return name().toLowerCase(Locale.ENGLISH).replace("_", " ");
+        }
     }
 
     /**

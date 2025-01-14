@@ -177,10 +177,10 @@ abstract class AbstractEmbeddedManagedProcess implements EmbeddedManagedProcess 
             } catch (RuntimeException rte) {
                 throw rte;
             } catch (InterruptedException ite) {
-                EmbeddedLogger.ROOT_LOGGER.error(ite.getLocalizedMessage(), ite);
+                logExitError(ite);
                 Thread.currentThread().interrupt();
             } catch (Exception ex) {
-                EmbeddedLogger.ROOT_LOGGER.error(ex.getLocalizedMessage(), ex);
+                logExitError(ex);
             }
 
             embeddedProcess.getProcessStateNotifier().removeProcessStateListener(processStateListener);
@@ -196,10 +196,10 @@ abstract class AbstractEmbeddedManagedProcess implements EmbeddedManagedProcess 
             } catch (RuntimeException rte) {
                 throw rte;
             } catch (InterruptedException ite) {
-                EmbeddedLogger.ROOT_LOGGER.error(ite.getLocalizedMessage(), ite);
+                logExitError(ite);
                 Thread.currentThread().interrupt();
             } catch (Exception ex) {
-                EmbeddedLogger.ROOT_LOGGER.error(ex.getLocalizedMessage(), ex);
+                logExitError(ex);
             }
         }
 
@@ -208,5 +208,9 @@ abstract class AbstractEmbeddedManagedProcess implements EmbeddedManagedProcess 
             embeddedProcess.close();
             embeddedProcess = null;
         }
+    }
+
+    private void logExitError(Exception ex) {
+        EmbeddedLogger.ROOT_LOGGER.errorExitingEmbeddedProcess(ex, type.getLogForm(), ex.getLocalizedMessage());
     }
 }
