@@ -138,7 +138,7 @@ public class ModuleLoadService implements Service<Module> {
     public static ServiceName installAliases(final ServiceTarget target, final ModuleIdentifier identifier, final List<ModuleIdentifier> aliases) {
         final ArrayList<ModuleDependency> dependencies = new ArrayList<ModuleDependency>(aliases.size());
         for (final ModuleIdentifier i : aliases) {
-            dependencies.add(new ModuleDependency(null, i, false, false, false, false));
+            dependencies.add(ModuleDependency.Builder.of(null, i.toString()).build());
         }
         final ModuleLoadService service = new ModuleLoadService(dependencies);
         return install(target, identifier.toString(), service);

@@ -38,7 +38,7 @@ public class ServerDependenciesProcessor implements DeploymentUnitProcessor {
         for (String moduleName : DEFAULT_MODULES) {
             try {
                 moduleLoader.loadModule(moduleName);
-                moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, moduleName, false, false, false, false));
+                moduleSpecification.addSystemDependency(ModuleDependency.Builder.of(moduleLoader, moduleName).build());
             } catch (ModuleLoadException ex) {
                 ServerLogger.ROOT_LOGGER.debugf("Module not found: %s", moduleName);
             }

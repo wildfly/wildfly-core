@@ -104,7 +104,7 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
                     }
                 }
 
-                final ModuleDependency dependency = new ModuleDependency(dependencyLoader, dependencyId, optional, export, services, true);
+                final ModuleDependency dependency = ModuleDependency.Builder.of(dependencyLoader, dependencyId.toString()).setOptional(optional).setExport(export).setImportServices(services).setUserSpecified(true).build();
                 if(metaInf) {
                     dependency.addImportFilter(PathFilters.getMetaInfSubdirectoriesFilter(), true);
                     dependency.addImportFilter(PathFilters.getMetaInfFilter(), true);

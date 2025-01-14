@@ -243,10 +243,13 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             }
         }
         // No more nested loop
+        ModuleDependency moduleDependency;
         for (ModuleDependency dependency : moduleDependencies) {
             String identifier = dependency.getDependencyModule();
             if (index.containsKey(identifier)) {
-                aliasDependencies.add(new ModuleDependency(dependency.getModuleLoader(), index.get(identifier).getModuleIdentifier(), dependency.isOptional(), dependency.isExport(), dependency.isImportServices(), dependency.isUserSpecified()));
+                moduleDependency = ModuleDependency.Builder.of(dependency.getModuleLoader(), index.get(identifier).getModuleIdentifier().toString())
+                        .setOptional(dependency.isOptional()).setExport(dependency.isExport()).setImportServices(dependency.isImportServices()).setUserSpecified(dependency.isUserSpecified()).build();
+                aliasDependencies.add(moduleDependency);
             }
         }
 
