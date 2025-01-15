@@ -15,6 +15,14 @@ import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.HashSet;
 import java.util.Set;
+import java.io.File;
+import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclEntryPermission;
+import java.nio.file.attribute.AclEntryType;
+import java.nio.file.attribute.AclFileAttributeView;
+import java.nio.file.attribute.FileOwnerAttributeView;
+import java.nio.file.attribute.UserPrincipal;
+import java.util.List;
 
 import jakarta.inject.Inject;
 
@@ -28,7 +36,6 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
@@ -69,29 +76,37 @@ public class ReadOnlyModeTestCase {
 
     @Test
     public void testReadOnlyConfigurationDirectory() throws Exception {
-        // We ignore the test on Windows to prevent in case of errors the pollution of %TMPDIR% with read only directories
-        // On unix machines, the /tmp dir is always deleted on each server boot by root user.
-        Assume.assumeFalse(TestSuiteEnvironment.isWindows());
-
         final Path jbossHome = Paths.get(System.getProperty("jboss.home"));
         final Path configDir = jbossHome.resolve("standalone").resolve("configuration");
         final Path standaloneTmpDir = jbossHome.resolve("standalone").resolve("tmp");
-        final Path osTmpDir =  Paths.get("/tmp");
+        final Path osTmpDir = TestSuiteEnvironment.isWindows() ? new File("target", "tmp").toPath().toAbsolutePath() : Paths.get("/tmp");
+        if(Files.notExists(osTmpDir)) {
+            Files.createDirectories(osTmpDir);
+        }
         final Path roConfigDir = Files.createTempDirectory(osTmpDir, "wildfly-test-suite-");
-
         PathUtil.copyRecursively(configDir, roConfigDir, true);
 
-        Set<PosixFilePermission> perms = new HashSet<>();
-
-        perms.add(PosixFilePermission.OWNER_READ);
-        perms.add(PosixFilePermission.OWNER_EXECUTE);
-        perms.add(PosixFilePermission.GROUP_READ);
-        perms.add(PosixFilePermission.GROUP_EXECUTE);
-        perms.add(PosixFilePermission.OTHERS_READ);
-        perms.add(PosixFilePermission.OTHERS_EXECUTE);
-
-        Files.getFileAttributeView(roConfigDir, PosixFileAttributeView.class).setPermissions(perms);
-
+        if (TestSuiteEnvironment.isWindows()) {
+            UserPrincipal owner = Files.getFileAttributeView(configDir, FileOwnerAttributeView.class).getOwner();
+            AclEntry entry = AclEntry.newBuilder()
+                    .setPrincipal(owner)
+                    .setType(AclEntryType.DENY)
+                    .setPermissions(AclEntryPermission.WRITE_DATA, AclEntryPermission.APPEND_DATA)
+                    .build();
+            AclFileAttributeView view = Files.getFileAttributeView(roConfigDir, AclFileAttributeView.class);
+            List<AclEntry> acl = view.getAcl();
+            acl.add(0, entry);
+            view.setAcl(acl);
+        } else {
+            Set<PosixFilePermission> perms = new HashSet<>();
+            perms.add(PosixFilePermission.OWNER_READ);
+            perms.add(PosixFilePermission.OWNER_EXECUTE);
+            perms.add(PosixFilePermission.GROUP_READ);
+            perms.add(PosixFilePermission.GROUP_EXECUTE);
+            perms.add(PosixFilePermission.OTHERS_READ);
+            perms.add(PosixFilePermission.OTHERS_EXECUTE);
+            Files.getFileAttributeView(roConfigDir, PosixFileAttributeView.class).setPermissions(perms);
+        }
         assertFalse(roConfigDir.toString() + " is writeable", Files.isWritable(roConfigDir));
 
         try {
@@ -120,12 +135,30 @@ public class ReadOnlyModeTestCase {
             }
 
         } finally {
-            perms.add(PosixFilePermission.OWNER_WRITE);
-            perms.add(PosixFilePermission.GROUP_WRITE);
-            perms.add(PosixFilePermission.OTHERS_WRITE);
-
-            Files.getFileAttributeView(roConfigDir, PosixFileAttributeView.class).setPermissions(perms);
-
+            if (TestSuiteEnvironment.isWindows()) {
+                UserPrincipal owner = Files.getFileAttributeView(configDir, FileOwnerAttributeView.class).getOwner();
+                AclEntry entry = AclEntry.newBuilder()
+                        .setPrincipal(owner)
+                        .setType(AclEntryType.ALLOW)
+                        .setPermissions(AclEntryPermission.WRITE_DATA, AclEntryPermission.APPEND_DATA)
+                        .build();
+                AclFileAttributeView view = Files.getFileAttributeView(roConfigDir, AclFileAttributeView.class);
+                List<AclEntry> acl = view.getAcl();
+                acl.add(0, entry);
+                view.setAcl(acl);
+            } else {
+                Set<PosixFilePermission> perms = new HashSet<>();
+                perms.add(PosixFilePermission.OWNER_WRITE);
+                perms.add(PosixFilePermission.GROUP_WRITE);
+                perms.add(PosixFilePermission.OTHERS_WRITE);
+                perms.add(PosixFilePermission.OWNER_READ);
+                perms.add(PosixFilePermission.OWNER_EXECUTE);
+                perms.add(PosixFilePermission.GROUP_READ);
+                perms.add(PosixFilePermission.GROUP_EXECUTE);
+                perms.add(PosixFilePermission.OTHERS_READ);
+                perms.add(PosixFilePermission.OTHERS_EXECUTE);
+                Files.getFileAttributeView(roConfigDir, PosixFileAttributeView.class).setPermissions(perms);
+            }
             PathUtil.deleteRecursively(roConfigDir);
         }
     }
