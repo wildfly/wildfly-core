@@ -115,13 +115,13 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             //if the parent has already attached parsed data for this sub deployment we need to process it
             if (deploymentRoot.hasAttachment(SUB_DEPLOYMENT_STRUCTURE)) {
                 final ModuleSpecification subModuleSpec = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
-                Map<ModuleIdentifier, AdditionalModuleSpecification> additionalModules = new HashMap<>();
+                Map<String, AdditionalModuleSpecification> additionalModules = new HashMap<>();
                 final List<AdditionalModuleSpecification> additionalModuleList = deploymentUnit.getParent().getAttachmentList(Attachments.ADDITIONAL_MODULES);
                 // Must synchronize on list as subdeployments executing Phase.STRUCTURE may be concurrently modifying it
                 //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (additionalModuleList) {
                     for (AdditionalModuleSpecification i : additionalModuleList) {
-                        additionalModules.put(i.getModuleIdentifier(), i);
+                        additionalModules.put(i.getModuleName(), i);
                     }
                 }
                 handleDeployment(phaseContext, deploymentUnit, subModuleSpec, deploymentRoot.getAttachment(SUB_DEPLOYMENT_STRUCTURE), additionalModules);
@@ -155,11 +155,11 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 result = parse(deploymentFile.getPhysicalFile(), deploymentUnit, moduleLoader);
             }
             // handle additional modules
-            Map<ModuleIdentifier, AdditionalModuleSpecification> additionalModules = new HashMap<>();
+            Map<String, AdditionalModuleSpecification> additionalModules = new HashMap<>();
             for (final ModuleStructureSpec additionalModule : result.getAdditionalModules()) {
                 for (final ModuleIdentifier identifier : additionalModule.getAnnotationModules()) {
                     //additional modules don't support annotation imports
-                    ServerLogger.DEPLOYMENT_LOGGER.annotationImportIgnored(identifier, additionalModule.getModuleIdentifier());
+                    ServerLogger.DEPLOYMENT_LOGGER.annotationImportIgnored(identifier, additionalModule.getModuleName());
                 }
                 //log a warning if the resource root is wrong
                 final List<ResourceRoot> additionalModuleResourceRoots = new ArrayList<ResourceRoot>(additionalModule.getResourceRoots());
@@ -171,10 +171,10 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                         itr.remove();
                     }
                 }
-                final AdditionalModuleSpecification additional = new AdditionalModuleSpecification(additionalModule.getModuleIdentifier(), additionalModuleResourceRoots);
+                final AdditionalModuleSpecification additional = new AdditionalModuleSpecification(additionalModule.getModuleName(), additionalModuleResourceRoots);
                 additional.addAliases(additionalModule.getAliases());
                 additional.addSystemDependencies(additionalModule.getModuleDependencies());
-                additionalModules.put(additional.getModuleIdentifier(), additional);
+                additionalModules.put(additional.getModuleName(), additional);
                 deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_MODULES, additional);
                 for (final ResourceRoot root : additionalModuleResourceRoots) {
                     ResourceRootIndexer.indexResourceRoot(root);
@@ -227,7 +227,10 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         }
     }
 
-    private void handleDeployment(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit, final ModuleSpecification moduleSpec, final ModuleStructureSpec rootDeploymentSpecification, final Map<ModuleIdentifier, AdditionalModuleSpecification> additionalModules) throws DeploymentUnitProcessingException {
+    private void handleDeployment(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit,
+                                  final ModuleSpecification moduleSpec, final ModuleStructureSpec rootDeploymentSpecification,
+                                  final Map<String, AdditionalModuleSpecification> additionalModules)
+            throws DeploymentUnitProcessingException {
         final Map<VirtualFile, ResourceRoot> resourceRoots = resourceRoots(deploymentUnit);
         // handle unmodifiable module dependencies with alias
         List<ModuleDependency> moduleDependencies = rootDeploymentSpecification.getModuleDependencies();
@@ -247,8 +250,10 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         for (ModuleDependency dependency : moduleDependencies) {
             String identifier = dependency.getDependencyModule();
             if (index.containsKey(identifier)) {
-                moduleDependency = ModuleDependency.Builder.of(dependency.getModuleLoader(), index.get(identifier).getModuleIdentifier().toString())
-                        .setOptional(dependency.isOptional()).setExport(dependency.isExport()).setImportServices(dependency.isImportServices()).setUserSpecified(dependency.isUserSpecified()).build();
+                moduleDependency = ModuleDependency.Builder.of(dependency.getModuleLoader(), index.get(identifier).getModuleName())
+                        .setOptional(dependency.isOptional()).setExport(dependency.isExport())
+                        .setImportServices(dependency.isImportServices()).setUserSpecified(dependency.isUserSpecified())
+                        .build();
                 aliasDependencies.add(moduleDependency);
             }
         }
@@ -280,18 +285,20 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         }
         // handle annotations
         for (final ModuleIdentifier dependency : rootDeploymentSpecification.getAnnotationModules()) {
-            ModuleIdentifier identifier = dependency;
+            String identifier = dependency.toString();
+            boolean aliased = false;
             for (AdditionalModuleSpecification module : additionalModules.values()) {
-                if (module.getModuleAliases().contains(dependency.toString())) {
-                    identifier = module.getModuleIdentifier();
+                if (module.getModuleAliases().contains(identifier)) {
+                    identifier = module.getModuleName();
+                    aliased = true;
                     break;
                 }
             }
-            deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, identifier);
+            deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, aliased ? ModuleIdentifier.fromString(identifier) : dependency);
             // additional modules will not be created till much later, a dep on them would fail
-            if (identifier.getName().startsWith(ServiceModuleLoader.MODULE_PREFIX) &&
+            if (identifier.startsWith(ServiceModuleLoader.MODULE_PREFIX) &&
                 !(additionalModules.containsKey(identifier) || isSubdeployment(identifier, deploymentUnit))) {
-                phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(identifier.toString()));
+                phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(identifier));
             }
         }
         moduleSpec.setLocalLast(rootDeploymentSpecification.isLocalLast());
@@ -301,9 +308,9 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         }
     }
 
-    private boolean isSubdeployment(ModuleIdentifier dependency, DeploymentUnit deploymentUnit) {
+    private boolean isSubdeployment(String dependency, DeploymentUnit deploymentUnit) {
         DeploymentUnit top = deploymentUnit.getParent()==null?deploymentUnit:deploymentUnit.getParent();
-        return dependency.getName().startsWith(ServiceModuleLoader.MODULE_PREFIX.concat(top.getName()));
+        return dependency.startsWith(ServiceModuleLoader.MODULE_PREFIX.concat(top.getName()));
     }
 
     private Map<VirtualFile, ResourceRoot> resourceRoots(final DeploymentUnit deploymentUnit) {

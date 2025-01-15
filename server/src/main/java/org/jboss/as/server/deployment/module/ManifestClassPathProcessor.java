@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachable;
 import org.jboss.as.server.deployment.Attachments;
@@ -196,7 +197,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         } else if (additionalModules.containsKey(classPathFile)) {
             final AdditionalModuleSpecification moduleSpecification = additionalModules.get(classPathFile);
             //as class path entries are exported, transitive dependencies will also be available
-            target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, moduleSpecification.getModuleIdentifier());
+            target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, ModuleIdentifier.fromString(moduleSpecification.getModuleName()));
         } else if (subDeployments.containsKey(classPathFile)) {
             //now we need to calculate the sub deployment module identifier
             //unfortunately the sub deployment has not been setup yet, so we cannot just
@@ -204,15 +205,15 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
             final ResourceRoot otherRoot = subDeployments.get(classPathFile);
             target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, ModuleIdentifierProcessor.createModuleIdentifier(otherRoot.getRootName(), otherRoot, topLevelDeployment, topLevelRoot, false));
         } else {
-            ModuleIdentifier identifier = createAdditionalModule(resourceRoot, topLevelDeployment, topLevelRoot, additionalModules, classPathFile, resourceRoots);
-            target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, identifier);
+            String identifier = createAdditionalModule(resourceRoot, topLevelDeployment, topLevelRoot, additionalModules, classPathFile, resourceRoots);
+            target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, ModuleIdentifier.fromString(identifier));
         }
     }
 
-    private ModuleIdentifier createAdditionalModule(final ResourceRoot resourceRoot, final DeploymentUnit topLevelDeployment, final VirtualFile topLevelRoot, final Map<VirtualFile, AdditionalModuleSpecification> additionalModules, final VirtualFile classPathFile, final ArrayDeque<RootEntry> resourceRoots) throws DeploymentUnitProcessingException {
+    private String createAdditionalModule(final ResourceRoot resourceRoot, final DeploymentUnit topLevelDeployment, final VirtualFile topLevelRoot, final Map<VirtualFile, AdditionalModuleSpecification> additionalModules, final VirtualFile classPathFile, final ArrayDeque<RootEntry> resourceRoots) throws DeploymentUnitProcessingException {
         final ResourceRoot root = createResourceRoot(classPathFile, topLevelDeployment, topLevelRoot);
         final String pathName = root.getRoot().getPathNameRelativeTo(topLevelRoot);
-        ModuleIdentifier identifier = ModuleIdentifier.create(ServiceModuleLoader.MODULE_PREFIX + topLevelDeployment.getName() + "." + pathName);
+        String identifier = ModuleIdentifierUtil.canonicalModuleIdentifier(ServiceModuleLoader.MODULE_PREFIX + topLevelDeployment.getName() + "." + pathName, null);
         AdditionalModuleSpecification module = new AdditionalModuleSpecification(identifier, root);
         topLevelDeployment.addToAttachmentList(Attachments.ADDITIONAL_MODULES, module);
         additionalModules.put(classPathFile, module);

@@ -130,15 +130,15 @@ public class ModuleLoadService implements Service<Module> {
         return install(target, identifier.toString(), service);
     }
 
-    public static ServiceName install(final ServiceTarget target, final ModuleIdentifier identifier, final Collection<ModuleDependency> systemDependencies, final Collection<ModuleDependency> localDependencies, final Collection<ModuleDependency> userDependencies) {
+    public static ServiceName install(final ServiceTarget target, final String identifier, final Collection<ModuleDependency> systemDependencies, final Collection<ModuleDependency> localDependencies, final Collection<ModuleDependency> userDependencies) {
         final ModuleLoadService service = new ModuleLoadService(systemDependencies, localDependencies, userDependencies);
-        return install(target, identifier.toString(), service);
+        return install(target, identifier, service);
     }
 
-    public static ServiceName installAliases(final ServiceTarget target, final ModuleIdentifier identifier, final List<ModuleIdentifier> aliases) {
+    public static ServiceName installAliases(final ServiceTarget target, final ModuleIdentifier identifier, final List<String> aliases) {
         final ArrayList<ModuleDependency> dependencies = new ArrayList<ModuleDependency>(aliases.size());
-        for (final ModuleIdentifier i : aliases) {
-            dependencies.add(ModuleDependency.Builder.of(null, i.toString()).build());
+        for (final String i : aliases) {
+            dependencies.add(ModuleDependency.Builder.of(null, i).build());
         }
         final ModuleLoadService service = new ModuleLoadService(dependencies);
         return install(target, identifier.toString(), service);
