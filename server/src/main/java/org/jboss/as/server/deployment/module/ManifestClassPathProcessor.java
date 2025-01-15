@@ -85,9 +85,9 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
 
         //These are resource roots that are already accessible by default
         //such as ear/lib jars an web-inf/lib jars
-        final Set<VirtualFile> existingAccessibleRoots = new HashSet<VirtualFile>();
+        final Set<VirtualFile> existingAccessibleRoots = new HashSet<>();
 
-        final Map<VirtualFile, ResourceRoot> subDeployments = new HashMap<VirtualFile, ResourceRoot>();
+        final Map<VirtualFile, ResourceRoot> subDeployments = new HashMap<>();
         for (ResourceRoot root : DeploymentUtils.allResourceRoots(topLevelDeployment)) {
             if (SubDeploymentMarker.isSubDeployment(root)) {
                 subDeployments.put(root.getRoot(), root);
@@ -98,7 +98,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
             }
         }
 
-        final ArrayDeque<RootEntry> resourceRoots = new ArrayDeque<RootEntry>();
+        final ArrayDeque<RootEntry> resourceRoots = new ArrayDeque<>();
         if (deploymentUnit.getParent() != null) {
             //top level deployments already had their exiting roots processed above
             for (ResourceRoot root : DeploymentUtils.allResourceRoots(deploymentUnit)) {
@@ -120,10 +120,9 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         // build a map of the additional module locations
         // note that if a resource root has been added to two different additional modules
         // and is then referenced via a Class-Path entry the behaviour is undefined
-        final Map<VirtualFile, AdditionalModuleSpecification> additionalModules = new HashMap<VirtualFile, AdditionalModuleSpecification>();
+        final Map<VirtualFile, AdditionalModuleSpecification> additionalModules = new HashMap<>();
         final List<AdditionalModuleSpecification> additionalModuleList = topLevelDeployment.getAttachmentList(Attachments.ADDITIONAL_MODULES);
         // Must synchronize on list as subdeployments executing Phase.STRUCTURE may be concurrently modifying it
-        //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (additionalModuleList) {
             for (AdditionalModuleSpecification module : additionalModuleList) {
                 for (ResourceRoot additionalModuleResourceRoot : module.getResourceRoots()) {
@@ -259,7 +258,6 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
      *
      * @param file           The file for which the resource root will be created
      * @return Returns the created {@link ResourceRoot}
-     * @throws java.io.IOException
      */
     private synchronized ResourceRoot createResourceRoot(final VirtualFile file, final DeploymentUnit deploymentUnit, final VirtualFile deploymentRoot) throws DeploymentUnitProcessingException {
         try {
@@ -283,7 +281,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         }
     }
 
-    private class RootEntry {
+    private static class RootEntry {
         private final ResourceRoot resourceRoot;
         private final Attachable target;
 
