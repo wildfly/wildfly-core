@@ -132,6 +132,13 @@ public class CliArgumentsTestCase {
         String output = cli.getOutput();
         try (BufferedReader reader = new BufferedReader(new StringReader(output))) {
             String line = reader.readLine();
+            // WFCORE-7130 workaround
+            if (Runtime.version().feature() >= 24) {
+                // Ignore JDK warnings about sun.misc.Unsafe deprecated method usages on JDK24+
+                while (line.contains("WARNING: ")) {
+                    line = reader.readLine();
+                }
+            }
             while (line.contains("Picked up JDK_JAVA_OPTIONS:") || line.contains("Picked up JAVA_TOOL_OPTIONS:")) {
                 line = reader.readLine();
             }
