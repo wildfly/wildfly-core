@@ -21,7 +21,6 @@ import org.jboss.as.server.deployment.ManifestHelper;
 import org.jboss.as.server.deployment.SubDeploymentMarker;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.filter.PathFilters;
 
@@ -98,7 +97,7 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
                     dependencyLoader = Module.getBootModuleLoader();
                 }
                 if(annotations) {
-                    deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, ModuleIdentifier.fromString(dependencyId));
+                    deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_INDEX_MODULES, dependencyId);
                     if(dependencyLoader == deploymentModuleLoader && !additionalModules.contains(dependencyId)) {
                         //additional modules will not be created till much later, a dep on them would fail
                         phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(dependencyId));

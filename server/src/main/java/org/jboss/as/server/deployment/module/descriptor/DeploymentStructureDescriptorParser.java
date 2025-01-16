@@ -157,7 +157,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             // handle additional modules
             Map<String, AdditionalModuleSpecification> additionalModules = new HashMap<>();
             for (final ModuleStructureSpec additionalModule : result.getAdditionalModules()) {
-                for (final ModuleIdentifier identifier : additionalModule.getAnnotationModules()) {
+                for (final String identifier : additionalModule.getAnnotationModules()) {
                     //additional modules don't support annotation imports
                     ServerLogger.DEPLOYMENT_LOGGER.annotationImportIgnored(identifier, additionalModule.getModuleName());
                 }
@@ -284,17 +284,15 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             moduleSpec.addClassTransformer(classTransformer);
         }
         // handle annotations
-        for (final ModuleIdentifier dependency : rootDeploymentSpecification.getAnnotationModules()) {
-            String identifier = dependency.toString();
-            boolean aliased = false;
+        for (final String dependency : rootDeploymentSpecification.getAnnotationModules()) {
+            String identifier = dependency;
             for (AdditionalModuleSpecification module : additionalModules.values()) {
                 if (module.getModuleAliases().contains(identifier)) {
                     identifier = module.getModuleName();
-                    aliased = true;
                     break;
                 }
             }
-            deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, aliased ? ModuleIdentifier.fromString(identifier) : dependency);
+            deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_INDEX_MODULES, identifier);
             // additional modules will not be created till much later, a dep on them would fail
             if (identifier.startsWith(ServiceModuleLoader.MODULE_PREFIX) &&
                 !(additionalModules.containsKey(identifier) || isSubdeployment(identifier, deploymentUnit))) {

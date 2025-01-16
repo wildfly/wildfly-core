@@ -57,14 +57,21 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
         for(AdditionalModuleSpecification i : top.getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
             additionalModuleSpecificationMap.put(i.getModuleName(), i);
         }
-        Map<String, CompositeIndex> additionalAnnotationIndexes = new HashMap<>();
-        final List<ModuleIdentifier> additionalModuleIndexes = deploymentUnit.getAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES);
-        final List<Index> indexes = new ArrayList<Index>();
 
+        // Until we remove ADDITIONAL_ANNOTATION_INDEXES, pick up any index modules added by the full WF ee subsystem
+        // and store them in the ADDITIONAL_INDEX_MODULES list. Use addToAttachmentList to ensure the
+        // ADDITIONAL_INDEX_MODULES key gets initialized to an AttachmentList, in case it hasn't already been.
+        for (ModuleIdentifier mi: deploymentUnit.getAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES)) {
+            deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_INDEX_MODULES, mi.toString());
+        }
+        // Now we can use the ADDITIONAL_INDEX_MODULES list.
+        final List<String> additionalModuleIndexes = deploymentUnit.getAttachmentList(Attachments.ADDITIONAL_INDEX_MODULES);
+
+        Map<String, CompositeIndex> additionalAnnotationIndexes = new HashMap<>();
+        final List<Index> indexes = new ArrayList<>();
         Map<String, DeploymentUnit> subdeploymentDependencies = buildSubdeploymentDependencyMap(deploymentUnit);
 
-        for (final ModuleIdentifier moduleIdentifier : additionalModuleIndexes) {
-            String moduleName = moduleIdentifier.toString();
+        for (final String moduleName : additionalModuleIndexes) {
             AdditionalModuleSpecification additional = additionalModuleSpecificationMap.get(moduleName);
             if(additional != null) {
                 // This module id refers to a deployment-specific module created based on a MANIFEST.MF Class-Path entry

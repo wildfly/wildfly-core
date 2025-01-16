@@ -29,7 +29,7 @@ class ModuleStructureSpec {
     private final List<ModuleIdentifier> exclusions = new ArrayList<ModuleIdentifier>();
     private final List<String> classTransformers = new ArrayList<String>();
     private final List<ModuleIdentifier> aliases = new ArrayList<ModuleIdentifier>();
-    private final List<ModuleIdentifier> annotationModules = new ArrayList<ModuleIdentifier>();
+    private final List<String> annotationModules = new ArrayList<>();
 
     /**
      * Note that this being null is different to an empty list.
@@ -83,11 +83,11 @@ class ModuleStructureSpec {
         return Collections.unmodifiableList(aliases);
     }
 
-    public void addAnnotationModule(final ModuleIdentifier dependency) {
+    public void addAnnotationModule(final String dependency) {
         annotationModules.add(dependency);
     }
 
-    public List<ModuleIdentifier> getAnnotationModules() {
+    public List<String> getAnnotationModules() {
         return Collections.unmodifiableList(annotationModules);
     }
 
