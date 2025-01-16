@@ -85,7 +85,7 @@ public enum Phase {
      * <p>
      * In this phase, these phase attachments may be modified:
      * <ul>
-     * <li>{@link Attachments#CLASS_PATH_ENTRIES} - class path entries found in the manifest and elsewhere.</li>
+     * <li>{@code ManifestClassPathProcessor#CLASS_PATH_MODULES} - class path entries found in the manifest and elsewhere.</li>
      * <li>{@link Attachments#EXTENSION_LIST_ENTRIES} - extension-list entries found in the manifest and elsewhere.</li>
      * </ul>
      * <p>
