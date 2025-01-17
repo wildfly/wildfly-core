@@ -69,13 +69,25 @@ public class DomainTestSuite {
         if(support == null) {
             start(testName);
         }
+        support.recordInitialHostState();
         return support;
     }
 
     // This can only be called from tests as part of this suite
     static synchronized void stopSupport() {
+        AssertionError invalidHostState = null;
+        if (support != null) {
+            try {
+                support.assertCurrentHostState();
+            } catch (AssertionError e) {
+                invalidHostState = e;
+            }
+        }
         if(! initializedLocally) {
             stop();
+        }
+        if (invalidHostState != null) {
+            throw invalidHostState;
         }
     }
 

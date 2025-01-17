@@ -5,6 +5,7 @@
 
 package org.jboss.as.controller;
 
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicStampedReference;
 
@@ -66,6 +67,12 @@ public class ControlledProcessState {
         @Override
         public String toString() {
             return stringForm;
+        }
+
+        public static State fromString(String stringForm) {
+            return stringForm == null
+                    ? null
+                    : Enum.valueOf(State.class, stringForm.toUpperCase(Locale.ENGLISH).replace('-', '_'));
         }
 
     }
