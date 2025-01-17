@@ -127,12 +127,6 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
             }
         }
         deploymentUnit.putAttachment(Attachments.ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE_NAME, Collections.unmodifiableMap(additionalAnnotationIndexes));
-        // For compatibility attach an additional map keyed by ModuleIdentifier. TODO remove this key and stop doing this.
-        Map<ModuleIdentifier, CompositeIndex> additionalIndexesByModId = new HashMap<>(additionalAnnotationIndexes.size());
-        for (Map.Entry<String, CompositeIndex> entry : additionalAnnotationIndexes.entrySet()) {
-            additionalIndexesByModId.put(ModuleIdentifier.fromString(entry.getKey()), entry.getValue());
-        }
-        deploymentUnit.putAttachment(Attachments.ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE, additionalIndexesByModId);
 
         final List<ResourceRoot> allResourceRoots = new ArrayList<ResourceRoot>();
         final List<ResourceRoot> resourceRoots = deploymentUnit.getAttachmentList(Attachments.RESOURCE_ROOTS);
