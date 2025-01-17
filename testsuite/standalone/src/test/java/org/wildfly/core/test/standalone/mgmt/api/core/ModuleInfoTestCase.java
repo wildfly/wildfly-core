@@ -5,6 +5,7 @@
 
 package org.wildfly.core.test.standalone.mgmt.api.core;
 
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
@@ -13,7 +14,6 @@ import org.jboss.modules.DependencySpec;
 import org.jboss.modules.LocalModuleLoader;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleDependencySpec;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -101,7 +101,7 @@ public class ModuleInfoTestCase extends ContainerResourceMgmtTestBase {
         }*/
 
         // load module.xml
-        ModuleIdentifier identifier = ModuleIdentifier.fromString(TARGET_MODULE_NAME + ":main");
+        String identifier = ModuleIdentifierUtil.canonicalModuleIdentifier(TARGET_MODULE_NAME + ":main");
         Module module = loadModule(identifier);
 
         // run module-info operation
@@ -147,7 +147,7 @@ public class ModuleInfoTestCase extends ContainerResourceMgmtTestBase {
         Assert.assertTrue(module.getClassLoader().getLocalPaths().containsAll(paths));
     }
 
-    private Module loadModule(ModuleIdentifier identifier) throws IOException, ModuleLoadException {
+    private Module loadModule(String identifier) throws IOException, ModuleLoadException {
         File[] roots = new File[]{new File(LAYERS_BASE)};
         LocalModuleLoader moduleLoader = new LocalModuleLoader(roots);
         return moduleLoader.loadModule(identifier);

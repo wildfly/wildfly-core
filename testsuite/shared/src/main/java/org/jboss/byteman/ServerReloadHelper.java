@@ -11,7 +11,6 @@ import org.jboss.byteman.rule.Rule;
 import org.jboss.byteman.rule.helper.Helper;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 
 /**
@@ -64,7 +63,7 @@ public class ServerReloadHelper extends Helper {
         Field instance = defaultBootModuleLoaderHolder.getDeclaredField("INSTANCE");
         instance.setAccessible(true);
         ModuleLoader loader = (ModuleLoader) instance.get(null);
-        Module module = loader.loadModule(ModuleIdentifier.fromString("org.jboss.as.deployment-scanner"));
+        Module module = loader.loadModule("org.jboss.as.deployment-scanner");
         traceln("ServerLoaderhelper", "Module " + module.toString() + " loaded.");
         ModuleClassLoader cl = module.getClassLoader();
         Class modelNodeClass = cl.loadClassLocal("org.jboss.dmr.ModelNode");
