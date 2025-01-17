@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.jboss.as.test.integration.domain.suites;
+package org.jboss.as.test.integration.domain;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
@@ -109,7 +109,7 @@ public class OperationErrorTestCase {
 
     @BeforeClass
     public static void setupDomain() throws Exception {
-        testSupport = DomainTestSuite.createSupport(OperationCancellationTestCase.class.getSimpleName());
+        testSupport = DomainTestSupport.createAndStartDefaultSupport(OperationErrorTestCase.class.getSimpleName());
         primaryClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         // Initialize the test extension
@@ -161,9 +161,9 @@ public class OperationErrorTestCase {
         ModelNode removePrimaryExtension = Util.createEmptyOperation(REMOVE, PRIMARY_ADDRESS.append(extensionAddress));
         executeForResponse(removePrimaryExtension, primaryClient);
 
+        testSupport.close();
         testSupport = null;
         primaryClient = null;
-        DomainTestSuite.stopSupport();
     }
 
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
