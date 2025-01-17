@@ -27,6 +27,7 @@ import org.jboss.as.controller.AttributeMarshallers;
 import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.AttributeParsers;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -41,7 +42,6 @@ import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
@@ -404,9 +404,8 @@ class PermissionMapperDefinitions {
     private static java.security.Permission createPermission(Permission permission) throws StartException {
         Module currentModule = Module.getCallerModule();
         if (permission.getModule() != null && currentModule != null) {
-            ModuleIdentifier mi = ModuleIdentifier.fromString(permission.getModule());
             try {
-                currentModule = currentModule.getModule(mi);
+                currentModule = currentModule.getModule(permission.getModule());
             } catch (ModuleLoadException e) {
                 // If we cannot load it, it can never be checked.
                 throw ElytronSubsystemMessages.ROOT_LOGGER.invalidPermissionModule(permission.getModule(), e);
@@ -432,7 +431,7 @@ class PermissionMapperDefinitions {
 
         Permission(final String className, final String module, final String targetName, final String action) {
             this.className = className;
-            this.module = module;
+            this.module = module != null ? ModuleIdentifierUtil.canonicalModuleIdentifier(module) : module;
             this.targetName = targetName;
             this.action = action;
         }

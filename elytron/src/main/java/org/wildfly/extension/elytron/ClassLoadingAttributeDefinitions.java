@@ -4,12 +4,12 @@
  */
 package org.wildfly.extension.elytron;
 
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.dmr.ModelType;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 
 /**
@@ -43,8 +43,7 @@ class ClassLoadingAttributeDefinitions {
     static ClassLoader resolveClassLoader(String module) throws ModuleLoadException {
         Module current = Module.getCallerModule();
         if (module != null && current != null) {
-            ModuleIdentifier mi = ModuleIdentifier.fromString(module);
-            current = current.getModule(mi);
+            current = current.getModule(ModuleIdentifierUtil.canonicalModuleIdentifier(module));
         }
 
         return current != null ? current.getClassLoader() : ClassLoadingAttributeDefinitions.class.getClassLoader();
