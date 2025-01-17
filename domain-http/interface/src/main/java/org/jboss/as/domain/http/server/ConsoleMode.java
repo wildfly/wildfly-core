@@ -18,9 +18,9 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.PredicateHandler;
 import io.undertow.server.handlers.RedirectHandler;
 import io.undertow.server.handlers.resource.ClassPathResourceManager;
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -256,8 +256,7 @@ public enum ConsoleMode {
 
 
     protected static ClassLoader getClassLoader(final ModuleLoader moduleLoader, final String module, final String slot) throws ModuleLoadException {
-        ModuleIdentifier id = ModuleIdentifier.create(module, slot);
-
+        String id = ModuleIdentifierUtil.canonicalModuleIdentifier(module, slot);
         return moduleLoader.loadModule(id).getClassLoader();
     }
 }
