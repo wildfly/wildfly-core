@@ -200,14 +200,6 @@ public final class Attachments {
     public static final AttachmentKey<AttachmentList<String>> ADDITIONAL_INDEX_MODULES = AttachmentKey.createList(String.class);
 
     /**
-     * Annotation indices, keyed by the identifier of the module from which they were obtained.
-     *
-     * @deprecated use {@link #ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE_NAME}
-     */
-    @Deprecated(forRemoval = true)
-    public static final AttachmentKey<Map<ModuleIdentifier, CompositeIndex>> ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE = AttachmentKey.create(Map.class);
-
-    /**
      * Annotation indices, keyed by the canonical name module from which they were obtained.
      */
     public static final AttachmentKey<Map<String, CompositeIndex>> ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE_NAME = AttachmentKey.create(Map.class);
