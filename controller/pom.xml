@@ -46,6 +46,10 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-core-security</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-embedded</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.wildfly.security</groupId>

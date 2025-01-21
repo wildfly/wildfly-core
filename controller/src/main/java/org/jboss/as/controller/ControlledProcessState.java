@@ -8,6 +8,8 @@ package org.jboss.as.controller;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicStampedReference;
 
+import org.wildfly.core.embedded.spi.EmbeddedProcessState;
+
 /**
  * The overall state of a process that is being managed by a {@link ModelController}.
  *
@@ -19,11 +21,11 @@ public class ControlledProcessState {
         /**
          * The process is starting and its runtime state is being made consistent with its persistent configuration.
          */
-        STARTING("starting", false),
+        STARTING(EmbeddedProcessState.STARTING, false),
         /**
          * The process is started, is running normally and has a runtime state consistent with its persistent configuration.
          */
-        RUNNING("running", true),
+        RUNNING(EmbeddedProcessState.RUNNING, true),
         /**
          * The process requires a stop and re-start of its root service (but not a full process restart) in order to
          * ensure stable operation and/or to bring its running state in line with its persistent configuration. A
@@ -32,22 +34,22 @@ public class ControlledProcessState {
          * handle external requests is similar to that of a full process restart. However, a reload can execute more
          * quickly than a full process restart.
          */
-        RELOAD_REQUIRED("reload-required", true),
+        RELOAD_REQUIRED(EmbeddedProcessState.RELOAD_REQUIRED, true),
         /**
          * The process must be terminated and replaced with a new process in order to ensure stable operation and/or to bring
          * the running state in line with the persistent configuration.
          */
-        RESTART_REQUIRED("restart-required", true),
+        RESTART_REQUIRED(EmbeddedProcessState.RESTART_REQUIRED, true),
         /** The process is stopping. */
-        STOPPING("stopping", false),
+        STOPPING(EmbeddedProcessState.STOPPING, false),
         /** The process is stopped */
-        STOPPED("stopped", false);
+        STOPPED(EmbeddedProcessState.STOPPED, false);
 
-        private final String stringForm;
+        private final EmbeddedProcessState embeddedForm;
         private final boolean running;
 
-        State(final String stringForm, final boolean running) {
-            this.stringForm = stringForm;
+        State(final EmbeddedProcessState embeddedForm, final boolean running) {
+            this.embeddedForm = embeddedForm;
             this.running = running;
         }
 
@@ -65,7 +67,11 @@ public class ControlledProcessState {
 
         @Override
         public String toString() {
-            return stringForm;
+            return embeddedForm.toString();
+        }
+
+        EmbeddedProcessState getEmbeddedProcessState() {
+            return embeddedForm;
         }
 
     }
@@ -81,8 +87,12 @@ public class ControlledProcessState {
     private boolean restartRequiredOnStarting = false;
 
     public ControlledProcessState(final boolean reloadSupported) {
+        this(reloadSupported, false);
+    }
+
+    public ControlledProcessState(final boolean reloadSupported, boolean embedded) {
         this.reloadSupported = reloadSupported;
-        service = new ControlledProcessStateService(State.STOPPED);
+        service = new ControlledProcessStateService(State.STOPPED, embedded);
     }
 
     public State getState() {

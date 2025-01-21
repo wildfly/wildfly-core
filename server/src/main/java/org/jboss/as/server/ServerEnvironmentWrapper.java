@@ -11,13 +11,13 @@ package org.jboss.as.server;
  */
 public final class ServerEnvironmentWrapper {
 
-    enum ServerEnvironmentStatus {
-        NORMAL, // expected abort
+    public enum ServerEnvironmentStatus {
+        NORMAL, // environment created or an expected abort
         ERROR // problematic abort
     }
 
-    private ServerEnvironment serverEnvironment;
-    private ServerEnvironmentStatus serverEnvironmentStatus;
+    private final ServerEnvironment serverEnvironment;
+    private final ServerEnvironmentStatus serverEnvironmentStatus;
 
     private ServerEnvironmentWrapper(ServerEnvironment serverEnvironment, ServerEnvironmentStatus serverEnvironmentStatus) {
         this.serverEnvironment = serverEnvironment;
@@ -25,7 +25,7 @@ public final class ServerEnvironmentWrapper {
     }
 
     ServerEnvironmentWrapper(ServerEnvironment serverEnvironment) {
-        this(serverEnvironment, null);
+        this(serverEnvironment, ServerEnvironmentStatus.NORMAL);
     }
 
     ServerEnvironmentWrapper(ServerEnvironmentStatus serverEnvironmentStatus) {

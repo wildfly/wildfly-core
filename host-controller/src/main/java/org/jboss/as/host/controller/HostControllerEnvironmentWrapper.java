@@ -13,14 +13,14 @@ import org.jboss.as.version.ProductConfig;
  */
 public final class HostControllerEnvironmentWrapper {
 
-    enum HostControllerEnvironmentStatus {
-        NORMAL, // expected abort
+    public enum HostControllerEnvironmentStatus {
+        NORMAL, // environment created or an expected abort
         ERROR // problematic abort
     }
 
-    private HostControllerEnvironment hostControllerEnvironment;
-    private HostControllerEnvironmentStatus hostControllerEnvironmentStatus;
-    private ProductConfig productConfig;
+    private final HostControllerEnvironment hostControllerEnvironment;
+    private final HostControllerEnvironmentStatus hostControllerEnvironmentStatus;
+    private final ProductConfig productConfig;
 
     private HostControllerEnvironmentWrapper(HostControllerEnvironment hostControllerEnvironment, HostControllerEnvironmentStatus hostControllerEnvironmentStatus, ProductConfig productConfig) {
         this.hostControllerEnvironment = hostControllerEnvironment;
@@ -29,7 +29,7 @@ public final class HostControllerEnvironmentWrapper {
     }
 
     HostControllerEnvironmentWrapper(HostControllerEnvironment hostControllerEnvironment) {
-        this(hostControllerEnvironment, null, hostControllerEnvironment.getProductConfig());
+        this(hostControllerEnvironment, HostControllerEnvironmentStatus.NORMAL, hostControllerEnvironment.getProductConfig());
     }
 
     HostControllerEnvironmentWrapper(HostControllerEnvironmentStatus hostControllerEnvironmentStatus, ProductConfig productConfig) {

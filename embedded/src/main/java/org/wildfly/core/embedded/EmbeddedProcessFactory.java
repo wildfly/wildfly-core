@@ -18,7 +18,6 @@ import java.util.Properties;
 
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
@@ -40,17 +39,6 @@ public class EmbeddedProcessFactory {
 
     private static final String MODULE_ID_EMBEDDED = "org.wildfly.embedded";
     private static final String MODULE_ID_VFS = "org.jboss.vfs";
-
-    private static final String SYSPROP_KEY_JBOSS_DOMAIN_BASE_DIR = "jboss.domain.base.dir";
-    private static final String SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
-    private static final String SYSPROP_KEY_JBOSS_DOMAIN_DEPLOYMENT_DIR = "jboss.domain.deployment.dir";
-    private static final String SYSPROP_KEY_JBOSS_DOMAIN_TEMP_DIR = "jboss.domain.temp.dir";
-    private static final String SYSPROP_KEY_JBOSS_DOMAIN_LOG_DIR = "jboss.domain.log.dir";
-
-    static final String[] DOMAIN_KEYS = {
-            SYSPROP_KEY_JBOSS_DOMAIN_BASE_DIR, SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR, SYSPROP_KEY_JBOSS_DOMAIN_DEPLOYMENT_DIR,
-            SYSPROP_KEY_JBOSS_DOMAIN_TEMP_DIR, SYSPROP_KEY_JBOSS_DOMAIN_LOG_DIR, SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR
-    };
 
     private static final String HOST_FACTORY = "org.wildfly.core.embedded.EmbeddedHostControllerFactory";
     private static final String SERVER_FACTORY = "org.wildfly.core.embedded.EmbeddedStandaloneServerFactory";
@@ -302,14 +290,11 @@ public class EmbeddedProcessFactory {
     }
 
     private static void setupVfsModule(final ModuleLoader moduleLoader) {
-        final ModuleIdentifier vfsModuleID = ModuleIdentifier.create(MODULE_ID_VFS);
-        final Module vfsModule;
         try {
-            vfsModule = moduleLoader.loadModule(vfsModuleID);
+            Module.registerURLStreamHandlerFactoryModule(moduleLoader.loadModule(MODULE_ID_VFS));
         } catch (final ModuleLoadException mle) {
             throw EmbeddedLogger.ROOT_LOGGER.moduleLoaderError(mle,MODULE_ID_VFS, moduleLoader);
         }
-        Module.registerURLStreamHandlerFactoryModule(vfsModule);
     }
 
     private static Object createManagedProcess(final ProcessType embeddedType, final Method createServerMethod, final Configuration configuration, ModuleClassLoader embeddedModuleCL) {

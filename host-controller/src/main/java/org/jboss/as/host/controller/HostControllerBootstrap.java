@@ -43,7 +43,7 @@ public class HostControllerBootstrap {
      */
     public void bootstrap() throws Exception {
         final HostRunningModeControl runningModeControl = environment.getRunningModeControl();
-        final ControlledProcessState processState = new ControlledProcessState(true);
+        final ControlledProcessState processState = new ControlledProcessState(true, false);
         shutdownHook.setControlledProcessState(processState);
         ServiceTarget target = serviceContainer.subTarget();
         ProcessStateNotifier processStateNotifier = ControlledProcessStateService.addService(target, processState);

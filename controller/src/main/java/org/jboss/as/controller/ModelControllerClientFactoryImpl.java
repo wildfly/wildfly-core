@@ -37,6 +37,7 @@ import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
+import org.wildfly.core.embedded.spi.EmbeddedModelControllerClientFactory;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -45,7 +46,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  *
  * @author Brian Stansberry
  */
-final class ModelControllerClientFactoryImpl implements ModelControllerClientFactory {
+final class ModelControllerClientFactoryImpl implements ModelControllerClientFactory, EmbeddedModelControllerClientFactory {
 
     private final ModelControllerImpl modelController;
     private final Supplier<SecurityIdentity> securityIdentitySupplier;
@@ -63,6 +64,11 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
     @Override
     public LocalModelControllerClient createSuperUserClient(Executor executor, boolean forUserCalls) {
         return createSuperUserClient(executor, forUserCalls, false);
+    }
+
+    @Override
+    public org.jboss.as.controller.client.LocalModelControllerClient createEmbeddedClient(Executor executor) {
+        return createSuperUserClient(executor, true);
     }
 
     /**

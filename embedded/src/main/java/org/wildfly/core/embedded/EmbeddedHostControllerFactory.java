@@ -5,47 +5,22 @@
 
 package org.wildfly.core.embedded;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
-import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.ProcessStateNotifier;
-import org.jboss.as.controller.ModelControllerClientFactory;
-import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
-import org.jboss.as.server.ElapsedTime;
-import org.jboss.as.host.controller.DomainModelControllerService;
-import org.jboss.as.host.controller.HostControllerEnvironment;
-import org.jboss.as.host.controller.Main;
-import org.jboss.as.server.FutureServiceContainer;
-import org.jboss.as.server.SystemExiter;
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.ModuleLoader;
-import org.jboss.msc.service.ServiceContainer;
-import org.jboss.msc.service.ServiceController;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
+import org.wildfly.core.embedded.spi.EmbeddedProcessBootstrap;
+import org.wildfly.core.embedded.spi.EmbeddedProcessBootstrapConfiguration;
 
 /**
- * This is the host controller counterpart to EmbeddedProcessFactory which lives behind a module class loader.
+ * This is the host controller counterpart to EmbeddedProcessFactory that lives behind a module class loader.
  * <p>
  * Factory that sets up an embedded {@link HostController} using modular classloading.
  * </p>
@@ -66,13 +41,14 @@ import org.wildfly.core.embedded.logging.EmbeddedLogger;
  * @author Ken Wills <kwills@redhat.com>
  * @see EmbeddedProcessFactory
  */
+
 public class EmbeddedHostControllerFactory {
 
     public static final String JBOSS_EMBEDDED_ROOT = "jboss.embedded.root";
-    private static final String MODULE_PATH = "-mp";
-    private static final String PC_ADDRESS = "--pc-address";
-    private static final String PC_PORT = "--pc-port";
 
+    private static final String DOMAIN_BASE_DIR = "jboss.domain.base.dir";
+    private static final String DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
+    private static final String DOMAIN_DATA_DIR = "jboss.domain.data.dir";
 
     private EmbeddedHostControllerFactory() {
     }
@@ -90,7 +66,7 @@ public class EmbeddedHostControllerFactory {
             throw EmbeddedLogger.ROOT_LOGGER.nullVar("cmdargs");
 
         setupCleanDirectories(jbossHomeDir, systemProps);
-        return new HostControllerImpl(jbossHomeDir, cmdargs, systemProps, systemEnv, moduleLoader, embeddedModuleCL);
+        return new HostControllerImpl(jbossHomeDir, cmdargs, systemProps, systemEnv, embeddedModuleCL);
     }
 
     static void setupCleanDirectories(File jbossHomeDir, Properties props) {
@@ -99,8 +75,8 @@ public class EmbeddedHostControllerFactory {
             return;
         }
 
-        File originalConfigDir = getFileUnderAsRoot(jbossHomeDir, props, HostControllerEnvironment.DOMAIN_CONFIG_DIR, "configuration", true);
-        File originalDataDir = getFileUnderAsRoot(jbossHomeDir, props, HostControllerEnvironment.DOMAIN_DATA_DIR, "data", false);
+        File originalConfigDir = getFileUnderAsRoot(jbossHomeDir, props, DOMAIN_CONFIG_DIR, "configuration", true);
+        File originalDataDir = getFileUnderAsRoot(jbossHomeDir, props, DOMAIN_DATA_DIR, "data", false);
 
         try {
             File configDir = new File(tempRoot, "config");
@@ -116,9 +92,9 @@ public class EmbeddedHostControllerFactory {
                 copyDirectory(originalDataDir, dataDir);
             }
 
-            props.put(HostControllerEnvironment.DOMAIN_BASE_DIR, tempRoot.getAbsolutePath());
-            props.put(HostControllerEnvironment.DOMAIN_CONFIG_DIR, configDir.getAbsolutePath());
-            props.put(HostControllerEnvironment.DOMAIN_DATA_DIR, dataDir.getAbsolutePath());
+            props.put(DOMAIN_BASE_DIR, tempRoot.getAbsolutePath());
+            props.put(DOMAIN_CONFIG_DIR, configDir.getAbsolutePath());
+            props.put(DOMAIN_DATA_DIR, dataDir.getAbsolutePath());
         } catch (IOException e) {
             throw EmbeddedLogger.ROOT_LOGGER.cannotSetupEmbeddedServer(e);
         }
@@ -128,21 +104,21 @@ public class EmbeddedHostControllerFactory {
     private static File getFileUnderAsRoot(File jbossHomeDir, Properties props, String propName, String relativeLocation, boolean mustExist) {
         String prop = props.getProperty(propName, null);
         if (prop == null) {
-            prop = props.getProperty(HostControllerEnvironment.DOMAIN_BASE_DIR, null);
+            prop = props.getProperty(DOMAIN_BASE_DIR, null);
             if (prop == null) {
                 File dir = new File(jbossHomeDir, "domain" + File.separator + relativeLocation);
                 if (mustExist && (!dir.exists() || !dir.isDirectory())) {
-                    throw ServerLogger.ROOT_LOGGER.embeddedServerDirectoryNotFound("domain" + File.separator + relativeLocation, jbossHomeDir.getAbsolutePath());
+                    throw EmbeddedLogger.ROOT_LOGGER.embeddedServerDirectoryNotFound("domain" + File.separator + relativeLocation, jbossHomeDir.getAbsolutePath());
                 }
                 return dir;
             } else {
                 File server = new File(prop);
-                validateDirectory(HostControllerEnvironment.DOMAIN_BASE_DIR, server);
+                validateDirectory(DOMAIN_BASE_DIR, server);
                 return new File(server, relativeLocation);
             }
         } else {
             File dir = new File(prop);
-            validateDirectory(HostControllerEnvironment.DOMAIN_BASE_DIR, dir);
+            validateDirectory(DOMAIN_BASE_DIR, dir);
             return dir;
         }
 
@@ -174,10 +150,10 @@ public class EmbeddedHostControllerFactory {
 
     private static void validateDirectory(String property, File file) {
         if (!file.exists()) {
-            throw ServerLogger.ROOT_LOGGER.propertySpecifiedFileDoesNotExist(property, file.getAbsolutePath());
+            throw EmbeddedLogger.ROOT_LOGGER.propertySpecifiedFileDoesNotExist(property, file.getAbsolutePath());
         }
         if (!file.isDirectory()) {
-            throw ServerLogger.ROOT_LOGGER.propertySpecifiedFileIsNotADirectory(property, file.getAbsolutePath());
+            throw EmbeddedLogger.ROOT_LOGGER.propertySpecifiedFileIsNotADirectory(property, file.getAbsolutePath());
         }
     }
 
@@ -193,247 +169,34 @@ public class EmbeddedHostControllerFactory {
                         copyDirectory(srcFile, destFile);
                     }
                 } catch (IOException e) {
-                    throw ServerLogger.ROOT_LOGGER.errorCopyingFile(srcFile.getAbsolutePath(), destFile.getAbsolutePath(), e);
+                    throw EmbeddedLogger.ROOT_LOGGER.errorCopyingFile(srcFile.getAbsolutePath(), destFile.getAbsolutePath(), e);
                 }
             }
         }
     }
 
-    private static class HostControllerImpl implements HostController {
+    private static class HostControllerImpl extends AbstractEmbeddedManagedProcess implements HostController {
 
-        private final PropertyChangeListener processStateListener;
-        private final String[] cmdargs;
         private final File jbossHomeDir;
-        private final Properties systemProps;
-        private final Map<String, String> systemEnv;
-        private final ModuleLoader moduleLoader;
-        private final ClassLoader embeddedModuleCL;
-        private ServiceContainer serviceContainer;
-        private volatile ControlledProcessState.State currentProcessState;
-        private ModelControllerClient modelControllerClient;
-        private ExecutorService executorService;
-        private ProcessStateNotifier processStateNotifier;
+        private final Properties systemProps; // TODO why is this not used?
+        private final Map<String, String> systemEnv; // TODO why is this not used?
 
-        public HostControllerImpl(final File jbossHomeDir, String[] cmdargs, Properties systemProps, Map<String, String> systemEnv, ModuleLoader moduleLoader, ClassLoader embeddedModuleCL) {
-            this.cmdargs = cmdargs;
+        public HostControllerImpl(final File jbossHomeDir, String[] cmdargs, Properties systemProps, Map<String, String> systemEnv, ClassLoader embeddedModuleCL) {
+            super(EmbeddedProcessBootstrap.Type.HOST_CONTROLLER, cmdargs, embeddedModuleCL);
             this.jbossHomeDir = jbossHomeDir;
             this.systemProps = systemProps;
             this.systemEnv = systemEnv;
-            this.moduleLoader = moduleLoader;
-            this.embeddedModuleCL = embeddedModuleCL;
-
-            processStateListener = new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt) {
-                    if ("currentState".equals(evt.getPropertyName())) {
-                        ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();
-                        establishModelControllerClient(newState, true);
-                    }
-                }
-            };
         }
 
         @Override
-        public void start() throws EmbeddedProcessStartException {
-            ElapsedTime elapsedTime = ElapsedTime.startingFromNow();
-            ClassLoader tccl = SecurityActions.getTccl();
-            try {
-                SecurityActions.setTccl(embeddedModuleCL);
-                EmbeddedHostControllerBootstrap hostControllerBootstrap = null;
-                try {
-                    // Take control of server use of System.exit
-                    SystemExiter.initialize(new SystemExiter.Exiter() {
-                        @Override
-                        public void exit(int status) {
-                            HostControllerImpl.this.exit();
-                        }
-                    });
-
-                    // Determine the HostControllerEnvironment
-                    HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, elapsedTime);
-
-                    FutureServiceContainer futureContainer = new FutureServiceContainer();
-                    final byte[] authBytes = new byte[16];
-                    new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
-                    final String pcAuthCode = Base64.getEncoder().encodeToString(authBytes);
-                    final AtomicReference<ProcessStateNotifier> notifierReference = new AtomicReference<>();
-                    hostControllerBootstrap = new EmbeddedHostControllerBootstrap(futureContainer, environment, pcAuthCode);
-                    hostControllerBootstrap.bootstrap(processStateListener, notifierReference);
-                    serviceContainer = futureContainer.get();
-                    executorService = Executors.newCachedThreadPool();
-                    processStateNotifier = notifierReference.get();
-                    establishModelControllerClient(currentProcessState, false);
-                } catch (RuntimeException rte) {
-                    if (hostControllerBootstrap != null) {
-                        hostControllerBootstrap.failed();
-                    }
-                    throw rte;
-                } catch (Exception ex) {
-                    if (hostControllerBootstrap != null) {
-                        hostControllerBootstrap.failed();
-                    }
-                    throw EmbeddedLogger.ROOT_LOGGER.cannotStartEmbeddedServer(ex);
-                }
-            } finally {
-                SecurityActions.setTccl(tccl);
-            }
+        EmbeddedProcessBootstrapConfiguration getBootstrapConfiguration() {
+            EmbeddedProcessBootstrapConfiguration configuration = super.getBootstrapConfiguration();
+            configuration.setJBossHome(jbossHomeDir);
+            return configuration;
         }
-
-        @Override
-        public synchronized ModelControllerClient getModelControllerClient() {
-            return modelControllerClient == null ? null : new DelegatingModelControllerClient(new DelegatingModelControllerClient.DelegateProvider() {
-                @Override
-                public ModelControllerClient getDelegate() {
-                    return getActiveModelControllerClient();
-                }
-            });
-        }
-
-        private synchronized void establishModelControllerClient(ControlledProcessState.State state, boolean storeState) {
-            ModelControllerClient newClient = null;
-            if (state != ControlledProcessState.State.STOPPING && state != ControlledProcessState.State.STOPPED && serviceContainer != null) {
-                ModelControllerClientFactory  clientFactory;
-                try {
-                    @SuppressWarnings("unchecked")
-                    final ServiceController clientFactorySvc =
-                            serviceContainer.getService(DomainModelControllerService.CLIENT_FACTORY_SERVICE_NAME);
-                    clientFactory = (ModelControllerClientFactory) clientFactorySvc.getValue();
-                } catch (RuntimeException e) {
-                    // Either NPE because clientFactorySvc was not installed, or ISE from getValue because not UP
-                    clientFactory = null;
-                }
-                if (clientFactory != null) {
-                    newClient = clientFactory.createSuperUserClient(executorService, true);
-                }
-            }
-            modelControllerClient = newClient;
-            if (storeState || currentProcessState == null) {
-                currentProcessState = state;
-            }
-        }
-
-        private synchronized ModelControllerClient getActiveModelControllerClient() {
-            switch (currentProcessState) {
-                case STOPPING: {
-                    throw EmbeddedLogger.ROOT_LOGGER.processIsStopping();
-                }
-                case STOPPED: {
-                    throw EmbeddedLogger.ROOT_LOGGER.processIsStopped();
-                }
-                case STARTING:
-                case RUNNING: {
-                    if (modelControllerClient == null) {
-                        // Service wasn't available when we got the ControlledProcessState
-                        // state change notification; try again
-                        establishModelControllerClient(currentProcessState, false);
-                        if (modelControllerClient == null) {
-                            throw EmbeddedLogger.ROOT_LOGGER.processIsReloading();
-                        }
-                    }
-                    // fall through
-                }
-                default: {
-                    return modelControllerClient;
-                }
-            }
-        }
-
-
-        @Override
-        public void stop() {
-            ClassLoader tccl = SecurityActions.getTccl();
-            try {
-                SecurityActions.setTccl(embeddedModuleCL);
-                exit();
-            } finally {
-                SecurityActions.setTccl(tccl);
-            }
-        }
-
-        @Override
-        public String getProcessState() {
-            if (currentProcessState == null) {
-                return null;
-            }
-            return currentProcessState.toString();
-        }
-
-        @Override
-        public boolean canQueryProcessState() {
-            return true;
-        }
-
-        private void exit() {
-
-            if (serviceContainer != null) {
-                try {
-                    serviceContainer.shutdown();
-                    serviceContainer.awaitTermination();
-                } catch (RuntimeException rte) {
-                    throw rte;
-                } catch (InterruptedException ite) {
-                    ServerLogger.ROOT_LOGGER.error(ite.getLocalizedMessage(), ite);
-                    Thread.currentThread().interrupt();
-                } catch (Exception ex) {
-                    ServerLogger.ROOT_LOGGER.error(ex.getLocalizedMessage(), ex);
-                }
-            }
-            if (processStateNotifier != null) {
-                processStateNotifier.removePropertyChangeListener(processStateListener);
-                processStateNotifier = null;
-            }
-            if (executorService != null) {
-                try {
-                    executorService.shutdown();
-                    // 10 secs is arbitrary, but if the service container is terminated,
-                    // no good can happen from waiting for ModelControllerClient requests to complete
-                    executorService.awaitTermination(10, TimeUnit.SECONDS);
-                } catch (RuntimeException rte) {
-                    throw rte;
-                } catch (InterruptedException ite) {
-                    ServerLogger.ROOT_LOGGER.error(ite.getLocalizedMessage(), ite);
-                    Thread.currentThread().interrupt();
-                } catch (Exception ex) {
-                    ServerLogger.ROOT_LOGGER.error(ex.getLocalizedMessage(), ex);
-                }
-            }
-
-            SystemExiter.initialize(SystemExiter.Exiter.DEFAULT);
-        }
-
-        private static HostControllerEnvironment createHostControllerEnvironment(File jbossHome, String[] cmdargs,
-                                                                                 ElapsedTime elapsedTime) {
-            SecurityActions.setPropertyPrivileged(HostControllerEnvironment.HOME_DIR, jbossHome.getAbsolutePath());
-
-            List<String> cmds = new ArrayList<String>(Arrays.asList(cmdargs));
-
-            // these are for compatibility with Main.determineEnvironment / HostControllerEnvironment
-            // Once WFCORE-938 is resolved, --admin-only will allow a connection back to the DC for slaves,
-            // and support a method for setting the domain master address outside of -Djboss.domain.primary.address
-            // so we'll probably need a command line argument for this if its not specified as a system prop
-            if (SecurityActions.getPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_PRIMARY_ADDRESS, null) == null) {
-                SecurityActions.setPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_PRIMARY_ADDRESS, "127.0.0.1");
-            }
-            cmds.add(MODULE_PATH);
-            cmds.add(SecurityActions.getPropertyPrivileged("module.path", ""));
-            cmds.add(PC_ADDRESS);
-            cmds.add("0");
-            cmds.add(PC_PORT);
-            cmds.add("0");
-            // this used to be set in the embedded-hc specific env setup, WFCORE-938 will add support for --admin-only=false
-            cmds.add("--admin-only");
-
-            for (final String prop : EmbeddedProcessFactory.DOMAIN_KEYS) {
-                // if we've started with any jboss.domain.base.dir etc, copy those in here.
-                String value = SecurityActions.getPropertyPrivileged(prop, null);
-                if (value != null)
-                    cmds.add("-D" + prop + "=" + value);
-            }
-            return Main.determineEnvironment(cmds.toArray(new String[cmds.size()]), elapsedTime, ProcessType.EMBEDDED_HOST_CONTROLLER).getHostControllerEnvironment();
-        }
-
 
     }
+
 }
 
 

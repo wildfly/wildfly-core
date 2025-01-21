@@ -13,6 +13,7 @@ import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.core.embedded.spi.EmbeddedProcessState;
 
 /**
  * Exposes the current {@link ControlledProcessState.State} and allows services to register a listener for changes
@@ -21,7 +22,7 @@ import org.jboss.msc.service.ServiceTarget;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class ControlledProcessStateService implements ProcessStateNotifier {
+public class ControlledProcessStateService implements ProcessStateNotifier, org.wildfly.core.embedded.spi.ProcessStateNotifier {
 
     /** @deprecated use the 'org.wildfly.management.process-state-notifier' capability to obtain a {@link ProcessStateNotifier}*/
     @Deprecated(forRemoval = true)
@@ -41,7 +42,7 @@ public class ControlledProcessStateService implements ProcessStateNotifier {
     public static ProcessStateNotifier addService(ServiceTarget target, ControlledProcessState processState) {
         final ControlledProcessStateService notifier = processState.getService();
         final ServiceBuilder<?> sb = target.addService();
-        Consumer<ProcessStateNotifier> consumer = sb.provides(INTERNAL_SERVICE_NAME, SERVICE_NAME);
+        Consumer<ProcessStateNotifier> consumer = sb.provides(INTERNAL_SERVICE_NAME, SERVICE_NAME, org.wildfly.core.embedded.spi.ProcessStateNotifier.SERVICE_NAME);
         sb.setInstance(Service.newInstance(consumer, notifier));
         sb.install();
         return notifier;
@@ -49,10 +50,12 @@ public class ControlledProcessStateService implements ProcessStateNotifier {
 
     private ControlledProcessState.State processState;
     private final PropertyChangeSupport changeSupport;
+    private final boolean embedded;
 
-    ControlledProcessStateService(ControlledProcessState.State initialState) {
+    ControlledProcessStateService(ControlledProcessState.State initialState, boolean embedded) {
         this.processState = initialState;
-        changeSupport = new PropertyChangeSupport(this);
+        this.changeSupport = new PropertyChangeSupport(this);
+        this.embedded = embedded;
     }
 
     /**
@@ -66,6 +69,17 @@ public class ControlledProcessStateService implements ProcessStateNotifier {
     }
 
     /**
+     * Returns the current process state.
+     *
+     * @return  the current state
+     */
+    @Override
+    public EmbeddedProcessState getEmbeddedProcessState() {
+        checkEmbedded();
+        return processState.getEmbeddedProcessState();
+    }
+
+    /**
      * Registers a listener for changes to the process state.
      *
      * @param listener the listener
@@ -73,7 +87,7 @@ public class ControlledProcessStateService implements ProcessStateNotifier {
     @Override
     public void addPropertyChangeListener(
             PropertyChangeListener listener) {
-        changeSupport.addPropertyChangeListener(listener);
+        changeSupport.addPropertyChangeListener("currentState", listener);
     }
 
     /**
@@ -84,12 +98,31 @@ public class ControlledProcessStateService implements ProcessStateNotifier {
     @Override
     public void removePropertyChangeListener(
             PropertyChangeListener listener) {
-        changeSupport.removePropertyChangeListener(listener);
+        changeSupport.removePropertyChangeListener("currentState", listener);
+    }
+
+    @Override
+    public void addProcessStateListener(PropertyChangeListener listener) {
+        checkEmbedded();
+        changeSupport.addPropertyChangeListener("embeddedState", listener);
+    }
+
+    @Override
+    public void removeProcessStateListener(PropertyChangeListener listener) {
+        checkEmbedded();
+        changeSupport.removePropertyChangeListener("embeddedState", listener);
     }
 
     synchronized void stateChanged(ControlledProcessState.State newState) {
         final ControlledProcessState.State oldState = processState;
         processState = newState;
         changeSupport.firePropertyChange("currentState", oldState, newState);
+        changeSupport.firePropertyChange("embeddedState", oldState.getEmbeddedProcessState(), newState.getEmbeddedProcessState());
+    }
+
+    private void checkEmbedded() {
+        if (!embedded) {
+            throw new IllegalStateException();
+        }
     }
 }

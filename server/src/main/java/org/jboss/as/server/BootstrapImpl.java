@@ -95,7 +95,8 @@ final class BootstrapImpl implements Bootstrap {
         }
         final FutureServiceContainer future = new FutureServiceContainer(container);
         final ServiceTarget tracker = container.subTarget();
-        final ControlledProcessState processState = new ControlledProcessState(true);
+        final boolean embedded = configuration.getServerEnvironment().getLaunchType().getProcessType().isEmbedded();
+        final ControlledProcessState processState = new ControlledProcessState(true, embedded);
         shutdownHook.setControlledProcessState(processState);
         ProcessStateNotifier processStateNotifier = ControlledProcessStateService.addService(tracker, processState);
         ServerSuspendController suspendController = new SuspendController();

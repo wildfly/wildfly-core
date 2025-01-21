@@ -5,48 +5,21 @@
 
 package org.wildfly.core.embedded;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
-import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.ProcessStateNotifier;
-import org.jboss.as.controller.ControlledProcessStateService;
-import org.jboss.as.controller.ModelControllerClientFactory;
-import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
-import org.jboss.as.server.Bootstrap;
-import org.jboss.as.server.ElapsedTime;
-import org.jboss.as.server.Main;
-import org.jboss.as.server.ServerEnvironment;
-import org.jboss.as.server.ServerService;
-import org.jboss.as.server.SystemExiter;
 import org.jboss.modules.ModuleLoader;
-import org.jboss.msc.Service;
-import org.jboss.msc.service.ServiceActivator;
-import org.jboss.msc.service.ServiceActivatorContext;
-import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceContainer;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StopContext;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
+import org.wildfly.core.embedded.spi.EmbeddedProcessBootstrap;
+import org.wildfly.core.embedded.spi.EmbeddedProcessBootstrapConfiguration;
 
 /**
- * This is the standalone server counter-part of EmbeddedProcessFactory which lives behind a module class loader.
+ * This is the standalone server counter-part of EmbeddedProcessFactory that lives behind a module class loader.
  * <p>
  * Factory that sets up an embedded @{link StandaloneServer} using modular classloading.
  * </p>
@@ -71,6 +44,9 @@ import org.wildfly.core.embedded.logging.EmbeddedLogger;
 public class EmbeddedStandaloneServerFactory {
 
     public static final String JBOSS_EMBEDDED_ROOT = "jboss.embedded.root";
+    private static final String SERVER_BASE_DIR = "jboss.server.base.dir";
+    private static final String SERVER_CONFIG_DIR = "jboss.server.config.dir";
+    private static final String SERVER_DATA_DIR = "jboss.server.data.dir";
 
     private EmbeddedStandaloneServerFactory() {
     }
@@ -100,8 +76,8 @@ public class EmbeddedStandaloneServerFactory {
             return;
         }
 
-        File originalConfigDir = getFileUnderAsRoot(jbossHomeDir.toFile(), props, ServerEnvironment.SERVER_CONFIG_DIR, "configuration", true);
-        File originalDataDir = getFileUnderAsRoot(jbossHomeDir.toFile(), props, ServerEnvironment.SERVER_DATA_DIR, "data", false);
+        File originalConfigDir = getFileUnderAsRoot(jbossHomeDir.toFile(), props, SERVER_CONFIG_DIR, "configuration", true);
+        File originalDataDir = getFileUnderAsRoot(jbossHomeDir.toFile(), props, SERVER_DATA_DIR, "data", false);
 
         try {
             Path configDir = tempRoot.resolve("config");
@@ -117,9 +93,9 @@ public class EmbeddedStandaloneServerFactory {
                 copyDirectory(originalDataDir, dataDir.toFile());
             }
 
-            props.put(ServerEnvironment.SERVER_BASE_DIR, tempRoot.toAbsolutePath().toString());
-            props.put(ServerEnvironment.SERVER_CONFIG_DIR, configDir.toAbsolutePath().toString());
-            props.put(ServerEnvironment.SERVER_DATA_DIR, dataDir.toAbsolutePath().toString());
+            props.put(SERVER_BASE_DIR, tempRoot.toAbsolutePath().toString());
+            props.put(SERVER_CONFIG_DIR, configDir.toAbsolutePath().toString());
+            props.put(SERVER_DATA_DIR, dataDir.toAbsolutePath().toString());
         }  catch (IOException e) {
             throw EmbeddedLogger.ROOT_LOGGER.cannotSetupEmbeddedServer(e);
         }
@@ -129,7 +105,7 @@ public class EmbeddedStandaloneServerFactory {
     private static File getFileUnderAsRoot(File jbossHomeDir, Properties props, String propName, String relativeLocation, boolean mustExist) {
         String prop = props.getProperty(propName, null);
         if (prop == null) {
-            prop = props.getProperty(ServerEnvironment.SERVER_BASE_DIR, null);
+            prop = props.getProperty(SERVER_BASE_DIR, null);
             if (prop == null) {
                 File dir = new File(jbossHomeDir, "standalone" + File.separator + relativeLocation);
                 if (mustExist && (!dir.exists() || !dir.isDirectory())) {
@@ -138,12 +114,12 @@ public class EmbeddedStandaloneServerFactory {
                 return dir;
             } else {
                 File server = new File(prop);
-                validateDirectory(ServerEnvironment.SERVER_BASE_DIR, server);
+                validateDirectory(SERVER_BASE_DIR, server);
                 return new File(server, relativeLocation);
             }
         } else {
             File dir = new File(prop);
-            validateDirectory(ServerEnvironment.SERVER_CONFIG_DIR, dir);
+            validateDirectory(SERVER_CONFIG_DIR, dir);
             return dir;
         }
 
@@ -196,135 +172,17 @@ public class EmbeddedStandaloneServerFactory {
     }
 
 
-    private static class StandaloneServerImpl implements StandaloneServer {
+    private static class StandaloneServerImpl extends AbstractEmbeddedManagedProcess implements StandaloneServer {
 
-        private final PropertyChangeListener processStateListener;
-        private final String[] cmdargs;
         private final Properties systemProps;
         private final Map<String, String> systemEnv;
         private final ModuleLoader moduleLoader;
-        private final ClassLoader embeddedModuleCL;
-        private ServiceContainer serviceContainer;
-        private ControlledProcessState.State currentProcessState;
-        private ModelControllerClient modelControllerClient;
-        private ExecutorService executorService;
-        private ProcessStateNotifier processStateNotifier;
 
         public StandaloneServerImpl(String[] cmdargs, Properties systemProps, Map<String, String> systemEnv, ModuleLoader moduleLoader, ClassLoader embeddedModuleCL) {
-            this.cmdargs = cmdargs;
+            super(EmbeddedProcessBootstrap.Type.STANDALONE_SERVER, cmdargs, embeddedModuleCL);
             this.systemProps = systemProps;
             this.systemEnv = systemEnv;
             this.moduleLoader = moduleLoader;
-            this.embeddedModuleCL = embeddedModuleCL;
-
-            processStateListener = new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt) {
-                    if ("currentState".equals(evt.getPropertyName())) {
-                        ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();
-                        establishModelControllerClient(newState, false);
-                    }
-                }
-            };
-        }
-
-        @Override
-        public synchronized ModelControllerClient getModelControllerClient() {
-            return modelControllerClient == null ? null : new DelegatingModelControllerClient(new DelegatingModelControllerClient.DelegateProvider() {
-                @Override
-                public ModelControllerClient getDelegate() {
-                    return getActiveModelControllerClient();
-                }
-            });
-        }
-
-        @Override
-        public void start() throws EmbeddedProcessStartException {
-            ElapsedTime elapsedTime = ElapsedTime.startingFromNow();
-            ClassLoader tccl = SecurityActions.getTccl();
-            try {
-                SecurityActions.setTccl(embeddedModuleCL);
-                Bootstrap bootstrap = null;
-                try {
-                    final long startTime = System.currentTimeMillis();
-
-                    // Take control of server use of System.exit
-                    SystemExiter.initialize(new SystemExiter.Exiter() {
-                        @Override
-                        public void exit(int status) {
-                            StandaloneServerImpl.this.exit();
-                        }
-                    });
-
-                    // Determine the ServerEnvironment
-                    ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv,
-                            ServerEnvironment.LaunchType.EMBEDDED, elapsedTime).getServerEnvironment();
-                    if (serverEnvironment == null) {
-                        // Nothing to do
-                        return;
-                    }
-                    bootstrap = Bootstrap.Factory.newInstance();
-
-                    Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
-
-                    configuration.setModuleLoader(moduleLoader);
-
-                    // As part of bootstrap install a service to capture the ProcessStateNotifier
-                    AtomicReference<ProcessStateNotifier> notifierRef = new AtomicReference<>();
-                    ServiceActivator notifierCapture = ctx -> captureNotifier(ctx, notifierRef);
-
-                    Future<ServiceContainer> future = bootstrap.startup(configuration, Collections.singletonList(notifierCapture));
-
-                    serviceContainer = future.get();
-
-                    executorService = Executors.newCachedThreadPool();
-
-                    processStateNotifier = notifierRef.get();
-                    processStateNotifier.addPropertyChangeListener(processStateListener);
-                    establishModelControllerClient(processStateNotifier.getCurrentState(), true);
-
-                } catch (RuntimeException rte) {
-                    if (bootstrap != null) {
-                        bootstrap.failed();
-                    }
-                    throw rte;
-                } catch (Exception ex) {
-                    if (bootstrap != null) {
-                        bootstrap.failed();
-                    }
-                    throw EmbeddedLogger.ROOT_LOGGER.cannotStartEmbeddedServer(ex);
-                }
-            } finally {
-                SecurityActions.setTccl(tccl);
-            }
-        }
-
-        private static void captureNotifier(ServiceActivatorContext ctx, AtomicReference<ProcessStateNotifier> notifierRef) {
-            ServiceBuilder<?> sb = ctx.getServiceTarget().addService();
-            final Supplier<ProcessStateNotifier> result = sb.requires(ControlledProcessStateService.INTERNAL_SERVICE_NAME);
-            sb.setInstance(new Service() {
-                @Override
-                public void start(StartContext context) {
-                    notifierRef.set(result.get());
-                    context.getController().setMode(ServiceController.Mode.REMOVE);
-                }
-
-                @Override
-                public void stop(StopContext context) {
-                }
-            });
-            sb.install();
-        }
-
-        @Override
-        public void stop() {
-            ClassLoader tccl = SecurityActions.getTccl();
-            try {
-                SecurityActions.setTccl(embeddedModuleCL);
-                exit();
-            } finally {
-                SecurityActions.setTccl(tccl);
-            }
         }
 
         @Override
@@ -339,95 +197,14 @@ public class EmbeddedStandaloneServerFactory {
             return false;
         }
 
-        private void exit() {
-
-            if (serviceContainer != null) {
-                try {
-                    serviceContainer.shutdown();
-
-                    serviceContainer.awaitTermination();
-                } catch (RuntimeException rte) {
-                    throw rte;
-                } catch (InterruptedException ite) {
-                    EmbeddedLogger.ROOT_LOGGER.error(ite.getLocalizedMessage(), ite);
-                    Thread.currentThread().interrupt();
-                } catch (Exception ex) {
-                    EmbeddedLogger.ROOT_LOGGER.error(ex.getLocalizedMessage(), ex);
-                }
-            }
-            if (processStateNotifier != null) {
-                processStateNotifier.removePropertyChangeListener(processStateListener);
-                processStateNotifier = null;
-            }
-            if (executorService != null) {
-                try {
-                    executorService.shutdown();
-
-                    // 10 secs is arbitrary, but if the service container is terminated,
-                    // no good can happen from waiting for ModelControllerClient requests to complete
-                    executorService.awaitTermination(10, TimeUnit.SECONDS);
-                } catch (RuntimeException rte) {
-                    throw rte;
-                } catch (InterruptedException ite) {
-                    EmbeddedLogger.ROOT_LOGGER.error(ite.getLocalizedMessage(), ite);
-                    Thread.currentThread().interrupt();
-                } catch (Exception ex) {
-                    EmbeddedLogger.ROOT_LOGGER.error(ex.getLocalizedMessage(), ex);
-                }
-            }
-
-
-            SystemExiter.initialize(SystemExiter.Exiter.DEFAULT);
-        }
-
-        private synchronized void establishModelControllerClient(ControlledProcessState.State state, boolean storeState) {
-            ModelControllerClient newClient = null;
-            if (state != ControlledProcessState.State.STOPPING && state != ControlledProcessState.State.STOPPED && serviceContainer != null) {
-                ModelControllerClientFactory clientFactory;
-                try {
-                    // TODO replace this in start() with the ServiceActivator approach we used to capture the ProcessStateNotifier
-                    @SuppressWarnings("unchecked")
-                    final ServiceController clientFactorySvc =
-                            serviceContainer.getService(ServerService.JBOSS_SERVER_CLIENT_FACTORY);
-                    clientFactory = (ModelControllerClientFactory) clientFactorySvc.getValue();
-                } catch (RuntimeException e) {
-                    // Either NPE because clientFactorySvc was not installed, or ISE from getValue because not UP
-                    clientFactory = null;
-                }
-                if (clientFactory != null) {
-                    newClient = clientFactory.createSuperUserClient(executorService, true);
-                }
-            }
-            modelControllerClient = newClient;
-            if (storeState || currentProcessState == null) {
-                currentProcessState = state;
-            }
-        }
-
-        private synchronized ModelControllerClient getActiveModelControllerClient() {
-            switch (currentProcessState) {
-                case STOPPING: {
-                    throw EmbeddedLogger.ROOT_LOGGER.processIsStopping();
-                }
-                case STOPPED: {
-                    throw EmbeddedLogger.ROOT_LOGGER.processIsStopped();
-                }
-                case STARTING:
-                case RUNNING: {
-                    if (modelControllerClient == null) {
-                        // Service wasn't available when we got the ControlledProcessState
-                        // state change notification; try again
-                        establishModelControllerClient(currentProcessState, false);
-                        if (modelControllerClient == null) {
-                            throw EmbeddedLogger.ROOT_LOGGER.processIsReloading();
-                        }
-                    }
-                    // fall through
-                }
-                default: {
-                    return modelControllerClient;
-                }
-            }
+        @Override
+        EmbeddedProcessBootstrapConfiguration getBootstrapConfiguration() {
+            EmbeddedProcessBootstrapConfiguration configuration = super.getBootstrapConfiguration();
+            configuration.setModuleLoader(moduleLoader);
+            configuration.setSystemProperties(systemProps);
+            configuration.setSystemEnv(systemEnv);
+            return configuration;
         }
     }
+
 }

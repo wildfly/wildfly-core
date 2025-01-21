@@ -1474,6 +1474,13 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 309, value = "%s stability level is not supported in %s")
     IllegalArgumentException unsupportedStability(Stability stability, String name);
 
+    @Message(id = 310, value = "Embedded process services are not available after %d seconds: %s")
+    @LogMessage(level = Logger.Level.ERROR)
+    void embeddedProcessServicesUnavailable(int timeout, String unavailable);
+
+    @Message(id = 311, value = "Cannot create a ServerEnvironment for an embedded server")
+    IllegalStateException cannotCreateServerEnvironment();
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

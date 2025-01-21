@@ -67,6 +67,7 @@
         <module name="org.wildfly.common"/>
         <!-- Allow javax->jakarta deployment transformation if this module is provided -->
         <module name="org.wildfly.deployment.transformation" optional="true" services="import"/>
+        <module name="org.wildfly.embedded"/>
         <module name="org.wildfly.extension.core-management-client" />
         <module name="org.wildfly.installation-manager" services="import"/>
         <module name="org.wildfly.security.elytron-private" services="import"/>

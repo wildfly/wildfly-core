@@ -3,37 +3,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.jboss.as.controller;
+package org.wildfly.core.embedded.spi;
 
 import java.beans.PropertyChangeListener;
 
-import org.wildfly.service.descriptor.NullaryServiceDescriptor;
+import org.jboss.msc.service.ServiceName;
 
 /**
- * Allows callers to check the current {@link ControlledProcessState.State} of the process
+ * Allows callers to check the current {@link EmbeddedProcessState state} of the process
  * and to register for notifications of state changes.
  *
- * @author Brian Stansberry (c) 2019 Red Hat Inc.
+ * @author Brian Stansberry
  */
 public interface ProcessStateNotifier {
-    NullaryServiceDescriptor<ProcessStateNotifier> SERVICE_DESCRIPTOR =
-            NullaryServiceDescriptor.of("org.wildfly.management.process-state-notifier", ProcessStateNotifier.class);
+
+    /** Only for use within the WildFly kernel; may change or be removed at any time */
+    ServiceName SERVICE_NAME = ServiceName.parse("org.wildfly.embedded.process-state-notifier");
 
     /**
      * Gets the current state of the controlled process.
      * @return the current state. Will not be {@code null}
+     *
+     * @throws IllegalStateException if the process is not an embedded process
      */
-    ControlledProcessState.State getCurrentState();
+    EmbeddedProcessState getEmbeddedProcessState();
 
     /**
      * Register a listener for changes in the current state. The listener will be notified
-     * with a {@code PropertyChangeEvent} whose property name will be {@code currentState}.
+     * with a {@code PropertyChangeEvent} whose property name will be {@code embeddedState}.
      * If <code>listener</code> is null, no exception is thrown and no action
      * is taken.
      *
      * @param listener the listener
+     *
+     * @throws IllegalStateException if the process is not an embedded process
      */
-    void addPropertyChangeListener(PropertyChangeListener listener);
+    void addProcessStateListener(PropertyChangeListener listener);
 
 
     /**
@@ -44,6 +49,9 @@ public interface ProcessStateNotifier {
      * thrown and no action is taken.
      *
      * @param listener the listener
+     *
+     * @throws IllegalStateException if the process is not an embedded process
      */
-    void removePropertyChangeListener(PropertyChangeListener listener);
+    void removeProcessStateListener(PropertyChangeListener listener);
 }
+

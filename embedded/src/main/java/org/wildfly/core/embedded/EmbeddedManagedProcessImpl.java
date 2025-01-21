@@ -12,10 +12,10 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
 
 /**
- * Indirection to the {@link StandaloneServer} or {@link HostController}; used to encapsulate access to the underlying
- * embedded instance in a manner that does not directly link this class. Necessary to avoid {@link ClassCastException}
- * when this class is loaded by the application {@link ClassLoader} (or any other hierarchical CL) while the server is
- * loaded by a modular environment.
+ * Embedding-application-side indirection to the {@link StandaloneServer} or {@link HostController}.
+ * Used to encapsulate access to the underlying embedded instance in a manner that does not directly link this class.
+ * Necessary to avoid {@link ClassCastException} when this class is loaded by the application {@link ClassLoader}
+ * (or any other hierarchical CL) while the server is loaded by a modular environment.
  *
  * @author <a href="mailto:alr@jboss.org">Andrew Lee Rubinger</a>
  * @author Thomas.Diesler@jboss.com.
