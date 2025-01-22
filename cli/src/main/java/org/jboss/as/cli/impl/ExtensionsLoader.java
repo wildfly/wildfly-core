@@ -26,10 +26,10 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.cli.impl.aesh.CLICommandRegistry;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.modules.ModuleClassLoader;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 
@@ -102,9 +102,7 @@ class ExtensionsLoader {
      * Using the client, iterates through the available domain management model extensions
      * and tries to load CLI command handlers from their modules.
      *
-     * @param registry
      * @param address
-     * @param client
      */
     void loadHandlers(ControllerAddress address) throws CommandLineException, CommandLineParserException {
 
@@ -150,7 +148,7 @@ class ExtensionsLoader {
             if(!module.isDefined()) {
                 addError("Extension " + ext.getName() + " is missing module attribute");
             } else {
-                final ModuleIdentifier moduleId = ModuleIdentifier.fromString(module.asString());
+                final String moduleId = JBossModulesNameUtil.parseCanonicalModuleIdentifier(module.asString());
                 ModuleClassLoader cl;
                 try {
                     cl = moduleLoader.loadModule(moduleId).getClassLoader();

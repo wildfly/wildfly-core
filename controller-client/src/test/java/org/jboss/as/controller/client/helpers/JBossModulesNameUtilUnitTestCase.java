@@ -3,10 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.jboss.as.controller;
+package org.jboss.as.controller.client.helpers;
 
-import static org.jboss.as.controller.ModuleIdentifierUtil.canonicalModuleIdentifier;
-import static org.jboss.as.controller.ModuleIdentifierUtil.parseModuleIdentifier;
+import static org.jboss.as.controller.client.helpers.JBossModulesNameUtil.canonicalModuleIdentifier;
+import static org.jboss.as.controller.client.helpers.JBossModulesNameUtil.parseCanonicalModuleIdentifier;
+import static org.jboss.as.controller.client.helpers.JBossModulesNameUtil.parseModuleIdentifier;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -16,18 +18,18 @@ import java.util.Map;
 import org.junit.Test;
 
 /**
- * Unit tests of {@link ModuleIdentifierUtil}.
+ * Unit tests of {@link JBossModulesNameUtil}.
  */
-public class ModuleIdentifierUtilUnitTestCase {
+public class JBossModulesNameUtilUnitTestCase {
 
     @Test
     public void testParsingCanonicalization() {
-        assertEquals("org.jboss.foo", canonicalModuleIdentifier("org.jboss.foo"));
-        assertEquals("org.jboss.foo", canonicalModuleIdentifier("org.jboss.foo:main"));
-        assertEquals("org.jboss.foo:bar", canonicalModuleIdentifier("org.jboss.foo:bar"));
+        assertEquals("org.jboss.foo", parseCanonicalModuleIdentifier("org.jboss.foo"));
+        assertEquals("org.jboss.foo", parseCanonicalModuleIdentifier("org.jboss.foo:main"));
+        assertEquals("org.jboss.foo:bar", parseCanonicalModuleIdentifier("org.jboss.foo:bar"));
         // TODO these next two seem wrong, but it's what ModuleIdentifier.fromString(...).toString() does
-        assertEquals("org.jboss\\\\\\:foo", canonicalModuleIdentifier("org.jboss\\:foo"));
-        assertEquals("org.jboss\\\\\\:foo:bar", canonicalModuleIdentifier("org.jboss\\:foo:bar"));
+        assertEquals("org.jboss\\\\\\:foo", parseCanonicalModuleIdentifier("org.jboss\\:foo"));
+        assertEquals("org.jboss\\\\\\:foo:bar", parseCanonicalModuleIdentifier("org.jboss\\:foo:bar"));
     }
 
     @Test
@@ -43,35 +45,35 @@ public class ModuleIdentifierUtilUnitTestCase {
     @Test
     public void testParsingToFunction() {
         validateFunctionResult(
-                parseModuleIdentifier("org.jboss.foo", ModuleIdentifierUtilUnitTestCase::biFunction),
+                parseModuleIdentifier("org.jboss.foo", JBossModulesNameUtilUnitTestCase::biFunction),
                 null);
 
         validateFunctionResult(
-                parseModuleIdentifier("org.jboss.foo:main", ModuleIdentifierUtilUnitTestCase::biFunction),
+                parseModuleIdentifier("org.jboss.foo:main", JBossModulesNameUtilUnitTestCase::biFunction),
                 "main");
 
         validateFunctionResult(
-                parseModuleIdentifier("org.jboss.foo:main", ModuleIdentifierUtilUnitTestCase::biFunction, false),
+                parseModuleIdentifier("org.jboss.foo:main", JBossModulesNameUtilUnitTestCase::biFunction, false),
                 "main");
 
         validateFunctionResult(
-                parseModuleIdentifier("org.jboss.foo:main", ModuleIdentifierUtilUnitTestCase::biFunction, true),
+                parseModuleIdentifier("org.jboss.foo:main", JBossModulesNameUtilUnitTestCase::biFunction, true),
                 null);
 
         validateFunctionResult(
-                parseModuleIdentifier("org.jboss.foo:main", ModuleIdentifierUtilUnitTestCase::biFunction, false, "bar"),
+                parseModuleIdentifier("org.jboss.foo:main", JBossModulesNameUtilUnitTestCase::biFunction, false, "bar"),
                 "main");
 
         validateFunctionResult(
-                parseModuleIdentifier("org.jboss.foo:main", ModuleIdentifierUtilUnitTestCase::biFunction, true, "bar"),
+                parseModuleIdentifier("org.jboss.foo:main", JBossModulesNameUtilUnitTestCase::biFunction, true, "bar"),
                 "bar");
 
         validateFunctionResult(
-                parseModuleIdentifier("org.jboss.foo", ModuleIdentifierUtilUnitTestCase::biFunction, false, "bar"),
+                parseModuleIdentifier("org.jboss.foo", JBossModulesNameUtilUnitTestCase::biFunction, false, "bar"),
                 "bar");
 
         validateFunctionResult(
-                parseModuleIdentifier("org.jboss.foo", ModuleIdentifierUtilUnitTestCase::biFunction, true, "bar"),
+                parseModuleIdentifier("org.jboss.foo", JBossModulesNameUtilUnitTestCase::biFunction, true, "bar"),
                 "bar");
     }
 

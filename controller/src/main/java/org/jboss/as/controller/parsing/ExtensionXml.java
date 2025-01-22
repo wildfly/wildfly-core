@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutorService;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
@@ -94,7 +95,15 @@ public class ExtensionXml {
             }
 
             // One attribute && require no content
-            final String moduleName = readStringAttributeElement(reader, Attribute.MODULE.getLocalName());
+            final String inputModuleName = readStringAttributeElement(reader, Attribute.MODULE.getLocalName());
+
+            // Require canonical module names
+            final String moduleName = JBossModulesNameUtil.parseCanonicalModuleIdentifier(inputModuleName);
+            if (!inputModuleName.equals(moduleName)) {
+                throw new XMLStreamException(
+                        ControllerLogger.MGMT_OP_LOGGER.nonCanonicalExtensionName(inputModuleName, moduleName),
+                        reader.getLocation());
+            }
 
             if (!found.add(moduleName)) {
                 // duplicate module name

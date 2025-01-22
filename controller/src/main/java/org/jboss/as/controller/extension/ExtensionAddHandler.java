@@ -13,6 +13,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
@@ -58,7 +59,14 @@ public class ExtensionAddHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final String moduleName = context.getCurrentAddressValue();
+
+        // Require canonical module names
+        final String addressValue = context.getCurrentAddressValue();
+        final String moduleName = JBossModulesNameUtil.parseCanonicalModuleIdentifier(addressValue);
+        if (!addressValue.equals(moduleName)) {
+            throw new OperationFailedException(ControllerLogger.MGMT_OP_LOGGER.nonCanonicalExtensionName(addressValue, moduleName));
+        }
+
         final ExtensionResource resource = new ExtensionResource(moduleName, extensionRegistry);
 
         context.addResource(PathAddress.EMPTY_ADDRESS, resource);

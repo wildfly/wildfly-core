@@ -6,6 +6,7 @@ package org.jboss.as.controller;
 
 import java.util.function.BiFunction;
 
+import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -21,9 +22,12 @@ public final class ModuleIdentifierUtil {
      *
      * @param moduleSpec a module name specification in the form {@code name[:slot]}. Cannot be {@code null}
      * @return the canonical representation. Will not return @{code null}
+     *
+     * @deprecated use {@link JBossModulesNameUtil#parseCanonicalModuleIdentifier(String)}
      */
+    @Deprecated(forRemoval = true, since = "28.0.0")
     public static String canonicalModuleIdentifier(String moduleSpec) {
-        return parseModuleIdentifier(moduleSpec, ModuleIdentifierUtil::canonicalModuleIdentifier);
+        return JBossModulesNameUtil.parseCanonicalModuleIdentifier(moduleSpec);
     }
 
     /**
@@ -37,9 +41,12 @@ public final class ModuleIdentifierUtil {
      *                 The slot value passed to the function may be null if the identifier does not contain one.
      * @return the value returned by {@code function}
      * @param <R> the type returned by {@code function}
+     *
+     * @deprecated use {@link JBossModulesNameUtil#parseModuleIdentifier(String, BiFunction)}
      */
+    @Deprecated(forRemoval = true, since = "28.0.0")
     public static <R> R parseModuleIdentifier(String moduleIdentifier, BiFunction<String, String, R> function) {
-        return parseModuleIdentifier(moduleIdentifier, function, false, null);
+        return JBossModulesNameUtil.parseModuleIdentifier(moduleIdentifier, function);
     }
 
 
@@ -54,9 +61,12 @@ public final class ModuleIdentifierUtil {
      * @param canonicalize if {@code true} the identifier will be {@link #canonicalModuleIdentifier(String) canonicalized} before parsing
      * @return the value returned by {@code function}
      * @param <R> the type returned by {@code function}
+     *
+     * @deprecated use {@link JBossModulesNameUtil#parseModuleIdentifier(String, BiFunction, boolean)}
      */
+    @Deprecated(forRemoval = true, since = "28.0.0")
     public static <R> R parseModuleIdentifier(String moduleIdentifier, BiFunction<String, String, R> function, boolean canonicalize) {
-        return parseModuleIdentifier(moduleIdentifier, function, canonicalize, null);
+        return JBossModulesNameUtil.parseModuleIdentifier(moduleIdentifier, function, canonicalize);
     }
 
 
@@ -72,63 +82,13 @@ public final class ModuleIdentifierUtil {
      * @param defaultSlot  string to pass to {@code function} as the slot parameter if the identifier doesn't include a slot value. May be {@code null}
      * @return the value returned by {@code function}
      * @param <R> the type returned by {@code function}
+     *
+     * @deprecated use {@link JBossModulesNameUtil#parseModuleIdentifier(String, BiFunction, boolean, String)}
      */
+    @Deprecated(forRemoval = true, since = "28.0.0")
     public static <R> R parseModuleIdentifier(String moduleIdentifier, BiFunction<String, String, R> function,
                                               boolean canonicalize, String defaultSlot) {
-        if (canonicalize) {
-            moduleIdentifier = canonicalModuleIdentifier(moduleIdentifier);
-        }
-
-        // Note: this is taken from org.jboss.modules.ModuleIdentifier.fromString and lightly adapted.
-
-        if (moduleIdentifier == null) {
-            throw new IllegalArgumentException("Module specification is null");
-        } else if (moduleIdentifier.isEmpty()) {
-            throw new IllegalArgumentException("Empty module specification");
-        } else {
-            StringBuilder b = new StringBuilder();
-
-            int c;
-            int i;
-            for(i = 0; i < moduleIdentifier.length(); i = moduleIdentifier.offsetByCodePoints(i, 1)) {
-                c = moduleIdentifier.codePointAt(i);
-                if (c == 92) {
-                    b.appendCodePoint(c);
-                    i = moduleIdentifier.offsetByCodePoints(i, 1);
-                    if (i >= moduleIdentifier.length()) {
-                        throw new IllegalArgumentException("Name has an unterminated escape");
-                    }
-
-                    c = moduleIdentifier.codePointAt(i);
-                    b.appendCodePoint(c);
-                } else {
-                    if (c == 58) {
-                        i = moduleIdentifier.offsetByCodePoints(i, 1);
-                        if (i == moduleIdentifier.length()) {
-                            throw new IllegalArgumentException("Slot is empty");
-                        }
-                        break;
-                    }
-
-                    b.appendCodePoint(c);
-                }
-            }
-
-            String name = b.toString();
-            b.setLength(0);
-            if (i >= moduleIdentifier.length()) {
-                return function.apply(name, defaultSlot);
-            } else {
-                do {
-                    c = moduleIdentifier.codePointAt(i);
-                    b.appendCodePoint(c);
-                    i = moduleIdentifier.offsetByCodePoints(i, 1);
-                } while(i < moduleIdentifier.length());
-
-                return function.apply(name, b.toString());
-            }
-        }
-
+        return JBossModulesNameUtil.parseModuleIdentifier(moduleIdentifier, function, canonicalize, defaultSlot);
     }
 
     /**
@@ -140,13 +100,12 @@ public final class ModuleIdentifierUtil {
      * @param slot the module slot. May be @{code null}
      *
      * @return the canonical representation. Will not return @{code null}
+     *
+     * @deprecated use {@link JBossModulesNameUtil#canonicalModuleIdentifier(String, String)}
      */
+    @Deprecated(forRemoval = true, since = "28.0.0")
     public static String canonicalModuleIdentifier(String name, String slot) {
-        if (name == null) {
-            throw new IllegalArgumentException("name is null");
-        }
-        String escaped = escapeName(name);
-        return slot == null || "main".equals(slot) ? escaped : escaped + ":" + escapeSlot(slot);
+        return JBossModulesNameUtil.canonicalModuleIdentifier(name, slot);
     }
 
     /**
@@ -166,47 +125,4 @@ public final class ModuleIdentifierUtil {
             return newValue;
         }
     };
-
-    private static String escapeName(String name) {
-        // Note: this is taken from org.jboss.modules.ModuleIdentifier.escapeName
-        StringBuilder b = new StringBuilder();
-        boolean escaped = false;
-        int i = 0;
-
-        while(i < name.length()) {
-            int c = name.codePointAt(i);
-            switch (c) {
-                case 58:
-                case 92:
-                    escaped = true;
-                    b.append('\\');
-                default:
-                    b.appendCodePoint(c);
-                    i = name.offsetByCodePoints(i, 1);
-            }
-        }
-
-        return escaped ? b.toString() : name;
-    }
-
-    private static String escapeSlot(String slot) {
-        // Note: this is taken from org.jboss.modules.ModuleIdentifier.escapeSlot
-        StringBuilder b = new StringBuilder();
-        boolean escaped = false;
-        int i = 0;
-
-        while(i < slot.length()) {
-            int c = slot.codePointAt(i);
-            switch (c) {
-                case 92:
-                    escaped = true;
-                    b.append('\\');
-                default:
-                    b.appendCodePoint(c);
-                    i = slot.offsetByCodePoints(i, 1);
-            }
-        }
-
-        return escaped ? b.toString() : slot;
-    }
 }

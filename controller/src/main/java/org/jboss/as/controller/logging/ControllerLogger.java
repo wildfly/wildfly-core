@@ -3809,4 +3809,8 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 517, value = "There are multiple Parallel Boot Operations.")
     void multipleParallelBootOperation();
+
+    @Message(id = 518, value = "Resource /extension=%s uses a non-canonical module name; use the canonical form %s. " +
+            "The canonical representation includes slot information in the module name only if the is slot is not 'main'.")
+    String nonCanonicalExtensionName(String nonCanonical, String canonical);
 }
