@@ -178,6 +178,6 @@ class FilePersistenceUtils {
         if ( !file.exists() || file.getParentFile() == null ){
             return false;
         }
-        return  file.getParentFile().canWrite();
+        return Files.isWritable(file.getParentFile().toPath());
     }
 }
