@@ -5,6 +5,8 @@
 
 package org.wildfly.extension.security.manager;
 
+import static org.wildfly.extension.security.manager.SecurityManagerExtension.DEPRECATED_SINCE;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +31,7 @@ class SecurityManagerRootDefinition extends PersistentResourceDefinition {
     private SecurityManagerRootDefinition() {
         super (SecurityManagerExtension.SUBSYSTEM_PATH, SecurityManagerExtension.getResolver(),
                 SecurityManagerSubsystemAdd.INSTANCE, ReloadRequiredRemoveStepHandler.INSTANCE);
+        setDeprecated(DEPRECATED_SINCE);
     }
 
     @Override
