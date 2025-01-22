@@ -106,6 +106,7 @@ public final class BootableJar implements ShutdownHandler {
     private final Arguments arguments;
     private final ModuleLoader loader;
     private final Path pidFile;
+    private final Path cleanupMarker;
 
     private BootableJar(BootableEnvironment environment, Arguments arguments, ModuleLoader loader, long unzipTime) throws Exception {
         this.environment = environment;
@@ -123,6 +124,7 @@ public final class BootableJar implements ShutdownHandler {
 
         log.advertiseInstall(environment.getJBossHome(), unzipTime + (System.currentTimeMillis() - t));
         pidFile = environment.getPidFile();
+        cleanupMarker = environment.getJBossHome().resolve("wildfly-cleanup-marker");
     }
 
     @Override
@@ -442,20 +444,26 @@ public final class BootableJar implements ShutdownHandler {
                 thread.setName("installation-cleaner");
                 return thread;
             });
-            final InstallationCleaner cleaner = new InstallationCleaner(environment, log);
-            executor.submit(cleaner);
             if (Files.exists(pidFile)) {
                 waitForShutdown();
             }
+            // We create this marker file synchronously
+            try {
+                Files.createFile(cleanupMarker);
+            } catch(IOException ex) {
+                log.cantCreate(pidFile.toString(), ex);
+            }
+            final InstallationCleaner cleaner = new InstallationCleaner(environment, log, cleanupMarker);
+            executor.submit(cleaner);
             executor.shutdown();
             try {
                 if (!executor.awaitTermination(environment.getTimeout(), TimeUnit.SECONDS)) {
                     // For some reason we've timed out. The deletion should likely be executing.
-                    // We can't start a new cleanup to force it. On Windows we would have the side effect to have 2 cleaner processes to
-                    // be executed, with the risk that a new installation has been installed and the new cleaner cleaning the new installation
                     log.cleanupTimeout(environment.getTimeout(), environment.getJBossHome());
+                    // This cleanup only runs if marker still exists and the directory is not deleted by an external process.
+                    cleaner.cleanupTimeout();
                 }
-            } catch (InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
                 // The task has been interrupted, leaving
                 log.cleanupTimeout(environment.getTimeout(), environment.getJBossHome());
             }
