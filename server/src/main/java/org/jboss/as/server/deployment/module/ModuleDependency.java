@@ -134,9 +134,6 @@ public final class ModuleDependency implements Serializable {
     private final boolean userSpecified;
     private final String reason;
 
-    // NOTE: this constructor isn't deprecated because it's used in over 100 places, and perhaps 40+ more if
-    // the uses of the equivalent constructor taking ModuleIdentifier make a simple switch to this. Changing all that
-    // code to use the builder just to clear a deprecation warning is a simple way to introduce bugs.
     /**
      * Construct a new instance.
      *
@@ -146,7 +143,10 @@ public final class ModuleDependency implements Serializable {
      * @param export {@code true} if resources should be exported by default
      * @param importServices {@code true} if the dependent module should be able to load services from the dependency
      * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
+     *
+     * @deprecated Use a {@link Builder}
      */
+    @Deprecated(forRemoval = true)
     public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
         this(moduleLoader, ModuleIdentifierUtil.canonicalModuleIdentifier(identifier), null, optional, export, importServices, userSpecified);
     }
