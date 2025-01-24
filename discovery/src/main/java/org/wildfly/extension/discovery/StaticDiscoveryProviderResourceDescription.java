@@ -6,8 +6,8 @@
 package org.wildfly.extension.discovery;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
@@ -26,16 +26,15 @@ import org.jboss.dmr.ModelType;
 import org.wildfly.discovery.AttributeValue;
 import org.wildfly.discovery.ServiceURL;
 import org.wildfly.discovery.impl.StaticDiscoveryProvider;
-import org.wildfly.subsystem.resource.ResourceDescriptor;
-import org.wildfly.subsystem.service.ResourceServiceInstaller;
-import org.wildfly.subsystem.service.capability.CapabilityServiceInstaller;
+import org.wildfly.discovery.spi.DiscoveryProvider;
+import org.wildfly.subsystem.service.ServiceDependency;
 
 /**
- * Registers the static discovery provider resource definition.
+ * Describes an aggregate discovery provider resource.
  * @author Paul Ferraro
  */
-public class StaticDiscoveryProviderRegistrar extends DiscoveryProviderRegistrar {
-    static final PathElement PATH = PathElement.pathElement("static-provider");
+public enum StaticDiscoveryProviderResourceDescription implements DiscoveryProviderResourceDescription {
+    INSTANCE;
 
     private static final SimpleAttributeDefinition ABSTRACT_TYPE = new SimpleAttributeDefinitionBuilder("abstract-type", ModelType.STRING, true).setAllowExpression(true).build();
     private static final SimpleAttributeDefinition ABSTRACT_TYPE_AUTHORITY = new SimpleAttributeDefinitionBuilder("abstract-type-authority", ModelType.STRING, true).setAllowExpression(true).build();
@@ -67,14 +66,20 @@ public class StaticDiscoveryProviderRegistrar extends DiscoveryProviderRegistrar
             .setFlags(Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final Collection<AttributeDefinition> ATTRIBUTES = List.of(SERVICES);
+    private final PathElement path = PathElement.pathElement("static-provider");
 
-    StaticDiscoveryProviderRegistrar() {
-        super(PATH, ResourceDescriptor.builder(DiscoverySubsystemRegistrar.RESOLVER.createChildResolver(PATH)).addAttributes(ATTRIBUTES));
+    @Override
+    public PathElement getPathElement() {
+        return this.path;
     }
 
     @Override
-    public ResourceServiceInstaller configure(OperationContext context, ModelNode model) throws OperationFailedException {
+    public Stream<AttributeDefinition> getAttributes() {
+        return Stream.of(SERVICES);
+    }
+
+    @Override
+    public ServiceDependency<DiscoveryProvider> resolve(OperationContext context, ModelNode model) throws OperationFailedException {
         List<ModelNode> services = SERVICES.resolveModelAttribute(context, model).asListOrEmpty();
         List<ServiceURL> serviceURLs = new ArrayList<>(services.size());
         for (ModelNode service : services) {
@@ -105,6 +110,6 @@ public class StaticDiscoveryProviderRegistrar extends DiscoveryProviderRegistrar
             Messages.log.tracef("Adding service URL %s", serviceURL);
             serviceURLs.add(serviceURL);
         }
-        return CapabilityServiceInstaller.builder(DiscoveryProviderRegistrar.DISCOVERY_PROVIDER_CAPABILITY, new StaticDiscoveryProvider(serviceURLs)).build();
+        return ServiceDependency.of(new StaticDiscoveryProvider(serviceURLs));
     }
 }

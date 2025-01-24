@@ -21,7 +21,9 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
+ * @deprecated Superseded by org.wildfly.subsystem.SubsystemPersistence
  */
+@Deprecated(forRemoval = true)
 public abstract class PersistentResourceXMLParser implements XMLStreamConstants, XMLElementReader<List<ModelNode>>, XMLElementWriter<SubsystemMarshallingContext>, UnaryOperator<PersistentResourceXMLDescription> {
 
     private final AtomicReference<PersistentResourceXMLDescription> cachedDescription = new AtomicReference<>();
