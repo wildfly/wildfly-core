@@ -188,14 +188,6 @@ public final class Attachments {
     /**
      * A list of modules for which annotation indexes should be prepared (or, in later phases, have been prepared).
      *
-     * @deprecated use {@link #ADDITIONAL_INDEX_MODULES}
-     */
-    @Deprecated(forRemoval = true)
-    public static final AttachmentKey<AttachmentList<ModuleIdentifier>> ADDITIONAL_ANNOTATION_INDEXES = AttachmentKey.createList(ModuleIdentifier.class);
-
-    /**
-     * A list of modules for which annotation indexes should be prepared (or, in later phases, have been prepared).
-     *
      */
     public static final AttachmentKey<AttachmentList<String>> ADDITIONAL_INDEX_MODULES = AttachmentKey.createList(String.class);
 

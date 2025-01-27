@@ -29,7 +29,6 @@ import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleRootMarker;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.jandex.Index;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 
 /**
@@ -58,13 +57,6 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
             additionalModuleSpecificationMap.put(i.getModuleName(), i);
         }
 
-        // Until we remove ADDITIONAL_ANNOTATION_INDEXES, pick up any index modules added by the full WF ee subsystem
-        // and store them in the ADDITIONAL_INDEX_MODULES list. Use addToAttachmentList to ensure the
-        // ADDITIONAL_INDEX_MODULES key gets initialized to an AttachmentList, in case it hasn't already been.
-        for (ModuleIdentifier mi: deploymentUnit.getAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES)) {
-            deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_INDEX_MODULES, mi.toString());
-        }
-        // Now we can use the ADDITIONAL_INDEX_MODULES list.
         final List<String> additionalModuleIndexes = deploymentUnit.getAttachmentList(Attachments.ADDITIONAL_INDEX_MODULES);
 
         Map<String, CompositeIndex> additionalAnnotationIndexes = new HashMap<>();
