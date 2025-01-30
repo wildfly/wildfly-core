@@ -18,6 +18,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CONFIG_AS_XML_FILE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CONFIG_AS_XML_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD_ENHANCED;
@@ -46,6 +47,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.List;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -363,7 +365,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
     }
 
     private static ModelNode readAttribute(ManagementInterface client, String address, String attributeName,
-            Outcome expectedOutcome) throws IOException {
+                                           Outcome expectedOutcome) throws IOException {
         ModelNode op = createOpNode(address, READ_ATTRIBUTE_OPERATION);
         op.get(NAME).set(attributeName);
 
@@ -492,8 +494,13 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
     }
 
     private static void reloadEnhancedUnauthorized(ManagementInterface client) throws IOException {
-        ModelNode op = Util.createEmptyOperation(RELOAD_ENHANCED, PathAddress.EMPTY_ADDRESS);
-        RbacUtil.executeOperation(client, op, Outcome.UNAUTHORIZED);
+        ModelNode opNames = Util.createEmptyOperation(READ_OPERATION_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS);
+        List<ModelNode> ops  = RbacUtil.executeOperation(client, opNames, Outcome.SUCCESS)
+                .get(RESULT).asList();
+        if (ops.contains(new ModelNode(RELOAD_ENHANCED))) {
+            ModelNode op = Util.createEmptyOperation(RELOAD_ENHANCED, PathAddress.EMPTY_ADDRESS);
+            RbacUtil.executeOperation(client, op, Outcome.UNAUTHORIZED);
+        }
     }
 
 }
