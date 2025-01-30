@@ -185,7 +185,7 @@ public class ConfigurationFile {
         this.configurationExtension = configurationExtension;
         this.interactionPolicy = interactionPolicy == null ? InteractionPolicy.STANDARD : interactionPolicy;
         // If we are in a read only policy and the configurationDir cannot be written, then we use the tmpDir for temporal files and history
-        this.historyRoot = new File(tmpDir != null && this.interactionPolicy.isReadOnly() && !configurationDir.canWrite() ? tmpDir : configurationDir,
+        this.historyRoot = new File(tmpDir != null && this.interactionPolicy.isReadOnly() && !Files.isWritable(configurationDir.toPath())? tmpDir : configurationDir,
                 rawName.replace('.', '_') + "_history");
         this.currentHistory = new File(historyRoot, "current");
         this.snapshotsDirectory = new File(historyRoot, "snapshot");
