@@ -6,11 +6,13 @@
 package org.jboss.as.server.operations;
 
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.SUSPEND_TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.renameTimeoutToSuspendTimeout;
 
+import java.util.EnumSet;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -20,7 +22,10 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.access.Action;
+import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.suspend.ServerSuspendController;
@@ -57,7 +62,13 @@ public class ServerSuspendHandler implements OperationStepHandler {
 
         context.addStep(new OperationStepHandler() {
             @Override
-            public void execute(final OperationContext context, ModelNode operation) throws OperationFailedException {
+            public void execute(final OperationContext context, ModelNode operation) {
+                AuthorizationResult authorizationResult = context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
+                if (authorizationResult.getDecision() == AuthorizationResult.Decision.DENY) {
+                    throw ControllerLogger.ACCESS_LOGGER.unauthorized(operation.get(OP).asString(),
+                            context.getCurrentAddress(), authorizationResult.getExplanation());
+                }
+
                 final ServerSuspendController suspendController = ServerSuspendHandler.this.suspendController;
                 ServerLogger.ROOT_LOGGER.suspendingServer(seconds, TimeUnit.SECONDS);
                 CompletableFuture<Void> suspend = suspendController.suspend(ServerSuspendController.Context.RUNNING).toCompletableFuture();
