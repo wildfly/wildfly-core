@@ -196,8 +196,8 @@
         <version.org.apache.httpcomponents.httpclient>4.5.14</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.16</version.org.apache.httpcomponents.httpcore>
         <version.org.apache.logging.log4j>2.23.1</version.org.apache.logging.log4j>
-        <version.org.apache.maven.provider>3.5.4</version.org.apache.maven.provider>
-        <version.org.apache.maven.resolver>1.1.1</version.org.apache.maven.resolver>
+        <version.org.apache.maven.provider>3.9.9</version.org.apache.maven.provider>
+        <version.org.apache.maven.resolver>1.9.22</version.org.apache.maven.resolver>
         <version.org.apache.sshd>2.14.0</version.org.apache.sshd>
         <version.org.apache.velocity>2.3</version.org.apache.velocity>
         <version.org.bouncycastle>1.79</version.org.bouncycastle>
