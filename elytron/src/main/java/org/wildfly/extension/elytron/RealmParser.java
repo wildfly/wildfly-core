@@ -112,6 +112,9 @@ class RealmParser {
     private final PersistentResourceXMLDescription tokenRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM))
             .addAttributes(TokenRealmDefinition.ATTRIBUTES)
             .build();
+    private final PersistentResourceXMLDescription tokenRealmParserPreview_18_0 = builder(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM))
+            .addAttributes(TokenRealmDefinition.ATTRIBUTES)
+            .build();
     private final PersistentResourceXMLDescription cachingRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.CACHING_REALM))
             .addAttributes(CachingRealmDefinition.ATTRIBUTES)
             .build();
@@ -266,6 +269,23 @@ class RealmParser {
             .addChild(ldapRealmParser)
             .addChild(filesystemRealmParser_16)
             .addChild(tokenRealmParser)
+            .addChild(cachingRealmParser)
+            .addChild(distributedRealmParser_18)
+            .addChild(failoverRealmParser)
+            .addChild(jaasRealmParser)
+            .build();
+
+    final PersistentResourceXMLDescription realmParserPreview_18_0 = decorator(ElytronDescriptionConstants.SECURITY_REALMS)
+            .addChild(aggregateRealmParser_8_0)
+            .addChild(customRealmParser)
+            .addChild(customModifiableRealmParser)
+            .addChild(identityRealmParser)
+            .addChild(jdbcRealmParser_14_0)
+            .addChild(keyStoreRealmParser)
+            .addChild(propertiesRealmParser_14_0)
+            .addChild(ldapRealmParser)
+            .addChild(filesystemRealmParser_16)
+            .addChild(tokenRealmParserPreview_18_0)
             .addChild(cachingRealmParser)
             .addChild(distributedRealmParser_18)
             .addChild(failoverRealmParser)
