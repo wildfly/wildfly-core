@@ -1,0 +1,51 @@
+/*
+ * Copyright The WildFly Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+package org.jboss.as.controller.persistence.xml;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.jboss.as.controller.FeatureFilter;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.xml.QNameResolver;
+import org.jboss.as.controller.xml.XMLCardinality;
+import org.jboss.as.controller.xml.XMLChoice;
+import org.jboss.dmr.ModelNode;
+
+/**
+ * Encapsulates a group of XML particles for a subsystem resource using xs:choice (i.e. one of) semantics.
+ * @author Paul Ferraro
+ */
+public interface ResourceModelXMLChoice extends ResourceXMLParticleGroup, XMLChoice<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>, ModelNode> {
+
+    interface Builder extends ResourceXMLParticleGroup.Builder<ResourceModelXMLChoice, Builder>, XMLChoice.Builder<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>, ModelNode> {
+    }
+
+    class DefaultBuilder extends ResourceXMLParticleGroup.AbstractBuilder<ResourceModelXMLChoice, Builder> implements Builder {
+
+        DefaultBuilder(FeatureFilter filter, QNameResolver resolver) {
+            super(filter, resolver, AttributeDefinitionXMLConfiguration.of(resolver));
+        }
+
+        @Override
+        public ResourceModelXMLChoice build() {
+            return new DefaultResourceContentXMLChoice(this.getChoices(), this.getCardinality());
+        }
+
+        @Override
+        protected Builder builder() {
+            return this;
+        }
+    }
+
+    class DefaultResourceContentXMLChoice extends XMLChoice.DefaultXMLChoice<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>, ModelNode> implements ResourceModelXMLChoice {
+
+        DefaultResourceContentXMLChoice(Collection<XMLChoice<Entry<PathAddress, Map<PathAddress, ModelNode>>, ModelNode>> choices, XMLCardinality cardinality) {
+            super(choices, cardinality);
+        }
+    }
+}
