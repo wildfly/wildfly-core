@@ -17,7 +17,9 @@ import org.wildfly.common.function.Functions;
 /**
  * An {@link XMLElementWriter} based on a {@link PersistentResourceXMLDescription}.
  * @author Paul Ferraro
+ * @deprecated Superseded by {@link org.jboss.as.controller.persistence.xml.SubsystemResourceXMLElementWriter}.
  */
+@Deprecated(forRemoval = true)
 public class PersistentResourceXMLDescriptionWriter implements XMLElementWriter<SubsystemMarshallingContext> {
     private final Supplier<PersistentResourceXMLDescription> description;
 
@@ -47,9 +49,10 @@ public class PersistentResourceXMLDescriptionWriter implements XMLElementWriter<
 
     @Override
     public void writeContent(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
+        ModelNode subsystemModel = context.getModelNode();
         PersistentResourceXMLDescription description = this.description.get();
         ModelNode model = new ModelNode();
-        model.get(description.getPathElement().getKeyValuePair()).set(context.getModelNode());
+        model.get(description.getPathElement().getKeyValuePair()).set(subsystemModel.isDefined() ? subsystemModel : new ModelNode().setEmptyObject());
         description.persist(writer, model);
     }
 }
