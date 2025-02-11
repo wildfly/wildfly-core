@@ -10,6 +10,7 @@ import java.util.function.Function;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.SubsystemModel;
+import org.jboss.as.controller.SubsystemResourceRegistration;
 import org.jboss.as.controller.transform.description.TransformationDescription;
 
 /**
@@ -20,6 +21,10 @@ public class SubsystemExtensionTransformerRegistration implements ExtensionTrans
     private final String name;
     private final Iterable<? extends SubsystemModel> legacyModels;
     private final Function<ModelVersion, TransformationDescription> factory;
+
+    protected <E extends Enum<E> & SubsystemModel> SubsystemExtensionTransformerRegistration(SubsystemResourceRegistration description, E currentModel, Function<ModelVersion, TransformationDescription> factory) {
+        this(description.getName(), currentModel, factory);
+    }
 
     protected <E extends Enum<E> & SubsystemModel> SubsystemExtensionTransformerRegistration(String name, E currentModel, Function<ModelVersion, TransformationDescription> factory) {
         this.name = name;

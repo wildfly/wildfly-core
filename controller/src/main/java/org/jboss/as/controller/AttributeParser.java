@@ -7,11 +7,13 @@ package org.jboss.as.controller;
 
 
 import java.util.Collections;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
+import org.jboss.as.controller.xml.XMLCardinality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
@@ -94,6 +96,15 @@ public abstract class AttributeParser {
 
     public String getXmlName(final AttributeDefinition attribute){
         return attribute.getXmlName();
+    }
+
+    /**
+     * Returns the cardinality of the XML particle for the specified attribute.
+     * @param attribute an attribute definition
+     * @return the cardinality of the XML particle for the specified attribute.
+     */
+    public XMLCardinality getCardinality(AttributeDefinition attribute) {
+        return this.isParseAsElement() ? (attribute.isNillable() ? XMLCardinality.Single.OPTIONAL : XMLCardinality.Single.REQUIRED) : XMLCardinality.DISABLED;
     }
 
     public static final AttributeParser SIMPLE = new AttributeParser() {

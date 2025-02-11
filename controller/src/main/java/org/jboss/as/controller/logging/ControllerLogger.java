@@ -49,6 +49,8 @@ import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.xml.XMLCardinality;
+import org.jboss.as.controller.xml.XMLElement;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.logging.BasicLogger;
@@ -3813,4 +3815,45 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 518, value = "Resource /extension=%s uses a non-canonical module name; use the canonical form %s. " +
             "The canonical representation includes slot information in the module name only if the is slot is not 'main'.")
     String nonCanonicalExtensionName(String nonCanonical, String canonical);
+
+    @LogMessage(level = WARN)
+    @Message(id = 519, value = "Attribute '%2$s' of element '%1$s' is no longer supported and will be ignored")
+    void attributeIgnored(QName elementName, QName attributeName);
+
+    @LogMessage(level = WARN)
+    @Message(id = 520, value = "Element '%s' is no longer supported and will be ignored")
+    void elementIgnored(QName elementName);
+
+    @Message(id = 521, value = "Element '%s' already defines attribute: %s")
+    IllegalArgumentException duplicateAttributes(QName elementName, QName attributeName);
+
+    @Message(id = 522, value = "XML model group already defines element: %s")
+    IllegalArgumentException duplicateElements(QName elementName);
+
+    @Message(id = 523, value = "XML choice already defines resource: %s")
+    IllegalArgumentException duplicatePathElement(PathElement path);
+
+    @Message(id = 524, value = "Element(s) '%s' must occur at least %d time(s)")
+    String minOccursNotReached(Collection<QName> elements, int minOccurs);
+
+    @Message(id = 525, value = "Element(s) '%s' may not occur more than %d time(s)")
+    String maxOccursExceeded(Collection<QName> elements, int maxOccurs);
+
+    @Message(id = 526, value = "%s is not a valid wildcard path")
+    IllegalArgumentException nonWildcardPathNotAllowed(PathElement path);
+
+    @Message(id = 527, value = "%s is not a valid non-wildcard path")
+    IllegalArgumentException wildcardPathNotAllowed(PathElement path);
+
+    @Message(id = 528, value = "%s is not a valid subsystem resource path")
+    IllegalArgumentException invalidSubsystemPath(PathElement path);
+
+    @Message(id = 529, value = "%s is not a valid override path of %s")
+    IllegalArgumentException invalidOverridePath(PathElement path, PathElement wildcardPath);
+
+    @Message(id = 530, value = "Illegal cardinality: %s")
+    IllegalArgumentException illegalXMLCardinality(XMLCardinality cardinality);
+
+    @Message(id = 531, value = "Illegal cardinality for xs:all group member: %s")
+    IllegalArgumentException illegalXMLAllElementCardinality(XMLElement<?, ?> element);
 }
