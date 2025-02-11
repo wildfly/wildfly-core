@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
@@ -24,6 +25,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.xml.XMLCardinality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -629,5 +631,43 @@ public final class ParseUtils {
                                                         .element(reader.getName())
                                                         .alternatives(new HashSet<String>() {{add(supportedElement);}}),
                                                 ex);
+    }
+
+    /**
+     * Creates an exception reporting that a given element did not appear a sufficient number of times.
+     * @param reader the stream reader
+     * @param elementName the element name
+     * @return a validation exception
+     */
+    public static XMLStreamException minOccursNotReached(XMLExtendedStreamReader reader, Set<QName> choices, XMLCardinality cardinality) {
+        XMLStreamException e = new XMLStreamException(ControllerLogger.ROOT_LOGGER.minOccursNotReached(choices, cardinality.getMinOccurs()), reader.getLocation());
+        return createValidationException(e, ErrorType.REQUIRED_ELEMENT_MISSING, choices);
+    }
+
+    /**
+     * Creates an exception reporting that a given element appeared too many times.
+     * @param reader the stream reader
+     * @param elementName the element name
+     * @return a validation exception
+     */
+    public static XMLStreamException maxOccursExceeded(XMLExtendedStreamReader reader, Set<QName> choices, XMLCardinality cardinality) {
+        XMLStreamException e = new XMLStreamException(ControllerLogger.ROOT_LOGGER.maxOccursExceeded(choices, cardinality.getMaxOccurs().orElse(Integer.MAX_VALUE)), reader.getLocation());
+        return createValidationException(e, ErrorType.DUPLICATE_ELEMENT, choices);
+    }
+
+    private static XMLStreamValidationException createValidationException(XMLStreamException e, ErrorType type, Set<QName> choices) {
+        ValidationError error = ValidationError.from(e, type);
+        Iterator<QName> names = choices.iterator();
+        if (names.hasNext()) {
+            error.element(names.next());
+        }
+        if (names.hasNext()) {
+            Set<String> alternatives = new TreeSet<>();
+            do {
+                alternatives.add(names.next().getLocalPart());
+            } while (names.hasNext());
+            error.alternatives(alternatives);
+        }
+        return new XMLStreamValidationException(e.getMessage(), error, e);
     }
 }
