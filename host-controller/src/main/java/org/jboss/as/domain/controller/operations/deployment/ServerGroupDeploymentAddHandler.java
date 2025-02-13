@@ -27,6 +27,7 @@ import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.server.deployment.ModelContentReference;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
 
 /**
  * Handles addition of a deployment to a server group.
@@ -39,6 +40,7 @@ public class ServerGroupDeploymentAddHandler implements OperationStepHandler {
 
     private final HostFileRepository fileRepository;
     private final ContentRepository contentRepository;
+    private static final Logger logger = Logger.getLogger("org.jboss.as.domain.controller.operations.deployment");
 
     public ServerGroupDeploymentAddHandler(final HostFileRepository fileRepository, ContentRepository contentRepository) {
         this.fileRepository = fileRepository;
@@ -94,6 +96,9 @@ public class ServerGroupDeploymentAddHandler implements OperationStepHandler {
             Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
             ModelNode domainDeployment = root.getChild(PathElement.pathElement(DEPLOYMENT, deploymentName)).getModel();
             String runtimeName = getRuntimeName(deploymentName, deployment, domainDeployment);
+            if (!runtimeName.contains(".")) {
+                logger.warnf("Deployment '%s' has a runtime name '%s' without an extension. This may cause issues in some environments.", deploymentName, runtimeName);
+            }
             PathAddress sgAddress = address.subAddress(0, address.size() - 1);
             Resource serverGroup = root.navigate(sgAddress);
             for (Resource.ResourceEntry re : serverGroup.getChildren(DEPLOYMENT)) {
