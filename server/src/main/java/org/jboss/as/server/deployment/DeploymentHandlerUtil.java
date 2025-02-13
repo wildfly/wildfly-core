@@ -16,6 +16,7 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNE
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getInputStream;
+import static org.jboss.as.server.logging.ServerLogger.DEPLOYMENT_NAMECHECK_LOGGER;
 import static org.jboss.msc.service.ServiceController.Mode.REMOVE;
 
 import java.io.IOException;
@@ -142,6 +143,9 @@ public class DeploymentHandlerUtil {
 
             context.addStep(new OperationStepHandler() {
                 public void execute(OperationContext context, ModelNode operation) {
+                    if (!deploymentUnitName.contains(".")) {
+                        DEPLOYMENT_NAMECHECK_LOGGER.deploymentsRuntimeNameWithoutExtension(managementName, deploymentUnitName);
+                    }
                     final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(deploymentUnitName);
                     final ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
                     final ServiceController<?> deploymentController = serviceRegistry.getService(deploymentUnitServiceName);
@@ -242,6 +246,9 @@ public class DeploymentHandlerUtil {
 
             context.addStep(new OperationStepHandler() {
                 public void execute(final OperationContext context, ModelNode operation) throws OperationFailedException {
+                    if (!deploymentUnitName.contains(".")) {
+                        DEPLOYMENT_NAMECHECK_LOGGER.deploymentsRuntimeNameWithoutExtension(managementName, deploymentUnitName);
+                    }
                     final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(deploymentUnitName);
                     context.removeService(deploymentUnitServiceName);
                     context.removeService(deploymentUnitServiceName.append("contents"));
@@ -303,6 +310,9 @@ public class DeploymentHandlerUtil {
 
             context.addStep(new OperationStepHandler() {
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    if (!deploymentUnitName.contains(".")) {
+                        DEPLOYMENT_NAMECHECK_LOGGER.deploymentsRuntimeNameWithoutExtension(managementName, deploymentUnitName);
+                    }
                     final ServiceName replacedDeploymentUnitServiceName = Services.deploymentUnitName(replacedDeploymentUnitName);
                     final ServiceName replacedContentsServiceName = replacedDeploymentUnitServiceName.append("contents");
                     context.removeService(replacedContentsServiceName);

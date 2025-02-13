@@ -8,6 +8,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.domain.controller.logging.DomainControllerLogger.DEPLOYMENT_NAMECHECK_LOGGER;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME_NILLABLE;
@@ -94,6 +95,9 @@ public class ServerGroupDeploymentAddHandler implements OperationStepHandler {
             Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
             ModelNode domainDeployment = root.getChild(PathElement.pathElement(DEPLOYMENT, deploymentName)).getModel();
             String runtimeName = getRuntimeName(deploymentName, deployment, domainDeployment);
+            if (!runtimeName.contains(".")) {
+                DEPLOYMENT_NAMECHECK_LOGGER.deploymentsRuntimeNameWithoutExtension(deploymentName, runtimeName);
+            }
             PathAddress sgAddress = address.subAddress(0, address.size() - 1);
             Resource serverGroup = root.navigate(sgAddress);
             for (Resource.ResourceEntry re : serverGroup.getChildren(DEPLOYMENT)) {

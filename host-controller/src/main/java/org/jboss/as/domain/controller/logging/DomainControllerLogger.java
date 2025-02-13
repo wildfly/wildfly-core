@@ -56,6 +56,12 @@ public interface DomainControllerLogger extends BasicLogger {
      */
     DomainControllerLogger HOST_CONTROLLER_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), DomainControllerLogger.class, "org.jboss.as.host.controller");
 
+    /**
+     * A logger with the category of {@code org.jboss.as.domain.controller.operations.deployment.runtime.namecheck}.
+     * <strong>Usage:</strong> Use this in case deployment's runtime name is missing an extension
+     */
+    DomainControllerLogger DEPLOYMENT_NAMECHECK_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), DomainControllerLogger.class, "org.jboss.as.domain.controller.operations.deployment.runtime.namecheck");
+
     @LogMessage(level = Level.WARN)
     @Message(id = 1, value = "Ignoring 'include' child of 'socket-binding-group' %s")
     void warnIgnoringSocketBindingGroupInclude(Location location);
@@ -789,4 +795,8 @@ public interface DomainControllerLogger extends BasicLogger {
 
     @Message(id = 98, value = "The following servers %s are starting; execution of remote management operations is not currently available")
     OperationFailedException serverManagementUnavailableDuringBoot(String serverNames);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 99, value = "Deployment '%s' has a runtime name '%s' without an extension. This may cause issues in some environments.")
+    void deploymentsRuntimeNameWithoutExtension(String deploymentName, String runtimeName);
 }
