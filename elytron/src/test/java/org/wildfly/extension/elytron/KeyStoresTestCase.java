@@ -47,7 +47,9 @@ import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -380,6 +382,20 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         X509Certificate certCa = (X509Certificate) keyStore.getCertificate("ca");
         assertEquals("O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA", certCa.getSubjectDN().getName());
         assertEquals("ca", keyStore.getCertificateAlias(certCa));
+    }
+
+    @Test
+    public void testChangeCredentialReferenceToClearText() {
+        PathAddress keystoreAddress = PathAddress.pathAddress("subsystem", "elytron").append(ElytronDescriptionConstants.KEY_STORE, "LocalhostKeystore");
+
+        ModelNode credentialReference = new ModelNode();
+        credentialReference.get(CredentialReference.CLEAR_TEXT).set("StorePassword");
+
+        ModelNode operation = Util.getWriteAttributeOperation(keystoreAddress, CredentialReference.CREDENTIAL_REFERENCE, credentialReference);
+        assertSuccess(services.executeOperation(operation));
+
+        ModelNode resource = services.executeOperation(Util.getReadResourceOperation(keystoreAddress)).get(ClientConstants.RESULT);
+        assertEquals("StorePassword", resource.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).asString());
     }
 
     @Test

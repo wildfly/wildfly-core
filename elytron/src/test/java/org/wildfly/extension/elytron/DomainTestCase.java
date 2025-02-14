@@ -6,6 +6,7 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.junit.Assert.assertTrue;
 import static org.wildfly.security.authz.RoleDecoder.KEY_SOURCE_ADDRESS;
 
 import java.io.FilePermission;
@@ -509,6 +510,17 @@ public class DomainTestCase extends AbstractSubsystemTest {
         sac.addRuntimeAttributes(createRuntimeAttributes("10.12.16.16"));
         sac.setAuthenticationName("user1");
         Assert.assertTrue(sac.authorize());
+    }
+
+    @Test
+    public void testWriteAttributeInvalidSecurityEventListerner() throws Exception {
+        init();
+        PathAddress secutiryDomainAddress = PathAddress.pathAddress("subsystem", "elytron").append(ElytronDescriptionConstants.SECURITY_DOMAIN, "MyDomain");
+        ModelNode operation = Util.getWriteAttributeOperation(secutiryDomainAddress, ElytronDescriptionConstants.SECURITY_EVENT_LISTENER, "invalid");
+        ModelNode result = services.executeOperation(operation);
+
+        assertFail(result);
+        assertTrue(result.get(ClientConstants.FAILURE_DESCRIPTION).asString().contains("WFLYCTL0369:"));
     }
 
     public static class MyPermissionMapper implements PermissionMapper {
