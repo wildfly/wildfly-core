@@ -40,7 +40,7 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemTest {
     private final ModelVersion version;
 
     public IOSubsystemTransformerTestCase(ModelTestControllerVersion controller) {
-        super(IOSubsystemRegistrar.NAME, new IOExtension());
+        super(IOSubsystemResourceRegistrar.INSTANCE.getName(), new IOExtension());
         this.controller = controller;
         this.version = this.getModelVersion().getVersion();
         this.additionalInitialization = AdditionalInitialization.MANAGEMENT;
@@ -129,10 +129,10 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemTest {
 
     private FailedOperationTransformationConfig createFailedOperationTransformationConfig() {
         FailedOperationTransformationConfig config = new FailedOperationTransformationConfig();
-        PathAddress subsystemAddress = PathAddress.pathAddress(IOSubsystemRegistrar.PATH);
+        PathAddress subsystemAddress = PathAddress.pathAddress(IOSubsystemResourceRegistrar.INSTANCE.getPathElement());
 
         if (IOSubsystemModel.VERSION_6_0_0.requiresTransformation(this.version)) {
-            config.addFailedAttribute(subsystemAddress, new FailedOperationTransformationConfig.NewAttributesConfig(IOSubsystemRegistrar.DEFAULT_WORKER.getName()));
+            config.addFailedAttribute(subsystemAddress, new FailedOperationTransformationConfig.NewAttributesConfig(IOSubsystemResourceRegistrar.DEFAULT_WORKER.getName()));
         }
 
         return config;

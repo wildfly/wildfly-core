@@ -14,6 +14,6 @@ import org.jboss.as.controller.transform.SubsystemExtensionTransformerRegistrati
 public class DiscoveryExtensionTransformerRegistration extends SubsystemExtensionTransformerRegistration {
 
     public DiscoveryExtensionTransformerRegistration() {
-        super(DiscoverySubsystemRegistrar.NAME, DiscoverySubsystemModel.CURRENT, DiscoverySubsystemTransformationDescriptionFactory.INSTANCE);
+        super(DiscoverySubsystemResourceRegistrar.INSTANCE, DiscoverySubsystemModel.CURRENT, DiscoverySubsystemTransformationDescriptionFactory.INSTANCE);
     }
 }
