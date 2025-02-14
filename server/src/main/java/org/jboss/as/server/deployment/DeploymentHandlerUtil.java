@@ -49,6 +49,7 @@ import org.jboss.as.server.deployment.transformation.DeploymentTransformer;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
 import org.jboss.msc.service.LifecycleEvent;
 import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.ServiceBuilder;
@@ -69,6 +70,7 @@ import org.jboss.vfs.VirtualFile;
 public class DeploymentHandlerUtil {
 
     private static final OperationContext.AttachmentKey<AnnotationIndexSupport> ANNOTATION_INDEX_SUPPORT = OperationContext.AttachmentKey.create(AnnotationIndexSupport.class);
+    private static final Logger logger = Logger.getLogger("org.jboss.as.server.deployment");
 
     static class ContentItem {
         // either hash or <path, relativeTo, isArchive>
@@ -142,6 +144,9 @@ public class DeploymentHandlerUtil {
 
             context.addStep(new OperationStepHandler() {
                 public void execute(OperationContext context, ModelNode operation) {
+                    if (!deploymentUnitName.contains(".")) {
+                        logger.warnf("Deployment '%s' has a runtime name '%s' without an extension. This may cause issues in some environments.", managementName, deploymentUnitName);
+                    }
                     final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(deploymentUnitName);
                     final ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
                     final ServiceController<?> deploymentController = serviceRegistry.getService(deploymentUnitServiceName);
