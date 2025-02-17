@@ -761,7 +761,8 @@ public class ServerInventoryImpl implements ServerInventory {
     private ManagedServerBootCmdFactory createBootFactory(final String serverName, final ModelNode domainModel, boolean suspend) {
         final String hostControllerName = domainController.getLocalHostInfo().getLocalHostName();
         final ModelNode hostModel = domainModel.require(HOST).require(hostControllerName);
-        return new ManagedServerBootCmdFactory(serverName, domainModel, hostModel, environment, domainController.getExpressionResolver(), suspend);
+        return new ManagedServerBootCmdFactory(serverName, domainModel, hostModel, environment,
+                domainController.getExpressionResolver(), domainController.getCapabilityRegistry(), suspend);
     }
 
     private ModelNode appendServerNameToFailureResponse(String serverName, ModelNode failureResponse) {
