@@ -119,7 +119,7 @@ public class DeploymentHandlerUtil {
                     ModelNode deploymentModel = deployment.getModel();
                     if(deploymentUnitName.equals(DeploymentAttributes.RUNTIME_NAME.resolveModelAttribute(context, deploymentModel).asString())
                             && DeploymentAttributes.ENABLED.resolveModelAttribute(context, deploymentModel).asBoolean()) {
-                        throw ServerLogger.ROOT_LOGGER.runtimeNameMustBeUnique(managementName, deploymentUnitName);
+                        throw ServerLogger.ROOT_LOGGER.runtimeNameMustBeUnique(deployment.getName(), deploymentUnitName, managementName);
                     }
                 }
             }
