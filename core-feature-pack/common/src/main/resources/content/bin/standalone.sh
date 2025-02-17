@@ -253,7 +253,7 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
     if [ "$GC_LOG" = "true" ]; then
         # Enable rotating GC logs if the JVM supports it and GC logs are not already enabled
         mkdir -p $JBOSS_LOG_DIR
-        NO_GC_LOG_ROTATE=`echo $JAVA_OPTS | $GREP "\-Xlog\:\?gc"`
+        NO_GC_LOG_ROTATE=`echo $JAVA_OPTS | $GREP "\-Xlog:\?gc"`
         if [ "x$NO_GC_LOG_ROTATE" = "x" ]; then
             # backup prior gc logs
             mv -f "$JBOSS_LOG_DIR/gc.log" "$JBOSS_LOG_DIR/backupgc.log" >/dev/null 2>&1
