@@ -28,8 +28,9 @@ import java.util.Map;
 public enum CoreManagementSubsystemSchema implements PersistentSubsystemSchema<CoreManagementSubsystemSchema> {
 
     VERSION_1_0(1),
-    VERSION_1_0_PREVIEW(1, Stability.PREVIEW);
-    static final Map<Stability, CoreManagementSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_1_0, VERSION_1_0_PREVIEW));
+    VERSION_1_0_PREVIEW(1, Stability.PREVIEW),
+    VERSION_2_0_PREVIEW(2, Stability.PREVIEW);
+    static final Map<Stability, CoreManagementSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_1_0, VERSION_2_0_PREVIEW));
 
     private final VersionedNamespace<IntVersion, CoreManagementSubsystemSchema> namespace;
 
