@@ -17,6 +17,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
@@ -24,6 +26,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.xml.XMLCardinality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -89,13 +92,13 @@ public final class ParseUtils {
      * @param reader the stream reader
      * @return the exception
      */
-    public static XMLStreamException unexpectedElement(final XMLExtendedStreamReader reader, Set<String> possible) {
+    public static XMLStreamException unexpectedElement(final XMLExtendedStreamReader reader, Set<?> possible) {
         final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.unexpectedElement(reader.getName(), asStringList(possible), reader.getLocation());
 
         return new XMLStreamValidationException(ex.getMessage(),
                                                 ValidationError.from(ex, ErrorType.UNEXPECTED_ELEMENT)
                                                         .element(reader.getName())
-                                                        .alternatives(possible),
+                                                        .alternatives(possible.stream().map(Object::toString).collect(Collectors.toSet())),
                                                 ex);
     }
 
@@ -145,14 +148,14 @@ public final class ParseUtils {
      * @param possibleAttributes attributes that are expected on this element
      * @return the exception
      */
-    public static XMLStreamException unexpectedAttribute(final XMLExtendedStreamReader reader, final int index, Set<String> possibleAttributes) {
+    public static XMLStreamException unexpectedAttribute(final XMLExtendedStreamReader reader, final int index, Set<?> possibleAttributes) {
         final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.unexpectedAttribute(reader.getAttributeName(index), asStringList(possibleAttributes), reader.getLocation());
 
         return new XMLStreamValidationException(ex.getMessage(),
                                                 ValidationError.from(ex, ErrorType.UNEXPECTED_ATTRIBUTE)
                                                         .element(reader.getName())
                                                         .attribute(reader.getAttributeName(index))
-                                                        .alternatives(possibleAttributes),
+                                                        .alternatives(possibleAttributes.stream().map(Object::toString).collect(Collectors.toSet())),
                                                 ex);
     }
 
@@ -629,5 +632,43 @@ public final class ParseUtils {
                                                         .element(reader.getName())
                                                         .alternatives(new HashSet<String>() {{add(supportedElement);}}),
                                                 ex);
+    }
+
+    /**
+     * Creates an exception reporting that a given element(s) did not appear a sufficient number of times.
+     * @param reader the stream reader
+     * @param elementName the element name
+     * @return a validation exception
+     */
+    public static XMLStreamException minOccursNotReached(XMLExtendedStreamReader reader, Set<QName> names, XMLCardinality cardinality) {
+        XMLStreamException e = new XMLStreamException(ControllerLogger.ROOT_LOGGER.minOccursNotReached(names, cardinality.getMinOccurs()), reader.getLocation());
+        return createValidationException(e, ErrorType.REQUIRED_ELEMENT_MISSING, names);
+    }
+
+    /**
+     * Creates an exception reporting that a given element appeared too many times.
+     * @param reader the stream reader
+     * @param elementName the element name
+     * @return a validation exception
+     */
+    public static XMLStreamException maxOccursExceeded(XMLExtendedStreamReader reader, Set<QName> names, XMLCardinality cardinality) {
+        XMLStreamException e = new XMLStreamException(ControllerLogger.ROOT_LOGGER.maxOccursExceeded(names, cardinality.getMaxOccurs().orElse(Integer.MAX_VALUE)), reader.getLocation());
+        return createValidationException(e, ErrorType.DUPLICATE_ELEMENT, names);
+    }
+
+    private static XMLStreamValidationException createValidationException(XMLStreamException e, ErrorType type, Set<QName> elements) {
+        ValidationError error = ValidationError.from(e, type);
+        Iterator<QName> names = elements.iterator();
+        if (names.hasNext()) {
+            error.element(names.next());
+        }
+        if (names.hasNext()) {
+            Set<String> alternatives = new TreeSet<>();
+            do {
+                alternatives.add(names.next().getLocalPart());
+            } while (names.hasNext());
+            error.alternatives(alternatives);
+        }
+        return new XMLStreamValidationException(e.getMessage(), error, e);
     }
 }
