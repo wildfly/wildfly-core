@@ -29,6 +29,7 @@ public class EndpointService implements Service {
 
     protected final String endpointName;
     protected volatile Endpoint endpoint;
+    private final EndpointType type;
     protected final OptionMap optionMap;
     private final Consumer<Endpoint> endpointConsumer;
     private final Supplier<XnioWorker> workerSupplier;
@@ -40,6 +41,7 @@ public class EndpointService implements Service {
             nodeName = "remote";
         }
         endpointName = type == EndpointType.SUBSYSTEM ? nodeName : nodeName + ":" + type;
+        this.type = type;
         this.optionMap = optionMap;
     }
 
@@ -58,6 +60,9 @@ public class EndpointService implements Service {
         // Reuse the options for the remote connection factory for now
         this.endpoint = endpoint;
         endpointConsumer.accept(endpoint);
+        if (type == EndpointType.SUBSYSTEM) {
+            Endpoint.ENDPOINT_CONTEXT_MANAGER.setGlobalDefault(endpoint);
+        }
     }
 
     /** {@inheritDoc} */
@@ -72,6 +77,9 @@ public class EndpointService implements Service {
             endpoint.addCloseHandler((closed, exception) -> {
                 context.complete();
             });
+        }
+        if (type == EndpointType.SUBSYSTEM) {
+            Endpoint.ENDPOINT_CONTEXT_MANAGER.setGlobalDefault(null);
         }
     }
 
