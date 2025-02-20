@@ -164,7 +164,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
                     if (ENABLED.resolveModelAttribute(context, otherDepl).asBoolean()) {
                         String otherRuntimeName = getRuntimeName(reName, otherDepl);
                         if (runtimeName.equals(otherRuntimeName)) {
-                            throw ServerLogger.ROOT_LOGGER.runtimeNameMustBeUnique(reName, runtimeName);
+                            throw ServerLogger.ROOT_LOGGER.runtimeNameMustBeUnique(reName, runtimeName, deploymentName);
                         }
                     }
                 }

@@ -1075,8 +1075,8 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 204, value = "Null '%s'")
     OperationFailedException nullParameter(String name);
 
-    @Message(id = 205, value = "There is already a deployment called %s with the same runtime name %s")
-    OperationFailedException runtimeNameMustBeUnique(String existingDeployment, String runtimename);
+    @Message(id = 205, value = "Deployment '%s' is already ENABLED with the runtime name '%s'. Duplicate deployment '%s' will not be processed.")
+    OperationFailedException runtimeNameMustBeUnique(String existingDeployment, String runtimeName, String newDeployment);
 
     @Message(id = 206, value = "Multiple deployment unit processors registered with priority %s and class %s")
     IllegalStateException duplicateDeploymentUnitProcessor(int priority, Class aClass);
