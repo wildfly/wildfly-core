@@ -5,6 +5,7 @@
 
 package org.wildfly.extension.io;
 
+import org.wildfly.common.function.Functions;
 import org.wildfly.subsystem.SubsystemConfiguration;
 import org.wildfly.subsystem.SubsystemExtension;
 import org.wildfly.subsystem.SubsystemPersistence;
@@ -17,6 +18,6 @@ import org.wildfly.subsystem.SubsystemPersistence;
 public class IOExtension extends SubsystemExtension<IOSubsystemSchema> {
 
     public IOExtension() {
-        super(SubsystemConfiguration.of(IOSubsystemRegistrar.NAME, IOSubsystemModel.CURRENT, IOSubsystemRegistrar::new), SubsystemPersistence.of(IOSubsystemSchema.CURRENT));
+        super(SubsystemConfiguration.of(IOSubsystemResourceRegistrar.INSTANCE, IOSubsystemModel.CURRENT, Functions.constantSupplier(IOSubsystemResourceRegistrar.INSTANCE)), SubsystemPersistence.of(IOSubsystemSchema.CURRENT));
     }
 }

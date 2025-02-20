@@ -3813,4 +3813,27 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 518, value = "Resource /extension=%s uses a non-canonical module name; use the canonical form %s. " +
             "The canonical representation includes slot information in the module name only if the is slot is not 'main'.")
     String nonCanonicalExtensionName(String nonCanonical, String canonical);
+
+    @LogMessage(level = WARN)
+    @Message(id = 519, value = "Attribute '%2$s' of element '%1$s' is no longer supported and will be ignored")
+    void attributeIgnored(QName elementName, QName attributeName);
+
+    @LogMessage(level = WARN)
+    @Message(id = 520, value = "Element '%s' is no longer supported and will be ignored")
+    void elementIgnored(QName elementName);
+
+    @Message(id = 521, value = "Element '%s' already defines attribute: %s")
+    IllegalArgumentException duplicateAttributes(QName elementName, QName attributeName);
+
+    @Message(id = 522, value = "XML model group already defines element: %s")
+    IllegalArgumentException duplicateElements(QName elementName);
+
+    @Message(id = 523, value = "XML choice already defines resource: %s")
+    IllegalArgumentException duplicatePathElement(PathElement path);
+
+    @Message(id = 524, value = "Element(s) '%s' must occur at least %d time(s)")
+    String minOccursNotReached(Set<QName> elements, int minOccurs);
+
+    @Message(id = 525, value = "Element(s) '%s' may not occur more than %d time(s)")
+    String maxOccursExceeded(Set<QName> elements, int maxOccurs);
 }

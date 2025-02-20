@@ -12,7 +12,9 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * @author Tomaz Cerar (c) 2017 Red Hat Inc.
+ * @deprecated To be removed without replacement.
  */
+@Deprecated(forRemoval = true)
 @FunctionalInterface
 public interface ResourceMarshaller {
     void persist(XMLExtendedStreamWriter writer, ModelNode model) throws XMLStreamException;

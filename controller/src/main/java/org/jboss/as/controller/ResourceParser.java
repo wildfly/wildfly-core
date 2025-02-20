@@ -13,7 +13,9 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
 
 /**
  * @author Tomaz Cerar (c) 2017 Red Hat Inc.
+ * @deprecated To be removed without replacement.
  */
+@Deprecated(forRemoval = true)
 @FunctionalInterface
 public interface ResourceParser {
     void parse(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException;
