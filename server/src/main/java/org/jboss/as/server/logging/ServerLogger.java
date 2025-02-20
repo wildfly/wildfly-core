@@ -116,6 +116,12 @@ public interface ServerLogger extends BasicLogger {
     ServerLogger DEPRECATED_DEP_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ServerLogger.class, "org.jboss.as.dependency.deprecated");
 
     /**
+     * A logger with the category of {@code org.jboss.as.server.deployment.runtime.namecheck}.
+     * <strong>Usage:</strong> Use this in case deployment's runtime name is missing an extension
+     */
+    ServerLogger DEPLOYMENT_NAMECHECK_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), ServerLogger.class, "org.jboss.as.server.deployment.runtime.namecheck");
+
+    /**
      * Log message for when a jboss-deployment-structure.xml file is ignored
      * @param file name of the ignored file
      */
@@ -1480,6 +1486,10 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 311, value = "Cannot create a ServerEnvironment for an embedded server")
     IllegalStateException cannotCreateServerEnvironment();
+
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 312, value = "Deployment '%s' has a runtime name '%s' without an extension. This may cause issues in some environments.")
+    void deploymentsRuntimeNameWithoutExtension(String managementName, String deploymentUnitName);
 
     ////////////////////////////////////////////////
     //Messages without IDs
