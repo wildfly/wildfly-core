@@ -36,10 +36,12 @@ import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.DefaultCapabilityServiceSupport;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ExpressionResolverImpl;
-import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
+import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.host.controller.jvm.JvmType;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
@@ -117,12 +119,13 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
 
     public ManagedServerBootCmdFactory(final String serverName, final ModelNode domainModel, final ModelNode hostModel,
                                        final HostControllerEnvironment environment, final ExpressionResolver expressionResolver,
-                                       final boolean suspend) {
+                                       final ImmutableCapabilityRegistry capabilityRegistry, final boolean suspend) {
         this.serverName = serverName;
         this.domainModel = domainModel;
         this.hostModel = hostModel;
         this.environment = environment;
-        this.expressionResolver = new ManagedServerExprResolver(expressionResolver, this.serverName);
+        this.expressionResolver = new ManagedServerExprResolver(expressionResolver, this.serverName,
+                new DefaultCapabilityServiceSupport(capabilityRegistry));
         this.suspend = suspend;
         this.serverModel = resolveExpressions(hostModel.require(SERVER_CONFIG).require(serverName), this.expressionResolver, true);
         this.directoryGrouping = resolveDirectoryGrouping(hostModel, this.expressionResolver);
@@ -615,12 +618,14 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     static class ManagedServerExprResolver extends ExpressionResolverImpl {
         final ExpressionResolver delegate;
         final String serverName;
+        final CapabilityServiceSupport capabilityServiceSupport;
         final Map<String, String> resolvableData;
 
-        public ManagedServerExprResolver(ExpressionResolver delegate, String serverName) {
+        public ManagedServerExprResolver(ExpressionResolver delegate, String serverName, CapabilityServiceSupport capabilityServiceSupport) {
             super(true);
             this.delegate = delegate;
             this.serverName = serverName;
+            this.capabilityServiceSupport = capabilityServiceSupport;
             this.resolvableData = new HashMap<>() {{
                 put(ServerEnvironment.SERVER_BASE_DIR, null);
                 put(ServerEnvironment.SERVER_DATA_DIR, null);
@@ -631,7 +636,12 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         }
 
         @Override
-        protected void resolvePluggableExpression(ModelNode node, OperationContext context) throws OperationFailedException {
+        public ModelNode resolveExpressions(final ModelNode node) throws OperationFailedException {
+            return resolveExpressions(node, capabilityServiceSupport);
+        }
+
+        @Override
+        protected void resolvePluggableExpression(ModelNode node, CapabilityServiceSupport capabilityServiceSupport) {
             String expression = node.asString();
             if (expression.length() > 3) {
                 String expressionValue = expression.substring(2, expression.length() - 1);
@@ -641,7 +651,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                         node.set(resolved);
                     }
                 } else {
-                    node.set(delegate.resolveExpressions(node, context));
+                    node.set(delegate.resolveExpressions(node, capabilityServiceSupport));
                 }
             }
         }
