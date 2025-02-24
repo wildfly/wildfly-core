@@ -83,6 +83,8 @@ public enum KernelAPIVersion {
     VERSION_26_0(26, 0, 0),
     // WildFly 34.0.0
     VERSION_27_0(27, 0, 0),
+    // WildFly 35.0.0
+    VERSION_28_0(28, 0, 0),
 
     // Latest
     CURRENT(Version.MANAGEMENT_MAJOR_VERSION, Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
