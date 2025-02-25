@@ -34,6 +34,7 @@ import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
+import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.dmr.ModelNode;
@@ -41,7 +42,6 @@ import org.jboss.dmr.ModelType;
 import org.jboss.modules.LocalModuleFinder;
 import org.jboss.modules.LocalModuleLoader;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.ModuleNotFoundException;
@@ -207,7 +207,7 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
     private static List<String> findResourcePaths(String moduleName) throws ModuleLoadException, ReflectiveOperationException, IOException, URISyntaxException {
         ModuleLoader moduleLoader = Module.getCallerModuleLoader();
         ModuleLoaderMXBean loader = ModuleInfoHandler.INSTANCE.getMxBean(moduleLoader);
-        moduleLoader.loadModule(ModuleIdentifier.fromString(moduleName));
+        moduleLoader.loadModule(JBossModulesNameUtil.parseCanonicalModuleIdentifier(moduleName));
 
         List<String> result = new LinkedList<>();
         for (ResourceLoaderInfo rl : loader.getResourceLoaders(moduleName)){

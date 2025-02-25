@@ -83,11 +83,11 @@ public class ModuleLoadService implements Service<Module> {
                         String val = moduleLoader.loadModule(id).getProperty("jboss.api");
                         if (val != null) {
                             if (val.equals("private")) {
-                                ServerLogger.PRIVATE_DEP_LOGGER.privateApiUsed(moduleDefinitionInjectedValue.getValue().getModuleIdentifier().getName(), id);
+                                ServerLogger.PRIVATE_DEP_LOGGER.privateApiUsed(moduleDefinitionInjectedValue.getValue().getModuleName(), id);
                             } else if (val.equals("unsupported")) {
-                                ServerLogger.UNSUPPORTED_DEP_LOGGER.unsupportedApiUsed(moduleDefinitionInjectedValue.getValue().getModuleIdentifier().getName(), id);
+                                ServerLogger.UNSUPPORTED_DEP_LOGGER.unsupportedApiUsed(moduleDefinitionInjectedValue.getValue().getModuleName(), id);
                             } else if (val.equals("deprecated")) {
-                                ServerLogger.DEPRECATED_DEP_LOGGER.deprecatedApiUsed(moduleDefinitionInjectedValue.getValue().getModuleIdentifier().getName(), id);
+                                ServerLogger.DEPRECATED_DEP_LOGGER.deprecatedApiUsed(moduleDefinitionInjectedValue.getValue().getModuleName(), id);
                             }
                         }
                     } catch (ModuleNotFoundException ignore) {
@@ -97,7 +97,7 @@ public class ModuleLoadService implements Service<Module> {
             }
             this.module = module;
         } catch (ModuleLoadException e) {
-            throw ServerLogger.ROOT_LOGGER.failedToLoadModule(moduleDefinitionInjectedValue.getValue().getModuleIdentifier(), e);
+            throw ServerLogger.ROOT_LOGGER.failedToLoadModule(moduleDefinitionInjectedValue.getValue().getModuleName(), e);
         }
     }
 

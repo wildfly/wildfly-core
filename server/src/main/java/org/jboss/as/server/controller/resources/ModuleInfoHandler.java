@@ -17,11 +17,11 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
+import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.management.DependencyInfo;
 import org.jboss.modules.management.ModuleInfo;
@@ -103,14 +103,14 @@ public class ModuleInfoHandler implements OperationStepHandler {
         populateModel(operation, model);
         String moduleName = MODULE_NAME.resolveModelAttribute(context, model).asString();
         String slot = MODULE_SLOT.resolveModelAttribute(context, model).asString();
-        ModuleIdentifier id = ModuleIdentifier.create(moduleName, slot);
+        String id = JBossModulesNameUtil.canonicalModuleIdentifier(moduleName, slot);
         ModuleLoader loader = Module.getBootModuleLoader();
         try {
             ModuleLoaderMXBean mxBean = getMxBean(loader);
-            ModuleInfo moduleInfo = mxBean.getModuleDescription(id.toString());
+            ModuleInfo moduleInfo = mxBean.getModuleDescription(id);
             context.getResult().set(populateModuleInfo(moduleInfo));
         } catch (Exception e) {
-            throw ServerLogger.ROOT_LOGGER.couldNotGetModuleInfo(id.toString(), e);
+            throw ServerLogger.ROOT_LOGGER.couldNotGetModuleInfo(id, e);
         }
     }
 

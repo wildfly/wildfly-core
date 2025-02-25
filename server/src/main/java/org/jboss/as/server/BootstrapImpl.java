@@ -14,14 +14,13 @@ import java.util.concurrent.TimeUnit;
 import javax.management.ObjectName;
 
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ControlledProcessStateService;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.server.jmx.RunningStateJmx;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.as.server.suspend.ServerSuspendController;
+import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.LifecycleEvent;
@@ -89,7 +88,7 @@ final class BootstrapImpl implements Bootstrap {
         assert configurationPersisterFactory != null : "configurationPersisterFactory is null";
 
         try {
-            Module.registerURLStreamHandlerFactoryModule(moduleLoader.loadModule(ModuleIdentifier.create("org.jboss.vfs")));
+            Module.registerURLStreamHandlerFactoryModule(moduleLoader.loadModule("org.jboss.vfs"));
         } catch (ModuleLoadException e) {
             throw ServerLogger.ROOT_LOGGER.vfsNotAvailable();
         }
@@ -299,7 +298,7 @@ final class BootstrapImpl implements Bootstrap {
 
         private static long getSuspendTimeout() {
             String timeoutString = System.getProperty(SIGTERM_SUSPEND_TIMEOUT_PROP);
-            if (timeoutString != null && timeoutString.length() > 0) {
+            if (timeoutString != null && !timeoutString.isEmpty()) {
                 try {
                     return Integer.decode(timeoutString);
                 } catch (NumberFormatException ex) {

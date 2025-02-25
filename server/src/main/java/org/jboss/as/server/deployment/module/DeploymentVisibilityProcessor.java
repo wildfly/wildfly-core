@@ -13,7 +13,6 @@ import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
-import org.jboss.modules.ModuleIdentifier;
 
 /**
  * Processor that aggregates all module descriptions visible to the deployment in an EEApplicationClasses structure.
@@ -43,25 +42,25 @@ public class DeploymentVisibilityProcessor implements DeploymentUnitProcessor {
         if (deploymentUnit.getParent() == null) {
             final List<DeploymentUnit> subDeployments = deploymentUnit.getAttachmentList(org.jboss.as.server.deployment.Attachments.SUB_DEPLOYMENTS);
             for (final DeploymentUnit sub : subDeployments) {
-                final ModuleIdentifier identifier = sub.getAttachment(org.jboss.as.server.deployment.Attachments.MODULE_IDENTIFIER);
+                final String identifier = sub.getAttachment(Attachments.MODULE_NAME);
                 if (identifier != null) {
-                    modules.put(identifier.toString(), sub);
+                    modules.put(identifier, sub);
                 }
             }
         } else {
             final DeploymentUnit parent = deploymentUnit.getParent();
             final List<DeploymentUnit> subDeployments = parent.getAttachmentList(org.jboss.as.server.deployment.Attachments.SUB_DEPLOYMENTS);
             //add the parent description
-            final ModuleIdentifier parentIdentifier = parent.getAttachment(org.jboss.as.server.deployment.Attachments.MODULE_IDENTIFIER);
+            final String parentIdentifier = parent.getAttachment(Attachments.MODULE_NAME);
             if (parentIdentifier != null) {
-                modules.put(parentIdentifier.toString(), parent);
+                modules.put(parentIdentifier, parent);
             }
 
             for (final DeploymentUnit sub : subDeployments) {
                 if (sub != deploymentUnit) {
-                    final ModuleIdentifier identifier = sub.getAttachment(org.jboss.as.server.deployment.Attachments.MODULE_IDENTIFIER);
+                    final String identifier = sub.getAttachment(Attachments.MODULE_NAME);
                     if (identifier != null) {
-                        modules.put(identifier.toString(), sub);
+                        modules.put(identifier, sub);
                     }
                 }
             }
