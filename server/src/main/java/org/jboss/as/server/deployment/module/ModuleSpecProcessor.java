@@ -261,7 +261,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         specBuilder.setClassFileTransformer(delegatingClassTransformer);
         deploymentUnit.putAttachment(DelegatingClassTransformer.ATTACHMENT_KEY, delegatingClassTransformer);
         final ModuleSpec moduleSpec = specBuilder.create();
-        final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(moduleIdentifier.toString());
+        final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(moduleIdentifier);
 
         ModuleDefinition moduleDefinition = new ModuleDefinition(moduleIdentifier, new HashSet<>(moduleSpecification.getAllDependencies()), moduleSpec);
 
@@ -282,15 +282,14 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
 
         ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
         for (final String aliasName : moduleSpecification.getModuleAliases()) {
-            final ModuleIdentifier alias = ModuleIdentifier.fromString(aliasName);
 
-            final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(alias.toString());
+            final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(aliasName);
             final ModuleSpec spec = ModuleSpec.buildAlias(aliasName, moduleIdentifier).create();
 
             HashSet<ModuleDependency> dependencies = new HashSet<>(moduleSpecification.getAllDependencies());
             //we need to add the module we are aliasing as a dependency, to make sure that it will be resolved
-            dependencies.add(ModuleDependency.Builder.of(moduleLoader, moduleIdentifier.toString()).build());
-            ModuleDefinition moduleDefinition = new ModuleDefinition(alias, dependencies, spec);
+            dependencies.add(ModuleDependency.Builder.of(moduleLoader, moduleIdentifier).build());
+            ModuleDefinition moduleDefinition = new ModuleDefinition(aliasName, dependencies, spec);
 
             final ServiceBuilder sb = phaseContext.getServiceTarget().addService(moduleSpecServiceName);
             final Consumer<ModuleDefinition> moduleDefinitionConsumer = sb.provides(moduleSpecServiceName);
@@ -300,7 +299,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
             sb.setInstance(new ModuleDefinitionService(moduleDefinitionConsumer, moduleDefinition));
             sb.install();
 
-            ModuleLoadService.installAliases(phaseContext.getServiceTarget(), alias, Collections.singletonList(moduleIdentifier));
+            ModuleLoadService.installAliases(phaseContext.getServiceTarget(), aliasName, Collections.singletonList(moduleIdentifier));
 
             ModuleResolvePhaseService.installService(phaseContext.getServiceTarget(), moduleDefinition);
         }

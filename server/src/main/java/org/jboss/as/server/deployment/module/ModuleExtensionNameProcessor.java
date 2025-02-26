@@ -12,7 +12,6 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.Services;
 import org.jboss.as.server.moduleservice.ExtensionIndex;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.ServiceController;
 
 /**
@@ -33,7 +32,7 @@ public final class ModuleExtensionNameProcessor implements DeploymentUnitProcess
         final ServiceController<?> extensionIndexController = phaseContext.getServiceRegistry().getRequiredService(
                 Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX);
         final ExtensionIndex extensionIndexService = (ExtensionIndex) extensionIndexController.getValue();
-        final ModuleIdentifier moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER);
+        final String moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_NAME);
         extensionIndexService.addDeployedExtension(moduleIdentifier, extensionInfo);
     }
 
@@ -47,7 +46,7 @@ public final class ModuleExtensionNameProcessor implements DeploymentUnitProcess
         final ServiceController<?> extensionIndexController = deploymentUnit.getServiceRegistry().getRequiredService(
                 Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX);
         final ExtensionIndex extensionIndexService = (ExtensionIndex) extensionIndexController.getValue();
-        final ModuleIdentifier moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER);
+        final String moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_NAME);
 
         extensionIndexService.removeDeployedExtension(extensionInfo.getName(), moduleIdentifier);
 
