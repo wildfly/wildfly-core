@@ -10,7 +10,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.AttachmentList;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
@@ -19,9 +18,9 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.DeploymentUtils;
 import org.jboss.as.server.deployment.Services;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.moduleservice.ExtensionIndex;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.filter.PathFilters;
 import org.jboss.msc.service.ServiceController;
@@ -47,15 +46,15 @@ public final class ModuleExtensionListProcessor implements DeploymentUnitProcess
         final ServiceController<?> controller = phaseContext.getServiceRegistry().getRequiredService(Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX);
         final ExtensionIndex index = (ExtensionIndex) controller.getValue();
         final List<ResourceRoot> allResourceRoots = DeploymentUtils.allResourceRoots(deploymentUnit);
-        final Set<ServiceName> nextPhaseDeps = new HashSet<ServiceName>();
+        final Set<ServiceName> nextPhaseDeps = new HashSet<>();
 
-        final Set<ModuleIdentifier> allExtensionListEntries = new LinkedHashSet<>();
+        final Set<String> allExtensionListEntries = new LinkedHashSet<>();
 
         for (ResourceRoot resourceRoot : allResourceRoots) {
             final AttachmentList<ExtensionListEntry> entries = resourceRoot.getAttachment(Attachments.EXTENSION_LIST_ENTRIES);
             if (entries != null) {
                 for (ExtensionListEntry entry : entries) {
-                    final ModuleIdentifier extension = index.findExtension(entry.getName(), entry.getSpecificationVersion(),
+                    final String extension = index.findExtensionAsString(entry.getName(), entry.getSpecificationVersion(),
                             entry.getImplementationVersion(), entry.getImplementationVendorId());
                     if (extension != null) {
                         allExtensionListEntries.add(extension);
@@ -72,7 +71,7 @@ public final class ModuleExtensionListProcessor implements DeploymentUnitProcess
                 final AttachmentList<ExtensionListEntry> entries = resourceRoot.getAttachment(Attachments.EXTENSION_LIST_ENTRIES);
                 if (entries != null) {
                     for (ExtensionListEntry entry : entries) {
-                        final ModuleIdentifier extension = index.findExtension(entry.getName(), entry.getSpecificationVersion(),
+                        final String extension = index.findExtensionAsString(entry.getName(), entry.getSpecificationVersion(),
                                 entry.getImplementationVersion(), entry.getImplementationVendorId());
                         if (extension != null) {
                             allExtensionListEntries.add(extension);
@@ -83,12 +82,12 @@ public final class ModuleExtensionListProcessor implements DeploymentUnitProcess
             }
         }
 
-        for (ModuleIdentifier extension : allExtensionListEntries) {
-            ModuleDependency dependency = ModuleDependency.Builder.of(moduleLoader, extension.toString()).setImportServices(true).setUserSpecified(true).build();
+        for (String extension : allExtensionListEntries) {
+            ModuleDependency dependency = ModuleDependency.Builder.of(moduleLoader, extension).setImportServices(true).setUserSpecified(true).build();
             dependency.addImportFilter(PathFilters.getMetaInfSubdirectoriesFilter(), true);
             dependency.addImportFilter(PathFilters.getMetaInfFilter(), true);
             moduleSpecification.addLocalDependency(dependency);
-            nextPhaseDeps.add(ServiceModuleLoader.moduleSpecServiceName(extension.toString()));
+            nextPhaseDeps.add(ServiceModuleLoader.moduleSpecServiceName(extension));
         }
 
 
@@ -101,12 +100,12 @@ public final class ModuleExtensionListProcessor implements DeploymentUnitProcess
                     if (entries != null) {
 
                         for (ExtensionListEntry entry : entries) {
-                            final ModuleIdentifier extension = index.findExtension(entry.getName(), entry
+                            final String extension = index.findExtensionAsString(entry.getName(), entry
                                     .getSpecificationVersion(), entry.getImplementationVersion(), entry
                                     .getImplementationVendorId());
                             if (extension != null) {
-                                moduleSpecification.addLocalDependency(ModuleDependency.Builder.of(moduleLoader, extension.toString()).setImportServices(true).build());
-                                nextPhaseDeps.add(ServiceModuleLoader.moduleSpecServiceName(extension.toString()));
+                                moduleSpecification.addLocalDependency(ModuleDependency.Builder.of(moduleLoader, extension).setImportServices(true).build());
+                                nextPhaseDeps.add(ServiceModuleLoader.moduleSpecServiceName(extension));
                             } else {
                                 ServerLogger.DEPLOYMENT_LOGGER.cannotFindExtensionListEntry(entry, resourceRoot);
                             }

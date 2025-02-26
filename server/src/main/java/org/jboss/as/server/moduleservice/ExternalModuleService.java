@@ -49,14 +49,24 @@ public class ExternalModuleService implements Service<ExternalModuleService>, Ex
     }
 
     @Override
-    public ModuleIdentifier addExternalModule(String moduleName, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget) {
-        return addExternalModule(moduleName, moduleName, serviceRegistry, serviceTarget);
+    public ModuleIdentifier addExternalModule(String path, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget) {
+        return ModuleIdentifier.fromString(addExternalModuleAsString(path, serviceRegistry, serviceTarget));
+    }
+
+    @Override
+    public String addExternalModuleAsString(String path, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget) {
+        return addExternalModuleAsString(path, path, serviceRegistry, serviceTarget);
     }
 
     @Override
     public ModuleIdentifier addExternalModule(String moduleName, String path, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget) {
-        ModuleIdentifier identifier = ModuleIdentifier.fromString(EXTERNAL_MODULE_PREFIX + moduleName);
-        ServiceName serviceName = ServiceModuleLoader.moduleSpecServiceName(identifier.toString());
+        return ModuleIdentifier.fromString(addExternalModuleAsString(moduleName, path, serviceRegistry, serviceTarget));
+    }
+
+    @Override
+    public String addExternalModuleAsString(String moduleName, String path, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget) {
+        String identifier = EXTERNAL_MODULE_PREFIX + moduleName;
+        ServiceName serviceName = ServiceModuleLoader.moduleSpecServiceName(identifier);
         ServiceController<?> controller = serviceRegistry.getService(serviceName);
         if (controller == null) {
             ExternalModuleSpecService service = new ExternalModuleSpecService(identifier, new File(path));
