@@ -28,8 +28,8 @@ public enum ElementOrderSubsystemSchema implements PersistentSubsystemSchema<Ele
         PersistentResourceXMLDescription.Builder groupBuilder = factory.builder(ElementOrderSubsystemResourceDefinition.GROUP_REGISTRATION);
         groupBuilder.addAttribute(ElementOrderSubsystemResourceDefinition.ATTRIBUTE, AttributeParsers.SIMPLE_ELEMENT, AttributeMarshallers.SIMPLE_ELEMENT);
         groupBuilder.addAttribute(ElementOrderSubsystemResourceDefinition.ATTRIBUTE_2, AttributeParsers.SIMPLE_ELEMENT, AttributeMarshallers.SIMPLE_ELEMENT);
-        groupBuilder.addChild(factory.builder(ElementOrderSubsystemResourceDefinition.CHILD_REGISTRATION).build());
-        groupBuilder.addChild(factory.builder(ElementOrderSubsystemResourceDefinition.CHILD_2_REGISTRATION).build());
+        groupBuilder.addChild(factory.builder(ElementOrderSubsystemResourceDefinition.CHILD_REGISTRATION).addAttribute(ElementOrderSubsystemResourceDefinition.NAME).build());
+        groupBuilder.addChild(factory.builder(ElementOrderSubsystemResourceDefinition.CHILD_2_REGISTRATION).addAttribute(ElementOrderSubsystemResourceDefinition.NAME).build());
         builder.addChild(groupBuilder.build());
         return builder.build();
     }
