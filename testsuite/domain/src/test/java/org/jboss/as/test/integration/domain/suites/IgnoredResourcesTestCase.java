@@ -150,7 +150,7 @@ public class IgnoredResourcesTestCase {
         }
 
         // Modify the ignored profile
-        ModelNode mod = createOpNode("profile=ignored/subsystem=io", "add");
+        ModelNode mod = createOpNode("profile=ignored/subsystem=request-controller", "add");
         executeOperation(mod, domainPrimaryLifecycleUtil.getDomainClient());
 
         // Resource still should not exist on secondary
