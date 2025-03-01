@@ -22,6 +22,6 @@ public class MixedStabilitySubsystemTestCase extends AbstractSubsystemSchemaTest
     }
 
     public MixedStabilitySubsystemTestCase(FooSubsystemSchema schema) {
-        super(FooSubsystemResourceDefinition.SUBSYSTEM_NAME, new FooSubsystemExtension(), schema, FooSubsystemSchema.CURRENT.get(schema.getStability()));
+        super(FooSubsystemResourceDefinition.REGISTRATION.getName(), new FooSubsystemExtension(), schema, FooSubsystemSchema.CURRENT.get(schema.getStability()));
     }
 }
