@@ -881,11 +881,7 @@ public class DomainLifecycleUtil implements AutoCloseable {
     public boolean isHostControllerStarted() {
         checkClosed();
         try {
-            ModelNode address = new ModelNode();
-            address.add("host", configuration.getHostName());
-
-            ControlledProcessState.State status = Enum.valueOf(ControlledProcessState.State.class, readAttribute("host-state", address).asString().toUpperCase(Locale.ENGLISH));
-            return status == ControlledProcessState.State.RUNNING;
+            return getHostControllerState() == ControlledProcessState.State.RUNNING;
         } catch (Exception ignored) {
             //
         }
@@ -898,22 +894,26 @@ public class DomainLifecycleUtil implements AutoCloseable {
      * returning {@code false}.
      *
      * @param state The {@link ControlledProcessState.State} to compare
-     * @return
+     * @return {@code true} if {@code state} equals the host controller state
      *
      * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
      */
     public boolean isHostControllerInState(ControlledProcessState.State state) {
         checkClosed();
         try {
-            ModelNode address = new ModelNode();
-            address.add("host", configuration.getHostName());
-
-            ControlledProcessState.State status = Enum.valueOf(ControlledProcessState.State.class, readAttribute("host-state", address).asString().toUpperCase(Locale.ENGLISH));
-            return status == state;
+            return state == getHostControllerState();
         } catch (Exception ignored) {
             //
         }
         return false;
+    }
+
+    public ControlledProcessState.State getHostControllerState() {
+        ModelNode address = new ModelNode();
+        address.add("host", configuration.getHostName());
+
+        return ControlledProcessState.State.fromString(readAttribute("host-state", address).asString());
+
     }
 
     private synchronized void closeConnection() {
