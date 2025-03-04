@@ -19,6 +19,7 @@ import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.common.iteration.ByteIterator;
@@ -88,9 +89,15 @@ class CertificateChainAttributeDefinitions {
 
     // TODO - Consider adding some of the more detailed fields from X509Certificate
 
+    // derivative attributes
+    private static final SimpleAttributeDefinition VALIDITY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VALIDITY, ModelType.STRING)
+            .setRequired(false)
+            .setStability(Stability.COMMUNITY)
+            .build();
+
     static final ObjectTypeAttributeDefinition CERTIFICATE = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.CERTIFICATE,
             TYPE, ALGORITHM, FORMAT, PUBLIC_KEY, SHA_1_DIGEST, SHA_256_DIGEST, ENCODED,
-            SUBJECT, ISSUER, NOT_BEFORE, NOT_AFTER, SERIAL_NUMBER, SIGNATURE_ALGORITHM, SIGNATURE, VERSION)
+            SUBJECT, ISSUER, NOT_BEFORE, NOT_AFTER, SERIAL_NUMBER, SIGNATURE_ALGORITHM, SIGNATURE, VERSION, VALIDITY)
         .setStorageRuntime()
         .build();
 
@@ -101,11 +108,11 @@ class CertificateChainAttributeDefinitions {
                 .build();
     }
 
-    static void writeCertificate(final ModelNode certificateModel, final Certificate certificate) throws CertificateEncodingException, NoSuchAlgorithmException {
-        writeCertificate(certificateModel, certificate, true);
+    static void writeCertificate(final ModelNode certificateModel, final Certificate certificate, final Stability stability) throws CertificateEncodingException, NoSuchAlgorithmException {
+        writeCertificate(certificateModel, certificate, true, stability);
     }
 
-    static void writeCertificate(final ModelNode certificateModel, final Certificate certificate, final boolean verbose) throws CertificateEncodingException, NoSuchAlgorithmException {
+    static void writeCertificate(final ModelNode certificateModel, final Certificate certificate, final boolean verbose, final Stability stability) throws CertificateEncodingException, NoSuchAlgorithmException {
        certificateModel.get(ElytronDescriptionConstants.TYPE).set(certificate.getType());
 
         PublicKey publicKey = certificate.getPublicKey();
@@ -123,11 +130,11 @@ class CertificateChainAttributeDefinitions {
         }
 
         if (certificate instanceof X509Certificate) {
-            writeX509Certificate(certificateModel, (X509Certificate) certificate);
+            writeX509Certificate(certificateModel, (X509Certificate) certificate, stability);
         }
     }
 
-    private static void writeX509Certificate(final ModelNode certificateModel, final X509Certificate certificate) throws CertificateEncodingException, NoSuchAlgorithmException {
+    private static void writeX509Certificate(final ModelNode certificateModel, final X509Certificate certificate, final Stability stability) throws CertificateEncodingException, NoSuchAlgorithmException {
         SimpleDateFormat sdf = new SimpleDateFormat(ISO_8601_FORMAT);
 
         certificateModel.get(ElytronDescriptionConstants.SUBJECT).set(certificate.getSubjectX500Principal().getName());
@@ -138,6 +145,10 @@ class CertificateChainAttributeDefinitions {
         certificateModel.get(ElytronDescriptionConstants.SIGNATURE_ALGORITHM).set(certificate.getSigAlgName());
         certificateModel.get(ElytronDescriptionConstants.SIGNATURE).set(encodedHexString(certificate.getSignature()));
         certificateModel.get(ElytronDescriptionConstants.VERSION).set("v" + certificate.getVersion());
+        //artificial parameters here, after concrete?
+        if(stability.enables(Stability.COMMUNITY)) {
+            certificateModel.get(ElytronDescriptionConstants.VALIDITY).set(CertificateValidity.getValidity(certificate.getNotBefore(), certificate.getNotAfter()).toString());
+        }
     }
 
     /**
@@ -149,7 +160,21 @@ class CertificateChainAttributeDefinitions {
      * @throws NoSuchAlgorithmException
      */
     static void writeCertificates(final ModelNode result, final Certificate[] certificates) throws CertificateEncodingException, NoSuchAlgorithmException {
-        writeCertificates(result, certificates, true);
+        writeCertificates(result, certificates, true, null);
+    }
+
+
+    /**
+     * Populate the supplied response with the model representation of the certificates.
+     *
+     * @param result the response to populate.
+     * @param certificates the certificates to add to the response.
+     * @param stability of operation context. Can be null in case its not part of model operations.
+     * @throws CertificateEncodingException
+     * @throws NoSuchAlgorithmException
+     */
+    static void writeCertificates(final ModelNode result, final Certificate[] certificates, final Stability stability) throws CertificateEncodingException, NoSuchAlgorithmException {
+        writeCertificates(result, certificates, true, stability);
     }
 
     /**
@@ -158,14 +183,15 @@ class CertificateChainAttributeDefinitions {
      * @param result the response to populate.
      * @param certificates the certificates to add to the response.
      * @param verbose mode of output.
+     * @param stability of operation context. Can be null in case its not part of model operations.
      * @throws CertificateEncodingException
      * @throws NoSuchAlgorithmException
      */
-    static void writeCertificates(final ModelNode result, final Certificate[] certificates, final boolean verbose) throws CertificateEncodingException, NoSuchAlgorithmException {
+    static void writeCertificates(final ModelNode result, final Certificate[] certificates, final boolean verbose, final Stability stability) throws CertificateEncodingException, NoSuchAlgorithmException {
         if (certificates != null) {
             for (Certificate current : certificates) {
                 ModelNode certificate = new ModelNode();
-                writeCertificate(certificate, current, verbose);
+                writeCertificate(certificate, current, verbose, stability);
                 result.add(certificate);
             }
         }
