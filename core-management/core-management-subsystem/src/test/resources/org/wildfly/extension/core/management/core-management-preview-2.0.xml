@@ -1,0 +1,9 @@
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+<subsystem xmlns="urn:jboss:domain:core-management:preview:2.0">
+    <configuration-changes max-history="10"/>
+    <unstable-api-annotations level="LOG"/>
+    <process-state-listener name="x" class="org.acme.foo.MyClass" module="org.acme.foo"/>
+</subsystem>
