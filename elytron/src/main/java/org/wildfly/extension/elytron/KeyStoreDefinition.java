@@ -231,31 +231,31 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-            ModelNode model = resource.getModel();
-            String providers = PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
-            String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
-            String type = TYPE.resolveModelAttribute(context, model).asStringOrNull();
-            String path = PATH.resolveModelAttribute(context, model).asStringOrNull();
+            final ModelNode model = resource.getModel();
+            final String providers = PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
+            final String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
+            final String type = TYPE.resolveModelAttribute(context, model).asStringOrNull();
+            final String path = PATH.resolveModelAttribute(context, model).asStringOrNull();
             String relativeTo = null;
             boolean required;
-            String aliasFilter = ALIAS_FILTER.resolveModelAttribute(context, model).asStringOrNull();
-
+            final String aliasFilter = ALIAS_FILTER.resolveModelAttribute(context, model).asStringOrNull();
+            final String keyStoreName = context.getCurrentAddressValue();
             final KeyStoreService keyStoreService;
             if (path != null) {
                 relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
                 required = REQUIRED.resolveModelAttribute(context, model).asBoolean();
-                keyStoreService = KeyStoreService.createFileBasedKeyStoreService(providerName, type, relativeTo, path, required, aliasFilter);
+                keyStoreService = KeyStoreService.createFileBasedKeyStoreService(keyStoreName, providerName, type, relativeTo, path, required, aliasFilter);
             } else {
                 if (type == null) {
                     throw ROOT_LOGGER.filelessKeyStoreMissingType();
                 }
-                keyStoreService = KeyStoreService.createFileLessKeyStoreService(providerName, type, aliasFilter);
+                keyStoreService = KeyStoreService.createFileLessKeyStoreService(keyStoreName, providerName, type, aliasFilter);
             }
 
-            ServiceTarget serviceTarget = context.getServiceTarget();
-            RuntimeCapability<Void> runtimeCapability = KEY_STORE_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
-            ServiceName serviceName = runtimeCapability.getCapabilityServiceName(KeyStore.class);
-            ServiceBuilder<KeyStore> serviceBuilder = serviceTarget.addService(serviceName, keyStoreService).setInitialMode(Mode.ACTIVE);
+            final ServiceTarget serviceTarget = context.getServiceTarget();
+            final RuntimeCapability<Void> runtimeCapability = KEY_STORE_RUNTIME_CAPABILITY.fromBaseCapability(keyStoreName);
+            final ServiceName serviceName = runtimeCapability.getCapabilityServiceName(KeyStore.class);
+            final ServiceBuilder<KeyStore> serviceBuilder = serviceTarget.addService(serviceName, keyStoreService).setInitialMode(Mode.ACTIVE);
 
             serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, keyStoreService.getPathManagerInjector());
             if (relativeTo != null) {
