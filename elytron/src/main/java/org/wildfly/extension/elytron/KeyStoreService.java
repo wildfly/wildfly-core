@@ -19,8 +19,6 @@ import java.security.MessageDigest;
 import java.security.Provider;
 import java.security.Security;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -69,6 +67,7 @@ class KeyStoreService implements ModifiableKeyStoreService {
     private static final int HEX_DELIMITER = ':';
     private static final String COMMON_NAME_PREFIX = "CN=";
 
+    private final String keyStoreName;
     private final String provider;
     private final String type;
     private final String path;
@@ -88,7 +87,9 @@ class KeyStoreService implements ModifiableKeyStoreService {
     private volatile ModifyTrackingKeyStore trackingKeyStore = null;
     private volatile KeyStore unmodifiableKeyStore = null;
 
-    private KeyStoreService(String provider, String type, String relativeTo, String path, boolean required, String aliasFilter) {
+    private KeyStoreService(final String keyStoreName, final String provider, final String type, final String relativeTo,
+            final String path, final boolean required, final String aliasFilter) {
+        this.keyStoreName = keyStoreName == null ? "N/A" : keyStoreName;
         this.provider = provider;
         this.type = type;
         this.relativeTo = relativeTo;
@@ -97,12 +98,14 @@ class KeyStoreService implements ModifiableKeyStoreService {
         this.aliasFilter = aliasFilter;
     }
 
-    static KeyStoreService createFileLessKeyStoreService(String provider, String type, String aliasFilter) {
-        return new KeyStoreService(provider, type, null, null, false, aliasFilter);
+    static KeyStoreService createFileLessKeyStoreService(final String keyStoreName, final String provider, final String type,
+            final String aliasFilter) {
+        return new KeyStoreService(keyStoreName, provider, type, null, null, false, aliasFilter);
     }
 
-    static KeyStoreService createFileBasedKeyStoreService(String provider, String type, String relativeTo, String path, boolean required, String aliasFilter) {
-        return new KeyStoreService(provider, type, relativeTo, path, required, aliasFilter);
+    static KeyStoreService createFileBasedKeyStoreService(final String keyStoreName, final String provider, final String type,
+            final String relativeTo, final String path, final boolean required, final String aliasFilter) {
+        return new KeyStoreService(keyStoreName, provider, type, relativeTo, path, required, aliasFilter);
     }
 
     /*
@@ -206,17 +209,28 @@ class KeyStoreService implements ModifiableKeyStoreService {
         }
     }
 
-    private void checkCertificatesValidity(KeyStore keyStore) throws KeyStoreException {
+    private void checkCertificatesValidity(final KeyStore keyStore) throws KeyStoreException {
         if (ROOT_LOGGER.isEnabled(Logger.Level.WARN)) {
-            Enumeration<String> aliases = keyStore.aliases();
+            final Enumeration<String> aliases = keyStore.aliases();
             while (aliases.hasMoreElements()) {
-                String alias = aliases.nextElement();
-                Certificate certificate = keyStore.getCertificate(alias);
+                final String alias = aliases.nextElement();
+                final Certificate certificate = keyStore.getCertificate(alias);
                 if (certificate != null && certificate instanceof X509Certificate) {
-                    try {
-                        ((X509Certificate) certificate).checkValidity();
-                    } catch (CertificateExpiredException | CertificateNotYetValidException e) {
-                        ROOT_LOGGER.certificateNotValid(alias, e);
+                    final X509Certificate xCertificate = (X509Certificate) certificate;
+                    final CertificateValidity certificateValidity = CertificateValidity.getValidity(xCertificate.getNotBefore(), xCertificate.getNotAfter());
+                    switch(certificateValidity) {
+                        case ABOUT_TO_EXPIRE:
+                            ROOT_LOGGER.certificateAboutToExpire(keyStoreName, alias);
+                            break;
+                        case EXPIRED:
+                            ROOT_LOGGER.certificateExpired(keyStoreName, alias);
+                            break;
+                        case NOT_YET:
+                            ROOT_LOGGER.certificateNotYetValid(keyStoreName, alias);
+                            break;
+                        case VALID:
+                        default:
+                            break;
                     }
                 }
             }
