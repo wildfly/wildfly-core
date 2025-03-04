@@ -480,7 +480,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                             final X509Certificate lastCertificate = certificateChain[certificateChain.length - 1];
                             final X509Certificate certificateOrIssuer = getCertificateOrIssuerFromKeyStores(lastCertificate, keyStore, getCacertsKeyStore(trustCacerts));
                             if (certificateOrIssuer == null) {
-                                writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), lastCertificate);
+                                writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), lastCertificate, context.getStability());
                                 throw ROOT_LOGGER.topMostCertificateFromCertificateReplyNotTrusted();
                             }
                             if (! lastCertificate.equals(certificateOrIssuer)) {
@@ -514,14 +514,14 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                                     throw ROOT_LOGGER.trustedCertificateAlreadyInCacertsKeyStore(trustedCertificateAlias);
                                 }
                             }
-                            writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), trustedCertificate, true);
+                            writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), trustedCertificate, true, context.getStability());
                             throw ROOT_LOGGER.unableToDetermineIfCertificateIsTrusted();
                         } else {
                             try {
                                 final HashMap<Principal, HashSet<X509Certificate>> certificatesMap = getKeyStoreCertificates(keyStore, cacertsKeyStore);
                                 X500.createX509CertificateChain(trustedCertificate, certificatesMap);
                             } catch (IllegalArgumentException e) {
-                                writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), trustedCertificate, true);
+                                writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), trustedCertificate, true, context.getStability());
                                 throw ROOT_LOGGER.unableToDetermineIfCertificateIsTrusted();
                             }
                         }
