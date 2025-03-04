@@ -23,6 +23,7 @@ import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
+import org.jboss.logging.Logger.Level;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
@@ -242,9 +243,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 23, value = "KeyStore file '%s' does not exist. Used blank.")
     void keyStoreFileNotExistsButIgnored(final String file);
 
-    @LogMessage(level = WARN)
-    @Message(id = 24, value = "Certificate [%s] in KeyStore is not valid")
-    void certificateNotValid(String alias, @Cause Exception cause);
+//    @LogMessage(level = WARN)
+//    @Message(id = 24, value = "Certificate [%s] in KeyStore is not valid")
+//    void certificateNotValid(String alias, @Cause Exception cause);
 
     @Message(id = 25, value = "Referenced property file is invalid: %s")
     StartException propertyFileIsInvalid(String message, @Cause Throwable cause);
@@ -344,6 +345,17 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 50, value = "The realm is not available. You can't flush the cache.")
     OperationFailedException cachedRealmServiceNotAvailable();
 
+    @LogMessage(level = Level.INFO)
+    @Message(id = 51, value = "Certificate in keystore: '%s' stored under alias: '%s' is not yet valid")
+    void certificateNotYetValid(String keyStore, String alias);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 52, value = "Certificate in keystore: '%s' stored under alias: '%s' will expire shortly")
+    void certificateAboutToExpire(String keyStore, String alias);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 53, value = "Certificate in keystore: '%s' stored under alias: '%s' has expired!")
+    void certificateExpired(String keyStore, String alias);
     /*
      * Credential Store Section.
      */
