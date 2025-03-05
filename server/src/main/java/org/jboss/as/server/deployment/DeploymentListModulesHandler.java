@@ -73,7 +73,7 @@ public class DeploymentListModulesHandler implements OperationStepHandler {
                         moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_NAME);
                     }
 
-                    final ServiceController<?> moduleLoadServiceController = sr.getService(ServiceModuleLoader.moduleServiceName(moduleIdentifier.toString()));
+                    final ServiceController<?> moduleLoadServiceController = sr.getService(ServiceModuleLoader.moduleServiceName(moduleIdentifier));
                     final ModuleLoadService moduleLoadService = (ModuleLoadService) moduleLoadServiceController.getService();
 
                     final ModelNode result = new ModelNode();
