@@ -49,7 +49,6 @@ import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.logging.annotations.Param;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceName;
@@ -997,7 +996,7 @@ public interface ServerLogger extends BasicLogger {
     IllegalStateException externalModuleServiceAlreadyStarted();
 
     @Message(id = 179, value = "Failed to load module: %s")
-    StartException failedToLoadModule(ModuleIdentifier module, @Cause ModuleLoadException cause);
+    StartException failedToLoadModule(String moduleName, @Cause ModuleLoadException cause);
 
     //@Message(id = 180, value = "Timeout waiting for module service: %s")
     //ModuleLoadException timeoutWaitingForModuleService(ModuleIdentifier module);
