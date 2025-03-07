@@ -17,7 +17,9 @@ import org.wildfly.common.function.Functions;
 /**
  * An {@link XMLElementWriter} based on a {@link PersistentResourceXMLDescription}.
  * @author Paul Ferraro
+ * @deprecated Superseded by {@link org.jboss.as.controller.persistence.xml.SubsystemResourceXMLElementWriter}.
  */
+@Deprecated(forRemoval = true, since = "28.0")
 public class PersistentResourceXMLDescriptionWriter implements XMLElementWriter<SubsystemMarshallingContext> {
     private final Supplier<PersistentResourceXMLDescription> description;
 

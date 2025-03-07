@@ -7,6 +7,7 @@ package org.wildfly.subsystem;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller.SubsystemModel;
+import org.jboss.as.controller.SubsystemResourceRegistration;
 import org.wildfly.subsystem.resource.SubsystemResourceDefinitionRegistrar;
 
 /**
@@ -32,6 +33,17 @@ public interface SubsystemConfiguration {
      * @return the registrar of the subsystem.
      */
     SubsystemResourceDefinitionRegistrar getRegistrar();
+
+    /**
+     * Factory method creating a basic SubsystemConfiguration.
+     * @param registration a subsystem registration
+     * @param currentModel the current subsystem model version
+     * @param registrarFactory a supplier of the resource definition registrar for this subsystem
+     * @return a new subsystem configuration
+     */
+    static SubsystemConfiguration of(SubsystemResourceRegistration registration, SubsystemModel model, Supplier<SubsystemResourceDefinitionRegistrar> registrarFactory) {
+        return of(registration.getName(), model, registrarFactory);
+    }
 
     /**
      * Factory method creating a basic SubsystemConfiguration.

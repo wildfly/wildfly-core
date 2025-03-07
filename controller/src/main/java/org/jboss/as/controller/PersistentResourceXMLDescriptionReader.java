@@ -17,7 +17,9 @@ import org.wildfly.common.function.Functions;
 /**
  * An {@link XMLElementReader} based on a {@link PersistentResourceXMLDescription}.
  * @author Paul Ferraro
+ * @deprecated Superseded by {@link org.jboss.as.controller.persistence.xml.SubsystemResourceXMLElementReader}.
  */
+@Deprecated(forRemoval = true, since = "28.0")
 public class PersistentResourceXMLDescriptionReader implements XMLElementReader<List<ModelNode>> {
     private final Supplier<PersistentResourceXMLDescription> description;
 
