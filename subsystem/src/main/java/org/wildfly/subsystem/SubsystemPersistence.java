@@ -12,12 +12,12 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.jboss.as.controller.Feature;
-import org.jboss.as.controller.PersistentResourceXMLDescription;
-import org.jboss.as.controller.PersistentResourceXMLDescriptionReader;
-import org.jboss.as.controller.PersistentResourceXMLDescriptionWriter;
-import org.jboss.as.controller.PersistentSubsystemSchema;
 import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
+import org.jboss.as.controller.persistence.xml.SubsystemResourceRegistrationXMLElement;
+import org.jboss.as.controller.persistence.xml.SubsystemResourceXMLElementReader;
+import org.jboss.as.controller.persistence.xml.SubsystemResourceXMLElementWriter;
+import org.jboss.as.controller.persistence.xml.SubsystemResourceXMLSchema;
 import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
@@ -58,7 +58,7 @@ public interface SubsystemPersistence<S extends SubsystemSchema<S>> {
      * @param currentSchema the current schema version
      * @return a subsystem persistence configuration
      */
-    static <S extends Enum<S> & PersistentSubsystemSchema<S>> SubsystemPersistence<S> of(S currentSchema) {
+    static <S extends Enum<S> & SubsystemResourceXMLSchema<S>> SubsystemPersistence<S> of(S currentSchema) {
         return of(EnumSet.of(currentSchema));
     }
 
@@ -68,13 +68,13 @@ public interface SubsystemPersistence<S extends SubsystemSchema<S>> {
      * @param currentSchemas the current schema versions
      * @return a subsystem persistence configuration
      */
-    static <S extends Enum<S> & PersistentSubsystemSchema<S>> SubsystemPersistence<S> of(Set<S> currentSchemas) {
+    static <S extends Enum<S> & SubsystemResourceXMLSchema<S>> SubsystemPersistence<S> of(Set<S> currentSchemas) {
         Assert.assertFalse(currentSchemas.isEmpty());
         Class<S> schemaClass = currentSchemas.iterator().next().getDeclaringClass();
-        // Build PersistentResourceXMLDescription for current schemas to share between reader and writer.
-        Map<S, PersistentResourceXMLDescription> currentXMLDescriptions = new EnumMap<>(schemaClass);
+        // Build SubsystemResourceRegistrationXMLElement for current schemas to share between reader and writer.
+        Map<S, SubsystemResourceRegistrationXMLElement> elements = new EnumMap<>(schemaClass);
         for (S currentSchema : currentSchemas) {
-            currentXMLDescriptions.put(currentSchema, currentSchema.getXMLDescription());
+            elements.put(currentSchema, currentSchema.getSubsystemXMLElement());
         }
         Map<Stability, S> currentSchemaPerStability = Feature.map(currentSchemas);
         return new SubsystemPersistence<>() {
@@ -85,13 +85,13 @@ public interface SubsystemPersistence<S extends SubsystemSchema<S>> {
 
             @Override
             public XMLElementReader<List<ModelNode>> getReader(S schema) {
-                return Optional.ofNullable(currentXMLDescriptions.get(schema)).<XMLElementReader<List<ModelNode>>>map(PersistentResourceXMLDescriptionReader::new).orElse(schema);
+                return Optional.ofNullable(elements.get(schema)).<XMLElementReader<List<ModelNode>>>map(SubsystemResourceXMLElementReader::new).orElse(schema);
             }
 
             @Override
             public XMLElementWriter<SubsystemMarshallingContext> getWriter(Stability stability) {
                 S currentSchema = currentSchemaPerStability.get(stability);
-                return new PersistentResourceXMLDescriptionWriter(currentXMLDescriptions.get(currentSchema));
+                return new SubsystemResourceXMLElementWriter(elements.get(currentSchema));
             }
         };
     }
