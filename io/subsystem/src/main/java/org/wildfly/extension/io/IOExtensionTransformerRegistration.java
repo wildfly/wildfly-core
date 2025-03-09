@@ -13,6 +13,6 @@ import org.jboss.as.controller.transform.SubsystemExtensionTransformerRegistrati
 public class IOExtensionTransformerRegistration extends SubsystemExtensionTransformerRegistration {
 
     public IOExtensionTransformerRegistration() {
-        super(IOSubsystemRegistrar.NAME, IOSubsystemModel.CURRENT, IOSubsystemTransformationDescriptionFactory.INSTANCE);
+        super(IOSubsystemResourceDefinitionRegistrar.REGISTRATION, IOSubsystemModel.CURRENT, IOSubsystemTransformationDescriptionFactory.INSTANCE);
     }
 }
