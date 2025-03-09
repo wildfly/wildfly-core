@@ -21,7 +21,6 @@ import org.jboss.as.network.SocketBindingManager;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.remoting3.Endpoint;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.xnio.OptionMap;
 
@@ -66,7 +65,9 @@ public class ConnectorAdd extends AbstractAddStepHandler {
 
         final ServiceName sbmName = context.getCapabilityServiceName(SocketBindingManager.SERVICE_DESCRIPTOR);
 
-        RemotingServices.installConnectorServicesForSocketBinding(target, context.getCapabilityServiceName(RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY.getName(), Endpoint.class), connectorName,
-                socketBindingName, optionMap, saslAuthenticationFactoryName, sslContextName, sbmName);
+        final String protocol = ConnectorResource.PROTOCOL.resolveModelAttribute(context, fullModel).asString();
+
+        RemotingServices.installConnectorServicesForSocketBinding(target, RemotingServices.SUBSYSTEM_ENDPOINT, connectorName,
+                socketBindingName, optionMap, saslAuthenticationFactoryName, sslContextName, sbmName, protocol);
     }
 }
