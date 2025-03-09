@@ -82,9 +82,9 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
                             jarFile.close();
                             Set<ExtensionJar> extensionJarSet = extensions.get(extensionName);
                             if (extensionJarSet == null)
-                                extensions.put(extensionName, extensionJarSet = new LinkedHashSet<ExtensionJar>());
+                                extensions.put(extensionName, extensionJarSet = new LinkedHashSet<>());
 
-                            ModuleIdentifier moduleIdentifier = moduleIdentifier(extensionName, specVersion, implVersion,
+                            String moduleIdentifier = moduleIdentifierStr(extensionName, specVersion, implVersion,
                                     implVendorId);
 
                             ExtensionJar extensionJar = new ExtensionJar(moduleIdentifier, implVersion, implVendorId,
@@ -95,7 +95,7 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
                             // now register a module spec service for this extension
                             // this makes it available for loading
                             ExternalModuleSpecService service = new ExternalModuleSpecService(moduleIdentifier, jar);
-                            ServiceName serviceName = ServiceModuleLoader.moduleSpecServiceName(moduleIdentifier.toString());
+                            ServiceName serviceName = ServiceModuleLoader.moduleSpecServiceName(moduleIdentifier);
                             ServiceBuilder sb = context.getChildTarget().addService(serviceName, service);
                             sb.requires(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX);
                             sb.setInitialMode(Mode.ON_DEMAND);
@@ -121,16 +121,26 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
 
     /** {@inheritDoc} */
     public synchronized void addDeployedExtension(ModuleIdentifier identifier, ExtensionInfo extensionInfo) {
+       this.addDeployedExtension(identifier.toString(), extensionInfo);
+    }
+
+    @Override
+    public void addDeployedExtension(String identifier, ExtensionInfo extensionInfo) {
         final ExtensionJar extensionJar = new ExtensionJar(identifier, extensionInfo);
         Set<ExtensionJar> jars = this.extensions.get(extensionInfo.getName());
         if (jars == null) {
-            this.extensions.put(extensionInfo.getName(), jars = new HashSet<ExtensionJar>());
+            this.extensions.put(extensionInfo.getName(), jars = new HashSet<>());
         }
         jars.add(extensionJar);
     }
 
     /** {@inheritDoc} */
     public synchronized boolean removeDeployedExtension(String name, ModuleIdentifier identifier) {
+        return this.removeDeployedExtension(name, identifier.toString());
+    }
+
+    @Override
+    public boolean removeDeployedExtension(String name, String identifier) {
         final Set<ExtensionJar> jars = this.extensions.get(name);
         if (jars != null) {
             final Iterator<ExtensionJar> it = jars.iterator();
@@ -145,9 +155,19 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
         return false;
     }
 
+    /** {@inheritDoc} */
+    @Override
     public synchronized ModuleIdentifier findExtension(final String name, final String minSpecVersion,
             final String minImplVersion, final String requiredVendorId) {
+        String extensionStr = findExtensionAsString(name, minSpecVersion, minImplVersion, requiredVendorId);
+        if (extensionStr != null) {
+            return ModuleIdentifier.create(extensionStr);
+        }
+        return null;
+    }
 
+    @Override
+    public String findExtensionAsString(String name, String minSpecVersion, String minImplVersion, String requiredVendorId) {
         final Set<ExtensionJar> jars = extensions.get(name.trim());
         if (jars != null)
             for (ExtensionJar extensionJar : jars) {
@@ -203,8 +223,14 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
         return null;
     }
 
+    @Deprecated(forRemoval = true, since = "28.0.0")
     public static ModuleIdentifier moduleIdentifier(final String name, final String minSpecVersion,
             final String minImplVersion, final String requiredVendorId) {
+        return ModuleIdentifier.create(moduleIdentifierStr(name, minSpecVersion, minImplVersion, requiredVendorId));
+    }
+
+    public static String moduleIdentifierStr(final String name, final String minSpecVersion,
+                                                    final String minImplVersion, final String requiredVendorId) {
         StringBuilder nameBuilder = new StringBuilder();
         nameBuilder.append(MODULE_PREFIX);
         nameBuilder.append(name);
@@ -220,7 +246,7 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
             nameBuilder.append(".vendor-");
             nameBuilder.append(requiredVendorId);
         }
-        return ModuleIdentifier.create(nameBuilder.toString());
+        return nameBuilder.toString();
     }
 
     public ExtensionIndex getValue() throws IllegalStateException, IllegalArgumentException {
@@ -303,9 +329,9 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
 
         private final String specVersion;
         private final String path;
-        private final ModuleIdentifier moduleIdentifier;
+        private final String moduleIdentifier;
 
-        ExtensionJar(final ModuleIdentifier moduleIdentifier, final String implVersion, final String implVendorId,
+        ExtensionJar(final String moduleIdentifier, final String implVersion, final String implVendorId,
                 final String specVersion, final String path) {
             this.implVersion = implVersion;
             this.implVendorId = implVendorId;
@@ -314,7 +340,7 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
             this.moduleIdentifier = moduleIdentifier;
         }
 
-        ExtensionJar(final ModuleIdentifier moduleIdentifier, final ExtensionInfo info) {
+        ExtensionJar(final String moduleIdentifier, final ExtensionInfo info) {
             this.implVersion = info.getImplVersion();
             this.implVendorId = info.getImplVendorId();
             this.specVersion = info.getSpecVersion();
