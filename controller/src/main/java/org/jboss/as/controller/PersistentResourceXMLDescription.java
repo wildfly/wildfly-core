@@ -704,7 +704,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
 
                     @Override
                     public Builder setXmlWrapperElement(String xmlWrapperElement) {
-                        builder.setXmlElementName(xmlWrapperElement);
+                        builder.setXmlWrapperElement(xmlWrapperElement);
                         return this;
                     }
 
