@@ -10,6 +10,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FUL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.domain.controller.logging.DomainControllerLogger.DEPLOYMENT_NAMECHECK_LOGGER;
 import static org.jboss.as.domain.controller.operations.deployment.AbstractDeploymentHandler.createFailureException;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
@@ -75,6 +76,9 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         final PathAddress address = PathAddress.pathAddress(deploymentPath);
         String runtimeName = correctedOperation.hasDefined(RUNTIME_NAME)
                 ? DeploymentAttributes.RUNTIME_NAME.resolveModelAttribute(context, correctedOperation).asString() : name;
+        if (!runtimeName.contains(".")) {
+            DEPLOYMENT_NAMECHECK_LOGGER.deploymentsRuntimeNameWithoutExtension(name, runtimeName);
+        }
         // clone the content param, so we can modify it to our own content
         ModelNode content = correctedOperation.require(CONTENT).clone();
 
