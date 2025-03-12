@@ -42,7 +42,7 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
     public static final int MAX_NUMBER_OF_JAR_RESOURCES = Integer.parseInt(WildFlySecurityManager.getPropertyPrivileged("org.jboss.as.server.max_number_of_jar_resources", "256"));
     private static final Logger log = Logger.getLogger(ExternalModuleSpecService.class);
 
-    private final ModuleIdentifier moduleIdentifier;
+    private final String moduleIdentifier;
 
     private final File file;
 
@@ -50,7 +50,22 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
 
     private List<JarFile> jarFiles;
 
+    /**
+     * Creates a new ExternalModuleSpecService.
+     *
+     * @param moduleIdentifier the module identifier
+     * @param file the file
+     *
+     * @deprecated Use {@link #ExternalModuleSpecService(String, File)} instead.
+     */
+    @Deprecated(forRemoval = true, since = "28.0.0")
     public ExternalModuleSpecService(ModuleIdentifier moduleIdentifier, File file) {
+        this.moduleIdentifier = moduleIdentifier.toString();
+        this.file = file;
+        this.jarFiles = new ArrayList<>();
+    }
+
+    public ExternalModuleSpecService(String moduleIdentifier, File file) {
         this.moduleIdentifier = moduleIdentifier;
         this.file = file;
         this.jarFiles = new ArrayList<>();
@@ -64,17 +79,17 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
             if (!file.isDirectory()) {
                 currentName = file.toString();
                 this.jarFiles.add(new JarFile(file));
-                specBuilder = ModuleSpec.build(moduleIdentifier.toString());
+                specBuilder = ModuleSpec.build(moduleIdentifier);
                 addResourceRoot(specBuilder, jarFiles.get(0));
-                log.debugf("Added %s jar file as resource root for %s module identifier", file.getAbsolutePath(), moduleIdentifier.getName());
+                log.debugf("Added %s jar file as resource root for %s module identifier", file.getAbsolutePath(), moduleIdentifier);
             } else {
-                specBuilder = ModuleSpec.build(moduleIdentifier.toString());
+                specBuilder = ModuleSpec.build(moduleIdentifier);
                 final Path rootPath = file.toPath();
 
                 //This path resource root added here pointing to the rootPath will be able to find other file resources in any rootPath subdirectories.
                 //We do not need to add a addPathResourceRoot for each subdirectory
                 addPathResourceRoot(specBuilder, rootPath);
-                log.debugf("Added %s directory as resource root for %s module identifier", file.getAbsolutePath(), moduleIdentifier.getName());
+                log.debugf("Added %s directory as resource root for %s module identifier", file.getAbsolutePath(), moduleIdentifier);
 
                 //scan any jar in this directory and subdirectories
                 final List<Path> processedPaths = new ArrayList<>();
@@ -94,7 +109,7 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
                         JarFile jarFile = new JarFile(jar.toFile());
                         this.jarFiles.add(jarFile);
                         addResourceRoot(specBuilder, jarFile);
-                        log.debugf("Added %s jar file as resource root for %s module identifier", jar.toString(), moduleIdentifier.getName());
+                        log.debugf("Added %s jar file as resource root for %s module identifier", jar.toString(), moduleIdentifier);
                     }
                 }
             }
@@ -118,7 +133,7 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
     @Override
     public synchronized void stop(StopContext context) {
         for (JarFile jarFile : jarFiles) {
-            log.debugf("Closing %s jar file which was added as resource root for %s module identifier", jarFile.getName(), moduleIdentifier.getName());
+            log.debugf("Closing %s jar file which was added as resource root for %s module identifier", jarFile.getName(), moduleIdentifier);
             VFSUtils.safeClose(jarFile);
         }
         jarFiles.clear();

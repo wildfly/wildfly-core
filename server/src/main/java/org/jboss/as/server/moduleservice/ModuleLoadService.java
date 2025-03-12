@@ -34,8 +34,8 @@ import org.jboss.msc.value.InjectedValue;
  */
 public class ModuleLoadService implements Service<Module> {
 
-    private final InjectedValue<ServiceModuleLoader> serviceModuleLoader = new InjectedValue<ServiceModuleLoader>();
-    private final InjectedValue<ModuleDefinition> moduleDefinitionInjectedValue = new InjectedValue<ModuleDefinition>();
+    private final InjectedValue<ServiceModuleLoader> serviceModuleLoader = new InjectedValue<>();
+    private final InjectedValue<ModuleDefinition> moduleDefinitionInjectedValue = new InjectedValue<>();
     private final List<ModuleDependency> allDependencies;
     private final Collection<ModuleDependency> systemDependencies;
     private final Collection<ModuleDependency> userDependencies;
@@ -74,7 +74,7 @@ public class ModuleLoadService implements Service<Module> {
     public synchronized void start(StartContext context) throws StartException {
         try {
             final ServiceModuleLoader moduleLoader = serviceModuleLoader.getValue();
-            final Module module = moduleLoader.loadModule(moduleDefinitionInjectedValue.getValue().getModuleIdentifier());
+            final Module module = moduleLoader.loadModule(moduleDefinitionInjectedValue.getValue().getModuleName());
             moduleLoader.relinkModule(module);
             for (ModuleDependency dependency : allDependencies) {
                 if (dependency.isUserSpecified()) {
@@ -117,31 +117,78 @@ public class ModuleLoadService implements Service<Module> {
         final ServiceBuilder<Module> builder = target.addService(serviceName, service);
 
         builder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER, ServiceModuleLoader.class, service.getServiceModuleLoader());
-        builder.addDependency(ServiceModuleLoader.moduleSpecServiceName(identifier.toString()), ModuleDefinition.class, service.getModuleDefinitionInjectedValue());
-        builder.requires(ServiceModuleLoader.moduleResolvedServiceName(identifier.toString())); //don't attempt to load until all dependent module specs are up, even transitive ones
+        builder.addDependency(ServiceModuleLoader.moduleSpecServiceName(identifier), ModuleDefinition.class, service.getModuleDefinitionInjectedValue());
+        builder.requires(ServiceModuleLoader.moduleResolvedServiceName(identifier)); //don't attempt to load until all dependent module specs are up, even transitive ones
         builder.setInitialMode(Mode.ON_DEMAND);
 
         builder.install();
         return serviceName;
     }
 
-    public static ServiceName install(final ServiceTarget target, final ModuleIdentifier identifier){
-        final ModuleLoadService service = new ModuleLoadService();
-        return install(target, identifier.toString(), service);
+    /**
+     * Installs a service that will load the module with the given identifier.
+     *
+     * @param target     the service target
+     * @param identifier the module identifier
+     * @return the service name
+     * @deprecated Use {@link #install(ServiceTarget, String)} instead
+     */
+    @Deprecated(forRemoval = true, since = "28.0.0")
+    public static ServiceName install(final ServiceTarget target, final ModuleIdentifier identifier) {
+        return install(target, identifier.toString());
     }
 
+    /**
+     * Installs a ModuleLoadService that will load the module with the given identifier.
+     *
+     * @param target     the service target
+     * @param identifier the module identifier in its canonical form
+     * @return the service name
+     */
+    public static ServiceName install(final ServiceTarget target, final String identifier) {
+        final ModuleLoadService service = new ModuleLoadService();
+        return install(target, identifier, service);
+    }
+
+    /**
+     * Installs a ModuleLoadService that will load the module with the given identifier and its dependencies.
+     *
+     * @param target the service target
+     * @param identifier the module identifier in its canonical form
+     * @param systemDependencies the system dependencies
+     * @param localDependencies the local dependencies
+     * @param userDependencies the user dependencies
+     *
+     * @return the service name
+     */
     public static ServiceName install(final ServiceTarget target, final String identifier, final Collection<ModuleDependency> systemDependencies, final Collection<ModuleDependency> localDependencies, final Collection<ModuleDependency> userDependencies) {
         final ModuleLoadService service = new ModuleLoadService(systemDependencies, localDependencies, userDependencies);
         return install(target, identifier, service);
     }
 
+    /**
+     * @deprecated Use {@link #installAliases(ServiceTarget, String, List)} instead
+     */
+    @Deprecated(forRemoval = true, since = "28.0.0")
     public static ServiceName installAliases(final ServiceTarget target, final ModuleIdentifier identifier, final List<String> aliases) {
-        final ArrayList<ModuleDependency> dependencies = new ArrayList<ModuleDependency>(aliases.size());
+        return installAliases(target, identifier.toString(), aliases);
+    }
+
+    /**
+     * Installs a ModuleLoadService that will load the module with the given identifier and its aliases.
+     *
+     * @param target  the service target
+     * @param identifier the module identifier in its canonical form
+     * @param aliases the list of aliases
+     * @return the service name
+     */
+    public static ServiceName installAliases(final ServiceTarget target, final String identifier, final List<String> aliases) {
+        final ArrayList<ModuleDependency> dependencies = new ArrayList<>(aliases.size());
         for (final String i : aliases) {
             dependencies.add(ModuleDependency.Builder.of(null, i).build());
         }
         final ModuleLoadService service = new ModuleLoadService(dependencies);
-        return install(target, identifier.toString(), service);
+        return install(target, identifier, service);
     }
 
     public InjectedValue<ServiceModuleLoader> getServiceModuleLoader() {

@@ -302,7 +302,9 @@ public final class ServerService extends AbstractControllerService {
             final File[] newExtDirs = Arrays.copyOf(extDirs, extDirs.length + 1);
             newExtDirs[extDirs.length] = new File(serverEnvironment.getServerBaseDir(), "lib/ext");
             serviceTarget.addService(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX,
-                    new ExtensionIndexService(newExtDirs)).setInitialMode(ServiceController.Mode.ON_DEMAND).install();
+                    new ExtensionIndexService(newExtDirs))
+                    .setInitialMode(ServiceController.Mode.ON_DEMAND)
+                    .install();
             final boolean suspend = runningModeControl.getSuspend() != null ? runningModeControl.getSuspend() : serverEnvironment.isStartSuspended();
             final boolean gracefulStartup = serverEnvironment.isStartGracefully();
             this.suspendController.reset();
