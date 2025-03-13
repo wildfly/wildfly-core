@@ -5,6 +5,8 @@
 
 package org.jboss.as.server.deployment.module.descriptor;
 
+import static org.jboss.as.server.moduleservice.ServiceModuleLoader.MODULE_PREFIX;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,7 +25,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.controller.ModuleIdentifierUtil;
-import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.MountedDeploymentOverlay;
@@ -33,15 +35,13 @@ import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.MountHandle;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.deployment.module.TempFileProviderService;
-import org.jboss.modules.ModuleIdentifier;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.filter.PathFilters;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
-
-import static org.jboss.as.server.moduleservice.ServiceModuleLoader.MODULE_PREFIX;
 
 /**
  * @author Stuart Douglas
@@ -769,7 +769,7 @@ public class JBossDeploymentStructureParser10 implements XMLElementReader<ParseR
         if (!required.isEmpty()) {
             throw missingAttributes(reader.getLocation(), required);
         }
-        specBuilder.getExclusions().add(ModuleIdentifier.create(name, slot));
+        specBuilder.addExclusion(JBossModulesNameUtil.canonicalModuleIdentifier(name, slot));
         if (reader.hasNext()) {
             switch (reader.nextTag()) {
                 case XMLStreamConstants.END_ELEMENT:

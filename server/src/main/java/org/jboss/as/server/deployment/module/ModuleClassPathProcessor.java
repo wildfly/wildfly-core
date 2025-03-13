@@ -50,7 +50,7 @@ public final class ModuleClassPathProcessor implements DeploymentUnitProcessor {
                     additionalModule.addLocalDependency(ModuleDependency.Builder.of(moduleLoader, entry).setExport(true).setImportServices(true).build());
                 }
                 // add a dependency on the top ear itself for good measure
-                additionalModule.addLocalDependency(ModuleDependency.Builder.of(moduleLoader, deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER).toString()).setImportServices(true).build());
+                additionalModule.addLocalDependency(ModuleDependency.Builder.of(moduleLoader, deploymentUnit.getAttachment(Attachments.MODULE_NAME)).setImportServices(true).build());
             }
         }
     }

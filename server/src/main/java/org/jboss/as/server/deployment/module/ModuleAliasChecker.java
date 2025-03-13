@@ -71,27 +71,41 @@ public class ModuleAliasChecker {
         }
     }
 
-     /**
+    /**
      * Check whether the identifier passed as an argument represents an Alias and if so, log a warning describing that the alias
      * can be replaced with its target module.
      *
-     * @param identifiers List of identifiers we want to verify.
-     * @param context The context to use in the log message to give more information about from where this module identifier has
+     * @param identifiers    List of identifiers we want to verify.
+     * @param context        The context to use in the log message to give more information about from where this module identifier has
      * @param deploymentName Deployment name where the dependencies are meant to be.
+     * @deprecated Iterate over all the identifiers and call {@link #checkModuleAliasesForExclusion(String, MessageContext, String)}
      */
+    @Deprecated(forRemoval = true, since = "28.0.0")
     public static void checkModuleAliasesForExclusions(List<ModuleIdentifier> identifiers, MessageContext context, String deploymentName) {
         for (ModuleIdentifier identifier : identifiers) {
             checkModuleAlias(context, deploymentName, identifier.toString(), true);
         }
     }
 
+    /**
+     * Check whether the module identifier passed as an argument represents an exclusion Alias and if so, log a warning describing that the alias
+     * can be replaced with its target module.
+     *
+     * @param identifier     The module identifier we want to verify.
+     * @param context        The context to use in the log message to give more information about from where this module identifier has
+     * @param deploymentName Deployment name where the dependencies are meant to be.
+     */
+    public static void checkModuleAliasesForExclusion(String identifier, MessageContext context, String deploymentName) {
+        checkModuleAlias(context, deploymentName, identifier, true);
+    }
+
     private static void checkModuleAlias(MessageContext context, String deploymentName, String identifier, boolean exclusions) {
         String targetModule = getTargetModule(identifier);
         if (targetModule != null) {
             if (exclusions) {
-                ServerLogger.DEPLOYMENT_LOGGER.aliasAddedAsExclusion(identifier, deploymentName, context.toString(), targetModule.toString());
+                ServerLogger.DEPLOYMENT_LOGGER.aliasAddedAsExclusion(identifier, deploymentName, context.toString(), targetModule);
             } else {
-                ServerLogger.DEPLOYMENT_LOGGER.aliasAddedAsDependency(identifier, deploymentName, context.toString(), targetModule.toString());
+                ServerLogger.DEPLOYMENT_LOGGER.aliasAddedAsDependency(identifier, deploymentName, context.toString(), targetModule);
             }
         }
     }

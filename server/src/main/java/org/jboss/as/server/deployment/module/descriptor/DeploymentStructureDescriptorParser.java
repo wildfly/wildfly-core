@@ -24,9 +24,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.server.DeployerChainAddHandler;
-import org.jboss.as.server.deployment.module.ModuleAliasChecker;
-import org.jboss.as.server.deployment.module.ModuleAliasChecker.MessageContext;
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.ServerService;
 import org.jboss.as.server.deployment.AttachmentKey;
 import org.jboss.as.server.deployment.Attachments;
@@ -40,12 +37,14 @@ import org.jboss.as.server.deployment.SubDeploymentMarker;
 import org.jboss.as.server.deployment.annotation.ResourceRootIndexer;
 import org.jboss.as.server.deployment.jbossallxml.JBossAllXmlParserRegisteringProcessor;
 import org.jboss.as.server.deployment.module.AdditionalModuleSpecification;
+import org.jboss.as.server.deployment.module.ModuleAliasChecker;
+import org.jboss.as.server.deployment.module.ModuleAliasChecker.MessageContext;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleRootMarker;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.deployment.module.ResourceRoot;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.staxmapper.XMLMapper;
 import org.jboss.vfs.VirtualFile;
@@ -162,7 +161,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                     ServerLogger.DEPLOYMENT_LOGGER.annotationImportIgnored(identifier, additionalModule.getModuleName());
                 }
                 //log a warning if the resource root is wrong
-                final List<ResourceRoot> additionalModuleResourceRoots = new ArrayList<ResourceRoot>(additionalModule.getResourceRoots());
+                final List<ResourceRoot> additionalModuleResourceRoots = new ArrayList<>(additionalModule.getResourceRoots());
                 final ListIterator<ResourceRoot> itr = additionalModuleResourceRoots.listIterator();
                 while (itr.hasNext()) {
                     final ResourceRoot resourceRoot = itr.next();
@@ -172,7 +171,9 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                     }
                 }
                 final AdditionalModuleSpecification additional = new AdditionalModuleSpecification(additionalModule.getModuleName(), additionalModuleResourceRoots);
-                additional.addAliases(additionalModule.getAliases());
+                for (String alias : additionalModule.getAliasesList()) {
+                    additional.addModuleAlias(alias);
+                }
                 additional.addSystemDependencies(additionalModule.getModuleDependencies());
                 additionalModules.put(additional.getModuleName(), additional);
                 deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_MODULES, additional);
@@ -190,13 +191,13 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 // set the ear cascade exclusions to sub-deployments flag as configured in jboss-deployment-structure.xml
                 moduleSpec.setExclusionsCascadedToSubDeployments(result.getEarExclusionsCascadedToSubDeployments());
             }
-            // handle the the root deployment
+            // handle the root deployment
             final ModuleStructureSpec rootDeploymentSpecification = result.getRootDeploymentSpecification();
             if (rootDeploymentSpecification != null) {
                 handleDeployment(phaseContext, deploymentUnit, moduleSpec, rootDeploymentSpecification, additionalModules);
             }
             // handle sub deployments
-            final Map<String, ResourceRoot> subDeploymentMap = new HashMap<String, ResourceRoot>();
+            final Map<String, ResourceRoot> subDeploymentMap = new HashMap<>();
             final List<ResourceRoot> resourceRoots = deploymentUnit.getAttachmentList(Attachments.RESOURCE_ROOTS);
             for (final ResourceRoot root : resourceRoots) {
                 if (SubDeploymentMarker.isSubDeployment(root)) {
@@ -215,8 +216,8 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
 
                 // cascade the exclusions if configured
                 if(moduleSpec.isExclusionsCascadedToSubDeployments() && rootDeploymentSpecification != null) {
-                    for(ModuleIdentifier exclusion : rootDeploymentSpecification.getExclusions()) {
-                        spec.getExclusions().add(exclusion);
+                    for(String exclusion : rootDeploymentSpecification.getExclusionsList()) {
+                        spec.addExclusion(exclusion);
                     }
                 }
             }
@@ -260,9 +261,14 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
 
         ModuleAliasChecker.checkModuleAliasesForDependencies(moduleDependencies, MessageContext.JBOSS_DEPLOYMENT_STRUCTURE_CONTEXT, deploymentUnit.getName());
         moduleSpec.addUserDependencies(moduleDependencies);
-        ModuleAliasChecker.checkModuleAliasesForExclusions(rootDeploymentSpecification.getExclusions(), MessageContext.JBOSS_DEPLOYMENT_STRUCTURE_CONTEXT, deploymentUnit.getName());
-        rootDeploymentSpecification.getExclusions().stream().map(ModuleIdentifier::toString).forEach(moduleSpec::addModuleExclusion);
-        moduleSpec.addAliases(rootDeploymentSpecification.getAliases());
+        List<String> exclusionsList = rootDeploymentSpecification.getExclusionsList();
+        for(String exclusion : exclusionsList) {
+            ModuleAliasChecker.checkModuleAliasesForExclusion(exclusion, MessageContext.JBOSS_DEPLOYMENT_STRUCTURE_CONTEXT, deploymentUnit.getName());
+            moduleSpec.addModuleExclusion(exclusion);
+        }
+        for (String alias : rootDeploymentSpecification.getAliasesList()) {
+            moduleSpec.addModuleAlias(alias);
+        }
         moduleSpec.addModuleSystemDependencies(rootDeploymentSpecification.getSystemDependencies());
         for (final ResourceRoot additionalResourceRoot : rootDeploymentSpecification.getResourceRoots()) {
 
@@ -312,7 +318,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
     }
 
     private Map<VirtualFile, ResourceRoot> resourceRoots(final DeploymentUnit deploymentUnit) {
-        final Map<VirtualFile, ResourceRoot> resourceRoots = new HashMap<VirtualFile, ResourceRoot>();
+        final Map<VirtualFile, ResourceRoot> resourceRoots = new HashMap<>();
         for (final ResourceRoot root : DeploymentUtils.allResourceRoots(deploymentUnit)) {
             resourceRoots.put(root.getRoot(), root);
         }

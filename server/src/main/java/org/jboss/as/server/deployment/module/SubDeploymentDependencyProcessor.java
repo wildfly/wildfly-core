@@ -12,7 +12,6 @@ import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.filter.PathFilters;
 
@@ -33,13 +32,13 @@ public class SubDeploymentDependencyProcessor implements DeploymentUnitProcessor
 
         final ModuleSpecification moduleSpec = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
-        final String moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER).toString();
+        final String moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_NAME);
 
         if (deploymentUnit.getParent() != null) {
-            final ModuleIdentifier parentModule = parent.getAttachment(Attachments.MODULE_IDENTIFIER);
+            final String parentModule = parent.getAttachment(Attachments.MODULE_NAME);
             if (parentModule != null) {
                 // access to ear classes
-                ModuleDependency moduleDependency = ModuleDependency.Builder.of(moduleLoader, parentModule.toString()).setImportServices(true).build();
+                ModuleDependency moduleDependency = ModuleDependency.Builder.of(moduleLoader, parentModule).setImportServices(true).build();
                 moduleDependency.addImportFilter(PathFilters.acceptAll(), true);
                 moduleSpec.addLocalDependency(moduleDependency);
             }
@@ -47,15 +46,15 @@ public class SubDeploymentDependencyProcessor implements DeploymentUnitProcessor
 
         // make the deployment content available to any additional modules
         for (AdditionalModuleSpecification module : deploymentUnit.getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
-            module.addLocalDependency(ModuleDependency.Builder.of(moduleLoader, moduleIdentifier.toString()).setImportServices(true).build());
+            module.addLocalDependency(ModuleDependency.Builder.of(moduleLoader, moduleIdentifier).setImportServices(true).build());
         }
 
         final List<DeploymentUnit> subDeployments = parent.getAttachmentList(Attachments.SUB_DEPLOYMENTS);
-        final List<ModuleDependency> accessibleModules = new ArrayList<ModuleDependency>();
+        final List<ModuleDependency> accessibleModules = new ArrayList<>();
         for (DeploymentUnit subDeployment : subDeployments) {
             final ModuleSpecification subModule = subDeployment.getAttachment(Attachments.MODULE_SPECIFICATION);
             if (!subModule.isPrivateModule() && (!parentModuleSpec.isSubDeploymentModulesIsolated() || subModule.isPublicModule())) {
-                String identifier = subDeployment.getAttachment(Attachments.MODULE_IDENTIFIER).toString();
+                String identifier = subDeployment.getAttachment(Attachments.MODULE_NAME);
                 ModuleDependency dependency = ModuleDependency.Builder.of(moduleLoader, identifier).setImportServices(true).build();
                 dependency.addImportFilter(PathFilters.acceptAll(), true);
                 accessibleModules.add(dependency);
