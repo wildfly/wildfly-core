@@ -12,7 +12,10 @@ import org.jboss.dmr.ModelType;
 
 /**
  * Provides utilities related to working with names of JBoss Modules modules.
+ *
+ * @deprecated use {@link JBossModulesNameUtil} instead
  */
+@Deprecated(forRemoval = true, since = "28.0.0")
 public final class ModuleIdentifierUtil {
 
     /**
@@ -111,7 +114,10 @@ public final class ModuleIdentifierUtil {
     /**
      * A {@link ParameterCorrector} that {@link #canonicalModuleIdentifier(String) canonicalizes}
      * values that are meant to represent JBoss Modules module names.
+     *
+     * @deprecated use {@link JBossModulesNameUtil#parseCanonicalModuleIdentifier} after resolving your attribute value in your step handler.
      */
+    @Deprecated(forRemoval = true, since = "28.0.0")
     public static final ParameterCorrector MODULE_NAME_CORRECTOR = new ParameterCorrector() {
         @Override
         public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
