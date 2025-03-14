@@ -208,7 +208,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
             //unfortunately the sub deployment has not been setup yet, so we cannot just
             //get it from the sub deployment directly
             final ResourceRoot otherRoot = subDeployments.get(classPathFile);
-            target.addToAttachmentList(CLASS_PATH_MODULES, ModuleIdentifierProcessor.createModuleIdentifier(otherRoot.getRootName(), otherRoot, topLevelDeployment, topLevelRoot, false).toString());
+            target.addToAttachmentList(CLASS_PATH_MODULES, ModuleIdentifierProcessor.createModuleIdentifierAsString(otherRoot.getRootName(), otherRoot, topLevelDeployment, topLevelRoot, false));
         } else {
             String identifier = createAdditionalModule(resourceRoot, topLevelDeployment, topLevelRoot, additionalModules, classPathFile, resourceRoots);
             target.addToAttachmentList(CLASS_PATH_MODULES, identifier);

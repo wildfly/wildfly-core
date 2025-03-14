@@ -74,7 +74,7 @@ public class PermissionsParserProcessor implements DeploymentUnitProcessor {
         final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
-        final String moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER).toString();
+        final String moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_NAME);
         final Function<String, String> wflyResolverFunc = deploymentUnit.getAttachment(Attachments.WFLY_DESCRIPTOR_EXPR_EXPAND_FUNCTION);
         final Function<String, String> specResolverFunc = deploymentUnit.getAttachment(Attachments.SPEC_DESCRIPTOR_EXPR_EXPAND_FUNCTION);
 
