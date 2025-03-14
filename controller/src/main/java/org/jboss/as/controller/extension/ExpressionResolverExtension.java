@@ -11,6 +11,7 @@ import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationClientException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 
 /**
  * Object that can be used to extend the functionality of an {@link ExpressionResolver} by handling
@@ -69,5 +70,25 @@ public interface ExpressionResolverExtension {
      * @throws ExpressionResolver.ExpressionResolutionServerException if some other internal expression resolution failure occurs.
      */
     String resolveExpression(String expression, OperationContext context);
+
+    /**
+     * Resolve a given simple expression string, returning {@code null} if the string is not of a form
+     * recognizable to the plugin.
+     *
+     * @param expression a string that matches {@link #EXTENSION_EXPRESSION_PATTERN} and that does not have
+     *                   any substrings that match that pattern.
+     * @param capabilitySupport object for accessing capability-backed APIs
+     *
+     * @throws ExpressionResolver.ExpressionResolutionUserException   if {@code expression} is a form understood by the plugin but in some
+     *                                             way is unacceptable. This should only be thrown due to flaws in the
+     *                                             provided {@code expression} or the configuration of resources used by
+     *                                             the resolver extension, which are 'user' problems. It should not
+     *                                             be used for internal problems in the resolver extension.
+     * @throws ExpressionResolver.ExpressionResolutionServerException if some other internal expression resolution failure occurs.
+     * @throws UnsupportedOperationException if this extension does not support resolution from a CapabilityServiceSupport capabilitySupport.
+     */
+    default String resolveExpression(String expression, CapabilityServiceSupport capabilitySupport) {
+        throw new UnsupportedOperationException();
+    }
 
 }
