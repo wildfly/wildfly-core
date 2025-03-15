@@ -38,9 +38,10 @@ final class InjectedNetworkBindingStreamServerService extends AbstractStreamServ
             final Supplier<SSLContext> sslContextSupplier,
             final Supplier<SocketBindingManager> socketBindingManagerSupplier,
             final Supplier<NetworkInterfaceBinding> interfaceBindingSupplier,
-            final OptionMap connectorPropertiesOptionMap, int port) {
+            final OptionMap connectorPropertiesOptionMap, int port,
+            final String protocol) {
         super(streamServerConsumer, endpointSupplier, saslAuthenticationFactorySupplier,
-                sslContextSupplier, socketBindingManagerSupplier, connectorPropertiesOptionMap);
+                sslContextSupplier, socketBindingManagerSupplier, connectorPropertiesOptionMap, protocol);
         this.interfaceBindingSupplier = interfaceBindingSupplier;
         this.port = port;
     }
