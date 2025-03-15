@@ -54,7 +54,7 @@ public class OutboundBindAddressResourceDefinition extends PersistentResourceDef
     static final OutboundBindAddressResourceDefinition INSTANCE = new OutboundBindAddressResourceDefinition();
 
     private OutboundBindAddressResourceDefinition() {
-        super(new SimpleResourceDefinition.Parameters(PATH, IOSubsystemRegistrar.RESOLVER.createChildResolver(PATH))
+        super(new SimpleResourceDefinition.Parameters(PATH, IOSubsystemResourceDefinitionRegistrar.RESOLVER.createChildResolver(PATH))
             .setAddHandler(new OutboundBindAddressAddHandler())
             .setRemoveHandler(new OutboundBindAddressRemoveHandler())
         );

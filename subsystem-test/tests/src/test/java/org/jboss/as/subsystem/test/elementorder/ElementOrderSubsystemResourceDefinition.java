@@ -21,8 +21,10 @@ public class ElementOrderSubsystemResourceDefinition extends SimpleResourceDefin
     static final String SUBSYSTEM_NAME = "element-order";
     static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, SUBSYSTEM_NAME);
     static final ResourceRegistration GROUP_REGISTRATION = ResourceRegistration.of(PathElement.pathElement("group"));
-    static final ResourceRegistration CHILD_REGISTRATION = ResourceRegistration.of(PathElement.pathElement("child"));
-    static final ResourceRegistration CHILD_2_REGISTRATION = ResourceRegistration.of(PathElement.pathElement("child2"));
+    static final ResourceRegistration CHILD_REGISTRATION = ResourceRegistration.of(PathElement.pathElement("child", "child"));
+    static final ResourceRegistration CHILD_2_REGISTRATION = ResourceRegistration.of(PathElement.pathElement("child2", "child2"));
+
+    static final AttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING).build();
 
     static final AttributeDefinition ATTRIBUTE = new SimpleAttributeDefinitionBuilder("attribute", ModelType.STRING)
             .setRequired(false)
@@ -59,27 +61,22 @@ public class ElementOrderSubsystemResourceDefinition extends SimpleResourceDefin
 
         @Override
         public void registerChildren(ManagementResourceRegistration registration) {
-            registration.registerSubModel(new ChildResourceDefinition());
-            registration.registerSubModel(new Child2ResourceDefinition());
+            registration.registerSubModel(new ChildResourceDefinition(CHILD_REGISTRATION));
+            registration.registerSubModel(new ChildResourceDefinition(CHILD_2_REGISTRATION));
         }
     }
 
     public class ChildResourceDefinition extends SimpleResourceDefinition {
 
-        ChildResourceDefinition() {
-            super(new Parameters(CHILD_REGISTRATION, NonResolvingResourceDescriptionResolver.INSTANCE)
+        ChildResourceDefinition(ResourceRegistration registration) {
+            super(new Parameters(registration, NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(ReloadRequiredAddStepHandler.INSTANCE)
                     .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE));
         }
-    }
 
-    public class Child2ResourceDefinition extends SimpleResourceDefinition {
-
-        Child2ResourceDefinition() {
-            super(new Parameters(CHILD_2_REGISTRATION, NonResolvingResourceDescriptionResolver.INSTANCE)
-                    .setAddHandler(ReloadRequiredAddStepHandler.INSTANCE)
-                    .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE));
+        @Override
+        public void registerAttributes(ManagementResourceRegistration registration) {
+            registration.registerReadWriteAttribute(NAME, null, ReloadRequiredWriteAttributeHandler.INSTANCE);
         }
     }
-
 }

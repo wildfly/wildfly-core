@@ -12,7 +12,7 @@ import org.jboss.staxmapper.Namespace;
  * A namespace qualified XML attribute or element.
  * @author Paul Ferraro
  */
-public interface Schema {
+public interface Schema extends QNameResolver {
 
     /**
      * Returns the local name of this attribute/element.
@@ -31,6 +31,11 @@ public interface Schema {
      * @return the qualified name of this attribute/element.
      */
     default QName getQualifiedName() {
-        return new QName(this.getNamespace().getUri(), this.getLocalName());
+        return this.resolve(this.getLocalName());
+    }
+
+    @Override
+    default QName resolve(String localName) {
+        return new QName(this.getNamespace().getUri(), localName);
     }
 }

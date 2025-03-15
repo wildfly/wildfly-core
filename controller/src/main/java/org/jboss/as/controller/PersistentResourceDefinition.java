@@ -20,7 +20,9 @@ import org.jboss.as.controller.registry.OperationEntry;
  * simplify the process of creating parsers and persisters.
  *
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
+ * @deprecated Build {@link ResourceDefinition} via {@link ResourceDefinition#builder(ResourceRegistration, ResourceDescriptionResolver)} or extend {@link SimpleResourceDefinition} directly.
  */
+@Deprecated(forRemoval = true, since = "28.0")
 public abstract class PersistentResourceDefinition extends SimpleResourceDefinition {
 
     protected PersistentResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {
