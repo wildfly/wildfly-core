@@ -63,30 +63,33 @@ public class AddResourceOperationStepHandler extends AbstractAddStepHandler impl
         PathElement path = address.getLastElement();
 
         OperationStepHandler parentHandler = context.getRootResourceRegistration().getOperationHandler(parentAddress, context.getCurrentOperationName());
-        if (parentHandler instanceof AddResourceOperationStepHandlerDescriptor) {
+        if (parentHandler instanceof DescribedOperationStepHandler) {
             @SuppressWarnings("unchecked")
-            AddResourceOperationStepHandlerDescriptor parentDescriptor = ((DescribedOperationStepHandler<AddResourceOperationStepHandlerDescriptor>) parentHandler).getDescriptor();
+            OperationStepHandlerDescriptor parentDescriptor = ((DescribedOperationStepHandler<OperationStepHandlerDescriptor>) parentHandler).getDescriptor();
+            if (parentDescriptor instanceof AddResourceOperationStepHandlerDescriptor) {
+                AddResourceOperationStepHandlerDescriptor parentAddOperationDescriptor = (AddResourceOperationStepHandlerDescriptor) parentDescriptor;
 
-            if (parentDescriptor.getRequiredChildResources().containsKey(path)) {
-                if (context.readResourceFromRoot(parentAddress, false).hasChild(path)) {
-                    // If we are a required child resource of our parent, we need to remove the auto-created resource first
-                    context.addStep(Util.createRemoveOperation(address), context.getRootResourceRegistration().getOperationHandler(address, ModelDescriptionConstants.REMOVE), OperationContext.Stage.MODEL);
-                    context.addStep(operation, this, OperationContext.Stage.MODEL);
-                    return;
-                }
-            }
-            for (PathElement requiredPath : parentDescriptor.getRequiredSingletonChildResources().keySet()) {
-                String requiredPathKey = requiredPath.getKey();
-                if (requiredPath.getKey().equals(path.getKey())) {
-                    Set<String> childrenNames = context.readResourceFromRoot(parentAddress, false).getChildrenNames(requiredPathKey);
-                    if (!childrenNames.isEmpty()) {
-                        // If there is a required singleton sibling resource, we need to remove it first
-                        for (String childName : childrenNames) {
-                            PathAddress singletonAddress = parentAddress.append(requiredPathKey, childName);
-                            context.addStep(Util.createRemoveOperation(singletonAddress), context.getRootResourceRegistration().getOperationHandler(singletonAddress, ModelDescriptionConstants.REMOVE), OperationContext.Stage.MODEL);
-                        }
+                if (parentAddOperationDescriptor.getRequiredChildResources().containsKey(path)) {
+                    if (context.readResourceFromRoot(parentAddress, false).hasChild(path)) {
+                        // If we are a required child resource of our parent, we need to remove the auto-created resource first
+                        context.addStep(Util.createRemoveOperation(address), context.getRootResourceRegistration().getOperationHandler(address, ModelDescriptionConstants.REMOVE), OperationContext.Stage.MODEL);
                         context.addStep(operation, this, OperationContext.Stage.MODEL);
                         return;
+                    }
+                }
+                for (PathElement requiredPath : parentAddOperationDescriptor.getRequiredSingletonChildResources().keySet()) {
+                    String requiredPathKey = requiredPath.getKey();
+                    if (requiredPath.getKey().equals(path.getKey())) {
+                        Set<String> childrenNames = context.readResourceFromRoot(parentAddress, false).getChildrenNames(requiredPathKey);
+                        if (!childrenNames.isEmpty()) {
+                            // If there is a required singleton sibling resource, we need to remove it first
+                            for (String childName : childrenNames) {
+                                PathAddress singletonAddress = parentAddress.append(requiredPathKey, childName);
+                                context.addStep(Util.createRemoveOperation(singletonAddress), context.getRootResourceRegistration().getOperationHandler(singletonAddress, ModelDescriptionConstants.REMOVE), OperationContext.Stage.MODEL);
+                            }
+                            context.addStep(operation, this, OperationContext.Stage.MODEL);
+                            return;
+                        }
                     }
                 }
             }
