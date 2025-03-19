@@ -400,7 +400,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
         final ModelNode warnings = getResponseHeaders().get(WARNINGS);
         boolean unique = true;
         if (warnings.isDefined()) {
-            // Don't repeat a warning. This is basically a secondard safeguard
+            // Don't repeat a warning. This is basically a secondary safeguard
             // against different steps for the same op ending up reporting the
             // same warning. List iteration is not efficient but > 1 warning
             // in an op is an edge case
