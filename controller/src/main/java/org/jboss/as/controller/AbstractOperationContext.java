@@ -633,6 +633,9 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
 
     /**
      * Gets a reference to the mutable ManagementResourceRegistration for the resource tree root.
+     * <p>
+     * This method validates that the caller has the necessary permissions to modify the model.
+     *
      * @return the registration.
      */
     abstract ManagementResourceRegistration getRootResourceRegistrationForUpdate();
