@@ -569,6 +569,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         return operationHeaders.getContextFlags().contains(ContextFlag.ALLOW_RESOURCE_SERVICE_RESTART);
     }
 
+    @Override
     public ManagementResourceRegistration getResourceRegistrationForUpdate() {
         return getMutableResourceRegistration(activeStep.address);
     }
@@ -615,6 +616,8 @@ final class OperationContextImpl extends AbstractOperationContext {
      * Gets a service registry that will ensure
      * {@link org.jboss.msc.service.ServiceController#setMode(org.jboss.msc.service.ServiceController.Mode) changes to the mode}
      * of registered services will result in subsequent verification of service stability.
+     * <p>
+     * This method validates that the caller has the necessary permissions to read or modify the runtime state.
      *
      * @param modify {@code true} if the caller intends to modify state
      * @param registryActiveStep the {@link org.jboss.as.controller.AbstractOperationContext.Step} that encapsulates
@@ -645,6 +648,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         return registry;
     }
 
+    @Override
     public ServiceController<?> removeService(final ServiceName name) throws UnsupportedOperationException {
 
         readOnly = false;

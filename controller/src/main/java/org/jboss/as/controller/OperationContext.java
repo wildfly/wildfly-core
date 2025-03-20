@@ -414,7 +414,10 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
     ModelNode getCurrentOperationParameter(String name, boolean nullable);
 
     /**
-     * Get a read only view of the managed resource registration.  The registration is relative to the operation address.
+     * Get a read only view of the managed resource registration. The registration is relative to the operation address.
+     * <p>
+     * This method validates that the caller has the necessary permissions to read the resource registration associated
+     * with the currently executing step.
      *
      * @return the model node registration
      */
@@ -422,6 +425,9 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
 
     /**
      * Get a mutable view of the managed resource registration.  The registration is relative to the operation address.
+     * <p>
+     * This method validates that the caller has the necessary permissions to read and modify the resource registration associated
+     * with the currently executing step.
      *
      * @return the model node registration
      */
@@ -444,6 +450,8 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
      * caller intends to make any modifications to any object reachable, directly or indirectly, from the returned
      * {@link ServiceRegistry}. This includes modifying any {@link ServiceController}, {@link org.jboss.msc.Service},
      * {@link org.jboss.msc.service.Service}, {@link org.jboss.msc.value.Value} or any object reachable from a value.
+     * <p>
+     * This method validates that the caller has the necessary permissions to read or modify the runtime state.
      *
      * @param modify {@code true} if the operation may be modifying any object reachable directly or indirectly from
      *                           the returned {@link ServiceRegistry}, {@code false} otherwise
@@ -456,6 +464,9 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
      * Initiate a service removal.  If the step is not a runtime operation handler step, an exception will be thrown.  Any
      * subsequent step which attempts to add a service with the same name will block until the service removal completes.
      * The returned controller may be used to attempt to cancel a removal in progress.
+     * <p>
+     * This method performs an authorization check to ensure that the caller has the necessary permissions
+     * to modify the runtime state.
      *
      * @param name the service to remove
      * @return the controller of the service to be removed if service of given name exists; null otherwise
@@ -466,6 +477,9 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
     /**
      * Initiate a service removal.  If the step is not a runtime operation handler step, an exception will be thrown.  Any
      * subsequent step which attempts to add a service with the same name will block until the service removal completes.
+     * <p>
+     * This method performs an authorization check to ensure that the caller has the necessary permissions
+     * to modify the runtime state.
      *
      * @param controller the service controller to remove
      * @throws UnsupportedOperationException if the calling step is not a runtime operation step
@@ -514,6 +528,9 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
     /**
      * Create a new resource, relative to the executed operation address.  Since only one operation
      * may write at a time, this operation may block until other writing operations have completed.
+     * <p>
+     * This method performs an authorization check to ensure that the caller has the necessary permissions
+     * to create the resource.
      *
      * @param address the (possibly empty) address where the resource should be created. Address is relative to the
      *                address of the operation being executed
@@ -526,7 +543,9 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
     /**
      * Add a new resource, at the executed operation address.  Since only one operation
      * may write at a time, this operation may block until other writing operations have completed.
-     *
+     * <p>
+     * This method performs an authorization check to ensure that the caller has the necessary permissions
+     * to add the resource.
      * @param address the (possibly empty) address where the resource should be added. Address is relative to the
      *                address of the operation being executed
      * @param toAdd the new resource
@@ -538,6 +557,9 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
     /**
      * Add a new resource, at to the executed operation address.  Since only one operation
      * may write at a time, this operation may block until other writing operations have completed.
+     * <p>
+     * This method performs an authorization check to ensure that the caller has the necessary permissions
+     * to add the resource.
      *
      * @param address the (possibly empty) address where the resource should be added. Address is relative to the
      *                address of the operation being executed
@@ -550,8 +572,11 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
 
     /**
      * Get the resource for read only operations, relative to the executed operation address. Reads never block.
-     * If a write action was previously performed, the value read will be from an uncommitted copy of the the management model.<br/>
-     *
+     * If a write action was previously performed, the value read will be from an uncommitted copy of the management model.
+     * <p>
+     * This method performs an authorization check to ensure that the caller has the necessary permissions
+     * to add the resource.
+     * <p>
      * Note: By default the returned resource is read-only copy of the entire sub-model. In case this is not required use
      * {@link OperationContext#readResource(PathAddress, boolean)} instead.
      *
@@ -564,7 +589,9 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
     /**
      * Get the resource for read only operations, relative to the executed operation address. Reads never block.
      * If a write action was previously performed, the value read will be from an uncommitted copy of the the management model.
-     *
+     * <p>
+     * This method performs an authorization check to ensure that the caller has the necessary permissions
+     * to add the resource.
      * @param relativeAddress the (possibly empty) address where the resource should be added. The address is relative to the
      *                address of the operation being executed
      * @param recursive whether the model should be read recursively or not
@@ -574,8 +601,10 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
 
     /**
      * Read an addressable resource from the root of the model. Reads never block. If a write action was previously performed,
-     * the value read will be from an uncommitted copy of the the management model.
+     * the value read will be from an uncommitted copy of the management model.
      * <p>
+     * This method performs an authorization check to ensure that the caller has the necessary permissions
+     * to read the resource.
      * Note: By default the returned resource is read-only copy of the entire sub-model. In case the entire sub-model
      * is not required use {@link OperationContext#readResourceFromRoot(PathAddress, boolean)} instead.
      *
@@ -586,13 +615,16 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
 
     /**
      * Read an addressable resource from the root of the model. Reads never block. If a write action was previously performed,
-     * the value read will be from an uncommitted copy of the the management model.
+     * the value read will be from an uncommitted copy of the management model.
      * <p>
      * Use the {@code recursive} parameter to avoid the expense of making read-only copies of large portions of the
      * resource tree. If {@code recursive} is {@code false}, the returned resource will only have placeholder resources
      * for immediate children. Those placeholder resources will return an empty
      * {@link org.jboss.as.controller.registry.Resource#getModel() model} and will not themselves have any children.
      * Their presence, however, allows the caller to see what immediate children exist under the target resource.
+     * <p>
+     * This method performs an authorization check to ensure that the caller has the necessary permissions
+     * to read the resource.
      *
      * @param address the (possibly empty) address
      * @param recursive whether the model should be read recursively or not
@@ -603,6 +635,9 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
     /**
      * Get an addressable resource for update operations. Since only one operation may write at a time, this operation
      * may block until other writing operations have completed.
+     * <p>
+     * This method performs an authorization check to ensure that the caller has the necessary permissions
+     * to read and modify the resource.
      *
      * @param relativeAddress the (possibly empty) address where the resource should be added. The address is relative to the
      *                address of the operation being executed
@@ -613,6 +648,9 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
     /**
      * Remove a resource relative to the executed operation address. Since only one operation
      * may write at a time, this operation may block until other writing operations have completed.
+     * <p>
+     * This method performs an authorization check to ensure that the caller has the necessary permissions
+     * to remove the resource.
      *
      * @param relativeAddress the (possibly empty) address where the resource should be removed. The address is relative to the
      *                address of the operation being executed
@@ -700,9 +738,7 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
     boolean revertResourceRestarted(PathAddress resource, Object owner);
 
     /**
-     * Resolves any expressions in the passed in ModelNode.
-     * Expressions may either represent system properties or vaulted date. For vaulted data the format is
-     * ${VAULT::vault_block::attribute_name::sharedKey}
+     * Resolves any expressions passed in the ModelNode.
      *
      * @param node the ModelNode containing expressions.
      * @return a copy of the node with expressions resolved
@@ -951,7 +987,6 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
      * </p>
      *
      * @param requested the base name of the requested capability. Cannot be {@code null}
-     * @param requestedSegments the dynamic segments of the requested capability. Cannot be {@code null}
      * @param dependent the runtime capability that requires the other capability. Cannot be {@code null}
      * @param attribute the attribute that triggered this requirement, or {@code null} if no single attribute was responsible
      * @return {@code true} if the requested capability is present; {@code false} if not. If {@code true}, hereafter
