@@ -6,10 +6,8 @@
 package org.wildfly.extension.discovery;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
@@ -17,6 +15,7 @@ import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -26,16 +25,16 @@ import org.jboss.dmr.ModelType;
 import org.wildfly.discovery.AttributeValue;
 import org.wildfly.discovery.ServiceURL;
 import org.wildfly.discovery.impl.StaticDiscoveryProvider;
-import org.wildfly.subsystem.resource.ResourceDescriptor;
-import org.wildfly.subsystem.service.ResourceServiceInstaller;
-import org.wildfly.subsystem.service.capability.CapabilityServiceInstaller;
+import org.wildfly.discovery.spi.DiscoveryProvider;
+import org.wildfly.subsystem.service.ServiceDependency;
 
 /**
  * Registers the static discovery provider resource definition.
  * @author Paul Ferraro
  */
-public class StaticDiscoveryProviderRegistrar extends DiscoveryProviderRegistrar {
-    static final PathElement PATH = PathElement.pathElement("static-provider");
+public class StaticDiscoveryProviderResourceDefinitionRegistrar extends DiscoveryProviderResourceDefinitionRegistrar {
+
+    static final ResourceRegistration REGISTRATION = ResourceRegistration.of(PathElement.pathElement("static-provider"));
 
     private static final SimpleAttributeDefinition ABSTRACT_TYPE = new SimpleAttributeDefinitionBuilder("abstract-type", ModelType.STRING, true).setAllowExpression(true).build();
     private static final SimpleAttributeDefinition ABSTRACT_TYPE_AUTHORITY = new SimpleAttributeDefinitionBuilder("abstract-type-authority", ModelType.STRING, true).setAllowExpression(true).build();
@@ -61,20 +60,18 @@ public class StaticDiscoveryProviderRegistrar extends DiscoveryProviderRegistrar
             SERVICE_ATTRIBUTES
         ).build();
 
-    private static final ObjectListAttributeDefinition SERVICES = new ObjectListAttributeDefinition.Builder("services", SERVICE)
+    static final ObjectListAttributeDefinition SERVICES = new ObjectListAttributeDefinition.Builder("services", SERVICE)
             .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
             .setFlags(Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final Collection<AttributeDefinition> ATTRIBUTES = List.of(SERVICES);
-
-    StaticDiscoveryProviderRegistrar() {
-        super(PATH, ResourceDescriptor.builder(DiscoverySubsystemRegistrar.RESOLVER.createChildResolver(PATH)).addAttributes(ATTRIBUTES));
+    StaticDiscoveryProviderResourceDefinitionRegistrar() {
+        super(REGISTRATION, List.of(SERVICES));
     }
 
     @Override
-    public ResourceServiceInstaller configure(OperationContext context, ModelNode model) throws OperationFailedException {
+    public ServiceDependency<DiscoveryProvider> resolve(OperationContext context, ModelNode model) throws OperationFailedException {
         List<ModelNode> services = SERVICES.resolveModelAttribute(context, model).asListOrEmpty();
         List<ServiceURL> serviceURLs = new ArrayList<>(services.size());
         for (ModelNode service : services) {
@@ -105,6 +102,6 @@ public class StaticDiscoveryProviderRegistrar extends DiscoveryProviderRegistrar
             Messages.log.tracef("Adding service URL %s", serviceURL);
             serviceURLs.add(serviceURL);
         }
-        return CapabilityServiceInstaller.builder(DiscoveryProviderRegistrar.DISCOVERY_PROVIDER_CAPABILITY, new StaticDiscoveryProvider(serviceURLs)).build();
+        return ServiceDependency.of(new StaticDiscoveryProvider(serviceURLs));
     }
 }

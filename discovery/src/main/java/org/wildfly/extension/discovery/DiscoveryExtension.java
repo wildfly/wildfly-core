@@ -17,6 +17,6 @@ import org.wildfly.subsystem.SubsystemPersistence;
 public class DiscoveryExtension extends SubsystemExtension<DiscoverySubsystemSchema> {
 
     public DiscoveryExtension() {
-        super(SubsystemConfiguration.of(DiscoverySubsystemRegistrar.NAME, DiscoverySubsystemModel.CURRENT, DiscoverySubsystemRegistrar::new), SubsystemPersistence.of(DiscoverySubsystemSchema.CURRENT));
+        super(SubsystemConfiguration.of(DiscoverySubsystemResourceDefinitionRegistrar.REGISTRATION, DiscoverySubsystemModel.CURRENT, DiscoverySubsystemResourceDefinitionRegistrar::new), SubsystemPersistence.of(DiscoverySubsystemSchema.CURRENT));
     }
 }
