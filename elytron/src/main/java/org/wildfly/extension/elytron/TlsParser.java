@@ -83,7 +83,7 @@ class TlsParser {
             .addAttribute(KeyStoreDefinition.REQUIRED)
             .addAttribute(FileAttributeDefinitions.PATH)
             .addAttribute(FileAttributeDefinitions.RELATIVE_TO)
-            .addAttribute(CredentialReference.getAttributeDefinition());
+            ;
 
     private PersistentResourceXMLBuilder ldapKeyStoreParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(LDAP_KEY_STORE))
             .addAttribute(LdapKeyStoreDefinition.DIR_CONTEXT)
