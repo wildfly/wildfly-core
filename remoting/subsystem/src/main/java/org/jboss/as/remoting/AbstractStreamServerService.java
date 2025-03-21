@@ -48,6 +48,8 @@ abstract class AbstractStreamServerService implements Service {
     private final Supplier<SocketBindingManager> socketBindingManagerSupplier;
     private final OptionMap connectorPropertiesOptionMap;
 
+    private final String protocol;
+
     private volatile AcceptingChannel<StreamConnection> streamServer;
     private volatile ManagedBinding managedBinding;
 
@@ -57,19 +59,21 @@ abstract class AbstractStreamServerService implements Service {
             final Supplier<SaslAuthenticationFactory> saslAuthenticationFactorySupplier,
             final Supplier<SSLContext> sslContextSupplier,
             final Supplier<SocketBindingManager> socketBindingManagerSupplier,
-            final OptionMap connectorPropertiesOptionMap) {
+            final OptionMap connectorPropertiesOptionMap,
+            final String protocol) {
         this.streamServerConsumer = streamServerConsumer;
         this.endpointSupplier = endpointSupplier;
         this.saslAuthenticationFactorySupplier = saslAuthenticationFactorySupplier;
         this.sslContextSupplier = sslContextSupplier;
         this.socketBindingManagerSupplier = socketBindingManagerSupplier;
         this.connectorPropertiesOptionMap = connectorPropertiesOptionMap;
+        this.protocol = protocol;
     }
 
     @Override
     public void start(final StartContext context) throws StartException {
         try {
-            NetworkServerProvider networkServerProvider = endpointSupplier.get().getConnectionProviderInterface("remoting", NetworkServerProvider.class);
+            NetworkServerProvider networkServerProvider = endpointSupplier.get().getConnectionProviderInterface(protocol, NetworkServerProvider.class);
 
             SSLContext sslContext = sslContextSupplier != null ? sslContextSupplier.get() : null;
 

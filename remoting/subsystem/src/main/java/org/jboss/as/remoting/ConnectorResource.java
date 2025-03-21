@@ -21,10 +21,12 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.network.ProtocolSocketBinding;
 import org.jboss.as.network.SocketBinding;
+import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -79,8 +81,15 @@ public class ConnectorResource extends SimpleResourceDefinition {
             .setRestartAllServices()
             .build();
 
+    static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(CommonAttributes.PROTOCOL, ModelType.STRING)
+            .setDefaultValue(new ModelNode(Protocol.REMOTE.toString()))
+            .setValidator(EnumValidator.create(Protocol.class))
+            .setRequired(false)
+            .setRestartAllServices()
+            .build();
+
     static final Collection<AttributeDefinition> ATTRIBUTES  = List.of(AUTHENTICATION_PROVIDER, SOCKET_BINDING, SECURITY_REALM,
-            SERVER_NAME, SASL_PROTOCOL, SASL_AUTHENTICATION_FACTORY, SSL_CONTEXT);
+            SERVER_NAME, SASL_PROTOCOL, SASL_AUTHENTICATION_FACTORY, SSL_CONTEXT, PROTOCOL);
 
     ConnectorResource() {
         super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(CONNECTOR))
