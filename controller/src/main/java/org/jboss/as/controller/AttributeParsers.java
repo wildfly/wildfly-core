@@ -95,35 +95,27 @@ public interface AttributeParsers {
             assert attribute instanceof MapAttributeDefinition;
             MapAttributeDefinition mapAttribute = (MapAttributeDefinition) attribute;
 
-            operation.get(attribute.getName()).setEmptyObject();//create empty attribute to address WFCORE-1448
+            if (!operation.hasDefined(attribute.getName())) {
+                // Create empty attribute to address WFCORE-1448
+                operation.get(attribute.getName()).setEmptyObject();
+            }
             if (wrapElement) {
                 if (!reader.getLocalName().equals(wrapper)) {
                     throw ParseUtils.unexpectedElement(reader, Collections.singleton(wrapper));
-                } else {
-                    // allow empty properties list
-                    if (reader.nextTag() == END_ELEMENT) {
-                        return;
-                    }
                 }
+                while (reader.hasNext() && (reader.nextTag() != END_ELEMENT)) {
+                    this.readElement(mapAttribute, reader, operation);
+                }
+            } else {
+                this.readElement(mapAttribute, reader, operation);
             }
+        }
 
-            do {
-                if (elementName.equals(reader.getLocalName())) {
-                    //real parsing happens
-                    parseSingleElement(mapAttribute, reader, operation);
-                } else {
-                    throw ParseUtils.unexpectedElement(reader, Collections.singleton(elementName));
-                }
-
-            } while (reader.hasNext() && reader.nextTag() != END_ELEMENT && reader.getLocalName().equals(elementName));
-
-            if (wrapElement) {
-                // To exit the do loop either we hit an END_ELEMENT or a START_ELEMENT not for 'elementName'
-                // The latter means a bad document
-                if (reader.getEventType() != END_ELEMENT) {
-                    throw ParseUtils.unexpectedElement(reader, Collections.singleton(elementName));
-                }
+        private void readElement(MapAttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
+            if (!reader.getLocalName().equals(this.elementName)) {
+                throw ParseUtils.unexpectedElement(reader, Collections.singleton(this.elementName));
             }
+            this.parseSingleElement(attribute, reader, operation);
         }
 
         public abstract void parseSingleElement(MapAttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException;
@@ -192,7 +184,6 @@ public interface AttributeParsers {
             String key = reader.getAttributeValue(null, keyAttributeName);
             ModelNode op = operation.get(attribute.getName(), key);
             parseEmbeddedElement(objectType, reader, op, keyAttributeName);
-            ParseUtils.requireNoContent(reader);
         }
     }
 
@@ -217,9 +208,6 @@ public interface AttributeParsers {
                 parseEmbeddedElement(objectType, reader, op);
             } else {
                 throw ParseUtils.unexpectedElement(reader, Collections.singleton(attribute.getXmlName()));
-            }
-            if (!reader.isEndElement()) {
-                ParseUtils.requireNoContent(reader);
             }
         }
 
@@ -261,8 +249,9 @@ public interface AttributeParsers {
                         throw ParseUtils.unexpectedElement(reader, attributeElements.keySet());
                     }
                 }
+            } else {
+                ParseUtils.requireNoContent(reader);
             }
-
         }
 
     }
@@ -297,9 +286,6 @@ public interface AttributeParsers {
                 } else {
                     throw ParseUtils.unexpectedElement(reader, Collections.singleton(objectType.getXmlName()));
                 }
-                if (!reader.isEndElement()) {
-                    ParseUtils.requireNoContent(reader);
-                }
             }
             operation.get(attribute.getName()).set(listValue);
         }
@@ -326,9 +312,6 @@ public interface AttributeParsers {
                 parseEmbeddedElement(objectType, reader, op);
             } else {
                 throw ParseUtils.unexpectedElement(reader, Collections.singleton(xmlName));
-            }
-            if (!reader.isEndElement()) {
-                ParseUtils.requireNoContent(reader);
             }
         }
     }
