@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceRegistration;
@@ -32,9 +33,11 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.DeploymentProcessorTarget;
+import org.jboss.dmr.ModelNode;
 import org.wildfly.common.iteration.CompositeIterable;
 import org.wildfly.subsystem.resource.capability.ResourceCapabilityReference;
 import org.wildfly.subsystem.resource.operation.AddResourceOperationStepHandlerDescriptor;
+import org.wildfly.subsystem.resource.operation.DescribedOperationStepHandler;
 import org.wildfly.subsystem.resource.operation.OperationStepHandlerDescriptor;
 import org.wildfly.subsystem.resource.operation.ResourceOperationRuntimeHandler;
 import org.wildfly.subsystem.resource.operation.WriteAttributeOperationStepHandler;
@@ -237,7 +240,26 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
 
         @Override
         public UnaryOperator<OperationStepHandler> getOperationTransformation(String operationName) {
-            return this.operationTransformers.getOrDefault(operationName, this.defaultOperationTransformer);
+            ResourceDescriptor descriptor = this;
+            UnaryOperator<OperationStepHandler> transformation = this.operationTransformers.getOrDefault(operationName, this.defaultOperationTransformer);
+            // Ensure transformed operation exposes its ResourceDescriptor
+            return (transformation != AbstractConfigurator.DEFAULT_OPERATION_TRANSFORMATION) ? new UnaryOperator<>() {
+                @Override
+                public OperationStepHandler apply(OperationStepHandler handler) {
+                    OperationStepHandler transformedHandler = transformation.apply(handler);
+                    return new DescribedOperationStepHandler<>() {
+                        @Override
+                        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                            transformedHandler.execute(context, operation);
+                        }
+
+                        @Override
+                        public ResourceDescriptor getDescriptor() {
+                            return descriptor;
+                        }
+                    };
+                }
+            } : transformation;
         }
 
         @Override
@@ -609,6 +631,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
      * An abstract {@link ResourceDescriptor} configurator.
      */
     abstract static class AbstractConfigurator<C extends Configurator<C>> implements Configurator<C> {
+        static final UnaryOperator<OperationStepHandler> DEFAULT_OPERATION_TRANSFORMATION = UnaryOperator.identity();
         static final BiPredicate<OperationContext, Resource> DEFAULT_CAPABILITY_FILTER = (context, resource) -> resource.getModel().isDefined();
 
         private static final Set<OperationEntry.Flag> RESTART_FLAGS = EnumSet.of(OperationEntry.Flag.RESTART_ALL_SERVICES, OperationEntry.Flag.RESTART_JVM, OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
@@ -628,7 +651,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         private Map<AttributeDefinition, AttributeTranslation> attributeTranslations = Map.of();
         private Set<ResourceCapabilityReference<?>> resourceCapabilityReferences = Set.of();
         private Map<String, UnaryOperator<OperationStepHandler>> operationTransformers = Map.of();
-        private UnaryOperator<OperationStepHandler> defaultOperationTransformer = UnaryOperator.identity();
+        private UnaryOperator<OperationStepHandler> defaultOperationTransformer = DEFAULT_OPERATION_TRANSFORMATION;
         private UnaryOperator<Resource> resourceTransformer = UnaryOperator.identity();
         private Optional<Consumer<DeploymentProcessorTarget>> deploymentChainContributor = Optional.empty();
 
