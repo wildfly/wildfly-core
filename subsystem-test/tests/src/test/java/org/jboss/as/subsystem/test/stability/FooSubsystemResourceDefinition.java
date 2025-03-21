@@ -8,13 +8,12 @@ import java.util.Collection;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredAddStepHandler;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.SubsystemResourceRegistration;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.version.Stability;
@@ -25,8 +24,7 @@ import org.jboss.dmr.ModelType;
  * @author Paul Ferraro
  */
 public class FooSubsystemResourceDefinition extends SimpleResourceDefinition {
-    static final String SUBSYSTEM_NAME = "foo";
-    static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, SUBSYSTEM_NAME);
+    static final SubsystemResourceRegistration REGISTRATION = SubsystemResourceRegistration.of("foo");
 
     static final AttributeDefinition EXPERIMENTAL = new SimpleAttributeDefinitionBuilder("experimental", ModelType.STRING)
             .setRequired(false)
@@ -36,7 +34,7 @@ public class FooSubsystemResourceDefinition extends SimpleResourceDefinition {
     static final Collection<AttributeDefinition> ATTRIBUTES = List.of(EXPERIMENTAL);
 
     FooSubsystemResourceDefinition() {
-        super(new Parameters(PATH, NonResolvingResourceDescriptionResolver.INSTANCE)
+        super(new Parameters(REGISTRATION.getPathElement(), NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddHandler(ReloadRequiredAddStepHandler.INSTANCE)
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE));
     }

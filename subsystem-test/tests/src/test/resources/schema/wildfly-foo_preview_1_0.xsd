@@ -10,9 +10,9 @@
     <xs:element name="subsystem" type="subsystem"/>
 
     <xs:complexType name="subsystem">
-        <xs:sequence>
+        <xs:choice maxOccurs="unbounded">
             <xs:element name="bar" type="bar"/>
-        </xs:sequence>
+        </xs:choice>
     </xs:complexType>
 
     <xs:complexType name="bar">

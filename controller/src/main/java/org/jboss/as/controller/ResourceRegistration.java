@@ -34,7 +34,7 @@ public interface ResourceRegistration extends Feature {
      * @return a resource registration
      */
     static ResourceRegistration of(PathElement path) {
-        return (path != null) ? new DefaultResourceRegistration(path) : DefaultResourceRegistration.ROOT;
+        return of(path, Stability.DEFAULT);
     }
 
     /**
@@ -44,25 +44,27 @@ public interface ResourceRegistration extends Feature {
      * @return a resource registration
      */
     static ResourceRegistration of(PathElement path, Stability stability) {
-        return (path != null) || (stability != DefaultResourceRegistration.ROOT.getStability()) ? new DefaultResourceRegistration(path) {
-            @Override
-            public Stability getStability() {
-                return stability;
-            }
-        } : DefaultResourceRegistration.ROOT;
+        return (path != null) || (stability != DefaultResourceRegistration.ROOT.getStability()) ? new DefaultResourceRegistration(path, stability) : DefaultResourceRegistration.ROOT;
     }
 
     class DefaultResourceRegistration implements ResourceRegistration {
-        static final ResourceRegistration ROOT = new DefaultResourceRegistration(null);
+        static final ResourceRegistration ROOT = new DefaultResourceRegistration(null, Stability.DEFAULT);
         private final PathElement path;
+        private final Stability stability;
 
-        DefaultResourceRegistration(PathElement path) {
+        DefaultResourceRegistration(PathElement path, Stability stability) {
             this.path = path;
+            this.stability = stability;
         }
 
         @Override
         public PathElement getPathElement() {
             return this.path;
+        }
+
+        @Override
+        public Stability getStability() {
+            return this.stability;
         }
 
         @Override

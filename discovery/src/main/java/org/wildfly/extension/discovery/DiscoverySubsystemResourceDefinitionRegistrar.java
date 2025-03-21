@@ -5,10 +5,9 @@
 
 package org.wildfly.extension.discovery;
 
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
-import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.SubsystemRegistration;
+import org.jboss.as.controller.SubsystemResourceRegistration;
 import org.jboss.as.controller.descriptions.ParentResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.SubsystemResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -21,23 +20,22 @@ import org.wildfly.subsystem.resource.SubsystemResourceDefinitionRegistrar;
  * Registrar for the discovery subsystem.
  * @author Paul Ferraro
  */
-class DiscoverySubsystemRegistrar implements SubsystemResourceDefinitionRegistrar {
+class DiscoverySubsystemResourceDefinitionRegistrar implements SubsystemResourceDefinitionRegistrar {
 
-    static final String NAME = "discovery";
-    static final PathElement PATH = SubsystemResourceDefinitionRegistrar.pathElement(NAME);
-    static final ParentResourceDescriptionResolver RESOLVER = new SubsystemResourceDescriptionResolver(NAME, DiscoverySubsystemRegistrar.class);
+    static final SubsystemResourceRegistration REGISTRATION = SubsystemResourceRegistration.of("discovery");
+    static final ParentResourceDescriptionResolver RESOLVER = new SubsystemResourceDescriptionResolver(REGISTRATION.getName(), DiscoverySubsystemResourceDefinitionRegistrar.class);
 
     @Override
     public ManagementResourceRegistration register(SubsystemRegistration parent, ManagementResourceRegistrationContext context) {
         parent.setHostCapable();
 
-        ManagementResourceRegistration registration = parent.registerSubsystemModel(ResourceDefinition.builder(ResourceRegistration.of(PATH), RESOLVER).build());
+        ManagementResourceRegistration registration = parent.registerSubsystemModel(ResourceDefinition.builder(REGISTRATION, RESOLVER).build());
         ResourceDescriptor descriptor = ResourceDescriptor.builder(RESOLVER).build();
 
         ManagementResourceRegistrar.of(descriptor).register(registration);
 
-        new AggregateDiscoveryProviderRegistrar().register(registration, context);
-        new StaticDiscoveryProviderRegistrar().register(registration, context);
+        new AggregateDiscoveryProviderResourceDefinitionRegistrar().register(registration, context);
+        new StaticDiscoveryProviderResourceDefinitionRegistrar().register(registration, context);
 
         return registration;
     }
