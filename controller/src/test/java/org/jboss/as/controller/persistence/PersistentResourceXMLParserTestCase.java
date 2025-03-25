@@ -499,19 +499,23 @@ public class PersistentResourceXMLParserTestCase {
 
 
         static final AttributeDefinition clusterAttr1 = create("cluster-attr1", ModelType.STRING)
+                .setRequired(false)
                 .setAttributeGroup("cluster")
                 .setXmlName("attr1")
                 .build();
         static final AttributeDefinition clusterAttr2 = create("cluster-attr2", ModelType.STRING)
+                .setRequired(false)
                 .setAttributeGroup("cluster")
                 .setXmlName("attr2")
                 .build();
 
         static final AttributeDefinition securityAttr1 = create("security-my-attr1", ModelType.STRING)
+                .setRequired(false)
                 .setAttributeGroup("security")
                 .setXmlName("my-attr1")
                 .build();
         static final AttributeDefinition securityAttr2 = create("security-my-attr2", ModelType.STRING)
+                .setRequired(false)
                 .setAttributeGroup("security")
                 .setXmlName("my-attr2")
                 .build();
@@ -1261,9 +1265,11 @@ public class PersistentResourceXMLParserTestCase {
             .build();
 
     public static final AttributeDefinition UNWRAPPED_LISTENER = ObjectListAttributeDefinition.Builder.of("unwrapped-listener", STATE_LISTENER)
-              .setRequired(true)
-              .setRuntimeServiceNotRequired()
-              .build();
+            .setAttributeParser(AttributeParsers.UNWRAPPED_OBJECT_LIST_PARSER)
+            .setAttributeMarshaller(AttributeMarshallers.OBJECT_LIST_UNWRAPPED)
+            .setRequired(true)
+            .setRuntimeServiceNotRequired()
+            .build();
 
     static class AttributeMappingObjectDefinition {
             static final SimpleAttributeDefinition FROM = new SimpleAttributeDefinitionBuilder("from", ModelType.STRING, false)
