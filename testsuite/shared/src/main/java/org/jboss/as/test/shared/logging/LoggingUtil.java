@@ -8,6 +8,7 @@ package org.jboss.as.test.shared.logging;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -173,6 +174,21 @@ public class LoggingUtil {
     public static long countLines(Path logPath) throws Exception {
         try(Stream<String> lines = Files.lines(logPath)) {
             return lines.count();
+        }
+    }
+
+    /**
+     * Truncates the log file at the given path, if one exists
+     * @param logPath the log file's path
+     * @throws Exception
+     */
+    public static void cleanLogFile(Path logPath) throws IOException {
+        if (Files.exists(logPath)) {
+            // Files.newOutputStream with no options truncates the file.
+            //noinspection EmptyTryBlock
+            try (OutputStream toClose = Files.newOutputStream(logPath)) {
+                // we don't want to do anything except close the stream
+            }
         }
     }
 }
