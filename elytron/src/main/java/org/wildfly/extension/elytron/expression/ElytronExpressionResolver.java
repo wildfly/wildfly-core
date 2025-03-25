@@ -65,15 +65,10 @@ public class ElytronExpressionResolver implements ExpressionResolverExtension {
         return resolveExpressionInternal(expression, context, null);
     }
 
-    /**
-     * Resolves expressions found in deployment resources.
-     *
-     * @param expression the expression string. Cannot be {@code null}
-     * @param serviceSupport support object to use to resolve the needed {@link CredentialStore}. Cannot be {@code null}
-     * @return the resolved expression string or {@code null} if {@code expression} isn't a credential store expression
-     *         or 'looks like' one but doesn't use the prefix supported by this resolver.
-     */
-    String resolveDeploymentExpression(String expression, CapabilityServiceSupport serviceSupport) {
+    @Override
+    public String resolveExpression(String expression, CapabilityServiceSupport serviceSupport) {
+        checkNotNullParam("expression", expression);
+        checkNotNullParam("serviceSupport", serviceSupport);
         return resolveExpressionInternal(expression, null, serviceSupport);
     }
 

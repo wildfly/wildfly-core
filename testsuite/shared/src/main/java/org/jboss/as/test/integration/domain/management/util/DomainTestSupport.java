@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.shared.FileUtils;
 import org.jboss.dmr.ModelNode;
@@ -335,6 +336,8 @@ public class DomainTestSupport implements AutoCloseable {
     private final DomainControllerClientConfig sharedClientConfig;
     private final String testClass;
     private volatile boolean closed;
+    private volatile ControlledProcessState.State initialPrimaryState;
+    private volatile ControlledProcessState.State initialSecondaryState;
 
 
 
@@ -433,6 +436,43 @@ public class DomainTestSupport implements AutoCloseable {
                 } catch (RuntimeException ignore) {
                 }
                 throw e;
+            }
+        }
+    }
+
+    /**
+     * Reads and records the {@code host-state} value of the host controllers supported by
+     * this object, for later comparison when {@link #assertCurrentHostState()} is called.
+     * <p/>
+     * The expect usage is that a test class would call this in a {@code @BeforeClass} or {@code @Before} method
+     * and then would call {@code assetCurrentHostState} in an {@code @AfterClass} or {@code @After} method
+     * to validate that the supported host controllers' states were not degraded in between.
+     */
+    public void recordInitialHostState() {
+        initialPrimaryState = domainPrimaryLifecycleUtil.getHostControllerState();
+        if (domainSecondaryLifecycleUtil != null) {
+            initialSecondaryState = domainSecondaryLifecycleUtil.getHostControllerState();
+        }
+    }
+
+    /**
+     * Validates that the current {@code host-state} values of the host controllers supported by
+     * this object are either {@link ControlledProcessState.State#RUNNING running}} or match the value
+     * recorded by the last call to {@link #recordInitialHostState()}.
+     * <p/>
+     * The basic idea is if a host controller's state has changed since the {@link #recordInitialHostState()}
+     * call, then that change should have brought the host to {@link ControlledProcessState.State#RUNNING running};
+     * otherwise the test degraded the host's state.
+     */
+    public void assertCurrentHostState() {
+        ControlledProcessState.State currentPrimaryState = domainPrimaryLifecycleUtil.getHostControllerState();
+        if (initialPrimaryState != currentPrimaryState) {
+            Assert.assertEquals("Primary host controller is in an invalid state", ControlledProcessState.State.RUNNING, currentPrimaryState);
+        }
+        if (domainSecondaryLifecycleUtil != null) {
+            ControlledProcessState.State currentSecondaryState = domainSecondaryLifecycleUtil.getHostControllerState();
+            if (initialSecondaryState != currentSecondaryState) {
+                Assert.assertEquals("Secondary host controller is in an invalid state", ControlledProcessState.State.RUNNING, currentSecondaryState);
             }
         }
     }
