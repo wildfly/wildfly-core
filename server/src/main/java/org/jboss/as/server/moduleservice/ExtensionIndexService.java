@@ -31,11 +31,25 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.vfs.VFSUtils;
 
 /**
+ * An MSC Service that provides an ExtensionIndex.
+ * See <a href="https://jakarta.ee/specifications/platform/10/jakarta-platform-spec-10.0#a2945">Jakarta EE Platform Specification, Library Support</a>
+ * <p>
+ * This service is responsible for scanning a set of directories for JAR files that contain extensions.
+ * By default, lib/ext under the server base directory is scanned. Users can specify additional directories
+ * using java.ext.dirs system property, {@link org.jboss.as.server.ServerEnvironment#JAVA_EXT_DIRS}. For each
+ * discovered extension, a module spec service is registered with the MSC container.
+ * <p>
+ * In addition to scanning directories, this service also allows the addition and removal of extensions
+ * provided by deployed applications. Those extensions are discovered by {@link org.jboss.as.server.deployment.module.ManifestExtensionNameProcessor}, which
+ * inspects the manifest file of the deployment. Those discovered extensions are added to
+ * this extension index by ModuleExtensionNameProcessor deployment processor.
+ * <p>
+ * Using this mechanism a Jakarta EE application can reference utility classes or other shared classes or
+ * resources packaged in a separate .jar file or directory that is included in the same Jakarta EE application
+ * package, or that has been previously installed in the Jakarta EE containers.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author Stuart Douglas
- *
- * TODO: this needs to be updated when libraries are deployed the server with extension name in the manifest
  */
 public final class ExtensionIndexService implements Service<ExtensionIndex>, ExtensionIndex {
 
@@ -46,6 +60,10 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
     private final File[] extensionRoots;
     private final Map<String, Set<ExtensionJar>> extensions = new HashMap<String, Set<ExtensionJar>>();
 
+    /**
+     * Construct a new service instance.
+     * @param roots The directories that will be scanned for JAR files that will be treated as Jakarta EE extensions.
+     */
     public ExtensionIndexService(final File... roots) {
         extensionRoots = roots;
     }
@@ -110,7 +128,6 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
                         }
                     } catch (IOException e) {
                         log.debugf("Failed to process JAR manifest for %s: %s", jar, e);
-                        continue;
                     }
         }
     }
