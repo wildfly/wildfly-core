@@ -12,7 +12,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-feature-pack-parent</artifactId>
-        <version>28.0.0.Beta6-SNAPSHOT</version>
+        <version>28.0.0.Beta6</version>
     </parent>
 
     <artifactId>wildfly-core-feature-pack-common</artifactId>
