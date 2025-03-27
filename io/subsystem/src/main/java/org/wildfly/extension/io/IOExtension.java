@@ -17,6 +17,6 @@ import org.wildfly.subsystem.SubsystemPersistence;
 public class IOExtension extends SubsystemExtension<IOSubsystemSchema> {
 
     public IOExtension() {
-        super(SubsystemConfiguration.of(IOSubsystemRegistrar.NAME, IOSubsystemModel.CURRENT, IOSubsystemRegistrar::new), SubsystemPersistence.of(IOSubsystemSchema.CURRENT));
+        super(SubsystemConfiguration.of(IOSubsystemResourceDefinitionRegistrar.REGISTRATION, IOSubsystemModel.CURRENT, IOSubsystemResourceDefinitionRegistrar::new), SubsystemPersistence.of(IOSubsystemSchema.CURRENT));
     }
 }

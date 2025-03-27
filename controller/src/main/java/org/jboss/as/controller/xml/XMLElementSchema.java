@@ -12,8 +12,8 @@ import org.jboss.staxmapper.XMLMapper;
 /**
  * A versioned schema for an XML element.
  * @author Paul Ferraro
- * @param S the schema type
- * @param T the type upon which this XML reader operates
+ * @param <S> the schema type
+ * @param <T> the type upon which this XML reader operates
  */
 public interface XMLElementSchema<S extends XMLElementSchema<S, T>, T> extends IntVersionSchema<S>, XMLElementReader<T> {
 

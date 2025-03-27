@@ -41,7 +41,9 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  *
  * @author Tomaz Cerar
  * @author Stuart Douglas
+ * @deprecated Superseded by {@link org.jboss.as.controller.persistence.xml.ResourceXMLParticleFactory}
  */
+@Deprecated(forRemoval = true, since = "28.0")
 public final class PersistentResourceXMLDescription implements ResourceParser, ResourceMarshaller {
 
     private final PathElement pathElement;
@@ -133,6 +135,10 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         return this.pathElement;
     }
 
+    String getNamespaceURI() {
+        return this.namespaceURI;
+    }
+
     /**
      * Parse xml from provided <code>reader</code> and add resulting operations to passed list
      * @param reader xml reader to parse from
@@ -140,6 +146,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
      * @param list list of operations where result will be put to.
      * @throws XMLStreamException if any error occurs while parsing
      */
+    @Override
     public void parse(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
         if (decoratorElement != null) {
             parseDecorator(reader, parentAddress, list);

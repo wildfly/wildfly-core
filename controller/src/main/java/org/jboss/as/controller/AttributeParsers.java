@@ -19,6 +19,7 @@ import java.util.Map;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.parsing.ParseUtils;
+import org.jboss.as.controller.xml.XMLCardinality;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
@@ -120,6 +121,10 @@ public interface AttributeParsers {
 
         public abstract void parseSingleElement(MapAttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException;
 
+        @Override
+        public XMLCardinality getCardinality(AttributeDefinition attribute) {
+            return this.wrapElement ? (attribute.isNillable() ? XMLCardinality.Single.OPTIONAL : XMLCardinality.Single.REQUIRED) : (attribute.isNillable() ? XMLCardinality.Unbounded.OPTIONAL : XMLCardinality.Unbounded.REQUIRED);
+        }
     }
 
 
@@ -262,7 +267,6 @@ public interface AttributeParsers {
             return true;
         }
 
-
         ObjectTypeAttributeDefinition getObjectType(AttributeDefinition attribute) {
             assert attribute instanceof ObjectListAttributeDefinition;
             ObjectListAttributeDefinition list = ((ObjectListAttributeDefinition) attribute);
@@ -275,7 +279,6 @@ public interface AttributeParsers {
 
             ObjectListAttributeDefinition list = ((ObjectListAttributeDefinition) attribute);
             ObjectTypeAttributeDefinition objectType = list.getValueType();
-
 
             ModelNode listValue = new ModelNode();
             listValue.setEmptyList();
@@ -314,6 +317,11 @@ public interface AttributeParsers {
                 throw ParseUtils.unexpectedElement(reader, Collections.singleton(xmlName));
             }
         }
+
+        @Override
+        public XMLCardinality getCardinality(AttributeDefinition attribute) {
+            return attribute.isNillable() ? XMLCardinality.Unbounded.OPTIONAL : XMLCardinality.Unbounded.REQUIRED;
+        }
     }
 
     class NamedStringListParser extends AttributeParsers.AttributeElementParser {
@@ -330,6 +338,11 @@ public interface AttributeParsers {
             String name = reader.getAttributeValue(0);
             addPermissionMapper.get(ad.getName()).add(name);
             ParseUtils.requireNoContent(reader);
+        }
+
+        @Override
+        public XMLCardinality getCardinality(AttributeDefinition attribute) {
+            return attribute.isNillable() ? XMLCardinality.Unbounded.OPTIONAL : XMLCardinality.Unbounded.REQUIRED;
         }
     }
 
