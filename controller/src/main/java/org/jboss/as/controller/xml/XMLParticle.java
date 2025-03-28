@@ -14,7 +14,10 @@ import org.jboss.as.version.Stability;
  * @param <RC> the reader context
  * @param <WC> the writer content
  */
-public interface XMLParticle<RC, WC> extends XMLComponent<XMLElementReader<RC>, WC> {
+public interface XMLParticle<RC, WC> extends XMLComponent<RC, WC> {
+
+    @Override
+    XMLElementReader<RC> getReader();
 
     /**
      * Returns the cardinality of this XML particle.

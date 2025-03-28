@@ -94,7 +94,7 @@ public interface SingletonResourceRegistrationXMLElement extends ResourceRegistr
                 }
 
                 @Override
-                public void handleAbsentElement(Map.Entry<PathAddress, Map<PathAddress, ModelNode>> context) {
+                public void whenAbsent(Map.Entry<PathAddress, Map<PathAddress, ModelNode>> context) {
                     if (implied) {
                         // Create add operation for implied resource if element is absent
                         this.createOperationEntry(context);

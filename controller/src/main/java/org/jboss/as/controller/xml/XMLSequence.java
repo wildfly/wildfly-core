@@ -105,14 +105,14 @@ public interface XMLSequence<RC, WC> extends XMLParticleGroup<RC, WC> {
                         if (group.getCardinality().isRequired()) {
                             throw ParseUtils.minOccursNotReached(reader, group.getNames(), group.getCardinality());
                         }
-                        group.getReader().handleAbsentElement(context);
+                        group.getReader().whenAbsent(context);
                     }
                 }
 
                 @Override
-                public void handleAbsentElement(RC context) {
+                public void whenAbsent(RC context) {
                     for (XMLParticleGroup<RC, WC> group : groups) {
-                        group.getReader().handleAbsentElement(context);
+                        group.getReader().whenAbsent(context);
                     }
                 }
 
@@ -126,7 +126,7 @@ public interface XMLSequence<RC, WC> extends XMLParticleGroup<RC, WC> {
                         if (group.getCardinality().isRequired()) {
                             throw ParseUtils.minOccursNotReached(reader, group.getNames(), group.getCardinality());
                         }
-                        group.getReader().handleAbsentElement(context);
+                        group.getReader().whenAbsent(context);
                     }
                     return null;
                 }

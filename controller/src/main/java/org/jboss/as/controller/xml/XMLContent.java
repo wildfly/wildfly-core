@@ -95,7 +95,7 @@ public interface XMLContent<RC, WC> extends XMLContentWriter<WC> {
                     this.group.getReader().readElement(reader, context);
                 } while (reader.getEventType() != XMLStreamConstants.END_ELEMENT);
             } else {
-                this.group.getReader().handleAbsentElement(context);
+                this.group.getReader().whenAbsent(context);
             }
             // Validate minOccurs
             if (occurrences < this.group.getCardinality().getMinOccurs()) {

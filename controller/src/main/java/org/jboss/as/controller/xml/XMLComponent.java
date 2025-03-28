@@ -10,13 +10,13 @@ import org.jboss.as.controller.Feature;
 /**
  * Encapsulates an XML component, e.g. particle/attribute.
  */
-public interface XMLComponent<R, WC> extends Feature {
+public interface XMLComponent<RC, WC> extends Feature {
 
     /**
      * Returns the reader of this XML component.
      * @return the reader of this XML component.
      */
-    R getReader();
+    XMLComponentReader<RC> getReader();
 
     /**
      * Returns the writer of this XML component.

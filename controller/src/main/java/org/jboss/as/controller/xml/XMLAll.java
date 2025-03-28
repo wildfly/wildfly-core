@@ -112,15 +112,15 @@ public interface XMLAll<RC, WC> extends XMLElementGroup<RC, WC> {
                             throw ParseUtils.minOccursNotReached(reader, required, XMLCardinality.Single.REQUIRED);
                         }
                         for (XMLElement<RC, WC> remainingElement : remaining.values()) {
-                            remainingElement.getReader().handleAbsentElement(context);
+                            remainingElement.getReader().whenAbsent(context);
                         }
                     }
                 }
 
                 @Override
-                public void handleAbsentElement(RC context) {
+                public void whenAbsent(RC context) {
                     for (XMLElement<RC, WC> element : orderedElements) {
-                        element.getReader().handleAbsentElement(context);
+                        element.getReader().whenAbsent(context);
                     }
                 }
             });
