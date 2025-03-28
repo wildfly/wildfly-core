@@ -82,19 +82,19 @@ public interface XMLContentWriter<C> extends XMLElementWriter<C> {
         };
     }
 
-    static <RC, WC> XMLContentWriter<WC> composite(Collection<? extends XMLParticle<RC, WC>> particles) {
+    static <RC, WC> XMLContentWriter<WC> composite(Collection<? extends XMLComponent<RC, WC>> components) {
         return new XMLContentWriter<>() {
             @Override
             public void writeContent(XMLExtendedStreamWriter writer, WC content) throws XMLStreamException {
-                for (XMLParticle<RC, WC> particle : particles) {
-                    particle.getWriter().writeContent(writer, content);
+                for (XMLComponent<RC, WC> component : components) {
+                    component.getWriter().writeContent(writer, content);
                 }
             }
 
             @Override
             public boolean isEmpty(WC content) {
-                for (XMLParticle<RC, WC> particle : particles) {
-                    XMLContentWriter<WC> contentWriter = particle.getWriter();
+                for (XMLComponent<RC, WC> component : components) {
+                    XMLContentWriter<WC> contentWriter = component.getWriter();
                     if (!contentWriter.isEmpty(content)) return false;
                 }
                 return true;

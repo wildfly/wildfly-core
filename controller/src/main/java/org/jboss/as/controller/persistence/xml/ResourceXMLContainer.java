@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -230,43 +229,6 @@ public interface ResourceXMLContainer extends XMLContainer<Map.Entry<PathAddress
             this.attributesReader.readElement(reader, operation);
 
             this.content.readContent(reader, context);
-        }
-    }
-
-    class ResourceXMLContainerWriter<C> implements XMLContentWriter<C> {
-        private final QName name;
-        private final XMLContentWriter<C> attributesWriter;
-        private final Function<C, ModelNode> model;
-        private final XMLContent<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>, ModelNode> childContent;
-
-        ResourceXMLContainerWriter(QName name, XMLContentWriter<C> attributesWriter, Function<C, ModelNode> model, XMLContent<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>, ModelNode> childContent) {
-            this.name = name;
-            this.attributesWriter = attributesWriter;
-            this.model = model;
-            this.childContent = childContent;
-        }
-
-        @Override
-        public void writeContent(XMLExtendedStreamWriter writer, C content) throws XMLStreamException {
-            String namespaceURI = this.name.getNamespaceURI();
-            writer.writeStartElement(namespaceURI, this.name.getLocalPart());
-
-            // If namespace is not yet bound to any prefix, bind it
-            if (writer.getNamespaceContext().getPrefix(namespaceURI) == null) {
-                writer.setPrefix(this.name.getPrefix(), namespaceURI);
-                writer.writeNamespace(this.name.getPrefix(), namespaceURI);
-            }
-
-            this.attributesWriter.writeContent(writer, content);
-
-            this.childContent.writeContent(writer, this.model.apply(content));
-
-            writer.writeEndElement();
-        }
-
-        @Override
-        public boolean isEmpty(C content) {
-            return this.attributesWriter.isEmpty(content) && this.childContent.isEmpty(this.model.apply(content));
         }
     }
 

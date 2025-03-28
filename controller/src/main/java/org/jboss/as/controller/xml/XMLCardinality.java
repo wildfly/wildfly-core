@@ -12,7 +12,7 @@ import java.util.Set;
 /**
  * Defines the cardinality of an XML particle.
  */
-public interface XMLCardinality {
+public interface XMLCardinality extends XMLUsage {
 
     /**
      * Returns the minimum number of occurrences of this particle.
@@ -30,6 +30,7 @@ public interface XMLCardinality {
      * Indicates whether or not the associated particle must occur, i.e. minOccurs &gt; 0
      * @return true, if the associated particle is required, false otherwise
      */
+    @Override
     default boolean isRequired() {
         return this.getMinOccurs() > 0;
     }
@@ -46,6 +47,7 @@ public interface XMLCardinality {
      * Indicates whether or not the associated particle may occur at all, i.e. maxOccurs &gt; 0
      * @return true, if the associated particle is enabled, false otherwise
      */
+    @Override
     default boolean isEnabled() {
         return this.getMaxOccurs().orElse(Integer.MAX_VALUE) > 0;
     }

@@ -82,7 +82,7 @@ public interface SingletonResourceRegistrationXMLElement extends ResourceRegistr
             XMLContent<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>, ModelNode> content = this.getContent();
 
             XMLElementReader<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>> resourceReader = new ResourceXMLContainerReader(attributesReader, content);
-            XMLContentWriter<ModelNode> resourceWriter = new ResourceXMLContainerWriter<>(name, attributesWriter, Function.identity(), content);
+            XMLContentWriter<ModelNode> resourceWriter = new DefaultXMLElementWriter<>(name, attributesWriter, Function.identity(), content);
 
             BiConsumer<Map<PathAddress, ModelNode>, PathAddress> operationTransformation = this.getOperationTransformation();
             XMLElementReader<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>> elementReader = new XMLElementReader<>() {
@@ -94,7 +94,7 @@ public interface SingletonResourceRegistrationXMLElement extends ResourceRegistr
                 }
 
                 @Override
-                public void handleAbsentElement(Map.Entry<PathAddress, Map<PathAddress, ModelNode>> context) {
+                public void whenAbsent(Map.Entry<PathAddress, Map<PathAddress, ModelNode>> context) {
                     if (implied) {
                         // Create add operation for implied resource if element is absent
                         this.createOperationEntry(context);

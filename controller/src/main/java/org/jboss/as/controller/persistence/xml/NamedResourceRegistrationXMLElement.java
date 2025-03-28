@@ -109,7 +109,7 @@ public interface NamedResourceRegistrationXMLElement extends ResourceRegistratio
             XMLContent<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>, ModelNode> content = this.getContent();
 
             XMLElementReader<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>> resourceReader = new ResourceXMLContainerReader(new ResourceAttributesXMLContentReader(attributes, configuration), content);
-            XMLContentWriter<Property> resourceWriter = new ResourceXMLContainerWriter<>(name, new ResourcePropertyAttributesXMLContentWriter(resourceAttributeName, attributes, configuration), Property::getValue, content);
+            XMLContentWriter<Property> resourceWriter = new DefaultXMLElementWriter<>(name, new ResourcePropertyAttributesXMLContentWriter(resourceAttributeName, attributes, configuration), Property::getValue, content);
 
             BiConsumer<Map<PathAddress, ModelNode>, PathAddress> operationTransformation = this.getOperationTransformation();
             XMLElementReader<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>> elementReader = new XMLElementReader<>() {
