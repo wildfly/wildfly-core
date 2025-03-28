@@ -5,7 +5,6 @@
 
 package org.jboss.as.controller.xml;
 
-import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.version.Stability;
 
@@ -15,25 +14,13 @@ import org.jboss.as.version.Stability;
  * @param <RC> the reader context
  * @param <WC> the writer content
  */
-public interface XMLParticle<RC, WC> extends Feature {
+public interface XMLParticle<RC, WC> extends XMLComponent<XMLElementReader<RC>, WC> {
 
     /**
      * Returns the cardinality of this XML particle.
      * @return the cardinality of this XML particle.
      */
     XMLCardinality getCardinality();
-
-    /**
-     * Returns the reader of this XML particle.
-     * @return the reader of this XML particle.
-     */
-    XMLElementReader<RC> getReader();
-
-    /**
-     * Returns the writer of this XML particle.
-     * @return the writer of this XML particle.
-     */
-    XMLContentWriter<WC> getWriter();
 
     interface Builder<RC, WC, T extends XMLParticle<RC, WC>, B extends Builder<RC, WC, T, B>> {
         /**
