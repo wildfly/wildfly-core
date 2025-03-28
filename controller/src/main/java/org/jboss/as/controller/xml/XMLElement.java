@@ -7,6 +7,7 @@ package org.jboss.as.controller.xml;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
@@ -122,20 +123,7 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
                     content.readContent(reader, context);
                 }
             };
-            XMLContentWriter<WC> writer = new XMLContentWriter<>() {
-                @Override
-                public void writeContent(XMLExtendedStreamWriter writer, WC value) throws XMLStreamException {
-                    writer.writeStartElement(name.getNamespaceURI(), name.getLocalPart());
-                    attributesWriter.writeContent(writer, value);
-                    content.writeContent(writer, value);
-                    writer.writeEndElement();
-                }
-
-                @Override
-                public boolean isEmpty(WC value) {
-                    return content.isEmpty(value);
-                }
-            };
+            XMLContentWriter<WC> writer = new DefaultXMLElementWriter<>(name, attributesWriter, Function.identity(), content);
             return new DefaultXMLElement<>(this.name, this.getCardinality(), reader, writer, this.stability);
         }
     }
@@ -185,6 +173,43 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
         @Override
         public String toString() {
             return String.format("<xs:element name=\"%s\" %s/>", this.name.getLocalPart(), XMLCardinality.toString(this.getCardinality()));
+        }
+    }
+
+    class DefaultXMLElementWriter<RC, WC, CC> implements XMLContentWriter<WC> {
+        private final QName name;
+        private final XMLContentWriter<WC> attributesWriter;
+        private final Function<WC, CC> childContentFactory;
+        private final XMLContent<RC, CC> childContent;
+
+        public DefaultXMLElementWriter(QName name, XMLContentWriter<WC> attributesWriter, Function<WC, CC> childContentFactory, XMLContent<RC, CC> childContent) {
+            this.name = name;
+            this.attributesWriter = attributesWriter;
+            this.childContentFactory = childContentFactory;
+            this.childContent = childContent;
+        }
+
+        @Override
+        public void writeContent(XMLExtendedStreamWriter writer, WC content) throws XMLStreamException {
+            String namespaceURI = this.name.getNamespaceURI();
+            writer.writeStartElement(namespaceURI, this.name.getLocalPart());
+
+            // If namespace is not yet bound to any prefix, bind it
+            if (writer.getNamespaceContext().getPrefix(namespaceURI) == null) {
+                writer.setPrefix(this.name.getPrefix(), namespaceURI);
+                writer.writeNamespace(this.name.getPrefix(), namespaceURI);
+            }
+
+            this.attributesWriter.writeContent(writer, content);
+
+            this.childContent.writeContent(writer, this.childContentFactory.apply(content));
+
+            writer.writeEndElement();
+        }
+
+        @Override
+        public boolean isEmpty(WC content) {
+            return this.attributesWriter.isEmpty(content) && this.childContent.isEmpty(this.childContentFactory.apply(content));
         }
     }
 }
