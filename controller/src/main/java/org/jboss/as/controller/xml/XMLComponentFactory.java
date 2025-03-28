@@ -11,23 +11,51 @@ import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.version.Stability;
 
 /**
- * A factory for creating builders of XML particles.
+ * A factory for creating builders of XML components.
  * N.B. All particles created by this factory have a default cardinality of {@link org.jboss.as.controller.xml.XMLCardinality.Single#REQUIRED}.
+ * N.B. All attributes created by this factory have a default usage of {@link org.jboss.as.controller.xml.XMLAttribute.Use#OPTIONAL}.
  * @author Paul Ferraro
  * @param <RC> the reader context
  * @param <WC> the writer context
  */
-public interface XMLParticleFactory<RC, WC> extends FeatureRegistry {
+public interface XMLComponentFactory<RC, WC> extends FeatureRegistry, QNameResolver {
+
     /**
-     * Creates a new factory instance for creating XML particles.
-     * @param <RC> the reader context
-     * @param <WC> the writer context
-     * @param registry a feature registry
-     * @return a new factory instance for creating XML particles.
+     * Creates a new particle factory for the specified schema.
+     * @param <S> the subsystem schema type
+     * @param schema a subsystem schema
+     * @return a particle factory
      */
-    static <RC, WC> XMLParticleFactory<RC, WC> newInstance(FeatureRegistry registry) {
-        return new DefaultXMLParticleFactory<>(registry);
+    static <S extends IntVersionSchema<S>, RC, WC> XMLComponentFactory<RC, WC> newInstance(S schema) {
+        return newInstance(schema, schema);
     }
+
+    /**
+     * Creates a new particle factory for the specified feature registry and qualified name resolver.
+     * @param registry a feature registry
+     * @param resolver a qualified name resolver
+     * @return a particle factory
+     */
+    static <RC, WC> XMLComponentFactory<RC, WC> newInstance(FeatureRegistry registry, QNameResolver resolver) {
+        return new DefaultXMLComponentFactory<>(registry, resolver);
+    }
+
+    /**
+     * Returns a builder of an XML attribute, using the specified name.
+     * @param name the qualified attribute name
+     * @return a builder of an XML attribute.
+     */
+    default XMLAttribute.Builder<RC, WC> attribute(QName name) {
+        return this.attribute(name, Stability.DEFAULT);
+    }
+
+    /**
+     * Returns a builder of an XML attribute, using the specified name and stability.
+     * @param name the qualified attribute name
+     * @param stability the stability of this attribute
+     * @return a builder of an XML element.
+     */
+    XMLAttribute.Builder<RC, WC> attribute(QName name, Stability stability);
 
     /**
      * Returns a builder of an XML element, using the specified name.
@@ -64,16 +92,28 @@ public interface XMLParticleFactory<RC, WC> extends FeatureRegistry {
      */
     XMLSequence.Builder<RC, WC> sequence();
 
-    class DefaultXMLParticleFactory<RC, WC> implements XMLParticleFactory<RC, WC> {
+    class DefaultXMLComponentFactory<RC, WC> implements XMLComponentFactory<RC, WC> {
         private final FeatureRegistry registry;
+        private final QNameResolver resolver;
 
-        DefaultXMLParticleFactory(FeatureRegistry registry) {
+        DefaultXMLComponentFactory(FeatureRegistry registry, QNameResolver resolver) {
             this.registry = registry;
+            this.resolver = resolver;
+        }
+
+        @Override
+        public QName resolve(String localName) {
+            return this.resolver.resolve(localName);
         }
 
         @Override
         public Stability getStability() {
             return this.registry.getStability();
+        }
+
+        @Override
+        public XMLAttribute.Builder<RC, WC> attribute(QName name, Stability stability) {
+            return new XMLAttribute.DefaultBuilder<>(name, stability);
         }
 
         @Override
