@@ -90,13 +90,13 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
         }
         CompletableFuture<Void> result = new CompletableFuture<>();
         // Prepare activity groups in priority order, i.e. first -> last
-        phaseStage(this.activityGroups, SuspendableActivity::prepare, context, Functions.discardingBiConsumer()).whenComplete((ignored, prepareException) -> {
+        phaseStage(this.activityGroups, SuspendableActivity::prepare, context, (ignored, prepareException) -> {
             if (prepareException != null) {
                 result.completeExceptionally(prepareException);
             } else {
                 this.state = State.SUSPENDING;
                 // Suspend activity groups in priority order, i.e. first -> last order
-                phaseStage(this.activityGroups, SuspendableActivity::suspend, context, Functions.discardingBiConsumer()).whenComplete((ignore, suspendException) -> {
+                phaseStage(this.activityGroups, SuspendableActivity::suspend, context, (ignore, suspendException) -> {
                     if (suspendException != null) {
                         result.completeExceptionally(suspendException);
                     } else {
@@ -106,9 +106,9 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
                             listener.complete();
                         }
                     }
-                });
+                }, Functions.discardingBiConsumer());
             }
-        });
+        }, Functions.discardingBiConsumer());
         return result;
     }
 
@@ -118,16 +118,14 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
             return SuspendableActivity.COMPLETED;
         }
         // Resume activity groups in reverse priority order, i.e. last -> first
-        CompletionStage<Void> resumeStage = phaseStage(this::resumeIterator, SuspendableActivity::resume, context, ServerLogger.ROOT_LOGGER::failedToResume);
-        resumeStage.whenComplete((ignore, exception) -> {
+        return phaseStage(this::resumeIterator, SuspendableActivity::resume, context, (ignore, exception) -> {
             if (exception == null) {
                 this.state = State.RUNNING;
                 for (OperationListener listener: this.listeners) {
                     listener.cancelled();
                 }
             }
-        });
-        return resumeStage;
+        }, ServerLogger.ROOT_LOGGER::failedToResume);
     }
 
     private Iterator<List<SuspendableActivity>> resumeIterator() {
@@ -143,9 +141,11 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
      * @param exceptionHandler handles exceptions thrown by the phase function
      * @return a completion stage for this phase of the suspend/resume process
      */
-    private static <C> CompletionStage<Void> phaseStage(Iterable<List<SuspendableActivity>> activityGroups, BiFunction<SuspendableActivity, C, CompletionStage<Void>> phase, C context, BiConsumer<SuspendableActivity, Throwable> exceptionHandler) {
+    private static <C> CompletionStage<Void> phaseStage(Iterable<List<SuspendableActivity>> activityGroups, BiFunction<SuspendableActivity, C, CompletionStage<Void>> phase, C context, BiConsumer<Void, Throwable> completionHandler, BiConsumer<SuspendableActivity, Throwable> exceptionHandler) {
         // Final stage will complete after all activity for all groups has completed
         CompletableFuture<Void> result = new CompletableFuture<>();
+        // Make sure to register completion handler before initiating group completer
+        result.whenComplete(completionHandler);
         // Iterate over activity groups (in the order dictated by the caller)
         Iterator<List<SuspendableActivity>> groups = activityGroups.iterator();
         BiConsumer<Void, Throwable> groupCompleter = new BiConsumer<>() {
