@@ -10,7 +10,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
@@ -36,6 +38,14 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
      * @return a qualified name
      */
     QName getName();
+
+    default <R, W> XMLElement<R, W> map(Function<R, RC> readContextMapper, Function<W, WC> writeContentMapper) {
+        return new DefaultXMLElement<>(this.getName(), this.getCardinality(), this.getReader().map(readContextMapper), this.getWriter().map(writeContentMapper), this.getStability());
+    }
+
+    default <R, W> XMLElement<R, W> withContext(Supplier<RC> readContextFactory, BiConsumer<R, RC> readContextConsumer, Function<W, WC> writeContentMapper) {
+        return new DefaultXMLElement<>(this.getName(), this.getCardinality(), this.getReader().withContext(readContextFactory, readContextConsumer), this.getWriter().map(writeContentMapper), this.getStability());
+    }
 
     /**
      * Builder of an XML element.

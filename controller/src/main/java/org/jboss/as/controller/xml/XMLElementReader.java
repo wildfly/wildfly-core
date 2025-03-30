@@ -6,6 +6,9 @@
 package org.jboss.as.controller.xml;
 
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -24,6 +27,51 @@ public interface XMLElementReader<C> extends org.jboss.staxmapper.XMLElementRead
     @Override
     default void whenAbsent(C context) {
         // Do nothing
+    }
+
+    /**
+     * Returns a new reader whose context is mapped from the specified function.
+     * @param mapper a context mapping function
+     * @param <T> the mapped context type
+     * @return a new writer whose context is mapped from the specified function.
+     */
+    default <T> XMLElementReader<T> map(Function<T, C> mapper) {
+        return new XMLElementReader<>() {
+            @Override
+            public void readElement(XMLExtendedStreamReader reader, T context) throws XMLStreamException {
+                XMLElementReader.this.readElement(reader, mapper.apply(context));
+            }
+
+            @Override
+            public void whenAbsent(T context) {
+                XMLElementReader.this.whenAbsent(mapper.apply(context));
+            }
+        };
+    }
+
+    /**
+     * Returns a new reader whose context is generated from the specified factory and applied via the specified consumer.
+     * @param contextFactory supplier of the read context
+     * @param applicator application of the read context
+     * @param <T> the mapped context type
+     * @return a new writer whose context is generated from the specified factory and applied via the specified consumer.
+     */
+    default <T> XMLElementReader<T> withContext(Supplier<C> contextFactory, BiConsumer<T, C> applicator) {
+        return new XMLElementReader<>() {
+            @Override
+            public void readElement(XMLExtendedStreamReader reader, T parentContext) throws XMLStreamException {
+                C context = contextFactory.get();
+                XMLElementReader.this.readElement(reader, context);
+                applicator.accept(parentContext, context);
+            }
+
+            @Override
+            public void whenAbsent(T parentContext) {
+                C context = contextFactory.get();
+                XMLElementReader.this.whenAbsent(context);
+                applicator.accept(parentContext, context);
+            }
+        };
     }
 
     /**

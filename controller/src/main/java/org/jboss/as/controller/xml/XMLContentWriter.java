@@ -5,6 +5,7 @@
 package org.jboss.as.controller.xml;
 
 import java.util.Collection;
+import java.util.function.Function;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -22,6 +23,26 @@ public interface XMLContentWriter<C> extends XMLElementWriter<C> {
      * Indicates whether the specified content is empty.
      */
     boolean isEmpty(C content);
+
+    /**
+     * Returns a new writer whose content is mapped from the specified function.
+     * @param mapper a content mapping function
+     * @param <T> the mapped content type
+     * @return a new writer whose content is mapped from the specified function.
+     */
+    default <T> XMLContentWriter<T> map(Function<T, C> mapper) {
+        return new XMLContentWriter<>() {
+            @Override
+            public void writeContent(XMLExtendedStreamWriter writer, T content) throws XMLStreamException {
+                XMLContentWriter.this.writeContent(writer, mapper.apply(content));
+            }
+
+            @Override
+            public boolean isEmpty(T content) {
+                return XMLContentWriter.this.isEmpty(mapper.apply(content));
+            }
+        };
+    }
 
     /**
      * Returns a new writer that invokes {@link #writeContent(XMLExtendedStreamWriter, Object)} on the specified writer <em>after</em> invoking {@link #writeContent(XMLExtendedStreamWriter, Object)} on this writer.
