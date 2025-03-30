@@ -23,7 +23,6 @@ import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.version.Stability;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
-import org.wildfly.common.Assert;
 
 /**
  * Encapsulates an XML element.
@@ -74,7 +73,7 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
      * @return an element whose content should be ignored.
      */
     static <RC, WC> XMLElement<RC, WC> ignore(QName name, XMLCardinality cardinality) {
-        return new DefaultXMLElement<>(name, cardinality, new XMLElementReader<>() {
+        XMLElementReader<RC> reader = new XMLElementReader<>() {
             @Override
             public void readElement(XMLExtendedStreamReader reader, RC context) throws XMLStreamException {
                 ControllerLogger.ROOT_LOGGER.elementIgnored(name);
@@ -86,7 +85,8 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
                     this.skipElement(reader);
                 }
             }
-        }, XMLContentWriter.empty(), Stability.DEFAULT);
+        };
+        return new DefaultXMLElement<>(name, cardinality, XMLElementReader.validate(name, reader), XMLContentWriter.empty(), Stability.DEFAULT);
     }
 
     class DefaultBuilder<RC, WC> extends XMLContainer.AbstractBuilder<RC, WC, XMLElement<RC, WC>, Builder<RC, WC>> implements Builder<RC, WC>, FeatureRegistry {
@@ -161,7 +161,7 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
                 }
             };
             XMLContentWriter<WC> writer = new DefaultXMLElementWriter<>(name, XMLContentWriter.composite(attributes.values()), Function.identity(), content);
-            return new DefaultXMLElement<>(this.name, this.getCardinality(), reader, writer, this.stability);
+            return new DefaultXMLElement<>(this.name, this.getCardinality(), XMLElementReader.validate(name, reader), writer, this.stability);
         }
 
         @Override
@@ -173,25 +173,8 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
     class DefaultXMLElement<RC, WC> extends DefaultXMLParticle<RC, WC> implements XMLElement<RC, WC> {
         private final QName name;
 
-        protected DefaultXMLElement(QName name, XMLCardinality cardinality, XMLElementReader<RC> elementReader, XMLContentWriter<WC> elementWriter, Stability stability) {
-            super(cardinality, new XMLElementReader<>() {
-                @Override
-                public void readElement(XMLExtendedStreamReader reader, RC value) throws XMLStreamException {
-                    // Validate entry criteria
-                    Assert.assertTrue(reader.isStartElement());
-                    if (!reader.getName().equals(name)) {
-                        throw ParseUtils.unexpectedElement(reader, Set.of(name));
-                    }
-                    elementReader.readElement(reader, value);
-                    // Validate exit criteria
-                    if (!reader.isEndElement()) {
-                        throw ParseUtils.unexpectedElement(reader);
-                    }
-                    if (!reader.getName().equals(name)) {
-                        throw ParseUtils.unexpectedEndElement(reader);
-                    }
-                }
-            }, elementWriter, stability);
+        protected DefaultXMLElement(QName name, XMLCardinality cardinality, XMLElementReader<RC> reader, XMLContentWriter<WC> writer, Stability stability) {
+            super(cardinality, reader, writer, stability);
             this.name = name;
         }
 

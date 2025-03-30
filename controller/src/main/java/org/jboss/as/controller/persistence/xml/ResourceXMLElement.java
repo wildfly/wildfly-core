@@ -100,7 +100,7 @@ public interface ResourceXMLElement extends ResourceXMLContainer, XMLElement<Map
     class DefaultResourceXMLElement extends DefaultXMLElement<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>, ModelNode> implements ResourceXMLElement {
 
         DefaultResourceXMLElement(QName name, XMLCardinality cardinality, XMLElementReader<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>> reader, XMLContentWriter<ModelNode> writer, Stability stability) {
-            super(name, cardinality, reader, writer, stability);
+            super(name, cardinality, XMLElementReader.validate(name, reader), writer, stability);
         }
     }
 }

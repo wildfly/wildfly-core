@@ -224,7 +224,7 @@ public interface ResourceRegistrationXMLElement extends ResourceXMLElement, Reso
         }
     }
 
-    class DefaultResourceRegistrationXMLElement extends DefaultXMLElement<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>, ModelNode> implements ResourceRegistrationXMLElement {
+    class DefaultResourceRegistrationXMLElement extends DefaultResourceXMLElement implements ResourceRegistrationXMLElement {
         private final PathElement path;
 
         DefaultResourceRegistrationXMLElement(ResourceRegistration registration, QName name, XMLCardinality cardinality, XMLElementReader<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>> reader, XMLContentWriter<ModelNode> writer) {
