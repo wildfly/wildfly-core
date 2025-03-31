@@ -4,6 +4,11 @@
  */
 package org.jboss.as.controller.xml;
 
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -51,6 +56,47 @@ public interface XMLContent<RC, WC> extends XMLContentWriter<WC> {
             @Override
             public void writeContent(XMLExtendedStreamWriter streamWriter, WC value) throws XMLStreamException {
                 // Do nothing
+            }
+        };
+    }
+
+    /**
+     * Returns XML content whose text is consumed by the specified consumer during parsing.
+     * @param <RC> the read context type
+     * @param <RC> the write context type
+     * @param consumer a consumer of text content
+     * @return XML content whose text is consumed by the specified consumer.
+     */
+    static <RC, WC> XMLContent<RC, WC> of(BiConsumer<RC, String> consumer) {
+        return of(consumer, Object::toString);
+    }
+
+    /**
+     * Returns XML content whose text is consumed by the specified consumer during parsing
+     * and formatted using the specified function during marshalling.
+     * @param <RC> the read context type
+     * @param <RC> the write context type
+     * @param consumer a consumer of text content
+     * @param formatter a formatter of text content
+     * @return XML content whose text is consumed by the specified consumer.
+     */
+    static <RC, WC> XMLContent<RC, WC> of(BiConsumer<RC, String> consumer, Function<WC, String> formatter) {
+        return new XMLContent<>() {
+            @Override
+            public void readContent(XMLExtendedStreamReader reader, RC context) throws XMLStreamException {
+                consumer.accept(context, reader.getElementText());
+            }
+
+            @Override
+            public void writeContent(XMLExtendedStreamWriter writer, WC content) throws XMLStreamException {
+                if (!this.isEmpty(content)) {
+                    writer.writeCharacters(formatter.apply(content));
+                }
+            }
+
+            @Override
+            public boolean isEmpty(WC content) {
+                return Optional.ofNullable(formatter.apply(content)).filter(Predicate.not(String::isEmpty)).isEmpty();
             }
         };
     }
