@@ -154,6 +154,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXTS));
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXT));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.PROPERTIES_ROLE_MAPPER));
     }
 
     private static void from18(ChainedTransformationDescriptionBuilder chainedBuilder) {
@@ -180,6 +181,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         .setDiscard(DiscardAttributeChecker.UNDEFINED, EMIT_EVENTS)
         .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), IGNORE_UNAVAILABLE_REALMS)
         .addRejectCheck(RejectAttributeChecker.DEFINED, EMIT_EVENTS);
+
     }
 
     private static void from17(ChainedTransformationDescriptionBuilder chainedBuilder) {

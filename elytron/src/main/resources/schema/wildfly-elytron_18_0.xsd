@@ -2752,6 +2752,7 @@
             <xs:element name="custom-evidence-decoder" type="customEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="aggregate-evidence-decoder" type="aggregateEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="regex-role-mapper" type="regexRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="properties-role-mapper" type="propertiesRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
         </xs:choice>
     </xs:complexType>
 
@@ -3893,6 +3894,32 @@
                     <xs:annotation>
                         <xs:documentation>
                             If true, replace all occurrences of pattern and not only the first one.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+    <xs:complexType name="propertiesRoleMapperType">
+        <xs:annotation>
+            <xs:documentation>
+                A RoleMapper definition for a RoleMapper that performs a mapping based on a property file.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="roleMapperType">
+                <xs:attribute name="path" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Property file used to perform the role mapping
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="relative-to" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Path from the file used to perform the role mapping
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>

@@ -92,6 +92,8 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
                     new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.ENCODING))
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG)),
                     new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.ENCODING))
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.PROPERTIES_ROLE_MAPPER, "PropertiesRoleMapper")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE)
         );
     }
 

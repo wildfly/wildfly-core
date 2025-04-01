@@ -128,6 +128,7 @@
             <role-decoder name="regexRoleDecoder"/>
         </aggregate-role-decoder>
         <regex-role-mapper name="RegexRoleMapper" pattern=".*-[a-z]*" replacement="$1"/>
+        <properties-role-mapper name="PropertiesRoleMapper" path="target/test-classes/org/wildfly/extension/elytron/rolesMapping-roles.properties"/>
     </mappers>
     <permission-sets>
         <permission-set name="my-permissions">

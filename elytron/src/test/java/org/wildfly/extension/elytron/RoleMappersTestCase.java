@@ -45,16 +45,9 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
             Assert.fail("Failed to boot, no reason provided");
         }
 
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain1");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain2");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain3");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain4");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain5");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain6");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain7");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain8");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain9");
-        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain10");
+        for (String domain : domainsToActivate) {
+            TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, domain);
+        }
     }
 
     @Test
@@ -366,5 +359,31 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
         roles = identity.getRoles();
         Assert.assertFalse(roles.contains("admin"));
         Assert.assertFalse(roles.contains("random"));
+    }
+
+    @Test
+    public void testAddPropertiesRoleMapper() throws Exception {
+        init("TestDomain11");
+
+        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain11");
+        Assert.assertNotNull(services.getContainer());
+        Assert.assertNotNull(services.getContainer().getService(serviceName));
+        SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(domain);
+
+        ServerAuthenticationContext context = domain.createNewAuthenticationContext();
+        context.setAuthenticationName("user2");
+        Assert.assertTrue(context.exists());
+        Assert.assertTrue(context.authorize());
+        context.succeed();
+        SecurityIdentity identity = context.getAuthorizedIdentity();
+
+        Roles roles = identity.getRoles();
+        Assert.assertTrue(roles.contains("123-user"));
+        Assert.assertTrue(roles.contains("joe"));
+        Assert.assertTrue(roles.contains("role-1"));
+        Assert.assertTrue(roles.contains("role-abc"));
+        Assert.assertEquals("user2", identity.getPrincipal().getName());
+
     }
 }

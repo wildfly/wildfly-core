@@ -9,6 +9,9 @@ import static org.wildfly.extension.elytron.Capabilities.ROLE_MAPPER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.ROLE_MAPPER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -16,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BinaryOperator;
 
@@ -41,16 +45,20 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
+import org.wildfly.security.auth.server._private.ElytronMessages;
 import org.wildfly.security.authz.MappedRoleMapper;
+import org.wildfly.security.authz.PropertiesMappedRoleMapper;
 import org.wildfly.security.authz.RegexRoleMapper;
 import org.wildfly.security.authz.RoleMapper;
 import org.wildfly.security.authz.Roles;
@@ -73,6 +81,16 @@ class RoleMapperDefinitions {
         .setMinSize(1)
         .setRestartAllServices()
         .build();
+
+    static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATH, ModelType.STRING, false)
+            .setMinSize(1)
+            .build();
+
+    static final SimpleAttributeDefinition RELATIVE_TO = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RELATIVE_TO, ModelType.STRING, true)
+            .setRequires(ElytronDescriptionConstants.PATH)
+            .setMinSize(1)
+            .setRequired(false)
+            .build();
 
     static final SimpleAttributeDefinition PATTERN = new SimpleAttributeDefinitionBuilder(RegexAttributeDefinitions.PATTERN).build();
 
@@ -226,6 +244,51 @@ class RoleMapperDefinitions {
         };
 
         return new RoleMapperResourceDefinition(ElytronDescriptionConstants.REGEX_ROLE_MAPPER, add, PATTERN, REPLACEMENT, KEEP_NON_MAPPED, REPLACE_ALL);
+    }
+
+    static ResourceDefinition getPropertyRoleMapperDefinition() {
+        AbstractAddStepHandler add = new RoleMapperAddHandler() {
+
+            @Override
+            protected ValueSupplier<RoleMapper> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
+
+                final String path = PATH.resolveModelAttribute(context, model).asString();
+                final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
+                String rootPath = Objects.isNull(relativeTo) ? validateRootPath(path) : extractedRootPath(context, path, relativeTo);
+                final PropertiesMappedRoleMapper propertiesMapper = new PropertiesMappedRoleMapper.Builder()
+                        .rootPath(rootPath)
+                        .build();
+                return () -> propertiesMapper;
+            }
+
+            private String extractedRootPath(OperationContext context, final String propertyRoleMapper, final String relativeTo) {
+                ServiceName pathMgrSvc = context.getCapabilityServiceName(PathManager.SERVICE_DESCRIPTOR);
+
+                @SuppressWarnings("unchecked")
+                final ServiceController<PathManager> controller = (ServiceController<PathManager>) context.getServiceRegistry(false).getService(pathMgrSvc);
+
+                if(controller == null) {
+                    throw ElytronMessages.log.pathManagerServiceNotStarted();
+                }
+
+                String rootPath = controller.getValue().resolveRelativePathEntry(propertyRoleMapper, relativeTo);
+                return validateRootPath(rootPath);
+            }
+
+            private String validateRootPath(String rootPath) {
+                final Path file = Paths.get(rootPath);
+
+                if(!Files.exists(file)) {
+                    throw ElytronMessages.log.propertiesRoleMapperFileNotExist(rootPath);
+                } else if(Files.isDirectory(file)) {
+                    throw ElytronMessages.log.propertiesRoleMapperPathIsDirectory(rootPath);
+                }
+
+                return rootPath;
+            }
+        };
+
+        return new RoleMapperResourceDefinition(ElytronDescriptionConstants.PROPERTIES_ROLE_MAPPER, add, PATH, RELATIVE_TO);
     }
 
     static AggregateComponentDefinition<RoleMapper> getAggregateRoleMapperDefinition() {

@@ -49,7 +49,7 @@ class MapperParser {
         VERSION_4_0, // mapped-role-mappers
         VERSION_8_0, // x500-subject-evidence-decoder, x509-subject-alt-name-evidence-decoder, custom-evidence-decoder, aggregate-evidence-decoder
         VERSION_10_0, // source-address-role-decoder, aggregate-role-decoder, regex-role-mapper
-        VERSION_12_0 // case-principal-transformer
+        VERSION_12_0 // case-principal-transformer, property-role-mapper
     }
 
     private final Version version;
@@ -186,6 +186,11 @@ class MapperParser {
             .addAttribute(RoleMapperDefinitions.REPLACEMENT)
             .addAttribute(RoleMapperDefinitions.KEEP_NON_MAPPED)
             .addAttribute(RoleMapperDefinitions.REPLACE_ALL)
+            .build();
+
+    private PersistentResourceXMLDescription propertiesRoleMapper = PersistentResourceXMLDescription.builder(RoleMapperDefinitions.getPropertyRoleMapperDefinition().getPathElement())
+            .addAttribute(RoleMapperDefinitions.PATH)
+            .addAttribute(RoleMapperDefinitions.RELATIVE_TO)
             .build();
 
     private PersistentResourceXMLDescription addPrefixRoleMapperParser = PersistentResourceXMLDescription.builder(RoleMapperDefinitions.getAddPrefixRoleMapperDefinition().getPathElement())
@@ -450,7 +455,8 @@ class MapperParser {
                 .addChild(sourceAddressRoleDecoderParser)
                 .addChild(aggregateRoleDecoderParser)
                 .addChild(regexRoleMapperParser)
-                .addChild(casePrincipalTransformerParser) // new
+                .addChild(casePrincipalTransformerParser)
+                .addChild(propertiesRoleMapper)// new
                 .build();
     }
 }

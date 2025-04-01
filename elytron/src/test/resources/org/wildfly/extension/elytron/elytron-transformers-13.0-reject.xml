@@ -103,6 +103,9 @@
         </ldap-realm>
         <distributed-realm name="DistributedRealmFirstUnavailableIgnoredEventEmitted" realms="LdapRealm FilesystemRealmIntegrity" ignore-unavailable-realms="true" emit-events="true"/>
     </security-realms>
+    <mappers>
+    	<properties-role-mapper name="PropertiesRoleMapper" path="target/test-classes/org/wildfly/extension/elytron/rolesMapping-roles.properties"/>
+    </mappers>
     <dir-contexts>
         <dir-context name="dirContext" url="ldap://localhost:11390" principal="uid=server,dc=elytron,dc=wildfly,dc=org" enable-connection-pooling="true">
             <credential-reference store="store1" alias="Elytron"/>
