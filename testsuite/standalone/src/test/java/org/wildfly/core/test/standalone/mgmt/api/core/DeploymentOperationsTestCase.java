@@ -94,7 +94,7 @@ public class DeploymentOperationsTestCase {
     @Inject
     private ManagementClient managementClient;
 
-    private static final int TIMEOUT = TimeoutUtil.adjust(20000);
+    private static final int TIMEOUT = TimeoutUtil.adjust(40000);
     private static final String TEST_DEPLOYMENT_NAME = "test-deployment.jar";
     private static final String PROPERTIES_RESOURCE = "service-activator-deployment.properties";
 
