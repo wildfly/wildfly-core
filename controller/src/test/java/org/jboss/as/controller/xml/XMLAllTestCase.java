@@ -20,12 +20,17 @@ import org.junit.Test;
 /**
  * Unit test validating read semantics of {@link XMLAll}.
  */
-public class XMLAllTestCase implements FeatureRegistry {
-    private final XMLParticleFactory<Void, Void> factory = XMLParticleFactory.newInstance(this);
+public class XMLAllTestCase implements FeatureRegistry, QNameResolver {
+    private final XMLComponentFactory<Void, Void> factory = XMLComponentFactory.newInstance(this, this);
 
     @Override
     public Stability getStability() {
         return Stability.COMMUNITY;
+    }
+
+    @Override
+    public QName resolve(String localName) {
+        return new QName(localName);
     }
 
     @Test
@@ -43,7 +48,7 @@ public class XMLAllTestCase implements FeatureRegistry {
             if (this.factory.getStability().enables(stability)) {
                 expectedSize += 1;
             }
-            builder.addElement(this.factory.element(new QName(stability.toString()), stability).build());
+            builder.addElement(this.factory.element(this.resolve(stability.toString()), stability).build());
         }
         XMLAll<Void, Void> all = builder.build();
         Assert.assertSame(expected, all.getStability());
@@ -55,13 +60,13 @@ public class XMLAllTestCase implements FeatureRegistry {
     public void testRequiredAll() throws XMLStreamException {
         // Validate xs:all with minOccurs = 1, maxOccurs = 1
         XMLAll<Void, Void> all = this.factory.all()
-                .addElement(this.factory.element(new QName("required"), Stability.COMMUNITY).build())
-                .addElement(this.factory.element(new QName("optional")).withCardinality(XMLCardinality.Single.OPTIONAL).build())
-                .addElement(this.factory.element(new QName("preview"), Stability.PREVIEW).build())
-                .addElement(this.factory.element(new QName("experimental"), Stability.EXPERIMENTAL).build())
-                .addElement(this.factory.element(new QName("disabled")).withCardinality(XMLCardinality.DISABLED).build())
+                .addElement(this.factory.element(this.resolve("required"), Stability.COMMUNITY).build())
+                .addElement(this.factory.element(this.resolve("optional")).withCardinality(XMLCardinality.Single.OPTIONAL).build())
+                .addElement(this.factory.element(this.resolve("preview"), Stability.PREVIEW).build())
+                .addElement(this.factory.element(this.resolve("experimental"), Stability.EXPERIMENTAL).build())
+                .addElement(this.factory.element(this.resolve("disabled")).withCardinality(XMLCardinality.DISABLED).build())
                 .build();
-        XMLElement<Void, Void> containerElement = this.factory.element(new QName("container")).withContent(all).build();
+        XMLElement<Void, Void> containerElement = this.factory.element(this.resolve("container")).withContent(all).build();
 
         try (XMLElementTester<Void, Void> tester = XMLElementTester.of(containerElement)) {
             // Positive tests
@@ -105,13 +110,13 @@ public class XMLAllTestCase implements FeatureRegistry {
     public void testOptionalAll() throws XMLStreamException {
         // Validate xs:all with minOccurs = 0, maxOccurs = 1
         XMLAll<Void, Void> all = this.factory.all().withCardinality(XMLCardinality.Single.OPTIONAL)
-                .addElement(this.factory.element(new QName("required"), Stability.COMMUNITY).build())
-                .addElement(this.factory.element(new QName("optional")).withCardinality(XMLCardinality.Single.OPTIONAL).build())
-                .addElement(this.factory.element(new QName("preview"), Stability.PREVIEW).build())
-                .addElement(this.factory.element(new QName("experimental"), Stability.EXPERIMENTAL).build())
-                .addElement(this.factory.element(new QName("disabled")).withCardinality(XMLCardinality.DISABLED).build())
+                .addElement(this.factory.element(this.resolve("required"), Stability.COMMUNITY).build())
+                .addElement(this.factory.element(this.resolve("optional")).withCardinality(XMLCardinality.Single.OPTIONAL).build())
+                .addElement(this.factory.element(this.resolve("preview"), Stability.PREVIEW).build())
+                .addElement(this.factory.element(this.resolve("experimental"), Stability.EXPERIMENTAL).build())
+                .addElement(this.factory.element(this.resolve("disabled")).withCardinality(XMLCardinality.DISABLED).build())
                 .build();
-        XMLElement<Void, Void> containerElement = this.factory.element(new QName("container")).withContent(all).build();
+        XMLElement<Void, Void> containerElement = this.factory.element(this.resolve("container")).withContent(all).build();
 
         try (XMLElementTester<Void, Void> tester = XMLElementTester.of(containerElement)) {
             // Positive tests
@@ -155,9 +160,9 @@ public class XMLAllTestCase implements FeatureRegistry {
     public void testDisabledAll() throws XMLStreamException {
         // Validate xs:all with minOccurs = 0, maxOccurs = 0
         XMLAll<Void, Void> all = this.factory.all().withCardinality(XMLCardinality.DISABLED)
-                .addElement(this.factory.element(new QName("required")).build())
+                .addElement(this.factory.element(this.resolve("required")).build())
                 .build();
-        XMLElement<Void, Void> containerElement = this.factory.element(new QName("container")).withContent(all).build();
+        XMLElement<Void, Void> containerElement = this.factory.element(this.resolve("container")).withContent(all).build();
 
         try (XMLElementTester<Void, Void> tester = XMLElementTester.of(containerElement)) {
             // Positive tests
@@ -177,10 +182,10 @@ public class XMLAllTestCase implements FeatureRegistry {
         XMLAll.Builder<Void, Void> builder = this.factory.all();
 
         // xs:all does not allow repeated elements
-        Assert.assertThrows(IllegalArgumentException.class, () -> builder.addElement(this.factory.element(new QName("unbounded")).withCardinality(XMLCardinality.Unbounded.OPTIONAL).build()));
-        Assert.assertThrows(IllegalArgumentException.class, () -> builder.addElement(this.factory.element(new QName("unbounded")).withCardinality(XMLCardinality.Unbounded.REQUIRED).build()));
-        Assert.assertThrows(IllegalArgumentException.class, () -> builder.addElement(this.factory.element(new QName("unbounded")).withCardinality(XMLCardinality.of(0, OptionalInt.of(2))).build()));
-        Assert.assertThrows(IllegalArgumentException.class, () -> builder.addElement(this.factory.element(new QName("unbounded")).withCardinality(XMLCardinality.of(1, OptionalInt.of(2))).build()));
+        Assert.assertThrows(IllegalArgumentException.class, () -> builder.addElement(this.factory.element(this.resolve("unbounded")).withCardinality(XMLCardinality.Unbounded.OPTIONAL).build()));
+        Assert.assertThrows(IllegalArgumentException.class, () -> builder.addElement(this.factory.element(this.resolve("unbounded")).withCardinality(XMLCardinality.Unbounded.REQUIRED).build()));
+        Assert.assertThrows(IllegalArgumentException.class, () -> builder.addElement(this.factory.element(this.resolve("unbounded")).withCardinality(XMLCardinality.of(0, OptionalInt.of(2))).build()));
+        Assert.assertThrows(IllegalArgumentException.class, () -> builder.addElement(this.factory.element(this.resolve("unbounded")).withCardinality(XMLCardinality.of(1, OptionalInt.of(2))).build()));
         // xs:all is not repeatable
         Assert.assertThrows(IllegalArgumentException.class, () -> builder.withCardinality(XMLCardinality.Unbounded.OPTIONAL));
         Assert.assertThrows(IllegalArgumentException.class, () -> builder.withCardinality(XMLCardinality.Unbounded.REQUIRED));

@@ -4,22 +4,27 @@
  */
 package org.jboss.as.controller.xml;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.FeatureRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.version.Stability;
-import org.jboss.staxmapper.XMLAttributeReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
-import org.wildfly.common.Assert;
 
 /**
  * Encapsulates an XML element.
@@ -34,6 +39,14 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
      */
     QName getName();
 
+    default <R, W> XMLElement<R, W> map(Function<R, RC> readContextMapper, Function<W, WC> writeContentMapper) {
+        return new DefaultXMLElement<>(this.getName(), this.getCardinality(), this.getReader().map(readContextMapper), this.getWriter().map(writeContentMapper), this.getStability());
+    }
+
+    default <R, W> XMLElement<R, W> withContext(Supplier<RC> readContextFactory, BiConsumer<R, RC> readContextConsumer, Function<W, WC> writeContentMapper) {
+        return new DefaultXMLElement<>(this.getName(), this.getCardinality(), this.getReader().withContext(readContextFactory, readContextConsumer), this.getWriter().map(writeContentMapper), this.getStability());
+    }
+
     /**
      * Builder of an XML element.
      * @param <RC> the reader context
@@ -46,7 +59,20 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
          * @param writer a writer of the attributes of this element
          * @return a reference to this builder
          */
-        Builder<RC, WC> withAttributes(Map<QName, XMLAttributeReader<RC>> readers, XMLContentWriter<WC> writer);
+        Builder<RC, WC> addAttribute(XMLAttribute<RC, WC> attribute);
+
+        /**
+         * Adds readers and writer for the attributes of this element.
+         * @param readers a map of readers per qualified name
+         * @param writer a writer of the attributes of this element
+         * @return a reference to this builder
+         */
+        default Builder<RC, WC> addAttributes(Iterable<? extends XMLAttribute<RC, WC>> attributes) {
+            for (XMLAttribute<RC, WC> attribute : attributes) {
+                this.addAttribute(attribute);
+            }
+            return this;
+        }
     }
 
     /**
@@ -57,7 +83,7 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
      * @return an element whose content should be ignored.
      */
     static <RC, WC> XMLElement<RC, WC> ignore(QName name, XMLCardinality cardinality) {
-        return new DefaultXMLElement<>(name, cardinality, new XMLElementReader<>() {
+        XMLElementReader<RC> reader = new XMLElementReader<>() {
             @Override
             public void readElement(XMLExtendedStreamReader reader, RC context) throws XMLStreamException {
                 ControllerLogger.ROOT_LOGGER.elementIgnored(name);
@@ -69,13 +95,13 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
                     this.skipElement(reader);
                 }
             }
-        }, XMLContentWriter.empty(), Stability.DEFAULT);
+        };
+        return new DefaultXMLElement<>(name, cardinality, XMLElementReader.validate(name, reader), XMLContentWriter.empty(), Stability.DEFAULT);
     }
 
-    class DefaultBuilder<RC, WC> extends XMLContainer.AbstractBuilder<RC, WC, XMLElement<RC, WC>, Builder<RC, WC>> implements Builder<RC, WC> {
+    class DefaultBuilder<RC, WC> extends XMLContainer.AbstractBuilder<RC, WC, XMLElement<RC, WC>, Builder<RC, WC>> implements Builder<RC, WC>, FeatureRegistry {
         private final QName name;
-        private volatile Map<QName, XMLAttributeReader<RC>> attributeReaders = Map.of();
-        private volatile XMLContentWriter<WC> attributesWriter = XMLContentWriter.empty();
+        private final List<XMLAttribute<RC, WC>> attributes = new LinkedList<>();
         private final Stability stability;
 
         DefaultBuilder(QName name, Stability stability) {
@@ -84,12 +110,10 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
         }
 
         @Override
-        public Builder<RC, WC> withAttributes(Map<QName, XMLAttributeReader<RC>> readers, XMLContentWriter<WC> writer) {
-            if (this.attributeReaders.isEmpty()) {
-                this.attributeReaders = new TreeMap<>(QNameResolver.COMPARATOR);
+        public Builder<RC, WC> addAttribute(XMLAttribute<RC, WC> attribute) {
+            if (this.enables(attribute)) {
+                this.attributes.add(attribute);
             }
-            this.attributeReaders.putAll(readers);
-            this.attributesWriter = this.attributesWriter.andThen(writer);
             return this;
         }
 
@@ -101,67 +125,66 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
         @Override
         public XMLElement<RC, WC> build() {
             QName name = this.name;
-            Map<QName, XMLAttributeReader<RC>> attributeReaders = this.attributeReaders;
-            XMLContentWriter<WC> attributesWriter = this.attributesWriter;
+            Map<QName, XMLAttribute<RC, WC>> attributes = new TreeMap<>(QNameResolver.COMPARATOR);
+            for (XMLAttribute<RC, WC> attribute : this.attributes) {
+                attributes.put(attribute.getName(), attribute);
+            }
             XMLContent<RC, WC> content = this.getContent();
             XMLElementReader<RC> reader = new XMLElementReader<>() {
                 @Override
                 public void readElement(XMLExtendedStreamReader reader, RC context) throws XMLStreamException {
+                    // Track occurrence via map removal
+                    Map<QName, XMLAttribute<RC, WC>> remaining = new TreeMap<>(QNameResolver.COMPARATOR);
+                    remaining.putAll(attributes);
                     for (int i = 0; i < reader.getAttributeCount(); ++i) {
                         QName attributeName = reader.getAttributeName(i);
                         if (attributeName.getNamespaceURI().equals(XMLConstants.NULL_NS_URI) && !reader.getName().getNamespaceURI().equals(XMLConstants.NULL_NS_URI)) {
                             // Inherit namespace of element, if unspecified
-                            attributeName = new QName(reader.getName().getNamespaceURI(), name.getLocalPart());
+                            attributeName = new QName(reader.getName().getNamespaceURI(), attributeName.getLocalPart());
                         }
-                        XMLAttributeReader<RC> attributeReader = attributeReaders.get(attributeName);
-                        if (attributeReader == null) {
-                            throw ParseUtils.unexpectedAttribute(reader, i, attributeReaders.keySet());
+                        XMLAttribute<RC, WC> attribute = remaining.remove(attributeName);
+                        if (attribute == null) {
+                            if (attributes.containsKey(attributeName)) {
+                                throw ParseUtils.duplicateAttribute(reader, attributeName.getLocalPart());
+                            }
+                            throw ParseUtils.unexpectedAttribute(reader, i, attributes.keySet());
                         }
-                        attributeReader.readAttribute(reader, i, context);
+                        if (!attribute.getUsage().isEnabled()) {
+                            throw ParseUtils.unexpectedAttribute(reader, i);
+                        }
+                        attribute.getReader().readAttribute(reader, i, context);
+                    }
+                    if (!remaining.isEmpty()) {
+                        Set<QName> missing = new TreeSet<>(QNameResolver.COMPARATOR);
+                        for (XMLAttribute<RC, WC> attribute : remaining.values()) {
+                            if (attribute.getUsage().isRequired()) {
+                                missing.add(attribute.getName());
+                            } else {
+                                attribute.getReader().whenAbsent(context);
+                            }
+                        }
+                        if (!missing.isEmpty()) {
+                            throw ParseUtils.missingRequired(reader, remaining.keySet());
+                        }
                     }
                     content.readContent(reader, context);
                 }
             };
-            XMLContentWriter<WC> writer = new XMLContentWriter<>() {
-                @Override
-                public void writeContent(XMLExtendedStreamWriter writer, WC value) throws XMLStreamException {
-                    writer.writeStartElement(name.getNamespaceURI(), name.getLocalPart());
-                    attributesWriter.writeContent(writer, value);
-                    content.writeContent(writer, value);
-                    writer.writeEndElement();
-                }
+            XMLContentWriter<WC> writer = new DefaultXMLElementWriter<>(name, XMLContentWriter.composite(attributes.values()), Function.identity(), content);
+            return new DefaultXMLElement<>(this.name, this.getCardinality(), XMLElementReader.validate(name, reader), writer, this.stability);
+        }
 
-                @Override
-                public boolean isEmpty(WC value) {
-                    return content.isEmpty(value);
-                }
-            };
-            return new DefaultXMLElement<>(this.name, this.getCardinality(), reader, writer, this.stability);
+        @Override
+        public Stability getStability() {
+            return this.stability;
         }
     }
 
     class DefaultXMLElement<RC, WC> extends DefaultXMLParticle<RC, WC> implements XMLElement<RC, WC> {
         private final QName name;
 
-        protected DefaultXMLElement(QName name, XMLCardinality cardinality, XMLElementReader<RC> elementReader, XMLContentWriter<WC> elementWriter, Stability stability) {
-            super(cardinality, new XMLElementReader<>() {
-                @Override
-                public void readElement(XMLExtendedStreamReader reader, RC value) throws XMLStreamException {
-                    // Validate entry criteria
-                    Assert.assertTrue(reader.isStartElement());
-                    if (!reader.getName().equals(name)) {
-                        throw ParseUtils.unexpectedElement(reader, Set.of(name));
-                    }
-                    elementReader.readElement(reader, value);
-                    // Validate exit criteria
-                    if (!reader.isEndElement()) {
-                        throw ParseUtils.unexpectedElement(reader);
-                    }
-                    if (!reader.getName().equals(name)) {
-                        throw ParseUtils.unexpectedEndElement(reader);
-                    }
-                }
-            }, elementWriter, stability);
+        protected DefaultXMLElement(QName name, XMLCardinality cardinality, XMLElementReader<RC> reader, XMLContentWriter<WC> writer, Stability stability) {
+            super(cardinality, reader, writer, stability);
             this.name = name;
         }
 
@@ -185,6 +208,43 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
         @Override
         public String toString() {
             return String.format("<xs:element name=\"%s\" %s/>", this.name.getLocalPart(), XMLCardinality.toString(this.getCardinality()));
+        }
+    }
+
+    class DefaultXMLElementWriter<RC, WC, CC> implements XMLContentWriter<WC> {
+        private final QName name;
+        private final XMLContentWriter<WC> attributesWriter;
+        private final Function<WC, CC> childContentFactory;
+        private final XMLContent<RC, CC> childContent;
+
+        public DefaultXMLElementWriter(QName name, XMLContentWriter<WC> attributesWriter, Function<WC, CC> childContentFactory, XMLContent<RC, CC> childContent) {
+            this.name = name;
+            this.attributesWriter = attributesWriter;
+            this.childContentFactory = childContentFactory;
+            this.childContent = childContent;
+        }
+
+        @Override
+        public void writeContent(XMLExtendedStreamWriter writer, WC content) throws XMLStreamException {
+            String namespaceURI = this.name.getNamespaceURI();
+            writer.writeStartElement(namespaceURI, this.name.getLocalPart());
+
+            // If namespace is not yet bound to any prefix, bind it
+            if (writer.getNamespaceContext().getPrefix(namespaceURI) == null) {
+                writer.setPrefix(this.name.getPrefix(), namespaceURI);
+                writer.writeNamespace(this.name.getPrefix(), namespaceURI);
+            }
+
+            this.attributesWriter.writeContent(writer, content);
+
+            this.childContent.writeContent(writer, this.childContentFactory.apply(content));
+
+            writer.writeEndElement();
+        }
+
+        @Override
+        public boolean isEmpty(WC content) {
+            return this.attributesWriter.isEmpty(content) && this.childContent.isEmpty(this.childContentFactory.apply(content));
         }
     }
 }

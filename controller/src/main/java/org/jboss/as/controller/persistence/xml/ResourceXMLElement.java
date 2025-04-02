@@ -83,7 +83,7 @@ public interface ResourceXMLElement extends ResourceXMLContainer, XMLElement<Map
             XMLContent<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>, ModelNode> content = this.getContent();
 
             XMLElementReader<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>> reader = new ResourceXMLContainerReader(new ResourceAttributesXMLContentReader(attributes, configuration), content);
-            XMLContentWriter<ModelNode> writer = new ResourceXMLContainerWriter<>(this.name, new ResourceAttributesXMLContentWriter(attributes, configuration), Function.identity(), content) {
+            XMLContentWriter<ModelNode> writer = new DefaultXMLElementWriter<>(this.name, new ResourceAttributesXMLContentWriter(attributes, configuration), Function.identity(), content) {
                 @Override
                 public void writeContent(XMLExtendedStreamWriter writer, ModelNode content) throws XMLStreamException {
                     // Skip if empty
@@ -100,7 +100,7 @@ public interface ResourceXMLElement extends ResourceXMLContainer, XMLElement<Map
     class DefaultResourceXMLElement extends DefaultXMLElement<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>, ModelNode> implements ResourceXMLElement {
 
         DefaultResourceXMLElement(QName name, XMLCardinality cardinality, XMLElementReader<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>> reader, XMLContentWriter<ModelNode> writer, Stability stability) {
-            super(name, cardinality, reader, writer, stability);
+            super(name, cardinality, XMLElementReader.validate(name, reader), writer, stability);
         }
     }
 }

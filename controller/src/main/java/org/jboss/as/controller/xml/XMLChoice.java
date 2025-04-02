@@ -100,14 +100,14 @@ public interface XMLChoice<RC, WC> extends XMLParticleGroup<RC, WC> {
                     } else if (cardinality.isRequired()) {
                         throw ParseUtils.unexpectedElement(reader, choices.keySet());
                     } else {
-                        this.handleAbsentElement(context);
+                        this.whenAbsent(context);
                     }
                 }
 
                 @Override
-                public void handleAbsentElement(RC context) {
-                    for (XMLParticleGroup<RC, WC> choice : groups) {
-                        choice.getReader().handleAbsentElement(context);
+                public void whenAbsent(RC context) {
+                    for (XMLParticleGroup<RC, WC> group : groups) {
+                        group.getReader().whenAbsent(context);
                     }
                 }
             });
@@ -127,7 +127,7 @@ public interface XMLChoice<RC, WC> extends XMLParticleGroup<RC, WC> {
 
         // Singleton choice
         DefaultXMLElementChoice(XMLElement<RC, WC> element) {
-            this(Map.of(element.getName(), element), element.getCardinality(), element.getReader()::handleAbsentElement, List.of(element), element.getStability());
+            this(Map.of(element.getName(), element), element.getCardinality(), element.getReader()::whenAbsent, List.of(element), element.getStability());
         }
 
         protected DefaultXMLElementChoice(Collection<? extends XMLElement<RC, WC>> elements, XMLCardinality cardinality, Consumer<RC> absenteeHandler, Stability stability) {
@@ -167,12 +167,12 @@ public interface XMLChoice<RC, WC> extends XMLParticleGroup<RC, WC> {
                     } else if (cardinality.isRequired()) {
                         throw ParseUtils.unexpectedElement(reader, names);
                     } else {
-                        this.handleAbsentElement(context);
+                        this.whenAbsent(context);
                     }
                 }
 
                 @Override
-                public void handleAbsentElement(RC context) {
+                public void whenAbsent(RC context) {
                     absenteeHandler.accept(context);
                 }
             }, writer, stability);
