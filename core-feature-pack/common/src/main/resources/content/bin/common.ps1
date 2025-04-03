@@ -232,8 +232,10 @@ Param(
   $MODULAR_JDK = SetModularJDK
   $JAVA_OPTS = Get-Java-Opts #takes care of looking at defind settings and/or using env:JAVA_OPTS
   $DEFAULT_MODULAR_JVM_OPTS = Get-Default-Modular-Jvm-Options -opts $JAVA_OPTS -modularJDK $MODULAR_JDK
-  $ENHANCED_SM = SetEnhancedSecurityManager
-  $SECURITY_MANAGER_CONFIG_OPT = Get-Security-Manager-Default -enhancedSM $ENHANCED_SM
+  if ($SECMGR) {
+      $ENHANCED_SM = SetEnhancedSecurityManager
+      $SECURITY_MANAGER_CONFIG_OPT = Get-Security-Manager-Default -enhancedSM $ENHANCED_SM
+  }
 
   $PROG_ARGS = @()
   if ($JAVA_OPTS -ne $null){

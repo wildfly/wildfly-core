@@ -289,8 +289,10 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
     JAVA_OPTS="$JAVA_OPTS $DEFAULT_MODULAR_JVM_OPTIONS"
 
     # Set default Security Manager configuration value
-    setSecurityManagerDefault
-    JAVA_OPTS="$JAVA_OPTS $SECURITY_MANAGER_CONFIG_OPTION"
+    if [ "$SECMGR" = "true" ]; then
+        setSecurityManagerDefault
+        JAVA_OPTS="$JAVA_OPTS $SECURITY_MANAGER_CONFIG_OPTION"
+    fi
 
     JAVA_OPTS="$PREPEND_JAVA_OPTS $JAVA_OPTS"
 fi

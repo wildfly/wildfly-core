@@ -48,6 +48,13 @@ public class DomainScriptTestCase extends ScriptTestCase {
         Assert.assertNotNull("The process is null and may have failed to start.", script);
         Assert.assertTrue("The process is not running and should be", script.isAlive());
 
+        final var stdout = script.getStdoutAsString();
+        if (supportsEnhancedSecurityManager() && env.containsKey("SECMGR")) {
+            Assert.assertTrue("Expected to find -Djava.security.manager=allow in the JVM parameters.", stdout.contains("-Djava.security.manager=allow"));
+        } else {
+            Assert.assertFalse("Did not expect to find -Djava.security.manager=allow in the JVM parameters.", stdout.contains("-Djava.security.manager=allow"));
+        }
+
         // Shutdown the server
         @SuppressWarnings("Convert2Lambda")
         final Callable<ModelNode> callable = new Callable<ModelNode>() {

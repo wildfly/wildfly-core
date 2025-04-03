@@ -47,11 +47,14 @@ public abstract class ScriptTestCase {
     static final Map<String, String> MAVEN_JAVA_OPTS = new LinkedHashMap<>();
 
     private final String scriptBaseName;
+    private final boolean enhancedSecurityManager;
     private ExecutorService service;
 
 
     ScriptTestCase(final String scriptBaseName) {
         this.scriptBaseName = scriptBaseName;
+        final int version = Runtime.version().feature();
+        enhancedSecurityManager = version >= 17 && version < 24;
     }
 
     @BeforeClass
@@ -120,6 +123,10 @@ public abstract class ScriptTestCase {
         } else {
             Assert.fail(script.getErrorMessage("The script process did not exit within " + ServerHelper.TIMEOUT + " seconds."));
         }
+    }
+
+    boolean supportsEnhancedSecurityManager() {
+        return enhancedSecurityManager;
     }
 
     static ModelNode executeOperation(final ModelControllerClient client, final ModelNode op) throws IOException {

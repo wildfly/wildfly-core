@@ -128,6 +128,13 @@ public class ScriptProcess extends Process implements AutoCloseable {
         return Files.readAllLines(stdoutLog, StandardCharsets.UTF_8);
     }
 
+    String getStdoutAsString() throws IOException {
+        if (stdoutLog == null) {
+            return "";
+        }
+        return String.join(System.lineSeparator(), getStdout());
+    }
+
     String getErrorMessage(final String msg) {
         final StringBuilder errorMessage = new StringBuilder(msg)
                 .append(System.lineSeparator())
@@ -176,8 +183,23 @@ public class ScriptProcess extends Process implements AutoCloseable {
 
     @Override
     public void close() {
-        destroy(delegate);
-        delegate = null;
+        try {
+            if (this.delegate != null) {
+                // First attempt to destroy all the child processes
+                delegate.children().forEachOrdered(child -> {
+                    if (child.destroyForcibly()) {
+                        try {
+                            child.onExit().get(timeout, TimeUnit.SECONDS);
+                        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                            LOGGER.errorf(e, "Failed to destroy child %s", child);
+                        }
+                    }
+                });
+            }
+        } finally {
+            destroy(delegate);
+            delegate = null;
+        }
     }
 
     @Override
