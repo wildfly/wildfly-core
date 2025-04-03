@@ -5,7 +5,9 @@
 
 package org.wildfly.scripts.test;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -111,11 +113,21 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         if (!script.getContainerHome().toString().contains(" ")) {
             ProcessHandle handle = script.toHandle();
             List<ProcessHandle> children = handle.children().collect(Collectors.toList());
-            Assert.assertEquals("The standalone process should have started one single process.", 1, children.size());
-            ProcessHandle serverProcess = children.get(0);
-            Optional<String> commandLine = serverProcess.info().commandLine();
-            Assert.assertFalse("Server process launch command is not available", commandLine.isEmpty());
-            String[] serverArgs = commandLine.get().split("\\s+");
+
+            String launchCommand;
+            if (TestSuiteEnvironment.isWindows()) {
+                ProcessHandle serverProcess = children.get(1);
+                launchCommand = getWindowsProcessCommandLine(serverProcess);
+                Assert.assertFalse("Server process launch command is not available", launchCommand.isEmpty());
+            } else {
+                Assert.assertEquals("The standalone process should have started one single process.", 1, children.size());
+                ProcessHandle serverProcess = children.get(0);
+                Optional<String> commandLine = serverProcess.info().commandLine();
+                Assert.assertFalse("Server process launch command is not available", commandLine.isEmpty());
+                launchCommand = commandLine.get();
+            }
+
+            String[] serverArgs = launchCommand.split("\\s+");
             int occurrences = 0;
             outer:
             for (int i = 0; i < serverArgs.length; i++) {
@@ -130,7 +142,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
                     }
                 }
             }
-            Assert.assertEquals("Found duplicate server jboss.server.base.dir argument in the server launch command. Launch command is " + commandLine.get(), 1, occurrences);
+            Assert.assertEquals("Found duplicate server jboss.server.base.dir argument in the server launch command. Launch command is " + launchCommand, 1, occurrences);
         }
 
         if (env.containsKey("MODULE_OPTS")) {
@@ -164,5 +176,25 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
             final String fileName = "gc.log";
             Assert.assertTrue(String.format("Missing %s file in %s", fileName, logDir), Files.exists(logDir.resolve(fileName)));
         }
+    }
+
+    private String getWindowsProcessCommandLine(ProcessHandle serverProcess) throws IOException {
+        String launchCommand = "";
+
+        ProcessBuilder builder = new ProcessBuilder("powershell", "Get-CimInstance Win32_Process -Filter \\\"ProcessId  = " + serverProcess.pid() + "\\\" | select CommandLine | Out-String -width 9999");
+        Process powerShellProcess = builder.start();
+        powerShellProcess.getOutputStream().close();
+        String line;
+        BufferedReader stdout = new BufferedReader(new InputStreamReader(powerShellProcess.getInputStream()));
+        while ((line = stdout.readLine()) != null) {
+            System.out.println(line);
+            if (line.contains("standalone")) {
+                launchCommand = line;
+                break;
+            }
+        }
+        stdout.close();
+
+        return launchCommand;
     }
 }
