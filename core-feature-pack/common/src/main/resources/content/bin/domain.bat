@@ -114,9 +114,11 @@ echo(!PROCESS_CONTROLLER_JAVA_OPTS! | findstr /r /c:"-Djava.security.manager" > 
 )
 
 rem Set default Security Manager configuration value
-call "!DIRNAME!common.bat" :setSecurityManagerDefault
-set "PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!"
-set "HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!"
+if "%SECMGR%" == "true" (
+    call "!DIRNAME!common.bat" :setSecurityManagerDefault
+    set "PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!"
+    set "HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!"
+)
 
 setlocal DisableDelayedExpansion
 

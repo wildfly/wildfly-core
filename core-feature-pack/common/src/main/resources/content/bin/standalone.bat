@@ -293,8 +293,10 @@ if not "%PRESERVE_JAVA_OPT%" == "true" (
     set "JAVA_OPTS=!JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!"
 
     rem Set default Security Manager configuration value
-    call "!DIRNAME!common.bat" :setSecurityManagerDefault
-    set "JAVA_OPTS=!JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!"
+    if "%SECMGR%" == "true" (
+        call "!DIRNAME!common.bat" :setSecurityManagerDefault
+        set "JAVA_OPTS=!JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!"
+    )
     setlocal DisableDelayedExpansion
 )
 
