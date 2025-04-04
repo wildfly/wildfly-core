@@ -259,6 +259,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(RoleMapperDefinitions.getLogicalRoleMapperDefinition());
         resourceRegistration.registerSubModel(RoleMapperDefinitions.getMappedRoleMapperDefinition());
         resourceRegistration.registerSubModel(RoleMapperDefinitions.getRegexRoleMapperDefinition());
+        resourceRegistration.registerSubModel(RoleMapperDefinitions.getPropertyRoleMapperDefinition());
 
         // Evidence Decoders
         resourceRegistration.registerSubModel(EvidenceDecoderDefinitions.getX500SubjectEvidenceDecoderDefinition());
