@@ -13,6 +13,7 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
@@ -90,7 +91,7 @@ public interface XMLContent<RC, WC> extends XMLContentWriter<WC> {
             @Override
             public void writeContent(XMLExtendedStreamWriter writer, WC content) throws XMLStreamException {
                 if (!this.isEmpty(content)) {
-                    writer.writeCharacters(formatter.apply(content));
+                    AttributeMarshaller.marshallElementContent(formatter.apply(content), writer);
                 }
             }
 
