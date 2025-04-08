@@ -417,6 +417,7 @@ interface ElytronDescriptionConstants {
     String PRINCIPAL_QUERY = "principal-query";
     String PROPERTIES = "properties";
     String PROPERTIES_REALM = "properties-realm";
+    String PROPERTIES_ROLE_MAPPER="properties-role-mapper";
     String PROPERTY = "property";
     String PROPERTY_LIST = "property-list";
     String PROTOCOL = "protocol";
