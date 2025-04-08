@@ -414,6 +414,7 @@
                                 <exclude>jacc-with-providers.xml</exclude>
                                 <exclude>legacy*.xml</exclude>
                                 <exclude>elytron-subsystem-community*.xml</exclude>
+                                <exclude>elytron-subsystem-preview*.xml</exclude>
                             </excludes>
                             <systemId>src/main/resources/schema/wildfly-elytron_18_0.xsd</systemId>
                         </validationSet>
