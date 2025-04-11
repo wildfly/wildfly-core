@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.jboss.as.controller.OperationContext;
+import org.wildfly.common.function.Functions;
 
 /**
  * Installs a service into the target associated with an {@link OperationContext}.
@@ -23,6 +24,16 @@ public interface ResourceServiceInstaller {
      * @return a mechanism to remove the installed service
      */
     Consumer<OperationContext> install(OperationContext context);
+
+    /**
+     * An installer that installs no services.
+     */
+    ResourceServiceInstaller NONE = new ResourceServiceInstaller() {
+        @Override
+        public Consumer<OperationContext> install(OperationContext context) {
+            return Functions.discardingConsumer();
+        }
+    };
 
     /**
      * Returns a composite {@link ResourceServiceInstaller} that installs the specified installers.
@@ -39,7 +50,7 @@ public interface ResourceServiceInstaller {
      * @return a composite installer
      */
     static ResourceServiceInstaller combine(Collection<? extends ResourceServiceInstaller> installers) {
-        return new ResourceServiceInstaller() {
+        return !installers.isEmpty() ? new ResourceServiceInstaller() {
             @Override
             public Consumer<OperationContext> install(OperationContext context) {
                 List<Consumer<OperationContext>> removers = new ArrayList<>(installers.size());
@@ -55,6 +66,6 @@ public interface ResourceServiceInstaller {
                     }
                 };
             }
-        };
+        } : NONE;
     }
 }
