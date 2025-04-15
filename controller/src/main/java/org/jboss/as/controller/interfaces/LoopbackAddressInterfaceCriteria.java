@@ -23,7 +23,7 @@ public class LoopbackAddressInterfaceCriteria extends AbstractInterfaceCriteria 
 
     private static final long serialVersionUID = 1L;
 
-    private String address;
+    private final String address;
     private InetAddress resolved;
     private boolean unknownHostLogged;
 
@@ -61,18 +61,19 @@ public class LoopbackAddressInterfaceCriteria extends AbstractInterfaceCriteria 
         return this.resolved;
     }
 
-        /**
+    /**
      * {@inheritDoc}
      *
      * @return <code>{@link #getAddress()}()</code> if {@link NetworkInterface#isLoopback()} is true, null otherwise.
      */
     @Override
     protected InetAddress isAcceptable(NetworkInterface networkInterface, InetAddress address) throws SocketException {
-
         try {
-            if( networkInterface.isLoopback() ) {
+            if (networkInterface.isLoopback()) {
                 return getAddress();
             }
+        } catch (SocketException ex) {
+            MGMT_OP_LOGGER.errorInspectingNetworkInterface(ex, networkInterface);
         } catch (UnknownHostException e) {
             // One time only log a warning
             if (!unknownHostLogged) {
