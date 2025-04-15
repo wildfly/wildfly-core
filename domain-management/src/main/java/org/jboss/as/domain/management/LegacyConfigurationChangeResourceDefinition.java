@@ -219,7 +219,7 @@ public class LegacyConfigurationChangeResourceDefinition extends SimpleResourceD
          *
          * @param context the operation context.
          * @param operation the operation we are securing.
-         * @return the secured opreation aka trimmed of all sensitive data.
+         * @return the secured operation aka trimmed of all sensitive data.
          * @throws OperationFailedException
          */
         private ModelNode secureOperation(OperationContext context, ModelNode operation) throws OperationFailedException {

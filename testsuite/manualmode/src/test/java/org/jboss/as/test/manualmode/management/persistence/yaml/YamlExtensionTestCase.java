@@ -467,7 +467,7 @@ public class YamlExtensionTestCase {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         container.startYamlExtension(new PrintStream(byteArrayOutputStream), new Path[]{testRemoveNonExistentResource});
         Assert.assertTrue("Server must start.", container.isStarted());
-        String expectedConsoleOutput = "WARN  [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0512: No resource exists at address '/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=non-existent-binding'. Ignoring the remove opreation.";
+        String expectedConsoleOutput = "WARN  [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0512: No resource exists at address '/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=non-existent-binding'. Ignoring the remove operation.";
         assertThat("Server log must contain WARN with information what was wrong.", byteArrayOutputStream.toString(), CoreMatchers.containsString(expectedConsoleOutput));
     }
 
