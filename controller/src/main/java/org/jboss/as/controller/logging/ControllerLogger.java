@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -3856,4 +3857,16 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 531, value = "Illegal cardinality for xs:all group member: %s")
     IllegalArgumentException illegalXMLAllElementCardinality(XMLElement<?, ?> element);
+
+    /**
+     * Logs an error message indicating a failure during inspecting a loopback network interface. This serves to provide
+     * more context for observed failures such as "Caused by: java.net.SocketException: No such device (getFlags()
+     * failed)".
+     *
+     * @param cause the actual SocketException raised
+     * @param name  the name of the interface that was being attempted
+     */
+    @LogMessage(level = ERROR)
+    @Message(id = 532, value = "Error while inspecting network interface %s")
+    void errorInspectingNetworkInterface(@Cause Throwable cause, NetworkInterface name);
 }
