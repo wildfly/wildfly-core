@@ -67,7 +67,7 @@ public class LoopbackAddressInterfaceCriteria extends AbstractInterfaceCriteria 
      * @return <code>{@link #getAddress()}()</code> if {@link NetworkInterface#isLoopback()} is true, null otherwise.
      */
     @Override
-    protected InetAddress isAcceptable(NetworkInterface networkInterface, InetAddress address) throws SocketException {
+    protected InetAddress isAcceptable(NetworkInterface networkInterface, InetAddress address) {
         try {
             if (networkInterface.isLoopback()) {
                 return getAddress();
