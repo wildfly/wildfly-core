@@ -4,16 +4,23 @@
  */
 package org.wildfly.service;
 
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StopContext;
 import org.wildfly.common.function.Functions;
+import org.wildfly.service.descriptor.BinaryServiceDescriptor;
+import org.wildfly.service.descriptor.NullaryServiceDescriptor;
+import org.wildfly.service.descriptor.QuaternaryServiceDescriptor;
+import org.wildfly.service.descriptor.TernaryServiceDescriptor;
+import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 
 /**
  * Encapsulates service installation into a {@link ServiceTarget}.
@@ -130,6 +137,65 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
      * @param <V> the service value type
      */
     interface UnaryBuilder<T, V> extends AsyncBuilder<UnaryBuilder<T, V>>, Installer.UnaryBuilder<UnaryBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> {
+
+        /**
+         * Configures a service descriptor provided by this service.
+         * @param descriptor a service descriptor
+         * @return a reference to this builder
+         */
+        default UnaryBuilder<T, V> provides(NullaryServiceDescriptor<T> descriptor) {
+            return this.provides(ServiceName.parse(descriptor.getName()));
+        }
+
+        /**
+         * Configures a service descriptor provided by this service.
+         * @param descriptor a service descriptor
+         * @param name a dynamic segment
+         * @return a reference to this builder
+         */
+        default UnaryBuilder<T, V> provides(UnaryServiceDescriptor<T> descriptor, String name) {
+            Map.Entry<String, String[]> resolved = descriptor.resolve(name);
+            return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
+        }
+
+        /**
+         * Configures a service descriptor provided by this service.
+         * @param descriptor a service descriptor
+         * @param parent the first dynamic segment
+         * @param child the second dynamic segment
+         * @return a reference to this builder
+         */
+        default UnaryBuilder<T, V> provides(BinaryServiceDescriptor<T> descriptor, String parent, String child) {
+            Map.Entry<String, String[]> resolved = descriptor.resolve(parent, child);
+            return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
+        }
+
+        /**
+         * Configures a service descriptor provided by this service.
+         * @param descriptor a service descriptor
+         * @param grandparent the first dynamic segment
+         * @param parent the second dynamic segment
+         * @param child the third dynamic segment
+         * @return a reference to this builder
+         */
+        default UnaryBuilder<T, V> provides(TernaryServiceDescriptor<T> descriptor, String grandparent, String parent, String child) {
+            Map.Entry<String, String[]> resolved = descriptor.resolve(grandparent, parent, child);
+            return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
+        }
+
+        /**
+         * Configures a service descriptor provided by this service.
+         * @param descriptor a service descriptor
+         * @param greatGrandparent the first dynamic segment
+         * @param grandparent the second dynamic segment
+         * @param parent the third dynamic segment
+         * @param child the fourth dynamic segment
+         * @return a reference to this builder
+         */
+        default UnaryBuilder<T, V> provides(QuaternaryServiceDescriptor<T> descriptor, String greatGrandparent, String grandparent ,String parent, String child) {
+            Map.Entry<String, String[]> resolved = descriptor.resolve(greatGrandparent, grandparent, parent, child);
+            return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
+        }
     }
 
     class DefaultServiceInstaller extends DefaultInstaller<ServiceTarget, ServiceBuilder<?>, ServiceBuilder<?>> implements ServiceInstaller {
