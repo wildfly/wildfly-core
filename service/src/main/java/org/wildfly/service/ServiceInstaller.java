@@ -30,27 +30,30 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
 
     /**
      * Returns a {@link ServiceInstaller} builder whose installed service provides the specified value.
+     * By default, the installed service will start when installed since the provided value is already available.
      * @param <V> the service value type
      * @param value the service value
      * @return a service installer builder
      */
     static <V> UnaryBuilder<V, V> builder(V value) {
-        return builder(Functions.constantSupplier(value)).asActive();
+        return builder(Functions.constantSupplier(value)).startWhen(StartWhen.INSTALLED);
     }
 
     /**
      * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified dependency.
+     * By default, the installed service will start when the specified dependency is available.
      * @param <V> the service value type
      * @param dependency a service dependency
      * @return a service installer builder
      */
     static <V> UnaryBuilder<V, V> builder(ServiceDependency<V> dependency) {
         Supplier<V> supplier = dependency;
-        return builder(supplier).requires(dependency).asPassive();
+        return builder(supplier).requires(dependency).startWhen(StartWhen.AVAILABLE);
     }
 
     /**
      * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified factory.
+     * By default, the installed service will start when required.
      * @param <V> the service value type
      * @param factory provides the service value
      * @return a service installer builder
@@ -61,6 +64,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
 
     /**
      * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified factory and mapping function.
+     * By default, the installed service will start when required.
      * @param <T> the source value type
      * @param <V> the service value type
      * @param mapper a function that returns the service value given the value supplied by the factory
@@ -73,6 +77,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
 
     /**
      * Returns a {@link ServiceInstaller} builder that installs the specified installer into a child target.
+     * By default, the installed service will start when installed.
      * @param installer a service installer
      * @return a service installer builder
      */
@@ -87,11 +92,12 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
             public void stop(StopContext context) {
                 // Services installed into child target are auto-removed after this service stops.
             }
-        }).asActive();
+        }).startWhen(StartWhen.INSTALLED);
     }
 
     /**
      * Returns a {@link ServiceInstaller} builder that executes the specified tasks on {@link Service#start(StartContext)} and {@link Service#stop(StopContext)}, respectively.
+     * By default, the installed service will start when available.
      * @param startTask a start task
      * @param stopTask a stop task
      * @return a service installer builder
@@ -107,7 +113,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
             public void stop(StopContext context) {
                 stopTask.run();
             }
-        });
+        }).startWhen(StartWhen.AVAILABLE);
     }
 
     /**

@@ -31,17 +31,19 @@ public interface CapabilityServiceInstaller extends ResourceServiceInstaller, In
 
     /**
      * Returns a {@link CapabilityServiceInstaller} builder for the specified capability whose installed service provides the specified value.
+     * By default, the installed service will start when installed since the provided value is already available.
      * @param <V> the service value type
      * @param capability the target capability
      * @param value the service value
      * @return a service installer builder
      */
     static <V> Builder<V, V> builder(RuntimeCapability<Void> capability, V value) {
-        return builder(capability, Functions.constantSupplier(value)).asActive();
+        return builder(capability, Functions.constantSupplier(value)).startWhen(StartWhen.INSTALLED);
     }
 
     /**
      * Returns a {@link CapabilityServiceInstaller} builder for the specified capability whose installed service provides the value supplied by the specified dependency.
+     * By default, the installed service will start when the specified dependency is available.
      * @param <V> the service value type
      * @param capability the target capability
      * @param dependency a service dependency
@@ -49,11 +51,12 @@ public interface CapabilityServiceInstaller extends ResourceServiceInstaller, In
      */
     static <V> Builder<V, V> builder(RuntimeCapability<Void> capability, ServiceDependency<V> dependency) {
         Supplier<V> supplier = dependency;
-        return builder(capability, supplier).requires(dependency).asPassive();
+        return builder(capability, supplier).requires(dependency).startWhen(StartWhen.AVAILABLE);
     }
 
     /**
      * Returns a {@link CapabilityServiceInstaller} builder for the specified capability whose installed service provides the value supplied by the specified factory.
+     * By default, the installed service will start when required.
      * @param <V> the service value type
      * @param capability the target capability
      * @param factory provides the service value
@@ -65,6 +68,7 @@ public interface CapabilityServiceInstaller extends ResourceServiceInstaller, In
 
     /**
      * Returns a {@link CapabilityServiceInstaller} builder for the specified capability whose installed service provides the value supplied by the specified factory and mapping function.
+     * By default, the installed service will start when required.
      * @param <T> the source value type
      * @param <V> the service value type
      * @param capability the target capability
