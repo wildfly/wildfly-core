@@ -39,6 +39,9 @@
         <security-domain name="TestDomain10" default-realm="ClearPropertyRealm" permission-mapper="ConstantPermissionMapper">
             <realm name="ClearPropertyRealm" role-mapper="AggregateRoleMapper1" role-decoder="GroupsToRoles"/>
         </security-domain>
+        <security-domain name="TestDomain11" default-realm="ClearPropertyRealm" permission-mapper="ConstantPermissionMapper">
+            <realm name="ClearPropertyRealm" role-mapper="PropertiesRoleMapper" role-decoder="GroupsToRoles"/>
+        </security-domain>
     </security-domains>
     <security-realms>
         <properties-realm name="ClearPropertyRealm">
@@ -79,6 +82,7 @@
         <regex-role-mapper name="MyRegexMapper3" pattern=".*-([a-zA-Z]*)-.*" replacement="$1" keep-non-mapped="true"/>
         <regex-role-mapper name="MyRegexMapper4" pattern="user" replacement="admin" keep-non-mapped="false" replace-all="true"/>
         <regex-role-mapper name="MyRegexMapper5" pattern="^user$" replacement="admin" keep-non-mapped="false" replace-all="true"/>
+        <properties-role-mapper name="PropertiesRoleMapper" path="target/test-classes/org/wildfly/extension/elytron/rolesMapping-roles.properties"/>
     </mappers>
     <permission-sets>
         <permission-set name="login-permission">
