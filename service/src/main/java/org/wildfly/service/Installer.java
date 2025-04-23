@@ -43,6 +43,43 @@ public interface Installer<ST extends ServiceTarget> {
     ServiceController<?> install(ST target);
 
     /**
+     * Enumerates the possible start conditions of a service.
+     */
+    enum StartWhen {
+        /**
+         * Indicates that a service and its dependencies should start when required by another service that wants to start.
+         * Once started, the service will automatically stop when there are no longer any services requiring it.
+         * This is the default start condition.
+         * @see {@link ServiceController.Mode#ON_DEMAND}
+         */
+        REQUIRED(ServiceController.Mode.ON_DEMAND),
+        /**
+         * Indicates that a service should start automatically after all of its dependencies have started.
+         * Once started, the service will automatically stop when any of its dependencies wants to stop.
+         * This condition does not prompt any dependencies to start.
+         * @see {@link ServiceController.Mode#PASSIVE}
+         */
+        AVAILABLE(ServiceController.Mode.PASSIVE),
+        /**
+         * Indicates that a service and its dependencies should start automatically after it is installed.
+         * Once started, the service will only stop if removed.
+         * Ideally, we only want services to start when necessary, thus this condition should be used sparingly.
+         * @see {@link ServiceController.Mode#ACTIVE}
+         */
+        INSTALLED(ServiceController.Mode.ACTIVE),
+        ;
+        private final ServiceController.Mode mode;
+
+        StartWhen(ServiceController.Mode mode) {
+            this.mode = mode;
+        }
+
+        ServiceController.Mode getMode() {
+            return this.mode;
+        }
+    }
+
+    /**
      * Builds an installer of a service.
      * @param <B> the builder type
      * @param <I> the installer type
@@ -74,17 +111,32 @@ public interface Installer<ST extends ServiceTarget> {
         }
 
         /**
+         * Specifies when the installed service should start.
+         * @param condition the start condition
+         * @return a reference to this builder
+         */
+        B startWhen(StartWhen condition);
+
+        /**
          * Configures the installed service to automatically start when all of its dependencies are available
          * and to automatically stop when any of its dependencies are no longer available.
          * @return a reference to this builder
+         * @deprecated Superseded by {@link #withStartMode(StartWhen)}
          */
-        B asPassive();
+        @Deprecated(forRemoval = true, since = "29.0")
+        default B asPassive() {
+            return this.startWhen(StartWhen.AVAILABLE);
+        }
 
         /**
          * Configures the installed service to start immediately after installation, forcing any dependencies to start.
          * @return a reference to this builder
+         * @deprecated Superseded by {@link #withStartMode(StartWhen)}
          */
-        B asActive();
+        @Deprecated(forRemoval = true, since = "29.0")
+        default B asActive() {
+            return this.startWhen(StartWhen.INSTALLED);
+        }
 
         /**
          * Configures the specified task to be run after the installed service is started.
@@ -243,6 +295,7 @@ public interface Installer<ST extends ServiceTarget> {
     }
 
     abstract class AbstractBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends DSB, DSB extends ServiceBuilder<?>> implements Installer.Builder<B, I, ST, DSB>, Installer.Configuration<SB, DSB> {
+        // By default, MSC uses ACTIVE, but most services should start ON_DEMAND
         private volatile ServiceController.Mode mode = ServiceController.Mode.ON_DEMAND;
         private volatile Consumer<DSB> dependency = Functions.discardingConsumer();
         private volatile Map<LifecycleEvent, List<Runnable>> lifecycleTasks = Map.of();
@@ -250,14 +303,8 @@ public interface Installer<ST extends ServiceTarget> {
         protected abstract B builder();
 
         @Override
-        public B asPassive() {
-            this.mode = ServiceController.Mode.PASSIVE;
-            return this.builder();
-        }
-
-        @Override
-        public B asActive() {
-            this.mode = ServiceController.Mode.ACTIVE;
+        public B startWhen(StartWhen condition) {
+            this.mode = condition.getMode();
             return this.builder();
         }
 
