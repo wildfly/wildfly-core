@@ -24,7 +24,6 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
-import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.PrivilegedAction;
 import java.security.Provider;
@@ -86,12 +85,10 @@ import org.wildfly.security.auth.server.EvidenceDecoder;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.RealmMapper;
-import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.authz.RoleMapper;
-import org.wildfly.security.manager.WildFlySecurityManager;
 import org.wildfly.security.manager.action.ReadPropertyAction;
 
 /**
@@ -399,19 +396,6 @@ class ElytronDefinition extends SimpleResourceDefinition {
         });
     }
 
-    private static AuthConfigFactory getAuthConfigFactory() {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        try {
-            Thread.currentThread().setContextClassLoader(ElytronDefinition.class.getClassLoader());
-            return AuthConfigFactory.getFactory();
-        } catch (Exception e) {
-            ROOT_LOGGER.trace("Unable to load default AuthConfigFactory.", e);
-            return null;
-        } finally {
-            Thread.currentThread().setContextClassLoader(classLoader);
-        }
-    }
-
     private static SecurityPropertyService uninstallSecurityPropertyService(OperationContext context) {
         ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
 
@@ -577,15 +561,4 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
     }
 
-    private static final Supplier<Boolean> ALLOW_DELEGATION = new Supplier<Boolean>() {
-
-        @Override
-        public Boolean get() {
-            if (WildFlySecurityManager.isChecking()) {
-                return doPrivileged((PrivilegedAction<Boolean>) () -> SecurityDomain.getCurrent() == null);
-            } else {
-                return SecurityDomain.getCurrent() == null;
-            }
-        }
-    };
 }
