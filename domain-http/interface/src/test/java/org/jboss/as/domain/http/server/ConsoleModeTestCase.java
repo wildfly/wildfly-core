@@ -10,7 +10,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
-import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.modules.LocalModuleLoader;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleLoader;
@@ -26,68 +25,68 @@ public class ConsoleModeTestCase {
 
     @Test
     public void testDefaultModules() throws Exception {
-        checkModule(null, ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console"), "modules-default");
+        checkModule(null, "org.jboss.as.console", "modules-default");
     }
 
 
     @Test
     public void testVersionedNoSlot() throws Exception {
-        checkModule(null, ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console.main", "1.2.1"), "modules-versioned");
+        checkModule(null, "org.jboss.as.console.main:1.2.1", "modules-versioned");
     }
 
     @Test
     public void testVersionedAndMainSlot() throws Exception {
-        checkModule("main", ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console.main", "1.2.1"), "modules-versioned");
+        checkModule("main", "org.jboss.as.console.main:1.2.1", "modules-versioned");
     }
 
     @Test
     public void testVersionedLayersNoSlot() throws Exception {
-        checkModule(null, ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console.main", "1.2.1"), "modules-base-and-layer1");
+        checkModule(null, "org.jboss.as.console.main:1.2.1", "modules-base-and-layer1");
     }
 
     @Test
     public void testVersionedLayersAndMainSlot() throws Exception {
-        checkModule("main", ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console.main", "1.2.1"), "modules-base-and-layer1");
+        checkModule("main", "org.jboss.as.console.main:1.2.1", "modules-base-and-layer1");
     }
 
     @Test
     public void testSeveralRootsVersionedLayersNoSlot() throws Exception {
-        checkModule(null, ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console.main", "3.0.0"), "modules-base-and-layer1", "modules-layer2");
+        checkModule(null, "org.jboss.as.console.main:3.0.0", "modules-base-and-layer1", "modules-layer2");
     }
 
     @Test
     public void testSeveralRootsVersionedLayersAndMainSlot() throws Exception {
-        checkModule("main", ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console.main", "3.0.0"), "modules-base-and-layer1", "modules-layer2");
+        checkModule("main", "org.jboss.as.console.main:3.0.0", "modules-base-and-layer1", "modules-layer2");
     }
 
     @Test
     public void testSeveralRootsDifferentOrderVersionedLayersNoSlot() throws Exception {
-        checkModule(null, ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console.main", "3.0.0"), "modules-layer2", "modules-base-and-layer1");
+        checkModule(null, "org.jboss.as.console.main:3.0.0", "modules-layer2", "modules-base-and-layer1");
     }
 
     @Test
     public void testSeveralRootsDifferentOrderVersionedLayersAndMainSlot() throws Exception {
-        checkModule("main", ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console.main", "3.0.0"), "modules-layer2", "modules-base-and-layer1");
+        checkModule("main", "org.jboss.as.console.main:3.0.0", "modules-layer2", "modules-base-and-layer1");
     }
 
     @Test
     public void testAddonsAndLayersAddon1WinsNoSlot() throws Exception {
-        checkModule(null, ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console.main", "2.0.0"), "modules-base-and-layer1", "modules-addons1");
+        checkModule(null, "org.jboss.as.console.main:2.0.0", "modules-base-and-layer1", "modules-addons1");
     }
 
     @Test
     public void testAddonsAndLayersLayer2WinsNoSlot() throws Exception {
-        checkModule(null, ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console.main", "3.0.0"), "modules-base-and-layer1", "modules-layer2", "modules-addons1");
+        checkModule(null, "org.jboss.as.console.main:3.0.0", "modules-base-and-layer1", "modules-layer2", "modules-addons1");
     }
 
     @Test
     public void testAddonsAndLayersAddon2WinsNoSlot() throws Exception {
-        checkModule(null, ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console.main", "4.0.0"), "modules-base-and-layer1", "modules-layer2", "modules-addons1", "modules-addons2");
+        checkModule(null, "org.jboss.as.console.main:4.0.0", "modules-base-and-layer1", "modules-layer2", "modules-addons1", "modules-addons2");
     }
 
     @Test
     public void testAddonsOnly() throws Exception {
-        checkModule(null, ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console.main", "4.0.0"), "modules-addons1", "modules-addons2");
+        checkModule(null, "org.jboss.as.console.main:4.0.0", "modules-addons1", "modules-addons2");
     }
 
     private void checkModule(String slot, String expected, String...moduleDirNames) throws Exception {
@@ -110,7 +109,6 @@ public class ConsoleModeTestCase {
             sb.append(file.getAbsolutePath());
         }
         System.setProperty("module.path", sb.toString());
-        LocalModuleLoader loader = new LocalModuleLoader();
-        return loader;
+        return new LocalModuleLoader();
     }
 }

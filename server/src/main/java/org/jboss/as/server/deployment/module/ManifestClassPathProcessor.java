@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import org.jboss.as.controller.ModuleIdentifierUtil;
+import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.as.server.deployment.Attachable;
 import org.jboss.as.server.deployment.AttachmentKey;
 import org.jboss.as.server.deployment.AttachmentList;
@@ -218,7 +218,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
     private String createAdditionalModule(final ResourceRoot resourceRoot, final DeploymentUnit topLevelDeployment, final VirtualFile topLevelRoot, final Map<VirtualFile, AdditionalModuleSpecification> additionalModules, final VirtualFile classPathFile, final ArrayDeque<RootEntry> resourceRoots) throws DeploymentUnitProcessingException {
         final ResourceRoot root = createResourceRoot(classPathFile, topLevelDeployment, topLevelRoot);
         final String pathName = root.getRoot().getPathNameRelativeTo(topLevelRoot);
-        String identifier = ModuleIdentifierUtil.canonicalModuleIdentifier(ServiceModuleLoader.MODULE_PREFIX + topLevelDeployment.getName() + "." + pathName, null);
+        String identifier = JBossModulesNameUtil.parseCanonicalModuleIdentifier(ServiceModuleLoader.MODULE_PREFIX + topLevelDeployment.getName() + "." + pathName);
         AdditionalModuleSpecification module = new AdditionalModuleSpecification(identifier, root);
         topLevelDeployment.addToAttachmentList(Attachments.ADDITIONAL_MODULES, module);
         additionalModules.put(classPathFile, module);

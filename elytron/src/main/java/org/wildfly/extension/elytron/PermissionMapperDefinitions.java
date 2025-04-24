@@ -27,7 +27,6 @@ import org.jboss.as.controller.AttributeMarshallers;
 import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.AttributeParsers;
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -38,6 +37,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -431,7 +431,7 @@ class PermissionMapperDefinitions {
 
         Permission(final String className, final String module, final String targetName, final String action) {
             this.className = className;
-            this.module = module != null ? ModuleIdentifierUtil.canonicalModuleIdentifier(module) : module;
+            this.module = module != null ? JBossModulesNameUtil.parseCanonicalModuleIdentifier(module) : module;
             this.targetName = targetName;
             this.action = action;
         }

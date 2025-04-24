@@ -21,7 +21,6 @@ import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -32,6 +31,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -160,8 +160,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
         if(moduleName != null && !"".equals(moduleName)){
             try {
                 Module cm = Module.getCallerModule();
-                //module = Module.getCallerModule().getModule(ModuleIdentifier.create(moduleName));
-                module = cm.getModule(ModuleIdentifierUtil.canonicalModuleIdentifier(moduleName));
+                module = cm.getModule(JBossModulesNameUtil.parseCanonicalModuleIdentifier(moduleName));
             } catch (ModuleLoadException e) {
                 throw ElytronSubsystemMessages.ROOT_LOGGER.unableToLoadModule(moduleName, e);
             }

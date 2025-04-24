@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.jar.Manifest;
 
-import org.jboss.as.controller.ModuleIdentifierUtil;
+import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -84,7 +84,7 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
                 }
                 final String[] dependencyParts = trimmed.split(" ");
 
-                final String dependencyId = ModuleIdentifierUtil.canonicalModuleIdentifier(dependencyParts[0]);
+                final String dependencyId = JBossModulesNameUtil.parseCanonicalModuleIdentifier(dependencyParts[0]);
                 final boolean export = containsParam(dependencyParts, EXPORT_PARAM);
                 final boolean optional = containsParam(dependencyParts, OPTIONAL_PARAM);
                 final boolean services = containsParam(dependencyParts, SERVICES_PARAM);
