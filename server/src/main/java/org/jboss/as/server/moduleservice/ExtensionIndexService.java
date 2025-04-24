@@ -20,7 +20,6 @@ import java.util.jar.Manifest;
 
 import org.jboss.as.server.deployment.module.ExtensionInfo;
 import org.jboss.logging.Logger;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
@@ -85,7 +84,7 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
                             if (extensionJarSet == null)
                                 extensions.put(extensionName, extensionJarSet = new LinkedHashSet<>());
 
-                            String moduleIdentifier = moduleIdentifierStr(extensionName, specVersion, implVersion,
+                            String moduleIdentifier = moduleIdentifier(extensionName, specVersion, implVersion,
                                     implVendorId);
 
                             ExtensionJar extensionJar = new ExtensionJar(moduleIdentifier, implVersion, implVendorId,
@@ -111,18 +110,12 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
                         }
                     } catch (IOException e) {
                         log.debugf("Failed to process JAR manifest for %s: %s", jar, e);
-                        continue;
                     }
         }
     }
 
     public synchronized void stop(final StopContext context) {
         extensions.clear();
-    }
-
-    /** {@inheritDoc} */
-    public synchronized void addDeployedExtension(ModuleIdentifier identifier, ExtensionInfo extensionInfo) {
-       this.addDeployedExtension(identifier.toString(), extensionInfo);
     }
 
     @Override
@@ -133,11 +126,6 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
             this.extensions.put(extensionInfo.getName(), jars = new HashSet<>());
         }
         jars.add(extensionJar);
-    }
-
-    /** {@inheritDoc} */
-    public synchronized boolean removeDeployedExtension(String name, ModuleIdentifier identifier) {
-        return this.removeDeployedExtension(name, identifier.toString());
     }
 
     @Override
@@ -154,17 +142,6 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
             }
         }
         return false;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public synchronized ModuleIdentifier findExtension(final String name, final String minSpecVersion,
-            final String minImplVersion, final String requiredVendorId) {
-        String extensionStr = findExtensionAsString(name, minSpecVersion, minImplVersion, requiredVendorId);
-        if (extensionStr != null) {
-            return ModuleIdentifier.create(extensionStr);
-        }
-        return null;
     }
 
     @Override
@@ -224,20 +201,7 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
         return null;
     }
 
-    @Deprecated(forRemoval = true, since = "28.0.0")
-    public static ModuleIdentifier moduleIdentifier(final String name, final String minSpecVersion,
-            final String minImplVersion, final String requiredVendorId) {
-        return ModuleIdentifier.create(moduleIdentifierStr(name, minSpecVersion, minImplVersion, requiredVendorId));
-    }
-
-    // This is private because:
-    //
-    // - once we remove the deprecated version, this method would be renamed to moduleIdentifier and there is no need to make it public now.
-    // - it is not intended to be used outside of this class, so maybe it would be better to keep it private.
-    //
-    // See https://github.com/wildfly/wildfly-core/pull/6357/files#r1986356468
-    //
-    private static String moduleIdentifierStr(final String name, final String minSpecVersion,
+    private static String moduleIdentifier(final String name, final String minSpecVersion,
                                                     final String minImplVersion, final String requiredVendorId) {
         StringBuilder nameBuilder = new StringBuilder();
         nameBuilder.append(MODULE_PREFIX);

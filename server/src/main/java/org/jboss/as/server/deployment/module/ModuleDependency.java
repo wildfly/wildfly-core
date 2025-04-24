@@ -11,8 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.jboss.as.controller.ModuleIdentifierUtil;
-import org.jboss.modules.ModuleIdentifier;
+import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.filter.PathFilter;
 
@@ -37,7 +36,7 @@ public final class ModuleDependency implements Serializable {
 
         private Builder(ModuleLoader moduleLoader, String moduleName) {
             this.moduleLoader = moduleLoader;
-            this.identifier = ModuleIdentifierUtil.canonicalModuleIdentifier(moduleName);
+            this.identifier = JBossModulesNameUtil.parseCanonicalModuleIdentifier(moduleName);
         }
 
         /**
@@ -134,76 +133,6 @@ public final class ModuleDependency implements Serializable {
     private final boolean userSpecified;
     private final String reason;
 
-    /**
-     * Construct a new instance.
-     *
-     * @param moduleLoader the module loader of the dependency (if {@code null}, then use the default server module loader)
-     * @param identifier the module identifier
-     * @param optional {@code true} if this is an optional dependency
-     * @param export {@code true} if resources should be exported by default
-     * @param importServices {@code true} if the dependent module should be able to load services from the dependency
-     * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
-     *
-     * @deprecated Use a {@link Builder}
-     */
-    @Deprecated(forRemoval = true)
-    public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
-        this(moduleLoader, ModuleIdentifierUtil.canonicalModuleIdentifier(identifier), null, optional, export, importServices, userSpecified);
-    }
-
-    /**
-     * Construct a new instance.
-     *
-     * @param moduleLoader the module loader of the dependency (if {@code null}, then use the default server module loader)
-     * @param identifier the module identifier
-     * @param optional {@code true} if this is an optional dependency
-     * @param export {@code true} if resources should be exported by default
-     * @param importServices  {@code true} if the dependent module should be able to load services from the dependency
-     * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
-     * @param reason reason for adding implicit module dependency
-     *
-     * @deprecated Use a {@link Builder}
-     */
-    @Deprecated(forRemoval = true)
-    public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified, String reason) {
-        this(moduleLoader, ModuleIdentifierUtil.canonicalModuleIdentifier(identifier), reason, optional, export, importServices, userSpecified);
-    }
-
-    /**
-     * Construct a new instance.
-     *
-     * @param moduleLoader the module loader of the dependency (if {@code null}, then use the default server module loader)
-     * @param identifier the module identifier
-     * @param optional {@code true} if this is an optional dependency
-     * @param export {@code true} if resources should be exported by default
-     * @param importServices  {@code true} if the dependent module should be able to load services from the dependency
-     * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
-     *
-     * @deprecated Use a {@link Builder} or {@link ModuleDependency(ModuleLoader, String, boolean, boolean, boolean, boolean)}
-     */
-    @Deprecated(forRemoval = true)
-    public ModuleDependency(final ModuleLoader moduleLoader, final ModuleIdentifier identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
-        this(moduleLoader, identifier, optional, export, importServices, userSpecified, null);
-    }
-
-    /**
-     * Construct a new instance.
-     *
-     * @param moduleLoader the module loader of the dependency (if {@code null}, then use the default server module loader)
-     * @param identifier the module identifier
-     * @param optional {@code true} if this is an optional dependency
-     * @param export {@code true} if resources should be exported by default
-     * @param importServices {@code true} if the dependent module should be able to load services from the dependency
-     * @param userSpecified {@code true} if this dependency was specified by the user, {@code false} if it was automatically added
-     * @param reason reason for adding implicit module dependency
-     *
-     * @deprecated Use a {@link Builder}
-     */
-    @Deprecated(forRemoval = true)
-    public ModuleDependency(final ModuleLoader moduleLoader, final ModuleIdentifier identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified, String reason) {
-        this(moduleLoader, identifier.toString(), reason, optional, export, importServices, userSpecified);
-    }
-
     private ModuleDependency(final ModuleLoader moduleLoader, final String identifier, String reason, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
         this.identifier = identifier;
         this.optional = optional;
@@ -218,16 +147,10 @@ public final class ModuleDependency implements Serializable {
         return moduleLoader;
     }
 
-    /** @deprecated use {@link #getDependencyModule()} */
-    @Deprecated(forRemoval = true)
-    public ModuleIdentifier getIdentifier() {
-        return ModuleIdentifier.fromString(identifier);
-    }
-
     /**
      * Gets the name of the module upon which there is a dependency.
      *
-     * @return the {@link ModuleIdentifierUtil#canonicalModuleIdentifier(String) canonical form} of the name of module
+     * @return the {@link JBossModulesNameUtil#parseCanonicalModuleIdentifier(String) canonical form} of the name of module
      */
     public String getDependencyModule() {
         return identifier;
