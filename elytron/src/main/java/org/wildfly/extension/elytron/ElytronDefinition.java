@@ -23,6 +23,7 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_EVENT_LISTENER
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
+import static org.wildfly.extension.elytron.CustomComponentDefinition.wrapFunction;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.ElytronScheduledExecutorService.installScheduledExecutorService;
 import static org.wildfly.extension.elytron.ElytronScheduledExecutorService.uninstallScheduledExecutorService;
@@ -180,7 +181,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
         // Audit
         resourceRegistration.registerSubModel(AuditResourceDefinitions.getAggregateSecurityEventListenerDefinition());
-        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(Consumer.class, SecurityEventListener::from,
+        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(Consumer.class, wrapFunction(SecurityEventListener::from),
                 ElytronDescriptionConstants.CUSTOM_SECURITY_EVENT_LISTENER, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY));
         resourceRegistration.registerSubModel(AuditResourceDefinitions.getFileAuditLogResourceDefinition());
         resourceRegistration.registerSubModel(AuditResourceDefinitions.getPeriodicRotatingFileAuditLogResourceDefinition());
@@ -197,9 +198,9 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
         // Security Realms
         resourceRegistration.registerSubModel(new AggregateRealmDefinition());
-        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(SecurityRealm.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_REALM, SECURITY_REALM_RUNTIME_CAPABILITY));
+        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(SecurityRealm.class, ElytronDefinition::identity, ElytronDescriptionConstants.CUSTOM_REALM, SECURITY_REALM_RUNTIME_CAPABILITY));
         resourceRegistration.registerSubModel(ModifiableRealmDecorator.wrap(new CustomComponentDefinition<>(
-                ModifiableSecurityRealm.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_MODIFIABLE_REALM,
+                ModifiableSecurityRealm.class, ElytronDefinition::identity, ElytronDescriptionConstants.CUSTOM_MODIFIABLE_REALM,
                 MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY)));
         resourceRegistration.registerSubModel(RealmDefinitions.getIdentityRealmDefinition());
         resourceRegistration.registerSubModel(new JdbcRealmDefinition());
@@ -214,11 +215,11 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(new JaasRealmDefinition());
 
         // Security Factories
-        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(SecurityFactory.class, CredentialSecurityFactory::from, ElytronDescriptionConstants.CUSTOM_CREDENTIAL_SECURITY_FACTORY, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY));
+        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(SecurityFactory.class, wrapFunction(CredentialSecurityFactory::from), ElytronDescriptionConstants.CUSTOM_CREDENTIAL_SECURITY_FACTORY, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY));
         resourceRegistration.registerSubModel(KerberosSecurityFactoryDefinition.getKerberosSecurityFactoryDefinition());
 
         // Permission Mappers
-        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(PermissionMapper.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_PERMISSION_MAPPER, PERMISSION_MAPPER_RUNTIME_CAPABILITY));
+        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(PermissionMapper.class, ElytronDefinition::identity, ElytronDescriptionConstants.CUSTOM_PERMISSION_MAPPER, PERMISSION_MAPPER_RUNTIME_CAPABILITY));
         resourceRegistration.registerSubModel(PermissionMapperDefinitions.getLogicalPermissionMapper());
         resourceRegistration.registerSubModel(PermissionMapperDefinitions.getSimplePermissionMapper());
         resourceRegistration.registerSubModel(PermissionMapperDefinitions.getConstantPermissionMapper());
@@ -230,26 +231,26 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(PrincipalDecoderDefinitions.getAggregatePrincipalDecoderDefinition());
         resourceRegistration.registerSubModel(PrincipalDecoderDefinitions.getConcatenatingPrincipalDecoder());
         resourceRegistration.registerSubModel(PrincipalDecoderDefinitions.getConstantPrincipalDecoder());
-        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(PrincipalDecoder.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_PRINCIPAL_DECODER, PRINCIPAL_DECODER_RUNTIME_CAPABILITY));
+        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(PrincipalDecoder.class, ElytronDefinition::identity, ElytronDescriptionConstants.CUSTOM_PRINCIPAL_DECODER, PRINCIPAL_DECODER_RUNTIME_CAPABILITY));
         resourceRegistration.registerSubModel(PrincipalDecoderDefinitions.getX500AttributePrincipalDecoder());
 
         // Principal Transformers
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getAggregatePrincipalTransformerDefinition());
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getChainedPrincipalTransformerDefinition());
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getConstantPrincipalTransformerDefinition());
-        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(Function.class, PrincipalTransformer::from, ElytronDescriptionConstants.CUSTOM_PRINCIPAL_TRANSFORMER, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY));
+        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(Function.class, wrapFunction(PrincipalTransformer::from), ElytronDescriptionConstants.CUSTOM_PRINCIPAL_TRANSFORMER, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY));
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getRegexPrincipalTransformerDefinition());
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getRegexValidatingPrincipalTransformerDefinition());
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getCasePrincipalTransformerDefinition());
 
         // Realm Mappers
         resourceRegistration.registerSubModel(RealmMapperDefinitions.getConstantRealmMapper());
-        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(RealmMapper.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_REALM_MAPPER, REALM_MAPPER_RUNTIME_CAPABILITY));
+        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(RealmMapper.class, ElytronDefinition::identity, ElytronDescriptionConstants.CUSTOM_REALM_MAPPER, REALM_MAPPER_RUNTIME_CAPABILITY));
         resourceRegistration.registerSubModel(RealmMapperDefinitions.getMappedRegexRealmMapper());
         resourceRegistration.registerSubModel(RealmMapperDefinitions.getSimpleRegexRealmMapperDefinition());
 
         // Role Decoders
-        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(RoleDecoder.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_ROLE_DECODER, ROLE_DECODER_RUNTIME_CAPABILITY));
+        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(RoleDecoder.class, ElytronDefinition::identity, ElytronDescriptionConstants.CUSTOM_ROLE_DECODER, ROLE_DECODER_RUNTIME_CAPABILITY));
         resourceRegistration.registerSubModel(RoleDecoderDefinitions.getSimpleRoleDecoderDefinition());
         resourceRegistration.registerSubModel(RoleDecoderDefinitions.getSourceAddressRoleDecoderDefinition());
         resourceRegistration.registerSubModel(RoleDecoderDefinitions.getAggregateRoleDecoderDefinition());
@@ -259,7 +260,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(RoleMapperDefinitions.getAddPrefixRoleMapperDefinition());
         resourceRegistration.registerSubModel(RoleMapperDefinitions.getAggregateRoleMapperDefinition());
         resourceRegistration.registerSubModel(RoleMapperDefinitions.getConstantRoleMapperDefinition());
-        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(RoleMapper.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_ROLE_MAPPER, ROLE_MAPPER_RUNTIME_CAPABILITY));
+        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(RoleMapper.class, ElytronDefinition::identity, ElytronDescriptionConstants.CUSTOM_ROLE_MAPPER, ROLE_MAPPER_RUNTIME_CAPABILITY));
         resourceRegistration.registerSubModel(RoleMapperDefinitions.getLogicalRoleMapperDefinition());
         resourceRegistration.registerSubModel(RoleMapperDefinitions.getMappedRoleMapperDefinition());
         resourceRegistration.registerSubModel(RoleMapperDefinitions.getRegexRoleMapperDefinition());
@@ -267,7 +268,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         // Evidence Decoders
         resourceRegistration.registerSubModel(EvidenceDecoderDefinitions.getX500SubjectEvidenceDecoderDefinition());
         resourceRegistration.registerSubModel(EvidenceDecoderDefinitions.getX509SubjectAltNameEvidenceDecoderDefinition());
-        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(EvidenceDecoder.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_EVIDENCE_DECODER, EVIDENCE_DECODER_RUNTIME_CAPABILITY));
+        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(EvidenceDecoder.class, ElytronDefinition::identity, ElytronDescriptionConstants.CUSTOM_EVIDENCE_DECODER, EVIDENCE_DECODER_RUNTIME_CAPABILITY));
         resourceRegistration.registerSubModel(EvidenceDecoderDefinitions.getAggregateEvidenceDecoderDefinition());
 
         // HTTP Mechanisms
@@ -361,6 +362,10 @@ class ElytronDefinition extends SimpleResourceDefinition {
             protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
                     ModelNode valueToRestore, ModelNode valueToRevert, Void handback) throws OperationFailedException {}
         });
+    }
+
+    private static <T, U> U identity(T t, U u) {
+        return u;
     }
 
     @Override
