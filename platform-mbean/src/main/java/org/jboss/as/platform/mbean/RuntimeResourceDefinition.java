@@ -103,7 +103,10 @@ class RuntimeResourceDefinition extends SimpleResourceDefinition {
             .setRuntimeServiceNotRequired()
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.JVM)
             .build();
-
+    private static AttributeDefinition PID = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.PID, ModelType.LONG, false)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .build();
     private static final List<AttributeDefinition> METRICS = Arrays.asList(
             UPTIME
     );
@@ -122,7 +125,8 @@ class RuntimeResourceDefinition extends SimpleResourceDefinition {
             BOOT_CLASS_PATH,
             INPUT_ARGUMENTS,
             START_TIME,
-            SYSTEM_PROPERTIES
+            SYSTEM_PROPERTIES,
+            PID
     );
 
     public static final List<String> RUNTIME_READ_ATTRIBUTES = Arrays.asList(
@@ -140,7 +144,8 @@ class RuntimeResourceDefinition extends SimpleResourceDefinition {
             BOOT_CLASS_PATH.getName(),
             INPUT_ARGUMENTS.getName(),
             START_TIME.getName(),
-            SYSTEM_PROPERTIES.getName()
+            SYSTEM_PROPERTIES.getName(),
+            PID.getName()
     );
     public static final List<String> RUNTIME_METRICS = Arrays.asList(
             UPTIME.getName()

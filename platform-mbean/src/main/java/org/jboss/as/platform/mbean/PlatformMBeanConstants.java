@@ -161,7 +161,7 @@ public class PlatformMBeanConstants {
     public static final String UPTIME = "uptime";
     public static final String START_TIME = "start-time";
     public static final String SYSTEM_PROPERTIES = "system-properties";
-
+    public static final String PID = "pid";
 
     // ThreadMXBean
     public static final String THREAD_COUNT = "thread-count";
