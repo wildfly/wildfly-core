@@ -133,6 +133,16 @@ public class PlatformMBeanConstants {
     public static final String ARCH = "arch";
     public static final String VERSION = "version";
     public static final String AVAILABLE_PROCESSORS = "available-processors";
+    public static final String COMMITTED_VIRTUAL_MEMORY_SIZE = "committed-virtual-memory-size";
+    public static final String FREE_PHYSICAL_MEMORY_SIZE = "free-physical-memory-size";
+    public static final String FREE_SWAP_SPACE_SIZE = "free-swap-space-size";
+    public static final String MAX_FILE_DESCRIPTOR_COUNT = "max-file-descriptor-count";
+    public static final String OPEN_FILE_DESCRIPTOR_COUNT = "open-file-descriptor-count";
+    public static final String PROCESS_CPU_LOAD = "process-cpu-load";
+    public static final String PROCESS_CPU_TIME = "process-cpu-time";
+    public static final String SYSTEM_CPU_LOAD = "system-cpu-load";
+    public static final String TOTAL_PHYSICAL_MEMORY_SIZE = "total-physical-memory-size";
+    public static final String TOTAL_SWAP_SPACE_SIZE = "total-swap-space-size";
     public static final String SYSTEM_LOAD_AVERAGE = "system-load-average";
 
     // RuntimeMXBean
