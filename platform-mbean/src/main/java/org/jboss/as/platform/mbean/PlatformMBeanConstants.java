@@ -195,8 +195,11 @@ public class PlatformMBeanConstants {
 
     public static final String FILE_NAME = "file-name";
     public static final String LINE_NUMBER = "line-number";
+    public static final String CLASS_LOADER_NAME = "class-loader-name";
     public static final String CLASS_NAME = "class-name";
     public static final String METHOD_NAME = "method-name";
+    public static final String MODULE_NAME = "module-name";
+    public static final String MODULE_VERSION = "module-version";
     public static final String NATIVE_METHOD = "native-method";
 
     public static final String THREAD_ID = "thread-id";

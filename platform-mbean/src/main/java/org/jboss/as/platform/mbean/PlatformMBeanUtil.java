@@ -159,8 +159,20 @@ public class PlatformMBeanUtil {
         if (stackTraceElement != null) {
             nullSafeSet(result.get(PlatformMBeanConstants.FILE_NAME), stackTraceElement.getFileName());
             result.get(PlatformMBeanConstants.LINE_NUMBER).set(stackTraceElement.getLineNumber());
+            ModelNode cl = result.get(PlatformMBeanConstants.CLASS_LOADER_NAME);
+            if (stackTraceElement.getClassLoaderName() != null) {
+                cl.set(stackTraceElement.getClassLoaderName());
+            }
             result.get(PlatformMBeanConstants.CLASS_NAME).set(stackTraceElement.getClassName());
             result.get(PlatformMBeanConstants.METHOD_NAME).set(stackTraceElement.getMethodName());
+            ModelNode mn = result.get(PlatformMBeanConstants.MODULE_NAME);
+            if (stackTraceElement.getModuleName() != null) {
+                mn.set(stackTraceElement.getModuleName());
+            }
+            ModelNode mv = result.get(PlatformMBeanConstants.MODULE_VERSION);
+            if (stackTraceElement.getModuleVersion()!= null) {
+                mv.set(stackTraceElement.getModuleVersion());
+            }
             result.get(PlatformMBeanConstants.NATIVE_METHOD).set(stackTraceElement.isNativeMethod());
         }
         return result;
