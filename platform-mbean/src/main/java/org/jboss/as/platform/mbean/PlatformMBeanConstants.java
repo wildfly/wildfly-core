@@ -46,15 +46,16 @@ public class PlatformMBeanConstants {
     // JDK 7 additions
     public static final String BUFFER_POOL = "buffer-pool";
     public static final String LOGGING = "logging";
+    public static final String PLATFORM_LOGGING = "platform-logging";
 
     public static final String PLATFORM_LOGGING_MXBEAN_NAME = "java.util.logging:type=Logging";
     public static final String BUFFER_POOL_MXBEAN_DOMAIN_TYPE = "java.nio:type=BufferPool";
     public static final ObjectName PLATFORM_LOGGING_OBJECT_NAME;
 
     public static final List<String> JDK_NOCOMPILATION_TYPES = Arrays.asList(CLASS_LOADING, GARBAGE_COLLECTOR, MEMORY_MANAGER, MEMORY, MEMORY_POOL, OPERATING_SYSTEM,
-        RUNTIME, THREADING);
+        RUNTIME, THREADING, PLATFORM_LOGGING);
     private static final List<String> JDK6_BASE_TYPES = Arrays.asList(CLASS_LOADING, COMPILATION, GARBAGE_COLLECTOR, MEMORY_MANAGER, MEMORY, MEMORY_POOL, OPERATING_SYSTEM,
-        RUNTIME, THREADING);
+        RUNTIME, THREADING, PLATFORM_LOGGING);
 
     public static final List<String> BASE_TYPES;
 
@@ -79,6 +80,11 @@ public class PlatformMBeanConstants {
     public static final String MEMORY_POOL_NAMES = "memory-pool-names";
     public static final String COLLECTION_COUNT = "collection-count";
     public static final String COLLECTION_TIME = "collection-time";
+    public static final String LAST_GC_INFO = "last-gc-info";
+    public static final String DURATION = "duration";
+    public static final String END_TIME = "end-time";
+    public static final String MEMORY_USAGE_AFTER_GC = "memory-usage-after-gc";
+    public static final String MEMORY_USAGE_BEFORE_GC = "memory-usage-before-gc";
 
     // MemoryMXBean
     public static final String OBJECT_PENDING_FINALIZATION_COUNT = "object-pending-finalization-count";
@@ -133,6 +139,16 @@ public class PlatformMBeanConstants {
     public static final String ARCH = "arch";
     public static final String VERSION = "version";
     public static final String AVAILABLE_PROCESSORS = "available-processors";
+    public static final String COMMITTED_VIRTUAL_MEMORY_SIZE = "committed-virtual-memory-size";
+    public static final String CPU_LOAD = "cpu-load";
+    public static final String FREE_MEMORY_SIZE = "free-memory-size";
+    public static final String FREE_SWAP_SPACE_SIZE = "free-swap-space-size";
+    public static final String MAX_FILE_DESCRIPTOR_COUNT = "max-file-descriptor-count";
+    public static final String OPEN_FILE_DESCRIPTOR_COUNT = "open-file-descriptor-count";
+    public static final String PROCESS_CPU_LOAD = "process-cpu-load";
+    public static final String PROCESS_CPU_TIME = "process-cpu-time";
+    public static final String TOTAL_MEMORY_SIZE = "total-memory-size";
+    public static final String TOTAL_SWAP_SPACE_SIZE = "total-swap-space-size";
     public static final String SYSTEM_LOAD_AVERAGE = "system-load-average";
 
     // RuntimeMXBean
@@ -151,7 +167,7 @@ public class PlatformMBeanConstants {
     public static final String UPTIME = "uptime";
     public static final String START_TIME = "start-time";
     public static final String SYSTEM_PROPERTIES = "system-properties";
-
+    public static final String PID = "pid";
 
     // ThreadMXBean
     public static final String THREAD_COUNT = "thread-count";
@@ -182,11 +198,25 @@ public class PlatformMBeanConstants {
     public static final String MAX_DEPTH = "max-depth";
     public static final String LOCKED_MONITORS = "locked-monitors";
     public static final String LOCKED_SYNCHRONIZERS = "locked-synchronizers";
+    public static final String CURRENT_THREAD_ALLOCATED_BYTES = "current-thread-allocated-bytes";
+    public static final String THREAD_ALLOCATED_BYTES = "thread-allocated-bytes";
+    public static final String THREADS_ALLOCATED_BYTES = "threads-allocated-bytes";
+    public static final String THREAD_CPU_TIME = "thread-cpu-time";
+    public static final String THREAD_USER_TIME = "thread-user-time";
+    public static final String THREAD_ALLOCATED_MEMORY_ENABLED = "thread-allocated-memory-enabled";
+    public static final String THREAD_ALLOCATED_MEMORY_SUPPORTED = "thread-allocated-memory-supported";
+    public static final String GET_THREAD_CPU_TIMES = "get-thread-cpu-times";
+    public static final String GET_THREAD_USER_TIMES = "get-thread-user-times";
+    public static final String GET_THREADS_ALLOCATED_BYTES = "get-threads-allocated-bytes";
+    public static final String GET_THREAD_ALLOCATED_BYTES = "get-thread-allocated-bytes";
 
     public static final String FILE_NAME = "file-name";
     public static final String LINE_NUMBER = "line-number";
+    public static final String CLASS_LOADER_NAME = "class-loader-name";
     public static final String CLASS_NAME = "class-name";
     public static final String METHOD_NAME = "method-name";
+    public static final String MODULE_NAME = "module-name";
+    public static final String MODULE_VERSION = "module-version";
     public static final String NATIVE_METHOD = "native-method";
 
     public static final String THREAD_ID = "thread-id";
@@ -203,6 +233,8 @@ public class PlatformMBeanConstants {
     public static final String STACK_TRACE = "stack-trace";
     public static final String SUSPENDED = "suspended";
     public static final String IN_NATIVE = "in-native";
+    public static final String DAEMON = "daemon";
+    public static final String PRIORITY = "priority";
 
     public static final String IDENTITY_HASH_CODE = "identity-hash-code";
     public static final String LOCKED_STACK_DEPTH = "locked-stack-depth";
@@ -245,6 +277,7 @@ public class PlatformMBeanConstants {
     public static final PathElement THREADING_PATH = PathElement.pathElement(ModelDescriptionConstants.TYPE, THREADING);
     public static final PathElement BUFFER_POOL_PATH = PathElement.pathElement(ModelDescriptionConstants.TYPE, BUFFER_POOL);
     public static final PathElement LOGGING_PATH = PathElement.pathElement(ModelDescriptionConstants.TYPE, LOGGING);
+    public static final PathElement PLATFORM_LOGGING_PATH = PathElement.pathElement(ModelDescriptionConstants.TYPE, PLATFORM_LOGGING);
 
 
     static {
@@ -252,6 +285,7 @@ public class PlatformMBeanConstants {
         List<String> list = new ArrayList<String>(JDK6);
         list.add(BUFFER_POOL);
         // list.add(LOGGING); AS7-2185
+        list.add(PLATFORM_LOGGING);
         BASE_TYPES = Collections.unmodifiableList(list);
 
         try {
