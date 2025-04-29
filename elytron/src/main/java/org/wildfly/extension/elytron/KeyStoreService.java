@@ -5,6 +5,7 @@
 
 package org.wildfly.extension.elytron;
 
+import static java.security.AccessController.doPrivileged;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 import static org.wildfly.security.provider.util.ProviderUtil.findProvider;
@@ -16,6 +17,7 @@ import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
+import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
 import java.security.cert.Certificate;
@@ -25,6 +27,11 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.TimeZone;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import javax.security.auth.x500.X500Principal;
@@ -38,6 +45,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.common.iteration.ByteIterator;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
@@ -66,6 +74,8 @@ class KeyStoreService implements ModifiableKeyStoreService {
     private static final String GENERATED_CERTIFICATE_SIGNATURE_ALGORITHM = "SHA256withRSA";
     private static final int HEX_DELIMITER = ':';
     private static final String COMMON_NAME_PREFIX = "CN=";
+    //default delay between certificate health checks: 12h
+    static final long DEFAULT_DELAY = 12*60*60*1000;
 
     private final String keyStoreName;
     private final String provider;
@@ -74,6 +84,10 @@ class KeyStoreService implements ModifiableKeyStoreService {
     private final String relativeTo;
     private final boolean required;
     private final String aliasFilter;
+    //delay in ms between service start and periodical check of certificate health
+    //if set to '0', this will mean one-time off warning, as prior to RFE
+    private long expirationCheckDelay = DEFAULT_DELAY;
+    private ScheduledExecutorService scheduledExecutorService;
 
     private final InjectedValue<PathManager> pathManager = new InjectedValue<>();
     private final InjectedValue<Provider[]> providers = new InjectedValue<>();
@@ -86,9 +100,10 @@ class KeyStoreService implements ModifiableKeyStoreService {
     private volatile AtomicLoadKeyStore keyStore = null;
     private volatile ModifyTrackingKeyStore trackingKeyStore = null;
     private volatile KeyStore unmodifiableKeyStore = null;
+    private volatile ScheduledFuture<?> certificateTaskFuture = null;
 
     private KeyStoreService(final String keyStoreName, final String provider, final String type, final String relativeTo,
-            final String path, final boolean required, final String aliasFilter) {
+            final String path, final boolean required, final String aliasFilter, final long expirationCheckDelay) {
         this.keyStoreName = keyStoreName == null ? "N/A" : keyStoreName;
         this.provider = provider;
         this.type = type;
@@ -96,16 +111,17 @@ class KeyStoreService implements ModifiableKeyStoreService {
         this.path = path;
         this.required = required;
         this.aliasFilter = aliasFilter;
+        this.expirationCheckDelay = expirationCheckDelay;
     }
 
     static KeyStoreService createFileLessKeyStoreService(final String keyStoreName, final String provider, final String type,
-            final String aliasFilter) {
-        return new KeyStoreService(keyStoreName, provider, type, null, null, false, aliasFilter);
+            final String aliasFilter, final long expirationCheckDelay) {
+        return new KeyStoreService(keyStoreName, provider, type, null, null, false, aliasFilter, expirationCheckDelay);
     }
 
     static KeyStoreService createFileBasedKeyStoreService(final String keyStoreName, final String provider, final String type,
-            final String relativeTo, final String path, final boolean required, final String aliasFilter) {
-        return new KeyStoreService(keyStoreName, provider, type, relativeTo, path, required, aliasFilter);
+            final String relativeTo, final String path, final boolean required, final String aliasFilter, final long expirationCheckDelay) {
+        return new KeyStoreService(keyStoreName, provider, type, relativeTo, path, required, aliasFilter, expirationCheckDelay);
     }
 
     /*
@@ -115,6 +131,7 @@ class KeyStoreService implements ModifiableKeyStoreService {
     @Override
     public void start(StartContext startContext) throws StartException {
         try {
+            this.scheduledExecutorService = createScannerExecutorService();
             AtomicLoadKeyStore keyStore = null;
 
             if (type != null) {
@@ -179,13 +196,14 @@ class KeyStoreService implements ModifiableKeyStoreService {
                         keyStore.load(null, password);
                     }
                 }
-                checkCertificatesValidity(keyStore);
             }
 
             this.keyStore = keyStore;
             KeyStore intermediate = aliasFilter != null ? FilteringKeyStore.filteringKeyStore(keyStore, AliasFilter.fromString(aliasFilter)) :  keyStore;
             this.trackingKeyStore = ModifyTrackingKeyStore.modifyTrackingKeyStore(intermediate);
             this.unmodifiableKeyStore = UnmodifiableKeyStore.unmodifiableKeyStore(intermediate);
+
+            scheduleCertificateHealthCheck();
         } catch (Exception e) {
             throw ROOT_LOGGER.unableToStartService(e);
         }
@@ -237,18 +255,61 @@ class KeyStoreService implements ModifiableKeyStoreService {
         }
     }
 
+    private void scheduleCertificateHealthCheck() {
+        //JIC
+        cancelHealthCheck(false);
+        //Check if its one-time or periodic.
+        //Schedule in executor, to have consistent log output(prefix).
+        // simple fixed rate
+        final Runnable task =() -> {
+            try {
+                checkCertificatesValidity(keyStore);
+            } catch (KeyStoreException e) {
+                ROOT_LOGGER.periodicKeyStoreCheckFailed(this.keyStoreName, e);
+            }
+        };
+
+        if(this.expirationCheckDelay == 0) {
+            this.certificateTaskFuture = scheduledExecutorService.schedule(task, 10, TimeUnit.SECONDS);
+        } else {
+            this.certificateTaskFuture = scheduledExecutorService.scheduleAtFixedRate(task, 0, this.expirationCheckDelay, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private void cancelHealthCheck(final boolean interrupt) {
+        final ScheduledFuture<?> certificateTaskFuture = this.certificateTaskFuture;
+        this.certificateTaskFuture = null;
+        if (certificateTaskFuture != null) {
+            certificateTaskFuture.cancel(false);
+        }
+    }
+
+    static ScheduledExecutorService createScannerExecutorService() {
+        final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<ThreadFactory>() {
+            public ThreadFactory run() {
+                return new JBossThreadFactory(new ThreadGroup("ElytronKeyStore-threads"), Boolean.FALSE, null, "%G - %t", null, null);
+            }
+        });
+        return Executors.newScheduledThreadPool(1, threadFactory);
+    }
+
     @Override
     public void stop(StopContext stopContext) {
         ROOT_LOGGER.tracef(
                 "stopping:  keyStore = %s  unmodifiableKeyStore = %s  trackingKeyStore = %s  pathResolver = %s",
                 keyStore, unmodifiableKeyStore, trackingKeyStore, pathResolver
         );
-        keyStore = null;
-        unmodifiableKeyStore = null;
-        trackingKeyStore = null;
-        if (pathResolver != null) {
-            pathResolver.clear();
-            pathResolver = null;
+        try {
+            cancelHealthCheck(true);
+            keyStore = null;
+            unmodifiableKeyStore = null;
+            trackingKeyStore = null;
+            if (pathResolver != null) {
+                pathResolver.clear();
+                pathResolver = null;
+            }
+        } finally {
+            this.scheduledExecutorService.shutdownNow();
         }
     }
 
