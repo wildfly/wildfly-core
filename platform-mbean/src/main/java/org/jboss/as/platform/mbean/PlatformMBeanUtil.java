@@ -125,7 +125,8 @@ public class PlatformMBeanUtil {
         for (LockInfo lock : threadInfo.getLockedSynchronizers()) {
             synchronizers.add(getDetypedLockInfo(lock));
         }
-
+        result.get(PlatformMBeanConstants.DAEMON).set(threadInfo.isDaemon());
+        result.get(PlatformMBeanConstants.PRIORITY).set(threadInfo.getPriority());
         return result;
     }
 

@@ -216,6 +216,8 @@ public class PlatformMBeanConstants {
     public static final String STACK_TRACE = "stack-trace";
     public static final String SUSPENDED = "suspended";
     public static final String IN_NATIVE = "in-native";
+    public static final String DAEMON = "daemon";
+    public static final String PRIORITY = "priority";
 
     public static final String IDENTITY_HASH_CODE = "identity-hash-code";
     public static final String LOCKED_STACK_DEPTH = "locked-stack-depth";
