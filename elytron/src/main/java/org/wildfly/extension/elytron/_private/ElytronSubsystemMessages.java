@@ -356,6 +356,10 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @LogMessage(level = Level.WARN)
     @Message(id = 53, value = "Certificate in keystore: '%s' stored under alias: '%s' has expired!")
     void certificateExpired(String keyStore, String alias);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 54, value = "Certificate in keystore: '%s' failed during health check.")
+    void periodicKeyStoreCheckFailed(String keyStore, @Cause KeyStoreException cause);
     /*
      * Credential Store Section.
      */
