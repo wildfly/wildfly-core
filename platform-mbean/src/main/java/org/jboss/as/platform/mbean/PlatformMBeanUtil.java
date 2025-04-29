@@ -5,11 +5,13 @@
 
 package org.jboss.as.platform.mbean;
 
+import com.sun.management.GcInfo;
 import java.lang.management.LockInfo;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.lang.management.MonitorInfo;
 import java.lang.management.ThreadInfo;
+import java.util.Map.Entry;
 import javax.management.JMException;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -127,6 +129,30 @@ public class PlatformMBeanUtil {
         }
         result.get(PlatformMBeanConstants.DAEMON).set(threadInfo.isDaemon());
         result.get(PlatformMBeanConstants.PRIORITY).set(threadInfo.getPriority());
+        return result;
+    }
+
+    /**
+     * Utility for converting {@linkcom.sun.management.GcInfo} to a detyped form.
+     *
+     * @param gcInfo the gc information data object
+     * @return the detyped representation
+     */
+    public static ModelNode getDetypedGcInfo(final GcInfo gcInfo) {
+        final ModelNode result = new ModelNode();
+
+        result.get(PlatformMBeanConstants.DURATION).set(gcInfo.getDuration());
+        result.get(PlatformMBeanConstants.END_TIME).set(gcInfo.getEndTime());
+        result.get(PlatformMBeanConstants.ID).set(gcInfo.getId());
+        result.get(PlatformMBeanConstants.START_TIME).set(gcInfo.getStartTime());
+        final ModelNode memUsageAfterGc = result.get(PlatformMBeanConstants.MEMORY_USAGE_AFTER_GC);
+        for (Entry<String, MemoryUsage> entry : gcInfo.getMemoryUsageAfterGc().entrySet()) {
+            memUsageAfterGc.add(entry.getKey(), getDetypedMemoryUsage(entry.getValue()));
+        }
+        final ModelNode memUsageBeforeGc = result.get(PlatformMBeanConstants.MEMORY_USAGE_BEFORE_GC);
+        for (Entry<String, MemoryUsage> entry : gcInfo.getMemoryUsageBeforeGc().entrySet()) {
+            memUsageBeforeGc.add(entry.getKey(), getDetypedMemoryUsage(entry.getValue()));
+        }
         return result;
     }
 

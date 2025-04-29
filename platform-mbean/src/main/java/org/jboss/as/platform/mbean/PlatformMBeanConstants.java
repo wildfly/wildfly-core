@@ -80,6 +80,11 @@ public class PlatformMBeanConstants {
     public static final String MEMORY_POOL_NAMES = "memory-pool-names";
     public static final String COLLECTION_COUNT = "collection-count";
     public static final String COLLECTION_TIME = "collection-time";
+    public static final String LAST_GC_INFO = "last-gc-info";
+    public static final String DURATION = "duration";
+    public static final String END_TIME = "end-time";
+    public static final String MEMORY_USAGE_AFTER_GC = "memory-usage-after-gc";
+    public static final String MEMORY_USAGE_BEFORE_GC = "memory-usage-before-gc";
 
     // MemoryMXBean
     public static final String OBJECT_PENDING_FINALIZATION_COUNT = "object-pending-finalization-count";
