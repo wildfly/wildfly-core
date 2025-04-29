@@ -46,15 +46,16 @@ public class PlatformMBeanConstants {
     // JDK 7 additions
     public static final String BUFFER_POOL = "buffer-pool";
     public static final String LOGGING = "logging";
+    public static final String PLATFORM_LOGGING = "platform-logging";
 
     public static final String PLATFORM_LOGGING_MXBEAN_NAME = "java.util.logging:type=Logging";
     public static final String BUFFER_POOL_MXBEAN_DOMAIN_TYPE = "java.nio:type=BufferPool";
     public static final ObjectName PLATFORM_LOGGING_OBJECT_NAME;
 
     public static final List<String> JDK_NOCOMPILATION_TYPES = Arrays.asList(CLASS_LOADING, GARBAGE_COLLECTOR, MEMORY_MANAGER, MEMORY, MEMORY_POOL, OPERATING_SYSTEM,
-        RUNTIME, THREADING);
+        RUNTIME, THREADING, PLATFORM_LOGGING);
     private static final List<String> JDK6_BASE_TYPES = Arrays.asList(CLASS_LOADING, COMPILATION, GARBAGE_COLLECTOR, MEMORY_MANAGER, MEMORY, MEMORY_POOL, OPERATING_SYSTEM,
-        RUNTIME, THREADING);
+        RUNTIME, THREADING, PLATFORM_LOGGING);
 
     public static final List<String> BASE_TYPES;
 
@@ -260,6 +261,7 @@ public class PlatformMBeanConstants {
     public static final PathElement THREADING_PATH = PathElement.pathElement(ModelDescriptionConstants.TYPE, THREADING);
     public static final PathElement BUFFER_POOL_PATH = PathElement.pathElement(ModelDescriptionConstants.TYPE, BUFFER_POOL);
     public static final PathElement LOGGING_PATH = PathElement.pathElement(ModelDescriptionConstants.TYPE, LOGGING);
+    public static final PathElement PLATFORM_LOGGING_PATH = PathElement.pathElement(ModelDescriptionConstants.TYPE, PLATFORM_LOGGING);
 
 
     static {
@@ -267,6 +269,7 @@ public class PlatformMBeanConstants {
         List<String> list = new ArrayList<String>(JDK6);
         list.add(BUFFER_POOL);
         // list.add(LOGGING); AS7-2185
+        list.add(PLATFORM_LOGGING);
         BASE_TYPES = Collections.unmodifiableList(list);
 
         try {
