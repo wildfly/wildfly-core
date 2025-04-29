@@ -198,6 +198,17 @@ public class PlatformMBeanConstants {
     public static final String MAX_DEPTH = "max-depth";
     public static final String LOCKED_MONITORS = "locked-monitors";
     public static final String LOCKED_SYNCHRONIZERS = "locked-synchronizers";
+    public static final String CURRENT_THREAD_ALLOCATED_BYTES = "current-thread-allocated-bytes";
+    public static final String THREAD_ALLOCATED_BYTES = "thread-allocated-bytes";
+    public static final String THREADS_ALLOCATED_BYTES = "threads-allocated-bytes";
+    public static final String THREAD_CPU_TIME = "thread-cpu-time";
+    public static final String THREAD_USER_TIME = "thread-user-time";
+    public static final String THREAD_ALLOCATED_MEMORY_ENABLED = "thread-allocated-memory-enabled";
+    public static final String THREAD_ALLOCATED_MEMORY_SUPPORTED = "thread-allocated-memory-supported";
+    public static final String GET_THREAD_CPU_TIMES = "get-thread-cpu-times";
+    public static final String GET_THREAD_USER_TIMES = "get-thread-user-times";
+    public static final String GET_THREADS_ALLOCATED_BYTES = "get-threads-allocated-bytes";
+    public static final String GET_THREAD_ALLOCATED_BYTES = "get-thread-allocated-bytes";
 
     public static final String FILE_NAME = "file-name";
     public static final String LINE_NUMBER = "line-number";

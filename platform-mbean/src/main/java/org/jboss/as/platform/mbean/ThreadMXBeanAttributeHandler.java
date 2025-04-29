@@ -6,6 +6,7 @@
 package org.jboss.as.platform.mbean;
 
 import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -43,8 +44,14 @@ class ThreadMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHandler
                     || ThreadResourceDefinition.THREADING_METRICS.contains(name)) {
                 storeResult(name, context.getResult());
             } else {
-                // Shouldn't happen; the global handler should reject
-                throw unknownAttribute(operation);
+                if ( ThreadResourceDefinition.THREADING_EXTENDED_READ_ATTRIBUTES.contains(name)
+                    || ThreadResourceDefinition.THREADING_EXTENDED_READ_WRITE_ATTRIBUTES.contains(name)
+                    || ThreadResourceDefinition.THREADING_EXTENDED_METRICS.contains(name)) {
+                    storeExtendedResult(name, context.getResult());
+                } else {
+                    // Shouldn't happen; the global handler should reject
+                    throw unknownAttribute(operation);
+                }
             }
         } catch (SecurityException | UnsupportedOperationException e) {
             throw new OperationFailedException(e.toString());
@@ -52,26 +59,45 @@ class ThreadMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHandler
 
     }
 
+    static void storeExtendedResult(String name, ModelNode store) {
+        ThreadMXBean mbean = ManagementFactory.getThreadMXBean();
+        if (mbean instanceof com.sun.management.ThreadMXBean) {
+            com.sun.management.ThreadMXBean extThread = (com.sun.management.ThreadMXBean) mbean;
+            // Requires JDK 11.0.10
+            // if (PlatformMBeanConstants.CURRENT_THREAD_ALLOCATED_BYTES.equals(name)) {
+            //    store.set(extThread.getCurrentThreadAllocatedBytes());
+            // } else
+            if (PlatformMBeanConstants.THREAD_ALLOCATED_MEMORY_ENABLED.equals(name)) {
+                store.set(extThread.isThreadAllocatedMemoryEnabled());
+            } else if (PlatformMBeanConstants.THREAD_ALLOCATED_MEMORY_SUPPORTED.equals(name)) {
+                store.set(extThread.isThreadAllocatedMemorySupported());
+            }
+        }
+    }
+
     @Override
     protected void executeWriteAttribute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
         final String name = operation.require(ModelDescriptionConstants.NAME).asString();
-
         try {
-            if (PlatformMBeanConstants.THREAD_CONTENTION_MONITORING_ENABLED.equals(name)) {
-                enabledValidator.validate(operation);
-                context.getServiceRegistry(true); //to trigger auth
-                ManagementFactory.getThreadMXBean().setThreadContentionMonitoringEnabled(operation.require(ModelDescriptionConstants.VALUE).asBoolean());
-            } else if (PlatformMBeanConstants.THREAD_CPU_TIME_ENABLED.equals(name)) {
-                enabledValidator.validate(operation);
-                context.getServiceRegistry(true); //to trigger auth
-                ManagementFactory.getThreadMXBean().setThreadCpuTimeEnabled(operation.require(ModelDescriptionConstants.VALUE).asBoolean());
-            } else if (ThreadResourceDefinition.THREADING_READ_WRITE_ATTRIBUTES.contains(name)) {
-                // Bug
-                throw PlatformMBeanLogger.ROOT_LOGGER.badWriteAttributeImpl(name);
+            if (ThreadResourceDefinition.THREADING_EXTENDED_READ_WRITE_ATTRIBUTES.contains(name)) {
+               executeExtendedWriteAttribute(context, operation, name);
             } else {
-                // Shouldn't happen; the global handler should reject
-                throw unknownAttribute(operation);
+                if (PlatformMBeanConstants.THREAD_CONTENTION_MONITORING_ENABLED.equals(name)) {
+                    enabledValidator.validate(operation);
+                    context.getServiceRegistry(true); //to trigger auth
+                    ManagementFactory.getThreadMXBean().setThreadContentionMonitoringEnabled(operation.require(ModelDescriptionConstants.VALUE).asBoolean());
+                } else if (PlatformMBeanConstants.THREAD_CPU_TIME_ENABLED.equals(name)) {
+                    enabledValidator.validate(operation);
+                    context.getServiceRegistry(true); //to trigger auth
+                    ManagementFactory.getThreadMXBean().setThreadCpuTimeEnabled(operation.require(ModelDescriptionConstants.VALUE).asBoolean());
+                } else if (ThreadResourceDefinition.THREADING_READ_WRITE_ATTRIBUTES.contains(name)) {
+                    // Bug
+                    throw PlatformMBeanLogger.ROOT_LOGGER.badWriteAttributeImpl(name);
+                } else {
+                    // Shouldn't happen; the global handler should reject
+                    throw unknownAttribute(operation);
+                }
             }
         } catch (SecurityException e) {
             throw new OperationFailedException(e.toString());
@@ -123,5 +149,23 @@ class ThreadMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHandler
             throw PlatformMBeanLogger.ROOT_LOGGER.badReadAttributeImpl(name);
         }
 
+    }
+
+    private void executeExtendedWriteAttribute(OperationContext context, ModelNode operation, String name) throws OperationFailedException {
+        ThreadMXBean mbean = ManagementFactory.getThreadMXBean();
+        if (mbean instanceof com.sun.management.ThreadMXBean) {
+            com.sun.management.ThreadMXBean extThread = (com.sun.management.ThreadMXBean) mbean;
+            if (PlatformMBeanConstants.THREAD_ALLOCATED_MEMORY_ENABLED.equals(name)) {
+                enabledValidator.validate(operation);
+                context.getServiceRegistry(true); //to trigger auth
+                extThread.setThreadAllocatedMemoryEnabled(operation.require(ModelDescriptionConstants.VALUE).asBoolean());
+            } else if (ThreadResourceDefinition.THREADING_EXTENDED_READ_WRITE_ATTRIBUTES.contains(name)) {
+                // Bug
+                throw PlatformMBeanLogger.ROOT_LOGGER.badWriteAttributeImpl(name);
+            } else {
+                // Shouldn't happen; the global handler should reject
+                throw unknownAttribute(operation);
+            }
+        }
     }
 }
