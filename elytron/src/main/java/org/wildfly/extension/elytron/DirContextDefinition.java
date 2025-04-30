@@ -157,11 +157,10 @@ class DirContextDefinition extends SimpleResourceDefinition {
             moduleName = MODULE.resolveModelAttribute(context, model).asString();
 
         Module module = null;
-        if(moduleName != null && !"".equals(moduleName)){
+        if(moduleName != null && !moduleName.isEmpty()){
             try {
                 Module cm = Module.getCallerModule();
-                //module = Module.getCallerModule().getModule(ModuleIdentifier.create(moduleName));
-                module = cm.getModule(ModuleIdentifierUtil.canonicalModuleIdentifier(moduleName));
+                module = cm.getModule(ModuleIdentifierUtil.parseCanonicalModuleIdentifier(moduleName));
             } catch (ModuleLoadException e) {
                 throw ElytronSubsystemMessages.ROOT_LOGGER.unableToLoadModule(moduleName, e);
             }

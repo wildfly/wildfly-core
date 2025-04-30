@@ -431,7 +431,7 @@ class PermissionMapperDefinitions {
 
         Permission(final String className, final String module, final String targetName, final String action) {
             this.className = className;
-            this.module = module != null ? ModuleIdentifierUtil.canonicalModuleIdentifier(module) : module;
+            this.module = module != null ? ModuleIdentifierUtil.parseCanonicalModuleIdentifier(module) : module;
             this.targetName = targetName;
             this.action = action;
         }
