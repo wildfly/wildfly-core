@@ -37,7 +37,7 @@ public final class ModuleDependency implements Serializable {
 
         private Builder(ModuleLoader moduleLoader, String moduleName) {
             this.moduleLoader = moduleLoader;
-            this.identifier = ModuleIdentifierUtil.canonicalModuleIdentifier(moduleName);
+            this.identifier = ModuleIdentifierUtil.parseCanonicalModuleIdentifier(moduleName);
         }
 
         /**
@@ -148,7 +148,7 @@ public final class ModuleDependency implements Serializable {
      */
     @Deprecated(forRemoval = true)
     public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
-        this(moduleLoader, ModuleIdentifierUtil.canonicalModuleIdentifier(identifier), null, optional, export, importServices, userSpecified);
+        this(moduleLoader, ModuleIdentifierUtil.parseCanonicalModuleIdentifier(identifier), null, optional, export, importServices, userSpecified);
     }
 
     /**
@@ -166,7 +166,7 @@ public final class ModuleDependency implements Serializable {
      */
     @Deprecated(forRemoval = true)
     public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified, String reason) {
-        this(moduleLoader, ModuleIdentifierUtil.canonicalModuleIdentifier(identifier), reason, optional, export, importServices, userSpecified);
+        this(moduleLoader, ModuleIdentifierUtil.parseCanonicalModuleIdentifier(identifier), reason, optional, export, importServices, userSpecified);
     }
 
     /**
@@ -227,7 +227,7 @@ public final class ModuleDependency implements Serializable {
     /**
      * Gets the name of the module upon which there is a dependency.
      *
-     * @return the {@link ModuleIdentifierUtil#canonicalModuleIdentifier(String) canonical form} of the name of module
+     * @return the {@link ModuleIdentifierUtil#parseCanonicalModuleIdentifier(String) canonical form} of the name of module
      */
     public String getDependencyModule() {
         return identifier;
