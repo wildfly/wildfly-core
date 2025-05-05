@@ -144,14 +144,14 @@ class ParallelBootOperationContext extends AbstractOperationContext {
 
     @Override
     public ImmutableManagementResourceRegistration getResourceRegistration() {
-        ImmutableManagementResourceRegistration parent = primaryContext.getResourceRegistration();
+        ImmutableManagementResourceRegistration parent = primaryContext.getRootResourceRegistration();
         return  parent.getSubModel(activeStep.address);
     }
 
     @Override
     public ManagementResourceRegistration getResourceRegistrationForUpdate() {
         acquireControllerLock();
-        ManagementResourceRegistration parent = primaryContext.getResourceRegistrationForUpdate();
+        ManagementResourceRegistration parent = primaryContext.getRootResourceRegistrationForUpdate();
         return  parent.getSubModel(activeStep.address);
     }
 
