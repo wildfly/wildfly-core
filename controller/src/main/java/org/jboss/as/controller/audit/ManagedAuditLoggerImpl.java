@@ -80,7 +80,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
             }
             storeLogItem(
                     AuditLogItem.createModelControllerItem(config.getAsVersion(), readOnly, config.isBooting(), resultAction, userId, domainUUID,
-                            accessMechanism, remoteAddress, resultantModel, operations));
+                            accessMechanism, remoteAddress, operations));
         } catch (Exception e) {
             handleLoggingException(e);
         } finally {

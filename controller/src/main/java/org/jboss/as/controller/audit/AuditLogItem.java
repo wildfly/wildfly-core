@@ -9,7 +9,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.jboss.as.controller.OperationContext.ResultAction;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
 
@@ -40,9 +39,9 @@ abstract class AuditLogItem {
     }
 
     static AuditLogItem createModelControllerItem(String asVersion, boolean readOnly, boolean booting, ResultAction resultAction, String userId,
-                String domainUUID, AccessMechanism accessMechanism, InetAddress remoteAddress, Resource resultantModel,
+                String domainUUID, AccessMechanism accessMechanism, InetAddress remoteAddress,
                 List<ModelNode> operations) {
-        return new ModelControllerAuditLogItem(asVersion, readOnly, booting, resultAction, userId, domainUUID, accessMechanism, remoteAddress, resultantModel, operations);
+        return new ModelControllerAuditLogItem(asVersion, readOnly, booting, resultAction, userId, domainUUID, accessMechanism, remoteAddress, operations);
     }
 
     static AuditLogItem createMethodAccessItem(String asVersion, boolean readOnly, boolean booting, String userId, String domainUUID,
@@ -121,15 +120,13 @@ abstract class AuditLogItem {
 
     static class ModelControllerAuditLogItem extends AuditLogItem {
         private final ResultAction resultAction;
-        private final Resource resultantModel;
         private final List<ModelNode> operations;
 
         ModelControllerAuditLogItem(String asVersion, boolean readOnly, boolean booting, ResultAction resultAction, String userId,
-                String domainUUID, AccessMechanism accessMechanism, InetAddress remoteAddress, Resource resultantModel,
+                String domainUUID, AccessMechanism accessMechanism, InetAddress remoteAddress,
                 List<ModelNode> operations) {
             super(asVersion, readOnly, booting, userId, domainUUID, accessMechanism, remoteAddress);
             this.resultAction = resultAction;
-            this.resultantModel = resultantModel;
             this.operations = operations;
         }
 
@@ -144,14 +141,6 @@ abstract class AuditLogItem {
          */
         ResultAction getResultAction() {
             return resultAction;
-        }
-
-        /**
-         * Get the resultantModel
-         * @return the resultantModel
-         */
-        Resource getResultantModel() {
-            return resultantModel;
         }
 
         /**
