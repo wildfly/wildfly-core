@@ -85,6 +85,19 @@ class TlsParser {
             .addAttribute(FileAttributeDefinitions.RELATIVE_TO)
             ;
 
+    private PersistentResourceXMLBuilder keyStoreParserCommunity_19_0 = PersistentResourceXMLDescription.builder(PathElement.pathElement(KEY_STORE))
+            .addAttribute(KeyStoreDefinition.TYPE)
+            .addAttribute(KeyStoreDefinition.PROVIDER_NAME)
+            .addAttribute(KeyStoreDefinition.PROVIDERS)
+            .addAttribute(KeyStoreDefinition.CREDENTIAL_REFERENCE)
+            .addAttribute(KeyStoreDefinition.ALIAS_FILTER)
+            .addAttribute(KeyStoreDefinition.REQUIRED)
+            .addAttribute(FileAttributeDefinitions.PATH)
+            .addAttribute(FileAttributeDefinitions.RELATIVE_TO)
+            .addAttribute(KeyStoreDefinition.EXPIRATION_CHECK_DELAY)
+            .addAttribute(KeyStoreDefinition.EXPIRATION_WATERMARK)
+            ;
+
     private PersistentResourceXMLBuilder ldapKeyStoreParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(LDAP_KEY_STORE))
             .addAttribute(LdapKeyStoreDefinition.DIR_CONTEXT)
             .addAttribute(LdapKeyStoreDefinition.SEARCH_PATH)
@@ -371,4 +384,36 @@ class TlsParser {
             .addChild(serverSslSniContextParser)
             .addChild(dynamicClientSslContextParser) // new
             .build();
+
+    final PersistentResourceXMLDescription tlsParserCommunity_19_0 = decorator(TLS)
+            .addChild(decorator(KEY_STORES)
+                    .addChild(keyStoreParserCommunity_19_0) // new
+                    .addChild(ldapKeyStoreParser)
+                    .addChild(filteringKeyStoreParser)
+            )
+            .addChild(keyManagerParser_12_0)
+            .addChild(trustManagerParser_14_0)
+            .addChild(serverSslContextParser_9_0)
+            .addChild(clientSslContextParser_9_0)
+            .addChild(certificateAuthorityParser)
+            .addChild(certificateAuthorityAccountParser)
+            .addChild(serverSslSniContextParser)
+            .build();
+
+    final PersistentResourceXMLDescription tlsParserCommunity_19_0_DynamicClientSSL = decorator(TLS)
+            .addChild(decorator(KEY_STORES)
+                    .addChild(keyStoreParserCommunity_19_0) // new
+                    .addChild(ldapKeyStoreParser)
+                    .addChild(filteringKeyStoreParser)
+            )
+            .addChild(keyManagerParser_12_0)
+            .addChild(trustManagerParser_14_0)
+            .addChild(serverSslContextParser_9_0)
+            .addChild(clientSslContextParser_9_0)
+            .addChild(certificateAuthorityParser)
+            .addChild(certificateAuthorityAccountParser)
+            .addChild(serverSslSniContextParser)
+            .addChild(dynamicClientSslContextParser) // new in 18._0
+            .build();
+
 }
