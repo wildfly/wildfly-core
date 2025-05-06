@@ -3,7 +3,7 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<subsystem xmlns="urn:wildfly:elytron:18.0">
+<subsystem xmlns="urn:wildfly:elytron:19.0">
     <audit-logging>
         <file-audit-log name="local-file" path="audit.log" relative-to="jboss.home.dir" synchronized="false" format="JSON" />
     </audit-logging>
