@@ -13,15 +13,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.concurrent.TimeUnit;
 
 import org.wildfly.core.jar.runtime._private.BootableJarLogger;
 
 /**
- * Allows for cleanup of a bootable JAR installation. The {@link #run()} method blocks until the
- * {@linkplain BootableEnvironment#getPidFile() PID file} is deleted or a
- * {@linkplain BootableEnvironment#getTimeout() timeout} is reached. Then there is an attempt to delete the install
- * directory.
+ * Allows for cleanup of a bootable JAR installation.
  * <p>
  * If the {@code org.wildfly.core.jar.cleanup.newProcess} system property is set to {@code true}, the default for Windows,
  * a new process will be launched to delete the install directory.
@@ -35,40 +31,25 @@ class InstallationCleaner implements Runnable {
     private final BootableJarLogger logger;
     private final boolean newProcess;
     private final int retries;
+    private Process process;
 
-    InstallationCleaner(final BootableEnvironment environment, final BootableJarLogger logger) {
+    InstallationCleaner(final BootableEnvironment environment, final BootableJarLogger logger, Path cleanupMarker) {
         this.environment = environment;
-        cleanupMarker = environment.getJBossHome().resolve("wildfly-cleanup-marker");
+        this.cleanupMarker = cleanupMarker;
         this.logger = logger;
         newProcess = getProperty("org.wildfly.core.jar.cleanup.newProcess", environment.isWindows());
         retries = getProperty("org.wildfly.core.jar.cleanup.retries", 3);
     }
 
     @Override
-    public void run() {
-        // Clean up is not already in progress
+    public synchronized void run() {
         if (Files.notExists(cleanupMarker)) {
-            try {
-                Files.createFile(cleanupMarker);
-                long timeout = environment.getTimeout() * 1000;
-                final Path pidFile = environment.getPidFile();
-                final long wait = 500L;
-                while (Files.exists(pidFile)) {
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(wait);
-                    } catch (InterruptedException ignore) {
-                        break;
-                    }
-                    timeout -= wait;
-                    if (timeout <= 0) {
-                        logger.cleanupTimeout(environment.getTimeout(), pidFile);
-                        break;
-                    }
-                }
-                cleanup();
-            } catch (IOException e) {
-                logger.failedToStartCleanupProcess(e, environment.getJBossHome());
-            }
+            return;
+        }
+        try {
+            cleanup();
+        } catch (InterruptedException | IOException e) {
+            logger.failedToStartCleanupProcess(e, environment.getJBossHome());
         }
     }
 
@@ -83,7 +64,10 @@ class InstallationCleaner implements Runnable {
      *
      * @throws IOException if an error occurs deleting the directory
      */
-    void cleanup() throws IOException {
+    private void cleanup() throws InterruptedException, IOException {
+        if (Files.notExists(cleanupMarker)) {
+            return;
+        }
         if (newProcess) {
             try {
                 newProcess();
@@ -100,6 +84,17 @@ class InstallationCleaner implements Runnable {
                 throw e;
             }
         } else {
+            deleteDirectory();
+        }
+    }
+
+    // In case of timeout, we attempt to do a cleanup only if the cleanupMarker exists
+    synchronized void cleanupTimeout() throws IOException, InterruptedException {
+        if (Files.notExists(cleanupMarker)) {
+            return;
+        }
+        // If a new process has been started, it will delete the installation when this process ends, so do nothing.
+        if (!newProcess) {
             deleteDirectory();
         }
     }
@@ -136,7 +131,7 @@ class InstallationCleaner implements Runnable {
         });
     }
 
-    private void newProcess() throws IOException {
+    private void newProcess() throws IOException, InterruptedException {
         // Start a new process which will clean up the install directory. This is done in a new process in cases where
         // this process may hold locks on to resources that need to be cleaned up.
         final String[] cmd = {
@@ -147,13 +142,14 @@ class InstallationCleaner implements Runnable {
                 System.getProperty("java.class.path"),
                 "org.wildfly.core.jar.boot.CleanupProcessor",
                 environment.getJBossHome().toString(),
-                Integer.toString(retries)
+                Integer.toString(retries),
+                Long.toString(ProcessHandle.current().pid())
         };
         final ProcessBuilder builder = new ProcessBuilder(cmd)
                 .redirectError(ProcessBuilder.Redirect.INHERIT)
                 .redirectOutput(ProcessBuilder.Redirect.INHERIT)
                 .directory(new File(System.getProperty("user.dir")));
-        builder.start();
+        process = builder.start();
     }
 
     private String getJavaCommand() {
