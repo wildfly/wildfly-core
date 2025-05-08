@@ -13,7 +13,6 @@ import org.jboss.as.server.Services;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleNotFoundException;
 import org.jboss.msc.service.Service;
@@ -126,19 +125,6 @@ public class ModuleLoadService implements Service<Module> {
     }
 
     /**
-     * Installs a service that will load the module with the given identifier.
-     *
-     * @param target     the service target
-     * @param identifier the module identifier
-     * @return the service name
-     * @deprecated Use {@link #install(ServiceTarget, String)} instead
-     */
-    @Deprecated(forRemoval = true, since = "28.0.0")
-    public static ServiceName install(final ServiceTarget target, final ModuleIdentifier identifier) {
-        return install(target, identifier.toString());
-    }
-
-    /**
      * Installs a ModuleLoadService that will load the module with the given identifier.
      *
      * @param target     the service target
@@ -164,14 +150,6 @@ public class ModuleLoadService implements Service<Module> {
     public static ServiceName install(final ServiceTarget target, final String identifier, final Collection<ModuleDependency> systemDependencies, final Collection<ModuleDependency> localDependencies, final Collection<ModuleDependency> userDependencies) {
         final ModuleLoadService service = new ModuleLoadService(systemDependencies, localDependencies, userDependencies);
         return install(target, identifier, service);
-    }
-
-    /**
-     * @deprecated Use {@link #installAliases(ServiceTarget, String, List)} instead
-     */
-    @Deprecated(forRemoval = true, since = "28.0.0")
-    public static ServiceName installAliases(final ServiceTarget target, final ModuleIdentifier identifier, final List<String> aliases) {
-        return installAliases(target, identifier.toString(), aliases);
     }
 
     /**

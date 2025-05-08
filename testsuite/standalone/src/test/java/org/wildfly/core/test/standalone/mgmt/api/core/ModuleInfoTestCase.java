@@ -5,7 +5,6 @@
 
 package org.wildfly.core.test.standalone.mgmt.api.core;
 
-import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
@@ -101,8 +100,7 @@ public class ModuleInfoTestCase extends ContainerResourceMgmtTestBase {
         }*/
 
         // load module.xml
-        String identifier = ModuleIdentifierUtil.canonicalModuleIdentifier(TARGET_MODULE_NAME + ":main");
-        Module module = loadModule(identifier);
+        Module module = loadModule(TARGET_MODULE_NAME);
 
         // run module-info operation
         ModelNode op = Util.createEmptyOperation("module-info", RESOURCE);
@@ -120,7 +118,7 @@ public class ModuleInfoTestCase extends ContainerResourceMgmtTestBase {
         for (DependencySpec d : xmlDependencies) {
             if (d instanceof ModuleDependencySpec) {
                 ModuleDependencySpec mds = (ModuleDependencySpec) d;
-                moduleDependencies.put(mds.getIdentifier().getName(), mds);
+                moduleDependencies.put(mds.getName(), mds);
             }
         }
         int foundDependencies = 0;
