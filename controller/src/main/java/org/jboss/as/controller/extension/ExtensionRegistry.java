@@ -57,6 +57,7 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -1419,6 +1420,17 @@ public final class ExtensionRegistry implements FeatureRegistry {
                 if (context.getCurrentStage() == OperationContext.Stage.MODEL || requireRuntimeDelegate) {
                     throw ControllerLogger.ROOT_LOGGER.cannotResolveExpression(expression);
                 }
+            }
+            return null;
+        }
+
+        @Override
+        public String resolveExpression(String expression, CapabilityServiceSupport capabilitySupport) {
+            ExpressionResolverExtension delegate = delegateSupplier.get();
+            if (delegate != null) {
+                return delegate.resolveExpression(expression, capabilitySupport);
+            } else if (expressionPattern.matcher(expression).matches()){
+                throw ControllerLogger.ROOT_LOGGER.cannotResolveExpression(expression);
             }
             return null;
         }
