@@ -118,6 +118,8 @@ class RuntimeMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHandle
                     propNode.set(prop.getValue());
                 }
             }
+        } else if (PlatformMBeanConstants.PID.equals(name)) {
+            store.set(ManagementFactory.getRuntimeMXBean().getPid());
         } else if (RuntimeResourceDefinition.RUNTIME_READ_ATTRIBUTES.contains(name)
                 || RuntimeResourceDefinition.RUNTIME_METRICS.contains(name)) {
             // Bug

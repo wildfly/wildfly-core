@@ -47,9 +47,70 @@ class OperatingSystemResourceDefinition extends SimpleResourceDefinition {
             .setRuntimeServiceNotRequired()
             .build();
 
+    private static SimpleAttributeDefinition COMMITTED_VIRTUAL_MEMORY_SIZE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COMMITTED_VIRTUAL_MEMORY_SIZE, ModelType.LONG, false)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setMeasurementUnit(MeasurementUnit.BYTES)
+            .build();
+    private static SimpleAttributeDefinition FREE_PHYSICAL_MEMORY_SIZE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.FREE_PHYSICAL_MEMORY_SIZE, ModelType.LONG, true)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setMeasurementUnit(MeasurementUnit.BYTES)
+            .build();
+    private static SimpleAttributeDefinition FREE_SWAP_SPACE_SIZE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.FREE_SWAP_SPACE_SIZE, ModelType.LONG, true)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setMeasurementUnit(MeasurementUnit.BYTES)
+            .build();
+    private static SimpleAttributeDefinition MAX_FILE_DESCRIPTOR_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.MAX_FILE_DESCRIPTOR_COUNT, ModelType.LONG, true)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setMeasurementUnit(MeasurementUnit.NONE)
+            .build();
+    private static SimpleAttributeDefinition OPEN_FILE_DESCRIPTOR_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.OPEN_FILE_DESCRIPTOR_COUNT, ModelType.LONG, true)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setMeasurementUnit(MeasurementUnit.NONE)
+            .build();
+    private static SimpleAttributeDefinition PROCESS_CPU_LOAD = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.PROCESS_CPU_LOAD, ModelType.DOUBLE, true)
+            .setMeasurementUnit(MeasurementUnit.PERCENTAGE)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .build();
+    private static SimpleAttributeDefinition PROCESS_CPU_TIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.PROCESS_CPU_TIME, ModelType.LONG, true)
+            .setMeasurementUnit(MeasurementUnit.NANOSECONDS)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .build();
+    private static SimpleAttributeDefinition SYSTEM_CPU_LOAD = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.SYSTEM_CPU_LOAD, ModelType.DOUBLE, true)
+            .setMeasurementUnit(MeasurementUnit.PERCENTAGE)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .build();
+    private static SimpleAttributeDefinition TOTAL_PHYSICAL_MEMORY_SIZE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.TOTAL_PHYSICAL_MEMORY_SIZE, ModelType.LONG, true)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setMeasurementUnit(MeasurementUnit.BYTES)
+            .build();
+    private static SimpleAttributeDefinition TOTAL_SWAP_SPACE_SIZE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.TOTAL_SWAP_SPACE_SIZE, ModelType.LONG, true)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setMeasurementUnit(MeasurementUnit.BYTES)
+            .build();
+
     private static final List<SimpleAttributeDefinition> METRICS = Arrays.asList(
             AVAILABLE_PROCESSORS,
-            SYSTEM_LOAD_AVERAGE
+            COMMITTED_VIRTUAL_MEMORY_SIZE,
+            FREE_PHYSICAL_MEMORY_SIZE,
+            FREE_SWAP_SPACE_SIZE,
+            MAX_FILE_DESCRIPTOR_COUNT,
+            OPEN_FILE_DESCRIPTOR_COUNT,
+            PROCESS_CPU_LOAD,
+            PROCESS_CPU_TIME,
+            SYSTEM_LOAD_AVERAGE,
+            SYSTEM_CPU_LOAD,
+            TOTAL_PHYSICAL_MEMORY_SIZE,
+            TOTAL_SWAP_SPACE_SIZE
     );
     private static final List<AttributeDefinition> READ_ATTRIBUTES = Arrays.asList(
             PlatformMBeanConstants.NAME,
@@ -62,6 +123,23 @@ class OperatingSystemResourceDefinition extends SimpleResourceDefinition {
             ARCH.getName(),
             VERSION.getName()
     );
+
+    public static final List<String> OPERATING_SYSTEM_EXTENDED_METRICS = Arrays.asList(
+            COMMITTED_VIRTUAL_MEMORY_SIZE.getName(),
+            FREE_PHYSICAL_MEMORY_SIZE.getName(),
+            FREE_SWAP_SPACE_SIZE.getName(),
+            PROCESS_CPU_LOAD.getName(),
+            PROCESS_CPU_TIME.getName(),
+            SYSTEM_CPU_LOAD.getName(),
+            TOTAL_PHYSICAL_MEMORY_SIZE.getName(),
+            TOTAL_SWAP_SPACE_SIZE.getName()
+    );
+
+    public static final List<String> OPERATING_SYSTEM_UNIX_METRICS = Arrays.asList(
+            MAX_FILE_DESCRIPTOR_COUNT.getName(),
+            OPEN_FILE_DESCRIPTOR_COUNT.getName()
+    );
+
     public static final List<String> OPERATING_SYSTEM_METRICS = Arrays.asList(
             AVAILABLE_PROCESSORS.getName(),
             SYSTEM_LOAD_AVERAGE.getName()

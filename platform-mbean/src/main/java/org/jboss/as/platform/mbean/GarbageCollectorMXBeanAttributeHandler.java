@@ -5,6 +5,7 @@
 
 package org.jboss.as.platform.mbean;
 
+import com.sun.management.GcInfo;
 import static org.jboss.as.platform.mbean.PlatformMBeanUtil.escapeMBeanName;
 
 import java.lang.management.GarbageCollectorMXBean;
@@ -48,33 +49,50 @@ class GarbageCollectorMXBeanAttributeHandler extends AbstractPlatformMBeanAttrib
         if (gcMBean == null) {
             throw PlatformMBeanLogger.ROOT_LOGGER.unknownGarbageCollector(gcName);
         }
-
-        if (PlatformMBeanConstants.OBJECT_NAME.getName().equals(name)) {
-            final String objName = PlatformMBeanUtil.getObjectNameStringWithNameKey(ManagementFactory.GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE, gcName);
-            context.getResult().set(objName);
-        } else if (ModelDescriptionConstants.NAME.equals(name)) {
-            context.getResult().set(escapeMBeanName(gcMBean.getName()));
-        } else if (PlatformMBeanConstants.VALID.getName().equals(name)) {
-            context.getResult().set(gcMBean.isValid());
-        } else if (PlatformMBeanConstants.MEMORY_POOL_NAMES.equals(name)) {
-            final ModelNode result = context.getResult();
-            result.setEmptyList();
-            for (String pool : gcMBean.getMemoryPoolNames()) {
-                result.add(escapeMBeanName(pool));
-            }
-        } else if (PlatformMBeanConstants.COLLECTION_COUNT.equals(name)) {
-            context.getResult().set(gcMBean.getCollectionCount());
-        } else if (PlatformMBeanConstants.COLLECTION_TIME.equals(name)) {
-            context.getResult().set(gcMBean.getCollectionTime());
-        } else if (GarbageCollectorResourceDefinition.GARBAGE_COLLECTOR_READ_ATTRIBUTES.contains(name)
-                || GarbageCollectorResourceDefinition.GARBAGE_COLLECTOR_METRICS.contains(name)) {
-            // Bug
-            throw PlatformMBeanLogger.ROOT_LOGGER.badReadAttributeImpl(name);
+        if (GarbageCollectorResourceDefinition.GARBAGE_COLLECTOR_EXTENDED_READ_ATTRIBUTES.contains(name)) {
+            storeExtendedResult(gcMBean, name, context.getResult());
         } else {
-            // Shouldn't happen; the global handler should reject
-            throw unknownAttribute(operation);
+            if (PlatformMBeanConstants.OBJECT_NAME.getName().equals(name)) {
+                final String objName = PlatformMBeanUtil.getObjectNameStringWithNameKey(ManagementFactory.GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE, gcName);
+                context.getResult().set(objName);
+            } else if (ModelDescriptionConstants.NAME.equals(name)) {
+                context.getResult().set(escapeMBeanName(gcMBean.getName()));
+            } else if (PlatformMBeanConstants.VALID.getName().equals(name)) {
+                context.getResult().set(gcMBean.isValid());
+            } else if (PlatformMBeanConstants.MEMORY_POOL_NAMES.equals(name)) {
+                final ModelNode result = context.getResult();
+                result.setEmptyList();
+                for (String pool : gcMBean.getMemoryPoolNames()) {
+                    result.add(escapeMBeanName(pool));
+                }
+            } else if (PlatformMBeanConstants.COLLECTION_COUNT.equals(name)) {
+                context.getResult().set(gcMBean.getCollectionCount());
+            } else if (PlatformMBeanConstants.COLLECTION_TIME.equals(name)) {
+                context.getResult().set(gcMBean.getCollectionTime());
+            } else if (GarbageCollectorResourceDefinition.GARBAGE_COLLECTOR_READ_ATTRIBUTES.contains(name)
+                    || GarbageCollectorResourceDefinition.GARBAGE_COLLECTOR_METRICS.contains(name)) {
+                // Bug
+                throw PlatformMBeanLogger.ROOT_LOGGER.badReadAttributeImpl(name);
+            } else {
+                // Shouldn't happen; the global handler should reject
+                throw unknownAttribute(operation);
+            }
         }
+    }
 
+    static void storeExtendedResult(GarbageCollectorMXBean gcMBean, String name, ModelNode store) {
+        if (gcMBean instanceof com.sun.management.GarbageCollectorMXBean) {
+            com.sun.management.GarbageCollectorMXBean extGcMBean = (com.sun.management.GarbageCollectorMXBean) gcMBean;
+             if (PlatformMBeanConstants.LAST_GC_INFO.equals(name)) {
+                GcInfo info = extGcMBean.getLastGcInfo();
+                if (info != null) {
+                    store.set(PlatformMBeanUtil.getDetypedGcInfo(info));
+                }
+             }  else if (GarbageCollectorResourceDefinition.GARBAGE_COLLECTOR_EXTENDED_READ_ATTRIBUTES.contains(name)) {
+                // Bug
+                throw PlatformMBeanLogger.ROOT_LOGGER.badReadAttributeImpl(name);
+            }
+        }
     }
 
     @Override
