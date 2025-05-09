@@ -17,6 +17,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
@@ -107,7 +108,7 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
                     alias = aliases.nextElement();
                     if(recursive) {
                         aliasNode = result.get(alias);
-                        ReadAliasHandler.readAlias(keyStore, alias, verbose, aliasNode);
+                        ReadAliasHandler.readAlias(keyStore, alias, verbose, aliasNode, context.getStability());
                     } else {
                         result.add(alias);
                     }
@@ -146,7 +147,7 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
 
             try {
                 ModelNode result = context.getResult();
-                readAlias(keyStore,alias,verbose,result);
+                readAlias(keyStore, alias, verbose, result, context.getStability());
             } catch (KeyStoreException | NoSuchAlgorithmException | CertificateEncodingException e) {
                 throw new OperationFailedException(e);
             }
@@ -167,7 +168,7 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
         }
 
         private static void readAlias(final KeyStore keyStore, final String alias, final boolean verbose,
-                final ModelNode result) throws KeyStoreException, NoSuchAlgorithmException, CertificateEncodingException {
+                final ModelNode result, final Stability stability) throws KeyStoreException, NoSuchAlgorithmException, CertificateEncodingException {
             if (!keyStore.containsAlias(alias)) {
                 ROOT_LOGGER.tracef("Alias [%s] does not exists in KeyStore");
                 return;
@@ -186,10 +187,10 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
             if (chain == null) {
                 Certificate cert = keyStore.getCertificate(alias);
                 if (cert != null) {
-                    writeCertificate(result.get(ElytronDescriptionConstants.CERTIFICATE), cert, verbose);
+                    writeCertificate(result.get(ElytronDescriptionConstants.CERTIFICATE), cert, verbose, stability);
                 }
             } else {
-                writeCertificates(result.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN), chain, verbose);
+                writeCertificates(result.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN), chain, verbose, stability);
             }
         }
     }
