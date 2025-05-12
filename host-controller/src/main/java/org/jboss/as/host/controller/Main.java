@@ -71,11 +71,8 @@ public final class Main {
     public static void main(String[] args) throws IOException {
         MDC.put("process", "host controller");
 
-
-        // Grab copies of our streams.
+        // Get a ref to the original stdin before we install JBoss Stdio
         final InputStream in = System.in;
-        //final PrintStream out = System.out;
-        //final PrintStream err = System.err;
 
         byte[] pcAuthKey = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
         try {

@@ -352,7 +352,7 @@ public interface ServerLogger extends BasicLogger {
 
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 55, value = "Caught exception during boot")
-    void caughtExceptionDuringBoot(@Cause Exception e);
+    void caughtExceptionDuringBoot(@Cause Throwable e);
 
 
     @Message(id = 56, value = "Server boot has failed in an unrecoverable manner; exiting. See previous messages for details. %s")
@@ -1479,6 +1479,11 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 311, value = "Cannot create a ServerEnvironment for an embedded server")
     IllegalStateException cannotCreateServerEnvironment();
+
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 312, value = "Caught exception during shutdown")
+    void caughtExceptionDuringShutdown(@Cause Throwable e);
 
     ////////////////////////////////////////////////
     //Messages without IDs
