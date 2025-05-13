@@ -11,7 +11,6 @@ import java.util.Set;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.module.ModuleDependency;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.inject.InjectionException;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
@@ -76,8 +75,8 @@ public class ModuleResolvePhaseService implements Service<ModuleResolvePhaseServ
     }
 
     public static void installService(final ServiceTarget serviceTarget, final ModuleDefinition moduleDefinition) {
-        String moduleIdentifier = moduleDefinition.getModuleIdentifier().toString();
-        final ModuleResolvePhaseService nextPhaseService = new ModuleResolvePhaseService(moduleIdentifier, Collections.singleton(moduleDefinition.getModuleIdentifier().toString()), 0);
+        String moduleIdentifier = moduleDefinition.getModuleName();
+        final ModuleResolvePhaseService nextPhaseService = new ModuleResolvePhaseService(moduleIdentifier, Collections.singleton(moduleDefinition.getModuleName()), 0);
         nextPhaseService.getModuleSpecs().add(moduleDefinition);
         ServiceBuilder<ModuleResolvePhaseService> builder = serviceTarget.addService(moduleResolvePhaseServiceName(moduleIdentifier, 0), nextPhaseService);
         builder.install();
@@ -118,12 +117,6 @@ public class ModuleResolvePhaseService implements Service<ModuleResolvePhaseServ
 
     public Set<ModuleDefinition> getModuleSpecs() {
         return moduleSpecs;
-    }
-
-    /** @deprecated this method will be made private */
-    @Deprecated(forRemoval = true)
-    public static ServiceName moduleSpecServiceName(ModuleIdentifier identifier, int phase) {
-        return moduleResolvePhaseServiceName(identifier.toString(), phase);
     }
 
     private static ServiceName moduleResolvePhaseServiceName(String identifier, int phase) {

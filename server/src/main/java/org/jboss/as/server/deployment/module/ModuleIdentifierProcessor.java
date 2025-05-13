@@ -10,7 +10,6 @@ import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -29,22 +28,6 @@ public class ModuleIdentifierProcessor implements DeploymentUnitProcessor {
         final VirtualFile toplevelRoot = topLevelDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT).getRoot();
         final String moduleIdentifier = createModuleIdentifierAsString(deploymentUnit.getName(), deploymentRoot, topLevelDeployment, toplevelRoot, deploymentUnit.getParent() == null);
         deploymentUnit.putAttachment(Attachments.MODULE_NAME, moduleIdentifier);
-    }
-
-    /**
-     * Create a module identifier for the deployment.
-     *
-     * @param deploymentUnitName The name of the deployment unit
-     * @param deploymentRoot     The deployment root
-     * @param topLevelDeployment The top level deployment
-     * @param toplevelRoot       The top level root
-     * @param topLevel           {@code true} if the deployment is a top level deployment, {@code false} otherwise
-     * @return the module identifier that represents the deployment
-     * @deprecated Use {@link #createModuleIdentifierAsString(String, ResourceRoot, DeploymentUnit, VirtualFile, boolean)} instead
-     */
-    @Deprecated(forRemoval = true, since = "28.0.0")
-    public static ModuleIdentifier createModuleIdentifier(final String deploymentUnitName, final ResourceRoot deploymentRoot, final DeploymentUnit topLevelDeployment, final VirtualFile toplevelRoot, final boolean topLevel) {
-        return ModuleIdentifier.create(createModuleIdentifierAsString(deploymentUnitName, deploymentRoot, topLevelDeployment, toplevelRoot, topLevel));
     }
 
     /**

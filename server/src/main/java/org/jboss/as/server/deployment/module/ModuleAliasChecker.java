@@ -9,7 +9,6 @@ import java.util.List;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 
@@ -68,22 +67,6 @@ public class ModuleAliasChecker {
         for (ModuleDependency dependency : dependencies) {
             String identifier = dependency.getDependencyModule();
             checkModuleAlias(context, deploymentName, identifier, false);
-        }
-    }
-
-    /**
-     * Check whether the identifier passed as an argument represents an Alias and if so, log a warning describing that the alias
-     * can be replaced with its target module.
-     *
-     * @param identifiers    List of identifiers we want to verify.
-     * @param context        The context to use in the log message to give more information about from where this module identifier has
-     * @param deploymentName Deployment name where the dependencies are meant to be.
-     * @deprecated Iterate over all the identifiers and call {@link #checkModuleAliasesForExclusion(String, MessageContext, String)}
-     */
-    @Deprecated(forRemoval = true, since = "28.0.0")
-    public static void checkModuleAliasesForExclusions(List<ModuleIdentifier> identifiers, MessageContext context, String deploymentName) {
-        for (ModuleIdentifier identifier : identifiers) {
-            checkModuleAlias(context, deploymentName, identifier.toString(), true);
         }
     }
 
