@@ -23,9 +23,9 @@ import org.jboss.msc.service.ServiceName;
 public class QueuelessThreadPoolWriteAttributeHandler extends ThreadsWriteAttributeOperationHandler {
 
     private final ServiceName serviceNameBase;
-    private final RuntimeCapability capability;
+    private final RuntimeCapability<Void> capability;
 
-    public QueuelessThreadPoolWriteAttributeHandler(boolean blocking, final RuntimeCapability capability, ServiceName serviceNameBase) {
+    public QueuelessThreadPoolWriteAttributeHandler(boolean blocking, final RuntimeCapability<Void> capability, ServiceName serviceNameBase) {
         super(blocking ? QueuelessThreadPoolAdd.BLOCKING_ATTRIBUTES : QueuelessThreadPoolAdd.NON_BLOCKING_ATTRIBUTES);
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;

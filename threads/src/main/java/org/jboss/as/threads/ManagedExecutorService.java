@@ -51,7 +51,7 @@ public abstract class ManagedExecutorService implements ExecutorService {
      */
     @Override
     public void shutdown() {
-        // Don't shutdown managed executor
+        // Don't shut down managed executor
     }
 
     /**
@@ -60,7 +60,7 @@ public abstract class ManagedExecutorService implements ExecutorService {
      */
     @Override
     public List<Runnable> shutdownNow() {
-        // Don't shutdown managed executor
+        // Don't shut down managed executor
         return Collections.emptyList();
     }
 

@@ -10,7 +10,6 @@ import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
@@ -27,17 +26,12 @@ public class ScheduledThreadPoolMetricsHandler extends ThreadPoolMetricsHandler 
             PoolAttributeDefinitions.LARGEST_THREAD_COUNT, PoolAttributeDefinitions.TASK_COUNT,
             PoolAttributeDefinitions.QUEUE_SIZE);
 
-    public ScheduledThreadPoolMetricsHandler(final ServiceName serviceNameBase) {
-        this(null, serviceNameBase);
-    }
-
-    public ScheduledThreadPoolMetricsHandler(RuntimeCapability capability, final ServiceName serviceNameBase) {
+    public ScheduledThreadPoolMetricsHandler(RuntimeCapability<Void> capability, final ServiceName serviceNameBase) {
         super(METRICS, capability, serviceNameBase);
     }
 
     @Override
-    protected void setResult(OperationContext context, final String attributeName, final Service<?> service)
-            throws OperationFailedException {
+    protected void setResult(OperationContext context, final String attributeName, final Service<?> service) {
         final ScheduledThreadPoolService pool = (ScheduledThreadPoolService) service;
         if(attributeName.equals(CommonAttributes.ACTIVE_COUNT)) {
             context.getResult().set(pool.getActiveCount());

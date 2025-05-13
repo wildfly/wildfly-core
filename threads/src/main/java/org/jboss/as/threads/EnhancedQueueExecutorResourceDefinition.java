@@ -19,6 +19,7 @@ import org.jboss.msc.service.ServiceName;
 /**
  * {@link org.jboss.as.controller.ResourceDefinition} for an {@code org.jboss.threads.EnhancedQueueExecutor} resource.
  */
+@SuppressWarnings("unused")
 public final class EnhancedQueueExecutorResourceDefinition extends SimpleResourceDefinition {
     private final EnhancedQueueExecutorWriteAttributeHandler writeAttributeHandler;
     private final EnhancedQueueExecutorMetricsHandler metricsHandler;
