@@ -27,10 +27,6 @@ class EnhancedQueueExecutorAdd extends AbstractAddStepHandler {
     private final RuntimeCapability<Void> capability;
     private final boolean allowCoreThreadTimeout;
 
-    EnhancedQueueExecutorAdd(ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase) {
-        this(threadFactoryResolver, serviceNameBase, null, false);
-    }
-
     EnhancedQueueExecutorAdd(ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase, RuntimeCapability<Void> capability, boolean allowCoreThreadTimeout) {
         this.threadFactoryResolver = threadFactoryResolver;
         this.serviceNameBase = serviceNameBase;
@@ -46,7 +42,7 @@ class EnhancedQueueExecutorAdd extends AbstractAddStepHandler {
 
         ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), capability, context.getCurrentAddress(),
                 serviceNameBase, params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),
-                null, null, null, context.getServiceTarget());
+                null, null, null, context.getCapabilityServiceTarget());
     }
 
     ServiceName getServiceNameBase() {

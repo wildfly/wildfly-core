@@ -23,7 +23,7 @@ import org.jboss.threads.JBossThreadPoolExecutor;
  * @author John E. Bailey
  */
 public class UnboundedQueueThreadPoolService implements Service<ManagedJBossThreadPoolExecutorService> {
-    private final InjectedValue<ThreadFactory> threadFactoryValue = new InjectedValue<ThreadFactory>();
+    private final InjectedValue<ThreadFactory> threadFactoryValue = new InjectedValue<>();
 
     private ManagedJBossThreadPoolExecutorService executor;
 
@@ -40,7 +40,7 @@ public class UnboundedQueueThreadPoolService implements Service<ManagedJBossThre
     public synchronized void start(final StartContext context) throws StartException {
         final TimeSpec keepAliveSpec = keepAlive;
         long keepAliveTime = keepAliveSpec == null ? Long.MAX_VALUE : keepAliveSpec.getUnit().toNanos(keepAliveSpec.getDuration());
-        final JBossThreadPoolExecutor jbossExecutor = new JBossThreadPoolExecutor(maxThreads, maxThreads, keepAliveTime, TimeUnit.NANOSECONDS, new LinkedBlockingQueue<Runnable>(), threadFactoryValue.getValue());
+        final JBossThreadPoolExecutor jbossExecutor = new JBossThreadPoolExecutor(maxThreads, maxThreads, keepAliveTime, TimeUnit.NANOSECONDS, new LinkedBlockingQueue<>(), threadFactoryValue.getValue());
         jbossExecutor.setAllowCoreThreadTimeout(allowCoreThreadTimeout);
         executor = new ManagedJBossThreadPoolExecutorService(jbossExecutor);
     }

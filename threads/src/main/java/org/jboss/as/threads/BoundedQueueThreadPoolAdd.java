@@ -48,6 +48,11 @@ public class BoundedQueueThreadPoolAdd extends AbstractAddStepHandler {
     }
 
     public BoundedQueueThreadPoolAdd(boolean blocking, ThreadFactoryResolver threadFactoryResolver,
+                                     HandoffExecutorResolver handoffExecutorResolver, ServiceName serviceNameBase) {
+        this(blocking, threadFactoryResolver, handoffExecutorResolver, serviceNameBase, null);
+    }
+
+    public BoundedQueueThreadPoolAdd(boolean blocking, ThreadFactoryResolver threadFactoryResolver,
                                      HandoffExecutorResolver handoffExecutorResolver, ServiceName serviceNameBase,
                                      RuntimeCapability<Void> capability) {
         this.blocking = blocking;
@@ -72,7 +77,7 @@ public class BoundedQueueThreadPoolAdd extends AbstractAddStepHandler {
         ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), capability, context.getCurrentAddress(),
                 serviceNameBase, params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),
                 params.getHandoffExecutor(), handoffExecutorResolver, blocking ?  null : service.getHandoffExecutorInjector(),
-                context.getServiceTarget());
+                context.getCapabilityServiceTarget());
     }
 
     boolean isBlocking() {

@@ -19,7 +19,7 @@ import org.jboss.threads.EnhancedQueueExecutor;
  * Service responsible for creating, starting and stopping an {@code org.jboss.threads.EnhancedQueueExecutor}.
  */
 class EnhancedQueueExecutorService implements Service<ManagedEnhancedQueueExecutor> {
-    private final InjectedValue<ThreadFactory> threadFactoryValue = new InjectedValue<ThreadFactory>();
+    private final InjectedValue<ThreadFactory> threadFactoryValue = new InjectedValue<>();
 
     private ManagedEnhancedQueueExecutor executor;
 

@@ -22,14 +22,14 @@ import org.jboss.msc.service.ServiceName;
 public class UnboundedQueueThreadPoolWriteAttributeHandler extends ThreadsWriteAttributeOperationHandler {
 
     private final ServiceName serviceNameBase;
-    private final RuntimeCapability capability;
+    private final RuntimeCapability<Void> capability;
 
     @Deprecated(forRemoval = true)
     public UnboundedQueueThreadPoolWriteAttributeHandler(ServiceName serviceNameBase) {
         this(null, serviceNameBase);
     }
 
-    public UnboundedQueueThreadPoolWriteAttributeHandler(final RuntimeCapability capability, ServiceName serviceNameBase) {
+    public UnboundedQueueThreadPoolWriteAttributeHandler(final RuntimeCapability<Void> capability, ServiceName serviceNameBase) {
         super(UnboundedQueueThreadPoolAdd.ATTRIBUTES);
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;

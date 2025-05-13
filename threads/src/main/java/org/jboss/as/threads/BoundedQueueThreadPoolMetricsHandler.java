@@ -10,7 +10,6 @@ import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
@@ -27,17 +26,12 @@ public class BoundedQueueThreadPoolMetricsHandler extends ThreadPoolMetricsHandl
             PoolAttributeDefinitions.LARGEST_THREAD_COUNT, PoolAttributeDefinitions.REJECTED_COUNT,
             PoolAttributeDefinitions.QUEUE_SIZE);
 
-    public BoundedQueueThreadPoolMetricsHandler(final ServiceName serviceNameBase) {
-        this(null, serviceNameBase);
-    }
-
-    public BoundedQueueThreadPoolMetricsHandler(final RuntimeCapability capability, final ServiceName serviceNameBase) {
+    public BoundedQueueThreadPoolMetricsHandler(final RuntimeCapability<Void> capability, final ServiceName serviceNameBase) {
         super(METRICS, capability, serviceNameBase);
     }
 
     @Override
-    protected void setResult(OperationContext context, final String attributeName, final Service<?> service)
-            throws OperationFailedException {
+    protected void setResult(OperationContext context, final String attributeName, final Service<?> service) {
         BoundedQueueThreadPoolService bounded = (BoundedQueueThreadPoolService) service;
         switch (attributeName) {
             case CommonAttributes.CURRENT_THREAD_COUNT:
