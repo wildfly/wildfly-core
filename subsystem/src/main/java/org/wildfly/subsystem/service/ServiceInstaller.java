@@ -158,7 +158,7 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
          * @param descriptor a service descriptor
          * @return a reference to this builder
          */
-        default UnaryBuilder<T, V> provides(NullaryServiceDescriptor<T> descriptor) {
+        default UnaryBuilder<T, V> provides(NullaryServiceDescriptor<V> descriptor) {
             return this.provides(ServiceNameFactory.resolveServiceName(descriptor));
         }
 
@@ -168,7 +168,7 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
          * @param name a dynamic segment
          * @return a reference to this builder
          */
-        default UnaryBuilder<T, V> provides(UnaryServiceDescriptor<T> descriptor, String name) {
+        default UnaryBuilder<T, V> provides(UnaryServiceDescriptor<V> descriptor, String name) {
             return this.provides(ServiceNameFactory.resolveServiceName(descriptor, name));
         }
 
@@ -179,7 +179,7 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
          * @param child the second dynamic segment
          * @return a reference to this builder
          */
-        default UnaryBuilder<T, V> provides(BinaryServiceDescriptor<T> descriptor, String parent, String child) {
+        default UnaryBuilder<T, V> provides(BinaryServiceDescriptor<V> descriptor, String parent, String child) {
             return this.provides(ServiceNameFactory.resolveServiceName(descriptor, parent, child));
         }
 
@@ -191,7 +191,7 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
          * @param child the third dynamic segment
          * @return a reference to this builder
          */
-        default UnaryBuilder<T, V> provides(TernaryServiceDescriptor<T> descriptor, String grandparent, String parent, String child) {
+        default UnaryBuilder<T, V> provides(TernaryServiceDescriptor<V> descriptor, String grandparent, String parent, String child) {
             return this.provides(ServiceNameFactory.resolveServiceName(descriptor, grandparent, parent, child));
         }
 
@@ -204,7 +204,7 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
          * @param child the fourth dynamic segment
          * @return a reference to this builder
          */
-        default UnaryBuilder<T, V> provides(QuaternaryServiceDescriptor<T> descriptor, String greatGrandparent, String grandparent ,String parent, String child) {
+        default UnaryBuilder<T, V> provides(QuaternaryServiceDescriptor<V> descriptor, String greatGrandparent, String grandparent ,String parent, String child) {
             return this.provides(ServiceNameFactory.resolveServiceName(descriptor, greatGrandparent, grandparent, parent, child));
         }
     }
