@@ -53,7 +53,7 @@ public final class ScheduledThreadPoolService implements Service<ManagedSchedule
             this.executor = null;
         }
         context.asynchronous();
-        executor.internalShutdown();
+        executor.internalShutdown(context);
     }
 
     public ManagedScheduledExecutorService getValue() throws IllegalStateException {

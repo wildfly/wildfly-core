@@ -5,35 +5,41 @@
 package org.jboss.as.threads;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.jboss.threads.JBossExecutors;
+import org.jboss.msc.service.StopContext;
 
 /**
+ * {@link ScheduledExecutorService} that provides hooks for integration
+ * with a WildFly management resource.
  *
  * @author Alexey Loubyansky
  */
-public class ManagedScheduledExecutorService extends ManagedExecutorService implements ScheduledExecutorService {
+public class ManagedScheduledExecutorService extends ManagedExecutorServiceImpl implements ScheduledExecutorService {
 
     private final ScheduledThreadPoolExecutor executor;
 
-    public ManagedScheduledExecutorService(ScheduledThreadPoolExecutor executor) {
+    ManagedScheduledExecutorService(ScheduledThreadPoolExecutor executor) {
         super(executor);
         this.executor = executor;
     }
 
+    /**
+     * {@inheritDoc}
+     * @see java.util.concurrent.Executor#execute(java.lang.Runnable)
+     */
     @Override
-    protected ExecutorService protectExecutor(ExecutorService executor) {
-        return JBossExecutors.protectedScheduledExecutorService((ScheduledExecutorService) executor);
+    public void execute(Runnable command) {
+        this.executor.execute(command);
     }
 
     @Override
-    void internalShutdown() {
+    void internalShutdown(StopContext stopContext) {
         executor.shutdown();
+        stopContext.complete();
     }
 
     @Override
