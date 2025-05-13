@@ -34,7 +34,7 @@ public class BoundedQueueThreadPoolWriteAttributeHandler extends ThreadsWriteAtt
     protected void applyOperation(final OperationContext context, ModelNode model, String attributeName,
                                   ServiceController<?> service, boolean forRollback) throws OperationFailedException {
 
-        final BoundedQueueThreadPoolService pool =  (BoundedQueueThreadPoolService) service.getService();
+        final EnhancedQueueExecutorService pool =  (EnhancedQueueExecutorService) service.getService();
 
         if (PoolAttributeDefinitions.KEEPALIVE_TIME.getName().equals(attributeName)) {
             TimeUnit defaultUnit = pool.getKeepAliveUnit();

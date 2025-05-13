@@ -48,7 +48,13 @@ public class UnboundedQueueThreadPoolAdd extends AbstractAddStepHandler {
 
         final BaseThreadPoolParameters params = ThreadPoolManagementUtils.parseUnboundedQueueThreadPoolParameters(context, operation, model);
 
-        final UnboundedQueueThreadPoolService service = new UnboundedQueueThreadPoolService(allowCoreThreadTimeout, params.getMaxThreads(), params.getKeepAliveTime());
+        final EnhancedQueueExecutorService service = new EnhancedQueueExecutorService(
+                allowCoreThreadTimeout,
+                params.getMaxThreads(),
+                params.getMaxThreads(),
+                Integer.MAX_VALUE,
+                params.getKeepAliveTime(),
+                false);
 
         ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), capability, context.getCurrentAddress(),
                 serviceNameBase, params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),

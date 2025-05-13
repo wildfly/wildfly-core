@@ -56,7 +56,7 @@ public class QueuelessThreadPoolResourceDefinition extends SimpleResourceDefinit
                                                                ServiceName serviceNameBase, boolean registerRuntimeOnly) {
         final boolean blocking = handoffExecutorResolver == null;
         final String resolverPrefix = blocking ? BLOCKING_QUEUELESS_THREAD_POOL : QUEUELESS_THREAD_POOL;
-        final RuntimeCapability<Void> capability = ThreadsServices.createCapability(type, ManagedQueuelessExecutorService.class);
+        final RuntimeCapability<Void> capability = ThreadsServices.createCapability(type, ManagedQueueExecutorService.class);
         final QueuelessThreadPoolAdd addHandler = new QueuelessThreadPoolAdd(blocking, threadFactoryResolver, handoffExecutorResolver, serviceNameBase, capability);
         final OperationStepHandler removeHandler = new QueuelessThreadPoolRemove(addHandler);
         return new QueuelessThreadPoolResourceDefinition(blocking, registerRuntimeOnly, capability, type, serviceNameBase, resolverPrefix, addHandler, removeHandler);

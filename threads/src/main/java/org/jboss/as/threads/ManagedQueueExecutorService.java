@@ -4,85 +4,48 @@
  */
 package org.jboss.as.threads;
 
-import org.jboss.threads.EventListener;
-import org.jboss.threads.QueueExecutor;
+import java.util.concurrent.ExecutorService;
 
 /**
+ * {@link ExecutorService} that provides hooks for integration
+ * with a WildFly management resource.
  *
  * @author Alexey Loubyansky
  */
-public class ManagedQueueExecutorService extends ManagedExecutorService {
+public interface ManagedQueueExecutorService extends ManagedExecutorService {
 
-    private final QueueExecutor executor;
 
-    public ManagedQueueExecutorService(QueueExecutor executor) {
-        super(executor);
-        this.executor = executor;
-    }
+    /**
+     * Gets whether this executor is configured to block calls to
+     * {@link #execute(Runnable)} until {@link #getMaxThreads() thread capacity}
+     * or {@link #getQueueSize() queue capacity} is available to handle the
+     * provided task.
+     *
+     * @return {@code true} if this executor support blocking semantics; {@code false} otherwise
+     */
+    boolean isBlocking();
 
-    @Override
-    void internalShutdown() {
-        executor.shutdown();
-    }
+    int getCoreThreads();
 
-    public int getCoreThreads() {
-        return executor.getCoreThreads();
-    }
+    boolean isAllowCoreTimeout();
 
-    // Package protected for subsys write-attribute handlers
-    void setCoreThreads(int coreThreads) {
-        executor.setCoreThreads(coreThreads);
-    }
+    int getMaxThreads();
 
-    public boolean isAllowCoreTimeout() {
-        return executor.isAllowCoreThreadTimeout();
-    }
+    long getKeepAlive();
 
-    void setAllowCoreTimeout(boolean allowCoreTimeout) {
-        executor.setAllowCoreThreadTimeout(allowCoreTimeout);
-    }
+    int getRejectedCount();
 
-    public boolean isBlocking() {
-        return executor.isBlocking();
-    }
+    long getTaskCount();
 
-    void setBlocking(boolean blocking) {
-        executor.setBlocking(blocking);
-    }
+    int getLargestThreadCount();
 
-    public int getMaxThreads() {
-        return executor.getMaxThreads();
-    }
+    int getLargestPoolSize();
 
-    void setMaxThreads(int maxThreads) {
-        executor.setMaxThreads(maxThreads);
-    }
+    int getCurrentThreadCount();
 
-    public long getKeepAlive() {
-        return executor.getKeepAliveTime();
-    }
+    long getCompletedTaskCount();
 
-    void setKeepAlive(TimeSpec keepAlive) {
-        executor.setKeepAliveTime(keepAlive.getDuration(), keepAlive.getUnit());
-    }
+    int getActiveCount();
 
-    public int getCurrentThreadCount() {
-        return executor.getCurrentThreadCount();
-    }
-
-    public int getLargestThreadCount() {
-        return executor.getLargestThreadCount();
-    }
-
-    public int getRejectedCount() {
-        return executor.getRejectedCount();
-    }
-
-    public int getQueueSize() {
-        return executor.getQueueSize();
-    }
-
-    <A> void addShutdownListener(final EventListener<A> shutdownListener, final A attachment) {
-        executor.addShutdownListener(shutdownListener, attachment);
-    }
+    int getQueueSize();
 }

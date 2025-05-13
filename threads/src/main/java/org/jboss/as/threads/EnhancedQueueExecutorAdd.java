@@ -38,7 +38,13 @@ class EnhancedQueueExecutorAdd extends AbstractAddStepHandler {
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
         final EnhancedQueueThreadPoolParameters params = ThreadPoolManagementUtils.parseEnhancedQueueThreadPoolParameters(context, operation, model);
 
-        final EnhancedQueueExecutorService service = new EnhancedQueueExecutorService(allowCoreThreadTimeout, params.getMaxThreads(), params.getCoreThreads(), params.getKeepAliveTime());
+        final EnhancedQueueExecutorService service = new EnhancedQueueExecutorService(
+                allowCoreThreadTimeout,
+                params.getMaxThreads(),
+                params.getCoreThreads(),
+                Integer.MAX_VALUE,
+                params.getKeepAliveTime(),
+                false);
 
         ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), capability, context.getCurrentAddress(),
                 serviceNameBase, params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),

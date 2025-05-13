@@ -39,7 +39,7 @@ public class UnboundedQueueThreadPoolWriteAttributeHandler extends ThreadsWriteA
     protected void applyOperation(final OperationContext context, ModelNode model, String attributeName,
                                   ServiceController<?> service, boolean forRollback) throws OperationFailedException {
 
-        final UnboundedQueueThreadPoolService pool =  (UnboundedQueueThreadPoolService) service.getService();
+        final EnhancedQueueExecutorService pool =  (EnhancedQueueExecutorService) service.getService();
 
         if (PoolAttributeDefinitions.KEEPALIVE_TIME.getName().equals(attributeName)) {
             TimeUnit defaultUnit = pool.getKeepAliveUnit();
