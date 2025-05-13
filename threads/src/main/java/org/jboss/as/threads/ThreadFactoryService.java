@@ -57,7 +57,7 @@ public final class ThreadFactoryService implements Service<ThreadFactory> {
     public synchronized void start(final StartContext context) throws StartException {
         final ThreadGroup threadGroup = threadGroupName == null ? null :
                 THREAD_GROUP_CACHE.computeIfAbsent(threadGroupName, ThreadGroup::new);
-        value = doPrivileged(new PrivilegedAction<ThreadFactory>() {
+        value = doPrivileged(new PrivilegedAction<>() {
             public ThreadFactory run() {
                 return new JBossThreadFactory(threadGroup, Boolean.FALSE, priority, namePattern, null, null);
             }

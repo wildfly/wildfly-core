@@ -19,9 +19,9 @@ import org.jboss.msc.service.ServiceName;
 class EnhancedQueueExecutorWriteAttributeHandler extends ThreadsWriteAttributeOperationHandler {
 
     private final ServiceName serviceNameBase;
-    private final RuntimeCapability capability;
+    private final RuntimeCapability<Void> capability;
 
-    EnhancedQueueExecutorWriteAttributeHandler(final RuntimeCapability capability, ServiceName serviceNameBase) {
+    EnhancedQueueExecutorWriteAttributeHandler(final RuntimeCapability<Void> capability, ServiceName serviceNameBase) {
         super(EnhancedQueueExecutorAdd.ATTRIBUTES);
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;

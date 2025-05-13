@@ -31,6 +31,7 @@ public class UnboundedQueueThreadPoolAdd extends AbstractAddStepHandler {
     private final RuntimeCapability<Void> capability;
     private final boolean allowCoreThreadTimeout;
 
+    @SuppressWarnings("unused")
     public UnboundedQueueThreadPoolAdd(ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase) {
         this(threadFactoryResolver, serviceNameBase, null, false);
     }
@@ -51,7 +52,7 @@ public class UnboundedQueueThreadPoolAdd extends AbstractAddStepHandler {
 
         ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), capability, context.getCurrentAddress(),
                 serviceNameBase, params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),
-                null, null, null, context.getServiceTarget());
+                null, null, null, context.getCapabilityServiceTarget());
     }
 
     ServiceName getServiceNameBase() {

@@ -10,7 +10,6 @@ import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
@@ -31,13 +30,12 @@ public class UnboundedQueueThreadPoolMetricsHandler extends ThreadPoolMetricsHan
         this(null, serviceNameBase);
     }
 
-    public UnboundedQueueThreadPoolMetricsHandler(final RuntimeCapability capability, final ServiceName serviceNameBase) {
+    public UnboundedQueueThreadPoolMetricsHandler(final RuntimeCapability<Void> capability, final ServiceName serviceNameBase) {
         super(METRICS, capability, serviceNameBase);
     }
 
     @Override
-    protected void setResult(OperationContext context, final String attributeName, final Service<?> service)
-            throws OperationFailedException {
+    protected void setResult(OperationContext context, final String attributeName, final Service<?> service) {
         final UnboundedQueueThreadPoolService pool = (UnboundedQueueThreadPoolService) service;
         switch (attributeName) {
             case CommonAttributes.ACTIVE_COUNT:

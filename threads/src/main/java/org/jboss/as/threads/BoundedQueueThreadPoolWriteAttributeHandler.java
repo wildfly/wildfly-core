@@ -22,9 +22,9 @@ import org.jboss.msc.service.ServiceName;
 public class BoundedQueueThreadPoolWriteAttributeHandler extends ThreadsWriteAttributeOperationHandler {
 
     private final ServiceName serviceNameBase;
-    private final RuntimeCapability capability;
+    private final RuntimeCapability<Void> capability;
 
-    public BoundedQueueThreadPoolWriteAttributeHandler(boolean blocking, final RuntimeCapability capability, ServiceName serviceNameBase) {
+    public BoundedQueueThreadPoolWriteAttributeHandler(boolean blocking, final RuntimeCapability<Void> capability, ServiceName serviceNameBase) {
         super(blocking ? BoundedQueueThreadPoolAdd.BLOCKING_ATTRIBUTES : BoundedQueueThreadPoolAdd.NON_BLOCKING_ATTRIBUTES);
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;

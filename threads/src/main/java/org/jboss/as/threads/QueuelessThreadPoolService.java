@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit;
  * @author John E. Bailey
  */
 public class QueuelessThreadPoolService implements Service<ManagedQueuelessExecutorService> {
-    private final InjectedValue<ThreadFactory> threadFactoryValue = new InjectedValue<ThreadFactory>();
-    private final InjectedValue<Executor> handoffExecutorValue = new InjectedValue<Executor>();
+    private final InjectedValue<ThreadFactory> threadFactoryValue = new InjectedValue<>();
+    private final InjectedValue<Executor> handoffExecutorValue = new InjectedValue<>();
     private final boolean blocking;
 
     private ManagedQueuelessExecutorService executor;
