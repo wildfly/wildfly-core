@@ -30,7 +30,7 @@ public class QueuelessThreadPoolMetricsHandler extends ThreadPoolMetricsHandler 
 
     @Override
     protected void setResult(OperationContext context, final String attributeName, final Service<?> service) {
-        final QueuelessThreadPoolService pool = (QueuelessThreadPoolService) service;
+        final EnhancedQueueExecutorService pool = (EnhancedQueueExecutorService) service;
         switch (attributeName) {
             case CommonAttributes.CURRENT_THREAD_COUNT:
                 context.getResult().set(pool.getCurrentThreadCount());

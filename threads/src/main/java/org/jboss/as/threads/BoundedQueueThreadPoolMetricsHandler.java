@@ -32,7 +32,7 @@ public class BoundedQueueThreadPoolMetricsHandler extends ThreadPoolMetricsHandl
 
     @Override
     protected void setResult(OperationContext context, final String attributeName, final Service<?> service) {
-        BoundedQueueThreadPoolService bounded = (BoundedQueueThreadPoolService) service;
+        EnhancedQueueExecutorService bounded = (EnhancedQueueExecutorService) service;
         switch (attributeName) {
             case CommonAttributes.CURRENT_THREAD_COUNT:
                 context.getResult().set(bounded.getCurrentThreadCount());

@@ -137,7 +137,7 @@ class ThreadPoolManagementUtils {
         return parseBaseThreadPoolOperationParameters(context, operation, model, params);
     }
 
-    static QueuelessThreadPoolParameters parseQueuelessThreadPoolParameters(final OperationContext context, final ModelNode operation, final ModelNode model, boolean blocking) throws OperationFailedException {
+    static EnhancedQueueThreadPoolParameters parseQueuelessThreadPoolParameters(final OperationContext context, final ModelNode operation, final ModelNode model, boolean blocking) throws OperationFailedException {
         ThreadPoolParametersImpl params = new ThreadPoolParametersImpl();
         parseBaseThreadPoolOperationParameters(context, operation, model, params);
 
@@ -149,7 +149,7 @@ class ThreadPoolManagementUtils {
         return params;
     }
 
-    static BoundedThreadPoolParameters parseBoundedThreadPoolParameters(final OperationContext context, final ModelNode operation, final ModelNode model, boolean blocking) throws OperationFailedException {
+    static EnhancedQueueThreadPoolParameters parseBoundedThreadPoolParameters(final OperationContext context, final ModelNode operation, final ModelNode model, boolean blocking) throws OperationFailedException {
         ThreadPoolParametersImpl params = new ThreadPoolParametersImpl();
         parseBaseThreadPoolOperationParameters(context, operation, model, params);
 
@@ -204,22 +204,14 @@ class ThreadPoolManagementUtils {
         TimeSpec getKeepAliveTime();
     }
 
-    interface QueuelessThreadPoolParameters extends BaseThreadPoolParameters {
-
+    interface EnhancedQueueThreadPoolParameters extends BaseThreadPoolParameters {
+        int getCoreThreads();
+        boolean isAllowCoreTimeout();
+        int getQueueLength();
         String getHandoffExecutor();
     }
 
-    interface BoundedThreadPoolParameters extends QueuelessThreadPoolParameters {
-        boolean isAllowCoreTimeout();
-        int getCoreThreads();
-        int getQueueLength();
-    }
-
-    interface EnhancedQueueThreadPoolParameters extends BaseThreadPoolParameters {
-        int getCoreThreads();
-    }
-
-    private static class ThreadPoolParametersImpl implements QueuelessThreadPoolParameters, BoundedThreadPoolParameters, EnhancedQueueThreadPoolParameters {
+    private static class ThreadPoolParametersImpl implements EnhancedQueueThreadPoolParameters {
         ModelNode address;
         String name;
         String threadFactory;
