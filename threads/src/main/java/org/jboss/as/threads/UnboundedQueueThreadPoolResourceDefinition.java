@@ -25,7 +25,7 @@ public class UnboundedQueueThreadPoolResourceDefinition extends SimpleResourceDe
 
     private final boolean registerRuntimeOnly;
     public static final RuntimeCapability<Void> CAPABILITY =
-            ThreadsServices.createCapability(UNBOUNDED_QUEUE_THREAD_POOL, ManagedJBossThreadPoolExecutorService.class);
+            ThreadsServices.createCapability(UNBOUNDED_QUEUE_THREAD_POOL, ManagedQueueExecutorService.class);
 
     public static UnboundedQueueThreadPoolResourceDefinition create(boolean registerRuntimeOnly) {
         return create(UNBOUNDED_QUEUE_THREAD_POOL, ThreadsServices.getThreadFactoryResolver(UNBOUNDED_QUEUE_THREAD_POOL),

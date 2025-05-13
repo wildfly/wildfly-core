@@ -4,7 +4,6 @@
  */
 package org.jboss.as.threads;
 
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -36,7 +35,7 @@ public class UnboundedQueueThreadPoolMetricsHandler extends ThreadPoolMetricsHan
 
     @Override
     protected void setResult(OperationContext context, final String attributeName, final Service<?> service) {
-        final UnboundedQueueThreadPoolService pool = (UnboundedQueueThreadPoolService) service;
+        final EnhancedQueueExecutorService pool = (EnhancedQueueExecutorService) service;
         switch (attributeName) {
             case CommonAttributes.ACTIVE_COUNT:
                 context.getResult().set(pool.getActiveCount());
