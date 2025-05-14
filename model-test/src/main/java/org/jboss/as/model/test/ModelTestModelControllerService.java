@@ -237,6 +237,60 @@ public abstract class ModelTestModelControllerService extends AbstractController
 
 
     /**
+     * This is the constructor to use for WildFly 35.0.0 core model tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, final Stability stability, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                              final DelegatingResourceDefinition rootResourceDefinition, final ControlledProcessState processState,
+                                              final ExpressionResolver expressionResolver, final CapabilityRegistry capabilityRegistry, final Controller35x version) {
+        super(null,
+                null,
+                processType,
+                stability,
+                runningModeControl,
+                persister,
+                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition,
+                null,
+                expressionResolver,
+                AuditLogger.NO_OP_LOGGER,
+                new DelegatingConfigurableAuthorizer(),
+                new ManagementSecurityIdentitySupplier(),
+                capabilityRegistry,
+                null);
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
+
+    /**
+     * This is the constructor to use for WildFly 35.0.0 subsystem tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, Stability stability, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                              final ResourceDefinition resourceDefinition, final ExpressionResolver expressionResolver, final ControlledProcessState processState,
+                                              final CapabilityRegistry capabilityRegistry, final Controller35x version) {
+        super(null,
+                null,
+                processType,
+                stability,
+                runningModeControl,
+                persister,
+                processState == null ? new ControlledProcessState(true) : processState,
+                resourceDefinition, null,
+                expressionResolver != null ? expressionResolver : ExpressionResolver.TEST_RESOLVER,
+                AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(),
+                new ManagementSecurityIdentitySupplier(),
+                capabilityRegistry,
+                null);
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
+    /**
      * This is the constructor to use for current core model tests
      */
     protected ModelTestModelControllerService(final ProcessType processType, final Stability stability, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
@@ -316,7 +370,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
         GlobalOperationHandlers.registerGlobalOperations(rootRegistration, ProcessType.STANDALONE_SERVER);
 
         rootRegistration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
-        //we don't register notifications as eap 6.2 and 6.3 dont support it, this is done in each legacy controller separatly
+        //we don't register notifications as eap 6.2 and 6.3 don't support it, this is done in each legacy controller separately
     }
 
     protected void initExtraModel(ManagementModel managementModel) {
@@ -539,6 +593,12 @@ public abstract class ModelTestModelControllerService extends AbstractController
     public static class Controller31x {
         public static Controller31x INSTANCE = new Controller31x();
         private Controller31x() {
+        }
+    }
+
+    public static class Controller35x {
+        public static Controller35x INSTANCE = new Controller35x();
+        private Controller35x() {
         }
     }
 }
