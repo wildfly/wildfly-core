@@ -149,7 +149,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
          * @param descriptor a service descriptor
          * @return a reference to this builder
          */
-        default UnaryBuilder<T, V> provides(NullaryServiceDescriptor<T> descriptor) {
+        default UnaryBuilder<T, V> provides(NullaryServiceDescriptor<V> descriptor) {
             return this.provides(ServiceName.parse(descriptor.getName()));
         }
 
@@ -159,7 +159,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
          * @param name a dynamic segment
          * @return a reference to this builder
          */
-        default UnaryBuilder<T, V> provides(UnaryServiceDescriptor<T> descriptor, String name) {
+        default UnaryBuilder<T, V> provides(UnaryServiceDescriptor<V> descriptor, String name) {
             Map.Entry<String, String[]> resolved = descriptor.resolve(name);
             return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
         }
@@ -171,7 +171,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
          * @param child the second dynamic segment
          * @return a reference to this builder
          */
-        default UnaryBuilder<T, V> provides(BinaryServiceDescriptor<T> descriptor, String parent, String child) {
+        default UnaryBuilder<T, V> provides(BinaryServiceDescriptor<V> descriptor, String parent, String child) {
             Map.Entry<String, String[]> resolved = descriptor.resolve(parent, child);
             return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
         }
@@ -184,7 +184,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
          * @param child the third dynamic segment
          * @return a reference to this builder
          */
-        default UnaryBuilder<T, V> provides(TernaryServiceDescriptor<T> descriptor, String grandparent, String parent, String child) {
+        default UnaryBuilder<T, V> provides(TernaryServiceDescriptor<V> descriptor, String grandparent, String parent, String child) {
             Map.Entry<String, String[]> resolved = descriptor.resolve(grandparent, parent, child);
             return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
         }
@@ -198,7 +198,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
          * @param child the fourth dynamic segment
          * @return a reference to this builder
          */
-        default UnaryBuilder<T, V> provides(QuaternaryServiceDescriptor<T> descriptor, String greatGrandparent, String grandparent ,String parent, String child) {
+        default UnaryBuilder<T, V> provides(QuaternaryServiceDescriptor<V> descriptor, String greatGrandparent, String grandparent ,String parent, String child) {
             Map.Entry<String, String[]> resolved = descriptor.resolve(greatGrandparent, grandparent, parent, child);
             return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
         }
