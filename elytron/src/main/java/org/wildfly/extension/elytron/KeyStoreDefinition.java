@@ -44,6 +44,7 @@ import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.LongRangeValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -115,8 +116,16 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
             .setValidator(new LongRangeValidator(0, Long.MAX_VALUE, true, true))
             .setRestartAllServices()
             .setStability(Stability.COMMUNITY)
+            .setMeasurementUnit(MeasurementUnit.MINUTES)
             .build();
 
+    static final SimpleAttributeDefinition EXPIRATION_WATERMARK = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.EXPIRATION_WATERMARK, ModelType.LONG, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(KeyStoreService.DEFAULT_EXPIRATION_WATERMARK))
+            .setValidator(new LongRangeValidator(0, Long.MAX_VALUE, true, true))
+            .setStability(Stability.COMMUNITY)
+            .setMeasurementUnit(MeasurementUnit.MINUTES)
+            .build();
     // Resource Resolver
 
     private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.KEY_STORE);
@@ -145,7 +154,7 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
         .setRuntimeOnly()
         .build();
 
-    private static final AttributeDefinition[] CONFIG_ATTRIBUTES = new AttributeDefinition[] { TYPE, PROVIDER_NAME, PROVIDERS, CREDENTIAL_REFERENCE, PATH, RELATIVE_TO, REQUIRED, ALIAS_FILTER , EXPIRATION_CHECK_DELAY};
+    private static final AttributeDefinition[] CONFIG_ATTRIBUTES = new AttributeDefinition[] { TYPE, PROVIDER_NAME, PROVIDERS, CREDENTIAL_REFERENCE, PATH, RELATIVE_TO, REQUIRED, ALIAS_FILTER , EXPIRATION_CHECK_DELAY, EXPIRATION_WATERMARK};
 
     private static final KeyStoreAddHandler ADD = new KeyStoreAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, KEY_STORE_RUNTIME_CAPABILITY);
@@ -247,6 +256,7 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
             final String type = TYPE.resolveModelAttribute(context, model).asStringOrNull();
             final String path = PATH.resolveModelAttribute(context, model).asStringOrNull();
             final long expirationCheckDelay = EXPIRATION_CHECK_DELAY.resolveModelAttribute(context, model).asLong();
+            final long expirationWatermark = EXPIRATION_WATERMARK.resolveModelAttribute(context, model).asLong();
             String relativeTo = null;
             boolean required;
             final String aliasFilter = ALIAS_FILTER.resolveModelAttribute(context, model).asStringOrNull();
@@ -256,12 +266,12 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
             if (path != null) {
                 relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
                 required = REQUIRED.resolveModelAttribute(context, model).asBoolean();
-                keyStoreService = KeyStoreService.createFileBasedKeyStoreService(keyStoreName, providerName, type, relativeTo, path, required, aliasFilter, expirationCheckDelay);
+                keyStoreService = KeyStoreService.createFileBasedKeyStoreService(keyStoreName, providerName, type, relativeTo, path, required, aliasFilter, expirationCheckDelay, expirationWatermark);
             } else {
                 if (type == null) {
                     throw ROOT_LOGGER.filelessKeyStoreMissingType();
                 }
-                keyStoreService = KeyStoreService.createFileLessKeyStoreService(keyStoreName, providerName, type, aliasFilter, expirationCheckDelay);
+                keyStoreService = KeyStoreService.createFileLessKeyStoreService(keyStoreName, providerName, type, aliasFilter, expirationCheckDelay, expirationWatermark);
             }
 
             final ServiceTarget serviceTarget = context.getServiceTarget();

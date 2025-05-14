@@ -75,7 +75,9 @@ class KeyStoreService implements ModifiableKeyStoreService {
     private static final int HEX_DELIMITER = ':';
     private static final String COMMON_NAME_PREFIX = "CN=";
     //default delay between certificate health checks: 12h
-    static final long DEFAULT_DELAY = 12*60*60*1000;
+    static final long DEFAULT_DELAY = 12*60;
+    //default threshold of warning: 7 days
+    static final long DEFAULT_EXPIRATION_WATERMARK = 7*24*60;
 
     private final String keyStoreName;
     private final String provider;
@@ -84,9 +86,11 @@ class KeyStoreService implements ModifiableKeyStoreService {
     private final String relativeTo;
     private final boolean required;
     private final String aliasFilter;
-    //delay in ms between service start and periodical check of certificate health
+    //delay in minutes between service start and periodical check of certificate health
     //if set to '0', this will mean one-time off warning, as prior to RFE
     private long expirationCheckDelay = DEFAULT_DELAY;
+    //minutes value between TTL of certificate and its expiration date, if TTL-expiration<water_mark, it will mean warning is warranted
+    private long expirationWaterMark = DEFAULT_EXPIRATION_WATERMARK;
     private ScheduledExecutorService scheduledExecutorService;
 
     private final InjectedValue<PathManager> pathManager = new InjectedValue<>();
@@ -103,7 +107,7 @@ class KeyStoreService implements ModifiableKeyStoreService {
     private volatile ScheduledFuture<?> certificateTaskFuture = null;
 
     private KeyStoreService(final String keyStoreName, final String provider, final String type, final String relativeTo,
-            final String path, final boolean required, final String aliasFilter, final long expirationCheckDelay) {
+            final String path, final boolean required, final String aliasFilter, final long expirationCheckDelay, final long expirationWaterMark) {
         this.keyStoreName = keyStoreName == null ? "N/A" : keyStoreName;
         this.provider = provider;
         this.type = type;
@@ -112,16 +116,17 @@ class KeyStoreService implements ModifiableKeyStoreService {
         this.required = required;
         this.aliasFilter = aliasFilter;
         this.expirationCheckDelay = expirationCheckDelay;
+        this.expirationWaterMark = expirationWaterMark;
     }
 
     static KeyStoreService createFileLessKeyStoreService(final String keyStoreName, final String provider, final String type,
-            final String aliasFilter, final long expirationCheckDelay) {
-        return new KeyStoreService(keyStoreName, provider, type, null, null, false, aliasFilter, expirationCheckDelay);
+            final String aliasFilter, final long expirationCheckDelay, final long expirationWaterMark) {
+        return new KeyStoreService(keyStoreName, provider, type, null, null, false, aliasFilter, expirationCheckDelay, expirationWaterMark);
     }
 
     static KeyStoreService createFileBasedKeyStoreService(final String keyStoreName, final String provider, final String type,
-            final String relativeTo, final String path, final boolean required, final String aliasFilter, final long expirationCheckDelay) {
-        return new KeyStoreService(keyStoreName, provider, type, relativeTo, path, required, aliasFilter, expirationCheckDelay);
+            final String relativeTo, final String path, final boolean required, final String aliasFilter, final long expirationCheckDelay, final long expirationWaterMark) {
+        return new KeyStoreService(keyStoreName, provider, type, relativeTo, path, required, aliasFilter, expirationCheckDelay, expirationWaterMark);
     }
 
     /*
@@ -235,7 +240,7 @@ class KeyStoreService implements ModifiableKeyStoreService {
                 final Certificate certificate = keyStore.getCertificate(alias);
                 if (certificate != null && certificate instanceof X509Certificate) {
                     final X509Certificate xCertificate = (X509Certificate) certificate;
-                    final CertificateValidity certificateValidity = CertificateValidity.getValidity(xCertificate.getNotBefore(), xCertificate.getNotAfter());
+                    final CertificateValidity certificateValidity = CertificateValidity.getValidity(xCertificate.getNotBefore(), xCertificate.getNotAfter(), this.expirationWaterMark);
                     switch(certificateValidity) {
                         case ABOUT_TO_EXPIRE:
                             ROOT_LOGGER.certificateAboutToExpire(keyStoreName, alias);
