@@ -108,11 +108,11 @@ class CertificateChainAttributeDefinitions {
                 .build();
     }
 
-    static void writeCertificate(final ModelNode certificateModel, final Certificate certificate, final Stability stability) throws CertificateEncodingException, NoSuchAlgorithmException {
-        writeCertificate(certificateModel, certificate, true, stability);
+    static void writeCertificate(final ModelNode certificateModel, final Certificate certificate, final Stability stability, final long expirationWarningWaterMark) throws CertificateEncodingException, NoSuchAlgorithmException {
+        writeCertificate(certificateModel, certificate, true, stability, expirationWarningWaterMark);
     }
 
-    static void writeCertificate(final ModelNode certificateModel, final Certificate certificate, final boolean verbose, final Stability stability) throws CertificateEncodingException, NoSuchAlgorithmException {
+    static void writeCertificate(final ModelNode certificateModel, final Certificate certificate, final boolean verbose, final Stability stability, final long expirationWarningWaterMark) throws CertificateEncodingException, NoSuchAlgorithmException {
        certificateModel.get(ElytronDescriptionConstants.TYPE).set(certificate.getType());
 
         PublicKey publicKey = certificate.getPublicKey();
@@ -130,11 +130,11 @@ class CertificateChainAttributeDefinitions {
         }
 
         if (certificate instanceof X509Certificate) {
-            writeX509Certificate(certificateModel, (X509Certificate) certificate, stability);
+            writeX509Certificate(certificateModel, (X509Certificate) certificate, stability, expirationWarningWaterMark);
         }
     }
 
-    private static void writeX509Certificate(final ModelNode certificateModel, final X509Certificate certificate, final Stability stability) throws CertificateEncodingException, NoSuchAlgorithmException {
+    private static void writeX509Certificate(final ModelNode certificateModel, final X509Certificate certificate, final Stability stability, final long expirationWarningWaterMark) throws CertificateEncodingException, NoSuchAlgorithmException {
         SimpleDateFormat sdf = new SimpleDateFormat(ISO_8601_FORMAT);
 
         certificateModel.get(ElytronDescriptionConstants.SUBJECT).set(certificate.getSubjectX500Principal().getName());
@@ -147,7 +147,7 @@ class CertificateChainAttributeDefinitions {
         certificateModel.get(ElytronDescriptionConstants.VERSION).set("v" + certificate.getVersion());
         //artificial parameters here, after concrete?
         if(stability.enables(Stability.COMMUNITY)) {
-            certificateModel.get(ElytronDescriptionConstants.VALIDITY).set(CertificateValidity.getValidity(certificate.getNotBefore(), certificate.getNotAfter()).toString());
+            certificateModel.get(ElytronDescriptionConstants.VALIDITY).set(CertificateValidity.getValidity(certificate.getNotBefore(), certificate.getNotAfter(), expirationWarningWaterMark).toString());
         }
     }
 
@@ -159,8 +159,8 @@ class CertificateChainAttributeDefinitions {
      * @throws CertificateEncodingException
      * @throws NoSuchAlgorithmException
      */
-    static void writeCertificates(final ModelNode result, final Certificate[] certificates) throws CertificateEncodingException, NoSuchAlgorithmException {
-        writeCertificates(result, certificates, true, null);
+    static void writeCertificates(final ModelNode result, final Certificate[] certificates, final Stability stability) throws CertificateEncodingException, NoSuchAlgorithmException {
+        writeCertificates(result, certificates, true, stability, KeyStoreDefinition.EXPIRATION_WATERMARK.getDefaultValue().asLong());
     }
 
 
@@ -170,11 +170,12 @@ class CertificateChainAttributeDefinitions {
      * @param result the response to populate.
      * @param certificates the certificates to add to the response.
      * @param stability of operation context. Can be null in case its not part of model operations.
+     * @param expiratioWatermark threshold for expiration warning.
      * @throws CertificateEncodingException
      * @throws NoSuchAlgorithmException
      */
-    static void writeCertificates(final ModelNode result, final Certificate[] certificates, final Stability stability) throws CertificateEncodingException, NoSuchAlgorithmException {
-        writeCertificates(result, certificates, true, stability);
+    static void writeCertificates(final ModelNode result, final Certificate[] certificates, final Stability stability, final long expiratioWatermark) throws CertificateEncodingException, NoSuchAlgorithmException {
+        writeCertificates(result, certificates, true, stability, expiratioWatermark);
     }
 
     /**
@@ -184,14 +185,15 @@ class CertificateChainAttributeDefinitions {
      * @param certificates the certificates to add to the response.
      * @param verbose mode of output.
      * @param stability of operation context. Can be null in case its not part of model operations.
+     * @param expiratioWatermark threshold for expiration warning.
      * @throws CertificateEncodingException
      * @throws NoSuchAlgorithmException
      */
-    static void writeCertificates(final ModelNode result, final Certificate[] certificates, final boolean verbose, final Stability stability) throws CertificateEncodingException, NoSuchAlgorithmException {
+    static void writeCertificates(final ModelNode result, final Certificate[] certificates, final boolean verbose, final Stability stability, final long expirationWarningWaterMark) throws CertificateEncodingException, NoSuchAlgorithmException {
         if (certificates != null) {
             for (Certificate current : certificates) {
                 ModelNode certificate = new ModelNode();
-                writeCertificate(certificate, current, verbose, stability);
+                writeCertificate(certificate, current, verbose, stability, expirationWarningWaterMark);
                 result.add(certificate);
             }
         }

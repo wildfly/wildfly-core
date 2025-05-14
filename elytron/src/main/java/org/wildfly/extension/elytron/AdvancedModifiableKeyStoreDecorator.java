@@ -52,6 +52,7 @@ import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -430,7 +431,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
             File resolvedPath = ((KeyStoreService) keyStoreService).getResolvedPath(pathResolver, path, relativeTo);
             boolean trustCacerts = TRUST_CACERTS.resolveModelAttribute(context, operation).asBoolean();
             boolean validate = VALIDATE.resolveModelAttribute(context, operation).asBoolean();
-
+            final ModelNode expirationWatermarkModelAttribute = KeyStoreDefinition.EXPIRATION_WATERMARK.resolveModelAttribute(context, context.readResource(PathAddress.EMPTY_ADDRESS).getModel());
             try {
                 final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
                 if (keyStore.entryInstanceOf(alias, KeyStore.PrivateKeyEntry.class)) {
@@ -480,7 +481,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                             final X509Certificate lastCertificate = certificateChain[certificateChain.length - 1];
                             final X509Certificate certificateOrIssuer = getCertificateOrIssuerFromKeyStores(lastCertificate, keyStore, getCacertsKeyStore(trustCacerts));
                             if (certificateOrIssuer == null) {
-                                writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), lastCertificate, context.getStability());
+                                writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), lastCertificate, context.getStability(), expirationWatermarkModelAttribute.asLong());
                                 throw ROOT_LOGGER.topMostCertificateFromCertificateReplyNotTrusted();
                             }
                             if (! lastCertificate.equals(certificateOrIssuer)) {
@@ -514,14 +515,14 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                                     throw ROOT_LOGGER.trustedCertificateAlreadyInCacertsKeyStore(trustedCertificateAlias);
                                 }
                             }
-                            writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), trustedCertificate, true, context.getStability());
+                            writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), trustedCertificate, true, context.getStability(), expirationWatermarkModelAttribute.asLong());
                             throw ROOT_LOGGER.unableToDetermineIfCertificateIsTrusted();
                         } else {
                             try {
                                 final HashMap<Principal, HashSet<X509Certificate>> certificatesMap = getKeyStoreCertificates(keyStore, cacertsKeyStore);
                                 X500.createX509CertificateChain(trustedCertificate, certificatesMap);
                             } catch (IllegalArgumentException e) {
-                                writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), trustedCertificate, true, context.getStability());
+                                writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), trustedCertificate, true, context.getStability(),  expirationWatermarkModelAttribute.asLong());
                                 throw ROOT_LOGGER.unableToDetermineIfCertificateIsTrusted();
                             }
                         }

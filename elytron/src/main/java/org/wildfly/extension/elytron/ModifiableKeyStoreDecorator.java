@@ -108,7 +108,8 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
                     alias = aliases.nextElement();
                     if(recursive) {
                         aliasNode = result.get(alias);
-                        ReadAliasHandler.readAlias(keyStore, alias, verbose, aliasNode, context.getStability());
+                        ModelNode expirationWatermarkModelAttribute = KeyStoreDefinition.EXPIRATION_WATERMARK.resolveModelAttribute(context, context.readResource(PathAddress.EMPTY_ADDRESS).getModel());
+                        ReadAliasHandler.readAlias(keyStore, alias, verbose, aliasNode, context.getStability(), expirationWatermarkModelAttribute.asLong());
                     } else {
                         result.add(alias);
                     }
@@ -147,7 +148,8 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
 
             try {
                 ModelNode result = context.getResult();
-                readAlias(keyStore, alias, verbose, result, context.getStability());
+                ModelNode expirationWatermarkModelAttribute = KeyStoreDefinition.EXPIRATION_WATERMARK.resolveModelAttribute(context, context.readResource(PathAddress.EMPTY_ADDRESS).getModel());
+                readAlias(keyStore, alias, verbose, result, context.getStability(), expirationWatermarkModelAttribute.asLong());
             } catch (KeyStoreException | NoSuchAlgorithmException | CertificateEncodingException e) {
                 throw new OperationFailedException(e);
             }
@@ -168,7 +170,7 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
         }
 
         private static void readAlias(final KeyStore keyStore, final String alias, final boolean verbose,
-                final ModelNode result, final Stability stability) throws KeyStoreException, NoSuchAlgorithmException, CertificateEncodingException {
+                final ModelNode result, final Stability stability, long expirationWarningWaterMark) throws KeyStoreException, NoSuchAlgorithmException, CertificateEncodingException {
             if (!keyStore.containsAlias(alias)) {
                 ROOT_LOGGER.tracef("Alias [%s] does not exists in KeyStore");
                 return;
@@ -187,10 +189,10 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
             if (chain == null) {
                 Certificate cert = keyStore.getCertificate(alias);
                 if (cert != null) {
-                    writeCertificate(result.get(ElytronDescriptionConstants.CERTIFICATE), cert, verbose, stability);
+                    writeCertificate(result.get(ElytronDescriptionConstants.CERTIFICATE), cert, verbose, stability, expirationWarningWaterMark);
                 }
             } else {
-                writeCertificates(result.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN), chain, verbose, stability);
+                writeCertificates(result.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN), chain, verbose, stability, expirationWarningWaterMark);
             }
         }
     }
