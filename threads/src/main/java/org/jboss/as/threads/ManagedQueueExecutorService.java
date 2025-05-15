@@ -5,113 +5,47 @@
 package org.jboss.as.threads;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import org.jboss.threads.BlockingExecutor;
-import org.jboss.threads.EventListener;
-import org.jboss.threads.JBossExecutors;
-import org.jboss.threads.QueueExecutor;
 
 /**
+ * {@link ExecutorService} that provides hooks for integration
+ * with a WildFly management resource.
  *
  * @author Alexey Loubyansky
  */
-public class ManagedQueueExecutorService extends ManagedExecutorService implements BlockingExecutor {
+public interface ManagedQueueExecutorService extends ManagedExecutorService {
 
-    private final QueueExecutor executor;
 
-    public ManagedQueueExecutorService(QueueExecutor executor) {
-        super(executor);
-        this.executor = executor;
-    }
+    /**
+     * Gets whether this executor is configured to block calls to
+     * {@link #execute(Runnable)} until {@link #getMaxThreads() thread capacity}
+     * or {@link #getQueueSize() queue capacity} is available to handle the
+     * provided task.
+     *
+     * @return {@code true} if this executor support blocking semantics; {@code false} otherwise
+     */
+    boolean isBlocking();
 
-    @Override
-    protected ExecutorService protectExecutor(ExecutorService executor) {
-        return JBossExecutors.protectedBlockingExecutorService((BlockingExecutor) executor);
-    }
+    int getCoreThreads();
 
-    @Override
-    void internalShutdown() {
-        executor.shutdown();
-    }
+    boolean isAllowCoreTimeout();
 
-    public int getCoreThreads() {
-        return executor.getCoreThreads();
-    }
+    int getMaxThreads();
 
-    // Package protected for subsys write-attribute handlers
-    void setCoreThreads(int coreThreads) {
-        executor.setCoreThreads(coreThreads);
-    }
+    long getKeepAlive();
 
-    public boolean isAllowCoreTimeout() {
-        return executor.isAllowCoreThreadTimeout();
-    }
+    int getRejectedCount();
 
-    void setAllowCoreTimeout(boolean allowCoreTimeout) {
-        executor.setAllowCoreThreadTimeout(allowCoreTimeout);
-    }
+    long getTaskCount();
 
-    public boolean isBlocking() {
-        return executor.isBlocking();
-    }
+    int getLargestThreadCount();
 
-    void setBlocking(boolean blocking) {
-        executor.setBlocking(blocking);
-    }
+    int getLargestPoolSize();
 
-    public int getMaxThreads() {
-        return executor.getMaxThreads();
-    }
+    int getCurrentThreadCount();
 
-    void setMaxThreads(int maxThreads) {
-        executor.setMaxThreads(maxThreads);
-    }
+    long getCompletedTaskCount();
 
-    public long getKeepAlive() {
-        return executor.getKeepAliveTime();
-    }
+    int getActiveCount();
 
-    void setKeepAlive(TimeSpec keepAlive) {
-        executor.setKeepAliveTime(keepAlive.getDuration(), keepAlive.getUnit());
-    }
-
-    public int getCurrentThreadCount() {
-        return executor.getCurrentThreadCount();
-    }
-
-    public int getLargestThreadCount() {
-        return executor.getLargestThreadCount();
-    }
-
-    public int getRejectedCount() {
-        return executor.getRejectedCount();
-    }
-
-    public int getQueueSize() {
-        return executor.getQueueSize();
-    }
-
-    <A> void addShutdownListener(final EventListener<A> shutdownListener, final A attachment) {
-        executor.addShutdownListener(shutdownListener, attachment);
-    }
-
-    @Override
-    public void executeBlocking(Runnable task)
-            throws RejectedExecutionException, InterruptedException {
-        executor.executeBlocking(task);
-    }
-
-    @Override
-    public void executeBlocking(Runnable task, long timeout, TimeUnit unit)
-            throws RejectedExecutionException, InterruptedException {
-        executor.executeBlocking(task, timeout, unit);
-    }
-
-    @Override
-    public void executeNonBlocking(Runnable task)
-            throws RejectedExecutionException {
-        executor.executeNonBlocking(task);
-    }
+    int getQueueSize();
 }

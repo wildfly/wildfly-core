@@ -10,7 +10,6 @@ import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
@@ -25,18 +24,13 @@ public class QueuelessThreadPoolMetricsHandler extends ThreadPoolMetricsHandler 
     public static final List<AttributeDefinition> METRICS = Arrays.asList(PoolAttributeDefinitions.CURRENT_THREAD_COUNT, PoolAttributeDefinitions.LARGEST_THREAD_COUNT,
             PoolAttributeDefinitions.REJECTED_COUNT,PoolAttributeDefinitions.QUEUE_SIZE);
 
-    public QueuelessThreadPoolMetricsHandler(final ServiceName serviceBaseName) {
-        this(null, serviceBaseName);
-    }
-
-    public QueuelessThreadPoolMetricsHandler(final RuntimeCapability capability, final ServiceName serviceBaseName) {
+    public QueuelessThreadPoolMetricsHandler(final RuntimeCapability<Void> capability, final ServiceName serviceBaseName) {
         super(METRICS, capability, serviceBaseName);
     }
 
     @Override
-    protected void setResult(OperationContext context, final String attributeName, final Service<?> service)
-            throws OperationFailedException {
-        final QueuelessThreadPoolService pool = (QueuelessThreadPoolService) service;
+    protected void setResult(OperationContext context, final String attributeName, final Service<?> service) {
+        final EnhancedQueueExecutorService pool = (EnhancedQueueExecutorService) service;
         switch (attributeName) {
             case CommonAttributes.CURRENT_THREAD_COUNT:
                 context.getResult().set(pool.getCurrentThreadCount());
