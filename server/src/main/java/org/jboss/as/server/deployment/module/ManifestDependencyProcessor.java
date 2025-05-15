@@ -84,7 +84,7 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
                 }
                 final String[] dependencyParts = trimmed.split(" ");
 
-                final String dependencyId = ModuleIdentifierUtil.canonicalModuleIdentifier(dependencyParts[0]);
+                final String dependencyId = ModuleIdentifierUtil.parseCanonicalModuleIdentifier(dependencyParts[0]);
                 final boolean export = containsParam(dependencyParts, EXPORT_PARAM);
                 final boolean optional = containsParam(dependencyParts, OPTIONAL_PARAM);
                 final boolean services = containsParam(dependencyParts, SERVICES_PARAM);
