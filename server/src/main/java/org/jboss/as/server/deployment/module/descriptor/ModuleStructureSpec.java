@@ -15,7 +15,6 @@ import org.jboss.as.server.deployment.module.FilterSpecification;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.modules.DependencySpec;
-import org.jboss.modules.ModuleIdentifier;
 
 /**
  * @author Stuart Douglas
@@ -27,7 +26,7 @@ class ModuleStructureSpec {
     private final List<DependencySpec> systemDependencies = new ArrayList<>();
     private final List<ResourceRoot> resourceRoots = new ArrayList<>();
     private final List<FilterSpecification> exportFilters = new ArrayList<>();
-    private final List<ModuleIdentifier> exclusions = new ArrayList<>();
+    private final List<String> exclusions = new ArrayList<>();
     private final List<String> classTransformers = new ArrayList<>();
     private final List<String> aliases = new ArrayList<>();
     private final List<String> annotationModules = new ArrayList<>();
@@ -80,30 +79,9 @@ class ModuleStructureSpec {
      * Adds an alias to the module structure spec.
      *
      * @param dependency the alias identifier
-     * @deprecated use {@link #addAlias(String)} instead
-     */
-    @Deprecated(forRemoval = true, since = "28.0.0")
-    public void addAlias(final ModuleIdentifier dependency) {
-        aliases.add(dependency.toString());
-    }
-
-    /**
-     * Adds an alias to the module structure spec.
-     *
-     * @param dependency the alias identifier
      */
     public void addAlias(final String dependency) {
         aliases.add(dependency);
-    }
-
-    /**
-     * Returns the aliases of this module spec.
-     * @return an unmodifiable list with the aliases of this module spec
-     * @deprecated use {@link #getAliasesList()} instead
-     */
-    @Deprecated(forRemoval = true, since = "28.0.0")
-    public List<ModuleIdentifier> getAliases() {
-        return aliases.stream().map(ModuleIdentifier::fromString).collect(Collectors.toUnmodifiableList());
     }
 
     /**
@@ -123,25 +101,15 @@ class ModuleStructureSpec {
     }
 
     /**
-     * Returns list of exclusions.
-     * @return the exclusions
-     * @deprecated use {@link #getExclusionsList()} instead
-     */
-    @Deprecated(forRemoval = true, since = "28.0.0")
-    public List<ModuleIdentifier> getExclusions() {
-        return exclusions;
-    }
-
-    /**
      * Returns the exclusions of this module spec. Use {@link #addExclusion(String)} to add new exclusions.
      * @return an unmodifiable list with the exclusions of this module spec.
      */
     public List<String> getExclusionsList() {
-        return exclusions.stream().map(ModuleIdentifier::toString).collect(Collectors.toUnmodifiableList());
+        return exclusions.stream().collect(Collectors.toUnmodifiableList());
     }
 
     public void addExclusion(String identifier) {
-        this.exclusions.add(ModuleIdentifier.fromString(identifier));
+        this.exclusions.add(identifier);
     }
 
     public List<FilterSpecification> getExportFilters() {

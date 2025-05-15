@@ -30,7 +30,6 @@ import org.jboss.as.server.moduleservice.ExternalModule;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.jandex.Index;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.vfs.VirtualFile;
@@ -236,14 +235,6 @@ public final class Attachments {
     //
     // CONFIGURE
     //
-    /**
-     * The module identifier.
-     *
-     * @deprecated use {@link #MODULE_NAME}
-     */
-    @Deprecated(forRemoval = true)
-    public static final AttachmentKey<ModuleIdentifier> MODULE_IDENTIFIER = AttachmentKey.create(ModuleIdentifier.class);
-
     /**
      * The canonical name of the module.
      */

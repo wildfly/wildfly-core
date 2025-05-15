@@ -17,7 +17,6 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.security.PermissionFactory;
 import org.wildfly.extension.security.manager.DeferredPermissionFactory;
@@ -30,16 +29,6 @@ import org.wildfly.extension.security.manager.logging.SecurityManagerLogger;
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
 public class PermissionsParser {
-
-    // TODO remove this as soon as the full WF testsuite use of it is updated to use the string variant
-    /**
-     * @deprecated use {@link #parse(XMLStreamReader, ModuleLoader, String)}
-     */
-    @Deprecated(forRemoval = true)
-    public static List<PermissionFactory> parse(final XMLStreamReader reader, final ModuleLoader loader, final ModuleIdentifier identifier)
-            throws XMLStreamException {
-        return parse(reader,loader, identifier.toString());
-    }
 
     /**
      * Parse the contents exposed by a reader into a list of {@link PermissionFactory} instances.

@@ -9,7 +9,6 @@ import java.util.function.Consumer;
 
 import org.jboss.as.server.Services;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
@@ -49,18 +48,8 @@ public class ExternalModuleService implements Service<ExternalModuleService>, Ex
     }
 
     @Override
-    public ModuleIdentifier addExternalModule(String path, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget) {
-        return ModuleIdentifier.fromString(addExternalModuleAsString(path, serviceRegistry, serviceTarget));
-    }
-
-    @Override
     public String addExternalModuleAsString(String path, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget) {
         return addExternalModuleAsString(path, path, serviceRegistry, serviceTarget);
-    }
-
-    @Override
-    public ModuleIdentifier addExternalModule(String moduleName, String path, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget) {
-        return ModuleIdentifier.fromString(addExternalModuleAsString(moduleName, path, serviceRegistry, serviceTarget));
     }
 
     @Override
