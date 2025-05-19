@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import jakarta.inject.Inject;
@@ -87,7 +88,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
                     // Wait until deployed ...
                     long timeout = System.currentTimeMillis() + TIMEOUT;
                     while (!(exists(client, DEPLOYMENT_ONE) && exists(client, DEPLOYMENT_TWO)) && System.currentTimeMillis() < timeout) {
-                        Thread.sleep(100);
+                        TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(2));
                     }
                     Assert.assertTrue(exists(client, DEPLOYMENT_ONE));
                     Assert.assertEquals("OK", deploymentState(client, DEPLOYMENT_ONE));
@@ -109,7 +110,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
                     // Wait until started ...
                     timeout = System.currentTimeMillis() + TIMEOUT;
                     while (!isRunning(client) && System.currentTimeMillis() < timeout) {
-                        Thread.sleep(10);
+                        TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(2));
                     }
 
                     Assert.assertTrue(Files.exists(oneDeployed));
@@ -120,7 +121,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
 
                     timeout = System.currentTimeMillis() + TIMEOUT;
                     while (exists(client, DEPLOYMENT_TWO) && System.currentTimeMillis() < timeout) {
-                        Thread.sleep(10);
+                        TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(2));
                     }
                     Assert.assertFalse("Deployment two should exist at " + TIME_FORMATTER.format(LocalDateTime.now()), exists(client, DEPLOYMENT_TWO));
                     ModelNode disableScanner = Util.getWriteAttributeOperation(PathAddress.parseCLIStyleAddress("/subsystem=deployment-scanner/scanner=testScanner"), "scan-interval", 300000);
@@ -136,7 +137,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
                     timeout = System.currentTimeMillis() + TIMEOUT;
 
                     while (Files.exists(oneDeployed) && System.currentTimeMillis() < timeout) {
-                        Thread.sleep(10);
+                        TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(2));
                     }
                     Assert.assertFalse(Files.exists(oneDeployed));
                 } finally {
@@ -331,7 +332,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
     private void waitFor(String message, ExceptionWrappingSupplier<Boolean> condition) throws Exception {
         long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
         while (!condition.get() && System.currentTimeMillis() < timeout) {
-            Thread.sleep(100);
+            TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(2));
         }
         Assert.assertTrue(message, condition.get());
     }
