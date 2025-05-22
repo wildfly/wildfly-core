@@ -21,8 +21,8 @@ import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.OpenListener;
 import org.jboss.remoting3.Registration;
+import org.jboss.threads.EnhancedQueueExecutor;
 import org.jboss.threads.JBossThreadFactory;
-import org.jboss.threads.QueueExecutor;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 import org.xnio.Options;
@@ -66,8 +66,13 @@ public class RemoteChannelPairSetup implements RemotingChannelPairSetup {
     public void setupRemoting(final ManagementMessageHandler handler) throws IOException {
         //executorService = new ThreadPoolExecutor(16, 16, 1L, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>());
         ThreadFactory threadFactory = new JBossThreadFactory(new ThreadGroup("Remoting"), Boolean.FALSE, null, "Remoting %f thread %t", null, null);
-        executorService = new QueueExecutor(EXECUTOR_MAX_THREADS / 4 + 1, EXECUTOR_MAX_THREADS, EXECUTOR_KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS, 500, threadFactory, true, null);
-
+        executorService = new EnhancedQueueExecutor.Builder()
+                .setCorePoolSize(EXECUTOR_MAX_THREADS / 4 + 1)
+                .setMaximumPoolSize(EXECUTOR_MAX_THREADS)
+                .setKeepAliveTime(EXECUTOR_KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS)
+                .setMaximumQueueSize(500)
+                .setThreadFactory(threadFactory)
+                .build();
         ChannelServer.Configuration configuration = new ChannelServer.Configuration();
         configuration.setEndpointName(ENDPOINT_NAME);
         configuration.setUriScheme(URI_SCHEME);
