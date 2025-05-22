@@ -254,7 +254,9 @@ Param(
   	$PROG_ARGS += "-Dlogging.configuration=file:$logFileProperties"
   }
   $PROG_ARGS += "-Djboss.home.dir=$JBOSS_HOME"
-  $PROG_ARGS += "-Djboss.server.base.dir=$global:JBOSS_BASE_DIR"
+  if (-not($SERVER_OPTS -match "-Djboss.server.base.dir")) {
+    $PROG_ARGS += "-Djboss.server.base.dir=$global:JBOSS_BASE_DIR"
+  }
   $PROG_ARGS += "-Djboss.server.config.dir=$global:JBOSS_CONFIG_DIR"
 
   if ($GC_LOG -eq $true){
