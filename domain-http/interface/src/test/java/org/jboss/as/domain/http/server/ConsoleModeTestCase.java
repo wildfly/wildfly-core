@@ -26,7 +26,7 @@ public class ConsoleModeTestCase {
 
     @Test
     public void testDefaultModules() throws Exception {
-        checkModule(null, ModuleIdentifierUtil.canonicalModuleIdentifier("org.jboss.as.console"), "modules-default");
+        checkModule(null, "org.jboss.as.console", "modules-default");
     }
 
 
