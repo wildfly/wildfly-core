@@ -60,4 +60,11 @@ public interface PlatformMBeanLogger extends BasicLogger {
 
     @Message(id = 10, value = "No MemoryPoolMXBean with name %s currently exists")
     OperationFailedException unknownMemoryPool(String mmName);
+
+    @Message(id = 11, value = "Operation %s is not supported by the underlying JVM")
+    OperationFailedException unsupportedOperation(String operation);
+
+    @Message(id = 12, value = "Attribute %s is not supported by the underlying JVM and can't be written.")
+    OperationFailedException unsupportedWritableAttribute(String attribute);
+
 }
