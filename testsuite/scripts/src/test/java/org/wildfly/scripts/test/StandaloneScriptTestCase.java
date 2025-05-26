@@ -5,15 +5,21 @@
 
 package org.wildfly.scripts.test;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import jakarta.json.JsonObject;
 
@@ -38,6 +44,7 @@ import org.wildfly.common.test.LoggingAgent;
 @RunWith(Parameterized.class)
 public class StandaloneScriptTestCase extends ScriptTestCase {
     private static final String STANDALONE_BASE_NAME = "standalone";
+    private static final String POWERSHELL = "powershell";
 
     @Parameter
     public Map<String, String> env;
@@ -80,6 +87,17 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         ServerConfigurator.removeJavaOpts(ServerHelper.JBOSS_HOME, STANDALONE_BASE_NAME, escapedVariable);
     }
 
+    @Test
+    public void testWFCORE5917InWindows() throws Exception {
+        // WFCORE-5917
+        // On Windows, command-line arguments of the process can be obtained only via PowerShell.
+        // For Windows, where PowerShell is not available, testScript WFCORE-5917 related assertions are skipped.
+        // The purpose of this test is to determine whether WFCORE-5917 has been verified.
+        if (TestSuiteEnvironment.isWindows()) {
+            Assume.assumeTrue(Shell.POWERSHELL.isSupported());
+        }
+    }
+
     @Override
     void testScript(final ScriptProcess script) throws InterruptedException, TimeoutException, IOException {
         // This is an odd case for Windows where with the -Xlog:gc* where the file argument does not seem to work with
@@ -88,7 +106,17 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         // seem to work when a directory has a space. An error indicating the trailing quote cannot be found. Removing
         // the `\ parts and just keeping quotes ends in the error shown in JDK-8215398.
         Assume.assumeFalse(TestSuiteEnvironment.isWindows() && env.containsKey("GC_LOG") && script.getScript().toString().contains(" "));
-        script.start(STANDALONE_CHECK, env, ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
+
+        // Test WFCORE-5917 by adding the jboss.server.base.dir argument
+        // Due to WFCORE-6684, skip this verification if there are whitespaces in the home directory
+        if (!script.getContainerHome().toString().contains(" ")) {
+            List<String> args = new ArrayList<>(Arrays.asList(ServerHelper.DEFAULT_SERVER_JAVA_OPTS));
+            Path sbdPath = script.getContainerHome().resolve("standalone");
+            args.add("-Djboss.server.base.dir=" + sbdPath);
+            script.start(STANDALONE_CHECK, env, args.toArray(String[]::new));
+        } else {
+            script.start(STANDALONE_CHECK, env, ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
+        }
 
         Assert.assertNotNull("The process is null and may have failed to start.", script);
         Assert.assertTrue("The process is not running and should be", script.isAlive());
@@ -98,6 +126,46 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
             Assert.assertTrue("Expected to find -Djava.security.manager=allow in the JVM parameters.", stdout.contains("-Djava.security.manager=allow"));
         } else {
             Assert.assertFalse("Did not expect to find -Djava.security.manager=allow in the JVM parameters.", stdout.contains("-Djava.security.manager=allow"));
+        }
+
+        // test WFCORE-5917
+        if (!script.getContainerHome().toString().trim().contains(" ")) {
+            ProcessHandle handle = script.toHandle();
+            List<ProcessHandle> children = handle.children().collect(Collectors.toList());
+
+            String launchCommand = "";
+            if (TestSuiteEnvironment.isWindows()) {
+                if (Shell.POWERSHELL.isSupported()) {
+                    ProcessHandle serverProcess = children.get(1);
+                    launchCommand = getWindowsProcessCommandLine(serverProcess);
+                    Assert.assertFalse("Server process launch command is not available", launchCommand.isEmpty());
+                }
+            } else {
+                Assert.assertEquals("The standalone process should have started one single process.", 1, children.size());
+                ProcessHandle serverProcess = children.get(0);
+                Optional<String> commandLine = serverProcess.info().commandLine();
+                Assert.assertFalse("Server process launch command is not available", commandLine.isEmpty());
+                launchCommand = commandLine.get();
+            }
+
+            if (!launchCommand.isEmpty()) {
+                String[] serverArgs = launchCommand.split("\\s+");
+                int occurrences = 0;
+                outer:
+                for (int i = 0; i < serverArgs.length; i++) {
+                    if ( !serverArgs[i].contains("-Djboss.server.base.dir=") ) {
+                        continue;
+                    }
+                    occurrences++;
+                    for (int j = i+1; j <serverArgs.length; j++) {
+                        if (serverArgs[i].equals(serverArgs[j])){
+                            occurrences++;
+                            break outer;
+                        }
+                    }
+                }
+                Assert.assertEquals("Found duplicate server jboss.server.base.dir argument in the server launch command. Launch command is " + launchCommand, 1, occurrences);
+            }
         }
 
         if (env.containsKey("MODULE_OPTS")) {
@@ -131,5 +199,24 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
             final String fileName = "gc.log";
             Assert.assertTrue(String.format("Missing %s file in %s", fileName, logDir), Files.exists(logDir.resolve(fileName)));
         }
+    }
+
+    private String getWindowsProcessCommandLine(ProcessHandle serverProcess) throws IOException {
+        String launchCommand = "";
+
+        ProcessBuilder builder = new ProcessBuilder(POWERSHELL, "Get-CimInstance Win32_Process -Filter \\\"ProcessId  = " + serverProcess.pid() + "\\\" | select CommandLine | Out-String -width 9999");
+        Process powerShellProcess = builder.start();
+        powerShellProcess.getOutputStream().close();
+        String line;
+        BufferedReader stdout = new BufferedReader(new InputStreamReader(powerShellProcess.getInputStream()));
+        while ((line = stdout.readLine()) != null) {
+            if (line.contains("standalone")) {
+                launchCommand = line;
+                break;
+            }
+        }
+        stdout.close();
+
+        return launchCommand;
     }
 }
