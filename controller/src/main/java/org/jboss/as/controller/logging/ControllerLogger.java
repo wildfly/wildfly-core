@@ -259,8 +259,8 @@ public interface ControllerLogger extends BasicLogger {
      * @param opAddress the address the operation failed on.
      */
     @LogMessage(level = ERROR)
-    @Message(id = 13, value = "Operation (%s) failed - address: (%s)")
-    void operationFailed(@Cause Throwable cause, ModelNode op, ModelNode opAddress);
+    @Message(id = 13, value = "Operation (%s) failed - address: (%s) - Stage: (%s)")
+    void operationFailed(@Cause Throwable cause, ModelNode op, ModelNode opAddress, OperationContext.Stage stage);
 
     /**
      * Logs an error message indicating operation failed.
@@ -270,8 +270,8 @@ public interface ControllerLogger extends BasicLogger {
      * @param failureDescription the failure description.
      */
     @LogMessage(level = ERROR)
-    @Message(id = Message.INHERIT, value = "Operation (%s) failed - address: (%s) - failure description: %s")
-    void operationFailed(ModelNode op, ModelNode opAddress, ModelNode failureDescription);
+    @Message(id = Message.INHERIT, value = "Operation (%s) failed - address: (%s) - Stage: (%s) - failure description: %s")
+    void operationFailed(ModelNode op, ModelNode opAddress, OperationContext.Stage stage, ModelNode failureDescription);
 
     /**
      * Logs a debug message indicating operation failed.
@@ -283,8 +283,8 @@ public interface ControllerLogger extends BasicLogger {
      *                           from the variant used by legacy controllers
      */
     @LogMessage(level = DEBUG)
-    @Message(id = Message.INHERIT, value = "Operation (%s) failed - address: (%s) - failure description: %s%s")
-    void operationFailed(ModelNode op, ModelNode opAddress, ModelNode failureDescription, String emptyString);
+    @Message(id = Message.INHERIT, value = "Operation (%s) failed - address: (%s) - Stage: (%s) - failure description: %s%s")
+    void operationFailed(ModelNode op, ModelNode opAddress, OperationContext.Stage stage, ModelNode failureDescription, String emptyString);
 
     // WFCORE-792 -- no longer used
 //    /**
@@ -326,8 +326,8 @@ public interface ControllerLogger extends BasicLogger {
      * @param failureDescription the failure description.
      */
     @LogMessage(level = Logger.Level.DEBUG)
-    @Message(id = 17, value = "Operation (%s) failed - address: (%s) - failure description: %s")
-    void operationFailedOnClientError(ModelNode op, ModelNode opAddress, ModelNode failureDescription);
+    @Message(id = 17, value = "Operation (%s) failed - address: (%s) - Stage: (%s) - failure description: %s")
+    void operationFailedOnClientError(ModelNode op, ModelNode opAddress, OperationContext.Stage stage, ModelNode failureDescription);
 
 //    /**
 //     * Logs an error indicating that createWrapper should be called

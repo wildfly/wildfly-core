@@ -133,7 +133,6 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
         builder.createLegacyKernelServicesBuilder(additionalInitialization, controllerVersion, version)
                 .addMavenResourceURL(mavenResourceURLs)
                 .skipReverseControllerCheck()
-                .addParentFirstClassPattern("org.jboss.as.controller.logging.ControllerLogger*")
                 .addParentFirstClassPattern("org.jboss.as.controller.PathAddress")
                 .addParentFirstClassPattern("org.jboss.as.controller.PathElement")
                 .addParentFirstClassPattern("org.jboss.as.server.logging.*")
