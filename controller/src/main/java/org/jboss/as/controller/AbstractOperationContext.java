@@ -1084,7 +1084,7 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
             if (!step.requiresDoneStage && !isExternalClient()) {
                 logStepFailure(step, false);
             } else {
-                MGMT_OP_LOGGER.operationFailed(t, step.operation.get(OP), step.operation.get(OP_ADDR));
+                MGMT_OP_LOGGER.operationFailed(t, step.operation.get(OP), step.operation.get(OP_ADDR), currentStage);
             }
 
             // Provide a failure description if there isn't one already
@@ -1134,17 +1134,17 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
         // the soon-to-be-abandoned OperationContext.
         if (isBooting() || currentStage == Stage.VERIFY
                 || (currentStage == Stage.RUNTIME && (step.requiresDoneStage || isExternalClient()))) {
-            MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR),
+            MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR), currentStage,
                     step.response.get(FAILURE_DESCRIPTION));
         } else if (fromOCE) {
-            MGMT_OP_LOGGER.operationFailedOnClientError(step.operation.get(OP), step.operation.get(OP_ADDR),
+            MGMT_OP_LOGGER.operationFailedOnClientError(step.operation.get(OP), step.operation.get(OP_ADDR), currentStage,
                     step.response.get(FAILURE_DESCRIPTION));
         } else if (currentStage != Stage.DOMAIN) {
             // Post-boot Stage.RUNTIME issues with internal read-only calls
             // TODO consider ERROR or DEBUG logging Stage.DOMAIN problems if it's clear the message will be comprehensible.
             // Currently Stage.DOMAIN failure handling involves message manipulation before sending the
             // failure data to the client; logging stuff before that is done is liable to just produce a log mess.
-            MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR),
+            MGMT_OP_LOGGER.operationFailed(step.operation.get(OP), step.operation.get(OP_ADDR), currentStage,
                         step.response.get(FAILURE_DESCRIPTION), "");
         }
     }
