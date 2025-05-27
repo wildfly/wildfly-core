@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
