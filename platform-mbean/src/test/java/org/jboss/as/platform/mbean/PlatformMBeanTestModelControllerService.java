@@ -28,6 +28,7 @@ import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.version.Stability;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 
@@ -45,9 +46,9 @@ public class PlatformMBeanTestModelControllerService extends AbstractControllerS
      *
      */
     protected PlatformMBeanTestModelControllerService() {
-        super(ProcessType.EMBEDDED_SERVER, new RunningModeControl(RunningMode.NORMAL), new NullConfigurationPersister(), new ControlledProcessState(true),
+        super(null, null, ProcessType.EMBEDDED_SERVER, Stability.COMMUNITY, new RunningModeControl(RunningMode.NORMAL), new NullConfigurationPersister(), new ControlledProcessState(true),
         ResourceBuilder.Factory.create(PathElement.pathElement("root"),NonResolvingResourceDescriptionResolver.INSTANCE).build(), null, ExpressionResolver.TEST_RESOLVER,
-        AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), new CapabilityRegistry(true));
+        AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), new CapabilityRegistry(true), null);
     }
 
     @Override

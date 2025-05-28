@@ -15,6 +15,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.operations.global.ReadResourceHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import static org.jboss.as.platform.mbean.PlatformMBeanConstants.PLATFORM_LOGGING_PATH;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelType;
 
 class PlatformLoggingResourceDefinition extends SimpleResourceDefinition {
@@ -22,6 +23,7 @@ class PlatformLoggingResourceDefinition extends SimpleResourceDefinition {
     static AttributeDefinition LOGGER_NAMES = new PrimitiveListAttributeDefinition.Builder(PlatformMBeanConstants.LOGGER_NAMES, ModelType.STRING)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
+            .setStability(Stability.COMMUNITY)
             .build();
 
     static final List<AttributeDefinition> READ_ATTRIBUTES = Arrays.asList(

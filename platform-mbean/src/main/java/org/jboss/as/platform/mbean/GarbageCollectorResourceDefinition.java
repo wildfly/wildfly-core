@@ -31,6 +31,7 @@ import static org.jboss.as.platform.mbean.PlatformMBeanConstants.MEMORY_INIT;
 import static org.jboss.as.platform.mbean.PlatformMBeanConstants.MEMORY_MAX;
 import static org.jboss.as.platform.mbean.PlatformMBeanConstants.MEMORY_USED;
 import static org.jboss.as.platform.mbean.PlatformMBeanConstants.START_TIME;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -58,33 +59,39 @@ class GarbageCollectorResourceDefinition extends SimpleResourceDefinition {
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static SimpleAttributeDefinition END_TIME_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create(END_TIME, ModelType.LONG, true)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static SimpleAttributeDefinition ID_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create(ID, ModelType.LONG, true)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static SimpleAttributeDefinition START_TIME_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create(START_TIME, ModelType.LONG, true)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static final AttributeDefinition MEMORY_USAGE_AFTER_GC_ATTRIBUTE = ObjectMapAttributeDefinition.Builder.of(
             PlatformMBeanConstants.MEMORY_USAGE_AFTER_GC,
             ObjectTypeAttributeDefinition.Builder.of(PlatformMBeanConstants.MEMORY_USAGE_AFTER_GC, MEMORY_INIT, MEMORY_USED, MEMORY_COMMITTED, MEMORY_MAX)
                     .build())
             .setFlags(AttributeAccess.Flag.STORAGE_RUNTIME)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static final AttributeDefinition MEMORY_USAGE_BEFORE_GC_ATTRIBUTE = ObjectMapAttributeDefinition.Builder.of(
             PlatformMBeanConstants.MEMORY_USAGE_BEFORE_GC,
             ObjectTypeAttributeDefinition.Builder.of(PlatformMBeanConstants.MEMORY_USAGE_BEFORE_GC, MEMORY_INIT, MEMORY_USED, MEMORY_COMMITTED, MEMORY_MAX)
                     .build())
             .setFlags(AttributeAccess.Flag.STORAGE_RUNTIME)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static SimpleAttributeDefinition LAST_GC_INFO = new ObjectTypeAttributeDefinition.Builder(
             PlatformMBeanConstants.LAST_GC_INFO,
@@ -98,6 +105,7 @@ class GarbageCollectorResourceDefinition extends SimpleResourceDefinition {
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setRequired(false)
+            .setStability(Stability.COMMUNITY)
             .build();
 
     private static final List<SimpleAttributeDefinition> METRICS = Arrays.asList(

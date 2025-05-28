@@ -16,6 +16,7 @@ import org.jboss.as.controller.operations.validation.ListValidator;
 import org.jboss.as.controller.operations.validation.LongRangeValidator;
 import org.jboss.as.controller.operations.validation.ParametersValidator;
 import org.jboss.as.platform.mbean.logging.PlatformMBeanLogger;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -31,6 +32,7 @@ public class ThreadMXBeanCpuTimesHandler implements OperationStepHandler {
             .setReplyValueType(ModelType.LONG)
             .setRuntimeOnly()
             .setReadOnly()
+            .setStability(Stability.COMMUNITY)
             .build();
 
     public static final ThreadMXBeanCpuTimesHandler INSTANCE = new ThreadMXBeanCpuTimesHandler();

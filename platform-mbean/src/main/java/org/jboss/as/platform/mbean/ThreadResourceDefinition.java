@@ -20,6 +20,7 @@ import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.global.ReadResourceHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -108,16 +109,19 @@ class ThreadResourceDefinition extends SimpleResourceDefinition {
             .setRuntimeServiceNotRequired()
             .setRequired(false)
             .setMeasurementUnit(MeasurementUnit.BYTES)
+            .setStability(Stability.COMMUNITY)
             .build();
     static AttributeDefinition THREAD_ALLOCATED_MEMORY_ENABLED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.THREAD_ALLOCATED_MEMORY_ENABLED, ModelType.BOOLEAN, false)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setRequired(false)
+            .setStability(Stability.COMMUNITY)
             .build();
     static AttributeDefinition THREAD_ALLOCATED_MEMORY_SUPPORTED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.THREAD_ALLOCATED_MEMORY_SUPPORTED, ModelType.BOOLEAN, false)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setRequired(false)
+            .setStability(Stability.COMMUNITY)
             .build();
 
 

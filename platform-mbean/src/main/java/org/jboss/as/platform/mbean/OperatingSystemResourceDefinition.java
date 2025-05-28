@@ -17,6 +17,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.global.ReadResourceHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -52,58 +53,70 @@ class OperatingSystemResourceDefinition extends SimpleResourceDefinition {
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .setRequired(false)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static SimpleAttributeDefinition FREE_MEMORY_SIZE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.FREE_MEMORY_SIZE, ModelType.LONG, true)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .setRequired(false)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static SimpleAttributeDefinition FREE_SWAP_SPACE_SIZE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.FREE_SWAP_SPACE_SIZE, ModelType.LONG, true)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .setRequired(false)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static SimpleAttributeDefinition MAX_FILE_DESCRIPTOR_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.MAX_FILE_DESCRIPTOR_COUNT, ModelType.LONG, true)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
+            .setRequired(false)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static SimpleAttributeDefinition OPEN_FILE_DESCRIPTOR_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.OPEN_FILE_DESCRIPTOR_COUNT, ModelType.LONG, true)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
+            .setRequired(false)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static SimpleAttributeDefinition PROCESS_CPU_LOAD = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.PROCESS_CPU_LOAD, ModelType.DOUBLE, true)
             .setMeasurementUnit(MeasurementUnit.PERCENTAGE)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setRequired(false)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static SimpleAttributeDefinition PROCESS_CPU_TIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.PROCESS_CPU_TIME, ModelType.LONG, true)
             .setMeasurementUnit(MeasurementUnit.NANOSECONDS)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setRequired(false)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static SimpleAttributeDefinition CPU_LOAD = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.CPU_LOAD, ModelType.DOUBLE, true)
             .setMeasurementUnit(MeasurementUnit.PERCENTAGE)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setRequired(false)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static SimpleAttributeDefinition TOTAL_MEMORY_SIZE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.TOTAL_MEMORY_SIZE, ModelType.LONG, true)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .setRequired(false)
+            .setStability(Stability.COMMUNITY)
             .build();
     private static SimpleAttributeDefinition TOTAL_SWAP_SPACE_SIZE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.TOTAL_SWAP_SPACE_SIZE, ModelType.LONG, true)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.BYTES)
             .setRequired(false)
+            .setStability(Stability.COMMUNITY)
             .build();
 
     private static final List<SimpleAttributeDefinition> METRICS = Arrays.asList(
