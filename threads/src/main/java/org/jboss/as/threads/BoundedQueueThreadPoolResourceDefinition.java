@@ -22,8 +22,6 @@ import org.jboss.msc.service.ServiceName;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class BoundedQueueThreadPoolResourceDefinition extends SimpleResourceDefinition {
-    public static final BoundedQueueThreadPoolResourceDefinition BLOCKING = create(true, false);
-    public static final BoundedQueueThreadPoolResourceDefinition NON_BLOCKING = create(false, false);
     private final BoundedQueueThreadPoolMetricsHandler metricsHandler;
     private final BoundedQueueThreadPoolWriteAttributeHandler writeHandler;
     private final boolean blocking;

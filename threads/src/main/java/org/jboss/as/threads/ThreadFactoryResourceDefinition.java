@@ -31,7 +31,7 @@ public class ThreadFactoryResourceDefinition extends SimpleResourceDefinition {
         this(PathElement.pathElement(type), RuntimeCapability.Builder.of("org.wildfly.threads." + type , true, ThreadFactory.class).build());
     }
 
-    public ThreadFactoryResourceDefinition(PathElement path, RuntimeCapability capability) {
+    public ThreadFactoryResourceDefinition(PathElement path, RuntimeCapability<Void> capability) {
         super(new SimpleResourceDefinition.Parameters(path,
                 new StandardResourceDescriptionResolver(CommonAttributes.THREAD_FACTORY, ThreadsExtension.RESOURCE_NAME,
                         ThreadsExtension.class.getClassLoader(), true, false))
