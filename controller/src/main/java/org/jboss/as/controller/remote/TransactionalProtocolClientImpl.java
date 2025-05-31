@@ -34,7 +34,6 @@ import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
-import org.jboss.as.controller.client.impl.AbstractDelegatingAsyncFuture;
 import org.jboss.as.controller.client.impl.ModelControllerProtocol;
 import org.jboss.as.controller.client.impl.OperationResponseProxy;
 import org.jboss.as.controller.logging.ControllerLogger;

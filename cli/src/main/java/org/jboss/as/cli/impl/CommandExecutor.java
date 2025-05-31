@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collection;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,7 +42,6 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
-import org.jboss.threads.AsyncFuture;
 
 /**
  * Implement the timeout logic when executing commands. Public for testing
@@ -101,12 +101,12 @@ public class CommandExecutor {
             }
 
             @Override
-            public AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
+            public CompletableFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
                 return doExecuteAsync(operation, messageHandler);
             }
 
             @Override
-            public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
+            public CompletableFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
                 return doExecuteAsync(operation, messageHandler);
             }
 
@@ -116,7 +116,7 @@ public class CommandExecutor {
             }
 
             @Override
-            public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+            public CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
                 return doExecuteOperationAsync(operation, messageHandler);
             }
 
@@ -157,15 +157,15 @@ public class CommandExecutor {
                 ((AwaiterModelControllerClient) wrapped).ensureConnected(timeoutMillis);
             }
 
-            private AsyncFuture<OperationResponse> doExecuteOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
-                AsyncFuture<OperationResponse> task
+            private CompletableFuture<OperationResponse> doExecuteOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+                CompletableFuture<OperationResponse> task
                         = wrapped.executeOperationAsync(operation, messageHandler);
                 setLastHandlerTask(task);
                 return task;
             }
 
             private OperationResponse doExecuteOperation(Operation operation, OperationMessageHandler messageHandler) throws IOException {
-                AsyncFuture<OperationResponse> task;
+                CompletableFuture<OperationResponse> task;
                 task = wrapped.executeOperationAsync(operation, messageHandler);
                 boolean canceled = setLastHandlerTask(task);
                 if (canceled) {
@@ -181,15 +181,15 @@ public class CommandExecutor {
                 }
             }
 
-            private AsyncFuture<ModelNode> doExecuteAsync(Operation operation, OperationMessageHandler messageHandler) {
-                AsyncFuture<ModelNode> task
+            private CompletableFuture<ModelNode> doExecuteAsync(Operation operation, OperationMessageHandler messageHandler) {
+                CompletableFuture<ModelNode> task
                         = wrapped.executeAsync(operation, messageHandler);
                 setLastHandlerTask(task);
                 return task;
             }
 
-            private AsyncFuture<ModelNode> doExecuteAsync(ModelNode operation, OperationMessageHandler messageHandler) {
-                AsyncFuture<ModelNode> task
+            private CompletableFuture<ModelNode> doExecuteAsync(ModelNode operation, OperationMessageHandler messageHandler) {
+                CompletableFuture<ModelNode> task
                         = wrapped.executeAsync(operation, messageHandler);
                 setLastHandlerTask(task);
                 return task;

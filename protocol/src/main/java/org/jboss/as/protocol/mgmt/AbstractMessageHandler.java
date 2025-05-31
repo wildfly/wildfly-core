@@ -377,7 +377,8 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
                 }
                 operationId = id;
             }
-            final ActiveOperationImpl<T, A> request = new ActiveOperationImpl<>(operationId, attachment, getCheckedCallback(callback), this);
+            final ActiveOperationImpl<T, A> request =
+                    new ActiveOperationImpl<>(operationId, attachment, getCheckedCallback(callback), this);
             final ActiveOperation<?, ?> existing =  activeRequests.putIfAbsent(operationId, request);
             if(existing != null) {
                 throw ProtocolLogger.ROOT_LOGGER.operationIdAlreadyExists(operationId);

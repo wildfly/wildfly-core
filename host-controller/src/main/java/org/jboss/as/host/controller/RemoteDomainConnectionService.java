@@ -28,6 +28,7 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -104,7 +105,6 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.RemotingOptions;
-import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -362,12 +362,12 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     }
 
     @Override
-    public AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
         return masterProxy.executeAsync(operation, messageHandler);
     }
 
     @Override
-    public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
         return masterProxy.executeAsync(operation, messageHandler);
     }
 
@@ -377,7 +377,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     }
 
     @Override
-    public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
         return masterProxy.executeOperationAsync(operation, messageHandler);
     }
 

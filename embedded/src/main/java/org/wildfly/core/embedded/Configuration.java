@@ -377,7 +377,7 @@ public interface Configuration {
                 SecurityActions.clearPropertyPrivileged(SYSPROP_KEY_CLASS_PATH);
                 SecurityActions.setPropertyPrivileged(SYSPROP_KEY_MODULE_PATH, modulePath);
 
-                final StringBuilder packages = new StringBuilder("org.jboss.modules,org.jboss.dmr,org.jboss.threads,org.jboss.as.controller.client");
+                final StringBuilder packages = new StringBuilder("org.jboss.modules,org.jboss.dmr,org.jboss.as.controller.client");
                 if (systemPackages != null) {
                     for (String packageName : systemPackages) {
                         packages.append(",");

@@ -5,6 +5,10 @@
 
 package org.jboss.as.protocol.mgmt;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import org.jboss.threads.AsyncFuture;
 import org.xnio.Cancellable;
 
@@ -48,11 +52,23 @@ public interface ActiveOperation<T, A> {
     A getAttachment();
 
     /**
-     * Get the result.
+     * Get an {@link AsyncFuture} that will provide the operation result.
      *
-     * @return the future result
+     * @return the future result. Will not return {@code null}
      */
     AsyncFuture<T> getResult();
+
+
+    /**
+     * Get a {@link CompletableFuture} that will provide a transformed operation result.
+     *
+     * @param transformer     function to transformer the operation result. Cannot be {@code null}
+     * @param asyncCancelTask function to invoke trigger async cancellation if {@link CompletableFuture#cancel(boolean) is called}.
+     *                        May be {@code null}, in which case {@link org.jboss.threads.AsyncFutureTask#asyncCancel(boolean)
+     *                        default async cancellation} is used.
+     * @return the future result. Will not return {@code null}
+     */
+    <U> CompletableFuture<U> getCompletableFuture(Function<T, U> transformer, Consumer<Boolean> asyncCancelTask);
 
     /**
      * Add a cancellation handler.

@@ -4,6 +4,10 @@
  */
 package org.jboss.as.cli.impl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,10 +15,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.CompletableFuture;
 
 import org.jboss.as.cli.Util;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -22,10 +23,6 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
-import org.jboss.threads.AsyncFuture;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -36,7 +33,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 public class BootScriptInvokerTestCase {
 
-    private class TestClient implements ModelControllerClient {
+    private static class TestClient implements ModelControllerClient {
 
         private class TestOperationResponse implements OperationResponse {
 
@@ -61,80 +58,8 @@ public class BootScriptInvokerTestCase {
 
         }
 
-        private class TestAsync implements AsyncFuture<ModelNode> {
-
-            @Override
-            public AsyncFuture.Status await() throws InterruptedException {
-                return AsyncFuture.Status.COMPLETE;
-            }
-
-            @Override
-            public AsyncFuture.Status await(long arg0, TimeUnit arg1) throws InterruptedException {
-                return AsyncFuture.Status.COMPLETE;
-            }
-
-            @Override
-            public ModelNode getUninterruptibly() throws CancellationException, ExecutionException {
-                return mn;
-            }
-
-            @Override
-            public ModelNode getUninterruptibly(long arg0, TimeUnit arg1) throws CancellationException, ExecutionException, TimeoutException {
-                return mn;
-            }
-
-            @Override
-            public AsyncFuture.Status awaitUninterruptibly() {
-                return AsyncFuture.Status.COMPLETE;
-            }
-
-            @Override
-            public AsyncFuture.Status awaitUninterruptibly(long arg0, TimeUnit arg1) {
-                return AsyncFuture.Status.COMPLETE;
-            }
-
-            @Override
-            public AsyncFuture.Status getStatus() {
-                return AsyncFuture.Status.COMPLETE;
-            }
-
-            @Override
-            public <A> void addListener(AsyncFuture.Listener<? super ModelNode, A> arg0, A arg1) {
-
-            }
-
-            @Override
-            public boolean cancel(boolean arg0) {
-                return true;
-            }
-
-            @Override
-            public void asyncCancel(boolean arg0) {
-            }
-
-            @Override
-            public boolean isCancelled() {
-                return false;
-            }
-
-            @Override
-            public boolean isDone() {
-                return true;
-            }
-
-            @Override
-            public ModelNode get() throws InterruptedException, ExecutionException {
-                return mn;
-            }
-
-            @Override
-            public ModelNode get(long arg0, TimeUnit arg1) throws InterruptedException, ExecutionException, TimeoutException {
-                return mn;
-            }
-        }
-
-        private Set<String> seen = new HashSet<>();
-        private ModelNode mn;
+        private final Set<String> seen = new HashSet<>();
+        private final ModelNode mn;
 
         private TestClient() {
             mn = new ModelNode();
@@ -149,13 +74,13 @@ public class BootScriptInvokerTestCase {
         }
 
         @Override
-        public AsyncFuture<ModelNode> executeAsync(Operation op, OperationMessageHandler arg1) {
+        public CompletableFuture<ModelNode> executeAsync(Operation op, OperationMessageHandler arg1) {
             seen.add(op.getOperation().get("operation").asString());
-            return new TestAsync();
+            return CompletableFuture.completedFuture(mn);
         }
 
         @Override
-        public AsyncFuture<OperationResponse> executeOperationAsync(Operation arg0, OperationMessageHandler arg1) {
+        public CompletableFuture<OperationResponse> executeOperationAsync(Operation arg0, OperationMessageHandler arg1) {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 

@@ -22,6 +22,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
@@ -32,6 +33,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.protocol.mgmt.AsyncToCompletableFutureAdapter;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
@@ -90,12 +92,12 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
             }
 
             @Override
-            public AsyncFuture<ModelNode> executeAsync(final Operation operation, final OperationMessageHandler messageHandler) {
+            public CompletableFuture<ModelNode> executeAsync(final Operation operation, final OperationMessageHandler messageHandler) {
                 return executeInVm(delegate::executeAsync, operation, messageHandler);
             }
 
             @Override
-            public AsyncFuture<OperationResponse> executeOperationAsync(final Operation operation, final OperationMessageHandler messageHandler) {
+            public CompletableFuture<OperationResponse> executeOperationAsync(final Operation operation, final OperationMessageHandler messageHandler) {
                 return executeInVm(delegate::executeOperationAsync, operation, messageHandler);
             }
 
@@ -171,16 +173,16 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
         }
 
         @Override
-        public AsyncFuture<ModelNode> executeAsync(final Operation operation, final OperationMessageHandler messageHandler) {
+        public CompletableFuture<ModelNode> executeAsync(final Operation operation, final OperationMessageHandler messageHandler) {
             return executeAsync(operation.getOperation(), messageHandler, operation, ResponseConverter.TO_MODEL_NODE);
         }
 
         @Override
-        public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+        public CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
             return executeAsync(operation.getOperation(), messageHandler, operation, ResponseConverter.TO_OPERATION_RESPONSE);
         }
 
-        private <T> AsyncFuture<T> executeAsync(final ModelNode op, final OperationMessageHandler messageHandler,
+        private <T> CompletableFuture<T> executeAsync(final ModelNode op, final OperationMessageHandler messageHandler,
                                                 final OperationAttachments attachments,
                                                 final ResponseConverter<T> responseConverter) {
             if (executor == null) {
@@ -224,7 +226,7 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
                     }
                 }
             });
-            return responseFuture;
+            return AsyncToCompletableFutureAdapter.adapt(responseFuture);
         }
 
         private Operation sanitizeOperation(Operation operation) {

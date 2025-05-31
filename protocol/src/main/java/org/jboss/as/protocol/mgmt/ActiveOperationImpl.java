@@ -8,7 +8,10 @@ package org.jboss.as.protocol.mgmt;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Channel;
@@ -122,6 +125,11 @@ class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOper
     }
 
     @Override
+    public <U>CompletableFuture<U> getCompletableFuture(Function<T, U> transformer, Consumer<Boolean> asyncCancelTask) {
+        return AsyncToCompletableFutureAdapter.adapt(this, transformer, asyncCancelTask);
+    }
+
+    @Override
     public void asyncCancel(boolean interruptionDesired) {
         final List<Cancellable> cancellables;
         synchronized (this) {
@@ -162,8 +170,8 @@ class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOper
         cancellable.cancel();
     }
 
-    public boolean cancel() {
-        return super.cancel(true);
+    private void cancel() {
+        super.cancel(true);
     }
 
     Channel getChannel() {

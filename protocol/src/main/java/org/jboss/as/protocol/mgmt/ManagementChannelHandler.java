@@ -223,5 +223,4 @@ public final class ManagementChannelHandler extends AbstractMessageHandler imple
             }
         }
     }
-
 }

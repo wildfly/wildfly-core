@@ -6,13 +6,13 @@
 package org.jboss.as.controller.client.helpers;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
-import org.jboss.threads.AsyncFuture;
 import org.wildfly.common.Assert;
 import org.wildfly.common.context.Contextual;
 
@@ -43,12 +43,12 @@ public final class ContextualModelControllerClient implements ModelControllerCli
     }
 
     @Override
-    public AsyncFuture<ModelNode> executeAsync(final Operation operation, final OperationMessageHandler messageHandler) {
+    public CompletableFuture<ModelNode> executeAsync(final Operation operation, final OperationMessageHandler messageHandler) {
         return context.runExFunction(o -> delegate.executeAsync(operation, messageHandler), null);
     }
 
     @Override
-    public AsyncFuture<OperationResponse> executeOperationAsync(final Operation operation, final OperationMessageHandler messageHandler) {
+    public CompletableFuture<OperationResponse> executeOperationAsync(final Operation operation, final OperationMessageHandler messageHandler) {
         return context.runExFunction(o -> delegate.executeOperationAsync(operation, messageHandler), null);
     }
 

@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -62,7 +62,6 @@ import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.jboss.threads.AsyncFuture;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -187,7 +186,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
+        public CompletableFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
             logger.info("Executing deploy command from MockServerController, its executor service should be closed");
             return executorService.submit(new Callable<>() {
                 @Override
@@ -198,7 +197,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+        public CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
             throw new UnsupportedOperationException();
         }
 
@@ -475,7 +474,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public <T> AsyncFuture<T> submit(Callable<T> tCallable) {
+        public <T> CompletableFuture<T> submit(Callable<T> tCallable) {
             if (isShutdown() || isTerminating()) {
                 throw new RejectedExecutionException("DiscardTaskExecutor has shutdown we can't run " + tCallable);
             }
@@ -509,7 +508,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         }
     }
 
-    private static class CallOnGetFuture<T> implements AsyncFuture<T> {
+    private static class CallOnGetFuture<T> extends CompletableFuture<T> {
 
         final Callable<T> callable;
         private boolean cancelled = false;
@@ -544,62 +543,16 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         public T get() throws InterruptedException, ExecutionException {
             try {
                 logger.info("CallOnGetFuture get " + callable);
-                return callable.call();
-            } catch (InterruptedException | ExecutionException e) {
-                throw e;
+                complete(callable.call());
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                completeExceptionally(e);
             }
+            return super.get();
         }
 
         @Override
         public T get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException {
             return get();
-        }
-
-        @Override
-        public AsyncFuture.Status await()  {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status await(long timeout, TimeUnit unit) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T getUninterruptibly() throws CancellationException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T getUninterruptibly(long timeout, TimeUnit unit) throws CancellationException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status awaitUninterruptibly() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status awaitUninterruptibly(long timeout, TimeUnit unit) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status getStatus() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public <A> void addListener(AsyncFuture.Listener<? super T, A> listener, A attachment) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void asyncCancel(boolean interruptionDesired) {
-            throw new UnsupportedOperationException();
         }
     }
 

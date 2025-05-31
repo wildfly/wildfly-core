@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -76,7 +76,6 @@ import org.jboss.byteman.contrib.bmunit.BMRule;
 import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.jboss.threads.AsyncFuture;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -1516,7 +1515,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
 
         TesteeSet ts = createTestee(new DiscardTaskExecutor() {
             @Override
-            public <T> AsyncFuture<T> submit(Callable<T> tCallable) {
+            public <T> CompletableFuture<T> submit(Callable<T> tCallable) {
                 return new TimeOutFuture<>(5, tCallable);
             }
         });
@@ -1776,7 +1775,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         final File deploying = new File(tmpDir, "foo.war" + FileSystemDeploymentService.DEPLOYING);
         final DiscardTaskExecutor myWaitingExecutor = new DiscardTaskExecutor(true) {
             @Override
-            public <T> AsyncFuture<T> submit(Callable<T> tCallable) {
+            public <T> CompletableFuture<T> submit(Callable<T> tCallable) {
                 return new WaitingFuture<>(50000, tCallable);
             }
         };
@@ -2072,7 +2071,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
+        public CompletableFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
             return executorService.submit(new Callable<>() {
                 @Override
                 public ModelNode call() {
@@ -2082,7 +2081,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+        public CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
             throw new UnsupportedOperationException();
         }
 
@@ -2340,7 +2339,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public <T> AsyncFuture<T> submit(Callable<T> tCallable) {
+        public <T> CompletableFuture<T> submit(Callable<T> tCallable) {
             if (allowRejection && (isShutdown() || isTerminating())) {
                 throw new RejectedExecutionException("DiscardTaskExecutor has shutdown we can't run " + tCallable);
             }
@@ -2352,7 +2351,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
     }
 
-    private static class CallOnGetFuture<T> implements AsyncFuture<T> {
+    private static class CallOnGetFuture<T> extends CompletableFuture<T> {
         final Callable<T> callable;
 
         private CallOnGetFuture(Callable<T> callable) {
@@ -2377,60 +2376,16 @@ public class FileSystemDeploymentServiceUnitTestCase {
         @Override
         public T get() throws InterruptedException, ExecutionException {
             try {
-                return callable.call();
+                complete(callable.call());
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                completeExceptionally(e);
             }
+            return super.get();
         }
 
         @Override
         public T get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
             return get();
-        }
-
-        @Override
-        public AsyncFuture.Status await() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status await(long timeout, TimeUnit unit) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T getUninterruptibly() throws CancellationException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T getUninterruptibly(long timeout, TimeUnit unit) throws CancellationException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status awaitUninterruptibly() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status awaitUninterruptibly(long timeout, TimeUnit unit) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status getStatus() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public <A> void addListener(AsyncFuture.Listener<? super T, A> listener, A attachment) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void asyncCancel(boolean interruptionDesired) {
-            throw new UnsupportedOperationException();
         }
     }
 
