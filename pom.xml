@@ -56,8 +56,8 @@
 
         <!-- Keep consistent with README.md and .mvn/wrapper/maven-wrapper.properties -->
         <maven.min.version>3.6.0</maven.min.version>
-        <!-- Require Java 11 -->
-        <maven.compiler.release>11</maven.compiler.release>
+        <!-- Require Java 17 -->
+        <maven.compiler.release>17</maven.compiler.release>
 
         <!-- Standard client-side JPMS settings identified as meeting
              the needs of WildFly libraries meant for use in clients. -->
@@ -390,7 +390,7 @@
                     </configuration>
                 </plugin>
 
-                <!-- Ban bad dependencies and require Java 11 for deploying -->
+                <!-- Ban bad dependencies and require Java 17 for deploying -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
@@ -475,7 +475,7 @@
                             </configuration>
                         </execution>
                         <execution>
-                            <id>require-java11</id>
+                            <id>require-java17</id>
                             <goals>
                                 <goal>enforce</goal>
                             </goals>
@@ -483,7 +483,7 @@
                             <configuration>
                                 <rules>
                                     <requireJavaVersion>
-                                        <version>[11,12)</version>
+                                        <version>[17,18)</version>
                                     </requireJavaVersion>
                                 </rules>
                             </configuration>
