@@ -25,6 +25,8 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.logging.Logger;
+import org.junit.AssumptionViolatedException;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -54,6 +56,13 @@ public class ProvisioningConsistencyTestCase {
             return new File(System.getenv("JBOSS_HOME")).getCanonicalFile().toPath();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @BeforeClass
+    public static void assumeNotS390() {
+        if ("s390x".equalsIgnoreCase(System.getProperty("os.arch"))) {
+            throw new AssumptionViolatedException("WFCORE-7269");
         }
     }
 
