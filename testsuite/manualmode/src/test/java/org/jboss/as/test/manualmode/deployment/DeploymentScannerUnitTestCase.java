@@ -120,10 +120,10 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
                     Assert.assertEquals("OK", deploymentState(client, DEPLOYMENT_ONE));
 
                     timeout = System.currentTimeMillis() + TIMEOUT;
-                    while (exists(client, DEPLOYMENT_TWO) && System.currentTimeMillis() < timeout) {
+                    do {
                         TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(2));
-                    }
-                    Assert.assertFalse("Deployment two should exist at " + TIME_FORMATTER.format(LocalDateTime.now()), exists(client, DEPLOYMENT_TWO));
+                    } while (exists(client, DEPLOYMENT_TWO) && System.currentTimeMillis() < timeout);
+                    Assert.assertFalse("Deployment two should not exist at " + TIME_FORMATTER.format(LocalDateTime.now()), exists(client, DEPLOYMENT_TWO));
                     ModelNode disableScanner = Util.getWriteAttributeOperation(PathAddress.parseCLIStyleAddress("/subsystem=deployment-scanner/scanner=testScanner"), "scan-interval", 300000);
                     result = client.execute(disableScanner);
                     assertEquals("Unexpected outcome of disabling the test deployment scanner: " + disableScanner, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
@@ -331,9 +331,10 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
 
     private void waitFor(String message, ExceptionWrappingSupplier<Boolean> condition) throws Exception {
         long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
-        while (!condition.get() && System.currentTimeMillis() < timeout) {
+        do {
             TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(2));
-        }
+        } while (!condition.get() && System.currentTimeMillis() < timeout);
+
         Assert.assertTrue(message, condition.get());
     }
 
