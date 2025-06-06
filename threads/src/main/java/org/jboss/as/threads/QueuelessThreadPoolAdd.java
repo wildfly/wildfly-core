@@ -4,14 +4,12 @@
  */
 package org.jboss.as.threads;
 
-
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.threads.ThreadPoolManagementUtils.QueuelessThreadPoolParameters;
+import org.jboss.as.threads.ThreadPoolManagementUtils.EnhancedQueueThreadPoolParameters;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 
@@ -40,11 +38,6 @@ public class QueuelessThreadPoolAdd extends AbstractAddStepHandler {
     private final RuntimeCapability<Void> capability;
 
     public QueuelessThreadPoolAdd(boolean blocking, ThreadFactoryResolver threadFactoryResolver,
-            HandoffExecutorResolver handoffExecutorResolver, ServiceName serviceNameBase) {
-        this(blocking, threadFactoryResolver, handoffExecutorResolver, serviceNameBase, null);
-    }
-
-    public QueuelessThreadPoolAdd(boolean blocking, ThreadFactoryResolver threadFactoryResolver,
                                   HandoffExecutorResolver handoffExecutorResolver, ServiceName serviceNameBase, RuntimeCapability<Void> capability) {
         this.blocking = blocking;
         this.threadFactoryResolver = threadFactoryResolver;
@@ -56,14 +49,20 @@ public class QueuelessThreadPoolAdd extends AbstractAddStepHandler {
     @Override
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
 
-        final QueuelessThreadPoolParameters params = ThreadPoolManagementUtils.parseQueuelessThreadPoolParameters(context, operation, model, blocking);
+        final EnhancedQueueThreadPoolParameters params = ThreadPoolManagementUtils.parseQueuelessThreadPoolParameters(context, operation, model, blocking);
 
-        final QueuelessThreadPoolService service = new QueuelessThreadPoolService(params.getMaxThreads(), blocking, params.getKeepAliveTime());
+        final EnhancedQueueExecutorService service = new EnhancedQueueExecutorService(
+                false,
+                params.getMaxThreads(),
+                0,
+                Integer.MAX_VALUE,
+                params.getKeepAliveTime(),
+                blocking);
 
         ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), capability, context.getCurrentAddress(),
                 serviceNameBase, params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),
                 params.getHandoffExecutor(), handoffExecutorResolver, blocking ?  null : service.getHandoffExecutorInjector(),
-                context.getServiceTarget());
+                context.getCapabilityServiceTarget());
     }
 
     boolean isBlocking() {

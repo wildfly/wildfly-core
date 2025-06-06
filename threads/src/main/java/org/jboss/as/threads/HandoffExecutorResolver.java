@@ -51,12 +51,6 @@ public interface HandoffExecutorResolver {
                                 OperationContext context);
 
     /**
-     * Standard implementation of {@link ThreadFactoryResolver} -- a {@link SimpleResolver} with a base service name
-     * of {@link ThreadsServices#EXECUTOR}.
-     */
-    HandoffExecutorResolver STANDARD_RESOLVER = new SimpleResolver(ThreadsServices.EXECUTOR);
-
-    /**
      * Base class for {@code ThreadFactoryResolver} implementations that handles the case of a null
      * {@code threadFactoryName} by installing a {@link ThreadFactoryService} whose service name is
      * the service name of the thread pool with {@code thread-factory} appended.
@@ -65,7 +59,7 @@ public interface HandoffExecutorResolver {
 
         @Override
         public ServiceName resolveHandoffExecutor(String handoffExecutorName, String threadPoolName, ServiceName threadPoolServiceName, ServiceTarget serviceTarget) {
-            ServiceName threadFactoryServiceName = null;
+            ServiceName threadFactoryServiceName;
 
             if (handoffExecutorName != null) {
                 threadFactoryServiceName = resolveNamedHandoffExecutor(handoffExecutorName, threadPoolName, threadPoolServiceName);
@@ -109,6 +103,7 @@ public interface HandoffExecutorResolver {
          * @param context  the context of the current operation; can be used to perform any necessary
          *                {@link OperationContext#removeService(ServiceName) service removals}
          */
+        @SuppressWarnings("unused")
         protected void releaseNamedHandoffExecutor(String handoffExecutorName, String threadPoolName, ServiceName threadPoolServiceName,
                                                    OperationContext context) {
             // no-op
@@ -124,6 +119,7 @@ public interface HandoffExecutorResolver {
          *                      a {@link org.jboss.as.threads.ThreadFactoryService}
          * @return the {@link ServiceName} of the {@link ThreadFactoryService} the thread pool should use. May be {@code null}
          */
+        @SuppressWarnings("unused")
         protected ServiceName resolveDefaultHandoffExecutor(String threadPoolName, ServiceName threadPoolServiceName,
                                                             ServiceTarget serviceTarget) {
             return null;
@@ -138,6 +134,7 @@ public interface HandoffExecutorResolver {
          * @param context the context of the current operation; can be used to perform any necessary
          *                {@link OperationContext#removeService(ServiceName) service removals}
          */
+        @SuppressWarnings("unused")
         protected void releaseDefaultHandoffExecutor(ServiceName threadPoolServiceName, OperationContext context) {
             // nothing to do since we didn't create anything
         }
