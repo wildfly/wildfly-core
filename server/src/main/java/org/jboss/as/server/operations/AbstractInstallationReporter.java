@@ -22,6 +22,7 @@ import static org.jboss.as.controller.operations.global.GlobalInstallationReport
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.JVM_VENDOR;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.JVM_VERSION;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.OS;
+import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_CHANNEL_VERSIONS;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_TYPE;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_COMMUNITY_IDENTIFIER;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_HOME;
@@ -39,6 +40,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -174,6 +176,10 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
         product.get(OS).set(createOSNode());
         product.get(CPU).set(createCPUNode());
         product.get(JVM).set(createJVMNode());
+        List<ModelNode> channelVersions = installation.getChannelVersions();
+        if (channelVersions != null && !channelVersions.isEmpty()) {
+            product.get(PRODUCT_CHANNEL_VERSIONS).set(channelVersions);
+        }
         return product;
     }
 
@@ -275,18 +281,18 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
 
         private final ProcessEnvironment environment;
         private final ProductConfig config;
-        private final ModelNode patchingInfo;
+        private final ModelNode installerInfo;
         private final Path installationDir;
 
-        public InstallationConfiguration(ProcessEnvironment environment, ProductConfig config, ModelNode patchingInfo, Path installationDir) {
+        public InstallationConfiguration(ProcessEnvironment environment, ProductConfig config, ModelNode installerInfo, Path installationDir) {
             assert environment != null;
             assert config != null;
-            assert patchingInfo != null;
+            assert installerInfo != null;
             assert installationDir != null;
 
             this.environment = environment;
             this.config = config;
-            this.patchingInfo = patchingInfo;
+            this.installerInfo = installerInfo;
             this.installationDir = installationDir;
         }
 
@@ -310,11 +316,23 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
         }
 
         String getLastUpdateDate() {
-            if (patchingInfo.isDefined()) {
-                List<ModelNode> result = Operations.readResult(patchingInfo).asList();
-                for (ModelNode patchAtt : result) {
-                    if (patchAtt.has("applied-at")) {
-                        return patchAtt.get("applied-at").asString();
+            if (installerInfo.get("result").isDefined()) {
+                List<ModelNode> result = Operations.readResult(installerInfo).asList();
+                for (ModelNode installerAtt : result) {
+                    if (installerAtt.has("timestamp")) {
+                        return installerAtt.get("timestamp").asString();
+                    }
+                }
+            }
+            return null;
+        }
+
+        List<ModelNode> getChannelVersions() {
+            if (installerInfo.get("result").isDefined()) {
+                List<ModelNode> result = Operations.readResult(installerInfo).asList();
+                for (ModelNode installerAtt : result) {
+                    if (installerAtt.has("channel-versions")) {
+                        return installerAtt.get("channel-versions").asList();
                     }
                 }
             }
