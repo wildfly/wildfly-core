@@ -37,8 +37,12 @@ class OperatingSystemMXBeanAttributeHandler extends AbstractPlatformMBeanAttribu
                     || OperatingSystemResourceDefinition.OPERATING_SYSTEM_METRICS.contains(name)) {
                 storeResult(name, context.getResult());
             } else {
-                // Shouldn't happen; the global handler should reject
-                throw unknownAttribute(operation);
+                if (OperatingSystemResourceDefinition.OPERATING_SYSTEM_EXTENDED_METRICS.contains(name)) {
+                    storeExtendedResult(name, context.getResult());
+                } else {
+                    // Shouldn't happen; the global handler should reject
+                    throw unknownAttribute(operation);
+                }
             }
         } catch (SecurityException e) {
             throw new OperationFailedException(e.toString());
@@ -51,6 +55,54 @@ class OperatingSystemMXBeanAttributeHandler extends AbstractPlatformMBeanAttribu
         // Shouldn't happen; the global handler should reject
         throw unknownAttribute(operation);
 
+    }
+
+    static void storeExtendedResult(String name, ModelNode store) {
+        ExtendedOperatingSystemMBean ext = new ExtendedOperatingSystemMBean();
+        if (PlatformMBeanConstants.COMMITTED_VIRTUAL_MEMORY_SIZE.equals(name)) {
+            if (ext.isAttributeDefined(ExtendedOperatingSystemMBean.COMMITTED_VIRTUAL_MEMORY_SIZE_ATTRIBUTE)) {
+                store.set(ext.getCommittedVirtualMemorySize());
+            }
+        } else if (PlatformMBeanConstants.FREE_MEMORY_SIZE.equals(name)) {
+            if (ext.isAttributeDefined(ExtendedOperatingSystemMBean.FREE_MEMORY_SIZE_ATTRIBUTE)) {
+                store.set(ext.getFreePhysicalMemorySize());
+            }
+        } else if (PlatformMBeanConstants.FREE_SWAP_SPACE_SIZE.equals(name)) {
+            if (ext.isAttributeDefined(ExtendedOperatingSystemMBean.FREE_SWAP_SPACE_SIZE_ATTRIBUTE)) {
+                store.set(ext.getFreeSwapSpaceSize());
+            }
+        } else if (PlatformMBeanConstants.PROCESS_CPU_LOAD.equals(name)) {
+            if (ext.isAttributeDefined(ExtendedOperatingSystemMBean.PROCESS_CPU_LOAD_ATTRIBUTE)) {
+                store.set(ext.getProcessCpuLoad());
+            }
+        } else if (PlatformMBeanConstants.PROCESS_CPU_TIME.equals(name)) {
+            if (ext.isAttributeDefined(ExtendedOperatingSystemMBean.PROCESS_CPU_TIME_ATTRIBUTE)) {
+                store.set(ext.getProcessCpuTime());
+            }
+        } else if (PlatformMBeanConstants.CPU_LOAD.equals(name)) {
+            if (ext.isAttributeDefined(ExtendedOperatingSystemMBean.CPU_LOAD_ATTRIBUTE)) {
+                store.set(ext.getSystemCpuLoad());
+            }
+        } else if (PlatformMBeanConstants.TOTAL_MEMORY_SIZE.equals(name)) {
+            if (ext.isAttributeDefined(ExtendedOperatingSystemMBean.TOTAL_MEMORY_SIZE)) {
+                store.set(ext.getTotalPhysicalMemorySize());
+            }
+        } else if (PlatformMBeanConstants.TOTAL_SWAP_SPACE_SIZE.equals(name)) {
+            if (ext.isAttributeDefined(ExtendedOperatingSystemMBean.TOTAL_SWAP_SPACE_SIZE)) {
+                store.set(ext.getTotalSwapSpaceSize());
+            }
+        } else if (PlatformMBeanConstants.MAX_FILE_DESCRIPTOR_COUNT.equals(name)) {
+            if (ext.isAttributeDefined(ExtendedOperatingSystemMBean.MAX_FILE_DESCRIPTOR_COUNT_ATTRIBUTE)) {
+                store.set(ext.getMaxFileDescriptorCount());
+            }
+        } else if (PlatformMBeanConstants.OPEN_FILE_DESCRIPTOR_COUNT.equals(name)) {
+            if (ext.isAttributeDefined(ExtendedOperatingSystemMBean.OPEN_FILE_DESCRIPTOR_COUNT)) {
+                store.set(ext.getOpenFileDescriptorCount());
+            }
+        } else if (OperatingSystemResourceDefinition.OPERATING_SYSTEM_EXTENDED_METRICS.contains(name)) {
+            // Bug
+            throw PlatformMBeanLogger.ROOT_LOGGER.badReadAttributeImpl(name);
+        }
     }
 
     static void storeResult(final String name, final ModelNode store) {
