@@ -185,7 +185,7 @@ public class OperationCancellationUnitTestCase {
         if (cancelViaResource) {
             testCancelViaMmgtOpResource(COMPOSITE, OperationContext.ExecutionStatus.EXECUTING, future, false);
         } else {
-            // cancel should return false becase interrupting here will result in a RuntimeException in the block-model handler
+            // cancel should return false because interrupting here will result in a RuntimeException in the block-model handler
             assertFalse(future.cancel(true));
         }
 
@@ -249,7 +249,7 @@ public class OperationCancellationUnitTestCase {
         if (cancelViaResource) {
             testCancelViaMmgtOpResource(COMPOSITE, OperationContext.ExecutionStatus.EXECUTING, future, false);
         } else {
-            // cancel should return false becase interrupting here will result in a RuntimeException in the block-model handler
+            // cancel should return false because interrupting here will result in a RuntimeException in the block-model handler
             assertFalse(future.cancel(true));
         }
 
@@ -277,7 +277,7 @@ public class OperationCancellationUnitTestCase {
         ModelNode composite = getCompositeOperation(null, step1, step2, step3);
         // With WFCORE-6157 we deliberately prevent cancellation allowing MSC rollback to be skipped,
         // so these ops will take the blocking timeout to execute. So set a lower timeout.
-        // Shorter than 15 would be better but we risk getting intermittent failures if executing our
+        // Shorter than 15 would be better, but we risk getting intermittent failures if executing our
         // cancellation is delayed by a long GC or something. Even 15 has the at risk, but oh well.
         composite.get(OPERATION_HEADERS).get(BLOCKING_TIMEOUT).set(15);
         Future<ModelNode> future = client.executeAsync(composite, null);
@@ -318,7 +318,7 @@ public class OperationCancellationUnitTestCase {
 
         ModelNode blockee = getOperation("good", "attr1", 2);
         Future<ModelNode> future = client.executeAsync(blockee, null);
-        ModelStageGoodHandler.goodHandlerLatch.await(5, TimeUnit.SECONDS);
+        assertTrue(ModelStageGoodHandler.goodHandlerLatch.await(5, TimeUnit.SECONDS));
 
         if (cancelViaResource) {
             testCancelViaMmgtOpResource("good", OperationContext.ExecutionStatus.AWAITING_OTHER_OPERATION, future, true);
@@ -338,9 +338,6 @@ public class OperationCancellationUnitTestCase {
 
     public static ModelNode getOperation(String opName, String attr, int val) {
         return getOperation(opName, attr, val, null, false);
-    }
-    public static ModelNode getOperation(String opName, String attr, int val, String rollbackName) {
-        return getOperation(opName, attr, val, rollbackName, false);
     }
 
     public static ModelNode getOperation(String opName, String attr, int val, String rollbackName, boolean async) {

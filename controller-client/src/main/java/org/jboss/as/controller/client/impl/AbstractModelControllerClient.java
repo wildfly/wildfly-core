@@ -43,8 +43,8 @@ import org.jboss.threads.AsyncFuture;
  */
 public abstract class AbstractModelControllerClient implements ModelControllerClient, ManagementRequestHandlerFactory {
 
-    private static ManagementRequestHandler<ModelNode, OperationExecutionContext> MESSAGE_HANDLER = new HandleReportRequestHandler();
-    private static ManagementRequestHandler<ModelNode, OperationExecutionContext> GET_INPUT_STREAM = new ReadAttachmentInputStreamRequestHandler();
+    private static final ManagementRequestHandler<ModelNode, OperationExecutionContext> MESSAGE_HANDLER = new HandleReportRequestHandler();
+    private static final ManagementRequestHandler<ModelNode, OperationExecutionContext> GET_INPUT_STREAM = new ReadAttachmentInputStreamRequestHandler();
 
     private static final OperationMessageHandler NO_OP_HANDLER = OperationMessageHandler.DISCARD;
 
@@ -151,7 +151,7 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
      * @throws IOException
      */
     private AsyncFuture<OperationResponse> execute(final OperationExecutionContext executionContext) throws IOException {
-        return executeRequest(new AbstractManagementRequest<OperationResponse, OperationExecutionContext>() {
+        return executeRequest(new AbstractManagementRequest<>() {
 
             @Override
             public byte getOperationType() {
@@ -194,18 +194,18 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
             // Read the inputStream index
             expectHeader(input, ModelControllerProtocol.PARAM_INPUTSTREAM_INDEX);
             final int index = input.readInt();
-            context.executeAsync(new ManagementRequestContext.AsyncTask<OperationExecutionContext>() {
+            context.executeAsync(new ManagementRequestContext.AsyncTask<>() {
                 @Override
-                public void execute(final ManagementRequestContext<OperationExecutionContext> context) throws Exception {
-                    final OperationExecutionContext exec = context.getAttachment();
-                    final ManagementRequestHeader header = ManagementRequestHeader.class.cast(context.getRequestHeader());
+                public void execute(final ManagementRequestContext<OperationExecutionContext> taskContext) throws Exception {
+                    final OperationExecutionContext exec = taskContext.getAttachment();
+                    final ManagementRequestHeader header = (ManagementRequestHeader) taskContext.getRequestHeader();
                     final ManagementResponseHeader response = new ManagementResponseHeader(header.getVersion(), header.getRequestId(), null);
                     final InputStreamEntry entry = exec.getStream(index);
                     synchronized (entry) {
                         // Initialize the stream entry
                         final int size = entry.initialize();
                         try {
-                            final FlushableDataOutput output = context.writeMessage(response);
+                            final FlushableDataOutput output = taskContext.writeMessage(response);
                             try {
                                 output.writeByte(ModelControllerProtocol.PARAM_INPUTSTREAM_LENGTH);
                                 output.writeInt(size);
@@ -245,7 +245,7 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
 
     }
 
-    protected AsyncFuture<OperationResponse> executeRequest(final ManagementRequest<OperationResponse, OperationExecutionContext> request, final OperationExecutionContext attachment) throws IOException {
+    AsyncFuture<OperationResponse> executeRequest(final ManagementRequest<OperationResponse, OperationExecutionContext> request, final OperationExecutionContext attachment) throws IOException {
         final ActiveOperation<OperationResponse, OperationExecutionContext> support = getChannelAssociation().executeRequest(request, attachment, attachment);
         return new DelegatingCancellableAsyncFuture(support.getResult(), support.getOperationId());
     }
@@ -350,12 +350,12 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
         }
 
         @Override
-        protected void sendRequest(ActiveOperation.ResultHandler<ModelNode> resultHandler, ManagementRequestContext<OperationExecutionContext> context, FlushableDataOutput output) throws IOException {
+        protected void sendRequest(ActiveOperation.ResultHandler<ModelNode> resultHandler, ManagementRequestContext<OperationExecutionContext> context, FlushableDataOutput output) {
             //
         }
 
         @Override
-        public void handleRequest(DataInput input, ActiveOperation.ResultHandler<ModelNode> resultHandler, ManagementRequestContext<OperationExecutionContext> context) throws IOException {
+        public void handleRequest(DataInput input, ActiveOperation.ResultHandler<ModelNode> resultHandler, ManagementRequestContext<OperationExecutionContext> context) {
             // Once the remote operation returns, we can set the cancelled status
             resultHandler.cancel();
         }
@@ -366,7 +366,7 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
         if(streams.isEmpty()) {
             return Collections.emptyList();
         }
-        final List<InputStreamEntry> entries = new ArrayList<InputStreamEntry>();
+        final List<InputStreamEntry> entries = new ArrayList<>();
         final boolean autoClose = operation.isAutoCloseStreams();
         for(final InputStream stream : streams) {
             if(stream instanceof InputStreamEntry) {

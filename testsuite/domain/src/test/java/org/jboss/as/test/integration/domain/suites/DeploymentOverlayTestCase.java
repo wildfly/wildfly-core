@@ -32,7 +32,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Properties;
@@ -337,7 +336,7 @@ public class DeploymentOverlayTestCase {
         }
     }
 
-    private Operation addDeployment(InputStream attachment) throws MalformedURLException {
+    private Operation addDeployment(InputStream attachment) {
         ModelNode operation = Operations.createAddOperation(PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
         ModelNode content = new ModelNode();
         content.get(INPUT_STREAM_INDEX).set(0);
@@ -345,14 +344,14 @@ public class DeploymentOverlayTestCase {
         return Operation.Factory.create(operation, Collections.singletonList(attachment));
     }
 
-    private ModelNode deployOnServerGroup(PathElement group, String runtimeName) throws MalformedURLException {
+    private ModelNode deployOnServerGroup(PathElement group, String runtimeName) {
         ModelNode operation = Operations.createOperation(ADD, PathAddress.pathAddress(group, DEPLOYMENT_PATH).toModelNode());
         operation.get(RUNTIME_NAME).set(runtimeName);
         operation.get(ENABLED).set(true);
         return operation;
     }
 
-    private ModelNode undeployAndRemoveOp() throws MalformedURLException {
+    private ModelNode undeployAndRemoveOp() {
         ModelNode op = new ModelNode();
         op.get(OP).set(COMPOSITE);
         ModelNode steps = op.get(STEPS);

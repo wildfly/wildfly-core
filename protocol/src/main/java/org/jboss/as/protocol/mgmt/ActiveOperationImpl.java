@@ -22,13 +22,7 @@ class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOper
 
     // All active operations have to use the direct executor for now. At least we need to make sure
     // completion/cancellation/cleanup are executed before further requests are handled.
-    private static final Executor directExecutor = new Executor() {
-
-        @Override
-        public void execute(final Runnable command) {
-            command.run();
-        }
-    };
+    private static final Executor directExecutor = Runnable::run;
 
     private static final List<Cancellable> CANCEL_REQUESTED = Collections.emptyList();
 
@@ -43,7 +37,7 @@ class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOper
         super(directExecutor);
         this.operationId = operationId;
         this.attachment = attachment;
-        addListener(new Listener<T, Object>() {
+        addListener(new Listener<>() {
             @Override
             public void handleComplete(AsyncFuture<? extends T> asyncFuture, Object attachment) {
                 try {
@@ -71,7 +65,7 @@ class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOper
             }
         }, null);
 
-        this.resultHandler = new ResultHandler<T>() {
+        this.resultHandler = new ResultHandler<>() {
             @Override
             public boolean done(T result) {
                 try {
@@ -159,7 +153,7 @@ class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOper
                     if (cancellables == CANCEL_REQUESTED) {
                         break;
                     } else {
-                        ((cancellables == null) ? (this.cancellables = new ArrayList<Cancellable>()) : cancellables).add(cancellable);
+                        ((cancellables == null) ? (this.cancellables = new ArrayList<>()) : cancellables).add(cancellable);
                     }
                 default:
                     return;

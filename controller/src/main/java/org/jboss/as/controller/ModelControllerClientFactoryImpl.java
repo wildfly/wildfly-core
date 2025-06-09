@@ -75,7 +75,7 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
      * Creates a superuser client that can execute calls that are to be regarded as part of process boot.
      * Package protected as this facility should only be made available to kernel code.
      */
-    final LocalModelControllerClient createBootClient(Executor executor) {
+    LocalModelControllerClient createBootClient(Executor executor) {
         return createSuperUserClient(executor, false, true);
     }
 
@@ -155,7 +155,7 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
             OperationResponse response;
             if (forUserCalls) {
                 final SecurityIdentity securityIdentity = securityIdentitySupplier.get();
-                response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<OperationResponse>() {
+                response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<>() {
 
                     @Override
                     public OperationResponse run() {
@@ -202,7 +202,7 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
                             OperationResponse response;
                             if (forUserCalls) {
                                 // We need the AccessAuditContext as that will make any inflowed SecurityIdentity available.
-                                response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<OperationResponse>() {
+                                response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<>() {
 
                                     @Override
                                     public OperationResponse run() {
@@ -335,26 +335,18 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
 
         T fromOperationResponse(OperationResponse or);
 
-        ResponseConverter<ModelNode> TO_MODEL_NODE = new ResponseConverter<ModelNode>() {
-            @Override
-            public ModelNode fromOperationResponse(OperationResponse or) {
-                ModelNode result = or.getResponseNode();
-                try {
-                    or.close();
-                } catch (IOException e) {
-                    ROOT_LOGGER.debugf(e, "Caught exception closing %s whose associated streams, "
-                            + "if any, were not wanted", or);
-                }
-                return result;
+        ResponseConverter<ModelNode> TO_MODEL_NODE = or -> {
+            ModelNode result = or.getResponseNode();
+            try {
+                or.close();
+            } catch (IOException e) {
+                ROOT_LOGGER.debugf(e, "Caught exception closing %s whose associated streams, "
+                        + "if any, were not wanted", or);
             }
+            return result;
         };
 
-        ResponseConverter<OperationResponse> TO_OPERATION_RESPONSE = new ResponseConverter<OperationResponse>() {
-            @Override
-            public OperationResponse fromOperationResponse(final OperationResponse or) {
-                return or;
-            }
-        };
+        ResponseConverter<OperationResponse> TO_OPERATION_RESPONSE = or -> or;
     }
 
     private static <T, U, R> R executeInVm(BiFunction<T, U, R> function, T t, U u) {

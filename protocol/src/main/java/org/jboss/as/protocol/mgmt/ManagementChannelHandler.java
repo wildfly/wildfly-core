@@ -28,7 +28,7 @@ public final class ManagementChannelHandler extends AbstractMessageHandler imple
     /**
      * Optional attachment for a temp file directory.
      */
-    public static final Attachments.Key<File> TEMP_DIR = new Attachments.Key<File>(File.class);
+    public static final Attachments.Key<File> TEMP_DIR = new Attachments.Key<>(File.class);
 
     private static final AtomicReferenceFieldUpdater<ManagementChannelHandler, ManagementRequestHandlerFactory[]> updater = AtomicReferenceFieldUpdater.newUpdater(ManagementChannelHandler.class, ManagementRequestHandlerFactory[].class, "handlers");
     private static final ManagementRequestHandlerFactory[] NO_HANDLERS = new ManagementRequestHandlerFactory[0];
@@ -82,7 +82,7 @@ public final class ManagementChannelHandler extends AbstractMessageHandler imple
     }
 
     @Override
-    public <T, A> ActiveOperation<T, A> initializeOperation(A attachment, ActiveOperation.CompletedCallback<T> callback) throws IOException {
+    public <T, A> ActiveOperation<T, A> initializeOperation(A attachment, ActiveOperation.CompletedCallback<T> callback) {
         return super.registerActiveOperation(attachment, callback);
     }
 

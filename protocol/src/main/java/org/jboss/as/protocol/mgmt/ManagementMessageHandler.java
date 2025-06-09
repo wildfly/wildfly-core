@@ -6,7 +6,6 @@
 package org.jboss.as.protocol.mgmt;
 
 import java.io.DataInput;
-import java.io.IOException;
 
 import org.jboss.remoting3.Channel;
 
@@ -24,8 +23,7 @@ public interface ManagementMessageHandler {
      * @param channel the channel
      * @param input the data input
      * @param header the header
-     * @throws IOException
      */
-    void handleMessage(Channel channel, DataInput input, ManagementProtocolHeader header) throws IOException;
+    void handleMessage(Channel channel, DataInput input, ManagementProtocolHeader header);
 
 }

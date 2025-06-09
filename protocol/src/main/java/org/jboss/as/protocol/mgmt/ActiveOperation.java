@@ -12,11 +12,11 @@ import org.xnio.Cancellable;
  * Encapsulates information about a currently active operation, which
  * can require multiple messages exchanged between the client and the
  * server.
- *
+ * <p/>
  * An attachment is optional, but can be used to maintain a shared state between multiple requests.
  * It can be accessed using the {@link org.jboss.as.protocol.mgmt.ManagementRequestContext#getAttachment()}
  * from the request handler.
- *
+ * <p/>
  * An operation is seen as active until one of the methods on the {@link ActiveOperation.ResultHandler} are called.
  *
  * @param <T> the result type
