@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -41,7 +42,6 @@ import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.remoting3.Channel;
-import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.JBossThreadFactory;
 import org.junit.After;
 import org.junit.Assert;
@@ -243,7 +243,7 @@ public class ModelControllerClientTestCase {
 
             final BlockingQueue<String> messages = new LinkedBlockingQueue<String>();
 
-            AsyncFuture<ModelNode> resultFuture = client.executeAsync(operation,
+            Future<ModelNode> resultFuture = client.executeAsync(operation,
                     new OperationMessageHandler() {
 
                         @Override
@@ -296,7 +296,7 @@ public class ModelControllerClientTestCase {
 
             final BlockingQueue<String> messages = new LinkedBlockingQueue<String>();
 
-            AsyncFuture<ModelNode> resultFuture = client.executeAsync(operation,
+            Future<ModelNode> resultFuture = client.executeAsync(operation,
                     new OperationMessageHandler() {
 
                         @Override

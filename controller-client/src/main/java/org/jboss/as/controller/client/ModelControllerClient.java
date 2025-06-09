@@ -105,7 +105,12 @@ public interface ModelControllerClient extends Closeable {
      *
      * @param operation the operation to execute
      * @return the future result of the operation
+     *
+     * @deprecated the type returned by this method will change to {@link java.util.concurrent.CompletableFuture}.
+     *             Callers can prepare for this by not assigning this method's returned value to a variable of type
+     *             {@link AsyncFuture} but instead use {@link java.util.concurrent.Future} as the variable type.
      */
+    @Deprecated
     default AsyncFuture<ModelNode> executeAsync(ModelNode operation) {
         return executeAsync(Operation.Factory.create(operation), OperationMessageHandler.DISCARD);
     }
@@ -116,7 +121,12 @@ public interface ModelControllerClient extends Closeable {
      * @param operation the operation to execute
      * @param messageHandler the message handler to use for operation progress reporting, or {@code null} for none
      * @return the future result of the operation
+     *
+     * @deprecated the type returned by this method will change to {@link java.util.concurrent.CompletableFuture}.
+     *             Callers can prepare for this by not assigning this method's returned value to a variable of type
+     *             {@link AsyncFuture} but instead use {@link java.util.concurrent.Future} as the variable type.
      */
+    @Deprecated
     default AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
         return executeAsync(Operation.Factory.create(operation), messageHandler);
     }
@@ -129,7 +139,12 @@ public interface ModelControllerClient extends Closeable {
      *
      * @param operation the operation to execute
      * @return the future result of the operation
+     *
+     * @deprecated the type returned by this method will change to {@link java.util.concurrent.CompletableFuture}.
+     *             Callers can prepare for this by not assigning this method's returned value to a variable of type
+     *             {@link AsyncFuture} but instead use {@link java.util.concurrent.Future} as the variable type.
      */
+    @Deprecated
     default AsyncFuture<ModelNode> executeAsync(Operation operation) {
         return executeAsync(operation, OperationMessageHandler.DISCARD);
     }
@@ -143,7 +158,12 @@ public interface ModelControllerClient extends Closeable {
      * @param operation the operation to execute
      * @param messageHandler the message handler to use for operation progress reporting, or {@code null} for none
      * @return the future result of the operation
+     *
+     * @deprecated the type returned by this method will change to {@link java.util.concurrent.CompletableFuture}.
+     *             Callers can prepare for this by not assigning this method's returned value to a variable of type
+     *             {@link AsyncFuture} but instead use {@link java.util.concurrent.Future} as the variable type.
      */
+    @Deprecated
     AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler);
 
     /**
@@ -156,7 +176,12 @@ public interface ModelControllerClient extends Closeable {
      * @param operation the operation to execute
      * @param messageHandler the message handler to use for operation progress reporting, or {@code null} for none
      * @return the future result of the operation
+     *
+     * @deprecated the type returned by this method will change to {@link java.util.concurrent.CompletableFuture}.
+     *             Callers can prepare for this by not assigning this method's returned value to a variable of type
+     *             {@link AsyncFuture} but instead use {@link java.util.concurrent.Future} as the variable type.
      */
+    @Deprecated
     AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler);
 
     /** Factory methods for creating a {@code ModelControllerClient}. */

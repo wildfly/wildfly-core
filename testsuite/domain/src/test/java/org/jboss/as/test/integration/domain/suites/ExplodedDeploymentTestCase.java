@@ -75,7 +75,6 @@ import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.jboss.threads.AsyncFuture;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -135,7 +134,7 @@ public class ExplodedDeploymentTestCase {
         final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
         ModelNode result;
         try (InputStream is = archive.as(ZipExporter.class).exportAsInputStream()) {
-            AsyncFuture<ModelNode> future = primaryClient.executeAsync(addDeployment(is), null);
+            Future<ModelNode> future = primaryClient.executeAsync(addDeployment(is), null);
             result = awaitSimpleOperationExecution(future);
         }
         assertTrue(Operations.isSuccessfulOutcome(result));
@@ -143,7 +142,7 @@ public class ExplodedDeploymentTestCase {
         String initialHash = HashUtil.bytesToHexString(contentNode.get(HASH).asBytes());
         assertTrue(contentNode.get(ARCHIVE).asBoolean(true));
         //Let's explode it
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(Operations.createOperation(EXPLODE, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode()), null);
+        Future<ModelNode> future = primaryClient.executeAsync(Operations.createOperation(EXPLODE, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
@@ -205,7 +204,7 @@ public class ExplodedDeploymentTestCase {
 
     @Test
     public void testInstallAndExplodeDeploymentOnDCFromScratch() throws IOException, MgmtOperationException {
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(addEmptyDeployment(), null); //Add empty deployment
+        Future<ModelNode> future = primaryClient.executeAsync(addEmptyDeployment(), null); //Add empty deployment
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
@@ -305,7 +304,7 @@ public class ExplodedDeploymentTestCase {
         steps.add(addContent);
         Operation operation = Operation.Factory.create(composite, contentAttachments);
 
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
+        Future<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(result.toString(), Operations.isSuccessfulOutcome(result));
         ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
@@ -342,7 +341,7 @@ public class ExplodedDeploymentTestCase {
         steps.add(deployOnServerGroup());
         Operation operation = Operation.Factory.create(composite, contentAttachments);
 
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
+        Future<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(result.toString(), Operations.isSuccessfulOutcome(result));
         ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
@@ -356,7 +355,7 @@ public class ExplodedDeploymentTestCase {
         ModelNode operation = Operations.createReadResourceOperation(address.toModelNode());
         operation.get(INCLUDE_RUNTIME).set(true);
         operation.get(INCLUDE_DEFAULTS).set(true);
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
+        Future<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         return Operations.readResult(result);
@@ -383,7 +382,7 @@ public class ExplodedDeploymentTestCase {
         if (path != null && !path.isEmpty()) {
             operation.get(PATH).set(path);
         }
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
+        Future<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode response = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(response));
         List<ModelNode> contents = Operations.readResult(response).asList();
@@ -403,7 +402,7 @@ public class ExplodedDeploymentTestCase {
     public void checkNoContent(String path) throws IOException {
         ModelNode operation = Operations.createOperation(READ_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
         operation.get(PATH).set(path);
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
+        Future<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertFalse(Operations.isSuccessfulOutcome(result));
     }
