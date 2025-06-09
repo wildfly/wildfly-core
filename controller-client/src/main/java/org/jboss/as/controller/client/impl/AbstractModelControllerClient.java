@@ -54,9 +54,8 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
      * Get the mgmt channel association.
      *
      * @return the channel association
-     * @throws IOException
      */
-    protected abstract ManagementChannelAssociation getChannelAssociation() throws IOException;
+    protected abstract ManagementChannelAssociation getChannelAssociation();
 
     @Override
     public ModelNode execute(final ModelNode operation) throws IOException {
@@ -379,7 +378,7 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
         return entries;
     }
 
-    private OperationResponse getOperationResponse(final ModelNode simpleResponse, final int batchId) throws IOException {
+    private OperationResponse getOperationResponse(final ModelNode simpleResponse, final int batchId) {
         final ModelNode streamHeader =  simpleResponse.hasDefined(RESPONSE_HEADERS) && simpleResponse.get(RESPONSE_HEADERS).hasDefined(ATTACHED_STREAMS)
                 ? simpleResponse.get(RESPONSE_HEADERS, ATTACHED_STREAMS)
                 : null;

@@ -74,7 +74,7 @@ class DomainTestConnection implements Closeable {
             }
 
             @Override
-            protected ManagementChannelAssociation getChannelAssociation() throws IOException {
+            protected ManagementChannelAssociation getChannelAssociation() {
                 return handler;
             }
 
