@@ -12,7 +12,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-subsystem-test-parent</artifactId>
-        <version>28.0.0-1-PSI-SNAPSHOT</version>
+        <version>28.0.0-1-PSI-ALPHA-1</version>
     </parent>
 
     <artifactId>wildfly-subsystem-test-tests</artifactId>
