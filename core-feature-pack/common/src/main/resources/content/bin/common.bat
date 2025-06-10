@@ -40,7 +40,7 @@ goto :eof
 :setDefaultModularJvmOptions
   call :setModularJdk
   if "!MODULAR_JDK!" == "true" (
-    echo "%~1" | findstr /I "\-\-add\-modules" > nul
+    echo %* | findstr /I "\-\-add\-modules" > nul
     if errorlevel == 1 (
       rem Set default modular jdk options
       rem Needed by the iiop-openjdk subsystem
