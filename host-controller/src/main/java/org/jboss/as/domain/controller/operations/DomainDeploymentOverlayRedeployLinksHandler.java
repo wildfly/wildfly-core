@@ -5,6 +5,7 @@
 package org.jboss.as.domain.controller.operations;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -19,6 +20,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENTS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY_LINK_REMOVAL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REDEPLOY_LINKS;
+import static org.jboss.as.domain.controller.logging.DomainControllerLogger.DEPLOYMENT_NAMECHECK_LOGGER;
+
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.server.deploymentoverlay.AffectedDeploymentOverlay;
 import org.jboss.dmr.ModelNode;
@@ -71,6 +74,15 @@ public class DomainDeploymentOverlayRedeployLinksHandler implements OperationSte
             if(!requiredRuntimeNames.isEmpty()) {
                 runtimeNames = requiredRuntimeNames;
             }
+        }
+
+        for (String runtimeName : runtimeNames) {
+//            if (!runtimeName.contains(".")) {
+//                Set<String> deployments = AffectedDeploymentOverlay.listAllLinks()
+//                context.resou
+//                DEPLOYMENT_NAMECHECK_LOGGER.deploymentsRuntimeNameWithoutExtension(deploymentName, runtimeName);
+//            }
+            DEPLOYMENT_NAMECHECK_LOGGER.controlPrint("THIS IS RUNTIME " + runtimeName);
         }
         return runtimeNames;
     }

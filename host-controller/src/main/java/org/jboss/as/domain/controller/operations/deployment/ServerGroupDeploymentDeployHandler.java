@@ -36,6 +36,7 @@ public class ServerGroupDeploymentDeployHandler implements OperationStepHandler 
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                ServerGroupDeploymentAddHandler.checkRuntimeNameExtension(name, context, address);
                 ServerGroupDeploymentAddHandler.validateRuntimeNames(name, context, address);
             }
         }, OperationContext.Stage.MODEL);

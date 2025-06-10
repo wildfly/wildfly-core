@@ -76,8 +76,9 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         final PathAddress address = PathAddress.pathAddress(deploymentPath);
         String runtimeName = correctedOperation.hasDefined(RUNTIME_NAME)
                 ? DeploymentAttributes.RUNTIME_NAME.resolveModelAttribute(context, correctedOperation).asString() : name;
+        String serverGroupName = address.subAddress(0, address.size() - 1).getLastElement().getValue();
         if (!runtimeName.contains(".")) {
-            DEPLOYMENT_NAMECHECK_LOGGER.deploymentsRuntimeNameWithoutExtension(name, runtimeName);
+            DEPLOYMENT_NAMECHECK_LOGGER.deploymentsRuntimeNameWithoutExtension(name, runtimeName, serverGroupName);
         }
         // clone the content param, so we can modify it to our own content
         ModelNode content = correctedOperation.require(CONTENT).clone();

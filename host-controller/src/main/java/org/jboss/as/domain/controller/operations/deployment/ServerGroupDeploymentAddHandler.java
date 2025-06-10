@@ -83,9 +83,21 @@ public class ServerGroupDeploymentAddHandler implements OperationStepHandler {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                checkRuntimeNameExtension(name, context, address);
                 validateRuntimeNames(name, context, address);
             }
         }, OperationContext.Stage.MODEL);
+    }
+
+    static void checkRuntimeNameExtension(String name, OperationContext context, PathAddress address) {
+        ModelNode deployment = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
+        Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
+        ModelNode domainDeployment = root.getChild(PathElement.pathElement(DEPLOYMENT, name)).getModel();
+        String runtimeName = getRuntimeName(name, deployment, domainDeployment);
+        String serverGroupName = address.subAddress(0, address.size() - 1).getLastElement().getValue();
+        if (!runtimeName.contains(".")) {
+            DEPLOYMENT_NAMECHECK_LOGGER.deploymentsRuntimeNameWithoutExtension(name, runtimeName, serverGroupName);
+        }
     }
 
     static void validateRuntimeNames(String deploymentName, OperationContext context, PathAddress address) throws OperationFailedException {
@@ -95,9 +107,6 @@ public class ServerGroupDeploymentAddHandler implements OperationStepHandler {
             Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
             ModelNode domainDeployment = root.getChild(PathElement.pathElement(DEPLOYMENT, deploymentName)).getModel();
             String runtimeName = getRuntimeName(deploymentName, deployment, domainDeployment);
-            if (!runtimeName.contains(".")) {
-                DEPLOYMENT_NAMECHECK_LOGGER.deploymentsRuntimeNameWithoutExtension(deploymentName, runtimeName);
-            }
             PathAddress sgAddress = address.subAddress(0, address.size() - 1);
             Resource serverGroup = root.navigate(sgAddress);
             for (Resource.ResourceEntry re : serverGroup.getChildren(DEPLOYMENT)) {
@@ -116,7 +125,7 @@ public class ServerGroupDeploymentAddHandler implements OperationStepHandler {
         }
     }
 
-    private static String getRuntimeName(String name, ModelNode deployment, ModelNode domainDeployment) {
+    static String getRuntimeName(String name, ModelNode deployment, ModelNode domainDeployment) {
         if (deployment.hasDefined(ModelDescriptionConstants.RUNTIME_NAME)) {
             return deployment.get(ModelDescriptionConstants.RUNTIME_NAME).asString();
         } else if (domainDeployment.hasDefined(ModelDescriptionConstants.RUNTIME_NAME)) {

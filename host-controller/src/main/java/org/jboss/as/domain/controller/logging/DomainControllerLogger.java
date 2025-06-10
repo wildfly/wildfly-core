@@ -797,6 +797,10 @@ public interface DomainControllerLogger extends BasicLogger {
     OperationFailedException serverManagementUnavailableDuringBoot(String serverNames);
 
     @LogMessage(level = Level.WARN)
-    @Message(id = 99, value = "Deployment '%s' has a runtime name '%s' without an extension. This may cause issues in some environments.")
-    void deploymentsRuntimeNameWithoutExtension(String deploymentName, String runtimeName);
+    @Message(id = 99, value = "Deployment '%s' has a runtime name '%s' without an extension on server group %s. This may cause issues in some environments.")
+    void deploymentsRuntimeNameWithoutExtension(String deploymentName, String runtimeName, String serverGroupName);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 100, value = "%s")
+    void controlPrint(String message);
 }
