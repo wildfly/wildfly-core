@@ -24,6 +24,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.AbstractManagementRequest;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
@@ -37,6 +38,7 @@ import org.jboss.as.protocol.mgmt.ManagementRequestHandlerFactory;
 import org.jboss.as.protocol.mgmt.ManagementRequestHeader;
 import org.jboss.as.protocol.mgmt.ManagementResponseHeader;
 import org.jboss.dmr.ModelNode;
+import org.jboss.threads.AsyncFuture;
 
 
 /**
@@ -264,11 +266,27 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
     }
 
     private void executeCancelAsyncRequest(ActiveOperation<?, ?> activeOperation) {
-        try {
-            getChannelAssociation().executeRequest(activeOperation.getOperationId(), new CancelAsyncRequest());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        if (activeOperation.getResult().getStatus() == AsyncFuture.Status.WAITING) {
+            // Tell the remote side to cancel
+            Integer operationId = activeOperation.getOperationId();
+            try {
+                getChannelAssociation().executeRequest(operationId, new CancelAsyncRequest());
+            } catch (Exception e) {
+                AsyncFuture.Status status = activeOperation.getResult().getStatus();
+                if (status == AsyncFuture.Status.WAITING) {
+                    if (e instanceof RuntimeException) {
+                        throw (RuntimeException) e;
+                    } else {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    // Most likely there was a race between our sending CancelAsyncRequest and the operation finishing.
+                    // The operation is done though, so just debug log the failure and move on.
+                    ControllerClientLogger.ROOT_LOGGER.debugf(e, "Executing CancelAsyncRequest for operation %s " +
+                            "failed but the operation reached status %s, so the failure is being ignored", operationId, status);
+                }
+            }
+        } // else the ActiveOperation is already done and there's nothing to cancel
     }
 
     static class OperationExecutionContext implements ActiveOperation.CompletedCallback<OperationResponse> {

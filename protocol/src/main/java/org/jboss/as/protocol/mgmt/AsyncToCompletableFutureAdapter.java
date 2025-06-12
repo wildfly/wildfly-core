@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.threads.AsyncFuture;
 
 /**
@@ -116,20 +117,23 @@ public final class AsyncToCompletableFutureAdapter {
                 asyncCancelConsumer.accept(mayInterruptIfRunning);
                 boolean afCancelled = asyncFuture.awaitUninterruptibly() == AsyncFuture.Status.CANCELLED;
 
-                if (!afCancelled) {
+                if (afCancelled) {
+                    ProtocolLogger.ROOT_LOGGER.tracef("%s: AsyncFuture is cancelled; proceeding to cancel ourself",
+                            getClass().getEnclosingClass().getSimpleName(), getClass().getSimpleName());
+                } else {
                     // Our AsyncFuture.Listener completes this future asynchronously,
                     // so block until it has done so before providing the resulting
                     // state by calling super.cancel.
                     //
                     // We do this because canceling the async future may result in
-                    // the canceled management op returning with either outcome=cancelled
-                    // or outcome=failed. We're in this block, so we know it's the latter.
+                    // the canceled management op returning with outcome=success,
+                    // outcome=failed or outcome=cancelled.
                     // We know this will result in the listener, in another
-                    // thread, eventually trying to complete this exceptionally.
+                    // thread, eventually trying to complete or cancel this CompletableFuture.
                     // We don't want the determination of whether this method returns
                     // true or false to be decided by a race between our call below to
-                    // super.cancel and the listener thread completing the
-                    // future as failed. So we block to let the listener thread win the race.
+                    // super.cancel and the listener thread completing or cancelling the
+                    // future. So we block to let the listener thread win the race.
                     //
                     // An alternative approach would be to call super.cancel first before
                     // cancelling the asyncFuture. But that could result in inconsistency
@@ -137,13 +141,15 @@ public final class AsyncToCompletableFutureAdapter {
                     // executed op. When ModelControllerClient async methods formerly returned an
                     // AsyncFuture these results were consistent, so we're maintaining
                     // that behavior with the CompletableFuture we now return.
+                    ProtocolLogger.ROOT_LOGGER.tracef("%s.%s: Awaiting AsyncFuture.Listener before proceeding to cancel ourself",
+                            getClass().getEnclosingClass().getSimpleName(), getClass().getSimpleName());
                     awaitLatch();
                 }
                 return super.cancel(mayInterruptIfRunning);
             } finally {
                 // Code hardening:
                 // If for some reason asyncFuture.awaitUninterruptibly() returns CANCELLED
-                // without the listener getting invoked, now that we're cancelled make sure
+                // without the listener getting invoked (yet), now that we're cancelled make sure
                 // the latch is counted down so other calls to cancel don't block.
                 latch.countDown();
             }
