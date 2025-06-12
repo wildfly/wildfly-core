@@ -11,10 +11,21 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.security.MessageDigest;
+import java.util.EnumSet;
 
 /**
  * Shared fs utils for the test suite.
@@ -130,5 +141,50 @@ public class FileUtils {
         }
     }
 
+    public static String computeHash(Path p) throws Exception {
+        byte[] data = Files.readAllBytes(p);
+        byte[] hash = MessageDigest.getInstance("MD5").digest(data);
+        return new BigInteger(1, hash).toString(16);
+    }
 
+    public static void unzipFile(Path zipFile, Path targetDir) throws IOException {
+        if (!Files.exists(targetDir)) {
+            Files.createDirectories(targetDir);
+        }
+        try (FileSystem zipfs = newFileSystem(zipFile)) {
+            for (Path zipRoot : zipfs.getRootDirectories()) {
+                unzip(zipRoot, targetDir);
+            }
+        }
+    }
+
+    private static FileSystem newFileSystem(Path path) throws IOException {
+        return FileSystems.newFileSystem(path, (ClassLoader) null);
+    }
+
+    private static void unzip(Path source, Path target) throws IOException {
+        Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
+                new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                    throws IOException {
+                final Path targetDir = target.resolve(source.relativize(dir).toString());
+                try {
+                    Files.copy(dir, targetDir);
+                } catch (FileAlreadyExistsException e) {
+                    if (!Files.isDirectory(targetDir)) {
+                        throw e;
+                    }
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Files.copy(file, target.resolve(source.relativize(file).toString()), StandardCopyOption.REPLACE_EXISTING);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
 }// class
