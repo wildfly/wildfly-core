@@ -22,14 +22,14 @@ import org.jboss.msc.service.ServiceName;
 public class UnboundedQueueThreadPoolWriteAttributeHandler extends ThreadsWriteAttributeOperationHandler {
 
     private final ServiceName serviceNameBase;
-    private final RuntimeCapability capability;
+    private final RuntimeCapability<Void> capability;
 
     @Deprecated(forRemoval = true)
     public UnboundedQueueThreadPoolWriteAttributeHandler(ServiceName serviceNameBase) {
         this(null, serviceNameBase);
     }
 
-    public UnboundedQueueThreadPoolWriteAttributeHandler(final RuntimeCapability capability, ServiceName serviceNameBase) {
+    public UnboundedQueueThreadPoolWriteAttributeHandler(final RuntimeCapability<Void> capability, ServiceName serviceNameBase) {
         super(UnboundedQueueThreadPoolAdd.ATTRIBUTES);
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;
@@ -39,7 +39,7 @@ public class UnboundedQueueThreadPoolWriteAttributeHandler extends ThreadsWriteA
     protected void applyOperation(final OperationContext context, ModelNode model, String attributeName,
                                   ServiceController<?> service, boolean forRollback) throws OperationFailedException {
 
-        final UnboundedQueueThreadPoolService pool =  (UnboundedQueueThreadPoolService) service.getService();
+        final EnhancedQueueExecutorService pool =  (EnhancedQueueExecutorService) service.getService();
 
         if (PoolAttributeDefinitions.KEEPALIVE_TIME.getName().equals(attributeName)) {
             TimeUnit defaultUnit = pool.getKeepAliveUnit();
