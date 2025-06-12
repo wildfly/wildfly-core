@@ -16,11 +16,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import org.jboss.as.server.deployment.SimpleAttachable;
 import org.jboss.modules.DependencySpec;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ResourceLoaderSpec;
 import org.jboss.modules.security.PermissionFactory;
 
@@ -205,17 +203,6 @@ public class ModuleSpecification extends SimpleAttachable {
     }
 
     /**
-     * Records that a module with the given identifier should be excluded from use as a system or local dependency.
-     * @param exclusion the module to exclude. Cannot be {@code null}
-     *
-     * @deprecated use {@link #addModuleExclusion(String)}
-     */
-    @Deprecated(forRemoval = true)
-    public void addExclusion(final ModuleIdentifier exclusion) {
-        addModuleExclusion(exclusion.toString());
-    }
-
-    /**
      * Records that a module with the given name should be excluded from use as a system or local dependency.
      * @param exclusion the module to exclude. Cannot be {@code null}
      */
@@ -248,20 +235,6 @@ public class ModuleSpecification extends SimpleAttachable {
             }
         }
     }
-
-    /**
-     * Records a collection of modules as being {@link #addModuleExclusion(String) excluded}.
-     * @param exclusions the identifiers of the modules to exclude. Cannot be {@code null}
-     *
-     * @deprecated iterate over the exclusions and call {@link #addModuleExclusion(String)}
-     */
-    @Deprecated(forRemoval = true)
-    public void addExclusions(final Iterable<ModuleIdentifier> exclusions) {
-        for (final ModuleIdentifier exclusion : exclusions) {
-            addExclusion(exclusion);
-        }
-    }
-
 
     /**
      * Local dependencies are dependencies on other parts of the deployment, such as a class-path entry
@@ -371,45 +344,9 @@ public class ModuleSpecification extends SimpleAttachable {
     /**
      * Record that another module is an alias for this module.
      * @param moduleIdentifier the identifier of the alias module. Cannot be {@code null}
-     *
-     * @deprecated use {@link #addModuleAlias(String)}
-     */
-    @Deprecated(forRemoval = true)
-    @SuppressWarnings("unused")
-    public void addAlias(final ModuleIdentifier moduleIdentifier) {
-        addModuleAlias(moduleIdentifier.toString());
-    }
-
-    /**
-     * Record that another module is an alias for this module.
-     * @param moduleIdentifier the identifier of the alias module. Cannot be {@code null}
      */
     public void addModuleAlias(final String moduleIdentifier) {
         aliases.add(moduleIdentifier);
-    }
-
-    /**
-     * Record that a collection of other modules are aliases for this module.
-     * @param moduleIdentifiers the identifiers of the alias modules. Cannot be {@code null}
-     *
-     * @deprecated iterate over the identifiers and call {@link #addModuleAlias(String)}
-     */
-    @Deprecated(forRemoval = true)
-    public void addAliases(final Collection<ModuleIdentifier> moduleIdentifiers) {
-        for (ModuleIdentifier id : moduleIdentifiers) {
-            addModuleAlias(id.toString());
-        }
-    }
-
-    /**
-     * Gets the identifiers of modules that are aliases for this module.
-     * @return the identifiers. Will not return {@code null}
-     *
-     * @deprecated use {@link #getModuleAliases()}
-     */
-    @Deprecated(forRemoval = true)
-    public List<ModuleIdentifier> getAliases() {
-        return aliases.stream().map(ModuleIdentifier::fromString).collect(Collectors.toList());
     }
 
     /**
@@ -456,19 +393,6 @@ public class ModuleSpecification extends SimpleAttachable {
      */
     public List<PermissionFactory> getPermissionFactories() {
         return permissionFactories;
-    }
-
-    /**
-     * Gets the identifiers of dependencies that {@link #addModuleExclusion(String) were meant to be excluded} but which were
-     * never recorded as a dependency.
-     *
-     * @return the names. Will not return {@code null}
-     *
-     * @deprecated use {@link #getFictitiousExcludedDependencies()}
-     */
-    @Deprecated(forRemoval = true)
-    public Set<ModuleIdentifier> getNonexistentExcludedDependencies() {
-        return getFictitiousExcludedDependencies().stream().map(ModuleIdentifier::fromString).collect(Collectors.toSet());
     }
 
     /**

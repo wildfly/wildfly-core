@@ -22,7 +22,6 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.logging.Logger;
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.ModuleDependencySpecBuilder;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleSpec;
 import org.jboss.modules.ResourceLoaderSpec;
 import org.jboss.modules.ResourceLoaders;
@@ -49,21 +48,6 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
     private volatile ModuleDefinition moduleDefinition;
 
     private List<JarFile> jarFiles;
-
-    /**
-     * Creates a new ExternalModuleSpecService.
-     *
-     * @param moduleIdentifier the module identifier
-     * @param file the file
-     *
-     * @deprecated Use {@link #ExternalModuleSpecService(String, File)} instead.
-     */
-    @Deprecated(forRemoval = true, since = "28.0.0")
-    public ExternalModuleSpecService(ModuleIdentifier moduleIdentifier, File file) {
-        this.moduleIdentifier = moduleIdentifier.toString();
-        this.file = file;
-        this.jarFiles = new ArrayList<>();
-    }
 
     public ExternalModuleSpecService(String moduleIdentifier, File file) {
         this.moduleIdentifier = moduleIdentifier;
