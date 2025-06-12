@@ -38,7 +38,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>29.0.0.Beta4</version>
+        <version>29.0.0.Beta5-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-testsuite</artifactId>
