@@ -59,7 +59,7 @@ public class InterfaceAddHandler extends AbstractAddStepHandler {
 
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         String name = context.getCurrentAddressValue();
-        ParsedInterfaceCriteria parsed = getCriteria(context, operation);
+        ParsedInterfaceCriteria parsed = getCriteria(context, model);
         if (parsed.getFailureMessage() != null) {
             throw new OperationFailedException(parsed.getFailureMessage());
         }

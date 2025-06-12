@@ -11,6 +11,7 @@ import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,7 +40,7 @@ public final class ParsedInterfaceCriteria {
 
     private final String failureMessage;
     private final boolean anyLocal;
-    private final Set<InterfaceCriteria> criteria = new LinkedHashSet<InterfaceCriteria>();
+    private final Set<InterfaceCriteria> criteria = new LinkedHashSet<>();
 
     private ParsedInterfaceCriteria(final String failureMessage) {
         this.failureMessage = failureMessage;
@@ -84,12 +85,19 @@ public final class ParsedInterfaceCriteria {
         } else {
             try {
                 final List<Property> nodes = subModel.asPropertyList();
-                final Set<InterfaceCriteria> criteriaSet = new LinkedHashSet<InterfaceCriteria>();
-                for (final Property property : nodes) {
+                final Set<InterfaceCriteria> criteriaSet = new LinkedHashSet<>();
+                int definedPropertyCount = 0;
+                for (Iterator<Property> propertyIterator = nodes.iterator(); propertyIterator.hasNext() ; ) {
+                    Property property = propertyIterator.next();
+                    // The model will have properties for all attributes; ignore the undefined ones
+                    if (!property.getValue().isDefined()) {
+                        continue;
+                    }
+                    definedPropertyCount++;
                     final InterfaceCriteria criterion = parseCriteria(property, false, expressionResolver);
                     if (criterion instanceof WildcardInetAddressInterfaceCriteria) {
-                        // AS7-1668: stop processing and just return the any binding.
-                        if (nodes.size() > 1) {
+                        // AS7-1668: stop processing and just return the 'any' binding.
+                        if (definedPropertyCount > 1 || hasMoreDefinedProperties(propertyIterator)) {
                             MGMT_OP_LOGGER.wildcardAddressDetected();
                         }
                         return ParsedInterfaceCriteria.ANY;
@@ -172,7 +180,7 @@ public final class ParsedInterfaceCriteria {
         if(!subModel.isDefined() || subModel.asInt() == 0) {
             return null;
         }
-        final Set<InterfaceCriteria> criteriaSet = new LinkedHashSet<InterfaceCriteria>();
+        final Set<InterfaceCriteria> criteriaSet = new LinkedHashSet<>();
         for(final Property nestedProperty :  subModel.asPropertyList()) {
             final Element element = Element.forName(nestedProperty.getName());
             switch (element) {
@@ -270,6 +278,15 @@ public final class ParsedInterfaceCriteria {
     }
     private static ModelNode parsePossibleExpression(final ModelNode node) {
         return (node.getType() == ModelType.STRING) ? ParseUtils.parsePossibleExpression(node.asString()) : node;
+    }
+
+    private static boolean hasMoreDefinedProperties(Iterator<Property> iterator) {
+        while (iterator.hasNext()) {
+            if (iterator.next().getValue().isDefined()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static class ParsingException extends RuntimeException {

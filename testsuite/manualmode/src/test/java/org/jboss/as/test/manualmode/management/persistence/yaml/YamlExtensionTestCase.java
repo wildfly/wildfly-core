@@ -22,6 +22,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUI
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,8 +49,10 @@ import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.as.test.shared.AssumeTestGroupUtil;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -93,6 +98,7 @@ public class YamlExtensionTestCase {
     private static Path testSocketOverrideYaml;
     private static Path testPortOffsetOverrideYaml;
     private static Path testRemoveSocketYaml;
+    private static Path testInterfaceOverrideYaml;
     private static Path testAddingExtensionPathDeploymentOverlayIgnored;
     private static Path testAddingEmptyExtensionFailYaml;
     private static Path testDeploymentYaml;
@@ -151,6 +157,7 @@ public class YamlExtensionTestCase {
         testSocketOverrideYaml = getResourceFilePath("test-socket-override.yml");
         testPortOffsetOverrideYaml = getResourceFilePath("test-port-offset-override.yml");
         testRemoveSocketYaml = getResourceFilePath("test-remove-socket.yml");
+        testInterfaceOverrideYaml = getResourceFilePath("test-interface-override.yml");
         testAddingExtensionPathDeploymentOverlayIgnored = getResourceFilePath("test-adding-extension-path-deployment-overlay-ignored.yml");
         testAddingEmptyExtensionFailYaml = getResourceFilePath("test-adding-empty-extension.yml");
         testDeploymentYaml = getResourceFilePath("test-deployment.yml");
@@ -642,6 +649,21 @@ public class YamlExtensionTestCase {
         container.start();
 
         Assert.assertEquals("Yaml changes to configuration were persisted to xml. This should never happen.", defaultXml, readConfigAsXml());
+    }
+
+    @Test
+    public void testInterfaceOverride() throws UnknownHostException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        container.startYamlExtension(new PrintStream(byteArrayOutputStream), new Path[]{testInterfaceOverrideYaml});
+        String logged = byteArrayOutputStream.toString();
+
+        InetAddress serverAddress = InetAddress.getByName(TestSuiteEnvironment.getServerAddress());
+        String expectedAddress = serverAddress instanceof Inet4Address ? "0.0.0.0" : "[0:0:0:0:0:0:0:0]";
+        String expectedConsoleOutput = "http://"+ expectedAddress + ":9990/management";
+        assertThat("The server didn't log it is listening on address 0.0.0.0.", logged, CoreMatchers.containsString(expectedConsoleOutput));
+        String unexpectedAddress = NetworkUtils.formatIPAddressForURI(serverAddress);
+        String unexpectedConsoleOutput = "http://" + unexpectedAddress + ":9990/management";
+        assertThat("The server logged it is listening on address 127.0.0.1.", logged, CoreMatchers.not(CoreMatchers.containsString(unexpectedConsoleOutput)));
     }
 
     private void waitForRunningMode(String runningMode) throws Exception {
