@@ -18,6 +18,13 @@
     <dependencies>
         <module name="java.management"/>
         <module name="jdk.unsupported"/>
+        <!-- declared in the JBoss Threads module-info,
+             but not actually used
+        <module name="io.smallrye.common.annotation"/>
+        -->
+        <module name="io.smallrye.common.constraint"/>
+        <module name="io.smallrye.common.cpu"/>
+        <module name="io.smallrye.common.function"/>
         <module name="org.wildfly.common"/>
         <module name="org.jboss.logging"/>
     </dependencies>

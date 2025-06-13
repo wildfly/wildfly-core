@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.security.auth.callback.CallbackHandler;
@@ -29,7 +30,6 @@ import org.jboss.as.controller.client.helpers.domain.ServerIdentity;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.threads.AsyncFuture;
 
 /**
  * Domain client implementation.
@@ -81,12 +81,12 @@ public class DomainClientImpl implements DomainClient {
     }
 
     @Override
-    public AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
         return delegate.executeAsync(operation, messageHandler);
     }
 
     @Override
-    public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
         return delegate.executeAsync(operation, messageHandler);
     }
 
@@ -96,7 +96,7 @@ public class DomainClientImpl implements DomainClient {
     }
 
     @Override
-    public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
         return delegate.executeOperationAsync(operation, messageHandler);
     }
 

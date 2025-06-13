@@ -31,9 +31,9 @@ public abstract class ThreadPoolMetricsHandler extends AbstractRuntimeOnlyHandle
 
     private final List<AttributeDefinition> metrics;
     private final ServiceName serviceNameBase;
-    private final RuntimeCapability capability;
+    private final RuntimeCapability<Void> capability;
 
-    protected ThreadPoolMetricsHandler(final List<AttributeDefinition> metrics, final RuntimeCapability capability, final ServiceName serviceNameBase) {
+    protected ThreadPoolMetricsHandler(final List<AttributeDefinition> metrics, final RuntimeCapability<Void> capability, final ServiceName serviceNameBase) {
         this.metrics = metrics;
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;

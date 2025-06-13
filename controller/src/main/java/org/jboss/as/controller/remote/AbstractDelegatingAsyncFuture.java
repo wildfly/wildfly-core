@@ -3,24 +3,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.jboss.as.controller.client.impl;
+package org.jboss.as.controller.remote;
 
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.jboss.threads.AsyncFuture;
 
 /**
- * Base class for {@link org.jboss.as.controller.client.impl.AbstractDelegatingAsyncFuture}
- * and {@link org.jboss.as.controller.client.impl.ConvertingDelegatingAsyncFuture} that handles the
- * simple delegation stuff.
- *
- * @author Brian Stansberry (c) 2014 Red Hat Inc.
+ * @author Emanuel Muckenhuber
  */
-abstract class BasicDelegatingAsyncFuture<T, D> implements AsyncFuture<T> {
+abstract class AbstractDelegatingAsyncFuture<T> implements AsyncFuture<T> {
 
-    final AsyncFuture<D> delegate;
+    final AsyncFuture<T> delegate;
 
-    BasicDelegatingAsyncFuture(AsyncFuture<D> delegate) {
+    AbstractDelegatingAsyncFuture(AsyncFuture<T> delegate) {
         this.delegate = delegate;
     }
 
@@ -65,5 +64,29 @@ abstract class BasicDelegatingAsyncFuture<T, D> implements AsyncFuture<T> {
     @Override
     public boolean isDone() {
         return delegate.isDone();
+    }
+
+    @Override
+    public T getUninterruptibly() throws CancellationException, ExecutionException {
+        return delegate.getUninterruptibly();
+    }
+
+    @Override
+    public T getUninterruptibly(long timeout, TimeUnit unit) throws CancellationException, ExecutionException, TimeoutException {
+        return delegate.getUninterruptibly(timeout, unit);
+    }
+
+    public <A> void addListener(Listener<? super T, A> aListener, A attachment) {
+        delegate.addListener(aListener, attachment);
+    }
+
+    @Override
+    public T get() throws InterruptedException, ExecutionException {
+        return delegate.get();
+    }
+
+    @Override
+    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        return delegate.get(timeout, unit);
     }
 }

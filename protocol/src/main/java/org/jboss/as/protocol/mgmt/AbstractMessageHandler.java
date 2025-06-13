@@ -34,7 +34,7 @@ import org.jboss.threads.AsyncFuture;
  */
 public abstract class AbstractMessageHandler implements ManagementMessageHandler, ManagementChannelShutdownHandle, CloseHandler<Channel> {
 
-    private static final ActiveOperation.CompletedCallback<?> NO_OP_CALLBACK = new ActiveOperation.CompletedCallback<Object>() {
+    private static final ActiveOperation.CompletedCallback<?> NO_OP_CALLBACK = new ActiveOperation.CompletedCallback<>() {
 
         @Override
         public void completed(Object result) {
@@ -72,7 +72,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
     private final ExecutorService executorService;
     private final AtomicInteger requestID = new AtomicInteger();
 
-    private final Map<Integer, ActiveRequest<?, ?>> requests = new ConcurrentHashMap<Integer, ActiveRequest<?, ?>>(16, 0.75f, Runtime.getRuntime().availableProcessors());
+    private final Map<Integer, ActiveRequest<?, ?>> requests = new ConcurrentHashMap<>(16, 0.75f, Runtime.getRuntime().availableProcessors());
 
     // mutable variables, have to be guarded by the lock
     private int activeCount = 0;
@@ -88,8 +88,8 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
 
     /**
      * Receive a notification that the channel was closed.
-     *
-     * This is used for the {@link ManagementClientChannelStrategy.Establishing} since it might use multiple channels.
+     * <p/>
+     * This is used for the {@code ManagementClientChannelStrategy.Establishing} since it might use multiple channels.
      *
      * @param closed the closed resource
      * @param e the exception which occurred during close, if any
@@ -139,7 +139,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
      * @param timeout the timeout
      * @param unit the time unit
      * @return {@code } false if the timeout was reached and there were still active operations
-     * @throws InterruptedException
+     * @throws InterruptedException if the thread is interrupted while waiting
      */
     @Override
     public boolean awaitCompletion(long timeout, TimeUnit unit) throws InterruptedException {
@@ -187,9 +187,8 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
      *
      * @param header the protocol header
      * @return the management request header
-     * @throws IOException
      */
-    protected ManagementRequestHeader validateRequest(final ManagementProtocolHeader header) throws IOException {
+    protected ManagementRequestHeader validateRequest(final ManagementProtocolHeader header) {
         return (ManagementRequestHeader) header;
     }
 
@@ -199,10 +198,9 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
      * @param channel the channel
      * @param input the message
      * @param header the management protocol header
-     * @throws IOException
      */
     @Override
-    public void handleMessage(final Channel channel, final DataInput input, final ManagementProtocolHeader header) throws IOException {
+    public void handleMessage(final Channel channel, final DataInput input, final ManagementProtocolHeader header) {
         final byte type = header.getType();
         if(type == ManagementProtocol.TYPE_RESPONSE) {
             // Handle response to local requests
@@ -244,12 +242,12 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
         assert support != null;
         updateChannelRef(support, channel);
         final Integer requestId = this.requestID.incrementAndGet();
-        final ActiveRequest<T, A> ar = new ActiveRequest<T, A>(support, request);
+        final ActiveRequest<T, A> ar = new ActiveRequest<>(support, request);
         requests.put(requestId, ar);
         final ManagementRequestHeader header = new ManagementRequestHeader(ManagementProtocol.VERSION, requestId, support.getOperationId(), request.getOperationType());
         final ActiveOperation.ResultHandler<T> resultHandler = support.getResultHandler();
         try {
-            request.sendRequest(resultHandler, new ManagementRequestContextImpl<T, A>(support, channel, header, getExecutor()));
+            request.sendRequest(resultHandler, new ManagementRequestContextImpl<>(support, channel, header, getExecutor()));
         } catch (Exception e) {
             resultHandler.failed(e);
             requests.remove(requestId);
@@ -265,7 +263,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
      * @param header the protocol header
      * @param activeRequest the active request
      */
-    protected <T, A> void handleRequest(final Channel channel, final DataInput message, final ManagementProtocolHeader header, ActiveRequest<T, A> activeRequest) {
+    <T, A> void handleRequest(final Channel channel, final DataInput message, final ManagementProtocolHeader header, ActiveRequest<T, A> activeRequest) {
         handleMessage(channel, message, header, activeRequest.context, activeRequest.handler);
     }
 
@@ -276,7 +274,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
      * @param message the message
      * @param header the protocol header
      * @param handler the request handler
-     * @throws IOException
+     * @throws IOException if {@code header}'s {@link ManagementRequestHeader#getBatchId() batch id} doesn't match any active operation
      */
     protected <T, A> void handleMessage(final Channel channel, final DataInput message, final ManagementRequestHeader header, ManagementRequestHandler<T, A> handler) throws IOException {
         final ActiveOperation<T, A> support = getActiveOperation(header);
@@ -302,7 +300,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
         final ActiveOperation.ResultHandler<T> resultHandler = support.getResultHandler();
         try {
             handler.handleRequest(message, resultHandler,
-                    new ManagementRequestContextImpl<T, A>(support, channel, header, getExecutor()));
+                    new ManagementRequestContextImpl<>(support, channel, header, getExecutor()));
         } catch (Exception e) {
             resultHandler.failed(e);
             safeWriteErrorResponse(channel, header, e);
@@ -379,7 +377,8 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
                 }
                 operationId = id;
             }
-            final ActiveOperationImpl<T, A> request = new ActiveOperationImpl<T, A>(operationId, attachment, getCheckedCallback(callback), this);
+            final ActiveOperationImpl<T, A> request =
+                    new ActiveOperationImpl<>(operationId, attachment, getCheckedCallback(callback), this);
             final ActiveOperation<?, ?> existing =  activeRequests.putIfAbsent(operationId, request);
             if(existing != null) {
                 throw ProtocolLogger.ROOT_LOGGER.operationIdAlreadyExists(operationId);
@@ -396,7 +395,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
      * Get an active operation.
      *
      * @param header the request header
-     * @return the active operation, {@code null} if if there is no registered operation
+     * @return the active operation, {@code null} if there is no registered operation
      */
     protected <T, A> ActiveOperation<T, A> getActiveOperation(final ManagementRequestHeader header) {
         return getActiveOperation(header.getBatchId());
@@ -406,7 +405,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
      * Get the active operation.
      *
      * @param id the active operation id
-     * @return the active operation, {@code null} if if there is no registered operation
+     * @return the active operation, {@code null} if there is no registered operation
      */
     protected <T, A> ActiveOperation<T, A> getActiveOperation(final Integer id) {
         //noinspection unchecked
@@ -419,7 +418,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
      * @return a list of cancelled operations
      */
     protected List<Integer> cancelAllActiveOperations() {
-        final List<Integer> operations = new ArrayList<Integer>();
+        final List<Integer> operations = new ArrayList<>();
         for(final ActiveOperationImpl<?, ?> activeOperation : activeRequests.values()) {
             activeOperation.asyncCancel(false);
             operations.add(activeOperation.getOperationId());
@@ -485,7 +484,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
      * @param channel the channel
      * @param header the request
      * @param error the error
-     * @throws IOException
+     * @throws IOException if a problem occurs writing the message
      */
     protected static void writeErrorResponse(final Channel channel, final ManagementRequestHeader header, final Throwable error) throws IOException {
         final ManagementResponseHeader response = ManagementResponseHeader.create(header, error);
@@ -503,7 +502,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
      *
      * @param header the mgmt protocol header
      * @param os the output stream
-     * @throws IOException
+     * @throws IOException if any problems occur writing the output
      */
     protected static FlushableDataOutput writeHeader(final ManagementProtocolHeader header, final OutputStream os) throws IOException {
         final FlushableDataOutput output = FlushableDataOutputImpl.create(os);
@@ -518,9 +517,9 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
      * @return the fallback handler
      */
     protected static <T, A> ManagementRequestHandler<T, A> getFallbackHandler(final ManagementRequestHeader header) {
-        return new ManagementRequestHandler<T, A>() {
+        return new ManagementRequestHandler<>() {
             @Override
-            public void handleRequest(final DataInput input, ActiveOperation.ResultHandler<T> resultHandler, ManagementRequestContext<A> context) throws IOException {
+            public void handleRequest(final DataInput input, ActiveOperation.ResultHandler<T> resultHandler, ManagementRequestContext<A> context) {
                 final Exception error = ProtocolLogger.ROOT_LOGGER.noSuchResponseHandler(Integer.toHexString(header.getRequestId()));
                 if(resultHandler.failed(error)) {
                     safeWriteErrorResponse(context.getChannel(), context.getRequestHeader(), error);
@@ -531,6 +530,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
 
     private static void updateChannelRef(final ActiveOperation<?, ?> operation, Channel channel) {
         if (operation instanceof ActiveOperationImpl) {
+            @SuppressWarnings("rawtypes")
             final ActiveOperationImpl<?, ?> a = (ActiveOperationImpl) operation;
             a.updateChannelRef(channel);
         }

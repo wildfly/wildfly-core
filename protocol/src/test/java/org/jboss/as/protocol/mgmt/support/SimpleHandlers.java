@@ -72,7 +72,7 @@ public class SimpleHandlers {
         }
 
         @Override
-        protected ManagementRequestHeader validateRequest(ManagementProtocolHeader header) throws IOException {
+        protected ManagementRequestHeader validateRequest(ManagementProtocolHeader header) {
             ManagementRequestHeader request = super.validateRequest(header);
             super.registerActiveOperation(request.getBatchId(), (Void) null);
             return request;
@@ -108,7 +108,7 @@ public class SimpleHandlers {
                                   final ManagementRequestContext<Void> context) throws IOException {
 
             final int data = readRequest(input);
-            context.executeAsync(new ManagementRequestContext.AsyncTask<Void>() {
+            context.executeAsync(new ManagementRequestContext.AsyncTask<>() {
                 @Override
                 public void execute(ManagementRequestContext<Void> context) throws Exception {
                     ProtocolUtils.writeResponse(new ProtocolUtils.ResponseWriter() {
@@ -145,7 +145,7 @@ public class SimpleHandlers {
         }
 
         @Override
-        void writeResponse(FlushableDataOutput output, int data) throws IOException {
+        void writeResponse(FlushableDataOutput output, int data) {
             throw new IllegalStateException();
         }
     }
@@ -189,7 +189,7 @@ public class SimpleHandlers {
 
         public static SimpleClient create(final Channel channel, final ExecutorService executorService) {
             final SimpleClient client = new SimpleClient(channel, executorService);
-            channel.addCloseHandler(new CloseHandler<Channel>() {
+            channel.addCloseHandler(new CloseHandler<>() {
                 @Override
                 public void handleClose(Channel closed, IOException exception) {
                     client.shutdownNow();

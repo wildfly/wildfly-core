@@ -24,7 +24,7 @@ public class QueuelessThreadPoolRemove extends AbstractRemoveStepHandler {
     }
 
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        final ThreadPoolManagementUtils.QueuelessThreadPoolParameters params =
+        final ThreadPoolManagementUtils.EnhancedQueueThreadPoolParameters params =
                 ThreadPoolManagementUtils.parseQueuelessThreadPoolParameters(context, operation, model, addHandler.isBlocking());
         ThreadPoolManagementUtils.removeThreadPoolService(params.getName(), addHandler.getServiceNameBase(),
                 params.getThreadFactory(), addHandler.getThreadFactoryResolver(),
