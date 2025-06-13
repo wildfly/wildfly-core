@@ -66,13 +66,18 @@ public final class InterfaceCriteriaWriteHandler implements OperationStepHandler
         } else {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownAttribute(attributeName));
         }
-        if (updateRuntime) {
+        // A runtime update after boot must be via a reload.
+        // During boot, no reload is needed because we just modified the model
+        // and the Stage.RUNTIME handler for the op that added this interface
+        // will process a model that includes our update.
+        boolean reload = updateRuntime && !context.isBooting();
+        if (reload) {
             // Require a reload
             context.reloadRequired();
         }
         // Verify the model in a later step
         context.addStep(VERIFY_HANDLER, OperationContext.Stage.MODEL);
-        OperationContext.RollbackHandler rollbackHandler = updateRuntime
+        OperationContext.RollbackHandler rollbackHandler = reload
                 ? OperationContext.RollbackHandler.REVERT_RELOAD_REQUIRED_ROLLBACK_HANDLER
                 : OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER;
         context.completeStep(rollbackHandler);
