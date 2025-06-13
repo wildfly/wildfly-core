@@ -28,7 +28,7 @@ public class ExistingChannelModelControllerClient extends AbstractModelControlle
     }
 
     @Override
-    protected ManagementChannelAssociation getChannelAssociation() throws IOException {
+    protected ManagementChannelAssociation getChannelAssociation() {
         return handler;
     }
 

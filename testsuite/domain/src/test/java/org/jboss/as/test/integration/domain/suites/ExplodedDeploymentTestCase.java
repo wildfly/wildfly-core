@@ -33,6 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TARGET_PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEPLOY;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -40,7 +41,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,7 +75,6 @@ import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.jboss.threads.AsyncFuture;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -135,7 +134,7 @@ public class ExplodedDeploymentTestCase {
         final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
         ModelNode result;
         try (InputStream is = archive.as(ZipExporter.class).exportAsInputStream()) {
-            AsyncFuture<ModelNode> future = primaryClient.executeAsync(addDeployment(is), null);
+            Future<ModelNode> future = primaryClient.executeAsync(addDeployment(is), null);
             result = awaitSimpleOperationExecution(future);
         }
         assertTrue(Operations.isSuccessfulOutcome(result));
@@ -143,13 +142,13 @@ public class ExplodedDeploymentTestCase {
         String initialHash = HashUtil.bytesToHexString(contentNode.get(HASH).asBytes());
         assertTrue(contentNode.get(ARCHIVE).asBoolean(true));
         //Let's explode it
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(Operations.createOperation(EXPLODE, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode()), null);
+        Future<ModelNode> future = primaryClient.executeAsync(Operations.createOperation(EXPLODE, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
         String explodedHash = HashUtil.bytesToHexString(contentNode.get(HASH).asBytes());
         assertFalse(contentNode.get(ARCHIVE).asBoolean(true));
-        assertFalse(initialHash.equals(explodedHash));
+        assertNotEquals(initialHash, explodedHash);
         //Let's deploy now
         future = primaryClient.executeAsync(deployOnServerGroup(), null);
         result = awaitSimpleOperationExecution(future);
@@ -205,7 +204,7 @@ public class ExplodedDeploymentTestCase {
 
     @Test
     public void testInstallAndExplodeDeploymentOnDCFromScratch() throws IOException, MgmtOperationException {
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(addEmptyDeployment(), null); //Add empty deployment
+        Future<ModelNode> future = primaryClient.executeAsync(addEmptyDeployment(), null); //Add empty deployment
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
@@ -305,7 +304,7 @@ public class ExplodedDeploymentTestCase {
         steps.add(addContent);
         Operation operation = Operation.Factory.create(composite, contentAttachments);
 
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
+        Future<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(result.toString(), Operations.isSuccessfulOutcome(result));
         ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
@@ -342,7 +341,7 @@ public class ExplodedDeploymentTestCase {
         steps.add(deployOnServerGroup());
         Operation operation = Operation.Factory.create(composite, contentAttachments);
 
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
+        Future<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(result.toString(), Operations.isSuccessfulOutcome(result));
         ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
@@ -356,7 +355,7 @@ public class ExplodedDeploymentTestCase {
         ModelNode operation = Operations.createReadResourceOperation(address.toModelNode());
         operation.get(INCLUDE_RUNTIME).set(true);
         operation.get(INCLUDE_DEFAULTS).set(true);
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
+        Future<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         return Operations.readResult(result);
@@ -378,12 +377,12 @@ public class ExplodedDeploymentTestCase {
         }
     }
 
-    public void browseContent(String path, List<String> expectedContents) throws IOException {
+    public void browseContent(String path, List<String> expectedContents) {
         ModelNode operation = Operations.createOperation(DEPLOYMENT_BROWSE_CONTENT_OPERATION, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
         if (path != null && !path.isEmpty()) {
             operation.get(PATH).set(path);
         }
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
+        Future<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode response = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(response));
         List<ModelNode> contents = Operations.readResult(response).asList();
@@ -400,10 +399,10 @@ public class ExplodedDeploymentTestCase {
         Assert.assertTrue(expectedContents.isEmpty());
     }
 
-    public void checkNoContent(String path) throws IOException {
+    public void checkNoContent(String path) {
         ModelNode operation = Operations.createOperation(READ_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
         operation.get(PATH).set(path);
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
+        Future<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertFalse(Operations.isSuccessfulOutcome(result));
     }
@@ -442,11 +441,11 @@ public class ExplodedDeploymentTestCase {
         }
     }
 
-    private Operation addEmptyDeployment() throws MalformedURLException {
+    private Operation addEmptyDeployment() {
         return Operation.Factory.create(addEmptyDeploymentNode());
     }
 
-    private Operation addDeployment(InputStream attachment) throws MalformedURLException {
+    private Operation addDeployment(InputStream attachment) {
         ModelNode operation = Operations.createAddOperation(PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
         ModelNode content = new ModelNode();
         content.get(INPUT_STREAM_INDEX).set(0);
@@ -454,7 +453,7 @@ public class ExplodedDeploymentTestCase {
         return Operation.Factory.create(operation, Collections.singletonList(attachment));
     }
 
-    private Operation addContentToDeployment(Map<String, InputStream> contents) throws MalformedURLException {
+    private Operation addContentToDeployment(Map<String, InputStream> contents) {
         ModelNode operation = Operations.createOperation(ADD_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
         final List<InputStream> attachments = addContentToDeploymentNode(operation, contents);
         return Operation.Factory.create(operation, attachments);
@@ -482,7 +481,7 @@ public class ExplodedDeploymentTestCase {
         return attachments;
     }
 
-    private Operation removeContentFromDeployment(List<String> paths) throws MalformedURLException {
+    private Operation removeContentFromDeployment(List<String> paths) {
         ModelNode operation = Operations.createOperation(REMOVE_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
         operation.get(PATHS).setEmptyList();
         for (String path : paths) {
@@ -491,13 +490,13 @@ public class ExplodedDeploymentTestCase {
         return Operation.Factory.create(operation);
     }
 
-    private ModelNode deployOnServerGroup() throws MalformedURLException {
+    private ModelNode deployOnServerGroup() {
         ModelNode operation = Operations.createOperation(ADD, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode());
         operation.get(ENABLED).set(true);
         return operation;
     }
 
-    private ModelNode undeployAndRemoveOp() throws MalformedURLException {
+    private ModelNode undeployAndRemoveOp() {
         ModelNode op = new ModelNode();
         op.get(OP).set(COMPOSITE);
         ModelNode steps = op.get(STEPS);

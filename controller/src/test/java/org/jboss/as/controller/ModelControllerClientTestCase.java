@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -41,7 +42,6 @@ import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.remoting3.Channel;
-import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.JBossThreadFactory;
 import org.junit.After;
 import org.junit.Assert;
@@ -71,7 +71,7 @@ public class ModelControllerClientTestCase {
         channels.shutdownRemoting();
     }
 
-    private ModelControllerClient setupTestClient(final ModelController controller) throws IOException {
+    private ModelControllerClient setupTestClient(final ModelController controller) {
         try {
             channels.setupRemoting(new ManagementChannelInitialization() {
                 @Override
@@ -84,8 +84,8 @@ public class ModelControllerClientTestCase {
                 }
 
                 private ExecutorService getClientRequestExecutor() {
-                    final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(512);
-                    final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<ThreadFactory>() {
+                    final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(512);
+                    final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<>() {
                         public ThreadFactory run() {
                             return new JBossThreadFactory(new ThreadGroup("management-handler-thread"), Boolean.FALSE, null, "%G - %t", null, null);
                         }
@@ -127,7 +127,7 @@ public class ModelControllerClientTestCase {
             ModelNode operation = new ModelNode();
             operation.get("test").set("123");
 
-            final BlockingQueue<String> messages = new LinkedBlockingQueue<String>();
+            final BlockingQueue<String> messages = new LinkedBlockingQueue<>();
 
             ModelNode result = client.execute(operation,
                     new OperationMessageHandler() {
@@ -157,16 +157,16 @@ public class ModelControllerClientTestCase {
 
         final CountDownLatch executeLatch = new CountDownLatch(1);
         final AtomicInteger size = new AtomicInteger();
-        final AtomicReference<byte[]> firstResult = new AtomicReference<byte[]>();
-        final AtomicReference<byte[]> secondResult = new AtomicReference<byte[]>();
-        final AtomicReference<byte[]> thirdResult = new AtomicReference<byte[]>();
+        final AtomicReference<byte[]> firstResult = new AtomicReference<>();
+        final AtomicReference<byte[]> secondResult = new AtomicReference<>();
+        final AtomicReference<byte[]> thirdResult = new AtomicReference<>();
         MockModelController controller = new MockModelController() {
             @Override
             public ModelNode execute(ModelNode operation, OperationMessageHandler handler, OperationTransactionControl control, OperationAttachments attachments) {
                 int streamIndex = 0;
                 for (InputStream in : attachments.getInputStreams()) {
                     try {
-                        ArrayList<Integer> readBytes = new ArrayList<Integer>();
+                        ArrayList<Integer> readBytes = new ArrayList<>();
                         int b = in.read();
                         while (b != -1) {
                             readBytes.add(b);
@@ -241,9 +241,9 @@ public class ModelControllerClientTestCase {
             operation.get("test").set("123");
             operation.get("operation").set("fake");
 
-            final BlockingQueue<String> messages = new LinkedBlockingQueue<String>();
+            final BlockingQueue<String> messages = new LinkedBlockingQueue<>();
 
-            AsyncFuture<ModelNode> resultFuture = client.executeAsync(operation,
+            Future<ModelNode> resultFuture = client.executeAsync(operation,
                     new OperationMessageHandler() {
 
                         @Override
@@ -294,9 +294,9 @@ public class ModelControllerClientTestCase {
             operation.get("test").set("123");
             operation.get("operation").set("fake");
 
-            final BlockingQueue<String> messages = new LinkedBlockingQueue<String>();
+            final BlockingQueue<String> messages = new LinkedBlockingQueue<>();
 
-            AsyncFuture<ModelNode> resultFuture = client.executeAsync(operation,
+            Future<ModelNode> resultFuture = client.executeAsync(operation,
                     new OperationMessageHandler() {
 
                         @Override
@@ -369,12 +369,11 @@ public class ModelControllerClientTestCase {
         }
 
         @Override
-        public void copyStream(DataOutput output) throws IOException {
-            return;
+        public void copyStream(DataOutput output) {
         }
 
         @Override
-        public int initialize() throws IOException {
+        public int initialize() {
             return 0;
         }
 

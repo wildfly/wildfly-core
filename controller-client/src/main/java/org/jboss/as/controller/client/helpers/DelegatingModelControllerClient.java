@@ -6,13 +6,13 @@
 package org.jboss.as.controller.client.helpers;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
-import org.jboss.threads.AsyncFuture;
 
 /**
  * Utility class to support delegation of {@link org.jboss.as.controller.client.ModelControllerClient} calls.
@@ -73,17 +73,17 @@ public class DelegatingModelControllerClient implements ModelControllerClient {
     }
 
     @Override
-    public AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
         return provider.getDelegate().executeAsync(operation, messageHandler);
     }
 
     @Override
-    public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
         return provider.getDelegate().executeAsync(operation, messageHandler);
     }
 
     @Override
-    public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
         return provider.getDelegate().executeOperationAsync(operation, messageHandler);
     }
 

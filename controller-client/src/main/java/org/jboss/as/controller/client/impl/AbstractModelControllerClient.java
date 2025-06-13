@@ -14,6 +14,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -21,6 +24,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.AbstractManagementRequest;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
@@ -43,8 +47,8 @@ import org.jboss.threads.AsyncFuture;
  */
 public abstract class AbstractModelControllerClient implements ModelControllerClient, ManagementRequestHandlerFactory {
 
-    private static ManagementRequestHandler<ModelNode, OperationExecutionContext> MESSAGE_HANDLER = new HandleReportRequestHandler();
-    private static ManagementRequestHandler<ModelNode, OperationExecutionContext> GET_INPUT_STREAM = new ReadAttachmentInputStreamRequestHandler();
+    private static final ManagementRequestHandler<ModelNode, OperationExecutionContext> MESSAGE_HANDLER = new HandleReportRequestHandler();
+    private static final ManagementRequestHandler<ModelNode, OperationExecutionContext> GET_INPUT_STREAM = new ReadAttachmentInputStreamRequestHandler();
 
     private static final OperationMessageHandler NO_OP_HANDLER = OperationMessageHandler.DISCARD;
 
@@ -52,9 +56,8 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
      * Get the mgmt channel association.
      *
      * @return the channel association
-     * @throws IOException
      */
-    protected abstract ManagementChannelAssociation getChannelAssociation() throws IOException;
+    protected abstract ManagementChannelAssociation getChannelAssociation();
 
     @Override
     public ModelNode execute(final ModelNode operation) throws IOException {
@@ -82,29 +85,29 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
     }
 
     @Override
-    public AsyncFuture<ModelNode> executeAsync(final ModelNode operation, final OperationMessageHandler messageHandler) {
+    public CompletableFuture<ModelNode> executeAsync(final ModelNode operation, final OperationMessageHandler messageHandler) {
         try {
-            final AsyncFuture<OperationResponse> delegate = execute(OperationExecutionContext.create(operation, messageHandler));
-            return new ConvertingDelegatingAsyncFuture(delegate);
+            return execute(OperationExecutionContext.create(operation, messageHandler),
+                    AbstractModelControllerClient::responseNodeOnlyWitRuntimeException);
         } catch (IOException e)  {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public AsyncFuture<ModelNode> executeAsync(final Operation operation, final OperationMessageHandler messageHandler) {
+    public CompletableFuture<ModelNode> executeAsync(final Operation operation, final OperationMessageHandler messageHandler) {
         try {
-            final AsyncFuture<OperationResponse> delegate = execute(OperationExecutionContext.create(operation, messageHandler));
-            return new ConvertingDelegatingAsyncFuture(delegate);
+            return execute(OperationExecutionContext.create(operation, messageHandler),
+                    AbstractModelControllerClient::responseNodeOnlyWitRuntimeException);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
         try {
-            return execute(OperationExecutionContext.create(operation, messageHandler));
+            return execute(OperationExecutionContext.create(operation, messageHandler), opResponse -> opResponse);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -130,7 +133,7 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
      */
     private OperationResponse executeForResult(final OperationExecutionContext executionContext) throws IOException {
         try {
-            return execute(executionContext).get();
+            return execute(executionContext, opResponse -> opResponse).get();
         } catch(Exception e) {
             throw new IOException(e);
         }
@@ -143,6 +146,14 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
         return result;
     }
 
+    private static ModelNode responseNodeOnlyWitRuntimeException(OperationResponse or) {
+        try {
+            return responseNodeOnly(or);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Execute a request.
      *
@@ -150,8 +161,9 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
      * @return the future result
      * @throws IOException
      */
-    private AsyncFuture<OperationResponse> execute(final OperationExecutionContext executionContext) throws IOException {
-        return executeRequest(new AbstractManagementRequest<OperationResponse, OperationExecutionContext>() {
+    private <T> CompletableFuture<T> execute(final OperationExecutionContext executionContext,
+                                             Function<OperationResponse, T> transformer) throws IOException {
+        return executeRequest(new AbstractManagementRequest<>() {
 
             @Override
             public byte getOperationType() {
@@ -183,7 +195,7 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
                 resultHandler.done(getOperationResponse(node, context.getOperationId()));
                 expectHeader(input, ManagementProtocol.RESPONSE_END);
             }
-        }, executionContext);
+        }, executionContext, transformer);
     }
 
     private static class ReadAttachmentInputStreamRequestHandler implements ManagementRequestHandler<ModelNode, OperationExecutionContext> {
@@ -194,18 +206,18 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
             // Read the inputStream index
             expectHeader(input, ModelControllerProtocol.PARAM_INPUTSTREAM_INDEX);
             final int index = input.readInt();
-            context.executeAsync(new ManagementRequestContext.AsyncTask<OperationExecutionContext>() {
+            context.executeAsync(new ManagementRequestContext.AsyncTask<>() {
                 @Override
-                public void execute(final ManagementRequestContext<OperationExecutionContext> context) throws Exception {
-                    final OperationExecutionContext exec = context.getAttachment();
-                    final ManagementRequestHeader header = ManagementRequestHeader.class.cast(context.getRequestHeader());
+                public void execute(final ManagementRequestContext<OperationExecutionContext> taskContext) throws Exception {
+                    final OperationExecutionContext exec = taskContext.getAttachment();
+                    final ManagementRequestHeader header = (ManagementRequestHeader) taskContext.getRequestHeader();
                     final ManagementResponseHeader response = new ManagementResponseHeader(header.getVersion(), header.getRequestId(), null);
                     final InputStreamEntry entry = exec.getStream(index);
                     synchronized (entry) {
                         // Initialize the stream entry
                         final int size = entry.initialize();
                         try {
-                            final FlushableDataOutput output = context.writeMessage(response);
+                            final FlushableDataOutput output = taskContext.writeMessage(response);
                             try {
                                 output.writeByte(ModelControllerProtocol.PARAM_INPUTSTREAM_LENGTH);
                                 output.writeInt(size);
@@ -245,9 +257,36 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
 
     }
 
-    protected AsyncFuture<OperationResponse> executeRequest(final ManagementRequest<OperationResponse, OperationExecutionContext> request, final OperationExecutionContext attachment) throws IOException {
-        final ActiveOperation<OperationResponse, OperationExecutionContext> support = getChannelAssociation().executeRequest(request, attachment, attachment);
-        return new DelegatingCancellableAsyncFuture(support.getResult(), support.getOperationId());
+    <T> CompletableFuture<T> executeRequest(final ManagementRequest<OperationResponse, OperationExecutionContext> request,
+                                            final OperationExecutionContext attachment,
+                                            final Function<OperationResponse, T> transformer) throws IOException {
+        final ActiveOperation<OperationResponse, OperationExecutionContext> activeOperation = getChannelAssociation().executeRequest(request, attachment, attachment);
+        Consumer<Boolean> asyncCancelTask = interruptionAllowed -> executeCancelAsyncRequest(activeOperation);
+        return activeOperation.getCompletableFuture(transformer, asyncCancelTask);
+    }
+
+    private void executeCancelAsyncRequest(ActiveOperation<?, ?> activeOperation) {
+        if (activeOperation.getResult().getStatus() == AsyncFuture.Status.WAITING) {
+            // Tell the remote side to cancel
+            Integer operationId = activeOperation.getOperationId();
+            try {
+                getChannelAssociation().executeRequest(operationId, new CancelAsyncRequest());
+            } catch (Exception e) {
+                AsyncFuture.Status status = activeOperation.getResult().getStatus();
+                if (status == AsyncFuture.Status.WAITING) {
+                    if (e instanceof RuntimeException) {
+                        throw (RuntimeException) e;
+                    } else {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    // Most likely there was a race between our sending CancelAsyncRequest and the operation finishing.
+                    // The operation is done though, so just debug log the failure and move on.
+                    ControllerClientLogger.ROOT_LOGGER.debugf(e, "Executing CancelAsyncRequest for operation %s " +
+                            "failed but the operation reached status %s, so the failure is being ignored", operationId, status);
+                }
+            }
+        } // else the ActiveOperation is already done and there's nothing to cancel
     }
 
     static class OperationExecutionContext implements ActiveOperation.CompletedCallback<OperationResponse> {
@@ -318,31 +357,9 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
     }
 
     /**
-     * Wraps the request execution AsyncFuture in an AsyncFuture impl that handles cancellation by sending a cancellation
-     * request to the remote side.
-     */
-    private class DelegatingCancellableAsyncFuture extends AbstractDelegatingAsyncFuture<OperationResponse> {
-
-        private final int batchId;
-        private DelegatingCancellableAsyncFuture(final AsyncFuture<OperationResponse> delegate, final int batchId) {
-            super(delegate);
-            this.batchId = batchId;
-        }
-
-        @Override
-        public void asyncCancel(boolean interruptionDesired) {
-            try {
-                getChannelAssociation().executeRequest(batchId, new CancelAsyncRequest());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    /**
      * Request cancelling the remote operation.
      */
-    private static class CancelAsyncRequest extends AbstractManagementRequest<ModelNode, OperationExecutionContext> {
+    private static class CancelAsyncRequest extends AbstractManagementRequest<OperationResponse, OperationExecutionContext> {
 
         @Override
         public byte getOperationType() {
@@ -350,12 +367,12 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
         }
 
         @Override
-        protected void sendRequest(ActiveOperation.ResultHandler<ModelNode> resultHandler, ManagementRequestContext<OperationExecutionContext> context, FlushableDataOutput output) throws IOException {
+        protected void sendRequest(ActiveOperation.ResultHandler<OperationResponse> resultHandler, ManagementRequestContext<OperationExecutionContext> context, FlushableDataOutput output) {
             //
         }
 
         @Override
-        public void handleRequest(DataInput input, ActiveOperation.ResultHandler<ModelNode> resultHandler, ManagementRequestContext<OperationExecutionContext> context) throws IOException {
+        public void handleRequest(DataInput input, ActiveOperation.ResultHandler<OperationResponse> resultHandler, ManagementRequestContext<OperationExecutionContext> context) {
             // Once the remote operation returns, we can set the cancelled status
             resultHandler.cancel();
         }
@@ -366,7 +383,7 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
         if(streams.isEmpty()) {
             return Collections.emptyList();
         }
-        final List<InputStreamEntry> entries = new ArrayList<InputStreamEntry>();
+        final List<InputStreamEntry> entries = new ArrayList<>();
         final boolean autoClose = operation.isAutoCloseStreams();
         for(final InputStream stream : streams) {
             if(stream instanceof InputStreamEntry) {
@@ -379,7 +396,7 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
         return entries;
     }
 
-    private OperationResponse getOperationResponse(final ModelNode simpleResponse, final int batchId) throws IOException {
+    private OperationResponse getOperationResponse(final ModelNode simpleResponse, final int batchId) {
         final ModelNode streamHeader =  simpleResponse.hasDefined(RESPONSE_HEADERS) && simpleResponse.get(RESPONSE_HEADERS).hasDefined(ATTACHED_STREAMS)
                 ? simpleResponse.get(RESPONSE_HEADERS, ATTACHED_STREAMS)
                 : null;

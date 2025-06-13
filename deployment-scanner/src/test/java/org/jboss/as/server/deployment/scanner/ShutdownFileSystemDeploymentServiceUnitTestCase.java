@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -62,7 +62,6 @@ import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.jboss.threads.AsyncFuture;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -77,7 +76,7 @@ import org.junit.Test;
  */
 public class ShutdownFileSystemDeploymentServiceUnitTestCase {
 
-    private static Logger logger = Logger.getLogger(ShutdownFileSystemDeploymentServiceUnitTestCase.class);
+    private static final Logger logger = Logger.getLogger(ShutdownFileSystemDeploymentServiceUnitTestCase.class);
 
     private static long count = System.currentTimeMillis();
 
@@ -93,19 +92,19 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
     private File tmpDir;
 
     @BeforeClass
-    public static void createTestSupport() throws Exception {
+    public static void createTestSupport() {
         testSupport = new AutoDeployTestSupport(ShutdownFileSystemDeploymentServiceUnitTestCase.class.getSimpleName());
     }
 
     @AfterClass
-    public static void cleanup() throws Exception {
+    public static void cleanup() {
         if (testSupport != null) {
             testSupport.cleanupFiles();
         }
     }
 
     @Before
-    public void setup() throws Exception {
+    public void setup() {
         executor.clear();
 
         File root = testSupport.getTempDir();
@@ -122,7 +121,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         testSupport.cleanupChannels();
     }
 
@@ -138,9 +137,9 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         testSupport.createZip(deployment, 0, false, false, true, true);
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
-            Future<Boolean> lockDone = executorService.submit(new Callable<Boolean>() {
+            Future<Boolean> lockDone = executorService.submit(new Callable<>() {
                 @Override
-                public Boolean call() throws Exception {
+                public Boolean call() {
                     try {
                         synchronized (ops.lock) {
                             logger.info("Executor service should be locked");
@@ -173,11 +172,11 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
     private static class MockServerController implements LocalModelControllerClient, ModelControllerClientFactory, DeploymentOperations.Factory {
 
         private final DiscardTaskExecutor executorService;
-        private final List<ModelNode> requests = new ArrayList<ModelNode>(1);
-        private final List<Response> responses = new ArrayList<Response>(1);
-        private final Map<String, byte[]> added = new HashMap<String, byte[]>();
-        private final Map<String, byte[]> deployed = new HashMap<String, byte[]>();
-        private final Set<String> externallyDeployed = new HashSet<String>();
+        private final List<ModelNode> requests = new ArrayList<>(1);
+        private final List<Response> responses = new ArrayList<>(1);
+        private final Map<String, byte[]> added = new HashMap<>();
+        private final Map<String, byte[]> deployed = new HashMap<>();
+        private final Set<String> externallyDeployed = new HashSet<>();
 
         @Override
         public OperationResponse executeOperation(Operation operation, OperationMessageHandler messageHandler) {
@@ -187,18 +186,18 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
+        public CompletableFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
             logger.info("Executing deploy command from MockServerController, its executor service should be closed");
-            return executorService.submit(new Callable<ModelNode>() {
+            return executorService.submit(new Callable<>() {
                 @Override
-                public ModelNode call() throws Exception {
+                public ModelNode call() {
                     return execute(operation);
                 }
             });
         }
 
         @Override
-        public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+        public CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
             throw new UnsupportedOperationException();
         }
 
@@ -231,10 +230,6 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
                 this.ok = ok;
                 this.rsp = rsp;
             }
-        }
-
-        MockServerController(String... existingDeployments) {
-            this(executor, existingDeployments);
         }
 
         MockServerController(DiscardTaskExecutor executorService, String... existingDeployments) {
@@ -418,8 +413,8 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
 
     private static class DiscardTaskExecutor extends ScheduledThreadPoolExecutor {
 
-        private final List<Runnable> tasks = new ArrayList<Runnable>();
-        private final Set<CallOnGetFuture<?>> futures = new HashSet<CallOnGetFuture<?>>();
+        private final List<Runnable> tasks = new ArrayList<>();
+        private final Set<CallOnGetFuture<?>> futures = new HashSet<>();
         private DiscardTaskExecutor() {
             super(0);
         }
@@ -427,8 +422,8 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         @Override
         public ScheduledFuture<?> schedule(final Runnable command, final long delay, final TimeUnit delayUnit) {
             tasks.add(command);
-            return new RunnableScheduledFuture<Object>() {
-                private FutureTask<?> task = new FutureTask<>(command, new Object());
+            return new RunnableScheduledFuture<>() {
+                private final FutureTask<?> task = new FutureTask<>(command, new Object());
 
                 @Override
                 public boolean isPeriodic() {
@@ -479,7 +474,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public <T> AsyncFuture<T> submit(Callable<T> tCallable) {
+        public <T> CompletableFuture<T> submit(Callable<T> tCallable) {
             if (isShutdown() || isTerminating()) {
                 throw new RejectedExecutionException("DiscardTaskExecutor has shutdown we can't run " + tCallable);
             }
@@ -513,7 +508,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         }
     }
 
-    private static class CallOnGetFuture<T> implements AsyncFuture<T> {
+    private static class CallOnGetFuture<T> extends CompletableFuture<T> {
 
         final Callable<T> callable;
         private boolean cancelled = false;
@@ -548,62 +543,16 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         public T get() throws InterruptedException, ExecutionException {
             try {
                 logger.info("CallOnGetFuture get " + callable);
-                return callable.call();
-            } catch (InterruptedException | ExecutionException e) {
-                throw e;
+                complete(callable.call());
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                completeExceptionally(e);
             }
+            return super.get();
         }
 
         @Override
-        public T get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
+        public T get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException {
             return get();
-        }
-
-        @Override
-        public AsyncFuture.Status await() throws InterruptedException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status await(long timeout, TimeUnit unit) throws InterruptedException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T getUninterruptibly() throws CancellationException, ExecutionException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T getUninterruptibly(long timeout, TimeUnit unit) throws CancellationException, ExecutionException, TimeoutException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status awaitUninterruptibly() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status awaitUninterruptibly(long timeout, TimeUnit unit) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status getStatus() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public <A> void addListener(AsyncFuture.Listener<? super T, A> listener, A attachment) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void asyncCancel(boolean interruptionDesired) {
-            throw new UnsupportedOperationException();
         }
     }
 
