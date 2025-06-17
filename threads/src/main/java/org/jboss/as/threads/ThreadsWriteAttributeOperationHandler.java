@@ -35,7 +35,6 @@ public abstract class ThreadsWriteAttributeOperationHandler extends AbstractWrit
     /**
      * Creates a handler that doesn't validate values.
      * @param attributes all persistent attributes of the
-     * @param runtimeAttributes attributes whose updated value can immediately be applied to the runtime
      */
     public ThreadsWriteAttributeOperationHandler(AttributeDefinition[] attributes) {
         this.attributes = attributes;
@@ -73,7 +72,7 @@ public abstract class ThreadsWriteAttributeOperationHandler extends AbstractWrit
     protected void revertUpdateToRuntime(final OperationContext context, final ModelNode operation,
                                          final String attributeName, final ModelNode valueToRestore,
                                          final ModelNode valueToRevert, final Boolean handback) throws OperationFailedException {
-        if (handback != null && handback.booleanValue() && context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getFlags().contains(AttributeAccess.Flag.RESTART_NONE)) {
+        if (handback != null && handback && context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getFlags().contains(AttributeAccess.Flag.RESTART_NONE)) {
             final ServiceController<?> service = getService(context, operation);
             if (service != null && service.getState() == ServiceController.State.UP) {
                 // Create and execute a write-attribute operation that uses the valueToRestore

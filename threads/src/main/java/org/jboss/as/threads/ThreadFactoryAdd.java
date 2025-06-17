@@ -26,12 +26,12 @@ public class ThreadFactoryAdd extends AbstractAddStepHandler {
     static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {
         PoolAttributeDefinitions.GROUP_NAME, PoolAttributeDefinitions.THREAD_NAME_PATTERN, PoolAttributeDefinitions.PRIORITY};
 
-    private final RuntimeCapability cap;
+    private final RuntimeCapability<Void> cap;
 
     /**
      * @param cap : nullable -  Setting it to null will only use old service name.
      */
-    ThreadFactoryAdd(RuntimeCapability cap) {
+    ThreadFactoryAdd(RuntimeCapability<Void> cap) {
         this.cap = cap;
     }
 
@@ -48,7 +48,7 @@ public class ThreadFactoryAdd extends AbstractAddStepHandler {
 
         final String name = context.getCurrentAddressValue();
 
-        final ServiceTarget target = context.getServiceTarget();
+        final ServiceTarget target = context.getCapabilityServiceTarget();
         final ThreadFactoryService service = new ThreadFactoryService();
         service.setNamePattern(threadNamePattern);
         service.setPriority(priority);
