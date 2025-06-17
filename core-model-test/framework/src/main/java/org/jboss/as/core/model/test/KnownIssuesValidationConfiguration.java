@@ -47,6 +47,7 @@ public class KnownIssuesValidationConfiguration extends ValidationConfiguration 
         config.allowNullValueTypeForOperationReplyProperties(createStandlonePlatformMBeanAddress(PlatformMBeanConstants.OPERATING_SYSTEM), READ_RESOURCE_OPERATION);
         config.allowNullValueTypeForOperationReplyProperties(createStandlonePlatformMBeanAddress(PlatformMBeanConstants.MEMORY_POOL), READ_RESOURCE_OPERATION);
         config.allowNullValueTypeForOperationReplyProperties(createStandlonePlatformMBeanAddress(PlatformMBeanConstants.RUNTIME), READ_RESOURCE_OPERATION);
+        config.allowNullValueTypeForOperationReplyProperties(createStandlonePlatformMBeanAddress(PlatformMBeanConstants.PLATFORM_LOGGING), READ_RESOURCE_OPERATION);
         final ModelNode MEMORY_POOL_CHILDREN_ADDR = createStandlonePlatformMBeanAddress(PlatformMBeanConstants.MEMORY_POOL);
         MEMORY_POOL_CHILDREN_ADDR.add(NAME, "*");
         config.allowNullValueTypeForOperationReplyProperties(MEMORY_POOL_CHILDREN_ADDR, READ_RESOURCE_OPERATION);
@@ -73,6 +74,7 @@ public class KnownIssuesValidationConfiguration extends ValidationConfiguration 
         config.allowNullValueTypeForOperationReplyProperties(createHostPlatformMBeanAddress(PlatformMBeanConstants.OPERATING_SYSTEM), READ_RESOURCE_OPERATION);
         config.allowNullValueTypeForOperationReplyProperties(createHostPlatformMBeanAddress(PlatformMBeanConstants.MEMORY_POOL), READ_RESOURCE_OPERATION);
         config.allowNullValueTypeForOperationReplyProperties(createHostPlatformMBeanAddress(PlatformMBeanConstants.RUNTIME), READ_RESOURCE_OPERATION);
+        config.allowNullValueTypeForOperationReplyProperties(createHostPlatformMBeanAddress(PlatformMBeanConstants.PLATFORM_LOGGING), READ_RESOURCE_OPERATION);
         final ModelNode MEMORY_POOL_CHILDREN_ADDR = createHostPlatformMBeanAddress(PlatformMBeanConstants.MEMORY_POOL);
         MEMORY_POOL_CHILDREN_ADDR.add(NAME, "*");
         config.allowNullValueTypeForOperationReplyProperties(MEMORY_POOL_CHILDREN_ADDR, READ_RESOURCE_OPERATION);

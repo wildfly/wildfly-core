@@ -49,10 +49,43 @@ public class ThreadMXBeanReadResourceHandler implements OperationStepHandler {
             }
         }
 
+        for (String attribute : ThreadResourceDefinition.THREADING_EXTENDED_READ_ATTRIBUTES) {
+            final ModelNode store = result.get(attribute);
+            try {
+                ThreadMXBeanAttributeHandler.storeExtendedResult(attribute, store);
+            } catch (SecurityException ignored) {
+                // just leave it undefined
+            } catch (UnsupportedOperationException ignored) {
+                // just leave it undefined
+            }
+        }
+
+        for (String attribute : ThreadResourceDefinition.THREADING_EXTENDED_READ_WRITE_ATTRIBUTES) {
+            final ModelNode store = result.get(attribute);
+            try {
+                ThreadMXBeanAttributeHandler.storeExtendedResult(attribute, store);
+            } catch (SecurityException ignored) {
+                // just leave it undefined
+            } catch (UnsupportedOperationException ignored) {
+                // just leave it undefined
+            }
+        }
+
         for (String attribute : ThreadResourceDefinition.THREADING_METRICS) {
             final ModelNode store = result.get(attribute);
             try {
                 ThreadMXBeanAttributeHandler.storeResult(attribute, store);
+            } catch (SecurityException ignored) {
+                // just leave it undefined
+            } catch (UnsupportedOperationException ignored) {
+                // just leave it undefined
+            }
+        }
+
+        for (String attribute : ThreadResourceDefinition.THREADING_EXTENDED_METRICS) {
+            final ModelNode store = result.get(attribute);
+            try {
+                ThreadMXBeanAttributeHandler.storeExtendedResult(attribute, store);
             } catch (SecurityException ignored) {
                 // just leave it undefined
             } catch (UnsupportedOperationException ignored) {

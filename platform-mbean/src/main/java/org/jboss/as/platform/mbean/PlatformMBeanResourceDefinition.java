@@ -37,5 +37,6 @@ public class PlatformMBeanResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(ThreadResourceDefinition.INSTANCE);
 
         resourceRegistration.registerSubModel(BufferPoolRootResourceDefinition.INSTANCE);
+        resourceRegistration.registerSubModel(PlatformLoggingResourceDefinition.INSTANCE);
     }
 }

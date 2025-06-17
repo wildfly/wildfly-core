@@ -57,6 +57,8 @@ public class RootPlatformMBeanResource extends AbstractPlatformMBeanResource {
             return new BufferPoolMXBeanResource();
         } else if (PlatformMBeanConstants.LOGGING.equals(name)) {
             return new LeafPlatformMBeanResource(PlatformMBeanConstants.LOGGING_PATH);
+        } else if (PlatformMBeanConstants.PLATFORM_LOGGING.equals(name)) {
+            return new LeafPlatformMBeanResource(PlatformMBeanConstants.PLATFORM_LOGGING_PATH);
         } else {
             return null;
         }

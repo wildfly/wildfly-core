@@ -20,6 +20,7 @@ import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.global.ReadResourceHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -103,6 +104,25 @@ class ThreadResourceDefinition extends SimpleResourceDefinition {
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
+    static AttributeDefinition CURRENT_THREAD_ALLOCATED_BYTES = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.CURRENT_THREAD_ALLOCATED_BYTES, ModelType.LONG, false)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setRequired(false)
+            .setMeasurementUnit(MeasurementUnit.BYTES)
+            .setStability(Stability.COMMUNITY)
+            .build();
+    static AttributeDefinition THREAD_ALLOCATED_MEMORY_ENABLED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.THREAD_ALLOCATED_MEMORY_ENABLED, ModelType.BOOLEAN, false)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setRequired(false)
+            .setStability(Stability.COMMUNITY)
+            .build();
+    static AttributeDefinition THREAD_ALLOCATED_MEMORY_SUPPORTED = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.THREAD_ALLOCATED_MEMORY_SUPPORTED, ModelType.BOOLEAN, false)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setRequired(false)
+            .setStability(Stability.COMMUNITY)
+            .build();
 
 
     static final List<AttributeDefinition> METRICS = Arrays.asList(
@@ -111,7 +131,8 @@ class ThreadResourceDefinition extends SimpleResourceDefinition {
             TOTAL_STARTED_THREAD_COUNT,
             DAEMON_THREAD_COUNT,
             CURRENT_THREAD_CPU_TIME,
-            CURRENT_THREAD_USER_TIME
+            CURRENT_THREAD_USER_TIME,
+            CURRENT_THREAD_ALLOCATED_BYTES
     );
     static final List<AttributeDefinition> READ_ATTRIBUTES = Arrays.asList(
             ALL_THREAD_IDS,
@@ -119,11 +140,13 @@ class ThreadResourceDefinition extends SimpleResourceDefinition {
             THREAD_CPU_TIME_SUPPORTED,
             CURRENT_THREAD_CPU_TIME_SUPPORTED,
             OBJECT_MONITOR_USAGE_SUPPORTED,
-            SYNCHRONIZER_USAGE_SUPPORTED
+            SYNCHRONIZER_USAGE_SUPPORTED,
+            THREAD_ALLOCATED_MEMORY_SUPPORTED
     );
     static final List<AttributeDefinition> READ_WRITE_ATTRIBUTES = Arrays.asList(
             THREAD_CONTENTION_MONITORING_ENABLED,
-            THREAD_CPU_TIME_ENABLED
+            THREAD_CPU_TIME_ENABLED,
+            THREAD_ALLOCATED_MEMORY_ENABLED
     );
 
     static final List<String> THREADING_READ_ATTRIBUTES = Arrays.asList(
@@ -134,6 +157,9 @@ class ThreadResourceDefinition extends SimpleResourceDefinition {
             OBJECT_MONITOR_USAGE_SUPPORTED.getName(),
             SYNCHRONIZER_USAGE_SUPPORTED.getName()
     );
+    static final List<String> THREADING_EXTENDED_READ_ATTRIBUTES = Arrays.asList(
+            THREAD_ALLOCATED_MEMORY_SUPPORTED.getName()
+    );
     static final List<String> THREADING_METRICS = Arrays.asList(
             THREAD_COUNT.getName(),
             PEAK_THREAD_COUNT.getName(),
@@ -142,9 +168,15 @@ class ThreadResourceDefinition extends SimpleResourceDefinition {
             CURRENT_THREAD_CPU_TIME.getName(),
             CURRENT_THREAD_USER_TIME.getName()
     );
+    static final List<String> THREADING_EXTENDED_METRICS = Arrays.asList(
+            CURRENT_THREAD_ALLOCATED_BYTES.getName()
+    );
     static final List<String> THREADING_READ_WRITE_ATTRIBUTES = Arrays.asList(
             THREAD_CONTENTION_MONITORING_ENABLED.getName(),
             THREAD_CPU_TIME_ENABLED.getName()
+    );
+    static final List<String> THREADING_EXTENDED_READ_WRITE_ATTRIBUTES = Arrays.asList(
+            THREAD_ALLOCATED_MEMORY_ENABLED.getName()
     );
 
     static final ThreadResourceDefinition INSTANCE = new ThreadResourceDefinition();
@@ -187,6 +219,10 @@ class ThreadResourceDefinition extends SimpleResourceDefinition {
         threads.registerOperationHandler(ThreadMXBeanCpuTimeHandler.DEFINITION, ThreadMXBeanCpuTimeHandler.INSTANCE);
         threads.registerOperationHandler(ThreadMXBeanUserTimeHandler.DEFINITION, ThreadMXBeanUserTimeHandler.INSTANCE);
         threads.registerOperationHandler(ThreadMXBeanDumpAllThreadsHandler.DEFINITION, ThreadMXBeanDumpAllThreadsHandler.INSTANCE);
+        threads.registerOperationHandler(ThreadMXBeanCpuTimesHandler.DEFINITION, ThreadMXBeanCpuTimesHandler.INSTANCE);
+        threads.registerOperationHandler(ThreadMXBeanUserTimesHandler.DEFINITION, ThreadMXBeanUserTimesHandler.INSTANCE);
+        threads.registerOperationHandler(ThreadMXBeanThreadsAllocatedBytesHandler.DEFINITION, ThreadMXBeanThreadsAllocatedBytesHandler.INSTANCE);
+        threads.registerOperationHandler(ThreadMXBeanThreadAllocatedBytesHandler.DEFINITION, ThreadMXBeanThreadAllocatedBytesHandler.INSTANCE);
     }
 }
 
