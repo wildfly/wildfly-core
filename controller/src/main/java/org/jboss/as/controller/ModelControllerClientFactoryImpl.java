@@ -22,6 +22,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
@@ -32,6 +33,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.protocol.mgmt.AsyncToCompletableFutureAdapter;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
@@ -75,7 +77,7 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
      * Creates a superuser client that can execute calls that are to be regarded as part of process boot.
      * Package protected as this facility should only be made available to kernel code.
      */
-    final LocalModelControllerClient createBootClient(Executor executor) {
+    LocalModelControllerClient createBootClient(Executor executor) {
         return createSuperUserClient(executor, false, true);
     }
 
@@ -90,12 +92,12 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
             }
 
             @Override
-            public AsyncFuture<ModelNode> executeAsync(final Operation operation, final OperationMessageHandler messageHandler) {
+            public CompletableFuture<ModelNode> executeAsync(final Operation operation, final OperationMessageHandler messageHandler) {
                 return executeInVm(delegate::executeAsync, operation, messageHandler);
             }
 
             @Override
-            public AsyncFuture<OperationResponse> executeOperationAsync(final Operation operation, final OperationMessageHandler messageHandler) {
+            public CompletableFuture<OperationResponse> executeOperationAsync(final Operation operation, final OperationMessageHandler messageHandler) {
                 return executeInVm(delegate::executeOperationAsync, operation, messageHandler);
             }
 
@@ -155,7 +157,7 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
             OperationResponse response;
             if (forUserCalls) {
                 final SecurityIdentity securityIdentity = securityIdentitySupplier.get();
-                response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<OperationResponse>() {
+                response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<>() {
 
                     @Override
                     public OperationResponse run() {
@@ -171,16 +173,16 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
         }
 
         @Override
-        public AsyncFuture<ModelNode> executeAsync(final Operation operation, final OperationMessageHandler messageHandler) {
+        public CompletableFuture<ModelNode> executeAsync(final Operation operation, final OperationMessageHandler messageHandler) {
             return executeAsync(operation.getOperation(), messageHandler, operation, ResponseConverter.TO_MODEL_NODE);
         }
 
         @Override
-        public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+        public CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
             return executeAsync(operation.getOperation(), messageHandler, operation, ResponseConverter.TO_OPERATION_RESPONSE);
         }
 
-        private <T> AsyncFuture<T> executeAsync(final ModelNode op, final OperationMessageHandler messageHandler,
+        private <T> CompletableFuture<T> executeAsync(final ModelNode op, final OperationMessageHandler messageHandler,
                                                 final OperationAttachments attachments,
                                                 final ResponseConverter<T> responseConverter) {
             if (executor == null) {
@@ -202,7 +204,7 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
                             OperationResponse response;
                             if (forUserCalls) {
                                 // We need the AccessAuditContext as that will make any inflowed SecurityIdentity available.
-                                response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<OperationResponse>() {
+                                response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<>() {
 
                                     @Override
                                     public OperationResponse run() {
@@ -224,7 +226,7 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
                     }
                 }
             });
-            return responseFuture;
+            return AsyncToCompletableFutureAdapter.adapt(responseFuture);
         }
 
         private Operation sanitizeOperation(Operation operation) {
@@ -335,26 +337,18 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
 
         T fromOperationResponse(OperationResponse or);
 
-        ResponseConverter<ModelNode> TO_MODEL_NODE = new ResponseConverter<ModelNode>() {
-            @Override
-            public ModelNode fromOperationResponse(OperationResponse or) {
-                ModelNode result = or.getResponseNode();
-                try {
-                    or.close();
-                } catch (IOException e) {
-                    ROOT_LOGGER.debugf(e, "Caught exception closing %s whose associated streams, "
-                            + "if any, were not wanted", or);
-                }
-                return result;
+        ResponseConverter<ModelNode> TO_MODEL_NODE = or -> {
+            ModelNode result = or.getResponseNode();
+            try {
+                or.close();
+            } catch (IOException e) {
+                ROOT_LOGGER.debugf(e, "Caught exception closing %s whose associated streams, "
+                        + "if any, were not wanted", or);
             }
+            return result;
         };
 
-        ResponseConverter<OperationResponse> TO_OPERATION_RESPONSE = new ResponseConverter<OperationResponse>() {
-            @Override
-            public OperationResponse fromOperationResponse(final OperationResponse or) {
-                return or;
-            }
-        };
+        ResponseConverter<OperationResponse> TO_OPERATION_RESPONSE = or -> or;
     }
 
     private static <T, U, R> R executeInVm(BiFunction<T, U, R> function, T t, U u) {

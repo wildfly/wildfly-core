@@ -74,7 +74,7 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
     }
 
     @Override
-    protected ManagementChannelAssociation getChannelAssociation() throws IOException {
+    protected ManagementChannelAssociation getChannelAssociation() {
         return closeable.channelAssociation;
     }
 

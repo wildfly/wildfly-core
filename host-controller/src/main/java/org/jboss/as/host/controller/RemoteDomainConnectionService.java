@@ -28,6 +28,7 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -104,7 +105,6 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.RemotingOptions;
-import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -167,9 +167,9 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     private volatile TransactionalProtocolClient txMasterProxy;
 
     private final FutureClient futureClient = new FutureClient();
-    private final InjectedValue<Endpoint> endpointInjector = new InjectedValue<Endpoint>();
+    private final InjectedValue<Endpoint> endpointInjector = new InjectedValue<>();
     private final InjectedValue<AuthenticationContext> authenticationContextInjector = new InjectedValue<>();
-    private final InjectedValue<ServerInventory> serverInventoryInjector = new InjectedValue<ServerInventory>();
+    private final InjectedValue<ServerInventory> serverInventoryInjector = new InjectedValue<>();
     private final InjectedValue<ScheduledExecutorService> scheduledExecutorInjector = new InjectedValue<>();
     private final ExecutorService executor;
     private final AtomicBoolean domainConfigAvailable;
@@ -362,12 +362,12 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     }
 
     @Override
-    public AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
         return masterProxy.executeAsync(operation, messageHandler);
     }
 
     @Override
-    public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
         return masterProxy.executeAsync(operation, messageHandler);
     }
 
@@ -377,12 +377,12 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     }
 
     @Override
-    public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
         return masterProxy.executeOperationAsync(operation, messageHandler);
     }
 
     @Override
-    public void fetchAndSyncMissingConfiguration(final OperationContext context, final Resource original) throws OperationFailedException {
+    public void fetchAndSyncMissingConfiguration(final OperationContext context, final Resource original) {
         final TransactionalProtocolClient client = txMasterProxy;
         context.addStep(new OperationStepHandler() {
             @Override
@@ -516,7 +516,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
 
                 @Override
                 public boolean applyDomainModel(final List<ModelNode> bootOperations) {
-                    // Apply the model..
+                    // Apply the model.
                     final HostInfo info = HostInfo.fromModelNode(createLocalHostInfo(), null);
                     return applyRemoteDomainModel(bootOperations, info);
                 }
@@ -526,7 +526,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                     RemoteDomainConnectionService.this.domainConfigAvailable.set(true);
                 }
             }, runningMode);
-            // Setup the management channel handler
+            // Set up the management channel handler
             handler = connection.getChannelHandler();
             handler.getAttachments().attach(ManagementChannelHandler.TEMP_DIR, tempDir);
         } catch (Exception e) {
@@ -607,15 +607,12 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     /** {@inheritDoc} */
     @Override
     public synchronized void stop(final StopContext context) {
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    StreamUtils.safeClose(connection);
-                    responseAttachmentSupport.shutdown();
-                } finally {
-                    context.complete();
-                }
+        Runnable r = () -> {
+            try {
+                StreamUtils.safeClose(connection);
+                responseAttachmentSupport.shutdown();
+            } finally {
+                context.complete();
             }
         };
         try {
@@ -801,14 +798,14 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     };
 
     private void setupHandler() {
-        // Setup the transaction protocol handler
+        // Set up the transaction protocol handler
         handler.addHandlerFactory(new TransactionalProtocolOperationHandler(controller, handler, responseAttachmentSupport));
         // Use the existing channel strategy
         masterProxy = ExistingChannelModelControllerClient.createAndAdd(handler);
         txMasterProxy = TransactionalProtocolHandlers.createClient(handler);
     }
 
-    private class FutureClient extends AsyncFutureTask<MasterDomainControllerClient>{
+    private static class FutureClient extends AsyncFutureTask<MasterDomainControllerClient>{
 
         protected FutureClient() {
             super(null);
@@ -838,7 +835,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         }
 
         @Override
-        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        public void execute(OperationContext context, ModelNode operation) {
             resource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
         }
     }
@@ -865,7 +862,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         }
 
         @Override
-        public void handleRequest(DataInput input, ActiveOperation.ResultHandler<Void> resultHandler, ManagementRequestContext<Void> context) throws IOException {
+        public void handleRequest(DataInput input, ActiveOperation.ResultHandler<Void> resultHandler, ManagementRequestContext<Void> context) {
             resultHandler.done(null);
         }
     }

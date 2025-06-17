@@ -6,13 +6,13 @@
 package org.jboss.as.cli.embedded;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
-import org.jboss.threads.AsyncFuture;
 
 /**
  * {@link org.jboss.as.controller.client.ModelControllerClient} that uses a
@@ -86,7 +86,7 @@ class ThreadContextsModelControllerClient implements ModelControllerClient {
     }
 
     @Override
-    public AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
         Contexts existing = contextSelector.pushLocal();
         try {
             return delegate.executeAsync(operation, messageHandler);
@@ -96,7 +96,7 @@ class ThreadContextsModelControllerClient implements ModelControllerClient {
     }
 
     @Override
-    public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
         Contexts existing = contextSelector.pushLocal();
         try {
             return delegate.executeAsync(operation, messageHandler);
@@ -106,7 +106,7 @@ class ThreadContextsModelControllerClient implements ModelControllerClient {
     }
 
     @Override
-    public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+    public CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
         Contexts existing = contextSelector.pushLocal();
         try {
             return delegate.executeOperationAsync(operation, messageHandler);

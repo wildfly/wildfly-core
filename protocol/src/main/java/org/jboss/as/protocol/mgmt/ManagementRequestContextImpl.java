@@ -73,7 +73,7 @@ class ManagementRequestContextImpl<T, A> implements ManagementRequestContext<A> 
             }
         };
         if (cancellable) {
-            support.addCancellable(runner);
+            support.addCancellable((Cancellable) runner);
         }
         return runner;
     }

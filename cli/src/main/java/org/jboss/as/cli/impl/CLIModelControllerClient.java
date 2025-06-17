@@ -151,7 +151,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
     }
 
     @Override
-    protected ManagementChannelAssociation getChannelAssociation() throws IOException {
+    protected ManagementChannelAssociation getChannelAssociation() {
         return channelAssociation;
     }
 

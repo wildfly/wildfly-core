@@ -33,6 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -48,7 +49,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -64,7 +65,6 @@ import java.util.regex.Pattern;
 
 import org.jboss.as.controller.LocalModelControllerClient;
 import org.jboss.as.controller.ModelControllerClientFactory;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.Operation;
@@ -76,7 +76,6 @@ import org.jboss.byteman.contrib.bmunit.BMRule;
 import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.jboss.threads.AsyncFuture;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -93,7 +92,7 @@ import org.junit.runner.RunWith;
 @RunWith(BMUnitRunner.class)
 public class FileSystemDeploymentServiceUnitTestCase {
 
-    private static Logger logger = Logger.getLogger(FileSystemDeploymentServiceUnitTestCase.class);
+    private static final Logger logger = Logger.getLogger(FileSystemDeploymentServiceUnitTestCase.class);
 
     private static long count = System.currentTimeMillis();
 
@@ -108,19 +107,19 @@ public class FileSystemDeploymentServiceUnitTestCase {
     private File tmpDir;
 
     @BeforeClass
-    public static void createTestSupport() throws Exception {
+    public static void createTestSupport() {
         testSupport = new AutoDeployTestSupport(FileSystemDeploymentServiceUnitTestCase.class.getSimpleName());
     }
 
     @AfterClass
-    public static void cleanup() throws Exception {
+    public static void cleanup() {
         if (testSupport != null) {
             testSupport.cleanupFiles();
         }
     }
 
     @Before
-    public void setup() throws Exception {
+    public void setup() {
         executor.clear();
 
         File root = testSupport.getTempDir();
@@ -137,7 +136,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         testSupport.cleanupChannels();
     }
 
@@ -328,6 +327,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         ts.testee.scan();
 
         String[] list = tmpDir.list();
+        assertNotNull(list);
 
         String deployed = null;
         String failed = null;
@@ -542,17 +542,6 @@ public class FileSystemDeploymentServiceUnitTestCase {
         assertEquals(1, ts.controller.deployed.size());
         byte[] newbytes = ts.controller.deployed.get("foo.war");
         assertFalse(Arrays.equals(newbytes, bytes));
-        // Since AS7-431 the content is no longer managed
-        /*
-        boolean installed = false;
-        for (byte[] content : ts.repo.content) {
-            if (Arrays.equals(newbytes, content)) {
-                installed = true;
-                break;
-            }
-        }
-        assertTrue(installed);
-        */
     }
 
     @Test
@@ -733,7 +722,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
      * a FAILED_DEPLOY marker file is left in the scanner's directory
      */
     @Test
-    public void testIgnoreExternalScannerFailedDeployment() throws Exception {
+    public void testIgnoreExternalScannerFailedDeployment() {
         MockServerController sc = new MockServerController("foo.war");
         TesteeSet ts = createTestee(sc);
         ts.controller.externallyDeployed.put("foo.war", null);
@@ -1483,7 +1472,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
     /**
      * Test for JBAS-9226 -- deleting a .deployed marker does not result in a redeploy
      *
-     * @throws Exception
+     * @throws Exception if there is a problem setting up the test infrastructure
      */
     @Test
     public void testIgnoreUndeployed() throws Exception {
@@ -1526,8 +1515,8 @@ public class FileSystemDeploymentServiceUnitTestCase {
 
         TesteeSet ts = createTestee(new DiscardTaskExecutor() {
             @Override
-            public <T> AsyncFuture<T> submit(Callable<T> tCallable) {
-                return new TimeOutFuture<T>(5, tCallable);
+            public <T> CompletableFuture<T> submit(Callable<T> tCallable) {
+                return new TimeOutFuture<>(5, tCallable);
             }
         });
 
@@ -1587,7 +1576,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
      * Tests that a deployment which had failed earlier, is redeployed (i.e. picked for deployment) when the deployment
      * file is updated (i.e. timestamp changes).
      *
-     * @throws Exception
+     * @throws Exception if there is a problem setting up test infrastructure
      */
     @Test
     public void testFailedArchiveRedeployedAfterDeploymentUpdate() throws Exception {
@@ -1635,7 +1624,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
      * Tests that a deployment which had been undeployed earlier, is redeployed (i.e. picked for deployment) when the deployment
      * file is updated (i.e. timestamp changes).
      *
-     * @throws Exception
+     * @throws Exception if there is a problem setting up the test infrastructure
      */
     @Test
     public void testUndeployedArchiveRedeployedAfterDeploymentUpdate() throws Exception {
@@ -1766,7 +1755,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
 
     /** WFCORE-64 */
     @Test
-    public void testForcedUndeployment() throws Exception {
+    public void testForcedUndeployment() {
         MockServerController sc = new MockServerController("foo.war", "failure.ear");
         TesteeSet ts = createTestee(sc);
         ts.controller.externallyDeployed.put("foo.war", null);
@@ -1774,7 +1763,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         assertThat(ts.controller.deployed.size(), is(2));
         //ts.testee.scan(true, new DefaultDeploymentOperations(sc), true);
         ts.testee.forcedUndeployScan();
-        assertThat(ts.controller.deployed.size(), is(1)); //Only non persistent deployments should be undeployed.
+        assertThat(ts.controller.deployed.size(), is(1)); //Only non-persistent deployments should be undeployed.
         assertThat(ts.controller.deployed.keySet(), hasItems("foo.war"));
     }
 
@@ -1786,8 +1775,8 @@ public class FileSystemDeploymentServiceUnitTestCase {
         final File deploying = new File(tmpDir, "foo.war" + FileSystemDeploymentService.DEPLOYING);
         final DiscardTaskExecutor myWaitingExecutor = new DiscardTaskExecutor(true) {
             @Override
-            public <T> AsyncFuture<T> submit(Callable<T> tCallable) {
-                return new WaitingFuture<T>(50000, tCallable);
+            public <T> CompletableFuture<T> submit(Callable<T> tCallable) {
+                return new WaitingFuture<>(50000, tCallable);
             }
         };
         MockServerController sc = new MockServerController(myWaitingExecutor);
@@ -1799,9 +1788,9 @@ public class FileSystemDeploymentServiceUnitTestCase {
         testSupport.createZip(deployment, 0, false, false, true, true);
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
-            Future<Boolean> lockDone = executorService.submit(new Callable<Boolean>() {
+            Future<Boolean> lockDone = executorService.submit(new Callable<>() {
                 @Override
-                public Boolean call() throws Exception {
+                public Boolean call() {
                     try {
                         while (!ops.ready) {//Waiting for deployment to start.
                             Thread.sleep(100);
@@ -1831,7 +1820,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
             action = "throw new java.io.IOException(\"Thanks Byteman\")"
     )
     @Test
-    public void testNoUndeployment() throws Exception {
+    public void testNoUndeployment() {
         MockServerController sc = new MockServerController("foo.war", "failure.ear");
         TesteeSet ts = createTestee(sc);
         ts.controller.externallyDeployed.put("foo.war", null);
@@ -1844,12 +1833,12 @@ public class FileSystemDeploymentServiceUnitTestCase {
             assertThat(ex.getClass().isAssignableFrom(RuntimeException.class), is(true));
             assertThat(ex.getLocalizedMessage(), is(DeploymentScannerLogger.ROOT_LOGGER.cannotListDirectoryFiles(ex.getCause(), tmpDir).getLocalizedMessage()));
         }
-        assertThat(ts.controller.deployed.size(), is(2)); //Only non persistent deployments should be undeployed.
+        assertThat(ts.controller.deployed.size(), is(2)); //Only non-persistent deployments should be undeployed.
         assertThat(ts.controller.deployed.keySet(), hasItems("foo.war", "failure.ear"));
     }
 
     @Test
-    public void testArchivePatterns() throws Exception {
+    public void testArchivePatterns() {
         Pattern pattern = FileSystemDeploymentService.ARCHIVE_PATTERN;
 
         assertTrue(pattern.matcher("x.war").matches());
@@ -1932,8 +1921,8 @@ public class FileSystemDeploymentServiceUnitTestCase {
      */
     @Test
     public void testUnreadableDeploymentDirDuringScan() throws Exception {
-        File war = createFile("foo.war");
-        File dodeploy = createFile("foo.war" + FileSystemDeploymentService.DO_DEPLOY);
+        createFile("foo.war");
+        createFile("foo.war" + FileSystemDeploymentService.DO_DEPLOY);
         File deployed = new File(tmpDir, "foo.war" + FileSystemDeploymentService.DEPLOYED);
 
         TesteeSet ts = createTestee();
@@ -1994,23 +1983,23 @@ public class FileSystemDeploymentServiceUnitTestCase {
         assertEquals(bytes, ts.controller.deployed.get("external.war"));
     }
 
-    private TesteeSet createTestee(String... existingContent) throws OperationFailedException {
+    private TesteeSet createTestee(String... existingContent) {
         return createTestee(new MockServerController(existingContent));
     }
 
-    private TesteeSet createTestee(final DiscardTaskExecutor executorService, final String... existingContent) throws OperationFailedException {
+    private TesteeSet createTestee(final DiscardTaskExecutor executorService, final String... existingContent) {
         return createTestee(new MockServerController(executorService, existingContent), executorService);
     }
 
-    private TesteeSet createTestee(final MockServerController sc) throws OperationFailedException {
+    private TesteeSet createTestee(final MockServerController sc) {
         return createTestee(sc, executor);
     }
 
-    private TesteeSet createTestee(final MockServerController sc, final ScheduledExecutorService executor) throws OperationFailedException {
+    private TesteeSet createTestee(final MockServerController sc, final ScheduledExecutorService executor) {
         return createTestee(sc, executor, sc.create());
     }
 
-    private TesteeSet createTestee(final MockServerController sc, final ScheduledExecutorService executor, DeploymentOperations ops) throws OperationFailedException {
+    private TesteeSet createTestee(final MockServerController sc, final ScheduledExecutorService executor, DeploymentOperations ops) {
         final FileSystemDeploymentService testee = new FileSystemDeploymentService(resourceAddress, null, tmpDir, null, sc, executor);
         testee.startScanner(ops);
         return new TesteeSet(testee, sc);
@@ -2068,11 +2057,11 @@ public class FileSystemDeploymentServiceUnitTestCase {
     private static class MockServerController implements LocalModelControllerClient, ModelControllerClientFactory, DeploymentOperations.Factory {
 
         private final DiscardTaskExecutor executorService;
-        private final List<ModelNode> requests = new ArrayList<ModelNode>(1);
-        private final List<Response> responses = new ArrayList<Response>(1);
-        private final Map<String, byte[]> added = new HashMap<String, byte[]>();
-        private final Map<String, byte[]> deployed = new HashMap<String, byte[]>();
-        private final Map<String, ExternalDeployment> externallyDeployed = new HashMap<String, ExternalDeployment>();
+        private final List<ModelNode> requests = new ArrayList<>(1);
+        private final List<Response> responses = new ArrayList<>(1);
+        private final Map<String, byte[]> added = new HashMap<>();
+        private final Map<String, byte[]> deployed = new HashMap<>();
+        private final Map<String, ExternalDeployment> externallyDeployed = new HashMap<>();
 
         @Override
         public OperationResponse executeOperation(Operation operation, OperationMessageHandler messageHandler) {
@@ -2082,17 +2071,17 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
-            return executorService.submit(new Callable<ModelNode>() {
+        public CompletableFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
+            return executorService.submit(new Callable<>() {
                 @Override
-                public ModelNode call() throws Exception {
+                public ModelNode call() {
                     return execute(operation);
                 }
             });
         }
 
         @Override
-        public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
+        public CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
             throw new UnsupportedOperationException();
         }
 
@@ -2332,7 +2321,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
 
     private static class DiscardTaskExecutor extends ScheduledThreadPoolExecutor {
 
-        private final List<Runnable> tasks = new ArrayList<Runnable>();
+        private final List<Runnable> tasks = new ArrayList<>();
         private final boolean allowRejection;
         private DiscardTaskExecutor() {
             this(false);
@@ -2350,11 +2339,11 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public <T> AsyncFuture<T> submit(Callable<T> tCallable) {
+        public <T> CompletableFuture<T> submit(Callable<T> tCallable) {
             if (allowRejection && (isShutdown() || isTerminating())) {
                 throw new RejectedExecutionException("DiscardTaskExecutor has shutdown we can't run " + tCallable);
             }
-            return new CallOnGetFuture<T>(tCallable);
+            return new CallOnGetFuture<>(tCallable);
         }
 
         void clear() {
@@ -2362,7 +2351,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
     }
 
-    private static class CallOnGetFuture<T> implements AsyncFuture<T> {
+    private static class CallOnGetFuture<T> extends CompletableFuture<T> {
         final Callable<T> callable;
 
         private CallOnGetFuture(Callable<T> callable) {
@@ -2387,60 +2376,16 @@ public class FileSystemDeploymentServiceUnitTestCase {
         @Override
         public T get() throws InterruptedException, ExecutionException {
             try {
-                return callable.call();
+                complete(callable.call());
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                completeExceptionally(e);
             }
+            return super.get();
         }
 
         @Override
         public T get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
             return get();
-        }
-
-        @Override
-        public AsyncFuture.Status await() throws InterruptedException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status await(long timeout, TimeUnit unit) throws InterruptedException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T getUninterruptibly() throws CancellationException, ExecutionException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T getUninterruptibly(long timeout, TimeUnit unit) throws CancellationException, ExecutionException, TimeoutException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status awaitUninterruptibly() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status awaitUninterruptibly(long timeout, TimeUnit unit) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AsyncFuture.Status getStatus() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public <A> void addListener(AsyncFuture.Listener<? super T, A> listener, A attachment) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void asyncCancel(boolean interruptionDesired) {
-            throw new UnsupportedOperationException();
         }
     }
 
@@ -2453,7 +2398,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public T get(long l, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
+        public T get(long l, TimeUnit timeUnit) throws TimeoutException {
             assertEquals("Should use the configured timeout", expectedTimeout, l);
             throw new TimeoutException();
         }

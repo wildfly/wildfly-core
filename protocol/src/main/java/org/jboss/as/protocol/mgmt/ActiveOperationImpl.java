@@ -8,7 +8,10 @@ package org.jboss.as.protocol.mgmt;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Channel;
@@ -22,13 +25,7 @@ class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOper
 
     // All active operations have to use the direct executor for now. At least we need to make sure
     // completion/cancellation/cleanup are executed before further requests are handled.
-    private static final Executor directExecutor = new Executor() {
-
-        @Override
-        public void execute(final Runnable command) {
-            command.run();
-        }
-    };
+    private static final Executor directExecutor = Runnable::run;
 
     private static final List<Cancellable> CANCEL_REQUESTED = Collections.emptyList();
 
@@ -43,7 +40,7 @@ class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOper
         super(directExecutor);
         this.operationId = operationId;
         this.attachment = attachment;
-        addListener(new Listener<T, Object>() {
+        addListener(new Listener<>() {
             @Override
             public void handleComplete(AsyncFuture<? extends T> asyncFuture, Object attachment) {
                 try {
@@ -71,7 +68,7 @@ class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOper
             }
         }, null);
 
-        this.resultHandler = new ResultHandler<T>() {
+        this.resultHandler = new ResultHandler<>() {
             @Override
             public boolean done(T result) {
                 try {
@@ -128,6 +125,11 @@ class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOper
     }
 
     @Override
+    public <U>CompletableFuture<U> getCompletableFuture(Function<T, U> transformer, Consumer<Boolean> asyncCancelTask) {
+        return AsyncToCompletableFutureAdapter.adapt(this, transformer, asyncCancelTask);
+    }
+
+    @Override
     public void asyncCancel(boolean interruptionDesired) {
         final List<Cancellable> cancellables;
         synchronized (this) {
@@ -159,7 +161,7 @@ class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOper
                     if (cancellables == CANCEL_REQUESTED) {
                         break;
                     } else {
-                        ((cancellables == null) ? (this.cancellables = new ArrayList<Cancellable>()) : cancellables).add(cancellable);
+                        ((cancellables == null) ? (this.cancellables = new ArrayList<>()) : cancellables).add(cancellable);
                     }
                 default:
                     return;
@@ -168,8 +170,8 @@ class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOper
         cancellable.cancel();
     }
 
-    public boolean cancel() {
-        return super.cancel(true);
+    private void cancel() {
+        super.cancel(true);
     }
 
     Channel getChannel() {

@@ -5,6 +5,10 @@
 
 package org.jboss.as.protocol.mgmt;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import org.jboss.threads.AsyncFuture;
 import org.xnio.Cancellable;
 
@@ -12,11 +16,11 @@ import org.xnio.Cancellable;
  * Encapsulates information about a currently active operation, which
  * can require multiple messages exchanged between the client and the
  * server.
- *
+ * <p/>
  * An attachment is optional, but can be used to maintain a shared state between multiple requests.
  * It can be accessed using the {@link org.jboss.as.protocol.mgmt.ManagementRequestContext#getAttachment()}
  * from the request handler.
- *
+ * <p/>
  * An operation is seen as active until one of the methods on the {@link ActiveOperation.ResultHandler} are called.
  *
  * @param <T> the result type
@@ -48,11 +52,23 @@ public interface ActiveOperation<T, A> {
     A getAttachment();
 
     /**
-     * Get the result.
+     * Get an {@link AsyncFuture} that will provide the operation result.
      *
-     * @return the future result
+     * @return the future result. Will not return {@code null}
      */
     AsyncFuture<T> getResult();
+
+
+    /**
+     * Get a {@link CompletableFuture} that will provide a transformed operation result.
+     *
+     * @param transformer     function to transformer the operation result. Cannot be {@code null}
+     * @param asyncCancelTask function to invoke trigger async cancellation if {@link CompletableFuture#cancel(boolean) is called}.
+     *                        May be {@code null}, in which case {@link org.jboss.threads.AsyncFutureTask#asyncCancel(boolean)
+     *                        default async cancellation} is used.
+     * @return the future result. Will not return {@code null}
+     */
+    <U> CompletableFuture<U> getCompletableFuture(Function<T, U> transformer, Consumer<Boolean> asyncCancelTask);
 
     /**
      * Add a cancellation handler.

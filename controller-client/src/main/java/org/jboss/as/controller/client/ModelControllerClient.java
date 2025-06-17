@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
+import java.util.concurrent.CompletableFuture;
 
 import javax.security.auth.callback.CallbackHandler;
 
@@ -18,7 +19,6 @@ import org.jboss.as.controller.client.helpers.ContextualModelControllerClient;
 import org.jboss.as.controller.client.impl.RemotingModelControllerClient;
 import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.threads.AsyncFuture;
 import org.wildfly.client.config.ConfigXMLParseException;
 import org.wildfly.common.context.Contextual;
 import org.wildfly.security.auth.client.ElytronXmlParser;
@@ -45,7 +45,7 @@ public interface ModelControllerClient extends Closeable {
 
     /**
      * Execute an operation synchronously.
-     *
+     * <p/>
      * Note that associated input-streams have to be closed by the caller, after the
      * operation completed {@link OperationAttachments#isAutoCloseStreams()}.
      *
@@ -106,7 +106,7 @@ public interface ModelControllerClient extends Closeable {
      * @param operation the operation to execute
      * @return the future result of the operation
      */
-    default AsyncFuture<ModelNode> executeAsync(ModelNode operation) {
+    default CompletableFuture<ModelNode> executeAsync(ModelNode operation) {
         return executeAsync(Operation.Factory.create(operation), OperationMessageHandler.DISCARD);
     }
 
@@ -117,7 +117,7 @@ public interface ModelControllerClient extends Closeable {
      * @param messageHandler the message handler to use for operation progress reporting, or {@code null} for none
      * @return the future result of the operation
      */
-    default AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
+    default CompletableFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
         return executeAsync(Operation.Factory.create(operation), messageHandler);
     }
 
@@ -130,7 +130,7 @@ public interface ModelControllerClient extends Closeable {
      * @param operation the operation to execute
      * @return the future result of the operation
      */
-    default AsyncFuture<ModelNode> executeAsync(Operation operation) {
+    default CompletableFuture<ModelNode> executeAsync(Operation operation) {
         return executeAsync(operation, OperationMessageHandler.DISCARD);
     }
 
@@ -144,7 +144,7 @@ public interface ModelControllerClient extends Closeable {
      * @param messageHandler the message handler to use for operation progress reporting, or {@code null} for none
      * @return the future result of the operation
      */
-    AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler);
+    CompletableFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler);
 
     /**
      * Execute an operation in another thread, optionally receiving progress reports, with the response
@@ -157,7 +157,7 @@ public interface ModelControllerClient extends Closeable {
      * @param messageHandler the message handler to use for operation progress reporting, or {@code null} for none
      * @return the future result of the operation
      */
-    AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler);
+    CompletableFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler);
 
     /** Factory methods for creating a {@code ModelControllerClient}. */
     class Factory {

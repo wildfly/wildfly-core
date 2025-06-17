@@ -32,7 +32,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Properties;
@@ -56,7 +55,6 @@ import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.jboss.threads.AsyncFuture;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -119,7 +117,7 @@ public class DeploymentOverlayTestCase {
         final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
         ModelNode result;
         try (InputStream is = archive.as(ZipExporter.class).exportAsInputStream()){
-            AsyncFuture<ModelNode> future = primaryClient.executeAsync(addDeployment(is), null);
+            Future<ModelNode> future = primaryClient.executeAsync(addDeployment(is), null);
             result = awaitSimpleOperationExecution(future);
         }
         assertTrue(Operations.isSuccessfulOutcome(result));
@@ -284,13 +282,13 @@ public class DeploymentOverlayTestCase {
     }
 
     private void executeAsyncForResult(DomainClient client, ModelNode op) {
-        AsyncFuture<ModelNode> future = client.executeAsync(op, null);
+        Future<ModelNode> future = client.executeAsync(op, null);
         ModelNode response = awaitSimpleOperationExecution(future);
         assertTrue(response.toJSONString(true), Operations.isSuccessfulOutcome(response));
     }
 
     private void executeAsyncForDomainFailure(DomainClient client, ModelNode op, String failureDescription) {
-        AsyncFuture<ModelNode> future = client.executeAsync(op, null);
+        Future<ModelNode> future = client.executeAsync(op, null);
         ModelNode response = awaitSimpleOperationExecution(future);
         assertFalse(response.toJSONString(true), Operations.isSuccessfulOutcome(response));
         assertTrue(response.toJSONString(true), Operations.getFailureDescription(response).hasDefined("domain-failure-description"));
@@ -299,7 +297,7 @@ public class DeploymentOverlayTestCase {
     }
 
     private void executeAsyncForFailure(DomainClient client, ModelNode op, String failureDescription) {
-        AsyncFuture<ModelNode> future = client.executeAsync(op, null);
+        Future<ModelNode> future = client.executeAsync(op, null);
         ModelNode response = awaitSimpleOperationExecution(future);
         assertFalse(response.toJSONString(true), Operations.isSuccessfulOutcome(response));
         assertEquals(failureDescription, Operations.getFailureDescription(response).asString());
@@ -318,7 +316,7 @@ public class DeploymentOverlayTestCase {
         ModelNode operation = Operations.createReadResourceOperation(address.toModelNode());
         operation.get(INCLUDE_RUNTIME).set(true);
         operation.get(INCLUDE_DEFAULTS).set(true);
-        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
+        Future<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         return Operations.readResult(result);
@@ -338,7 +336,7 @@ public class DeploymentOverlayTestCase {
         }
     }
 
-    private Operation addDeployment(InputStream attachment) throws MalformedURLException {
+    private Operation addDeployment(InputStream attachment) {
         ModelNode operation = Operations.createAddOperation(PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
         ModelNode content = new ModelNode();
         content.get(INPUT_STREAM_INDEX).set(0);
@@ -346,14 +344,14 @@ public class DeploymentOverlayTestCase {
         return Operation.Factory.create(operation, Collections.singletonList(attachment));
     }
 
-    private ModelNode deployOnServerGroup(PathElement group, String runtimeName) throws MalformedURLException {
+    private ModelNode deployOnServerGroup(PathElement group, String runtimeName) {
         ModelNode operation = Operations.createOperation(ADD, PathAddress.pathAddress(group, DEPLOYMENT_PATH).toModelNode());
         operation.get(RUNTIME_NAME).set(runtimeName);
         operation.get(ENABLED).set(true);
         return operation;
     }
 
-    private ModelNode undeployAndRemoveOp() throws MalformedURLException {
+    private ModelNode undeployAndRemoveOp() {
         ModelNode op = new ModelNode();
         op.get(OP).set(COMPOSITE);
         ModelNode steps = op.get(STEPS);
