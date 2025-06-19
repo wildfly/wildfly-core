@@ -7,7 +7,6 @@ package org.jboss.as.threads;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.dmr.ModelNode;
 
 /**
  * Add the threads subsystem.
@@ -18,9 +17,6 @@ import org.jboss.dmr.ModelNode;
 class ThreadsSubsystemAdd extends AbstractAddStepHandler {
 
     static final ThreadsSubsystemAdd INSTANCE = new ThreadsSubsystemAdd();
-
-    protected void populateModel(ModelNode operation, ModelNode model) {
-    }
 
     protected boolean requiresRuntime(OperationContext context) {
         return false;

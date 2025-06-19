@@ -22,7 +22,7 @@ import org.jboss.msc.value.InjectedValue;
  */
 public final class ScheduledThreadPoolService implements Service<ManagedScheduledExecutorService> {
 
-    private final InjectedValue<ThreadFactory> threadFactoryValue = new InjectedValue<ThreadFactory>();
+    private final InjectedValue<ThreadFactory> threadFactoryValue = new InjectedValue<>();
 
     private ManagedScheduledExecutorService executor;
     private StopContext context;
@@ -53,7 +53,7 @@ public final class ScheduledThreadPoolService implements Service<ManagedSchedule
             this.executor = null;
         }
         context.asynchronous();
-        executor.internalShutdown();
+        executor.internalShutdown(context);
     }
 
     public ManagedScheduledExecutorService getValue() throws IllegalStateException {

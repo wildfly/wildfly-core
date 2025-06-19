@@ -104,6 +104,7 @@ public interface ThreadFactoryResolver {
          * @param context  the context of the current operation; can be used to perform any necessary
          *                {@link OperationContext#removeService(ServiceName) service removals}
          */
+        @SuppressWarnings("unused")
         protected void releaseNamedThreadFactory(String threadFactoryName, String threadPoolName, ServiceName threadPoolServiceName,
                               OperationContext context) {
             // no-op

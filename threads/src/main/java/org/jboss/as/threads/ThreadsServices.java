@@ -53,10 +53,6 @@ public final class ThreadsServices {
         return FACTORY.append(name);
     }
 
-    public static ServiceName executorName(final String name) {
-        return EXECUTOR.append(name);
-    }
-
     public static RuntimeCapability<Void> createCapability(String type, Class<?> serviceValueType) {
        return RuntimeCapability.Builder.of(getCapabilityBaseName(type) , true, serviceValueType).build();
     }

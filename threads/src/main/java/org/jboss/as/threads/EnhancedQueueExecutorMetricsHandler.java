@@ -25,7 +25,7 @@ class EnhancedQueueExecutorMetricsHandler extends ThreadPoolMetricsHandler {
             PoolAttributeDefinitions.LARGEST_THREAD_COUNT, PoolAttributeDefinitions.REJECTED_COUNT,
             PoolAttributeDefinitions.TASK_COUNT, PoolAttributeDefinitions.QUEUE_SIZE);
 
-    EnhancedQueueExecutorMetricsHandler(final RuntimeCapability capability, final ServiceName serviceNameBase) {
+    EnhancedQueueExecutorMetricsHandler(final RuntimeCapability<Void> capability, final ServiceName serviceNameBase) {
         super(METRICS, capability, serviceNameBase);
     }
 

@@ -35,34 +35,6 @@ class ThreadPoolManagementUtils {
 
     static <T> void installThreadPoolService(final Service<T> threadPoolService,
                                              final String threadPoolName,
-                                             final ServiceName serviceNameBase,
-                                             final String threadFactoryName,
-                                             final ThreadFactoryResolver threadFactoryResolver,
-                                             final Injector<ThreadFactory> threadFactoryInjector,
-                                             final ServiceTarget target) {
-        installThreadPoolService(threadPoolService, threadPoolName, serviceNameBase,
-                threadFactoryName, threadFactoryResolver, threadFactoryInjector,
-                null, null, null,
-                target);
-    }
-
-    static <T> void installThreadPoolService(final Service<T> threadPoolService,
-                                             final String threadPoolName,
-                                             final ServiceName serviceNameBase,
-                                             final String threadFactoryName,
-                                             final ThreadFactoryResolver threadFactoryResolver,
-                                             final Injector<ThreadFactory> threadFactoryInjector,
-                                             final String handoffExecutorName,
-                                             final HandoffExecutorResolver handoffExecutorResolver,
-                                             final Injector<Executor> handoffExecutorInjector,
-                                             final ServiceTarget target) {
-        installThreadPoolService(threadPoolService, threadPoolName, null, null, serviceNameBase, threadFactoryName,
-                threadFactoryResolver, threadFactoryInjector, handoffExecutorName, handoffExecutorResolver,
-                handoffExecutorInjector, target);
-    }
-
-    static <T> void installThreadPoolService(final Service<T> threadPoolService,
-                                             final String threadPoolName,
                                              final RuntimeCapability<Void> cap,
                                              final PathAddress address,
                                              final ServiceName serviceNameBase,
@@ -104,14 +76,6 @@ class ThreadPoolManagementUtils {
 
         serviceBuilder.install();
 
-    }
-
-    static void removeThreadPoolService(final String threadPoolName,
-                                             final ServiceName serviceNameBase,
-                                             final String threadFactoryName,
-                                             final ThreadFactoryResolver threadFactoryResolver,
-                                             final OperationContext operationContext) {
-        removeThreadPoolService(threadPoolName, serviceNameBase, threadFactoryName, threadFactoryResolver, null, null, operationContext);
     }
 
     static void removeThreadPoolService(final String threadPoolName,
@@ -173,7 +137,7 @@ class ThreadPoolManagementUtils {
         return parseBaseThreadPoolOperationParameters(context, operation, model, params);
     }
 
-    static QueuelessThreadPoolParameters parseQueuelessThreadPoolParameters(final OperationContext context, final ModelNode operation, final ModelNode model, boolean blocking) throws OperationFailedException {
+    static EnhancedQueueThreadPoolParameters parseQueuelessThreadPoolParameters(final OperationContext context, final ModelNode operation, final ModelNode model, boolean blocking) throws OperationFailedException {
         ThreadPoolParametersImpl params = new ThreadPoolParametersImpl();
         parseBaseThreadPoolOperationParameters(context, operation, model, params);
 
@@ -185,7 +149,7 @@ class ThreadPoolManagementUtils {
         return params;
     }
 
-    static BoundedThreadPoolParameters parseBoundedThreadPoolParameters(final OperationContext context, final ModelNode operation, final ModelNode model, boolean blocking) throws OperationFailedException {
+    static EnhancedQueueThreadPoolParameters parseBoundedThreadPoolParameters(final OperationContext context, final ModelNode operation, final ModelNode model, boolean blocking) throws OperationFailedException {
         ThreadPoolParametersImpl params = new ThreadPoolParametersImpl();
         parseBaseThreadPoolOperationParameters(context, operation, model, params);
 
@@ -240,22 +204,14 @@ class ThreadPoolManagementUtils {
         TimeSpec getKeepAliveTime();
     }
 
-    interface QueuelessThreadPoolParameters extends BaseThreadPoolParameters {
-
+    interface EnhancedQueueThreadPoolParameters extends BaseThreadPoolParameters {
+        int getCoreThreads();
+        boolean isAllowCoreTimeout();
+        int getQueueLength();
         String getHandoffExecutor();
     }
 
-    interface BoundedThreadPoolParameters extends QueuelessThreadPoolParameters {
-        boolean isAllowCoreTimeout();
-        int getCoreThreads();
-        int getQueueLength();
-    }
-
-    interface EnhancedQueueThreadPoolParameters extends BaseThreadPoolParameters {
-        int getCoreThreads();
-    }
-
-    private static class ThreadPoolParametersImpl implements QueuelessThreadPoolParameters, BoundedThreadPoolParameters, EnhancedQueueThreadPoolParameters {
+    private static class ThreadPoolParametersImpl implements EnhancedQueueThreadPoolParameters {
         ModelNode address;
         String name;
         String threadFactory;

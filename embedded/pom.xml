@@ -83,16 +83,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>org.jboss.threads</groupId>
-            <artifactId>jboss-threads</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
 
         <!-- Compile time dependencies that at runtime are loaded
              by the embedded process' modular classloader from its

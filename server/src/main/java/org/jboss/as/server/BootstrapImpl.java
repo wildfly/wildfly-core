@@ -218,6 +218,11 @@ final class BootstrapImpl implements Bootstrap {
             Runtime.getRuntime().addShutdownHook(this);
             synchronized (this) {
                 if (!down) {
+                    // WFLY-7045 JBoss Threads will turn off statistics tracking in a static initializer,
+                    // preventing our management API working, unless we tell it not to
+                    if (WildFlySecurityManager.getPropertyPrivileged("jboss.threads.eqe.statistics", null) == null) {
+                        WildFlySecurityManager.setPropertyPrivileged("jboss.threads.eqe.statistics", "true");
+                    }
                     container = ServiceContainer.Factory.create("jboss-as", MAX_THREADS, 30, TimeUnit.SECONDS, false);
                     return container;
                 } else {

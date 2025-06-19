@@ -43,7 +43,7 @@ public class ScheduledThreadPoolAdd extends AbstractAddStepHandler {
 
         ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), capability, context.getCurrentAddress(),
                 serviceNameBase, params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),
-                null, null, null, context.getServiceTarget());
+                null, null, null, context.getCapabilityServiceTarget());
     }
 
     ServiceName getServiceNameBase() {
