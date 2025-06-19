@@ -303,10 +303,27 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
     private void addDebugDeploymentLogger(ModelControllerClient client) throws Exception {
         boolean ok = false;
         try {
-            final ModelNode op = Util.createAddOperation(getScannerLoggerResourcePath());
+            ModelNode op = Util.createAddOperation(getLoggerConsoleHandler());
+            op.get("level").set("TRACE");
+            ModelNode result = client.execute(op);
+            assertEquals("Unexpected outcome of adding a console handler for deployment scanner: " + op, SUCCESS, result.get(OUTCOME).asString());
+            ok = true;
+        } finally {
+            if (!ok) {
+                ModelNode removeOp = Util.createRemoveOperation(getScannerLoggerResourcePath());
+                ModelNode result = client.execute(removeOp);
+                assertEquals("Unexpected outcome of removing the test deployment logger: " + removeOp, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
+            }
+        }
+
+        ok = false;
+        try {
+            ModelNode op = Util.createAddOperation(getScannerLoggerResourcePath());
             op.get("category").set("org.jboss.as.server.deployment.scanner");
             op.get("level").set("TRACE");
-            op.get("use-parent-handlers").set(true);
+            op.get("handlers").setEmptyList().add("CONSOLE_TRACE");
+            op.get("use-parent-handlers").set(false);
+
             ModelNode result = client.execute(op);
             assertEquals("Unexpected outcome of setting the test deployment logger to debug: " + op, SUCCESS, result.get(OUTCOME).asString());
             ok = true;
@@ -328,6 +345,11 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
     private PathAddress getScannerLoggerResourcePath() {
         return PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "logging"), PathElement.pathElement("logger", "org.jboss.as.server.deployment.scanner"));
     }
+
+    private PathAddress getLoggerConsoleHandler() {
+        return PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "logging"), PathElement.pathElement("console-handler", "CONSOLE_TRACE"));
+    }
+
 
     private void waitFor(String message, ExceptionWrappingSupplier<Boolean> condition) throws Exception {
         long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
