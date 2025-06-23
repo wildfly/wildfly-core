@@ -12,7 +12,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-management</artifactId>
-        <version>29.0.0.Beta6</version>
+        <version>29.0.0.Beta7-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-management-subsystem</artifactId>

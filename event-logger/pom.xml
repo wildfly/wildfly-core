@@ -10,7 +10,7 @@
     <parent>
         <artifactId>wildfly-core-parent</artifactId>
         <groupId>org.wildfly.core</groupId>
-        <version>29.0.0.Beta6</version>
+        <version>29.0.0.Beta7-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
