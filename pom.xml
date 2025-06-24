@@ -180,7 +180,7 @@
         <version.commons-io>2.16.1</version.commons-io>
         <version.io.netty>4.1.122.Final</version.io.netty>
         <version.io.smallrye.jandex>3.3.1</version.io.smallrye.jandex>
-        <version.io.smallrye.smallrye-common>2.12.0</version.io.smallrye.smallrye-common>
+        <version.io.smallrye.smallrye-common>2.12.2</version.io.smallrye.smallrye-common>
         <version.io.undertow>2.3.18.Final</version.io.undertow>
         <version.jakarta.json.jakarta-json-api>2.1.3</version.jakarta.json.jakarta-json-api>
         <version.jakarta.interceptor.jakarta-interceptors-api>2.1.0</version.jakarta.interceptor.jakarta-interceptors-api>
