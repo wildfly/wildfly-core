@@ -14,6 +14,7 @@ import static org.jboss.as.server.deployment.scanner.DeploymentScannerDefinition
 
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -25,6 +26,7 @@ import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.management.Capabilities;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationFilter;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
@@ -86,6 +88,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
     private final Supplier<ModelControllerClientFactory> clientFactory;
     private final Supplier<ProcessStateNotifier> processStateNotifier;
     private final ScheduledExecutorService scheduledExecutor;
+    private final Supplier<Executor> mgmtExecutor;
     private volatile PathManager.Callback.Handle callbackHandle;
 
     public static ServiceName getServiceName(String repositoryName) {
@@ -116,17 +119,20 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                                                                   final boolean autoDeployExploded, final boolean autoDeployXml, final boolean scanEnabled, final long deploymentTimeout, boolean rollbackOnRuntimeFailure,
                                                                   final FileSystemDeploymentService bootTimeService, final ScheduledExecutorService scheduledExecutorService) {
         final RuntimeCapability<Void> capName =  SCANNER_CAPABILITY.fromBaseCapability(resourceAddress.getLastElement().getValue());
-        final CapabilityServiceBuilder<?> sb = context.getCapabilityServiceTarget().addCapability(capName);
+        final CapabilityServiceBuilder<?> sb = context.getCapabilityServiceTarget().addService();
         final Consumer<DeploymentScanner> serviceConsumer = sb.provides(capName);
+
         final Supplier<PathManager> pathManager = sb.requires(PathManager.SERVICE_DESCRIPTOR);
         final Supplier<NotificationHandlerRegistry> notificationRegistry = sb.requires(NotificationHandlerRegistry.SERVICE_DESCRIPTOR);
         final Supplier<ModelControllerClientFactory> clientFactory = sb.requires(ModelControllerClientFactory.SERVICE_DESCRIPTOR);
         final Supplier<ProcessStateNotifier> processStateNotifier = sb.requires(ProcessStateNotifier.SERVICE_DESCRIPTOR);
+        final Supplier<Executor> mgmtExecutor = sb.requires(Capabilities.MANAGEMENT_EXECUTOR);
+
         sb.requires(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_CHAINS);
         final DeploymentScannerService service = new DeploymentScannerService(
                 serviceConsumer, pathManager, notificationRegistry, clientFactory, processStateNotifier, scheduledExecutorService,
                 resourceAddress, relativeTo, path, scanInterval, unit, autoDeployZip,
-                autoDeployExploded, autoDeployXml, scanEnabled, deploymentTimeout, rollbackOnRuntimeFailure, bootTimeService);
+                autoDeployExploded, autoDeployXml, scanEnabled, deploymentTimeout, rollbackOnRuntimeFailure, bootTimeService, mgmtExecutor);
         sb.setInstance(service);
         sb.install();
     }
@@ -136,7 +142,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                                      final Supplier<ProcessStateNotifier> processStateNotifier, final ScheduledExecutorService scheduledExecutor,
                                      final PathAddress resourceAddress, final String relativeTo, final String path, final int interval, final TimeUnit unit, final boolean autoDeployZipped,
                                      final boolean autoDeployExploded, final boolean autoDeployXml, final boolean enabled, final long deploymentTimeout,
-                                     final boolean rollbackOnRuntimeFailure, final FileSystemDeploymentService bootTimeService) {
+                                     final boolean rollbackOnRuntimeFailure, final FileSystemDeploymentService bootTimeService, final Supplier<Executor> mgmtExecutor) {
         this.serviceConsumer = serviceConsumer;
         this.pathManager = pathManager;
         this.notificationRegistry = notificationRegistry;
@@ -155,6 +161,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
         this.rollbackOnRuntimeFailure = rollbackOnRuntimeFailure;
         this.deploymentTimeout = deploymentTimeout;
         this.scanner = bootTimeService;
+        this.mgmtExecutor = mgmtExecutor;
     }
 
 
@@ -168,7 +175,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
             final DeploymentOperations.Factory factory = new DeploymentOperations.Factory() {
                 @Override
                 public DeploymentOperations create() {
-                    return new DefaultDeploymentOperations(clientFactory.get(), scheduledExecutor);
+                    return new DefaultDeploymentOperations(clientFactory.get(), mgmtExecutor.get());
                 }
             };
 
