@@ -88,7 +88,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
                     // Wait until deployed ...
                     long timeout = System.currentTimeMillis() + TIMEOUT;
                     while (!(exists(client, DEPLOYMENT_ONE) && exists(client, DEPLOYMENT_TWO)) && System.currentTimeMillis() < timeout) {
-                        TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(2));
+                        TimeUnit.MILLISECONDS.sleep(TimeoutUtil.adjust(300));
                     }
                     Assert.assertTrue(exists(client, DEPLOYMENT_ONE));
                     Assert.assertEquals("OK", deploymentState(client, DEPLOYMENT_ONE));
@@ -110,7 +110,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
                     // Wait until started ...
                     timeout = System.currentTimeMillis() + TIMEOUT;
                     while (!isRunning(client) && System.currentTimeMillis() < timeout) {
-                        TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(2));
+                        TimeUnit.MILLISECONDS.sleep(TimeoutUtil.adjust(300));
                     }
 
                     Assert.assertTrue(Files.exists(oneDeployed));
@@ -121,7 +121,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
 
                     timeout = System.currentTimeMillis() + TIMEOUT;
                     do {
-                        TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(2));
+                        TimeUnit.MILLISECONDS.sleep(TimeoutUtil.adjust(300));
                     } while (exists(client, DEPLOYMENT_TWO) && System.currentTimeMillis() < timeout);
                     Assert.assertFalse("Deployment two should not exist at " + TIME_FORMATTER.format(LocalDateTime.now()), exists(client, DEPLOYMENT_TWO));
                     ModelNode disableScanner = Util.getWriteAttributeOperation(PathAddress.parseCLIStyleAddress("/subsystem=deployment-scanner/scanner=testScanner"), "scan-interval", 300000);
@@ -137,7 +137,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
                     timeout = System.currentTimeMillis() + TIMEOUT;
 
                     while (Files.exists(oneDeployed) && System.currentTimeMillis() < timeout) {
-                        TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(2));
+                        TimeUnit.MILLISECONDS.sleep(TimeoutUtil.adjust(300));
                     }
                     Assert.assertFalse(Files.exists(oneDeployed));
                 } finally {
@@ -205,7 +205,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
     /**
      * https://issues.jboss.org/browse/WFCORE-1890
      *
-     * When FS deployment is erplaced with a managed deployment with same name it is not marked as undeployed and reboot will fail.
+     * When FS deployment is replaced with a managed deployment with same name it is not marked as undeployed and reboot will fail.
      */
     @Test
     public void testReplaceDeploymentWithPersistentDeployment() throws Exception {
@@ -354,7 +354,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
     private void waitFor(String message, ExceptionWrappingSupplier<Boolean> condition) throws Exception {
         long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
         do {
-            TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(2));
+            TimeUnit.MILLISECONDS.sleep(TimeoutUtil.adjust(300));
         } while (!condition.get() && System.currentTimeMillis() < timeout);
 
         Assert.assertTrue(message, condition.get());

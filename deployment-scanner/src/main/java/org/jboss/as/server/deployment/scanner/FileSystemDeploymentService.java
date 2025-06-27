@@ -936,19 +936,12 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                 addContentAddingTask(path, archive, deploymentName, deploymentFile, timestamp);
             } else if (fileName.endsWith(FAILED_DEPLOY)) {
                 final String deploymentName = fileName.substring(0, fileName.length() - FAILED_DEPLOY.length());
-                if (acquireScanLock()) {
-                    try {
-                        assert scanContext != null;
-                        scanContext.toRemove.remove(deploymentName);
-                        if (!deployed.containsKey(deploymentName) && !(new File(child.getParent(), deploymentName).exists())) {
-                            if (scanContext.registeredDeployments.containsKey(deploymentName)) {
-                                scanContext.scannerTasks.add(new UndeployTask(deploymentName, deploymentDir, scanContext.scanStartTime, true));
-                            }
-                            removeExtraneousMarker(child, fileName);
-                        }
-                    } finally {
-                        releaseScanLock();
+                scanContext.toRemove.remove(deploymentName);
+                if (!deployed.containsKey(deploymentName) && !(new File(child.getParent(), deploymentName).exists())) {
+                    if (scanContext.registeredDeployments.containsKey(deploymentName)) {
+                        scanContext.scannerTasks.add(new UndeployTask(deploymentName, deploymentDir, scanContext.scanStartTime, true));
                     }
+                    removeExtraneousMarker(child, fileName);
                 }
             } else if (isEEArchive(fileName)) {
                 boolean autoDeployable = child.isDirectory() ? autoDeployExploded : autoDeployZip;
