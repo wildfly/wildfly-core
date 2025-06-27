@@ -41,9 +41,9 @@ public class ElytronExtension implements Extension {
     /**
      * The current name space used for the {@code subsystem} element
      */
-    static final String NAMESPACE_18_0 = "urn:wildfly:elytron:18.0";
+    static final String NAMESPACE_19_0 = "urn:wildfly:elytron:19.0";
 
-    static final String CURRENT_NAMESPACE = NAMESPACE_18_0;
+    static final String CURRENT_NAMESPACE = NAMESPACE_19_0;
 
     /**
      * The name of our subsystem within the model.
@@ -76,8 +76,9 @@ public class ElytronExtension implements Extension {
     static final ModelVersion ELYTRON_17_0_0 = ModelVersion.create(17);
     static final ModelVersion ELYTRON_18_0_0 = ModelVersion.create(18);
     static final ModelVersion ELYTRON_19_0_0 = ModelVersion.create(19);
+    static final ModelVersion ELYTRON_20_0_0 = ModelVersion.create(20, 0);
 
-    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_19_0_0;
+    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_20_0_0;
 
     static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
