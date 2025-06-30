@@ -339,6 +339,9 @@
                                         <!-- Manipulates the legacy security realm ManagementRealm.
                                              TODO determine if we want that used for management in this installation -->
                                         <exclude>org.jboss.as.test.integration.credential.store.ManagementAuthenticationUsersTestCase.java</exclude>
+                                        <!-- Those tests rely on the /error/index.html that is not present when the console is disabled -->
+                                        <exclude>org.jboss.as.test.integration.management.http.HttpManagementConstantHeadersTestCase.java</exclude>
+                                        <exclude>org.jboss.as.test.integration.management.http.CustomManagementContextTestCase.java</exclude>
                                     </excludes>
                                 </configuration>
                             </execution>
@@ -445,6 +448,9 @@
                                         <exclude>org.jboss.as.test.integration.management.console.WebConsoleRedirectionTestCase.java</exclude>
                                         <!-- No snapshot, readonly config -->
                                         <exclude>org.wildfly.core.test.standalone.mgmt.api.ModelPersistenceTestCase.java</exclude>
+                                        <!-- Those tests rely on the /error/index.html that is not present when the console is disabled -->
+                                        <exclude>org.jboss.as.test.integration.management.http.HttpManagementConstantHeadersTestCase.java</exclude>
+                                        <exclude>org.jboss.as.test.integration.management.http.CustomManagementContextTestCase.java</exclude>
                                     </excludes>
                                 </configuration>
                             </execution>
