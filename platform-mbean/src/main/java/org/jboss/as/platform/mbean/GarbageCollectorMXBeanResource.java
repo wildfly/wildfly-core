@@ -5,6 +5,8 @@
 
 package org.jboss.as.platform.mbean;
 
+import static org.jboss.as.platform.mbean.PlatformMBeanConstants.GARBAGE_COLLECTOR_TYPE;
+import static org.jboss.as.platform.mbean.PlatformMBeanConstants.TYPE;
 import static org.jboss.as.platform.mbean.PlatformMBeanUtil.escapeMBeanName;
 
 import java.lang.management.GarbageCollectorMXBean;
@@ -30,7 +32,7 @@ public class GarbageCollectorMXBeanResource extends AbstractPlatformMBeanResourc
     @Override
     ResourceEntry getChildEntry(String name) {
         for (GarbageCollectorMXBean mbean : ManagementFactory.getGarbageCollectorMXBeans()) {
-            if (name.equals(escapeMBeanName(mbean.getName()))) {
+            if (name.equals(escapeMBeanName(mbean.getName())) && mbean.getObjectName().getKeyProperty(TYPE).equals(GARBAGE_COLLECTOR_TYPE)) {
                 return new LeafPlatformMBeanResource(PathElement.pathElement(ModelDescriptionConstants.NAME, name));
             }
         }
@@ -41,7 +43,9 @@ public class GarbageCollectorMXBeanResource extends AbstractPlatformMBeanResourc
     Set<String> getChildrenNames() {
         final Set<String> result = new LinkedHashSet<String>();
         for (GarbageCollectorMXBean mbean : ManagementFactory.getGarbageCollectorMXBeans()) {
-            result.add(escapeMBeanName(mbean.getName()));
+            if(mbean.getObjectName().getKeyProperty(TYPE).equals(GARBAGE_COLLECTOR_TYPE)) {
+                result.add(escapeMBeanName(mbean.getName()));
+            }
         }
         return result;
     }

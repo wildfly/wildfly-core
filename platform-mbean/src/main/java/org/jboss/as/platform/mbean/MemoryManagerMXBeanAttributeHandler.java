@@ -5,6 +5,8 @@
 
 package org.jboss.as.platform.mbean;
 
+import static org.jboss.as.platform.mbean.PlatformMBeanConstants.MEMORY_MANAGER_TYPE;
+import static org.jboss.as.platform.mbean.PlatformMBeanConstants.TYPE;
 import static org.jboss.as.platform.mbean.PlatformMBeanUtil.escapeMBeanName;
 
 import java.lang.management.ManagementFactory;
@@ -39,7 +41,8 @@ class MemoryManagerMXBeanAttributeHandler extends AbstractPlatformMBeanAttribute
         MemoryManagerMXBean memoryManagerMXBean = null;
 
         for (MemoryManagerMXBean mbean : ManagementFactory.getMemoryManagerMXBeans()) {
-            if (mmName.equals(escapeMBeanName(mbean.getName()))) {
+            if (mmName.equals(escapeMBeanName(mbean.getName())) &&
+                mbean.getObjectName().getKeyProperty(TYPE).equals(MEMORY_MANAGER_TYPE)) {
                 memoryManagerMXBean = mbean;
             }
         }

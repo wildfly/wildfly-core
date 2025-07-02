@@ -5,6 +5,8 @@
 
 package org.jboss.as.platform.mbean;
 
+import static org.jboss.as.platform.mbean.PlatformMBeanConstants.MEMORY_MANAGER_TYPE;
+import static org.jboss.as.platform.mbean.PlatformMBeanConstants.TYPE;
 import static org.jboss.as.platform.mbean.PlatformMBeanUtil.escapeMBeanName;
 
 import java.lang.management.ManagementFactory;
@@ -30,7 +32,7 @@ public class MemoryManagerMXBeanResource extends AbstractPlatformMBeanResource {
     @Override
     ResourceEntry getChildEntry(String name) {
         for (MemoryManagerMXBean mbean : ManagementFactory.getMemoryManagerMXBeans()) {
-            if (name.equals(escapeMBeanName(mbean.getName()))) {
+            if (name.equals(escapeMBeanName(mbean.getName())) && mbean.getObjectName().getKeyProperty(TYPE).equals(MEMORY_MANAGER_TYPE)) {
                 return new LeafPlatformMBeanResource(PathElement.pathElement(ModelDescriptionConstants.NAME, name));
             }
         }
@@ -41,7 +43,9 @@ public class MemoryManagerMXBeanResource extends AbstractPlatformMBeanResource {
     Set<String> getChildrenNames() {
         final Set<String> result = new LinkedHashSet<String>();
         for (MemoryManagerMXBean mbean : ManagementFactory.getMemoryManagerMXBeans()) {
-            result.add(escapeMBeanName(mbean.getName()));
+            if(mbean.getObjectName().getKeyProperty(TYPE).equals(MEMORY_MANAGER_TYPE)) {
+                result.add(escapeMBeanName(mbean.getName()));
+            }
         }
         return result;
     }

@@ -5,6 +5,8 @@
 
 package org.jboss.as.platform.mbean;
 
+import static org.jboss.as.platform.mbean.PlatformMBeanConstants.MEMORY_POOL_TYPE;
+import static org.jboss.as.platform.mbean.PlatformMBeanConstants.TYPE;
 import static org.jboss.as.platform.mbean.PlatformMBeanUtil.escapeMBeanName;
 
 import java.lang.management.ManagementFactory;
@@ -30,7 +32,7 @@ public class MemoryPoolMXBeanResource extends AbstractPlatformMBeanResource {
     @Override
     ResourceEntry getChildEntry(String name) {
         for (MemoryPoolMXBean mbean : ManagementFactory.getMemoryPoolMXBeans()) {
-            if (name.equals(escapeMBeanName(mbean.getName()))) {
+            if (name.equals(escapeMBeanName(mbean.getName())) && mbean.getObjectName().getKeyProperty(TYPE).equals(MEMORY_POOL_TYPE)) {
                 return new LeafPlatformMBeanResource(PathElement.pathElement(ModelDescriptionConstants.NAME, name));
             }
         }
@@ -41,7 +43,9 @@ public class MemoryPoolMXBeanResource extends AbstractPlatformMBeanResource {
     Set<String> getChildrenNames() {
         final Set<String> result = new LinkedHashSet<String>();
         for (MemoryPoolMXBean mbean : ManagementFactory.getMemoryPoolMXBeans()) {
-            result.add(escapeMBeanName(mbean.getName()));
+            if(mbean.getObjectName().getKeyProperty(TYPE).equals(MEMORY_POOL_TYPE)) {
+                result.add(escapeMBeanName(mbean.getName()));
+            }
         }
         return result;
     }
