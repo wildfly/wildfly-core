@@ -8,7 +8,8 @@ package org.jboss.as.server.moduleservice;
 import org.jboss.as.server.deployment.module.ExtensionInfo;
 
 /**
- * An index of available extensions.
+ * An index of available Jakarta EE extensions (optional packages and shared libraries).
+ * See <a href="https://jakarta.ee/specifications/platform/10/jakarta-platform-spec-10.0#a2945">Jakarta EE Platform Specification, Library Support</a>
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
