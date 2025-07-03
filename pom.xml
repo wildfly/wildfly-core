@@ -365,6 +365,7 @@
                             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                             <jboss.remoting.leakdebugging>false</jboss.remoting.leakdebugging>
                             <test.level>${test.level}</test.level>
+                            <java.min.version>${maven.compiler.release}</java.min.version>
                         </systemPropertyVariables>
                         <argLine>${surefire.system.args}</argLine>
                     </configuration>

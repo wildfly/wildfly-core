@@ -279,7 +279,9 @@ public class PlatformMBeanConstants {
     public static final PathElement LOGGING_PATH = PathElement.pathElement(ModelDescriptionConstants.TYPE, LOGGING);
     public static final PathElement PLATFORM_LOGGING_PATH = PathElement.pathElement(ModelDescriptionConstants.TYPE, PLATFORM_LOGGING);
 
-
+    public static String MEMORY_POOL_TYPE = "MemoryPool";
+    public static String GARBAGE_COLLECTOR_TYPE = "GarbageCollector";
+    public static String MEMORY_MANAGER_TYPE = "MemoryManager";
     static {
         final List<String> JDK6 = ManagementFactory.getCompilationMXBean() == null ? JDK_NOCOMPILATION_TYPES : JDK6_BASE_TYPES;
         List<String> list = new ArrayList<String>(JDK6);

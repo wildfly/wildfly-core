@@ -47,6 +47,17 @@ public final class AssumeTestGroupUtil {
     }
 
     /**
+     * Assume for tests that fail when the JVM version is not the expected one.
+     *
+     * @param javaSpecificationVersion the JDK specification version. Use 17 for JDK 17.
+     */
+    public static void assumeJDKVersionExact(int javaSpecificationVersion) {
+        assert javaSpecificationVersion >= 17; // we only support 17 or later
+        assumeCondition("Tests failing if the JDK in use is not " + javaSpecificationVersion + ".",
+                () -> isJDKVersionExact(javaSpecificationVersion));
+    }
+
+    /**
      * Assume for tests that fail when the JVM version is too low. This should be used sparingly.
      *
      * @param javaSpecificationVersion the JDK specification version. Use 11 for JDK 11. Must be 11 or higher.
@@ -66,6 +77,17 @@ public final class AssumeTestGroupUtil {
         assert javaSpecificationVersion > 11; // we only support 11 or later so no reason to call this for 11
         assumeCondition("Tests failing if the JDK in use is after " + javaSpecificationVersion + ".",
                 () -> isJDKVersionBefore(javaSpecificationVersion));
+    }
+
+    /**
+     * Check if the current JDK specification version is equal to the given
+     * value.
+     *
+     * @param javaSpecificationVersion the JDK specification version. Use 17 for
+     * JDK 17.
+     */
+    public static boolean isJDKVersionExact(int javaSpecificationVersion) {
+        return getJavaSpecificationVersion() == javaSpecificationVersion;
     }
 
     /**
