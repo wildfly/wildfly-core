@@ -310,16 +310,16 @@ final class OperationContextImpl extends AbstractOperationContext {
                     // Change the response for the step to mark as failed
                     StringBuilder msg = new StringBuilder();
                     if (ignoreContext) {
-                        msg = msg.append(ControllerLogger.ROOT_LOGGER.cannotRemoveRequiredCapability(required.getName()));
+                        msg.append(ControllerLogger.ROOT_LOGGER.cannotRemoveRequiredCapability(required.getName()));
                     } else {
-                        msg = msg.append(ControllerLogger.ROOT_LOGGER.cannotRemoveRequiredCapabilityInContext(required.getName(), required.getScope().getName()));
+                        msg.append(ControllerLogger.ROOT_LOGGER.cannotRemoveRequiredCapabilityInContext(required.getName(), required.getScope().getName()));
                     }
                     for (RuntimeRequirementRegistration reg : entry.getValue()) {
                         RegistrationPoint rp = reg.getOldestRegistrationPoint();
                         if (rp.getAttribute() == null) {
-                            msg = msg.append('\n').append(ControllerLogger.ROOT_LOGGER.requirementPointSimple(reg.getDependentName(), rp.getAddress().toCLIStyleString()));
+                            msg.append('\n').append(ControllerLogger.ROOT_LOGGER.requirementPointSimple(reg.getDependentName(), rp.getAddress().toCLIStyleString()));
                         } else {
-                            msg = msg.append('\n').append(ControllerLogger.ROOT_LOGGER.requirementPointFull(reg.getDependentName(), rp.getAttribute(), rp.getAddress().toCLIStyleString()));
+                            msg.append('\n').append(ControllerLogger.ROOT_LOGGER.requirementPointFull(reg.getDependentName(), rp.getAttribute(), rp.getAddress().toCLIStyleString()));
                         }
                     }
                     String msgString = msg.toString();
@@ -362,7 +362,7 @@ final class OperationContextImpl extends AbstractOperationContext {
             for (Map.Entry<Step, Set<CapabilityId>> entry : missingForStep.entrySet()) {
                 Step step = entry.getKey();
                 ModelNode response = step.response;
-                // only overwrite reponse failure-description if there isn't one
+                // only overwrite response failure-description if there isn't one
                 StringBuilder msg = response.hasDefined(FAILURE_DESCRIPTION)
                         ? null
                         : new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing());
@@ -401,7 +401,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                         for (Step step : inconsistent) {
                             ModelNode response = step.response;
                             String depConName = reg.getDependentContext().getName();
-                            // only overwrite reponse failure-description if there isn't one
+                            // only overwrite response failure-description if there isn't one
                             if (!response.hasDefined(FAILURE_DESCRIPTION)) {
                                 if(!(adminOnly && isBooting())) {
                                     response.get(FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.inconsistentCapabilityContexts(reg.getRequiredName(),
@@ -569,6 +569,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         return operationHeaders.getContextFlags().contains(ContextFlag.ALLOW_RESOURCE_SERVICE_RESTART);
     }
 
+    @Override
     public ManagementResourceRegistration getResourceRegistrationForUpdate() {
         return getMutableResourceRegistration(activeStep.address);
     }
@@ -615,6 +616,8 @@ final class OperationContextImpl extends AbstractOperationContext {
      * Gets a service registry that will ensure
      * {@link org.jboss.msc.service.ServiceController#setMode(org.jboss.msc.service.ServiceController.Mode) changes to the mode}
      * of registered services will result in subsequent verification of service stability.
+     * <p>
+     * This method validates that the caller has the necessary permissions to read or modify the runtime state.
      *
      * @param modify {@code true} if the caller intends to modify state
      * @param registryActiveStep the {@link org.jboss.as.controller.AbstractOperationContext.Step} that encapsulates
@@ -645,6 +648,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         return registry;
     }
 
+    @Override
     public ServiceController<?> removeService(final ServiceName name) throws UnsupportedOperationException {
 
         readOnly = false;
