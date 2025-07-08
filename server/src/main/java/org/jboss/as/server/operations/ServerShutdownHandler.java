@@ -20,6 +20,7 @@ import java.io.FileReader;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.Properties;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -143,15 +144,15 @@ public class ServerShutdownHandler implements OperationStepHandler {
                     @Override
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                         if (resultAction == OperationContext.ResultAction.KEEP) {
-                            //even if the timeout is zero we still pause the server
-                            //to stop new requests being accepted as it is shutting down
-                            final ShutdownAction shutdown = new ShutdownAction(getOperationName(operation), restart, performInstallation);
                             ServerLogger.ROOT_LOGGER.suspendingServer(seconds, TimeUnit.SECONDS);
-                            CompletionStage<Void> suspend = ServerShutdownHandler.this.suspendController.suspend(ServerSuspendController.Context.SHUTDOWN);
+                            // Initiate suspend, even if we will not wait before shutting down
+                            CompletionStage<Void> suspend = ServerShutdownHandler.this.suspendController.suspend(ServerSuspendController.Context.SHUTDOWN).whenComplete(ServerSuspendHandler::suspendComplete);
                             if (seconds >= 0) {
+                                // Auto-complete suspend if not complete with the configured timeout
                                 suspend.toCompletableFuture().completeOnTimeout(null, seconds, TimeUnit.SECONDS);
                             }
-                            suspend.whenComplete(shutdown);
+                            // Shutdown when complete
+                            suspend.whenComplete(new ShutdownAction(getOperationName(operation), restart, performInstallation));
                         }
                     }
                 });
@@ -177,9 +178,8 @@ public class ServerShutdownHandler implements OperationStepHandler {
 
         @Override
         public void accept(Void ignore, Throwable exception) {
-            if (exception != null) {
-                ServerLogger.ROOT_LOGGER.caughtExceptionDuringShutdown(exception);
-            } else {
+            // Commence shutdown, unless suspend was cancelled
+            if (!(exception instanceof CancellationException)) {
                 processState.setStopping();
                 final Thread thread = new Thread(new Runnable() {
                     public void run() {

@@ -13,9 +13,10 @@ import static org.jboss.as.server.controller.resources.ServerRootResourceDefinit
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.renameTimeoutToSuspendTimeout;
 
 import java.util.EnumSet;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -71,19 +72,34 @@ public class ServerSuspendHandler implements OperationStepHandler {
 
                 final ServerSuspendController suspendController = ServerSuspendHandler.this.suspendController;
                 ServerLogger.ROOT_LOGGER.suspendingServer(seconds, TimeUnit.SECONDS);
-                CompletableFuture<Void> suspend = suspendController.suspend(ServerSuspendController.Context.RUNNING).toCompletableFuture();
-                if (seconds >= 0) {
-                    suspend.completeOnTimeout(null, seconds, TimeUnit.SECONDS);
-                }
-                try {
-                    suspend.join();
-                } catch (CancellationException e) {
-                    context.setRollbackOnly();
+                CompletionStage<Void> suspend = suspendController.suspend(ServerSuspendController.Context.RUNNING).whenComplete(ServerSuspendHandler::suspendComplete);
+                if (seconds != 0) {
+                    try {
+                        if (seconds < 0) {
+                            // Wait indefinitely
+                            suspend.toCompletableFuture().get();
+                        } else {
+                            suspend.toCompletableFuture().get(seconds, TimeUnit.SECONDS);
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } catch (TimeoutException e) {
+                        // Done waiting
+                    } catch (ExecutionException e) {
+                        context.getFailureDescription().set(e.getCause().getLocalizedMessage());
+                        context.setRollbackOnly();
+                    }
                 }
                 context.completeStep(new RollbackHandler(suspendController));
             }
         }, OperationContext.Stage.RUNTIME);
         context.completeStep(OperationContext.ResultHandler.NOOP_RESULT_HANDLER);
+    }
+
+    static void suspendComplete(Void result, Throwable exception) {
+        if (exception != null) {
+            ServerLogger.ROOT_LOGGER.suspendFailed(exception);
+        }
     }
 
     private static final class RollbackHandler implements OperationContext.ResultHandler {
@@ -98,7 +114,14 @@ public class ServerSuspendHandler implements OperationStepHandler {
         public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
             if (resultAction == OperationContext.ResultAction.ROLLBACK) {
                 ServerLogger.ROOT_LOGGER.resumingServer();
-                this.controller.resume(ServerSuspendController.Context.RUNNING).toCompletableFuture().join();
+                CompletionStage<Void> resume = this.controller.resume(ServerSuspendController.Context.RUNNING).whenComplete(ServerResumeHandler::resumeComplete);
+                try {
+                    resume.toCompletableFuture().get();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (ExecutionException e) {
+                    // Ignore - we already logged any completion failures
+                }
             }
         }
     }
