@@ -168,8 +168,7 @@ public enum ModelTestControllerVersion {
         return String.format("%s:%s%s:%s",
                 coreArtifact ? getCoreMavenGroupId() : getMavenGroupId(),
                 getArtifactIdPrefix(), artifactIdPart,
-                getMavenGavVersion());
-
+                coreArtifact ? getCoreVersion() : getMavenGavVersion());
     }
 
     public Stability getStability() {
