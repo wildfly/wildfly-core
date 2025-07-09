@@ -18,7 +18,7 @@ import org.wildfly.legacy.version.LegacyVersions;
  */
 public enum ModelTestControllerVersion {
     // Release version under test
-    MASTER (CurrentVersion.VERSION, false, null, "master" ),
+    MASTER(CurrentVersion.VERSION, false, null, "master"),
 
     //EAP releases
     EAP_7_4_0("7.4.0.GA-redhat-00005", true, "23.0.0", "15.0.2.Final-redhat-00001", "7.4.0"),
@@ -48,16 +48,18 @@ public enum ModelTestControllerVersion {
     ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, String realVersionName) {
         this(mavenGavVersion, eap, testControllerVersion, null, realVersionName);
     }
+
     ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, String coreVersion, String realVersionName) {
         this(mavenGavVersion, eap, testControllerVersion, coreVersion, realVersionName, false);
     }
+
     ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, String coreVersion, String realVersionName, boolean ignored) {
         this.mavenGavVersion = mavenGavVersion;
         this.testControllerVersion = testControllerVersion;
         this.eap = eap;
         this.stability = eap ? Stability.DEFAULT : Stability.COMMUNITY;
         this.validLegacyController = testControllerVersion != null;
-        this.coreVersion = coreVersion == null? mavenGavVersion : coreVersion; //full == core
+        this.coreVersion = coreVersion == null ? mavenGavVersion : coreVersion; //full == core
         this.realVersionName = realVersionName;
         this.ignored = ignored;
         if (eap) {
@@ -124,7 +126,12 @@ public enum ModelTestControllerVersion {
         return realVersionName;
     }
 
-    public String getArtifactIdPrefix(){
+    /**
+     * @deprecated The artifact prefix has not been relevant since WildFly 8. Remove usages of this method and replace with
+     * {@link ModelTestControllerVersion#createGAV(String)} and {@link ModelTestControllerVersion#createCoreGAV(String)} as appropriate.
+     */
+    @Deprecated(forRemoval = true)
+    public String getArtifactIdPrefix() {
         return artifactIdPrefix;
     }
 
@@ -151,19 +158,46 @@ public enum ModelTestControllerVersion {
         }
     }
 
-    public ModelVersion getSubsystemModelVersion(String subsystemName){
+    public ModelVersion getSubsystemModelVersion(String subsystemName) {
         return getSubsystemModelVersions().get(subsystemName);
     }
 
-    public Map<String,ModelVersion> getSubsystemModelVersions(){
-        if (subsystemModelVersions.isEmpty()){
-            synchronized (subsystemModelVersions){
+    public Map<String, ModelVersion> getSubsystemModelVersions() {
+        if (subsystemModelVersions.isEmpty()) {
+            synchronized (subsystemModelVersions) {
                 subsystemModelVersions.putAll(LegacyVersions.getModelVersions(realVersionName));
             }
         }
         return this.subsystemModelVersions;
     }
 
+    /**
+     * Creates a Maven GAV (groupId:artifactId:version) string for the specified artifact
+     * for this test controller version.
+     *
+     * @param artifactId the artifactId to include in the GAV string
+     * @return the Maven coordinates of the artifact for this test controller version.
+     */
+    public String createGAV(String artifactId) {
+        return String.format("%s:%s:%s", getMavenGroupId(), artifactId, getMavenGavVersion());
+    }
+
+    /**
+     * Creates a Maven GAV (groupId:artifactId:version) string for the specified wildfly-core artifact
+     * for this test controller version.
+     *
+     * @param artifactId the artifactId from wildfly-core to include in the GAV string
+     * @return the Maven coordinates of the wildfly-core artifact for this test controller version.
+     */
+    public String createCoreGAV(String artifactId) {
+        return String.format("%s:%s:%s", getCoreMavenGroupId(), artifactId, getCoreVersion());
+    }
+
+    /**
+     * @deprecated Use {@link ModelTestControllerVersion#createGAV(String)} and
+     * {@link ModelTestControllerVersion#createCoreGAV(String)} instead.
+     */
+    @Deprecated(forRemoval = true)
     public String getMavenGav(String artifactIdPart, boolean coreArtifact) {
         return String.format("%s:%s%s:%s",
                 coreArtifact ? getCoreMavenGroupId() : getMavenGroupId(),
