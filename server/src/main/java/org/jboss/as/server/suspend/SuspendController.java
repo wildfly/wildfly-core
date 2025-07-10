@@ -5,17 +5,21 @@
 
 package org.jboss.as.server.suspend;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -25,7 +29,6 @@ import java.util.stream.Stream;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.wildfly.common.Assert;
-import org.wildfly.common.function.Functions;
 
 /**
  * Orchestrates suspending and resuming of registered server activity.
@@ -72,60 +75,67 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
 
     private final List<OperationListener> listeners = new CopyOnWriteArrayList<>();
 
-    private volatile State state = State.SUSPENDED;
+    private final AtomicReference<State> state = new AtomicReference<>(State.SUSPENDED);
+    private volatile CompletionStage<Void> activeSuspend = SuspendableActivity.COMPLETED;
 
     @Override
     public void reset() {
-        this.state = State.SUSPENDED;
+        this.state.getAndSet(State.SUSPENDED);
     }
 
     @Override
     public CompletionStage<Void> suspend(ServerSuspendContext context) {
-        if (this.state == State.SUSPENDED) {
-            return SuspendableActivity.COMPLETED;
+        if (!this.state.compareAndSet(State.RUNNING, State.PRE_SUSPEND)) {
+            // Return active suspend (which may already be complete) if not running
+            return this.activeSuspend;
         }
-        this.state = State.PRE_SUSPEND;
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        this.activeSuspend = result;
         for (OperationListener listener: this.listeners) {
             listener.suspendStarted();
         }
-        CompletableFuture<Void> result = new CompletableFuture<>();
+        // Collect stages in case we need to cancel them
+        List<CompletionStage<Void>> phaseStages = new ArrayList<>(2);
+        result.whenComplete(propagateCancellation(phaseStages));
         // Prepare activity groups in priority order, i.e. first -> last
-        phaseStage(this.activityGroups, SuspendableActivity::prepare, context, (ignored, prepareException) -> {
+        phaseStages.add(phaseStage(this.activityGroups, SuspendableActivity::prepare, context, (ignored, prepareException) -> {
             if (prepareException != null) {
                 result.completeExceptionally(prepareException);
             } else {
-                this.state = State.SUSPENDING;
+                this.state.set(State.SUSPENDING);
                 // Suspend activity groups in priority order, i.e. first -> last order
-                phaseStage(this.activityGroups, SuspendableActivity::suspend, context, (ignore, suspendException) -> {
+                phaseStages.add(phaseStage(this.activityGroups, SuspendableActivity::suspend, context, (ignore, suspendException) -> {
                     if (suspendException != null) {
                         result.completeExceptionally(suspendException);
                     } else {
-                        this.state = State.SUSPENDED;
+                        this.state.set(State.SUSPENDED);
                         result.complete(null);
                         for (OperationListener listener: this.listeners) {
                             listener.complete();
                         }
                     }
-                }, Functions.discardingBiConsumer());
+                }));
             }
-        }, Functions.discardingBiConsumer());
+        }));
         return result;
     }
 
     @Override
     public CompletionStage<Void> resume(ServerResumeContext context) {
-        if (this.state == State.RUNNING) {
+        if (this.state.get() == State.RUNNING) {
             return SuspendableActivity.COMPLETED;
         }
+        // Cancel any active suspend
+        this.activeSuspend.toCompletableFuture().cancel(false);
         // Resume activity groups in reverse priority order, i.e. last -> first
         return phaseStage(this::resumeIterator, SuspendableActivity::resume, context, (ignore, exception) -> {
             if (exception == null) {
-                this.state = State.RUNNING;
+                this.state.set(State.RUNNING);
                 for (OperationListener listener: this.listeners) {
                     listener.cancelled();
                 }
             }
-        }, ServerLogger.ROOT_LOGGER::failedToResume);
+        });
     }
 
     private Iterator<List<SuspendableActivity>> resumeIterator() {
@@ -138,17 +148,19 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
      * @param activityGroups the activity groups in a given iteration order
      * @param phase a function for this phase.
      * @param context the phase context
-     * @param exceptionHandler handles exceptions thrown by the phase function
      * @return a completion stage for this phase of the suspend/resume process
      */
-    private static <C> CompletionStage<Void> phaseStage(Iterable<List<SuspendableActivity>> activityGroups, BiFunction<SuspendableActivity, C, CompletionStage<Void>> phase, C context, BiConsumer<Void, Throwable> completionHandler, BiConsumer<SuspendableActivity, Throwable> exceptionHandler) {
+    private static <C> CompletionStage<Void> phaseStage(Iterable<List<SuspendableActivity>> activityGroups, BiFunction<SuspendableActivity, C, CompletionStage<Void>> phase, C context, BiConsumer<Void, Throwable> completionHandler) {
         // Final stage will complete after all activity for all groups has completed
         CompletableFuture<Void> result = new CompletableFuture<>();
         // Make sure to register completion handler before initiating group completer
         result.whenComplete(completionHandler);
+        // Collect stages in case we need to cancel them
+        List<CompletionStage<Void>> groupStages = new LinkedList<>();
+        result.whenComplete(propagateCancellation(groupStages));
         // Iterate over activity groups (in the order dictated by the caller)
         Iterator<List<SuspendableActivity>> groups = activityGroups.iterator();
-        BiConsumer<Void, Throwable> groupCompleter = new BiConsumer<>() {
+        new BiConsumer<Void, Throwable>() {
             @Override
             public void accept(Void ignore, Throwable exception) {
                 if (exception != null) {
@@ -160,12 +172,16 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
                     // Create stage for next group
                     List<SuspendableActivity> activities = List.copyOf(groups.next());
                     CompletableFuture<Void> groupStage = new CompletableFuture<>();
+                    groupStages.add(groupStage);
                     // Reuse groupCompleter instance as completion handler
                     groupStage.whenComplete(this);
                     if (activities.isEmpty()) {
                         // No activities, complete immediately
                         groupStage.complete(null);
                     } else {
+                        // Collect stages in case we need to cancel them
+                        List<CompletionStage<Void>> stages = new ArrayList<>(activities.size());
+                        groupStage.whenComplete(propagateCancellation(stages));
                         // Counter used to determine when all activities have complete
                         AtomicInteger activityCounter = new AtomicInteger(activities.size());
                         for (SuspendableActivity activity : activities) {
@@ -173,11 +189,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
                                 @Override
                                 public void accept(Void ignore, Throwable exception) {
                                     if (exception != null) {
-                                        try {
-                                            exceptionHandler.accept(activity, exception);
-                                        } finally {
-                                            groupStage.completeExceptionally(exception);
-                                        }
+                                        groupStage.completeExceptionally(exception);
                                     } else if (activityCounter.decrementAndGet() == 0) {
                                         // All activities of group have completed
                                         groupStage.complete(null);
@@ -185,7 +197,9 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
                                 }
                             };
                             try {
-                                phase.apply(activity, context).whenComplete(activityCompleter);
+                                CompletionStage<Void> stage = phase.apply(activity, context);
+                                stages.add(stage);
+                                stage.whenComplete(activityCompleter);
                             } catch (Throwable e) {
                                 activityCompleter.accept(null, e);
                             }
@@ -193,9 +207,21 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
                     }
                 }
             }
-        };
-        groupCompleter.accept(null, null);
+        }.accept(null, null);
         return result;
+    }
+
+    static BiConsumer<Void, Throwable> propagateCancellation(List<CompletionStage<Void>> stages) {
+        return new BiConsumer<>() {
+            @Override
+            public void accept(Void result, Throwable exception) {
+                if (exception instanceof CancellationException) {
+                    for (CompletionStage<Void> stage : stages) {
+                        stage.toCompletableFuture().cancel(false);
+                    }
+                }
+            }
+        };
     }
 
     /**
@@ -263,7 +289,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
         }
         if (this.priorities.putIfAbsent(activity, priority) == null) {
             this.activityGroups.get(priority.ordinal()).add(activity);
-            if (this.state != State.RUNNING) {
+            if (this.state.get() != State.RUNNING) {
                 // if the activity is added when we are not running we just immediately suspend it
                 // this should only happen at boot, so there should be no outstanding requests anyway
                 // note that this means there is no execution group grouping of these calls.
@@ -282,7 +308,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
 
     @Override
     public State getState() {
-        return this.state;
+        return this.state.get();
     }
 
     @Override
