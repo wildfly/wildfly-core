@@ -17,6 +17,7 @@
         <include name="discovery"/>
         <include name="core-tools"/>
     </layers>
+    <feature-group name="management-console"/>
     <!-- package included in case configuration is provisioned without inheriting all modules -->
     <packages>
         <package name="org.jboss.as.patching.cli"/>
