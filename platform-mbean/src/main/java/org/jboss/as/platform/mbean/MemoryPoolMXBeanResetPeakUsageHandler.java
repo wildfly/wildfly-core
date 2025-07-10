@@ -5,6 +5,8 @@
 
 package org.jboss.as.platform.mbean;
 
+import static org.jboss.as.platform.mbean.PlatformMBeanConstants.MEMORY_POOL_TYPE;
+import static org.jboss.as.platform.mbean.PlatformMBeanConstants.TYPE;
 import static org.jboss.as.platform.mbean.PlatformMBeanUtil.escapeMBeanName;
 
 import java.lang.management.ManagementFactory;
@@ -53,7 +55,8 @@ public class MemoryPoolMXBeanResetPeakUsageHandler implements OperationStepHandl
         MemoryPoolMXBean memoryPoolMXBean = null;
 
         for (MemoryPoolMXBean mbean : ManagementFactory.getMemoryPoolMXBeans()) {
-            if (memPoolName.equals(escapeMBeanName(mbean.getName()))) {
+            if (memPoolName.equals(escapeMBeanName(mbean.getName())) &&
+                mbean.getObjectName().getKeyProperty(TYPE).equals(MEMORY_POOL_TYPE)) {
                 memoryPoolMXBean = mbean;
             }
         }

@@ -5,6 +5,8 @@
 
 package org.jboss.as.platform.mbean;
 
+import static org.jboss.as.platform.mbean.PlatformMBeanConstants.GARBAGE_COLLECTOR_TYPE;
+import static org.jboss.as.platform.mbean.PlatformMBeanConstants.TYPE;
 import static org.jboss.as.platform.mbean.PlatformMBeanUtil.escapeMBeanName;
 
 import java.lang.management.GarbageCollectorMXBean;
@@ -41,7 +43,8 @@ class GarbageCollectorMXBeanAttributeHandler extends AbstractPlatformMBeanAttrib
         GarbageCollectorMXBean gcMBean = null;
 
         for (GarbageCollectorMXBean mbean : ManagementFactory.getGarbageCollectorMXBeans()) {
-            if (gcName.equals(escapeMBeanName(mbean.getName()))) {
+            if (gcName.equals(escapeMBeanName(mbean.getName())) &&
+                mbean.getObjectName().getKeyProperty(TYPE).equals(GARBAGE_COLLECTOR_TYPE)) {
                 gcMBean = mbean;
             }
         }
