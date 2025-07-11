@@ -100,7 +100,9 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
         // Prepare activity groups in priority order, i.e. first -> last
         phaseStages.add(phaseStage(this.activityGroups, SuspendableActivity::prepare, context, (ignored, prepareException) -> {
             if (prepareException != null) {
-                result.completeExceptionally(prepareException);
+                // If prepare fails, log failure and complete with cancellation
+                ServerLogger.ROOT_LOGGER.suspendFailed(prepareException);
+                result.completeExceptionally(new CancellationException(prepareException.getMessage()));
             } else {
                 this.state.set(State.SUSPENDING);
                 // Suspend activity groups in priority order, i.e. first -> last order

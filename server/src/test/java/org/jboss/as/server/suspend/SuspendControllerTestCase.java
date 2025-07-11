@@ -80,6 +80,43 @@ public class SuspendControllerTestCase {
     }
 
     /**
+     * Verify that an exceptionally completed prepare phase results in a cancelled suspend.
+     */
+    @Test
+    public void failedPrepare() {
+        SuspendController controller = new SuspendController();
+        // For the sake of test simplification, bypass auto-suspend on activity registration by resuming server
+        controller.resume(Context.STARTUP);
+
+        SuspendableActivity activity = mock(SuspendableActivity.class);
+        ServerSuspendContext suspendContext = mock(ServerSuspendContext.class);
+
+        CompletableFuture<Void> prepare = new CompletableFuture<>();
+        CompletableFuture<Void> suspend = new CompletableFuture<>();
+
+        doReturn(prepare).when(activity).prepare(suspendContext);
+        doReturn(suspend).when(activity).suspend(suspendContext);
+
+        controller.registerActivity(activity);
+
+        CompletableFuture<Void> result = controller.suspend(suspendContext).toCompletableFuture();
+
+        verify(activity).prepare(suspendContext);
+        verifyNoMoreInteractions(activity);
+
+        Assert.assertFalse(result.isDone());
+        Assert.assertFalse(result.isCancelled());
+        Assert.assertFalse(result.isCompletedExceptionally());
+
+        prepare.completeExceptionally(new Exception());
+
+        Assert.assertTrue(result.isDone());
+        Assert.assertTrue(result.isCancelled());
+        Assert.assertTrue(result.isCompletedExceptionally());
+        Assert.assertThrows(CancellationException.class, result::join);
+    }
+
+    /**
      * Verify that cancelling the future returned via {@link SuspendController#suspend(ServerSuspendContext)} also cancels the future returned by {@link SuspendableActivity#prepare(ServerSuspendContext)}.
      */
     @Test
