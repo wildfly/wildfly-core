@@ -11,6 +11,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 
 import java.util.EnumSet;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -62,11 +64,24 @@ public class ServerResumeHandler implements OperationStepHandler {
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                         if (resultAction == OperationContext.ResultAction.KEEP) {
                             ServerLogger.ROOT_LOGGER.resumingServer();
-                            ServerResumeHandler.this.suspendController.resume(ServerSuspendController.Context.RUNNING).toCompletableFuture().join();
+                            CompletionStage<Void> resume = ServerResumeHandler.this.suspendController.resume(ServerSuspendController.Context.RUNNING).whenComplete(ServerResumeHandler::resumeComplete);
+                            try {
+                                resume.toCompletableFuture().get();
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            } catch (ExecutionException e) {
+                                context.getFailureDescription().set(e.getCause().getLocalizedMessage());
+                            }
                         }
                     }
                 });
             }
         }, OperationContext.Stage.RUNTIME);
+    }
+
+    static void resumeComplete(Void result, Throwable exception) {
+        if (exception != null) {
+            ServerLogger.ROOT_LOGGER.resumeFailed(exception);
+        }
     }
 }

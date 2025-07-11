@@ -6,15 +6,21 @@
 package org.jboss.as.server.suspend;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jboss.as.server.suspend.ServerSuspendController.Context;
 import org.jboss.as.server.suspend.SuspendableActivityRegistry.SuspendPriority;
 import org.junit.Assert;
 import org.junit.Test;
@@ -23,6 +29,319 @@ import org.junit.Test;
  * Unit tests of {@link ServerSuspendController}.
  */
 public class SuspendControllerTestCase {
+
+    /**
+     * Verify prepare/suspend stages of {@link ServerSuspendController#suspend(ServerSuspendContext)}.
+     */
+    @Test
+    public void suspend() {
+        SuspendController controller = new SuspendController();
+        // For the sake of test simplification, bypass auto-suspend on activity registration by resuming server
+        controller.resume(Context.STARTUP);
+
+        SuspendableActivity activity = mock(SuspendableActivity.class);
+        ServerSuspendContext suspendContext = mock(ServerSuspendContext.class);
+
+        CompletableFuture<Void> prepare = new CompletableFuture<>();
+        CompletableFuture<Void> suspend = new CompletableFuture<>();
+
+        doReturn(prepare).when(activity).prepare(suspendContext);
+        doReturn(suspend).when(activity).suspend(suspendContext);
+
+        controller.registerActivity(activity);
+
+        CompletableFuture<Void> result = controller.suspend(suspendContext).toCompletableFuture();
+
+        verify(activity).prepare(suspendContext);
+        verifyNoMoreInteractions(activity);
+
+        Assert.assertFalse(result.isDone());
+        Assert.assertFalse(result.isCancelled());
+        Assert.assertFalse(result.isCompletedExceptionally());
+
+        prepare.complete(null);
+
+        verify(activity).suspend(suspendContext);
+        verifyNoMoreInteractions(activity);
+
+        Assert.assertFalse(result.isDone());
+        Assert.assertFalse(result.isCancelled());
+        Assert.assertFalse(result.isCompletedExceptionally());
+
+        suspend.complete(null);
+
+        result.getNow(null);
+
+        verifyNoMoreInteractions(activity);
+
+        Assert.assertTrue(result.isDone());
+        Assert.assertFalse(result.isCancelled());
+        Assert.assertFalse(result.isCompletedExceptionally());
+    }
+
+    /**
+     * Verify that an exceptionally completed prepare phase results in a cancelled suspend.
+     */
+    @Test
+    public void failedPrepare() {
+        SuspendController controller = new SuspendController();
+        // For the sake of test simplification, bypass auto-suspend on activity registration by resuming server
+        controller.resume(Context.STARTUP);
+
+        SuspendableActivity activity = mock(SuspendableActivity.class);
+        ServerSuspendContext suspendContext = mock(ServerSuspendContext.class);
+
+        CompletableFuture<Void> prepare = new CompletableFuture<>();
+        CompletableFuture<Void> suspend = new CompletableFuture<>();
+
+        doReturn(prepare).when(activity).prepare(suspendContext);
+        doReturn(suspend).when(activity).suspend(suspendContext);
+
+        controller.registerActivity(activity);
+
+        CompletableFuture<Void> result = controller.suspend(suspendContext).toCompletableFuture();
+
+        verify(activity).prepare(suspendContext);
+        verifyNoMoreInteractions(activity);
+
+        Assert.assertFalse(result.isDone());
+        Assert.assertFalse(result.isCancelled());
+        Assert.assertFalse(result.isCompletedExceptionally());
+
+        prepare.completeExceptionally(new Exception());
+
+        Assert.assertTrue(result.isDone());
+        Assert.assertTrue(result.isCancelled());
+        Assert.assertTrue(result.isCompletedExceptionally());
+        Assert.assertThrows(CancellationException.class, result::join);
+    }
+
+    /**
+     * Verify that cancelling the future returned via {@link SuspendController#suspend(ServerSuspendContext)} also cancels the future returned by {@link SuspendableActivity#prepare(ServerSuspendContext)}.
+     */
+    @Test
+    public void cancelPrepare() {
+        SuspendController controller = new SuspendController();
+        // For the sake of test simplification, bypass auto-suspend on activity registration by resuming server
+        controller.resume(Context.STARTUP);
+
+        SuspendableActivity activity = mock(SuspendableActivity.class);
+        ServerSuspendContext suspendContext = mock(ServerSuspendContext.class);
+
+        CompletableFuture<Void> prepare = new CompletableFuture<>();
+        CompletableFuture<Void> suspend = new CompletableFuture<>();
+
+        doReturn(prepare).when(activity).prepare(suspendContext);
+        doReturn(suspend).when(activity).suspend(suspendContext);
+
+        controller.registerActivity(activity);
+
+        CompletableFuture<Void> result = controller.suspend(suspendContext).toCompletableFuture();
+
+        verify(activity).prepare(suspendContext);
+        verifyNoMoreInteractions(activity);
+
+        Assert.assertFalse(result.isDone());
+        Assert.assertFalse(result.isCancelled());
+        Assert.assertFalse(result.isCompletedExceptionally());
+
+        Assert.assertTrue(result.cancel(false));
+
+        Assert.assertTrue(result.isDone());
+        Assert.assertTrue(result.isCancelled());
+        Assert.assertTrue(result.isCompletedExceptionally());
+        Assert.assertThrows(CancellationException.class, result::join);
+
+        // Verify that cancellation propagates to future returned by ServerActivity
+        Assert.assertTrue(prepare.isDone());
+        Assert.assertTrue(prepare.isCancelled());
+        Assert.assertTrue(prepare.isCompletedExceptionally());
+        Assert.assertThrows(CancellationException.class, prepare::join);
+    }
+
+    /**
+     * Verify that cancelling the future returned via {@link SuspendController#suspend(ServerSuspendContext)} also cancels the future returned by {@link SuspendableActivity#suspend(ServerSuspendContext)}.
+     */
+    @Test
+    public void cancelSuspend() {
+        SuspendController controller = new SuspendController();
+        // For the sake of test simplification, bypass auto-suspend on activity registration by resuming server
+        controller.resume(Context.STARTUP);
+
+        SuspendableActivity activity = mock(SuspendableActivity.class);
+        ServerSuspendContext suspendContext = mock(ServerSuspendContext.class);
+
+        CompletableFuture<Void> prepare = new CompletableFuture<>();
+        CompletableFuture<Void> suspend = new CompletableFuture<>();
+
+        doReturn(prepare).when(activity).prepare(suspendContext);
+        doReturn(suspend).when(activity).suspend(suspendContext);
+
+        controller.registerActivity(activity);
+
+        CompletableFuture<Void> result = controller.suspend(suspendContext).toCompletableFuture();
+
+        verify(activity).prepare(suspendContext);
+        verifyNoMoreInteractions(activity);
+
+        Assert.assertFalse(result.isDone());
+        Assert.assertFalse(result.isCancelled());
+        Assert.assertFalse(result.isCompletedExceptionally());
+
+        prepare.complete(null);
+
+        verify(activity).suspend(suspendContext);
+        verifyNoMoreInteractions(activity);
+
+        Assert.assertFalse(result.isDone());
+        Assert.assertFalse(result.isCancelled());
+        Assert.assertFalse(result.isCompletedExceptionally());
+
+        Assert.assertTrue(result.cancel(false));
+
+        Assert.assertTrue(result.isDone());
+        Assert.assertTrue(result.isCancelled());
+        Assert.assertTrue(result.isCompletedExceptionally());
+        Assert.assertThrows(CancellationException.class, result::join);
+
+        // Verify that cancellation propagates to future returned by ServerActivity
+        Assert.assertTrue(suspend.isDone());
+        Assert.assertTrue(suspend.isCancelled());
+        Assert.assertTrue(suspend.isCompletedExceptionally());
+        Assert.assertThrows(CancellationException.class, suspend::join);
+    }
+
+    /**
+     * Verify that {@link ServerSuspendController#resume(ServerResumeContext)} cancels the future returned by a previous {@link SuspendController#suspend(ServerResumeContext)}.
+     */
+    @Test
+    public void resume() {
+        SuspendController controller = new SuspendController();
+        // For the sake of test simplification, bypass auto-suspend on activity registration by resuming server
+        controller.resume(Context.STARTUP);
+
+        SuspendableActivity activity = mock(SuspendableActivity.class);
+        ServerSuspendContext suspendContext = mock(ServerSuspendContext.class);
+        ServerResumeContext resumeContext = mock(ServerResumeContext.class);
+
+        CompletableFuture<Void> prepare = new CompletableFuture<>();
+        CompletableFuture<Void> suspend = new CompletableFuture<>();
+        CompletableFuture<Void> resume = new CompletableFuture<>();
+
+        doReturn(prepare).when(activity).prepare(suspendContext);
+        doReturn(suspend).when(activity).suspend(suspendContext);
+        doReturn(resume).when(activity).resume(resumeContext);
+
+        controller.registerActivity(activity);
+
+        CompletableFuture<Void> activeSuspend = controller.suspend(suspendContext).toCompletableFuture();
+
+        verify(activity).prepare(suspendContext);
+        verifyNoMoreInteractions(activity);
+
+        Assert.assertFalse(activeSuspend.isDone());
+        Assert.assertFalse(activeSuspend.isCancelled());
+        Assert.assertFalse(activeSuspend.isCompletedExceptionally());
+
+        // Complete prepare, but leave suspend incomplete
+        prepare.complete(null);
+
+        verify(activity).suspend(suspendContext);
+        verifyNoMoreInteractions(activity);
+
+        CompletableFuture<Void> result = controller.resume(resumeContext).toCompletableFuture();
+
+        verify(activity).resume(resumeContext);
+        verifyNoMoreInteractions(activity);
+
+        Assert.assertFalse(resume.isDone());
+        Assert.assertFalse(resume.isCancelled());
+        Assert.assertFalse(resume.isCompletedExceptionally());
+
+        // Verify cancellation of active suspend
+        Assert.assertTrue(activeSuspend.isDone());
+        Assert.assertTrue(activeSuspend.isCancelled());
+        Assert.assertTrue(activeSuspend.isCompletedExceptionally());
+        Assert.assertThrows(CancellationException.class, activeSuspend::join);
+
+        Assert.assertTrue(suspend.isDone());
+        Assert.assertTrue(suspend.isCancelled());
+        Assert.assertTrue(suspend.isCompletedExceptionally());
+        Assert.assertThrows(CancellationException.class, suspend::join);
+
+        resume.complete(null);
+
+        Assert.assertTrue(result.isDone());
+        Assert.assertFalse(result.isCancelled());
+        Assert.assertFalse(result.isCompletedExceptionally());
+    }
+
+    /**
+     * Verify that cancelling the future returned via {@link SuspendController#resume(ServerResumeContext)} also cancels the future returned by {@link SuspendableActivity#resume(ServerResumeContext)}.
+     */
+    @Test
+    public void cancelResume() {
+        SuspendController controller = new SuspendController();
+        // For the sake of test simplification, bypass auto-suspend on activity registration by resuming server
+        controller.resume(Context.STARTUP);
+
+        SuspendableActivity activity = mock(SuspendableActivity.class);
+        ServerSuspendContext suspendContext = mock(ServerSuspendContext.class);
+        ServerResumeContext resumeContext = mock(ServerResumeContext.class);
+
+        CompletableFuture<Void> prepare = new CompletableFuture<>();
+        CompletableFuture<Void> suspend = new CompletableFuture<>();
+        CompletableFuture<Void> resume = new CompletableFuture<>();
+
+        doReturn(prepare).when(activity).prepare(suspendContext);
+        doReturn(suspend).when(activity).suspend(suspendContext);
+        doReturn(resume).when(activity).resume(resumeContext);
+
+        controller.registerActivity(activity);
+
+        // First suspend server so we can resume it
+        CompletableFuture<Void> activeSuspend = controller.suspend(suspendContext).toCompletableFuture();
+
+        verify(activity).prepare(suspendContext);
+        verifyNoMoreInteractions(activity);
+
+        Assert.assertFalse(activeSuspend.isDone());
+        Assert.assertFalse(activeSuspend.isCancelled());
+        Assert.assertFalse(activeSuspend.isCompletedExceptionally());
+
+        prepare.complete(null);
+
+        verify(activity).suspend(suspendContext);
+        verifyNoMoreInteractions(activity);
+
+        suspend.complete(null);
+
+        Assert.assertTrue(activeSuspend.isDone());
+        Assert.assertFalse(activeSuspend.isCancelled());
+        Assert.assertFalse(activeSuspend.isCompletedExceptionally());
+
+        CompletableFuture<Void> result = controller.resume(resumeContext).toCompletableFuture();
+
+        verify(activity).resume(resumeContext);
+        verifyNoMoreInteractions(activity);
+
+        Assert.assertFalse(resume.isDone());
+        Assert.assertFalse(resume.isCancelled());
+        Assert.assertFalse(resume.isCompletedExceptionally());
+
+        Assert.assertTrue(result.cancel(false));
+
+        Assert.assertTrue(result.isDone());
+        Assert.assertTrue(result.isCancelled());
+        Assert.assertTrue(result.isCompletedExceptionally());
+        Assert.assertThrows(CancellationException.class, result::join);
+
+        // Verify that cancellation propagates to future returned by ServerActivity
+        Assert.assertTrue(resume.isDone());
+        Assert.assertTrue(result.isCancelled());
+        Assert.assertTrue(result.isCompletedExceptionally());
+        Assert.assertThrows(CancellationException.class, result::join);
+    }
 
     /**
      * Tests that ServerActivities in different execution groups are executed in the correct order

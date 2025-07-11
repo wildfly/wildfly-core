@@ -179,8 +179,10 @@ public final class DomainServerMain {
         CompletionStage<Void> suspendStage = ServerDomainProcessShutdownHandler.SUSPEND_STAGE.get();
         try {
             if (suspendStage != null) {
-                suspendStage.toCompletableFuture().join();
+                suspendStage.toCompletableFuture().get();
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (Throwable e) {
             ServerLogger.ROOT_LOGGER.caughtExceptionDuringShutdown(e);
         } finally {
