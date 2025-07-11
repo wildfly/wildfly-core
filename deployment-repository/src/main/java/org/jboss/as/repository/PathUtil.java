@@ -19,6 +19,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.function.BiPredicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -37,28 +38,73 @@ public class PathUtil {
      * @param source a Path pointing to a file or a directory that must exist
      * @param target a Path pointing to a directory where the contents will be copied.
      * @param overwrite overwrite existing files - if set to false fails if the target file already exists.
-     * @throws IOException
+     * @throws IOException if an I/O error is while walking the file tree or copying
      */
     public static void copyRecursively(final Path source, final Path target, boolean overwrite) throws IOException {
+        copyRecursively(source, target, overwrite,
+                (sourcePath, targetPath) -> true,
+                (sourcePath, targetPath) -> true,
+                (sourcePath, exception) -> true);
+    }
+
+    /**
+     * Copy a path recursively, testing each directory and file along the way to see if its path should be copied.
+     * @param source a Path pointing to a file or a directory that must exist
+     * @param target a Path pointing to a directory where the contents will be copied.
+     * @param overwrite overwrite existing files - if set to false fails if the target file already exists.
+     * @param directoryPredicate predicate to test before processing a directory. Cannot be {@code null}.
+     *                           The parameters of {@link BiPredicate#test(Object, Object)} are the
+     *                           source directory path and the target directory path
+     * @param filePredicate predicate to test before copying a file.  Cannot be {@code null}.
+*    *                      The parameters of {@link BiPredicate#test(Object, Object)} are the
+     *                      source file path and the target file path
+     * @param exceptionPredicate predicate to test before throwing an IOException from copying.  Cannot be {@code null}.
+     *                           The parameters of {@link BiPredicate#test(Object, Object)} are the
+     *                           source file path and the exception
+     * @throws IOException if an I/O error is while walking the file tree or copying
+     */
+    public static void copyRecursively(final Path source, final Path target, final boolean overwrite,
+                                       final BiPredicate<Path, Path> directoryPredicate,
+                                       final BiPredicate<Path, Path> filePredicate,
+                                       final BiPredicate<Path, IOException> exceptionPredicate) throws IOException {
         final CopyOption[] options;
         if (overwrite) {
             options = new CopyOption[]{StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING};
         } else {
             options = new CopyOption[]{StandardCopyOption.COPY_ATTRIBUTES};
         }
-        Files.walkFileTree(source, new FileVisitor<Path>() {
+        Files.walkFileTree(source, new FileVisitor<>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                 Path targetDir = target.resolve(source.relativize(dir));
-                if(! Files.exists(targetDir)) {
-                    Files.copy(dir, targetDir, options);
+                if (directoryPredicate.test(dir, targetDir)) {
+                    if (!Files.exists(targetDir)) {
+                        try {
+                            Files.copy(dir, targetDir, options);
+                        } catch (IOException ioe) {
+                            if (exceptionPredicate.test(dir, ioe)) {
+                                throw ioe;
+                            }
+                        }
+                    }
+                    return FileVisitResult.CONTINUE;
+                } else {
+                    return FileVisitResult.SKIP_SUBTREE;
                 }
-                return FileVisitResult.CONTINUE;
             }
 
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Files.copy(file, target.resolve(source.relativize(file)), options);
+            public FileVisitResult visitFile(Path sourcePath, BasicFileAttributes attrs) throws IOException {
+                Path targetPath = target.resolve(source.relativize(sourcePath));
+                if (filePredicate.test(sourcePath, targetPath)) {
+                    try {
+                        Files.copy(sourcePath, targetPath, options);
+                    } catch (IOException ioe) {
+                        if (exceptionPredicate.test(sourcePath, ioe)) {
+                            throw ioe;
+                        }
+                    }
+                }
                 return FileVisitResult.CONTINUE;
             }
 
@@ -91,10 +137,22 @@ public class PathUtil {
 
     /**
      * Delete a path recursively.
-     * @param path a Path pointing to a file or a directory that may not exists anymore.
-     * @throws IOException
+     * @param path a Path pointing to a file or a directory that may not exist anymore.
+     * @throws IOException if an I/O error occurs deleting a file
      */
     public static void deleteRecursively(final Path path) throws IOException {
+        deleteRecursively(path, (thePath, exception) -> true);
+    }
+
+    /**
+     * Delete a path recursively, optionally suppressing exceptions.
+     * @param path a Path pointing to a file or a directory that may not exist anymore. Cannot be {@code null}
+     * @param exceptionPredicate predicate to test before throwing any IOException that occurs. Cannot be {@code null}
+     *                           The parameters of {@link BiPredicate#test(Object, Object)} are the
+     *                           path being processed when the exception occurred and the exception
+     * @throws IOException  if an I/O error occurs deleting a file
+     */
+    public static void deleteRecursively(final Path path, BiPredicate<Path, IOException> exceptionPredicate) throws IOException {
         DeploymentRepositoryLogger.ROOT_LOGGER.debugf("Deleting %s recursively", path);
         if (Files.exists(path)) {
             Files.walkFileTree(path, new FileVisitor<Path>() {
@@ -105,7 +163,13 @@ public class PathUtil {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    Files.delete(file);
+                    try {
+                        Files.delete(file);
+                    } catch (IOException ioe) {
+                        if (exceptionPredicate.test(file, ioe)) {
+                            throw ioe;
+                        }
+                    }
                     return FileVisitResult.CONTINUE;
                 }
 
@@ -117,7 +181,13 @@ public class PathUtil {
 
                 @Override
                 public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                    Files.delete(dir);
+                    try {
+                        Files.delete(dir);
+                    } catch (IOException ioe) {
+                        if (exceptionPredicate.test(dir, ioe)) {
+                            throw ioe;
+                        }
+                    }
                     return FileVisitResult.CONTINUE;
                 }
             });

@@ -135,11 +135,29 @@ public class GitRepository implements Closeable {
                         git.commit().setMessage(ServerLogger.ROOT_LOGGER.addingIgnored()).call();
                     }
                 } catch (GitAPIException ex) {
-                    try (Stream<Path> names = Files.list(basePath)) {
-                        names.filter(p -> ! "log".equals(p.getFileName().toString())).forEach(PathUtil::deleteSilentlyRecursively);
-                    }
-                    PathUtil.copyRecursively(atticPath, basePath, false);
-                    throw ServerLogger.ROOT_LOGGER.failedToInitRepository(ex, gitConfig.getRepository());
+                    RuntimeException wrapped = ServerLogger.ROOT_LOGGER.failedToInitRepository(ex, gitConfig.getRepository());
+
+                    // Try and restore, logging but otherwise ignoring any failures. Don't overwrite.
+
+                    clearExistingFiles(basePath, gitConfig.getRepository()); // in case the try block wrote something before failing
+                    // BES 2025/07/11 Like the code it replaced, this makes a special case of the 'log' dir as something
+                    // that can't be copied back, but there are many other things that were copied out but not cleaned.
+                    // Other than issues with the 'log' dir this has historically worked, so it must rely on the fact
+                    // that Files.isSameFile() returns true for the attic file and the original file so long as neither
+                    // was touched after being copied to the attic. Presumably 'log' is special as those files are
+                    // more likely to be touched.
+                    PathUtil.copyRecursively(atticPath, basePath, false,
+                            (sourcePath, targetPath) -> {
+                                Path relative = basePath.relativize(sourcePath);
+                                return relative.getNameCount() > 1 || !"log".equals(sourcePath.getFileName().toString());
+                            },
+                            (sourcePath, targetPath) -> true,
+                            (failedPath, ioe) -> {
+                                ServerLogger.ROOT_LOGGER.failedToRestoreConfiguration(failedPath, gitConfig.getRepository(), ioe.toString());
+                                wrapped.addSuppressed(ioe);
+                                return false;
+                            });
+                    throw wrapped;
                 } finally {
                     PathUtil.deleteSilentlyRecursively(atticPath);
                 }
