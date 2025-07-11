@@ -12,6 +12,7 @@
 
     <resources>
         <artifact name="${org.wildfly.core:wildfly-jar-runtime}"/>
+        <resource-root path="bootable-configurators"/>
     </resources>
 
     <exports>
