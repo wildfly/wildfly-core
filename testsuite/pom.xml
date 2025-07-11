@@ -54,6 +54,7 @@
         <module>embedded</module>
         <module>scripts</module>
         <module>unstable-api-annotation</module>
+        <module>bootable-configurator</module>
     </modules>
 
 

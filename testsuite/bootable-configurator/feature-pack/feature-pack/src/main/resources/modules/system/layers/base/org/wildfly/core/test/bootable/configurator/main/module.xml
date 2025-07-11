@@ -1,0 +1,23 @@
+<!--
+~ Copyright The WildFly Authors
+~ SPDX-License-Identifier: Apache-2.0
+~
+-->
+<!-- TODO Rename this module to something matching your chosen subsystem name -->
+<module xmlns="urn:jboss:module:1.9" name="org.wildfly.core.test.bootable.configurator">
+  <properties>
+    <property name="jboss.api" value="private"/>
+  </properties>
+
+  <resources>
+    <artifact name="${org.wildfly.core:wildfly-core-testsuite-bootable-configurator-impl}"/>
+  </resources>
+  <dependencies>
+    <module name="org.wildfly.bootable-jar"/>
+  </dependencies>
+  <provides>
+    <service name="org.wildfly.core.jar.runtime.BootableServerConfigurator">
+      <with-class name="org.wildfly.core.test.bootable.configurator.TestConfigurator"/>
+    </service>
+  </provides>
+</module>
