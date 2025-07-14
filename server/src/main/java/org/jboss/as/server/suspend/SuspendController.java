@@ -129,13 +129,13 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
         }
         // Cancel any active suspend
         this.activeSuspend.toCompletableFuture().cancel(false);
+        for (OperationListener listener: this.listeners) {
+            listener.cancelled();
+        }
         // Resume activity groups in reverse priority order, i.e. last -> first
         return phaseStage(this::resumeIterator, SuspendableActivity::resume, context, (ignore, exception) -> {
             if (exception == null) {
                 this.state.set(State.RUNNING);
-                for (OperationListener listener: this.listeners) {
-                    listener.cancelled();
-                }
             }
         });
     }
