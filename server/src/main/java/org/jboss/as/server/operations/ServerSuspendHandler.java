@@ -13,6 +13,7 @@ import static org.jboss.as.server.controller.resources.ServerRootResourceDefinit
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.renameTimeoutToSuspendTimeout;
 
 import java.util.EnumSet;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -83,8 +84,9 @@ public class ServerSuspendHandler implements OperationStepHandler {
                         }
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
+                        context.setRollbackOnly();
                     } catch (TimeoutException e) {
-                        // Done waiting
+                        // Stop waiting, but do not rollback
                     } catch (ExecutionException e) {
                         context.getFailureDescription().set(e.getCause().getLocalizedMessage());
                         context.setRollbackOnly();
@@ -97,7 +99,7 @@ public class ServerSuspendHandler implements OperationStepHandler {
     }
 
     static void suspendComplete(Void result, Throwable exception) {
-        if (exception != null) {
+        if ((exception != null) && !(exception instanceof CancellationException)) {
             ServerLogger.ROOT_LOGGER.suspendFailed(exception);
         }
     }

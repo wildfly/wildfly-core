@@ -11,6 +11,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 
 import java.util.EnumSet;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
@@ -64,11 +65,13 @@ public class ServerResumeHandler implements OperationStepHandler {
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                         if (resultAction == OperationContext.ResultAction.KEEP) {
                             ServerLogger.ROOT_LOGGER.resumingServer();
-                            CompletionStage<Void> resume = ServerResumeHandler.this.suspendController.resume(ServerSuspendController.Context.RUNNING).whenComplete(ServerResumeHandler::resumeComplete);
+                            CompletionStage<Void> resume = ServerResumeHandler.this.suspendController.resume(ServerSuspendController.Context.RUNNING);
+                            resume.whenComplete(ServerResumeHandler::resumeComplete);
                             try {
                                 resume.toCompletableFuture().get();
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
+                                resume.toCompletableFuture().cancel(false);
                             } catch (ExecutionException e) {
                                 context.getFailureDescription().set(e.getCause().getLocalizedMessage());
                             }
@@ -80,7 +83,7 @@ public class ServerResumeHandler implements OperationStepHandler {
     }
 
     static void resumeComplete(Void result, Throwable exception) {
-        if (exception != null) {
+        if ((exception != null) && !(exception instanceof CancellationException)) {
             ServerLogger.ROOT_LOGGER.resumeFailed(exception);
         }
     }
