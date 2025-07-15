@@ -61,7 +61,6 @@ import org.wildfly.security.mechanism.AuthenticationMechanismException;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  * @author Mike M. Clark
  */
-@SuppressWarnings("deprecation")
 @MessageLogger(projectCode = "WFLYSRV", length = 4)
 public interface ServerLogger extends BasicLogger {
 
@@ -1485,8 +1484,16 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 312, value = "Caught exception during shutdown")
     void caughtExceptionDuringShutdown(@Cause Throwable e);
 
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 313, value = "Caught exception during server suspend")
+    void suspendFailed(@Cause Throwable e);
+
+    @LogMessage(level = Logger.Level.ERROR)
+    @Message(id = 314, value = "Caught exception during server resume")
+    void resumeFailed(@Cause Throwable e);
+
     @LogMessage(level = ERROR)
-    @Message(id = 313, value = "Failed to restore file %s after failing to initialize the git repository %s -- Cause: %s")
+    @Message(id = 315, value = "Failed to restore file %s after failing to initialize the git repository %s -- Cause: %s")
     void failedToRestoreConfiguration(Path failed, String repository, String cause);
 
     ////////////////////////////////////////////////
