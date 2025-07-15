@@ -9,6 +9,7 @@ import java.lang.management.ManagementFactory;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import javax.management.ObjectName;
@@ -297,7 +298,13 @@ final class BootstrapImpl implements Bootstrap {
                     // If necessary we'll wait 500 ms longer for it in the off chance a gc or something delays things
                     suspend.completeOnTimeout(null, millis + 500, TimeUnit.MILLISECONDS);
                 }
-                suspend.join();
+                try {
+                    suspend.get();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (ExecutionException e) {
+                    ServerLogger.ROOT_LOGGER.caughtExceptionDuringShutdown(e);
+                }
             }
         }
 
