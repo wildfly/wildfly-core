@@ -1385,8 +1385,8 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 283, value = "A non-graceful startup was requested in conjunction with a suspended startup. The server will start suspended.")
     void disregardingNonGraceful();
 
-    @Message(id = 284, value = "Failed to restore the configuration after failing to initialize the repository %s")
-    RuntimeException failedToRestoreConfiguration(@Cause Exception cause, String repository);
+//    @Message(id = 284, value = "Failed to restore the configuration after failing to initialize the repository %s")
+//    RuntimeException failedToRestoreConfiguration(@Cause Exception cause, String repository);
 
     @LogMessage(level = WARN)
     @Message(id = 285, value = "Vault support has been removed, no vault resources will be initialised.")
@@ -1491,6 +1491,10 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 314, value = "Caught exception during server resume")
     void resumeFailed(@Cause Throwable e);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 315, value = "Failed to restore file %s after failing to initialize the git repository %s -- Cause: %s")
+    void failedToRestoreConfiguration(Path failed, String repository, String cause);
 
     ////////////////////////////////////////////////
     //Messages without IDs
