@@ -251,7 +251,7 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
   )
 )
 
-if not "%PRESERVE_JAVA_OPT%" == "true" (
+if not "%PRESERVE_JAVA_OPTS%" == "true" (
     if "%GC_LOG%" == "true" (
         if not exist "%JBOSS_LOG_DIR%" > nul 2>&1 (
             mkdir "%JBOSS_LOG_DIR%"
