@@ -41,6 +41,6 @@ final class StandaloneSystemPropertyContext extends SystemPropertyContext {
         addPropertyIfAbsent(SERVER_CONTENT_DIR, resolvePath(dataDir, "content"));
         addPropertyIfAbsent(SERVER_DEPLOY_DIR, resolvePath(dataDir, "content"));
         addPropertyIfAbsent(SERVER_LOG_DIR, resolvePath(baseDir, "log"));
-        addPropertyIfAbsent(SERVER_TEMP_DIR, resolvePath(baseDir, "tmp"));
+        addPropertyIfAbsent(SERVER_TEMP_DIR, resolvePath(baseDir, "tmp/embedded-server"));
     }
 }

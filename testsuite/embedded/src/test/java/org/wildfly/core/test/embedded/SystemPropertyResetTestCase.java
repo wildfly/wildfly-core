@@ -38,7 +38,7 @@ public class SystemPropertyResetTestCase extends AbstractTestCase {
         expectedProperties.put("jboss.server.config.dir", resolvePath(baseDir, "configuration"));
         expectedProperties.put("jboss.server.content.dir", resolvePath(baseDir, "data", "content"));
         expectedProperties.put("jboss.server.data.dir", resolvePath(baseDir, "data"));
-        expectedProperties.put("jboss.server.temp.dir", resolvePath(baseDir, "tmp"));
+        expectedProperties.put("jboss.server.temp.dir", resolvePath(baseDir, "tmp/embedded-server"));
 
         final StandaloneServer server = EmbeddedProcessFactory.createStandaloneServer(Environment.createConfigBuilder().build());
 
