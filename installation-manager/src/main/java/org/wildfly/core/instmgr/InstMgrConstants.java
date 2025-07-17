@@ -33,6 +33,7 @@ public interface InstMgrConstants {
     String HISTORY_DETAILED_CHANNEL_REPOSITORIES = "repositories";
     String HISTORY_DETAILED_CHANNEL_STATUS = "status";
     String HISTORY_RESULT_DESCRIPTION = "description";
+    String HISTORY_RESULT_CHANNEL_VERSIONS = "channel-versions";
     String HISTORY_RESULT_DETAILED_ARTIFACT_CHANGES = "artifact-changes";
     String HISTORY_RESULT_DETAILED_CHANNEL_CHANGES = "channel-changes";
     String HISTORY_RESULT_HASH = "hash";
@@ -62,4 +63,6 @@ public interface InstMgrConstants {
     String REVISION = "revision";
     String TOOL_NAME = "installer";
     String INTERNAL_REPO_PREFIX = "repo-";
+    String INSTALLED_VERSIONS = "installed-versions";
+    String VERSION = "version";
 }
