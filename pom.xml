@@ -178,7 +178,7 @@
         <version.commons-daemon>1.4.1</version.commons-daemon>
         <version.commons-lang3>3.17.0</version.commons-lang3>
         <version.commons-io>2.16.1</version.commons-io>
-        <version.io.netty>4.1.122.Final</version.io.netty>
+        <version.io.netty>4.1.123.Final</version.io.netty>
         <version.io.smallrye.jandex>3.3.2</version.io.smallrye.jandex>
         <version.io.smallrye.smallrye-common>2.12.2</version.io.smallrye.smallrye-common>
         <version.io.undertow>2.3.18.Final</version.io.undertow>
