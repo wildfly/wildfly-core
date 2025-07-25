@@ -61,6 +61,7 @@ import org.wildfly.security.mechanism.AuthenticationMechanismException;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  * @author Mike M. Clark
  */
+@SuppressWarnings("deprecation")
 @MessageLogger(projectCode = "WFLYSRV", length = 4)
 public interface ServerLogger extends BasicLogger {
 

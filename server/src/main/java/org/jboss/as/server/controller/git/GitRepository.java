@@ -4,6 +4,7 @@
  */
 package org.jboss.as.server.controller.git;
 
+import static org.eclipse.jgit.ignore.IgnoreNode.MatchResult.IGNORED;
 import static org.eclipse.jgit.lib.Constants.DEFAULT_REMOTE_NAME;
 import static org.eclipse.jgit.lib.Constants.DOT_GIT_IGNORE;
 import static org.eclipse.jgit.lib.Constants.DOT_GIT;
@@ -21,7 +22,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -33,6 +37,8 @@ import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.ignore.FastIgnoreRule;
+import org.eclipse.jgit.ignore.IgnoreNode;
 import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
@@ -55,6 +61,7 @@ import org.wildfly.client.config.ConfigXMLParseException;
 public class GitRepository implements Closeable {
 
     private final Set<String> ignored;
+    private final IgnoreNode ignoreNode;
     private final Repository repository;
     private final Path basePath;
     private final String defaultRemoteRepository;
@@ -66,6 +73,11 @@ public class GitRepository implements Closeable {
         this.basePath = gitConfig.getBasePath();
         this.branch = gitConfig.getBranch();
         this.ignored = gitConfig.getIgnored();
+        List<FastIgnoreRule> rules = new ArrayList<>(ignored.size());
+        for (String rule : ignored) {
+            rules.add(new FastIgnoreRule(rule));
+        }
+        this.ignoreNode = new IgnoreNode(rules);
         this.defaultRemoteRepository = gitConfig.getRepository();
         File baseDir = basePath.toFile();
         File gitDir = new File(baseDir, DOT_GIT);
@@ -129,7 +141,6 @@ public class GitRepository implements Closeable {
                     config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, gitConfig.isSign());
                     config.setBoolean(ConfigConstants.CONFIG_TAG_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, gitConfig.isSign());
                     config.save();
-                    git.clean().call();
                     git.pull().setRemote(remoteName).setRemoteBranchName(branch).setStrategy(MergeStrategy.RESOLVE).call();
                     if (createGitIgnore(git, basePath)) {
                         git.commit().setMessage(ServerLogger.ROOT_LOGGER.addingIgnored()).call();
@@ -148,7 +159,7 @@ public class GitRepository implements Closeable {
                     // more likely to be touched.
                     PathUtil.copyRecursively(atticPath, basePath, false,
                             (sourcePath, targetPath) -> {
-                                Path relative = basePath.relativize(sourcePath);
+                                Path relative = atticPath.relativize(sourcePath);
                                 return relative.getNameCount() > 1 || !"log".equals(sourcePath.getFileName().toString());
                             },
                             (sourcePath, targetPath) -> true,
@@ -169,10 +180,11 @@ public class GitRepository implements Closeable {
 
     private void clearExistingFiles(Path root, String gitRepository) {
         try {
+            final Set<Path> protectedDirectories = new HashSet<>();
             Files.walkFileTree(root, new FileVisitor<Path>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                    if (!ignored.contains(dir.getFileName().toString() + '/')) {
+                    if (!isIgnored(dir, true)) {
                         return FileVisitResult.CONTINUE;
                     }
                     return FileVisitResult.SKIP_SUBTREE;
@@ -180,11 +192,15 @@ public class GitRepository implements Closeable {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    try {
-                        ServerLogger.ROOT_LOGGER.debugf("Deleting file %s", file);
-                        Files.delete(file);
-                    } catch (IOException ioex) {
-                        ServerLogger.ROOT_LOGGER.debug(ioex.getMessage(), ioex);
+                    if (!isIgnored(file, false)) {
+                        try {
+                            ServerLogger.ROOT_LOGGER.debugf("Deleting file %s", file);
+                            Files.delete(file);
+                        } catch (IOException ioex) {
+                            ServerLogger.ROOT_LOGGER.debug(ioex.getMessage(), ioex);
+                        }
+                    } else {
+                        protectedDirectories.add(file.getParent());
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -202,8 +218,13 @@ public class GitRepository implements Closeable {
                     if (exc != null) {
                         throw exc;
                     }
+                    for(Path protectedDir : protectedDirectories) {
+                        if(protectedDir.startsWith(dir)) {
+                            return FileVisitResult.CONTINUE;
+                        }
+                    }
                     try {
-                        ServerLogger.ROOT_LOGGER.debugf("Deleting file %s", dir);
+                        ServerLogger.ROOT_LOGGER.debugf("Deleting folder %s", dir);
                         Files.delete(dir);
                     } catch (IOException ioex) {
                         ServerLogger.ROOT_LOGGER.debug(ioex.getMessage(), ioex);
@@ -216,9 +237,29 @@ public class GitRepository implements Closeable {
             throw ServerLogger.ROOT_LOGGER.failedToInitRepository(ex, gitRepository);
         }
     }
+
+    private boolean isIgnored(Path path, boolean isDirectory) {
+        if(path == null || path.getFileName() == null || basePath.equals(path)) {
+            return false;
+        }
+        String filePath = basePath.relativize(path).toString();
+        if(isDirectory) {
+            filePath += '/';
+        }
+        IgnoreNode.MatchResult result = ignoreNode.isIgnored(filePath, isDirectory);
+        boolean isIgnored = switch (result) {
+            case IGNORED -> true;
+            case NOT_IGNORED -> false;
+            default -> isIgnored(path.getParent(), true);
+        };
+        ServerLogger.ROOT_LOGGER.debugf("File " + filePath + (isIgnored ?" ignored":" NOT ignored"));
+        return isIgnored;
+    }
+
     public GitRepository(Repository repository) {
         this.repository = repository;
         this.ignored = Collections.emptySet();
+        this.ignoreNode = new IgnoreNode();
         this.defaultRemoteRepository = DEFAULT_REMOTE_NAME;
         this.branch = MASTER;
         if (repository.isBare()) {
