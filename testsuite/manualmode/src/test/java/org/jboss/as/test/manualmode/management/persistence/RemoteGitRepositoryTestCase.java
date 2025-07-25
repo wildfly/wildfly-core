@@ -18,7 +18,6 @@ import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.eclipse.jgit.util.FileUtils;
 import org.jboss.as.repository.PathUtil;
 import org.junit.After;
 import org.junit.Assert;
@@ -85,7 +84,7 @@ public class RemoteGitRepositoryTestCase extends AbstractGitRepositoryTestCase {
         if (remoteRepository != null) {
             remoteRepository.close();
         }
-        FileUtils.delete(remoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        PathUtil.deleteSilentlyRecursively(remoteRoot.getParent());
     }
 
     /**

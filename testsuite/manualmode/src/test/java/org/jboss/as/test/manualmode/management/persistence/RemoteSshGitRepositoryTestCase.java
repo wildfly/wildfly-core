@@ -249,7 +249,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
             sshServer.stop();
             sshServer = null;
         }
-        FileUtils.delete(KNOWN_HOSTS, FileUtils.RECURSIVE | FileUtils.RETRY);
+        PathUtil.deleteSilentlyRecursively(KNOWN_HOSTS.toPath());
         closeRepository();
         closeEmptyRemoteRepository();
         closeRemoteRepository();
@@ -535,7 +535,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         if (remoteRepository != null) {
             remoteRepository.close();
         }
-        FileUtils.delete(remoteRoot.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        PathUtil.deleteSilentlyRecursively(remoteRoot);
     }
 
     private static void cleanCredentialStores() {

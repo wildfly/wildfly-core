@@ -28,9 +28,9 @@ import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.treewalk.TreeWalk;
-import org.eclipse.jgit.util.FileUtils;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
+import org.jboss.as.repository.PathUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
@@ -82,7 +82,7 @@ public class AbstractGitRepositoryTestCase {
         if (emptyRemoteRepository != null) {
             emptyRemoteRepository.close();
         }
-        FileUtils.delete(emptyRemoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        PathUtil.deleteSilentlyRecursively(emptyRemoteRoot.getParent());
     }
 
     protected Repository createRepository() throws IOException {
@@ -95,15 +95,15 @@ public class AbstractGitRepositoryTestCase {
         return repo;
     }
 
-    protected void closeRepository() throws Exception{
+    protected void closeRepository() throws Exception {
         if (repository != null) {
             repository.close();
         }
         if (Files.exists(getDotGitDir())) {
-            FileUtils.delete(getDotGitDir().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+            PathUtil.deleteSilentlyRecursively(getDotGitDir());
         }
-        if(Files.exists(getDotGitIgnore())) {
-            FileUtils.delete(getDotGitIgnore().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        if (Files.exists(getDotGitIgnore())) {
+            PathUtil.deleteSilentlyRecursively(getDotGitIgnore());
         }
     }
 
@@ -155,7 +155,7 @@ public class AbstractGitRepositoryTestCase {
                     treeWalk.setRecursive(true);
                     List<DiffEntry> diff = DiffEntry.scan(treeWalk, false, null);
                     for (DiffEntry diffEntry : diff) {
-                        if(diffEntry.getChangeType() == DiffEntry.ChangeType.DELETE) {
+                        if (diffEntry.getChangeType() == DiffEntry.ChangeType.DELETE) {
                             result.add("-" + diffEntry.getOldPath());
                         } else {
                             result.add(diffEntry.getNewPath());
