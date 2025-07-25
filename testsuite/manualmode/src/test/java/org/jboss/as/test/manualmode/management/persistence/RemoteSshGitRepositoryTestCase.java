@@ -175,7 +175,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
     @AfterClass
     public static void afterClass() throws IOException {
         Security.removeProvider(CREDENTIAL_STORE_PROVIDER.getName());
-        FileUtils.delete(CS_PUBKEY.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        FileUtils.delete(CS_PUBKEY.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
         PathUtil.deleteRecursively(backupRoot);
     }
 
@@ -487,7 +487,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
             assertLogContains(serverLog, "cannot be established", true);
         } finally {
             //Delete empty known_hosts file
-            FileUtils.delete(emptyHosts.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+            FileUtils.delete(emptyHosts.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
         }
 
     }
