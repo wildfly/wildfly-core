@@ -28,9 +28,9 @@ import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.treewalk.TreeWalk;
+import org.eclipse.jgit.util.FileUtils;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
-import org.jboss.as.repository.PathUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
@@ -82,7 +82,7 @@ public class AbstractGitRepositoryTestCase {
         if (emptyRemoteRepository != null) {
             emptyRemoteRepository.close();
         }
-        PathUtil.deleteSilentlyRecursively(emptyRemoteRoot.getParent());
+        FileUtils.delete(emptyRemoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
     }
 
     protected Repository createRepository() throws IOException {
@@ -95,15 +95,15 @@ public class AbstractGitRepositoryTestCase {
         return repo;
     }
 
-    protected void closeRepository() throws Exception {
+    protected void closeRepository() throws Exception{
         if (repository != null) {
             repository.close();
         }
         if (Files.exists(getDotGitDir())) {
-            PathUtil.deleteSilentlyRecursively(getDotGitDir());
+            FileUtils.delete(getDotGitDir().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
         }
-        if (Files.exists(getDotGitIgnore())) {
-            PathUtil.deleteSilentlyRecursively(getDotGitIgnore());
+        if(Files.exists(getDotGitIgnore())) {
+            FileUtils.delete(getDotGitIgnore().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
         }
     }
 

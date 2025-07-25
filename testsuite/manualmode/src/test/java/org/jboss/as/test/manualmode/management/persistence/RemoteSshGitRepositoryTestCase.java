@@ -249,7 +249,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
             sshServer.stop();
             sshServer = null;
         }
-        PathUtil.deleteSilentlyRecursively(KNOWN_HOSTS.toPath());
+        FileUtils.delete(KNOWN_HOSTS, FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
         closeRepository();
         closeEmptyRemoteRepository();
         closeRemoteRepository();
