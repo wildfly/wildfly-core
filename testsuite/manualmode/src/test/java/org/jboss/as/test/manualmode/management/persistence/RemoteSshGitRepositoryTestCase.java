@@ -175,7 +175,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
     @AfterClass
     public static void afterClass() throws IOException {
         Security.removeProvider(CREDENTIAL_STORE_PROVIDER.getName());
-        FileUtils.delete(CS_PUBKEY.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        FileUtils.delete(CS_PUBKEY.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
         PathUtil.deleteRecursively(backupRoot);
     }
 
@@ -190,6 +190,10 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         Path properties = repoConfigDir.resolve("logging.properties");
         if (Files.exists(properties)) {
             Files.delete(properties);
+        }
+        Path standaloneHistory = repoConfigDir.resolve("standalone_xml_history");
+        if (Files.exists(standaloneHistory)) {
+            PathUtil.deleteRecursively(standaloneHistory);
         }
         Path jbossAuthDir = new File(System.getProperty("jboss.home", System.getenv("JBOSS_HOME"))).toPath().resolve("standalone").resolve("tmp").resolve("auth");
         Files.createDirectories(jbossAuthDir);
@@ -245,7 +249,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
             sshServer.stop();
             sshServer = null;
         }
-        FileUtils.delete(KNOWN_HOSTS, FileUtils.RECURSIVE | FileUtils.RETRY);
+        FileUtils.delete(KNOWN_HOSTS, FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
         closeRepository();
         closeEmptyRemoteRepository();
         closeRemoteRepository();
@@ -483,7 +487,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
             assertLogContains(serverLog, "cannot be established", true);
         } finally {
             //Delete empty known_hosts file
-            FileUtils.delete(emptyHosts.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+            FileUtils.delete(emptyHosts.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
         }
 
     }
@@ -531,7 +535,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         if (remoteRepository != null) {
             remoteRepository.close();
         }
-        FileUtils.delete(remoteRoot.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        PathUtil.deleteSilentlyRecursively(remoteRoot);
     }
 
     private static void cleanCredentialStores() {
