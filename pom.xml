@@ -22,6 +22,32 @@
 
     <name>WildFly: Core Parent Aggregator</name>
     <description>WildFly: Core Parent Aggregator</description>
+    <url>${wildfly.core.scm.url}</url>
+
+    <developers>
+        <developer>
+            <id>yersan</id>
+            <name>Yeray Borges</name>
+            <url>https://github.com/yersan</url>
+            <organization>IBM</organization>
+            <organizationUrl>https://www.ibm.com</organizationUrl>
+        </developer>
+        <developer>
+            <id>jmesnil</id>
+            <name>Jeff Mesnil</name>
+            <url>https://github.com/jmesnil</url>
+            <organization>Red Hat</organization>
+            <organizationUrl>https://www.redhat.com</organizationUrl>
+        </developer>
+        <developer>
+            <id>bstansberry</id>
+            <name>Brian Stansberry</name>
+            <url>https://github.com/bstansberry</url>
+            <organization>IBM</organization>
+            <organizationUrl>https://www.ibm.com</organizationUrl>
+        </developer>
+        <!-- and many others -->
+    </developers>
 
     <licenses>
         <license>
