@@ -213,16 +213,22 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 }
                 final ResourceRoot subDeployment = subDeploymentMap.get(path);
                 subDeployment.putAttachment(SUB_DEPLOYMENT_STRUCTURE, spec);
+            }
 
-                // cascade the exclusions if configured
-                if(moduleSpec.isExclusionsCascadedToSubDeployments() && rootDeploymentSpecification != null) {
-                    for(String exclusion : rootDeploymentSpecification.getExclusionsList()) {
-                        spec.addExclusion(exclusion);
+            // cascade exclusions to ALL subdeployments when
+            // ear-exclusions-cascaded-to-subdeployments is enabled
+            if (moduleSpec.isExclusionsCascadedToSubDeployments() && rootDeploymentSpecification != null) {
+                for (final ResourceRoot subDeployment : subDeploymentMap.values()) {
+                    ModuleStructureSpec subDeploymentSpec = subDeployment.getAttachment(SUB_DEPLOYMENT_STRUCTURE);
+                    if (subDeploymentSpec == null) {
+                        subDeploymentSpec = new ModuleStructureSpec();
+                        subDeployment.putAttachment(SUB_DEPLOYMENT_STRUCTURE, subDeploymentSpec);
+                    }
+                    for (String exclusion : rootDeploymentSpecification.getExclusionsList()) {
+                        subDeploymentSpec.addExclusion(exclusion);
                     }
                 }
             }
-
-
         } catch (IOException e) {
             throw new DeploymentUnitProcessingException(e);
         }
@@ -404,6 +410,4 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 // ignore
             }
     }
-
-
 }
