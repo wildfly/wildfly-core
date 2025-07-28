@@ -366,6 +366,15 @@
                     <artifactId>wildfly-maven-gpg-plugin</artifactId>
                     <executions><execution><id>default</id><phase>none</phase></execution></executions>
                 </plugin>
+
+                <!-- Don't deploy -->
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nxrm3-maven-plugin</artifactId>
+                    <configuration>
+                        <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>

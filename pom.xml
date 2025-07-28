@@ -59,6 +59,10 @@
         <!-- Require Java 17 -->
         <maven.compiler.release>17</maven.compiler.release>
 
+        <!-- Repository Deployment Settings -->
+        <nexus.repository.staging>wildfly-staging</nexus.repository.staging>
+        <nexus.staging.tag>wildfly-core-${project.version}</nexus.staging.tag>
+
         <!-- Standard client-side JPMS settings identified as meeting
              the needs of WildFly libraries meant for use in clients. -->
         <standard.client.modular.jdk.args>
@@ -335,6 +339,13 @@
                     <groupId>org.wildfly</groupId>
                     <artifactId>wildfly-maven-gpg-plugin</artifactId>
                     <version>${version.org.wildfly.wildfly-maven-gpg-plugin}</version>
+                    <configuration>
+                        <useAgent>true</useAgent>
+                        <gpgArguments>
+                            <arg>--pinentry-mode</arg>
+                            <arg>${gpg.pinEntryMode}</arg>
+                        </gpgArguments>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
