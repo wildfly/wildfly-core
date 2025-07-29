@@ -22,21 +22,6 @@ public final class ModuleIdentifierUtil {
      *
      * @param moduleSpec a module name specification in the form {@code name[:slot]}. Cannot be {@code null}
      * @return the canonical representation. Will not return @{code null}
-     *
-     * @deprecated use {@link #parseCanonicalModuleIdentifier(String)}
-     */
-    @Deprecated(forRemoval = true, since = "28.0.0")
-    public static String canonicalModuleIdentifier(String moduleSpec) {
-        return JBossModulesNameUtil.parseCanonicalModuleIdentifier(moduleSpec);
-    }
-
-    /**
-     * Provides the canonical string representation of a module identifier from a string
-     * of the form {@code name[:slot]}. The canonical representation will not include
-     * slot information if the slot is {@code main}.
-     *
-     * @param moduleSpec a module name specification in the form {@code name[:slot]}. Cannot be {@code null}
-     * @return the canonical representation. Will not return @{code null}
      */
     public static String parseCanonicalModuleIdentifier(String moduleSpec) {
         return JBossModulesNameUtil.parseCanonicalModuleIdentifier(moduleSpec);
