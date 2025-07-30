@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.sshd.common.config.keys.KeyUtils;
 import org.apache.sshd.common.config.keys.PublicKeyEntry;
@@ -175,13 +176,13 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
     @AfterClass
     public static void afterClass() throws IOException {
         Security.removeProvider(CREDENTIAL_STORE_PROVIDER.getName());
-        FileUtils.delete(CS_PUBKEY.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        FileUtils.delete(CS_PUBKEY.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
         PathUtil.deleteRecursively(backupRoot);
     }
 
     @Before
     public void prepareTest() throws Exception {
-        remoteRoot = new File("target", "remote").toPath();
+        remoteRoot = Files.createTempDirectory(new File("target").toPath(), "remote");
         Path repoConfigDir = remoteRoot.resolve("configuration");
         Files.createDirectories(repoConfigDir);
         File baseDir = remoteRoot.toAbsolutePath().toFile();
@@ -190,6 +191,10 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         Path properties = repoConfigDir.resolve("logging.properties");
         if (Files.exists(properties)) {
             Files.delete(properties);
+        }
+        Path standaloneHistory = repoConfigDir.resolve("standalone_xml_history");
+        if (Files.exists(standaloneHistory)) {
+            PathUtil.deleteRecursively(standaloneHistory);
         }
         Path jbossAuthDir = new File(System.getProperty("jboss.home", System.getenv("JBOSS_HOME"))).toPath().resolve("standalone").resolve("tmp").resolve("auth");
         Files.createDirectories(jbossAuthDir);
@@ -245,7 +250,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
             sshServer.stop();
             sshServer = null;
         }
-        FileUtils.delete(KNOWN_HOSTS, FileUtils.RECURSIVE | FileUtils.RETRY);
+        FileUtils.delete(KNOWN_HOSTS, FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
         closeRepository();
         closeEmptyRemoteRepository();
         closeRemoteRepository();
@@ -275,7 +280,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         Assert.assertTrue("Directory not found " + getDotGitDir(), Files.exists(getDotGitDir()));
         Assert.assertTrue("File not found " + getDotGitIgnore(), Files.exists(getDotGitIgnore()));
         List<String> commits = listCommits(remoteRepository);
-        Assert.assertEquals(1, commits.size());
+        Assert.assertEquals(commits.stream().collect(Collectors.joining()) , 1, commits.size());
         addSystemProperty();
         publish(null);
         commits = listCommits(remoteRepository);
@@ -410,7 +415,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         Assert.assertTrue("Directory not found " + getDotGitDir(), Files.exists(getDotGitDir()));
         Assert.assertTrue("File not found " + getDotGitIgnore(), Files.exists(getDotGitIgnore()));
         List<String> commits = listCommits(remoteRepository);
-        Assert.assertEquals(1, commits.size());
+        Assert.assertEquals(commits.stream().collect(Collectors.joining()) , 1, commits.size());
         addSystemProperty();
         publish(null);
         commits = listCommits(remoteRepository);
@@ -483,7 +488,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
             assertLogContains(serverLog, "cannot be established", true);
         } finally {
             //Delete empty known_hosts file
-            FileUtils.delete(emptyHosts.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+            FileUtils.delete(emptyHosts.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
         }
 
     }
@@ -531,7 +536,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         if (remoteRepository != null) {
             remoteRepository.close();
         }
-        FileUtils.delete(remoteRoot.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        FileUtils.delete(remoteRoot.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
     }
 
     private static void cleanCredentialStores() {
