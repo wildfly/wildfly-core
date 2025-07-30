@@ -47,6 +47,10 @@ public class RemoteGitRepositoryTestCase extends AbstractGitRepositoryTestCase {
         if(Files.exists(properties)) {
             Files.delete(properties);
         }
+        Path standaloneHistory = repoConfigDir.resolve("standalone_xml_history");
+        if (Files.exists(standaloneHistory)) {
+            PathUtil.deleteRecursively(standaloneHistory);
+        }
         File gitDir = new File(baseDir, Constants.DOT_GIT);
         if (!gitDir.exists()) {
             try (Git git = Git.init().setDirectory(baseDir).setInitialBranch(Constants.MASTER).call()) {
@@ -74,13 +78,14 @@ public class RemoteGitRepositoryTestCase extends AbstractGitRepositoryTestCase {
         closeRepository();
         closeEmptyRemoteRepository();
         closeRemoteRepository();
+        Files.deleteIfExists(getJbossServerBaseDir().resolve("log").resolve("ignored.log"));
     }
 
     private void closeRemoteRepository() throws Exception{
         if (remoteRepository != null) {
             remoteRepository.close();
         }
-        FileUtils.delete(remoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        FileUtils.delete(remoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
     }
 
     /**
@@ -88,6 +93,7 @@ public class RemoteGitRepositoryTestCase extends AbstractGitRepositoryTestCase {
      */
     @Test
     public void startGitRepoRemoteTest() throws Exception {
+        Files.createFile(getJbossServerBaseDir().resolve("log").resolve("ignored.log"));
         // start with remote repository containing configuration (--git-repo=file:///my_repo/test/.git)
         container.startGitBackedConfiguration("file://" + remoteRoot.resolve(Constants.DOT_GIT).toAbsolutePath().toString(), Constants.MASTER, null);
         Assert.assertTrue("Directory not found " + getDotGitDir(), Files.exists(getDotGitDir()));
