@@ -6,6 +6,7 @@
 package org.jboss.as.server.deployment.module;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 
 import org.jboss.as.server.logging.ServerLogger;
@@ -28,6 +29,12 @@ import org.jboss.vfs.VirtualFile;
  * @author John Bailey
  */
 public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
+
+    private final File serverContentDir;
+
+    public DeploymentRootMountProcessor(File serverContentDir) {
+        this.serverContentDir = serverContentDir;
+    }
 
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
@@ -57,7 +64,7 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
 
         } else {
             // The mount point we will use for the repository file
-            deploymentRoot = VFS.getChild("content/" + deploymentName);
+            deploymentRoot = VFS.getChild(serverContentDir.getAbsolutePath() + "/" + deploymentName);
 
             boolean failed = false;
             Closeable handle = null;
