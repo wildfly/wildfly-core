@@ -28,7 +28,7 @@
         <plugins>
             <plugin>
                 <groupId>org.wildfly.plugins</groupId>
-                <artifactId>wildfly-component-matrix-plugin</artifactId>
+                <artifactId>wildfly-bom-builder-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>build-bom</id>
@@ -46,7 +46,7 @@
                             <bomVersion>${project.version}</bomVersion>
                             <bomName>WildFly Core: Component Matrix</bomName>
                             <bomDescription>WildFly Core: Component Matrix</bomDescription>
-                            <inheritExclusions>true</inheritExclusions>
+                            <inheritExclusions>ALL</inheritExclusions>
                             <licenses>true</licenses>
                         </configuration>
                     </execution>
