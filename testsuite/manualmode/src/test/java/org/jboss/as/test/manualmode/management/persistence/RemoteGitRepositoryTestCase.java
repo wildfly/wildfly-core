@@ -11,11 +11,13 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.RepositoryCache;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.util.FileUtils;
@@ -84,7 +86,10 @@ public class RemoteGitRepositoryTestCase extends AbstractGitRepositoryTestCase {
     private void closeRemoteRepository() throws Exception{
         if (remoteRepository != null) {
             remoteRepository.close();
+            remoteRepository = null;
         }
+        RepositoryCache.clear();
+        TimeUnit.MILLISECONDS.sleep(500);
         FileUtils.delete(remoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
     }
 

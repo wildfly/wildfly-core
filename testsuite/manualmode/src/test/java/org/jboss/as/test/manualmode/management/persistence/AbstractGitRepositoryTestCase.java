@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import jakarta.inject.Inject;
+import java.util.concurrent.TimeUnit;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -22,6 +23,7 @@ import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.RepositoryCache;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTag;
@@ -81,7 +83,10 @@ public class AbstractGitRepositoryTestCase {
     protected void closeEmptyRemoteRepository() throws Exception {
         if (emptyRemoteRepository != null) {
             emptyRemoteRepository.close();
+            emptyRemoteRepository = null;
         }
+        RepositoryCache.clear();
+        TimeUnit.MILLISECONDS.sleep(500);
         FileUtils.delete(emptyRemoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
     }
 
@@ -98,7 +103,10 @@ public class AbstractGitRepositoryTestCase {
     protected void closeRepository() throws Exception{
         if (repository != null) {
             repository.close();
+            repository = null;
         }
+        RepositoryCache.clear();
+        TimeUnit.MILLISECONDS.sleep(500);
         if (Files.exists(getDotGitDir())) {
             FileUtils.delete(getDotGitDir().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
         }
