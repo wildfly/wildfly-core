@@ -365,11 +365,6 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-gpg-plugin</artifactId>
-                    <version>${version.gpg.plugin}</version>
-                </plugin>
-                <plugin>
                     <groupId>org.wildfly</groupId>
                     <artifactId>wildfly-maven-gpg-plugin</artifactId>
                     <version>${version.org.wildfly.wildfly-maven-gpg-plugin}</version>
