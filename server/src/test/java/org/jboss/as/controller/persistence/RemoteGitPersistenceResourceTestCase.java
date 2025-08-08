@@ -10,12 +10,15 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.RepositoryCache;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.util.FileUtils;
 import org.jboss.as.controller.persistence.ConfigurationPersister.SnapshotInfo;
 import org.jboss.as.server.controller.git.GitRepository;
 import org.jboss.as.server.controller.git.GitRepositoryConfiguration;
@@ -59,12 +62,16 @@ public class RemoteGitPersistenceResourceTestCase extends AbstractGitPersistence
     public void deleteDirectoriesAndFiles() throws Exception {
         if (remoteRepository != null) {
             remoteRepository.close();
+            remoteRepository = null;
         }
         if (repository != null) {
             repository.close();
+            repository = null;
         }
-        delete(remoteRoot.getParent().toFile());
-        delete(root.getParent().toFile());
+        RepositoryCache.clear();
+        TimeUnit.MILLISECONDS.sleep(500);
+        FileUtils.delete(remoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
+        FileUtils.delete(root.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
     }
 
     @Test
