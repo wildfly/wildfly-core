@@ -86,14 +86,8 @@
         <maven.compiler.release>17</maven.compiler.release>
 
         <!-- Repository Deployment Settings -->
-        <nexus.serverId>jboss</nexus.serverId>
-        <nexus.repository.release>releases</nexus.repository.release>
         <nexus.repository.staging>wildfly-staging</nexus.repository.staging>
-        <nexus.repository.url>https://repository.jboss.org/nexus/</nexus.repository.url>
         <nexus.staging.tag>wildfly-core-${project.version}</nexus.staging.tag>
-
-        <!-- maven-gpg-plugin -->
-        <gpg.pinEntryMode>loopback</gpg.pinEntryMode>
 
         <!-- Standard client-side JPMS settings identified as meeting
              the needs of WildFly libraries meant for use in clients. -->
@@ -160,9 +154,7 @@
 
         <!-- Non-default maven plugin versions and configuration -->
         <version.buildhelper.plugin>3.4.0</version.buildhelper.plugin>
-        <version.gpg.plugin>3.2.8</version.gpg.plugin>
         <version.jacoco.plugin>0.8.10</version.jacoco.plugin>
-        <version.nxrm3.plugin>1.0.7</version.nxrm3.plugin>
         <version.org.jboss.galleon>6.0.6.Final</version.org.jboss.galleon>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
         <version.org.wildfly.galleon-plugins>7.4.0.Final</version.org.wildfly.galleon-plugins>
@@ -368,18 +360,6 @@
                     <groupId>org.wildfly</groupId>
                     <artifactId>wildfly-maven-gpg-plugin</artifactId>
                     <version>${version.org.wildfly.wildfly-maven-gpg-plugin}</version>
-                    <configuration>
-                        <useAgent>true</useAgent>
-                        <gpgArguments>
-                            <arg>--pinentry-mode</arg>
-                            <arg>${gpg.pinEntryMode}</arg>
-                        </gpgArguments>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-gpg-plugin</artifactId>
-                    <version>${version.gpg.plugin}</version>
                     <configuration>
                         <useAgent>true</useAgent>
                         <gpgArguments>
@@ -714,31 +694,6 @@
                     <groupId>org.jboss.galleon</groupId>
                     <artifactId>galleon-maven-plugin</artifactId>
                     <version>${version.org.jboss.galleon}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.sonatype.plugins</groupId>
-                    <artifactId>nxrm3-maven-plugin</artifactId>
-                    <version>${version.nxrm3.plugin}</version>
-                    <configuration>
-                        <serverId>${nexus.serverId}</serverId>
-                        <nexusUrl>${nexus.repository.url}</nexusUrl>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>nexus-move</id>
-                            <configuration>
-                                <repository>${nexus.repository.staging}</repository>
-                                <destinationRepository>${nexus.repository.release}</destinationRepository>
-                                <tag>${nexus.staging.tag}</tag>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>nexus-delete</id>
-                            <configuration>
-                                <tag>${nexus.staging.tag}</tag>
-                            </configuration>
-                        </execution>
-                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.wildfly.maven.plugins</groupId>
@@ -2382,53 +2337,6 @@
 
     <!-- Profiles -->
     <profiles>
-        <profile>
-            <id>jboss-release</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-deploy-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>default-deploy</id>
-                                <phase>none</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nxrm3-maven-plugin</artifactId>
-                        <extensions>true</extensions>
-                        <executions>
-                            <execution>
-                                <id>nexus-deploy</id>
-                                <phase>deploy</phase>
-                                <goals>
-                                    <goal>staging-deploy</goal>
-                                </goals>
-                                <configuration>
-                                    <repository>${nexus.repository.staging}</repository>
-                                    <tag>${nexus.staging.tag}</tag>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>gpg-sign</id>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
         <!--
           Name: jpda
           Descr: Enable JPDA remote debuging
