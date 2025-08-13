@@ -36,18 +36,18 @@
                             <goal>build-bom</goal>
                         </goals>
                         <configuration>
-                            <parent>
+                            <bomParent>
                                 <groupId>org.jboss</groupId>
                                 <artifactId>jboss-parent</artifactId>
                                 <relativePath/>
-                            </parent>
+                            </bomParent>
                             <bomGroupId>${project.groupId}</bomGroupId>
                             <bomArtifactId>wildfly-core-component-matrix</bomArtifactId>
                             <bomVersion>${project.version}</bomVersion>
                             <bomName>WildFly Core: Component Matrix</bomName>
                             <bomDescription>WildFly Core: Component Matrix</bomDescription>
                             <inheritExclusions>ALL</inheritExclusions>
-                            <licenses>true</licenses>
+                            <generateLicenses>true</generateLicenses>
                         </configuration>
                     </execution>
                 </executions>
