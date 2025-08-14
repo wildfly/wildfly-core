@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.sshd.common.config.keys.KeyUtils;
@@ -38,6 +39,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.junit.ssh.SshTestGitServer;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.RepositoryCache;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.util.FileUtils;
 import org.jboss.as.repository.PathUtil;
@@ -535,7 +537,10 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
     private void closeRemoteRepository() throws Exception {
         if (remoteRepository != null) {
             remoteRepository.close();
+            remoteRepository = null;
         }
+        RepositoryCache.clear();
+        TimeUnit.MILLISECONDS.sleep(500);
         FileUtils.delete(remoteRoot.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
     }
 
