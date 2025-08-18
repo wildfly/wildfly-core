@@ -16,6 +16,11 @@
 
     <dependencies>
         <module name="java.management"/>
+        <module name="java.xml"/>
         <module name="org.jboss.logging"/>
+        <module name="io.smallrye.common.cpu"/>
+        <module name="io.smallrye.common.net"/>
+        <module name="io.smallrye.common.os"/>
+        <module name="io.smallrye.common.expression"/>
     </dependencies>
 </module>
