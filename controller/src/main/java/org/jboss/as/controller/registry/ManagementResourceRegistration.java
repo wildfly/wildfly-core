@@ -5,6 +5,8 @@
 
 package org.jboss.as.controller.registry;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -31,6 +33,9 @@ import org.wildfly.common.Assert;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public interface ManagementResourceRegistration extends ImmutableManagementResourceRegistration {
+
+    @Override
+    ManagementResourceRegistration getParent();
 
     /**
      * Get a specifically named resource that overrides this {@link PathElement#WILDCARD_VALUE wildcard registration}
@@ -239,7 +244,52 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
     void unregisterProxyController(PathElement address);
 
     /**
-     * Register an alias registration to another part of the model
+     * Registers an alternate path by which this {@link ManagementResourceRegistration} may be referenced.
+     * @param path an alternate path by which the current resource registration may be referenced
+     * @throws IllegalArgumentException if the specified path is identical to the path of this {@link ManagementResourceRegistration} or if its wildcard characteristic does not match.
+     * @throws UnsupportedOperationException if this is the root registration
+     */
+    default void registerAlias(PathElement path) {
+        this.registerAlias(ResourceRegistration.of(path));
+    }
+
+    /**
+     * Registers an alternate path by which this {@link ManagementResourceRegistration} may be referenced, if supported by the stability of the specified registration.
+     * @param registration a registration defining an alternate path by which the current resource registration may be referenced
+     * @throws IllegalArgumentException if the path of the specified registration is identical to the path of this {@link ManagementResourceRegistration} or if its wildcard characteristic does not match.
+     * @throws UnsupportedOperationException if this is the root registration
+     */
+    default void registerAlias(ResourceRegistration registration) {
+        PathElement path = this.getPathAddress().getLastElement();
+        if (path == null) {
+            // There can be no alias for the root MRR
+            throw new UnsupportedOperationException();
+        }
+        PathElement alias = registration.getPathElement();
+        if ((alias.isWildcard() != path.isWildcard()) || alias.equals(path)) {
+            throw new IllegalArgumentException(path.toString());
+        }
+        this.getParent().registerAlias(registration, new AliasEntry(this) {
+            @Override
+            public PathAddress convertToTargetAddress(PathAddress address, AliasContext context) {
+                PathAddress target = this.getTargetAddress();
+                List<PathElement> result = new ArrayList<>(address.size());
+                for (int i = 0; i < address.size(); ++i) {
+                    PathElement element = address.getElement(i);
+                    if (i < target.size()) {
+                        PathElement targetElement = target.getElement(i);
+                        result.add(targetElement.isWildcard() ? PathElement.pathElement(targetElement.getKey(), element.getValue()) : targetElement);
+                    } else {
+                        result.add(element);
+                    }
+                }
+                return PathAddress.pathAddress(result);
+            }
+        });
+    }
+
+    /**
+     * Register an alias to an arbitrary location in the model.
      *
      * @param address the child of this registry that is an alias
      * @param aliasEntry the target model
@@ -248,7 +298,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
     void registerAlias(PathElement address, AliasEntry aliasEntry);
 
     /**
-     * Register an alias registration to another part of the model
+     * Register an alias to an arbitrary location in the model.
      *
      * @param registration the registration of the child of this registry that is an alias
      * @param aliasEntry the target model
