@@ -70,7 +70,6 @@ import org.jboss.as.controller.persistence.SubsystemXmlWriterRegistry;
 import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.AttributeAccess;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.NotificationEntry;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -1054,7 +1053,7 @@ public final class ExtensionRegistry implements FeatureRegistry {
         }
 
         @Override
-        public ImmutableManagementResourceRegistration getParent() {
+        public ManagementResourceRegistration getParent() {
             ManagementResourceRegistration deplParent = (ManagementResourceRegistration) deployments.getParent();
             ManagementResourceRegistration subParent = (ManagementResourceRegistration) subdeployments.getParent();
             if (deployments == subParent) {

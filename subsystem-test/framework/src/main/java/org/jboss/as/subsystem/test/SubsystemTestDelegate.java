@@ -856,7 +856,7 @@ final class SubsystemTestDelegate {
         }
 
         @Override
-        public ImmutableManagementResourceRegistration getParent() {
+        public ManagementResourceRegistration getParent() {
             return null;
         }
 
