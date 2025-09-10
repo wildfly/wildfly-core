@@ -88,6 +88,8 @@
         <!-- Repository Deployment Settings -->
         <nexus.repository.staging>wildfly-staging</nexus.repository.staging>
         <nexus.staging.tag>wildfly-core-${project.version}</nexus.staging.tag>
+        <!-- Nexus staging repository URL used to retrieve test component releases -->
+        <nexus.repository.staging.url>${nexus.repository.url}repository/${nexus.repository.staging}</nexus.repository.staging.url>
 
         <!-- Standard client-side JPMS settings identified as meeting
              the needs of WildFly libraries meant for use in clients. -->
@@ -2424,10 +2426,18 @@
                 <repository>
                     <id>jboss-staging-repository-group</id>
                     <name>JBoss Staging Repository Group</name>
-                    <url>https://repository.jboss.org/nexus/content/groups/staging/</url>
+                    <url>${nexus.repository.staging.url}</url>
                     <layout>default</layout>
                 </repository>
             </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>jboss-staging-repository-group</id>
+                    <name>JBoss Staging Repository Group</name>
+                    <url>${nexus.repository.staging.url}</url>
+                    <layout>default</layout>
+                </pluginRepository>
+            </pluginRepositories>
         </profile>
 
         <!-- -Dts.layers -->
