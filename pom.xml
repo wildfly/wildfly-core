@@ -260,9 +260,7 @@
         <version.org.jboss.staxmapper>1.5.0.Final</version.org.jboss.staxmapper>
         <version.org.jboss.stdio>1.1.0.Final</version.org.jboss.stdio>
         <version.org.jboss.threads>3.9.1</version.org.jboss.threads>
-        <version.org.jboss.xnio>3.8.16.Final</version.org.jboss.xnio>
-        <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
-        <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
+        <version.org.jboss.xnio>3.8.17.Final</version.org.jboss.xnio>
         <version.org.mock-server.mockserver-netty>5.8.1</version.org.mock-server.mockserver-netty>
         <version.org.mockito>3.10.0</version.org.mockito>
         <version.org.jmockit>1.49</version.org.jmockit>
@@ -1196,12 +1194,12 @@
             <dependency>
                 <groupId>org.jboss.xnio</groupId>
                 <artifactId>xnio-api</artifactId>
-                <version>${version.org.jboss.xnio.xnio-api}</version>
+                <version>${version.org.jboss.xnio}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.xnio</groupId>
                 <artifactId>xnio-nio</artifactId>
-                <version>${version.org.jboss.xnio.xnio-nio}</version>
+                <version>${version.org.jboss.xnio}</version>
             </dependency>
             <dependency>
                 <groupId>org.projectodd.vdx</groupId>
