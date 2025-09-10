@@ -97,7 +97,7 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
-    public ImmutableManagementResourceRegistration getParent() {
+    public ManagementResourceRegistration getParent() {
         return getDelegate().getParent();
     }
 

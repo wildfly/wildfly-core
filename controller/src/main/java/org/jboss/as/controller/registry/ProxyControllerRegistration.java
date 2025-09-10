@@ -430,7 +430,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
         }
 
         @Override
-        public ImmutableManagementResourceRegistration getParent() {
+        public ManagementResourceRegistration getParent() {
             PathAddress parentAddress = ProxyControllerRegistration.this.getPathAddress();
             if (pathAddress.size() == parentAddress.size() + 1) {
                 return ProxyControllerRegistration.this;
