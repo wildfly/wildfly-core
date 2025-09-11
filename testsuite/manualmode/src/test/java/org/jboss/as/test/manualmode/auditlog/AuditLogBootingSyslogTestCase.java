@@ -10,6 +10,8 @@ import static org.jboss.as.test.manualmode.auditlog.AbstractLogFieldsOfLogTestCa
 
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+
 import jakarta.inject.Inject;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -40,6 +42,7 @@ import org.xnio.IoUtils;
 @RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class AuditLogBootingSyslogTestCase {
+    private final int READ_MESSAGES_TIMEOUT_MILLISECONDS = Integer.getInteger("org.jboss.as.test.manualmode.auditlog.read-messages-timeout-ms", 5000);
     private final ModelNode userAuthAddress = Operations.createAddress("subsystem", "elytron", "configurable-sasl-server-factory", "configured");
     private final ModelNode userIdentRealmAddress = Operations.createAddress("subsystem", "elytron", "identity-realm", "local");
     private final PathAddress auditLogConfigAddress = PathAddress.pathAddress(CoreManagementResourceDefinition.PATH_ELEMENT,
@@ -125,34 +128,34 @@ public class AuditLogBootingSyslogTestCase {
     private void waitForExpectedOperations(int expectedOperations, BlockingQueue<SyslogServerEventIF> queue) throws InterruptedException {
         int operations = 0;
         int openClose = 0;
-        long endTime = System.currentTimeMillis() + TimeoutUtil.adjust(5000);
+        long endTime = System.currentTimeMillis() + TimeoutUtil.adjust(READ_MESSAGES_TIMEOUT_MILLISECONDS);
+        StringBuilder sb = new StringBuilder();
         do {
             if (queue.isEmpty()) {
-                Thread.sleep(100);
+                TimeUnit.MILLISECONDS.sleep(100);
             }
-
             while (!queue.isEmpty()) {
                 SyslogServerEventIF event = queue.take();
                 char[] messageChars = event.getMessage().toCharArray();
-                for (char character : messageChars) {
-                    if (character == '{' || character == '}') {
-                        if (character == '{') {
-                            openClose++;
-                        } else {
-                            openClose--;
-                        }
-                        Assert.assertTrue(openClose >= 0);
-
-                        if (openClose == 0) operations++;
-                    }
-                }
-            }
-
-            if (operations >= expectedOperations) {
-                break;
+                sb.append(messageChars, 0, messageChars.length);
             }
         } while (System.currentTimeMillis() < endTime);
 
+        for (char character : sb.toString().toCharArray()) {
+            if (character == '{' || character == '}') {
+                if (character == '{') {
+                    openClose++;
+                } else {
+                    openClose--;
+                }
+                Assert.assertTrue(openClose >= 0);
+
+                if (openClose == 0) operations++;
+            }
+
+            if (operations >= expectedOperations)
+                break;
+        }
         Assert.assertEquals(expectedOperations, operations);
     }
 
