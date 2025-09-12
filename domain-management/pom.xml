@@ -12,7 +12,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>30.0.0.Beta1</version>
+        <version>30.0.0.Beta2-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-domain-management</artifactId>
