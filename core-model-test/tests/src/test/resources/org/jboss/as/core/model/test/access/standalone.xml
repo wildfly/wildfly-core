@@ -4,7 +4,7 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<server xmlns="urn:jboss:domain:20.0">
+<server xmlns="urn:jboss:domain:21.0">
    <management>
       <access-control provider="rbac" use-identity-roles="true" permission-combination-policy="rejecting">
          <role-mapping>

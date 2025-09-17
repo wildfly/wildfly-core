@@ -114,8 +114,11 @@ public final class StandaloneXml implements ManagementXmlReaderWriter {
             case 19:
                 new StandaloneXml_18(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
-            default:
+            case 20:
                 new StandaloneXml_20(extensionHandler, namespace, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
+                break;
+            default:
+                new StandaloneXml_21(extensionHandler, namespace, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
         }
     }
 
@@ -123,7 +126,7 @@ public final class StandaloneXml implements ManagementXmlReaderWriter {
     public void writeContent(final XMLExtendedStreamWriter writer, final VersionedNamespace<IntVersion, ManagementXmlSchema> namespace, final ModelMarshallingContext context)
             throws XMLStreamException {
 
-        new StandaloneXml_20(extensionHandler, namespace, deferredExtensionContext, parsingOptions).writeContent(writer, context);
+        new StandaloneXml_21(extensionHandler, namespace, deferredExtensionContext, parsingOptions).writeContent(writer, context);
     }
 
     class DefaultExtensionHandler implements ExtensionHandler {
