@@ -11,6 +11,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -73,7 +74,7 @@ public class ServerResumeHandler implements OperationStepHandler {
                                 Thread.currentThread().interrupt();
                                 resume.toCompletableFuture().cancel(false);
                             } catch (ExecutionException e) {
-                                context.getFailureDescription().set(e.getCause().getLocalizedMessage());
+                                context.getFailureDescription().set(Optional.ofNullable(e.getCause()).orElse(e).toString());
                             }
                         }
                     }
