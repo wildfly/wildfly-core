@@ -11,6 +11,8 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.List;
 import java.util.Set;
@@ -33,6 +35,7 @@ import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.registry.AliasEntry.AliasContext;
 import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -62,6 +65,30 @@ public class CoreManagementResourceRegistrationUnitTestCase {
     }
 
     @Test
+    public void simpleAlias() {
+        PathElement parentPath = PathElement.pathElement("parent");
+        ManagementResourceRegistration parent = this.rootRegistration.registerSubModel(new SimpleResourceDefinition(parentPath, NonResolvingResourceDescriptionResolver.INSTANCE));
+
+        PathElement path = PathElement.pathElement("foo", "bar");
+        PathElement alias = PathElement.pathElement("foo-alias", "bar-alias");
+        parent.registerSubModel(new SimpleResourceDefinition(path, NonResolvingResourceDescriptionResolver.INSTANCE)).registerAlias(alias);
+        PathElement wildcardPath = PathElement.pathElement("baz");
+        PathElement wildcardAlias = PathElement.pathElement("baz-alias");
+        parent.registerSubModel(new SimpleResourceDefinition(wildcardPath, NonResolvingResourceDescriptionResolver.INSTANCE)).registerAlias(wildcardAlias);
+
+        AliasContext context = mock(AliasContext.class);
+
+        PathAddress parentAddress = PathAddress.pathAddress(parentPath.getKey(), "test");
+        PathAddress address = parent.getSubModel(PathAddress.pathAddress(alias)).getAliasEntry().convertToTargetAddress(parentAddress.append(alias), mock(AliasContext.class));
+        PathAddress wildcardAddress = parent.getSubModel(PathAddress.pathAddress(wildcardAlias)).getAliasEntry().convertToTargetAddress(parentAddress.append("baz-alias", "qux"), mock(AliasContext.class));
+
+        verifyNoInteractions(context);
+
+        assertEquals(parentAddress.append(path), address);
+        assertEquals(parentAddress.append("baz", "qux"), wildcardAddress);
+    }
+
+    @Test
     public void testHandlersOnRootResource() throws Exception {
 
         rootRegistration.registerOperationHandler(getOpDef("one"), TestHandler.ONE);
@@ -80,7 +107,6 @@ public class CoreManagementResourceRegistrationUnitTestCase {
         ManagementResourceRegistration child = rootRegistration.registerSubModel(new SimpleResourceDefinition(childElement, NonResolvingResourceDescriptionResolver.INSTANCE));
         child.registerOperationHandler(getOpDef("one"), TestHandler.ONE);
         child.registerOperationHandler(getOpDef("two", OperationEntry.Flag.READ_ONLY), TestHandler.TWO);
-
 
         OperationStepHandler oneHandler = child.getOperationHandler(PathAddress.EMPTY_ADDRESS, "one");
         assertSame(TestHandler.ONE, oneHandler);
@@ -375,13 +401,13 @@ public class CoreManagementResourceRegistrationUnitTestCase {
 
     private static class TestHandler implements OperationStepHandler {
 
-        private static TestHandler INSTANCE = new TestHandler();
+        private static final TestHandler INSTANCE = new TestHandler();
 
-        private static TestHandler ONE = new TestHandler();
-        private static TestHandler TWO = new TestHandler();
+        private static final TestHandler ONE = new TestHandler();
+        private static final TestHandler TWO = new TestHandler();
 
-        private static TestHandler PARENT = new TestHandler();
-        private static TestHandler CHILD = new TestHandler();
+        private static final TestHandler PARENT = new TestHandler();
+        private static final TestHandler CHILD = new TestHandler();
 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {

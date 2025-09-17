@@ -530,7 +530,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     }
 
     @Override
-    public ImmutableManagementResourceRegistration getParent() {
+    public ManagementResourceRegistration getParent() {
         return parent == null ? null : parent.getParent();
     }
 
