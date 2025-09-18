@@ -13,6 +13,7 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 
 import io.undertow.io.IoCallback;
+import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.ResponseCodeHandler;
 import io.undertow.util.Headers;
@@ -23,14 +24,14 @@ import org.jboss.dmr.ModelNode;
  */
 public class Common {
 
-    public static final ResponseCodeHandler MOVED_PERMANENTLY = new ResponseCodeHandler(301);
-    public static final ResponseCodeHandler TEMPORARY_REDIRECT = new ResponseCodeHandler(307);
-    public static final ResponseCodeHandler UNAUTHORIZED = new ResponseCodeHandler(403);
-    public static final ResponseCodeHandler NOT_FOUND = HANDLE_404;
-    public static final ResponseCodeHandler METHOD_NOT_ALLOWED_HANDLER = new ResponseCodeHandler(405);
-    public static final ResponseCodeHandler UNSUPPORTED_MEDIA_TYPE = new ResponseCodeHandler(415);
-    public static final ResponseCodeHandler INTERNAL_SERVER_ERROR = new ResponseCodeHandler(500);
-    public static final ResponseCodeHandler SERVICE_UNAVAIABLE = new ResponseCodeHandler(503);
+    public static final HttpHandler MOVED_PERMANENTLY = new ContentSecurityPolicyHeaderHandler(new ResponseCodeHandler(301));
+    public static final HttpHandler TEMPORARY_REDIRECT = new ContentSecurityPolicyHeaderHandler(new ResponseCodeHandler(307));
+    public static final HttpHandler UNAUTHORIZED = new ContentSecurityPolicyHeaderHandler(new ResponseCodeHandler(403));
+    public static final HttpHandler NOT_FOUND = new ContentSecurityPolicyHeaderHandler(HANDLE_404);
+    public static final HttpHandler METHOD_NOT_ALLOWED_HANDLER = new ContentSecurityPolicyHeaderHandler(new ResponseCodeHandler(405));
+    public static final HttpHandler UNSUPPORTED_MEDIA_TYPE = new ContentSecurityPolicyHeaderHandler(new ResponseCodeHandler(415));
+    public static final HttpHandler INTERNAL_SERVER_ERROR = new ContentSecurityPolicyHeaderHandler(new ResponseCodeHandler(500));
+    public static final HttpHandler SERVICE_UNAVAIABLE = new ContentSecurityPolicyHeaderHandler(new ResponseCodeHandler(503));
 
     static final String APPLICATION_DMR_ENCODED = "application/dmr-encoded";
     static final String APPLICATION_JSON = "application/json";
