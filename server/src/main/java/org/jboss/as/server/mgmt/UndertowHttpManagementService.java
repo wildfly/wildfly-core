@@ -30,6 +30,7 @@ import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.domain.http.server.ContentSecurityPolicyHeaderHandler;
 import org.jboss.as.server.mgmt.domain.ExtensibleHttpManagement;
 import org.jboss.as.server.mgmt.domain.HttpManagement;
 import org.jboss.msc.service.Service;
@@ -128,7 +129,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         @Override
         public void addManagementHandler(String contextName, boolean requiresSecurity, HttpHandler managementHandler) {
             Assert.assertNotNull(serverManagement);
-            serverManagement.addManagementHandler(contextName, requiresSecurity, managementHandler);
+            serverManagement.addManagementHandler(contextName, requiresSecurity, new ContentSecurityPolicyHeaderHandler(managementHandler));
         }
 
         @Override
