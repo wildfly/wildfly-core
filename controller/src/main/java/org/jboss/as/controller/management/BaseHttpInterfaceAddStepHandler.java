@@ -33,9 +33,14 @@ import org.xnio.OptionMap.Builder;
 public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfaceAddStepHandler {
 
     private static final String PROPERTY_BASE = "org.wildfly.management.";
+    // Do not use the system properties, use the management API to configure them in the model
+    @Deprecated(since = "30.0.0",  forRemoval = true)
     private static final String BACKLOG_PROPERTY = PROPERTY_BASE + "backlog";
+    @Deprecated(since = "30.0.0",  forRemoval = true)
     private static final String CONNECTION_HIGH_WATER_PROPERTY = PROPERTY_BASE + "connection-high-water";
+    @Deprecated(since = "30.0.0",  forRemoval = true)
     private static final String CONNECTION_LOW_WATER_PROPERTY = PROPERTY_BASE + "connection-low-water";
+    @Deprecated(since = "30.0.0",  forRemoval = true)
     private static final String NO_REQUEST_TIMEOUT_PROPERTY = PROPERTY_BASE + "no-request-timeout";
 
     protected static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.http-authentication-factory";

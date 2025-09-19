@@ -31,10 +31,11 @@ public class StandaloneMgmtInterfacesTestCase extends AbstractCoreModelTest {
     }
 
     @Test
-    public void testResourceConstraints_Community() throws Exception {
-        // Test for https://issues.redhat.com/browse/WFCORE-6830
-        testConfiguration("standalone_resource_constraints_community.xml", Stability.COMMUNITY);
+    public void testResourceConstraints() throws Exception {
+        // Test for https://issues.redhat.com/browse/WFCORE-7317
+        testConfiguration("standalone_resource_constraints.xml");
     }
+
 
     public void testConfiguration(String fileName) throws Exception {
         testConfiguration(fileName, Stability.DEFAULT);
