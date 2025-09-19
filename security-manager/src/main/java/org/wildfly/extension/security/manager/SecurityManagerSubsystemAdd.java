@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -62,14 +63,21 @@ class SecurityManagerSubsystemAdd extends AbstractBoottimeAddStepHandler {
         final ModelNode node = Resource.Tools.readModel(resource);
         // get the minimum set of deployment permissions.
         final ModelNode deploymentPermissionsModel = node.get(DEPLOYMENT_PERMISSIONS_PATH.getKeyValuePair());
-        final ModelNode minimumPermissionsNode = MINIMUM_PERMISSIONS.resolveModelAttribute(context, deploymentPermissionsModel);
-        final List<PermissionFactory> minimumSet = this.retrievePermissionSet(DeferredPermissionFactory.Type.MINIMUM_SET, context, minimumPermissionsNode);
-
-        // get the maximum set of deployment permissions.
-        ModelNode maximumPermissionsNode = MAXIMUM_PERMISSIONS.resolveModelAttribute(context, deploymentPermissionsModel);
+        ModelNode minimumPermissionsNode = null;
+        ModelNode maximumPermissionsNode = null;
+        try {
+            minimumPermissionsNode = MINIMUM_PERMISSIONS.resolveModelAttribute(context, deploymentPermissionsModel);
+            maximumPermissionsNode = MAXIMUM_PERMISSIONS.resolveModelAttribute(context, deploymentPermissionsModel);
+        } catch (ExpressionResolver.ExpressionResolutionUserException ex) {
+            // TODO: better exception choice ?
+            throw (System.getSecurityManager() != null) ? new RuntimeException(ex) : ex;
+        }
         if (!maximumPermissionsNode.isDefined())
             maximumPermissionsNode = DEFAULT_MAXIMUM_SET;
-        final List<PermissionFactory> maximumSet = this.retrievePermissionSet(DeferredPermissionFactory.Type.MAXIMUM_SET, context, maximumPermissionsNode);
+        final List<PermissionFactory> minimumSet = this
+                .retrievePermissionSet(DeferredPermissionFactory.Type.MINIMUM_SET, context, minimumPermissionsNode);
+        final List<PermissionFactory> maximumSet = this
+                .retrievePermissionSet(DeferredPermissionFactory.Type.MAXIMUM_SET, context, maximumPermissionsNode);
 
         // validate the configured permissions - the minimum set must be implied by the maximum set.
         final FactoryPermissionCollection maxPermissionCollection = new FactoryPermissionCollection(maximumSet.toArray(new PermissionFactory[maximumSet.size()]));
