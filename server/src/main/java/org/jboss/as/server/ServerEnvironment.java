@@ -766,7 +766,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             }
             if (qualifiedHostName == null || qualifiedHostName.isBlank()) {
                 try {
-                    qualifiedHostName = NetworkUtils.canonize(InetAddressUtil.getLocalHost().getHostName());
+                    qualifiedHostName = NetworkUtils.canonize(InetAddressUtil.getLocalHost().getCanonicalHostName());
                 } catch (UnknownHostException e) {
                     qualifiedHostName = null;
                 }
