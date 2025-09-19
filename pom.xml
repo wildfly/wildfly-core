@@ -205,7 +205,7 @@
         <version.com.fasterxml.jackson>2.17.3</version.com.fasterxml.jackson>
         <version.com.fasterxml.jackson.databind>${version.com.fasterxml.jackson}</version.com.fasterxml.jackson.databind>
         <version.com.jcraft.jsch>0.1.55</version.com.jcraft.jsch>
-        <version.commons-cli>1.9.0</version.commons-cli>
+        <version.commons-cli>1.10.0</version.commons-cli>
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-daemon>1.4.1</version.commons-daemon>
         <version.commons-lang3>3.18.0</version.commons-lang3>
