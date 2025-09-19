@@ -31,6 +31,7 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.util.FileUtils;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
+import org.jboss.as.domain.http.server.OperatingSystemDetector;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
@@ -81,8 +82,14 @@ public class AbstractGitRepositoryTestCase {
     protected void closeEmptyRemoteRepository() throws Exception {
         if (emptyRemoteRepository != null) {
             emptyRemoteRepository.close();
+            emptyRemoteRepository = null;
         }
-        FileUtils.delete(emptyRemoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
+        //TODO: Remove once WFCORE-7339 is merged
+        if(OperatingSystemDetector.INSTANCE.isWindows()) {
+            FileUtils.delete(emptyRemoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
+        } else {
+            FileUtils.delete(emptyRemoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
+        }
     }
 
     protected Repository createRepository() throws IOException {
@@ -98,12 +105,23 @@ public class AbstractGitRepositoryTestCase {
     protected void closeRepository() throws Exception{
         if (repository != null) {
             repository.close();
+            repository = null;
         }
         if (Files.exists(getDotGitDir())) {
-            FileUtils.delete(getDotGitDir().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
+            //TODO: Remove once WFCORE-7339 is merged
+            if (OperatingSystemDetector.INSTANCE.isWindows()) {
+                FileUtils.delete(getDotGitDir().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
+            } else {
+                FileUtils.delete(getDotGitDir().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
+            }
         }
-        if(Files.exists(getDotGitIgnore())) {
-            FileUtils.delete(getDotGitIgnore().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
+        if (Files.exists(getDotGitIgnore())) {
+            //TODO: Remove once WFCORE-7339 is merged
+            if (OperatingSystemDetector.INSTANCE.isWindows()) {
+                FileUtils.delete(getDotGitIgnore().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
+            } else {
+                FileUtils.delete(getDotGitIgnore().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
+            }
         }
     }
 
