@@ -4,7 +4,7 @@
   -->
 
 <!-- for needs of DomainTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:community:18.0" register-jaspi-factory="false" default-ssl-context="client">
+<subsystem xmlns="urn:wildfly:elytron:community:19.0" register-jaspi-factory="false" default-ssl-context="client">
     <authentication-client>
         <authentication-context name="myAC" />
     </authentication-client>
