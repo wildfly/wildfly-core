@@ -27,6 +27,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostContr
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
+import java.security.GeneralSecurityException;
 import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.util.List;
@@ -492,7 +493,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
                         ROOT_LOGGER.trace("Jakarta Authorization Dynamically Registered.");
                         context.registerCapability(JAKARTA_AUTHORIZATION_RUNTIME_CAPABILITY);
                     }
-                } catch (SecurityException e) {
+                } catch (GeneralSecurityException e) {
                     throw ROOT_LOGGER.unableToRegisterJakartaAuthorization(e);
                 }
 
