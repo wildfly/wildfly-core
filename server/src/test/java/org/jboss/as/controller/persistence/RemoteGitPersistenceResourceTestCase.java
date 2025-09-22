@@ -67,7 +67,7 @@ public class RemoteGitPersistenceResourceTestCase extends AbstractGitPersistence
             repository.close();
             repository = null;
         }
-        
+
         //TODO: Remove once WFCORE-7339 is merged
         if (OperatingSystemDetector.INSTANCE.isWindows()) {
             FileUtils.delete(remoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
