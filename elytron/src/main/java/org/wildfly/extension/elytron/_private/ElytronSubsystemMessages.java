@@ -349,7 +349,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     // DO NOT FOLLOW ON FROM 1221
 
     @Message(id = 51, value = "Registration of Jakarta Authorization failed.")
-    OperationFailedException unableToRegisterJakartaAuthorization();
+    OperationFailedException unableToRegisterJakartaAuthorization(@Cause SecurityException cause);
 
     /*
      * Credential Store Section.

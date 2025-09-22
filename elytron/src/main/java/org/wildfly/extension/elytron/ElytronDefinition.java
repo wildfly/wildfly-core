@@ -10,6 +10,7 @@ import static org.jboss.as.server.security.VirtualDomainUtil.VIRTUAL_SECURITY_DO
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.ELYTRON_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.JAKARTA_AUTHORIZATION_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PERMISSION_MAPPER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_DECODER_RUNTIME_CAPABILITY;
@@ -89,7 +90,7 @@ import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.authz.RoleMapper;
-import org.wildfly.security.jakarta.authz.AuthorizarionRegistration;
+import org.wildfly.security.jakarta.authz.AuthorizationRegistration;
 import org.wildfly.security.manager.action.ReadPropertyAction;
 
 import jakarta.security.auth.message.config.AuthConfigFactory;
@@ -486,8 +487,13 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
             if (context.isNormalServer()) {
 
-                if (!AuthorizarionRegistration.register()) {
-                    throw ROOT_LOGGER.unableToRegisterJakartaAuthorization();
+                try {
+                    if (AuthorizationRegistration.register()) {
+                        ROOT_LOGGER.trace("Jakarta Authorization Dynamically Registered.");
+                        context.registerCapability(JAKARTA_AUTHORIZATION_RUNTIME_CAPABILITY);
+                    }
+                } catch (SecurityException e) {
+                    throw ROOT_LOGGER.unableToRegisterJakartaAuthorization(e);
                 }
 
                 context.addStep(new AbstractDeploymentChainStep() {

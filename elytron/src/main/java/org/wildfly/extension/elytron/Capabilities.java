@@ -269,7 +269,13 @@ class Capabilities {
             .Builder.of(JACC_POLICY_CAPABILITY, false, Policy.class)
             .build();
 
+    static final String JAKARTA_AUTHORIZATION_CAPABILITY = CAPABILITY_BASE + "jakarta-authorization";
+    static final RuntimeCapability<Void> JAKARTA_AUTHORIZATION_RUNTIME_CAPABILITY =  RuntimeCapability
+            .Builder.of(JAKARTA_AUTHORIZATION_CAPABILITY, false, Void.class)
+            .build();
+
     static final String EXPRESSION_RESOLVER_CAPABILITY = CAPABILITY_BASE + "expression-resolver";
+
 
     /**
      * Requirements, capabilities from other subsystems.
