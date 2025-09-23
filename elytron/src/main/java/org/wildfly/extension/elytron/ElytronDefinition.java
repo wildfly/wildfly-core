@@ -10,6 +10,7 @@ import static org.jboss.as.server.security.VirtualDomainUtil.VIRTUAL_SECURITY_DO
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.ELYTRON_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.JAKARTA_AUTHORIZATION_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PERMISSION_MAPPER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_DECODER_RUNTIME_CAPABILITY;
@@ -24,7 +25,9 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
+import java.security.GeneralSecurityException;
 import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.util.List;
@@ -35,7 +38,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
-import jakarta.security.auth.message.config.AuthConfigFactory;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.AttributeMarshaller;
@@ -89,7 +91,10 @@ import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.authz.RoleMapper;
+import org.wildfly.security.jakarta.authz.AuthorizationRegistration;
 import org.wildfly.security.manager.action.ReadPropertyAction;
+
+import jakarta.security.auth.message.config.AuthConfigFactory;
 
 /**
  * Top level {@link ResourceDefinition} for the Elytron subsystem.
@@ -482,6 +487,16 @@ class ElytronDefinition extends SimpleResourceDefinition {
             }
 
             if (context.isNormalServer()) {
+
+                try {
+                    if (AuthorizationRegistration.register()) {
+                        ROOT_LOGGER.trace("Jakarta Authorization Dynamically Registered.");
+                        context.registerCapability(JAKARTA_AUTHORIZATION_RUNTIME_CAPABILITY);
+                    }
+                } catch (GeneralSecurityException e) {
+                    throw ROOT_LOGGER.unableToRegisterJakartaAuthorization(e);
+                }
+
                 context.addStep(new AbstractDeploymentChainStep() {
                     @Override
                     protected void execute(DeploymentProcessorTarget processorTarget) {

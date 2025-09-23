@@ -10,6 +10,7 @@ import static org.jboss.logging.Logger.Level.WARN;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.net.UnknownHostException;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchProviderException;
@@ -344,6 +345,13 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 50, value = "The realm is not available. You can't flush the cache.")
     OperationFailedException cachedRealmServiceNotAvailable();
 
+    @Message(id = 1221, value = "Unable to obtain DynamicSSLContext from the provided authentication context")
+    RuntimeException unableToObtainDynamicSSLContext();
+    // DO NOT FOLLOW ON FROM 1221
+
+    @Message(id = 51, value = "Registration of Jakarta Authorization failed.")
+    OperationFailedException unableToRegisterJakartaAuthorization(@Cause GeneralSecurityException cause);
+
     /*
      * Credential Store Section.
      */
@@ -405,6 +413,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = 927, value = "The secret key operation '%s' failed to complete due to '%s'.")
     OperationFailedException secretKeyOperationFailed(String operationName, String error, @Cause Throwable cause);
+
 
     /*
      * Identity Resource Messages - 1000
@@ -731,8 +740,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
             "use Elytron Tool command `filesystem-realm-encrypt`")
     OperationFailedException addSecretKeyToInitializedFilesystemRealm();
 
-    @Message(id = 1221, value = "Unable to obtain DynamicSSLContext from the provided authentication context")
-    RuntimeException unableToObtainDynamicSSLContext();
+    // Message ID 1221 Mistakenly used for DynamicSSLContext - Moved above.
+
+
     /*
      * Don't just add new errors to the end of the file, there may be an appropriate section above for the resource.
      *
