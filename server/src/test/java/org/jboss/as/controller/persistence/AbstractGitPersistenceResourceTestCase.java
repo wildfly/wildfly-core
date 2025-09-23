@@ -53,17 +53,6 @@ public class AbstractGitPersistenceResourceTestCase {
         return file;
     }
 
-    protected void delete(File file) {
-        if (file.isDirectory()) {
-            for (String name : file.list()) {
-                delete(new File(file, name));
-            }
-        }
-        if (!file.delete() && file.exists()) {
-            Assert.fail("Could not delete " + file);
-        }
-    }
-
     protected void assertFileContents(Path file, String expectedContents) throws Exception {
         Assert.assertTrue(file + " does not exist", Files.exists(file));
         StringBuilder sb = new StringBuilder();
