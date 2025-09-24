@@ -183,6 +183,9 @@
         <embedding.jar.jpms.exports>java.desktop/sun.awt java.naming/com.sun.jndi.ldap java.naming/com.sun.jndi.url.ldap java.naming/com.sun.jndi.url.ldaps jdk.naming.dns/com.sun.jndi.dns</embedding.jar.jpms.exports>
         <embedding.jar.jpms.opens>java.base/com.sun.net.ssl.internal.ssl java.base/java.lang java.base/java.lang.invoke java.base/java.lang.reflect java.base/java.io java.base/java.net java.base/java.security java.base/java.util java.base/java.util.concurrent java.management/javax.management java.naming/javax.naming</embedding.jar.jpms.opens>
 
+        <!-- By default, skips the assembly plugin used by dist/build modules. This property is configured by activating the jboss-release or release profiles -->
+        <release.assembly.skip>true</release.assembly.skip>
+
         <!--
             Dependency versions. Please keep alphabetical.
             you can automatically sort it by running
@@ -2543,5 +2546,14 @@
             </build>
         </profile>
 
+        <!-- Base jboss-release profile shared between build/dist and component-matrix-builder.
+             Here, it only enables the assembly plugin used by the build/dist modules. This profile is further extended
+             at component-matrix-builder module level to provide additional configuration targeting the deploy goal. -->
+        <profile>
+            <id>jboss-release</id>
+            <properties>
+                <release.assembly.skip>false</release.assembly.skip>
+            </properties>
+        </profile>
     </profiles>
 </project>

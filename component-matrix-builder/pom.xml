@@ -16,7 +16,6 @@
         <version>30.0.0.Beta3-SNAPSHOT</version>
     </parent>
 
-    <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-component-matrix-builder</artifactId>
 
     <packaging>pom</packaging>
@@ -59,7 +58,7 @@
         <!--
              This module attaches an artifact (bom-pom.xml) under a different
              Maven GA from the module's GA.
-             1) Disable the jboss-parent pom's jboss-release profule use of maven-gpg-plugin
+             1) Disable the jboss-parent pom's jboss-release profile use of maven-gpg-plugin
              for this one as it can't handle that; we need to use wildfly-maven-gpg-plugin
              to deal with this.
              2) Work around the nxrm3-maven-plugin's staging-deploy mojo's inability to directly
