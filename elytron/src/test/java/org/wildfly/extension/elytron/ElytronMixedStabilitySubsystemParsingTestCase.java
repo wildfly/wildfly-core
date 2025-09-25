@@ -8,7 +8,6 @@ import mockit.Mock;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.subsystem.test.AbstractSubsystemSchemaTest;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
-import org.jboss.as.version.Stability;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -17,6 +16,7 @@ import org.junit.runners.Parameterized.Parameters;
 import mockit.MockUp;
 
 import java.io.IOException;
+import java.net.URL;
 import java.security.Security;
 import java.util.EnumSet;
 
@@ -47,10 +47,13 @@ public class ElytronMixedStabilitySubsystemParsingTestCase extends AbstractSubsy
         new MockUp<>(classToMock) {
             @Mock
             private String readResource(String name) throws IOException {
-                String namespaceUri = ElytronSubsystemSchema.CURRENT.get(Stability.DEFAULT).getNamespace().getUri();
-                String version = namespaceUri.substring(namespaceUri.lastIndexOf(':') + 1);
-                if (!name.contains(version + ".xml")) {
-                    return ModelTestUtils.readResource(getClass(), name.replace("elytron", "legacy-elytron-subsystem"));
+                final URL url = getClass().getResource(name.replace("elytron", "legacy-elytron-subsystem"));
+                if (url != null) {
+                    if (!name.contains("19")) {
+                        return ModelTestUtils.readResource(getClass(), name.replace("elytron", "legacy-elytron-subsystem"));
+                    }
+                    else
+                        return ModelTestUtils.readResource(getClass(), name.replace("elytron", "elytron-subsystem"));
                 } else {
                     return ModelTestUtils.readResource(getClass(), name.replace("elytron", "elytron-subsystem"));
                 }
