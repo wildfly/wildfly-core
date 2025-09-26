@@ -31,9 +31,9 @@ public class HostMgmtInterfacesTestCase extends AbstractCoreModelTest {
     }
 
     @Test
-    public void testResourceConstraints_Community() throws Exception {
-        // Test for https://issues.redhat.com/browse/WFCORE-6830
-        testConfiguration("host_resource_constraints_community.xml", Stability.COMMUNITY);
+    public void testResourceConstraints() throws Exception {
+        // Test for https://issues.redhat.com/browse/WFCORE-7317
+        testConfiguration("host_resource_constraints.xml");
     }
 
     private void testConfiguration(String fileName) throws Exception {
