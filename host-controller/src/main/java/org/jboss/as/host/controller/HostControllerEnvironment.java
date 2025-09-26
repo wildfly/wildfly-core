@@ -26,6 +26,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.interfaces.InetAddressUtil;
 import org.jboss.as.server.ElapsedTime;
 import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationFile;
@@ -303,7 +304,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
             }
             if (qualifiedHostName == null) {
                 try {
-                    qualifiedHostName = NetworkUtils.canonize(InetAddress.getLocalHost().getHostName());
+                    qualifiedHostName = NetworkUtils.canonize(InetAddressUtil.getLocalHost().getCanonicalHostName());
                 } catch (UnknownHostException e) {
                     qualifiedHostName = null;
                 }
