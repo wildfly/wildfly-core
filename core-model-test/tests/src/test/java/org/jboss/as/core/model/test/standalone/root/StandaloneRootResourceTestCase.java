@@ -253,7 +253,7 @@ public class StandaloneRootResourceTestCase extends AbstractCoreModelTest {
     }
 
     private String getDefaultServerName() throws Exception {
-        String hostName = NetworkUtils.canonize(InetAddress.getLocalHost().getHostName().toLowerCase(Locale.ENGLISH));
+        String hostName = NetworkUtils.canonize(InetAddress.getLocalHost().getCanonicalHostName().toLowerCase(Locale.ENGLISH));
         int index = hostName.indexOf('.');
         return index == -1 ? hostName : hostName.substring(0, index);
     }
