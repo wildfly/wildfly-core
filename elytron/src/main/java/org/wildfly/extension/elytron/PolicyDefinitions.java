@@ -64,7 +64,6 @@ import org.jboss.msc.service.StopContext;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.authz.jacc.DelegatingPolicyContextHandler;
 import org.wildfly.security.authz.jacc.ElytronPolicyConfigurationFactory;
-import org.wildfly.security.authz.jacc.JaccDelegatingPolicy;
 import org.wildfly.security.authz.jacc.PolicyUtil;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -97,7 +96,7 @@ class PolicyDefinitions {
     static class JaccPolicyDefinition {
         static final SimpleAttributeDefinition NAME = RESOURCE_NAME; // TODO Remove this once PolicyParser is deleted
         static final SimpleAttributeDefinition POLICY_PROVIDER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.POLICY, ModelType.STRING, true)
-                .setDefaultValue(new ModelNode(JaccDelegatingPolicy.class.getName()))
+                .setDefaultValue(new ModelNode("org.wildfly.security.authz.jacc.JaccDelegatingPolicy"))
                 .setMinSize(1)
                 .build();
         static final SimpleAttributeDefinition CONFIGURATION_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CONFIGURATION_FACTORY, ModelType.STRING, true)
