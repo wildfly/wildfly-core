@@ -12,7 +12,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-testsuite</artifactId>
-        <version>30.0.0.Beta4-SNAPSHOT</version>
+        <version>30.0.0.Beta4</version>
     </parent>
 
     <artifactId>wildfly-core-testsuite-unstable-api-annotation</artifactId>
