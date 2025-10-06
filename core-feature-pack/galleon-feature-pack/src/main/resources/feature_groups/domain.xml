@@ -22,7 +22,8 @@
     <feature-group name="domain-host-excludes"/>
 
     <feature spec="profile">
-        <param name="profile" value="default"/>
+        <param name="__profile" value="default"/>
         <feature-group name="domain-profile"/>
     </feature>
+        
 </feature-group-spec>
