@@ -101,7 +101,7 @@ public abstract class AbstractConfigurationChangesTestCase {
         PathAddress allowedOrigins = PathAddress.pathAddress().append(host).append(ALLOWED_ORIGINS_ADDRESS);
         ModelNode setAllowedOrigins = Util.createEmptyOperation("list-add", allowedOrigins);
         setAllowedOrigins.get(ModelDescriptionConstants.NAME).set(ModelDescriptionConstants.ALLOWED_ORIGINS);
-        setAllowedOrigins.get(ModelDescriptionConstants.VALUE).set("http://www.wildfly.org");
+        setAllowedOrigins.get(ModelDescriptionConstants.VALUE).set("https://www.wildfly.org");
         client.execute(setAllowedOrigins); // 1 -- write to host core
         PathAddress auditLogAddress = PathAddress.pathAddress().append(host).append(AUDIT_LOG_ADDRESS);
         ModelNode disableLogBoot = Util.getWriteAttributeOperation(auditLogAddress, ModelDescriptionConstants.LOG_BOOT, false);

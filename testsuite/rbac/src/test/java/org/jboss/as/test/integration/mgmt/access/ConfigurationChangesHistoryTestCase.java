@@ -120,7 +120,7 @@ public class ConfigurationChangesHistoryTestCase extends AbstractManagementInter
         client.execute(configureSensitivity);
         ModelNode setAllowedOrigins = Util.createEmptyOperation("list-add", ALLOWED_ORIGINS_ADDRESS);
         setAllowedOrigins.get(NAME).set(ALLOWED_ORIGINS);
-        setAllowedOrigins.get(VALUE).set( "http://www.wildfly.org");
+        setAllowedOrigins.get(VALUE).set("https://www.wildfly.org");
         client.execute(setAllowedOrigins);
         ModelNode disableLogBoot = Util.getWriteAttributeOperation(AUDIT_LOG_ADDRESS, LOG_BOOT, false);
         client.execute(disableLogBoot);

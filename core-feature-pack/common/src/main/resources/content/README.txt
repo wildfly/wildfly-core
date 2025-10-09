@@ -8,7 +8,7 @@
                                 |___/
 
 Welcome to WildFly (formerly known as JBoss Application Server)
-http://www.wildfly.org/
+https://www.wildfly.org/
 
 Go to the above link for documentation, and additional downloads.
 
@@ -28,7 +28,7 @@ Key Features
 Release Notes
 -------------
 You can obtain the release notes here:
-http://wildfly.org/news/
+https://wildfly.org/news/
 
 Getting Started
 ---------------

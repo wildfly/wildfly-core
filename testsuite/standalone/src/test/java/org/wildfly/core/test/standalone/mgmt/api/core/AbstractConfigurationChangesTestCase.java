@@ -28,7 +28,7 @@ public abstract class AbstractConfigurationChangesTestCase extends ContainerReso
     public void createConfigurationChanges(ModelControllerClient client) throws Exception {
         ModelNode setAllowedOrigins = Util.createEmptyOperation("list-add", ALLOWED_ORIGINS_ADDRESS);
         setAllowedOrigins.get(ModelDescriptionConstants.NAME).set(ModelDescriptionConstants.ALLOWED_ORIGINS);
-        setAllowedOrigins.get(ModelDescriptionConstants.VALUE).set("http://www.wildfly.org");
+        setAllowedOrigins.get(ModelDescriptionConstants.VALUE).set("https://www.wildfly.org");
         client.execute(setAllowedOrigins);
         ModelNode setSystemProperty = Util.createAddOperation(SYSTEM_PROPERTY_ADDRESS);
         setSystemProperty.get(ModelDescriptionConstants.VALUE).set("changeConfig");
