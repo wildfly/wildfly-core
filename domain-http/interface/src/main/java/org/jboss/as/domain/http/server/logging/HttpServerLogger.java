@@ -91,4 +91,6 @@ public interface HttpServerLogger extends BasicLogger {
             " 'ManagementRealm' and this is already selected by default by the add-user tool.")
     String realmNotReadyForSecuredManagementHandler(String scriptFile);
 
+    @Message(id = 17, value = "The context name conflicts with an already registered context: %s")
+    IllegalStateException conflictingContextNames(String contextName);
 }

@@ -178,7 +178,7 @@ public class ManagementHttpServer {
         String context = fixPath(contextName);
         // Reject reserved contexts or duplicate extensions
         if (extensionHandlers.reservedContexts.contains(context) || !extensionHandlers.extensionContexts.add(context)) {
-            throw new IllegalStateException();
+            throw HttpServerLogger.ROOT_LOGGER.conflictingContextNames(context);
         }
         ResourceHandlerDefinition def = DomainUtil.createStaticContentHandler(resourceManager, context);
         HttpHandler readinessHandler = new RedirectReadinessHandler(extensionHandlers.readyFunction, def.getHandler(),
@@ -192,7 +192,7 @@ public class ManagementHttpServer {
         String context = fixPath(contextName);
         // Reject reserved contexts or duplicate extensions
         if (extensionHandlers.reservedContexts.contains(context) || !extensionHandlers.extensionContexts.add(context)) {
-            throw new IllegalStateException();
+            throw HttpServerLogger.ROOT_LOGGER.conflictingContextNames(context);
         }
         final Function<HttpServerExchange, Boolean> readyFunction;
         if (requireSecurity) {
@@ -210,7 +210,7 @@ public class ManagementHttpServer {
         String context = fixPath(contextName);
         // Reject reserved contexts or duplicate extensions
         if (extensionHandlers.reservedContexts.contains(context) || !extensionHandlers.extensionContexts.add(context)) {
-            throw new IllegalStateException();
+            throw HttpServerLogger.ROOT_LOGGER.conflictingContextNames(context);
         }
         HttpHandler remapHandler = new RemapHandler(remapper, extensionHandlers.managementHandler);
         extensionHandlers.extensionPathHandler.addPrefixPath(context, remapHandler);
@@ -221,7 +221,7 @@ public class ManagementHttpServer {
         String context = fixPath(contextName);
         // Reject reserved contexts or non-existent extensions
         if (extensionHandlers.reservedContexts.contains(context) || !extensionHandlers.extensionContexts.contains(context)) {
-            throw new IllegalStateException();
+            throw HttpServerLogger.ROOT_LOGGER.conflictingContextNames(context);
         }
         extensionHandlers.extensionContexts.remove(context);
         extensionHandlers.extensionPathHandler.removePrefixPath(context);
