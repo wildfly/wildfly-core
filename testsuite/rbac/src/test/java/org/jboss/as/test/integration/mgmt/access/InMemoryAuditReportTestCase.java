@@ -77,7 +77,7 @@ public class InMemoryAuditReportTestCase extends AbstractManagementInterfaceRbac
     @Before
     public void createConfigurationChanges() throws Exception {
         ManagementInterface client = getClientForUser(SUPERUSER_USER);
-        ModelNode setAllowedOrigins = Util.getWriteAttributeOperation(ALLOWED_ORIGINS_ADDRESS, ALLOWED_ORIGINS, "http://www.wildfly.org");
+        ModelNode setAllowedOrigins = Util.getWriteAttributeOperation(ALLOWED_ORIGINS_ADDRESS, ALLOWED_ORIGINS, "https://www.wildfly.org");
         client.execute(setAllowedOrigins);
         ModelNode setSystemProperty = Util.createAddOperation(SYSTEM_PROPERTY_ADDRESS);
         setSystemProperty.get(VALUE).set("changeConfig");
