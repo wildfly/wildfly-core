@@ -13,7 +13,7 @@ With plugin and configuration in place you can format java code using the defaul
 You also get an icon in the menu bar which allows you to toggle between Idea native and Eclipse formatting.
 
 It might be that you are running into the issue that the formatter [adds a single space in empty line comments]
-(http://stackoverflow.com/questions/7008340/eclipse-formatter-adds-space-in-empty-comment-lines). This will fail the built time
+(http://stackoverflow.com/questions/7008340/eclipse-formatter-adds-space-in-empty-comment-lines). This will fail the build time
 [checkstyle audit](http://maven.apache.org/plugins/maven-checkstyle-plugin/).
 The problem is caused by a [bug](https://bugs.eclipse.org/bugs/show_bug.cgi?id=360523) in the Eclipse formatter. The easiest
 workaround for now is to edit _as7formatter.xml_ and disable the comment formatting (getting the javadoc format right should

@@ -590,7 +590,7 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
 
         /**
          * Add a required capability at the resource level, using the resource registration address and the nameMappers
-         * to resolve the required and dependant capabilities.
+         * to resolve the required and dependent capabilities.
          * @param baseDependentName the dependent capability base name.
          * @param dependentDynamicNameMapper the dependent capability name mapper.
          * @param baseRequirementName the required capability base name.

@@ -13,7 +13,7 @@ User contributed init scripts
 
 In this folder you can find user contributed scripts & services for running WildFly as a service on various operating systems.
 
-This scripts are user contributions and are here as example and/or reference.  
+These scripts are user contributions and are here as examples and/or reference.  
 
 init.d
 ------

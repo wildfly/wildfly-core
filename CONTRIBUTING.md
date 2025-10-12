@@ -1,6 +1,6 @@
 # Contributing To WildFly Core
 
-Thanks for considering contributing to WildFly Core. This project provides the core runtime used by the WildFly application server and everyone is more than welcome to contribute to it. There are many ways to contribute, from writing tutorials or blog posts, improving the documentation, submitting bug reports, fixing an existing bug and implementing new features.
+Thank you for considering contributing to WildFly Core. This project provides the core runtime used by the WildFly application server and everyone is more than welcome to contribute to it. There are many ways to contribute, from writing tutorials or blog posts, improving the documentation, submitting bug reports, fixing an existing bug and implementing new features.
 
 We expect all contributors and users to follow our [Code of Conduct](https://github.com/wildfly/wildfly-core/blob/main/CODE_OF_CONDUCT.md) when communicating through project channels. These include, but are not limited to: chat, issues, code.
 
