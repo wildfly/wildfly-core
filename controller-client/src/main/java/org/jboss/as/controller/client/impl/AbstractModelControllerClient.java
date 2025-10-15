@@ -389,8 +389,7 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
             if(stream instanceof InputStreamEntry) {
                 entries.add((InputStreamEntry) stream);
             } else {
-                // TODO don't copy everything to memory... perhaps use InputStreamEntry.CachingStreamEntry
-                entries.add(new InputStreamEntry.InMemoryEntry(stream, autoClose));
+                entries.add(new InputStreamEntry.CachingInMemoryFallbackStreamEntry(stream, autoClose));
             }
         }
         return entries;

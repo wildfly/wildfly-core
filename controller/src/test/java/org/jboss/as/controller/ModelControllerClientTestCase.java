@@ -188,7 +188,7 @@ public class ModelControllerClientTestCase {
                         streamIndex++;
 
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        log.error("There was an error processing the Operation Streams", e);
                     }
                 }
                 size.set(streamIndex);
