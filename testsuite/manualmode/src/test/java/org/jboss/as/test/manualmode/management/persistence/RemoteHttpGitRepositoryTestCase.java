@@ -17,7 +17,6 @@ import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.util.FileUtils;
-import org.jboss.as.domain.http.server.OperatingSystemDetector;
 import org.jboss.as.repository.PathUtil;
 import org.junit.After;
 import org.junit.Assert;
@@ -91,12 +90,7 @@ public class RemoteHttpGitRepositoryTestCase extends AbstractGitRepositoryTestCa
             remoteRepository.close();
             remoteRepository = null;
         }
-        //TODO: Remove once WFCORE-7339 is merged
-        if (OperatingSystemDetector.INSTANCE.isWindows()) {
-            FileUtils.delete(remoteRoot.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
-        } else {
-            FileUtils.delete(remoteRoot.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
-        }
+        FileUtils.delete(remoteRoot.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
     }
 
     @Test
