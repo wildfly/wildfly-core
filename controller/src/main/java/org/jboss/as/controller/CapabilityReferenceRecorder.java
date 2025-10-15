@@ -239,7 +239,7 @@ public interface CapabilityReferenceRecorder extends Feature {
         }
 
         /**
-         * @param capability dependant capability, useful when resource provides more than single capability.
+         * @param capability dependent capability, useful when resource provides more than single capability.
          * @param baseRequirementName base requirement name
          * @param attributes list of additional attributes on same resource that are used to dynamically construct name
          * of capability

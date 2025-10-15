@@ -275,7 +275,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
         boolean timeoutOccured = false;
         while (doTry) {
             try {
-                // Can't be called locked, could create dead lock if close occured.
+                // Can't be called locked, could create dead lock if close occurred.
                 getOrCreateChannel().getConnection();
                 doTry = false;
             } catch (IOException e) {

@@ -27,7 +27,7 @@ public interface ConnectionInfo {
 
     /**
      * Returns the Controller Address. If a ModelControllerClient has been
-     * passed to the CommandContext and no connection occured, then the address
+     * passed to the CommandContext and no connection occurred, then the address
      * is unknown.
      *
      * @return The Controller Address if known. Otherwise returns null.

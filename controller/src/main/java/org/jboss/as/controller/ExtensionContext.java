@@ -115,7 +115,7 @@ public interface ExtensionContext extends FeatureRegistry {
      * @param requiresRuntimeResolution {@code true} if the kernel resolver should throw an expression resolution
      *                                  exception if the {@code supplier} returns {@code null}, the expression string
      *                                  to resolves matches the given {@code expressionPattern}, and the resolution
-     *                                  is occuring outside of {@link OperationContext.Stage#MODEL}.
+     *                                  is occurring outside of {@link OperationContext.Stage#MODEL}.
      */
     default void registerExpressionResolverExtension(Supplier<ExpressionResolverExtension> supplier, Pattern expressionPattern,
                                                      boolean requiresRuntimeResolution) {

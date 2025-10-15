@@ -386,9 +386,9 @@ public class OperationRequestCompleter implements CommandLineCompleter {
         // Call the value completer.
         // Completion is done with substituted line, so returned offset
         // is possibly wrong.
-        // Some completers are reseting the CommandContext referenced parsed
+        // Some completers are resetting the CommandContext referenced parsed
         // command. We need to keep a local reference to substitution
-        // to compute substitution index after completion occured.
+        // to compute substitution index after completion occurred.
         SubstitutedLine substitutions = parsedCmd.getSubstitutions();
 
         final String normalizedChunk = chunk == null ? "" : chunk;

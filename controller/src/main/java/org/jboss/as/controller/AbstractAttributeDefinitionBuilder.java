@@ -726,7 +726,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      *
      * @param referencedCapability the name of the dynamic capability the dynamic portion of whose name is
      *                             represented by the attribute's value
-     *  @param dependantAttributes attribute from same resource that will be used to derive multiple dynamic parts for the dependant capability
+     *  @param dependantAttributes attribute from same resource that will be used to derive multiple dynamic parts for the dependent capability
      * @return the builder
      * @see AttributeDefinition#addCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
      * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)

@@ -172,7 +172,7 @@ public class ConnectSyncUnitTestCase {
     /**
      * This is the key class in these tests. Its 'await' method gets invoked by connectSync
      * and while 'await' is executing it can set up the expected
-     * state that will be seen later by connectSync, beyond it's own response.
+     * state that will be seen later by connectSync, beyond its own response.
      */
     private static class TestTimeoutHandler implements ProtocolTimeoutHandler {
         private final FutureResult<Connection> futureResult;

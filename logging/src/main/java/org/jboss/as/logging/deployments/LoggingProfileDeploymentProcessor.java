@@ -58,7 +58,7 @@ public class LoggingProfileDeploymentProcessor extends AbstractLoggingDeployment
                         LoggingLogger.ROOT_LOGGER.tracef("Registering log context '%s' on '%s' for profile '%s'", logContext, subDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT), loggingProfile);
                         registerLogContext(subDeployment, subDeploymentModule, logContext);
                     }
-                    // Add the parents service to the sub-deployment if the sub-deployment did not define it's own log context
+                    // Add the parents service to the sub-deployment if the sub-deployment did not define its own log context
                     if (!subDeployment.hasAttachment(LoggingDeploymentResourceProcessor.LOGGING_CONFIGURATION_SERVICE_KEY)) {
                         subDeployment.putAttachment(LoggingDeploymentResourceProcessor.LOGGING_CONFIGURATION_SERVICE_KEY, loggingConfigurationService);
                     }
