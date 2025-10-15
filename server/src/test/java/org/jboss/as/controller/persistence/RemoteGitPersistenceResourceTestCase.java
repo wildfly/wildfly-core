@@ -18,7 +18,6 @@ import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.util.FileUtils;
 import org.jboss.as.controller.persistence.ConfigurationPersister.SnapshotInfo;
-import org.jboss.as.domain.http.server.OperatingSystemDetector;
 import org.jboss.as.server.controller.git.GitRepository;
 import org.jboss.as.server.controller.git.GitRepositoryConfiguration;
 import org.junit.After;
@@ -67,18 +66,8 @@ public class RemoteGitPersistenceResourceTestCase extends AbstractGitPersistence
             repository.close();
             repository = null;
         }
-
-        //TODO: Remove once WFCORE-7339 is merged
-        if (OperatingSystemDetector.INSTANCE.isWindows()) {
-            FileUtils.delete(remoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
-        } else {
-            FileUtils.delete(remoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
-        }
-        if (OperatingSystemDetector.INSTANCE.isWindows()) {
-            FileUtils.delete(root.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
-        } else {
-            FileUtils.delete(root.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
-        }
+        FileUtils.delete(remoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
+        FileUtils.delete(root.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
     }
 
     @Test

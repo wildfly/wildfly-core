@@ -31,7 +31,6 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.util.FileUtils;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
-import org.jboss.as.domain.http.server.OperatingSystemDetector;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
@@ -84,12 +83,7 @@ public class AbstractGitRepositoryTestCase {
             emptyRemoteRepository.close();
             emptyRemoteRepository = null;
         }
-        //TODO: Remove once WFCORE-7339 is merged
-        if(OperatingSystemDetector.INSTANCE.isWindows()) {
-            FileUtils.delete(emptyRemoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
-        } else {
-            FileUtils.delete(emptyRemoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
-        }
+        FileUtils.delete(emptyRemoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
     }
 
     protected Repository createRepository() throws IOException {
@@ -108,20 +102,10 @@ public class AbstractGitRepositoryTestCase {
             repository = null;
         }
         if (Files.exists(getDotGitDir())) {
-            //TODO: Remove once WFCORE-7339 is merged
-            if (OperatingSystemDetector.INSTANCE.isWindows()) {
-                FileUtils.delete(getDotGitDir().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
-            } else {
-                FileUtils.delete(getDotGitDir().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
-            }
+            FileUtils.delete(getDotGitDir().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
         }
         if (Files.exists(getDotGitIgnore())) {
-            //TODO: Remove once WFCORE-7339 is merged
-            if (OperatingSystemDetector.INSTANCE.isWindows()) {
-                FileUtils.delete(getDotGitIgnore().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
-            } else {
-                FileUtils.delete(getDotGitIgnore().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
-            }
+            FileUtils.delete(getDotGitIgnore().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
         }
     }
 
