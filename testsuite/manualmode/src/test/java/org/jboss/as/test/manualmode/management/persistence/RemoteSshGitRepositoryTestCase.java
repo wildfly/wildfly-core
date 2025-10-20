@@ -40,7 +40,6 @@ import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.util.FileUtils;
-import org.jboss.as.domain.http.server.OperatingSystemDetector;
 import org.jboss.as.repository.PathUtil;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -251,12 +250,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
             sshServer.stop();
             sshServer = null;
         }
-        //TODO: Remove once WFCORE-7339 is merged
-        if (OperatingSystemDetector.INSTANCE.isWindows()) {
-            FileUtils.delete(KNOWN_HOSTS, FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
-        } else {
-            FileUtils.delete(KNOWN_HOSTS, FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
-        }
+        FileUtils.delete(KNOWN_HOSTS, FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
         closeRepository();
         closeEmptyRemoteRepository();
         closeRemoteRepository();
@@ -543,12 +537,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
             remoteRepository.close();
             remoteRepository = null;
         }
-        //TODO: Remove once WFCORE-7339 is merged
-        if (OperatingSystemDetector.INSTANCE.isWindows()) {
-            FileUtils.delete(remoteRoot.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING | FileUtils.IGNORE_ERRORS);
-        } else {
-            FileUtils.delete(remoteRoot.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
-        }
+        FileUtils.delete(remoteRoot.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY | FileUtils.SKIP_MISSING);
     }
 
     private static void cleanCredentialStores() {
