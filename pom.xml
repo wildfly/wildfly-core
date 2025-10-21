@@ -162,7 +162,7 @@
         <version.org.wildfly.galleon-plugins>7.4.0.Final</version.org.wildfly.galleon-plugins>
         <version.org.eclipse.m2e.lifecycle-mapping>1.0.0</version.org.eclipse.m2e.lifecycle-mapping>
         <!-- wildfly-maven-plugin-->
-        <version.wildfly.plugin>5.1.4.Final</version.wildfly.plugin>
+        <version.wildfly.plugin>5.1.5.Final</version.wildfly.plugin>
         <!-- plugins related to wildfly build and tooling -->
         <version.org.wildfly.bom-builder-plugin>2.0.10.Final</version.org.wildfly.bom-builder-plugin>
         <version.org.wildfly.wildfly-maven-gpg-plugin>3.2.8.SP1</version.org.wildfly.wildfly-maven-gpg-plugin>
