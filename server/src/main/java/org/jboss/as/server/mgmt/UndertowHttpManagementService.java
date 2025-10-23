@@ -19,6 +19,7 @@ import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.management.BaseHttpInterfaceAddStepHandler;
 import org.jboss.as.controller.management.HttpInterfaceCommonPolicy.Header;
 import org.jboss.as.domain.http.server.ConsoleAvailability;
 import org.jboss.as.domain.http.server.ConsoleMode;
@@ -360,6 +361,8 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
             }
         }
 
+        final Long uploadLimit = Long.getLong(BaseHttpInterfaceAddStepHandler.DEFAULT_UPLOAD_LIMIT_PROPERTY, BaseHttpInterfaceAddStepHandler.DEFAULT_UPLOAD_LIMIT);
+
         try {
             ManagementHttpServer.Builder serverManagementBuilder = ManagementHttpServer.builder()
                     .setBindAddress(bindAddress)
@@ -379,6 +382,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     .setConnectionHighWater(connectionHighWater)
                     .setConnectionLowWater(connectionLowWater)
                     .setNoRequestTimeout(noRequestTimeout)
+                    .setUploadLimit(uploadLimit)
                     ;
 
             if (virtualSecurityDomainSupplier != null && virtualMechanismFactorySupplier != null) {

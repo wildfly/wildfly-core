@@ -38,6 +38,10 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
     private static final String CONNECTION_LOW_WATER_PROPERTY = PROPERTY_BASE + "connection-low-water";
     private static final String NO_REQUEST_TIMEOUT_PROPERTY = PROPERTY_BASE + "no-request-timeout";
 
+    // 1GB default upload limit
+    public static final long DEFAULT_UPLOAD_LIMIT = 1073741824L;
+    public static final String DEFAULT_UPLOAD_LIMIT_PROPERTY = PROPERTY_BASE + "upload.limit";
+
     protected static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.http-authentication-factory";
     protected static final String SASL_AUTHENTICATION_FACTORY_CAPABILITY = "org.wildfly.security.sasl-authentication-factory";
     protected static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";
