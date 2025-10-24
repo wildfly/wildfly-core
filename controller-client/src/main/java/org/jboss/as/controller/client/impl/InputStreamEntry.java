@@ -6,6 +6,7 @@
 package org.jboss.as.controller.client.impl;
 
 import java.io.BufferedInputStream;
+
 import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.protocol.StreamUtils;
 
@@ -13,12 +14,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.DataOutput;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 
 /**
  * @author Emanuel Muckenhuber
@@ -29,7 +31,7 @@ public interface InputStreamEntry extends Closeable {
      * Initialize the input stream entry.
      *
      * @return the size of the underlying stream
-     * @throws java.io.IOException
+     * @throws java.io.IOException if there is an error initializing the stream entry
      */
     int initialize() throws IOException;
 
@@ -62,7 +64,7 @@ public interface InputStreamEntry extends Closeable {
             try {
                 StreamUtils.copyStream(original, os);
             } finally {
-                if(autoClose) {
+                if (autoClose) {
                     StreamUtils.safeClose(original);
                 }
             }
@@ -92,8 +94,7 @@ public interface InputStreamEntry extends Closeable {
 
         private final boolean autoClose;
         private final InputStream original;
-
-        private File temp;
+        private Path temp;
 
         public CachingStreamEntry(final InputStream original, final boolean autoClose) {
             this.original = original;
@@ -101,23 +102,28 @@ public interface InputStreamEntry extends Closeable {
         }
 
         @Override
-        public synchronized int initialize() throws IOException {
-            if(temp == null) {
-                temp = File.createTempFile("client", "stream");
+        public synchronized int initialize() throws IOException, CannotInitializeCacheException {
+            if (temp == null) {
                 try {
-                    return (int) Files.copy(original, temp.toPath());
+                    temp = Files.createTempFile("client", "stream");
+                } catch (IOException e) {
+                    throw new CannotInitializeCacheException(e);
+                }
+
+                try {
+                    return (int) Files.copy(original, temp, StandardCopyOption.REPLACE_EXISTING);
                 } finally {
-                    if(autoClose) {
+                    if (autoClose) {
                         StreamUtils.safeClose(original);
                     }
                 }
             }
-            return (int) temp.length();
+            return (int) temp.toFile().length();
         }
 
         @Override
         public synchronized void copyStream(final DataOutput output) throws IOException {
-            final FileInputStream is = new FileInputStream(temp);
+            InputStream is = Files.newInputStream(temp, StandardOpenOption.DELETE_ON_CLOSE);
             try {
                 StreamUtils.copyStream(is, output);
             } finally {
@@ -127,11 +133,55 @@ public interface InputStreamEntry extends Closeable {
 
         @Override
         public synchronized void close() throws IOException {
-            if (!temp.delete()) {
-                ControllerClientLogger.ROOT_LOGGER.cannotDeleteTempFile(temp.getName());
-                temp.deleteOnExit();
+            if (temp != null && temp.toFile().exists() && !temp.toFile().delete()) {
+                ControllerClientLogger.ROOT_LOGGER.cannotDeleteTempFile(temp.toString());
+                temp.toFile().deleteOnExit();
             }
             temp = null;
+        }
+    }
+
+    class CannotInitializeCacheException extends RuntimeException {
+        public CannotInitializeCacheException(Throwable cause) {
+            super(cause);
+        }
+    }
+
+    /**
+     * Cache the data on disk with a fallback copying the data to the memory if the disk cache file cannot be created.
+     */
+    class CachingInMemoryFallbackStreamEntry implements InputStreamEntry {
+        private final boolean autoClose;
+        private final InputStream original;
+
+        private InputStreamEntry streamEntry;
+
+        public CachingInMemoryFallbackStreamEntry(final InputStream original, final boolean autoClose) {
+            this.original = original;
+            this.autoClose = autoClose;
+        }
+
+        @Override
+        public synchronized int initialize() throws IOException {
+            if (streamEntry == null) {
+                try {
+                    streamEntry = new CachingStreamEntry(original, autoClose);
+                } catch (CannotInitializeCacheException e) {
+                    streamEntry = new InMemoryEntry(original, autoClose);
+                }
+            }
+
+            return streamEntry.initialize();
+        }
+
+        @Override
+        public void copyStream(final DataOutput output) throws IOException {
+            streamEntry.copyStream(output);
+        }
+
+        @Override
+        public void close() throws IOException {
+            streamEntry.close();
         }
     }
 
