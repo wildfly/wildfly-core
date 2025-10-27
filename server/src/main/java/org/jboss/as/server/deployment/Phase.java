@@ -508,6 +508,8 @@ public enum Phase {
     public static final int POST_MODULE_RESOURCE_DEF_XML_JMS_DESTINATION            = 0x1703;
     public static final int POST_MODULE_RESOURCE_DEF_XML_JMS_CONNECTION_FACTORY     = 0x1704;
     public static final int POST_MODULE_RESOURCE_DEF_XML_MAIL_SESSION               = 0x1705;
+    public static final int POST_MODULE_CONCURRO_CDI_BEANS_BINDING      = 0x1710;
+    public static final int POST_MODULE_CONCURRO_CDI_BEANS_DESCRIPTOR   = 0x1711;
     public static final int POST_MODULE_WS_REF_DESCRIPTOR               = 0x1800;
     public static final int POST_MODULE_WS_REF_ANNOTATION               = 0x1801;
     public static final int POST_MODULE_WS_VERIFICATION                 = 0x1880;
