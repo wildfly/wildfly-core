@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.SubsystemResourceRegistration;
@@ -77,8 +78,19 @@ class IOSubsystemResourceDefinitionRegistrar implements SubsystemResourceDefinit
         ModelNode workers = model.get(WorkerResourceDefinition.PATH.getKey());
         WorkerAdd.checkWorkerConfiguration(context, workers);
 
+        CapabilityServiceInstaller.Builder<AtomicInteger, Integer> maxThreadsBuilder =
+                CapabilityServiceInstaller.builder(MAX_THREADS_CAPABILITY, AtomicInteger::intValue, Functions.constantSupplier(this.maxThreads));
+        if (workers.isDefined()) {
+            // Give each known worker a chance to record their threads before starting
+            // the service that reports the current total maxThreads.
+            for (String workerName : workers.keys()) {
+                PathAddress workerPath = context.getCurrentAddress().append(WorkerResourceDefinition.PATH.getKey(), workerName);
+                maxThreadsBuilder.requires(ServiceDependency.on(WorkerResourceDefinition.CAPABILITY.getCapabilityServiceName(workerPath)));
+            }
+        }
+
         List<ResourceServiceInstaller> installers = new ArrayList<>(2);
-        installers.add(CapabilityServiceInstaller.builder(MAX_THREADS_CAPABILITY, AtomicInteger::intValue, Functions.constantSupplier(this.maxThreads)).build());
+        installers.add(maxThreadsBuilder.build());
 
         ServiceDependency<XnioWorker> defaultWorker = DEFAULT_WORKER.resolve(context, model);
         if (defaultWorker.isPresent()) {
