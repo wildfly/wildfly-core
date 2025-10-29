@@ -19,6 +19,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Comparator;
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -48,6 +49,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 
 /**
  *
@@ -210,36 +212,45 @@ public class YamlConfigurationExtensionTest {
         List<ParsedBootOp> postExtensionOps = new ArrayList<>();
         ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
+        postExtensionOps.sort(Comparator.comparing(o -> o.address.toString()));
+
         assertFalse(postExtensionOps.isEmpty());
         assertEquals(7, postExtensionOps.size());
+
         assertEquals(ADD, postExtensionOps.get(0).operationName);
-        assertEquals(PathAddress.pathAddress("property", "test-property"), postExtensionOps.get(0).address);
-        assertTrue(postExtensionOps.get(0).operation.hasDefined("props"));
-        ModelNode properties = postExtensionOps.get(0).operation.get("props").asObject();
-        assertEquals("0", properties.get("ip_ttl").asString());
-        assertEquals("5", properties.get("tcp_ttl").asString());
+        assertEquals(PathAddress.pathAddress("basic", "test"), postExtensionOps.get(0).address);
+        assertFalse(postExtensionOps.get(0).operation.hasDefined("value"));
+
         assertEquals(ADD, postExtensionOps.get(1).operationName);
-        assertEquals(PathAddress.pathAddress("basic", "test"), postExtensionOps.get(1).address);
-        assertFalse(postExtensionOps.get(1).operation.hasDefined("value"));
-        assertEquals(ADD, postExtensionOps.get(2).operationName);
-        assertEquals(PathAddress.pathAddress("classpath", "runtime"), postExtensionOps.get(2).address);
-        ModelNode objectMap = postExtensionOps.get(2).operation.get("complex-map").asObject();
+        assertEquals(PathAddress.pathAddress("classpath", "runtime"), postExtensionOps.get(1).address);
+        ModelNode objectMap = postExtensionOps.get(1).operation.get("complex-map").asObject();
         assertEquals("org.widlfly.test.Main", objectMap.get("main-class").asObject().get("class-name").asString());
         assertEquals("org.wildfly.test:main", objectMap.get("main-class").asObject().get("module").asString());
         assertEquals("org.widlfly.test.MyTest", objectMap.get("test-class").asObject().get("class-name").asString());
         assertEquals("org.wildfly.test:main", objectMap.get("test-class").asObject().get("module").asString());
+
+        assertEquals(ADD, postExtensionOps.get(2).operationName);
+        assertEquals(PathAddress.pathAddress("property", "test-property"), postExtensionOps.get(2).address);
+        assertTrue(postExtensionOps.get(2).operation.hasDefined("props"));
+        ModelNode properties = postExtensionOps.get(2).operation.get("props").asObject();
+        assertEquals("0", properties.get("ip_ttl").asString());
+        assertEquals("5", properties.get("tcp_ttl").asString());
+
         assertEquals(ADD, postExtensionOps.get(3).operationName);
         assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(3).address);
         assertTrue(postExtensionOps.get(3).operation.hasDefined("value"));
         assertEquals("foo", postExtensionOps.get(3).operation.get("value").asString());
+
         assertEquals(ADD, postExtensionOps.get(4).operationName);
         assertEquals(PathAddress.pathAddress("system-property", "bbb"), postExtensionOps.get(4).address);
         assertTrue(postExtensionOps.get(4).operation.hasDefined("value"));
         assertEquals("bar", postExtensionOps.get(4).operation.get("value").asString());
+
         assertEquals(ADD, postExtensionOps.get(5).operationName);
         assertEquals(PathAddress.pathAddress("system-property", "ccc"), postExtensionOps.get(5).address);
         assertTrue(postExtensionOps.get(5).operation.hasDefined("value"));
         assertEquals("test", postExtensionOps.get(5).operation.get("value").asString());
+ 
         assertEquals(ADD, postExtensionOps.get(6).operationName);
         assertEquals(PathAddress.pathAddress("system-property", "value"), postExtensionOps.get(6).address);
         assertTrue(postExtensionOps.get(6).operation.hasDefined("value"));
@@ -390,18 +401,28 @@ public class YamlConfigurationExtensionTest {
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
         assertEquals(11, postExtensionOps.size());
-        assertEquals(ADD, postExtensionOps.get(0).operationName);
-        assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(0).address);
-        assertFalse(postExtensionOps.get(0).operation.hasDefined("value"));
+
+        postExtensionOps.sort(Comparator.comparing(o -> o.address.toString()));
+
         assertEquals(ADD, postExtensionOps.get(1).operationName);
-        assertEquals(PathAddress.pathAddress("system-property", "bbb"), postExtensionOps.get(1).address);
+        assertEquals(PathAddress.pathAddress("classpath", "runtime"), postExtensionOps.get(1).address);
         assertFalse(postExtensionOps.get(1).operation.hasDefined("value"));
-        assertEquals(ADD, postExtensionOps.get(2).operationName);
-        assertEquals(PathAddress.pathAddress("property", "test-property"), postExtensionOps.get(2).address);
-        assertFalse(postExtensionOps.get(2).operation.hasDefined("value"));
+
+        assertEquals(WRITE_ATTRIBUTE_OPERATION, postExtensionOps.get(2).operationName);
+        assertEquals(PathAddress.pathAddress("classpath", "runtime"), postExtensionOps.get(2).address);
+        assertTrue(postExtensionOps.get(2).operation.hasDefined("value"));
+        assertEquals("complex-map", postExtensionOps.get(2).operation.get("name").asString());
+        assertTrue(postExtensionOps.get(2).operation.hasDefined("value"));
+        ModelNode objectMap = postExtensionOps.get(2).operation.get("value").asObject();
+        assertEquals("org.widlfly.test.Main", objectMap.get("main-class").get("class-name").asString());
+        assertEquals("org.wildfly.test:main", objectMap.get("main-class").get("module").asString());
+        assertEquals("org.widlfly.test.MyTest", objectMap.get("test-class").get("class-name").asString());
+        assertEquals("org.wildfly.test:main", objectMap.get("test-class").get("module").asString());
+
         assertEquals(ADD, postExtensionOps.get(3).operationName);
-        assertEquals(PathAddress.pathAddress("classpath", "runtime"), postExtensionOps.get(3).address);
+        assertEquals(PathAddress.pathAddress("property", "test-property"), postExtensionOps.get(3).address);
         assertFalse(postExtensionOps.get(3).operation.hasDefined("value"));
+
         assertEquals(WRITE_ATTRIBUTE_OPERATION, postExtensionOps.get(4).operationName);
         assertEquals(PathAddress.pathAddress("property", "test-property"), postExtensionOps.get(4).address);
         assertTrue(postExtensionOps.get(4).operation.hasDefined("name"));
@@ -410,23 +431,20 @@ public class YamlConfigurationExtensionTest {
         ModelNode properties = postExtensionOps.get(4).operation.get("value").asObject();
         assertEquals("0", properties.get("ip_ttl").asString());
         assertEquals("5", properties.get("tcp_ttl").asString());
+
         assertEquals(ADD, postExtensionOps.get(5).operationName);
-        assertEquals(PathAddress.pathAddress("basic", "test"), postExtensionOps.get(5).address);
+        assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(5).address);
         assertFalse(postExtensionOps.get(5).operation.hasDefined("value"));
+
         assertEquals(WRITE_ATTRIBUTE_OPERATION, postExtensionOps.get(6).operationName);
-        assertEquals(PathAddress.pathAddress("classpath", "runtime"), postExtensionOps.get(6).address);
         assertTrue(postExtensionOps.get(6).operation.hasDefined("value"));
-        assertEquals("complex-map", postExtensionOps.get(6).operation.get("name").asString());
-        assertTrue(postExtensionOps.get(6).operation.hasDefined("value"));
-        ModelNode objectMap = postExtensionOps.get(6).operation.get("value").asObject();
-        assertEquals("org.widlfly.test.Main", objectMap.get("main-class").get("class-name").asString());
-        assertEquals("org.wildfly.test:main", objectMap.get("main-class").get("module").asString());
-        assertEquals("org.widlfly.test.MyTest", objectMap.get("test-class").get("class-name").asString());
-        assertEquals("org.wildfly.test:main", objectMap.get("test-class").get("module").asString());
-        assertEquals(WRITE_ATTRIBUTE_OPERATION, postExtensionOps.get(7).operationName);
-        assertTrue(postExtensionOps.get(7).operation.hasDefined("value"));
-        assertEquals("foo", postExtensionOps.get(7).operation.get("value").asString());
-        assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(7).address);
+        assertEquals("foo", postExtensionOps.get(6).operation.get("value").asString());
+        assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(6).address);
+
+        assertEquals(ADD, postExtensionOps.get(7).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "bbb"), postExtensionOps.get(7).address);
+        assertFalse(postExtensionOps.get(7).operation.hasDefined("value"));
+
         assertEquals(WRITE_ATTRIBUTE_OPERATION, postExtensionOps.get(8).operationName);
         assertTrue(postExtensionOps.get(8).operation.hasDefined("value"));
         assertEquals("bar", postExtensionOps.get(8).operation.get("value").asString());
@@ -434,10 +452,12 @@ public class YamlConfigurationExtensionTest {
         assertEquals(WRITE_ATTRIBUTE_OPERATION, postExtensionOps.get(8).operationName);
         assertTrue(postExtensionOps.get(8).operation.hasDefined("value"));
         assertEquals("bar", postExtensionOps.get(8).operation.get("value").asString());
+
         assertEquals(ADD, postExtensionOps.get(9).operationName);
         assertEquals(PathAddress.pathAddress("system-property", "ccc"), postExtensionOps.get(9).address);
         assertTrue(postExtensionOps.get(9).operation.hasDefined("value"));
         assertEquals("test", postExtensionOps.get(9).operation.get("value").asString());
+
         assertEquals(ADD, postExtensionOps.get(10).operationName);
         assertEquals(PathAddress.pathAddress("system-property", "value"), postExtensionOps.get(10).address);
         assertTrue(postExtensionOps.get(10).operation.hasDefined("value"));
