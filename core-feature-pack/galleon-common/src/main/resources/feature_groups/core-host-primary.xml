@@ -6,7 +6,7 @@
 
 <feature-group-spec name="core-host-primary" xmlns="urn:jboss:galleon:feature-group:1.0">
     <feature spec="host">
-        <param name="host" value="primary"/>
+        <param name="__host" value="primary"/>
         <param name="persist-name" value="true"/>
 
         <feature-group name="host-audit"/>
