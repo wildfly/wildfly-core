@@ -13,7 +13,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-testsuite</artifactId>
-        <version>31.0.0.Beta1-SNAPSHOT</version>
+        <version>31.0.0.Beta1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
