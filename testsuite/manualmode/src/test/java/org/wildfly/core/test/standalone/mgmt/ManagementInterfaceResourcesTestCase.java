@@ -53,7 +53,6 @@ public class ManagementInterfaceResourcesTestCase {
     /*
      * Command Templates
      */
-    private static final String HTTP_INTERFACE_READ_ATTRIBUTE = "/core-service=management/management-interface=http-interface:read-attribute(name=%s)";
     private static final String HTTP_INTERFACE_WRITE_ATTRIBUTE = "/core-service=management/management-interface=http-interface:write-attribute(name=%s, value=%d)";
     private static final String HTTP_INTERFACE_UNDEFINE_ATTRIBUTE = "/core-service=management/management-interface=http-interface:undefine-attribute(name=%s)";
     private static final String SYSTEM_PROPERTY_ADD = "/system-property=%s:add(value=%d)";
@@ -159,13 +158,6 @@ public class ManagementInterfaceResourcesTestCase {
                 cli.sendLine(String.format(SYSTEM_PROPERTY_ADD, CONNECTION_LOW_WATER_PROPERTY, 3));
                 cli.sendLine(String.format(SYSTEM_PROPERTY_ADD, NO_REQUEST_TIMEOUT_PROPERTY, noRequestTimeout));
             } else {
-                cli.sendLine(String.format(HTTP_INTERFACE_READ_ATTRIBUTE, BACKLOG_ATTRIBUTE), true);
-                String response = cli.readOutput();
-                if (response.contains("WFLYCTL0201")) {
-                    LOG.info("Attribute \"backlog\" not found - assuming the attributes are not available at the server's stability level" );
-                    controller.stop();
-                    return;
-                }
                 cli.sendLine(String.format(HTTP_INTERFACE_WRITE_ATTRIBUTE, BACKLOG_ATTRIBUTE, 2));
                 cli.sendLine(String.format(HTTP_INTERFACE_WRITE_ATTRIBUTE, CONNECTION_HIGH_WATER_ATTRIBUTE, 6));
                 cli.sendLine(String.format(HTTP_INTERFACE_WRITE_ATTRIBUTE, CONNECTION_LOW_WATER_ATTRIBUTE, 3));
