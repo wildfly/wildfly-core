@@ -5,6 +5,7 @@
 package org.jboss.as.cli.impl.aesh;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import org.aesh.command.CommandRuntime;
 import org.aesh.command.container.CommandContainer;
 import org.aesh.command.shell.Shell;
@@ -90,6 +91,11 @@ public class CLICommandInvocationBuilder implements
         @Override
         public Key read(Prompt prompt) throws InterruptedException {
             //TODO
+            return null;
+        }
+
+        @Override
+        public Key read(long timeout, TimeUnit unit) throws InterruptedException {
             return null;
         }
 

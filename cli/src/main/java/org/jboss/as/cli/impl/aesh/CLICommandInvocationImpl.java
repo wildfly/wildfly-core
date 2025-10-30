@@ -5,6 +5,7 @@
 package org.jboss.as.cli.impl.aesh;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.aesh.command.Executor;
@@ -22,6 +23,7 @@ import org.aesh.command.invocation.CommandInvocation;
 import org.aesh.command.invocation.CommandInvocationConfiguration;
 import org.aesh.command.parser.CommandLineParserException;
 import org.aesh.readline.completion.Completion;
+import org.aesh.readline.terminal.Key;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.impl.ReadlineConsole;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
@@ -99,6 +101,11 @@ class CLICommandInvocationImpl implements CLICommandInvocation {
     @Override
     public KeyAction input() throws InterruptedException {
         return shell.read();
+    }
+
+    @Override
+    public Key input(long timeout, TimeUnit unit) throws InterruptedException {
+        return shell.read(timeout, unit);
     }
 
     @Override
