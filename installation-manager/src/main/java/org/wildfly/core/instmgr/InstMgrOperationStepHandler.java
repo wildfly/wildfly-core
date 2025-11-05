@@ -78,9 +78,17 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
                 if (!current.normalize().startsWith(targetDir.normalize())) {
                     throw InstMgrLogger.ROOT_LOGGER.zipEntryOutsideOfTarget(current.toRealPath().toString(), targetDir.toRealPath().toString());
                 }
+
                 if (entry.isDirectory()) {
+                    // if the entry is within the file we just create the folder structure and continue
                     current.toFile().mkdirs();
                 } else {
+                    // just in case the folders were not within the zip file we do check the folder
+                    // structure exists and we create it
+                    Path parentFolder = current.getParent();
+                    if (!Files.exists(parentFolder)) {
+                        parentFolder.toFile().mkdirs();
+                    }
                     Files.copy(zis, current, StandardCopyOption.REPLACE_EXISTING);
                 }
                 entry = zis.getNextEntry();
