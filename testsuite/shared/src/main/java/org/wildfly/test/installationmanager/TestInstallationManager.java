@@ -22,10 +22,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.wildfly.installationmanager.ArtifactChange;
+import org.wildfly.installationmanager.CandidateType;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.ChannelChange;
+import org.wildfly.installationmanager.FileConflict;
 import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.InstallationChanges;
+import org.wildfly.installationmanager.InstallationUpdates;
 import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.OperationNotAvailableException;
@@ -42,8 +45,10 @@ public class TestInstallationManager implements InstallationManager {
     public static List<Channel> lstChannels;
     public static List<ManifestVersion> installedVersions;
     public static List<Repository> findUpdatesRepositories;
+    public static List<ManifestVersion> findUpdatesVersions;
     public static List<ArtifactChange> findUpdatesChanges;
     public static List<Repository> prepareUpdatesRepositories;
+    public static List<ManifestVersion> prepareUpdatesVersions;
     public static Path prepareUpdatesTargetDir;
 
     public static List<Repository> prepareRevertRepositories;
@@ -119,10 +124,10 @@ public class TestInstallationManager implements InstallationManager {
 
             // History sample data
             history = new HashMap<>();
-            history.put("update", new HistoryResult("update", Instant.now(), "update", "update description"));
-            history.put("install", new HistoryResult("install", Instant.now(), "install", "install description"));
-            history.put("rollback", new HistoryResult("rollback", Instant.now(), "rollback", "rollback description"));
-            history.put("config_change", new HistoryResult("config_change", Instant.now(), "config_change", "config_change description"));
+            history.put("update", new HistoryResult("update", Instant.now(), "update", "update description", List.of()));
+            history.put("install", new HistoryResult("install", Instant.now(), "install", "install description", List.of()));
+            history.put("rollback", new HistoryResult("rollback", Instant.now(), "rollback", "rollback description", List.of()));
+            history.put("config_change", new HistoryResult("config_change", Instant.now(), "config_change", "config_change description", List.of()));
 
             // List Updates sample Data
 
@@ -132,6 +137,8 @@ public class TestInstallationManager implements InstallationManager {
             findUpdatesChanges.add(new ArtifactChange("1.0.0.Final", "1.0.1.Final", "org.findupdates:findupdates.updated", ArtifactChange.Status.UPDATED));
 
             findUpdatesRepositories = new ArrayList<>();
+
+            findUpdatesVersions = new ArrayList<>();
 
             noUpdatesFound = false;
 
@@ -196,12 +203,24 @@ public class TestInstallationManager implements InstallationManager {
     }
 
     @Override
+    public boolean prepareUpdate(Path candidatePath, List<Repository> repositories, List<ManifestVersion> manifestVersions) throws Exception {
+        prepareUpdatesVersions = new ArrayList<>(manifestVersions);
+        return prepareUpdate(candidatePath, repositories);
+    }
+
+    @Override
     public List<ArtifactChange> findUpdates(List<Repository> repositories) throws Exception {
         if (noUpdatesFound) {
             return new ArrayList<>();
         }
         findUpdatesRepositories = new ArrayList<>(repositories);
         return findUpdatesChanges;
+    }
+
+    @Override
+    public InstallationUpdates findUpdates(List<Repository> repositories, List<ManifestVersion> manifestVersions) throws Exception {
+        findUpdatesVersions = new ArrayList<>(manifestVersions);
+        return new InstallationUpdates(findUpdates(repositories), new ArrayList<>());
     }
 
     @Override
@@ -267,8 +286,23 @@ public class TestInstallationManager implements InstallationManager {
     }
 
     @Override
+    public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
+        return generateApplyUpdateCommand(scriptHome, candidatePath, shell) + noConflictsOnly;
+    }
+
+    @Override
+    public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
+        return generateApplyRevertCommand( scriptHome, candidatePath, shell) + noConflictsOnly;
+    }
+
+    @Override
     public Collection<ManifestVersion> getInstalledVersions() throws Exception {
         return installedVersions;
+    }
+
+    @Override
+    public Collection<FileConflict> verifyCandidate(Path candidatePath, CandidateType candidateType) throws Exception {
+        return List.of();
     }
 
     public static void zipDir(Path inputFile, Path target) throws IOException {
