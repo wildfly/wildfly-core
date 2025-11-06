@@ -42,13 +42,18 @@ public interface InstMgrConstants {
     String LIST_UPDATES_ARTIFACT_NAME = "name";
     String LIST_UPDATES_NEW_VERSION = "new-version";
     String LIST_UPDATES_OLD_VERSION = "old-version";
-    String LIST_UPDATES_RESULT = "updates";
+    String LIST_UPDATES_IS_DOWNGRADE = "is-downgrade";
+    String LIST_ARTIFACT_UPDATES_RESULT = "artifact-updates";
+    String LIST_MANIFEST_UPDATES_RESULT = "manifest-updates";
     String LIST_UPDATES_STATUS = "status";
     String LIST_UPDATES_WORK_DIR = "work-dir";
     String LOCAL_CACHE = "local-cache";
     String MANIFEST = "manifest";
+    String MANIFEST_CURRENT_VERSION = "current-version";
     String MANIFEST_GAV = "gav";
+    String MANIFEST_LOCATION = "location";
     String MANIFEST_URL = "url";
+    String MANIFEST_VERSION = "version";
     String MAVEN_REPO_DIR_NAME_IN_ZIP_FILES = "maven-repository";
     String MAVEN_REPO_FILE = "maven-repo-file";
     String MAVEN_REPO_FILES = "maven-repo-files";
@@ -62,4 +67,6 @@ public interface InstMgrConstants {
     String REVISION = "revision";
     String TOOL_NAME = "installer";
     String INTERNAL_REPO_PREFIX = "repo-";
+    String MANIFEST_VERSIONS = "manifest-versions";
+    String ALLOW_MANIFEST_DOWNGRADES = "allow-manifest-downgrades";
 }

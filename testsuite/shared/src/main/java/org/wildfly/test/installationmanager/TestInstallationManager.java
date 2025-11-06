@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -22,10 +23,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.wildfly.installationmanager.ArtifactChange;
+import org.wildfly.installationmanager.CandidateType;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.ChannelChange;
+import org.wildfly.installationmanager.FileConflict;
 import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.InstallationChanges;
+import org.wildfly.installationmanager.InstallationUpdates;
 import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.OperationNotAvailableException;
@@ -42,8 +46,10 @@ public class TestInstallationManager implements InstallationManager {
     public static List<Channel> lstChannels;
     public static List<ManifestVersion> installedVersions;
     public static List<Repository> findUpdatesRepositories;
+    public static List<ManifestVersion> findUpdatesVersions;
     public static List<ArtifactChange> findUpdatesChanges;
     public static List<Repository> prepareUpdatesRepositories;
+    public static List<ManifestVersion> prepareUpdatesVersions;
     public static Path prepareUpdatesTargetDir;
 
     public static List<Repository> prepareRevertRepositories;
@@ -52,6 +58,7 @@ public class TestInstallationManager implements InstallationManager {
     public static InstallationChanges installationChanges;
     public static HashMap<String, HistoryResult> history;
     public static boolean initialized = false;
+    public static Boolean prepareAllowManifestDowngrades = null;
 
     public static String APPLY_REVERT_BASE_GENERATED_COMMAND = "apply revert";
     public static String APPLY_UPDATE_BASE_GENERATED_COMMAND = "apply update";
@@ -119,10 +126,10 @@ public class TestInstallationManager implements InstallationManager {
 
             // History sample data
             history = new HashMap<>();
-            history.put("update", new HistoryResult("update", Instant.now(), "update", "update description"));
-            history.put("install", new HistoryResult("install", Instant.now(), "install", "install description"));
-            history.put("rollback", new HistoryResult("rollback", Instant.now(), "rollback", "rollback description"));
-            history.put("config_change", new HistoryResult("config_change", Instant.now(), "config_change", "config_change description"));
+            history.put("update", new HistoryResult("update", Instant.now(), "update", "update description", List.of()));
+            history.put("install", new HistoryResult("install", Instant.now(), "install", "install description", List.of()));
+            history.put("rollback", new HistoryResult("rollback", Instant.now(), "rollback", "rollback description", List.of()));
+            history.put("config_change", new HistoryResult("config_change", Instant.now(), "config_change", "config_change description", List.of()));
 
             // List Updates sample Data
 
@@ -132,6 +139,8 @@ public class TestInstallationManager implements InstallationManager {
             findUpdatesChanges.add(new ArtifactChange("1.0.0.Final", "1.0.1.Final", "org.findupdates:findupdates.updated", ArtifactChange.Status.UPDATED));
 
             findUpdatesRepositories = new ArrayList<>();
+
+            findUpdatesVersions = new ArrayList<>();
 
             noUpdatesFound = false;
 
@@ -163,8 +172,8 @@ public class TestInstallationManager implements InstallationManager {
 
     public TestInstallationManager(Path installationDir, MavenOptions mavenOptions) throws Exception {
         initialize();
-        this.installationDir = installationDir;
-        this.mavenOptions = mavenOptions;
+        TestInstallationManager.installationDir = installationDir;
+        TestInstallationManager.mavenOptions = mavenOptions;
     }
 
     @Override
@@ -185,23 +194,37 @@ public class TestInstallationManager implements InstallationManager {
     }
 
     @Override
-    public boolean prepareUpdate(Path targetDir, List<Repository> repositories) throws Exception {
+    public boolean prepareUpdate(Path targetDir, List<Repository> repositories, boolean allowManifestDowngrades) throws Exception {
         if (noUpdatesFound) {
             return false;
         }
         prepareUpdatesTargetDir = targetDir;
         prepareUpdatesRepositories = new ArrayList<>(repositories);
+        prepareAllowManifestDowngrades = allowManifestDowngrades;
         Files.createTempFile(targetDir, "server-prepare-marker-", null);
         return true;
     }
 
     @Override
-    public List<ArtifactChange> findUpdates(List<Repository> repositories) throws Exception {
+    public boolean prepareUpdate(Path candidatePath, List<Repository> repositories, List<ManifestVersion> manifestVersions, boolean allowManifestDowngrades) throws Exception {
+        prepareUpdatesVersions = new ArrayList<>(manifestVersions);
+        return prepareUpdate(candidatePath, repositories, allowManifestDowngrades);
+    }
+
+    @Override
+    public InstallationUpdates findUpdates(List<Repository> repositories) throws Exception {
         if (noUpdatesFound) {
-            return new ArrayList<>();
+            return new InstallationUpdates(Collections.emptyList(), Collections.emptyList());
         }
         findUpdatesRepositories = new ArrayList<>(repositories);
-        return findUpdatesChanges;
+        return new InstallationUpdates(findUpdatesChanges, Collections.emptyList());
+    }
+
+    @Override
+    public InstallationUpdates findUpdates(List<Repository> repositories, List<ManifestVersion> manifestVersions) throws Exception {
+        // TODO: test manifest updates as well
+        findUpdatesVersions = new ArrayList<>(manifestVersions);
+        return findUpdates(repositories);
     }
 
     @Override
@@ -267,8 +290,23 @@ public class TestInstallationManager implements InstallationManager {
     }
 
     @Override
+    public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
+        return generateApplyUpdateCommand(scriptHome, candidatePath, shell) + noConflictsOnly;
+    }
+
+    @Override
+    public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
+        return generateApplyRevertCommand( scriptHome, candidatePath, shell) + noConflictsOnly;
+    }
+
+    @Override
     public Collection<ManifestVersion> getInstalledVersions() throws Exception {
         return installedVersions;
+    }
+
+    @Override
+    public Collection<FileConflict> verifyCandidate(Path candidatePath, CandidateType candidateType) throws Exception {
+        return List.of();
     }
 
     public static void zipDir(Path inputFile, Path target) throws IOException {
