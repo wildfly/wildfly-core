@@ -26,6 +26,9 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.core.instmgr.logging.InstMgrLogger;
 import org.wildfly.installationmanager.ArtifactChange;
+import org.wildfly.installationmanager.InstallationUpdates;
+import org.wildfly.installationmanager.ManifestVersion;
+import org.wildfly.installationmanager.ManifestVersionChange;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
@@ -54,9 +57,15 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
             .setAlternatives(InstMgrConstants.MAVEN_REPO_FILES)
             .build();
 
+    protected static final AttributeDefinition MANIFEST_VERSIONS = new ObjectListAttributeDefinition.Builder(InstMgrConstants.MANIFEST_VERSIONS, MANIFEST_VERSION_OBJ)
+            .setStorageRuntime()
+            .setRequired(false)
+            .build();
+
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, InstMgrResolver.RESOLVER)
             .addParameter(OFFLINE)
             .addParameter(REPOSITORIES)
+            .addParameter(MANIFEST_VERSIONS)
             .addParameter(LOCAL_CACHE)
             .addParameter(NO_RESOLVE_LOCAL_CACHE)
             .addParameter(USE_DEFAULT_LOCAL_CACHE)
@@ -78,6 +87,7 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
         final Path localRepository = pathLocalRepo != null ? Path.of(pathLocalRepo) : null;
         final List<ModelNode> mavenRepoFileIndexes = MAVEN_REPO_FILES.resolveModelAttribute(context, operation).asListOrEmpty();
         final List<ModelNode> repositoriesMn = REPOSITORIES.resolveModelAttribute(context, operation).asListOrEmpty();
+        final List<ModelNode> manifestVersionsMn = MANIFEST_VERSIONS.resolveModelAttribute(context, operation).asListOrEmpty();
 
         if (noResolveLocalCache != null && useDefaultLocalCache !=null) {
             throw InstMgrLogger.ROOT_LOGGER.noResolveLocalCacheWithUseDefaultLocalCache();
@@ -131,13 +141,39 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
                         repositories.addAll(toRepositories(context, repositoriesMn));
                     }
 
-                    InstMgrLogger.ROOT_LOGGER.debug("Calling SPI to list updates with the following repositories:" + repositories);
-                    final List<ArtifactChange> updates = im.findUpdates(repositories);
-                    final ModelNode resultValue = new ModelNode();
-                    final ModelNode updatesMn = new ModelNode().addEmptyList();
+                    List<ManifestVersion> manifestVersions = toManifestVersions(context, manifestVersionsMn);
 
-                    if (!updates.isEmpty()) {
-                        for (ArtifactChange artifactChange : updates) {
+                    InstMgrLogger.ROOT_LOGGER.debug("Calling SPI to list updates with the following repositories:" + repositories);
+                    final InstallationUpdates updates = im.findInstallationUpdates(repositories, manifestVersions);
+                    final ModelNode resultValue = new ModelNode();
+                    final ModelNode manifestUpdatesMn = new ModelNode().addEmptyList();
+                    final ModelNode artifactUpdatesMn = new ModelNode().addEmptyList();
+
+                    if (!updates.manifestUpdates().isEmpty()) {
+                        for (ManifestVersionChange manifestChange : updates.manifestUpdates()) {
+                            ModelNode manifestChangeMn = new ModelNode();
+                            manifestChangeMn.get(InstMgrConstants.CHANNEL_NAME).set(manifestChange.getChannelName());
+                            manifestChangeMn.get(InstMgrConstants.MANIFEST_LOCATION).set(manifestChange.getLocation());
+                            manifestChangeMn.get(InstMgrConstants.LIST_UPDATES_OLD_VERSION).set(manifestChange.getCurrentVersion().getPhysicalVersion());
+                            manifestChangeMn.get(InstMgrConstants.LIST_UPDATES_NEW_VERSION).set(manifestChange.getNewVersion().getPhysicalVersion());
+
+                            String currentLogicalVersion = manifestChange.getCurrentVersion().getLogicalVersion();
+                            if (currentLogicalVersion != null) {
+                                manifestChangeMn.get(InstMgrConstants.LIST_UPDATES_OLD_LOGICAL_VERSION).set(currentLogicalVersion);
+                            }
+
+                            String newLogicalVersion = manifestChange.getNewVersion().getLogicalVersion();
+                            if (newLogicalVersion != null) {
+                                manifestChangeMn.get(InstMgrConstants.LIST_UPDATES_NEW_LOGICAL_VERSION).set(newLogicalVersion);
+                            }
+
+                            manifestChangeMn.get(InstMgrConstants.LIST_UPDATES_IS_DOWNGRADE).set(manifestChange.isDowngrade());
+                            manifestUpdatesMn.add(manifestChangeMn);
+                        }
+                    }
+
+                    if (!updates.artifactUpdates().isEmpty()) {
+                        for (ArtifactChange artifactChange : updates.artifactUpdates()) {
                             ModelNode artifactChangeMn = new ModelNode();
                             artifactChangeMn.get(InstMgrConstants.LIST_UPDATES_STATUS).set(artifactChange.getStatus().name().toLowerCase(Locale.ENGLISH));
                             artifactChangeMn.get(InstMgrConstants.LIST_UPDATES_ARTIFACT_NAME).set(artifactChange.getArtifactName());
@@ -157,19 +193,18 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
                                 default:
                                     throw InstMgrLogger.ROOT_LOGGER.unexpectedArtifactChange(artifactChange.toString());
                             }
-                            updatesMn.add(artifactChangeMn);
+                            artifactUpdatesMn.add(artifactChangeMn);
                         }
                         if (!mavenRepoFileIndexes.isEmpty()) {
-                            resultValue.get(InstMgrConstants.LIST_UPDATES_RESULT).set(updatesMn);
                             resultValue.get(InstMgrConstants.LIST_UPDATES_WORK_DIR).set(listUpdatesWorkDir.getFileName().toString());
                         } else {
                             imService.deleteTempDir(listUpdatesWorkDir);
-                            resultValue.get(InstMgrConstants.LIST_UPDATES_RESULT).set(updatesMn);
                         }
                     } else {
                         imService.deleteTempDir(listUpdatesWorkDir);
-                        resultValue.get(InstMgrConstants.LIST_UPDATES_RESULT).set(updatesMn);
                     }
+                    resultValue.get(InstMgrConstants.LIST_UPDATES_RESULT).set(artifactUpdatesMn);
+                    resultValue.get(InstMgrConstants.LIST_MANIFEST_UPDATES_RESULT).set(manifestUpdatesMn);
 
                     context.getResult().set(resultValue);
 

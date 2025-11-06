@@ -67,7 +67,12 @@ public class ChannelListCommand extends AbstractInstMgrCommand {
                 } else {
                     manifest = manifestMn.get(InstMgrConstants.MANIFEST_URL).asString();
                 }
-                ctx.printLine("  manifest: " + manifest);
+                String currentVersion = manifestMn.get(InstMgrConstants.MANIFEST_CURRENT_VERSION).asStringOrNull();
+                if (currentVersion == null) {
+                    ctx.printLine(String.format("  manifest: %s", manifest));
+                } else {
+                    ctx.printLine(String.format("  manifest: %s (version: %s)", manifest, currentVersion));
+                }
             }
 
             if (channel.get(InstMgrConstants.REPOSITORIES).isDefined()) {

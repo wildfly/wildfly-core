@@ -23,6 +23,7 @@ import org.wildfly.core.instmgr.InstMgrListUpdatesHandler;
 public class ListUpdatesAction extends AbstractInstMgrCommand {
     private final List<File> mavenRepoFiles;
     private final List<String> repositories;
+    private final List<String> manifestVersions;
     private final Path localCache;
     private final Boolean noResolveLocalCache;
     private final Boolean useDefaultLocalCache;
@@ -32,6 +33,7 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
     public ListUpdatesAction(Builder builder) {
         this.mavenRepoFiles = builder.mavenRepoFiles;
         this.repositories = builder.repositories;
+        this.manifestVersions = builder.manifestVersions;
         this.localCache = builder.localCache;
         this.noResolveLocalCache = builder.noResolveLocalCache;
         this.offline = builder.offline;
@@ -56,6 +58,7 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
         }
 
         addRepositoriesToModelNode(op, this.repositories);
+        addManifestVersionsToModelNode(op, this.manifestVersions);
 
         if (localCache != null) {
             op.get(InstMgrConstants.LOCAL_CACHE).set(localCache.normalize().toAbsolutePath().toString());
@@ -83,6 +86,7 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
         private ModelNode headers;
         private List<File> mavenRepoFiles;
         private List<String> repositories;
+        private List<String> manifestVersions;
         private Path localCache;
 
         private Boolean noResolveLocalCache;
@@ -90,6 +94,7 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
 
         public Builder() {
             this.repositories = new ArrayList<>();
+            this.manifestVersions = new ArrayList<>();
             this.offline = false;
             this.mavenRepoFiles = new ArrayList<>();
         }
@@ -104,6 +109,13 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
         public Builder setRepositories(List<String> repositories) {
             if (repositories != null) {
                 this.repositories.addAll(repositories);
+            }
+            return this;
+        }
+
+        public Builder setManifestVersions(List<String> manifestVersions) {
+            if (manifestVersions != null) {
+                this.manifestVersions = manifestVersions;
             }
             return this;
         }

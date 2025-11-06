@@ -16,6 +16,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,6 +38,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.core.instmgr.logging.InstMgrLogger;
 import org.wildfly.installationmanager.Channel;
+import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
@@ -149,6 +151,9 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
 
         InstMgrListUpdatesHandler lstUpdatesHandler = new InstMgrListUpdatesHandler(imService, imf);
         resourceRegistration.registerOperationHandler(InstMgrListUpdatesHandler.DEFINITION, lstUpdatesHandler);
+
+        InstMgrListManifestVersionsHandler lstManifestVersionsHandler = new InstMgrListManifestVersionsHandler(imService, imf);
+        resourceRegistration.registerOperationHandler(InstMgrListManifestVersionsHandler.DEFINITION, lstManifestVersionsHandler);
 
         InstMgrCleanHandler clean = new InstMgrCleanHandler(imService, imf);
         resourceRegistration.registerOperationHandler(InstMgrCleanHandler.DEFINITION, clean);
@@ -263,6 +268,8 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
                         MavenOptions mavenOptions = new MavenOptions(null, false);
                         InstallationManager installationManager = imf.create(serverHome, mavenOptions);
 
+                        HashMap<String, String> manifestVersions = readInstalledManifestVersions(installationManager);
+
                         ModelNode mChannels = new ModelNode().addEmptyList();
                         Collection<Channel> channels = installationManager.listChannels();
                         for (Channel channel : channels) {
@@ -280,7 +287,12 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
 
                             ModelNode mManifest = new ModelNode();
                             if (channel.getManifestCoordinate().isPresent()) {
-                                mManifest.get(InstMgrConstants.MANIFEST_GAV).set(channel.getManifestCoordinate().get());
+                                String coordinate = channel.getManifestCoordinate().get();
+                                mManifest.get(InstMgrConstants.MANIFEST_GAV).set(coordinate);
+                                if (manifestVersions.containsKey(coordinate)) {
+                                    mManifest.get(InstMgrConstants.MANIFEST_CURRENT_VERSION)
+                                            .set(manifestVersions.get(coordinate));
+                                }
                                 mChannel.get(InstMgrConstants.MANIFEST).set(mManifest);
                             } else if (channel.getManifestUrl().isPresent()) {
                                 mManifest.get(InstMgrConstants.MANIFEST_URL)
@@ -363,5 +375,15 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
                 }
             }
         }
+    }
+
+    private static HashMap<String, String> readInstalledManifestVersions(InstallationManager installationManager)
+            throws Exception {
+        HashMap<String, String> versionsMap = new HashMap<>();
+        Collection<ManifestVersion> installedManifestVersions = installationManager.getInstalledVersions();
+        installedManifestVersions.forEach(version -> {
+            versionsMap.put(version.getChannelId(), version.getVersion());
+        });
+        return versionsMap;
     }
 }

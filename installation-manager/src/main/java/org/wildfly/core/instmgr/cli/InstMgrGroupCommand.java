@@ -13,6 +13,7 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 
 @GroupCommandDefinition(name = InstMgrGroupCommand.COMMAND_NAME, description = "", groupCommands = {
         UpdateCommand.class,
+        ListManifestVersionsCommand.class,
         CleanCommand.class,
         RevertCommand.class,
         HistoryCommand.class,

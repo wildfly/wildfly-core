@@ -810,6 +810,113 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         removeCustomPatch(customPatchManifest);
     }
 
+    @Test
+    public void listUpdatesWithManifestVersions() throws OperationFailedException {
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
+
+        ModelNode manifestVersions = new ModelNode();
+
+        ModelNode manifestVersion = new ModelNode();
+        manifestVersion.get(InstMgrConstants.CHANNEL_NAME).set("channel-0");
+        manifestVersion.get(InstMgrConstants.MANIFEST_VERSION).set("1.2.3");
+        manifestVersions.add(manifestVersion);
+
+        manifestVersion = new ModelNode();
+        manifestVersion.get(InstMgrConstants.CHANNEL_NAME).set("channel-1");
+        manifestVersion.get(InstMgrConstants.MANIFEST_URL).set("file:path/to/manifest.yaml");
+        manifestVersions.add(manifestVersion);
+
+        op.get(InstMgrConstants.MANIFEST_VERSIONS).set(manifestVersions);
+
+
+        ModelNode response = executeForResult(op);
+        verifyListUpdatesResult(response, false);
+
+        Assert.assertEquals(2, TestInstallationManager.findUpdatesVersions.size());
+
+        Assert.assertEquals("channel-0", TestInstallationManager.findUpdatesVersions.get(0).getChannelId());
+        Assert.assertEquals("1.2.3", TestInstallationManager.findUpdatesVersions.get(0).getVersion());
+        Assert.assertEquals(ManifestVersion.Type.MAVEN, TestInstallationManager.findUpdatesVersions.get(0).getType());
+
+        Assert.assertEquals("channel-1", TestInstallationManager.findUpdatesVersions.get(1).getChannelId());
+        Assert.assertEquals("file:path/to/manifest.yaml", TestInstallationManager.findUpdatesVersions.get(1).getVersion());
+        Assert.assertEquals(ManifestVersion.Type.URL, TestInstallationManager.findUpdatesVersions.get(1).getType());
+    }
+
+    @Test
+    public void listManifestVersions_defaultParam() throws OperationFailedException {
+        listManifestVersions(null);
+    }
+
+    @Test
+    public void listManifestVersions_includeDowngrade() throws OperationFailedException {
+        listManifestVersions(true);
+    }
+
+    /**
+     * @param includeDowngrades value of the includeDowngrades operation parameter, null for default parameter value
+     *                          to be used.
+     */
+    private void listManifestVersions(Boolean includeDowngrades) throws OperationFailedException {
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrListManifestVersionsHandler.OPERATION_NAME, pathElements);
+
+        ModelNode repositories = new ModelNode();
+        ModelNode repository = new ModelNode();
+        repository.get(InstMgrConstants.REPOSITORY_ID).set("id1");
+        repository.get(InstMgrConstants.REPOSITORY_URL).set("https://localhost.one");
+        repositories.add(repository);
+
+        repository = new ModelNode();
+        repository.get(InstMgrConstants.REPOSITORY_ID).set("id2");
+        repository.get(InstMgrConstants.REPOSITORY_URL).set("https://localhost.two");
+        repositories.add(repository);
+
+        op.get(InstMgrConstants.REPOSITORIES).set(repositories);
+
+        if (includeDowngrades != null) {
+            op.get(InstMgrConstants.INCLUDE_DOWNGRADES).set(includeDowngrades);
+        }
+
+
+        ModelNode response = executeForResult(op);
+
+        Assert.assertEquals(2, TestInstallationManager.findManifestVersionsRepositories.size());
+        Repository repositoryOne = TestInstallationManager.findManifestVersionsRepositories.get(0);
+        Assert.assertEquals("id1", repositoryOne.getId());
+        Assert.assertTrue(repositoryOne.getUrl().matches("https://localhost.one"));
+
+        Repository repositoryTwo = TestInstallationManager.findManifestVersionsRepositories.get(1);
+        Assert.assertEquals("id2", repositoryTwo.getId());
+        Assert.assertTrue(repositoryTwo.getUrl().matches("https://localhost.two"));
+
+        if (includeDowngrades == null || !includeDowngrades) {
+            Assert.assertFalse(TestInstallationManager.findManifestVersionsIncludeDowngrades);
+        } else {
+            Assert.assertTrue(TestInstallationManager.findManifestVersionsIncludeDowngrades);
+        }
+
+        Assert.assertEquals(1, response.asList().size());
+        ModelNode manifestInfoMn = response.asList().get(0);
+        Assert.assertEquals("test-channel", manifestInfoMn.get(InstMgrConstants.CHANNEL_NAME).asString());
+        Assert.assertEquals("a:b", manifestInfoMn.get(InstMgrConstants.MANIFEST_LOCATION).asString());
+        Assert.assertEquals("1.0.0", manifestInfoMn.get(InstMgrConstants.MANIFEST_CURRENT_VERSION).asString());
+        Assert.assertEquals("Logical version 1.0.0", manifestInfoMn.get(InstMgrConstants.MANIFEST_CURRENT_LOGICAL_VERSION).asString());
+
+        if (includeDowngrades == null || !includeDowngrades) {
+            Assert.assertEquals(1, manifestInfoMn.get(InstMgrConstants.MANIFEST_VERSIONS).asList().size());
+            Assert.assertEquals("1.0.1", manifestInfoMn.get(InstMgrConstants.MANIFEST_VERSIONS).asList().get(0).get(InstMgrConstants.MANIFEST_VERSION).asString());
+            Assert.assertEquals("Logical version 1.0.1", manifestInfoMn.get(InstMgrConstants.MANIFEST_VERSIONS).asList().get(0).get(InstMgrConstants.MANIFEST_LOGICAL_VERSION).asString());
+        } else {
+            Assert.assertEquals(2, manifestInfoMn.get(InstMgrConstants.MANIFEST_VERSIONS).asList().size());
+            Assert.assertEquals("0.0.9", manifestInfoMn.get(InstMgrConstants.MANIFEST_VERSIONS).asList().get(0).get(InstMgrConstants.MANIFEST_VERSION).asString());
+            Assert.assertEquals("Logical version 0.0.9", manifestInfoMn.get(InstMgrConstants.MANIFEST_VERSIONS).asList().get(0).get(InstMgrConstants.MANIFEST_LOGICAL_VERSION).asString());
+            Assert.assertEquals("1.0.1", manifestInfoMn.get(InstMgrConstants.MANIFEST_VERSIONS).asList().get(1).get(InstMgrConstants.MANIFEST_VERSION).asString());
+            Assert.assertEquals("Logical version 1.0.1", manifestInfoMn.get(InstMgrConstants.MANIFEST_VERSIONS).asList().get(1).get(InstMgrConstants.MANIFEST_LOGICAL_VERSION).asString());
+        }
+    }
+
     /**
      * Verifies that we have created the expected structure for a repository created to supply the artifacts included in an Uploaded Maven Zip File.
      *
@@ -1172,6 +1279,71 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
             prop.load(in);
             Assert.assertEquals(JBOSS_HOME.resolve("bin") + TestInstallationManager.APPLY_UPDATE_BASE_GENERATED_COMMAND + instMgrService.getPreparedServerDir(), prop.get(InstMgrCandidateStatus.INST_MGR_COMMAND_KEY));
         }
+    }
+
+    @Test
+    public void prepareUpdatesWithManifestVersionsDowngradesUnspecified() throws OperationFailedException, IOException {
+        prepareUpdatesWithManifestVersions(null);
+    }
+
+    @Test
+    public void prepareUpdatesWithManifestVersionsDowngradesYes() throws OperationFailedException, IOException {
+        prepareUpdatesWithManifestVersions(true);
+    }
+
+    @Test
+    public void prepareUpdatesWithManifestVersionsDowngradesNo() throws OperationFailedException, IOException {
+        prepareUpdatesWithManifestVersions(false);
+    }
+
+    private void prepareUpdatesWithManifestVersions(Boolean allowManifestDowngrades) throws OperationFailedException, IOException {
+            InstMgrService instMgrService = (InstMgrService) this.recordedServices.get(InstMgrResourceDefinition.INSTALLATION_MANAGER_CAPABILITY.getCapabilityServiceName()).get();
+
+        Assert.assertFalse(instMgrService.getPreparedServerDir().toFile().exists());
+        Assert.assertEquals(InstMgrCandidateStatus.Status.CLEAN, instMgrService.getCandidateStatus());
+        Assert.assertTrue(instMgrService.canPrepareServer());
+
+
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
+
+        ModelNode manifestVersions = new ModelNode();
+
+        ModelNode manifestVersion = new ModelNode();
+        manifestVersion.get(InstMgrConstants.CHANNEL_NAME).set("channel-0");
+        manifestVersion.get(InstMgrConstants.MANIFEST_VERSION).set("1.2.3");
+        manifestVersions.add(manifestVersion);
+
+        manifestVersion = new ModelNode();
+        manifestVersion.get(InstMgrConstants.CHANNEL_NAME).set("channel-1");
+        manifestVersion.get(InstMgrConstants.MANIFEST_URL).set("file:path/to/manifest.yaml");
+        manifestVersions.add(manifestVersion);
+
+        op.get(InstMgrConstants.MANIFEST_VERSIONS).set(manifestVersions);
+
+        if (allowManifestDowngrades != null) {
+            op.get(InstMgrConstants.ALLOW_MANIFEST_DOWNGRADES).set(allowManifestDowngrades);
+        }
+
+        ModelNode response = executeForResult(op);
+
+        if (allowManifestDowngrades == null || !allowManifestDowngrades) {
+            Assert.assertFalse(TestInstallationManager.prepareAllowManifestDowngrades);
+        } else {
+            Assert.assertTrue(TestInstallationManager.prepareAllowManifestDowngrades);
+        }
+
+        Assert.assertEquals(instMgrService.getPreparedServerDir().toString(), response.asString());
+
+        Assert.assertEquals(2, TestInstallationManager.prepareUpdatesVersions.size());
+
+        Assert.assertEquals("channel-0", TestInstallationManager.prepareUpdatesVersions.get(0).getChannelId());
+        Assert.assertEquals("1.2.3", TestInstallationManager.prepareUpdatesVersions.get(0).getVersion());
+        Assert.assertEquals(ManifestVersion.Type.MAVEN, TestInstallationManager.prepareUpdatesVersions.get(0).getType());
+
+        Assert.assertEquals("channel-1", TestInstallationManager.prepareUpdatesVersions.get(1).getChannelId());
+        Assert.assertEquals("file:path/to/manifest.yaml", TestInstallationManager.prepareUpdatesVersions.get(1).getVersion());
+        Assert.assertEquals(ManifestVersion.Type.URL, TestInstallationManager.prepareUpdatesVersions.get(1).getType());
     }
 
     @Test
@@ -1590,6 +1762,15 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
                 Assert.fail("Unexpected status for an artifact change: " + status);
             }
         }
+
+        results = response.get(InstMgrConstants.LIST_MANIFEST_UPDATES_RESULT).asList();
+        Assert.assertEquals(1, results.size());
+        Assert.assertEquals("wildfly-core", results.get(0).get(InstMgrConstants.CHANNEL_NAME).asString());
+        Assert.assertEquals("org.wildfly.core.channels:wildfly-core", results.get(0).get(InstMgrConstants.MANIFEST_LOCATION).asString());
+        Assert.assertEquals("1.0.0.Final", results.get(0).get(InstMgrConstants.LIST_UPDATES_OLD_VERSION).asString());
+        Assert.assertEquals("WildFly Core 1.0.0.Final", results.get(0).get(InstMgrConstants.LIST_UPDATES_OLD_LOGICAL_VERSION).asString());
+        Assert.assertEquals("1.1.0.Final", results.get(0).get(InstMgrConstants.LIST_UPDATES_NEW_VERSION).asString());
+        Assert.assertEquals("WildFly Core 1.1.0.Final", results.get(0).get(InstMgrConstants.LIST_UPDATES_NEW_LOGICAL_VERSION).asString());
 
         Assert.assertEquals(hasWorkDir, response.hasDefined(InstMgrConstants.LIST_UPDATES_WORK_DIR));
     }
