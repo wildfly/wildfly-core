@@ -103,6 +103,9 @@ public interface InstMgrLogger extends BasicLogger {
     @Message(id = 25, value = "Cannot report installation channels: '%s'")
     void failedToFindInstallationChannels(Exception failure);
 
+    @Message(id = 26, value = "Exactly one of version string or URL fields is required to define a manifest version.")
+    OperationFailedException exactlyOneOfManifestVersionOrUrlRequired();
+
     ////////////////////////////////////////////////
     // Messages without IDs
 

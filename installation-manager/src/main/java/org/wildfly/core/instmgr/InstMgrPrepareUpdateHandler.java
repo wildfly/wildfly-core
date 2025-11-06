@@ -28,6 +28,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.core.instmgr.logging.InstMgrLogger;
+import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
@@ -37,7 +38,7 @@ import org.wildfly.installationmanager.spi.InstallationManagerFactory;
  * Operation handler that prepares a candidate server with the available updates.
  */
 public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
-    static final String OPERATION_NAME = "prepare-updates";
+    public static final String OPERATION_NAME = "prepare-updates";
 
     protected static final AttributeDefinition MAVEN_REPO_FILE = SimpleAttributeDefinitionBuilder.create(InstMgrConstants.MAVEN_REPO_FILE, ModelType.INT)
             .setStorageRuntime()
@@ -64,14 +65,29 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
             .setAlternatives(InstMgrConstants.LIST_UPDATES_WORK_DIR, InstMgrConstants.MAVEN_REPO_FILES)
             .build();
 
+    protected static final AttributeDefinition MANIFEST_VERSIONS = new ObjectListAttributeDefinition.Builder(InstMgrConstants.MANIFEST_VERSIONS, MANIFEST_VERSION_OBJ)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setRequired(false)
+            .build();
+
+    protected static final AttributeDefinition ALLOW_MANIFEST_DOWNGRADES = new SimpleAttributeDefinitionBuilder(InstMgrConstants.ALLOW_MANIFEST_DOWNGRADES, ModelType.BOOLEAN)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setRequired(true)
+            .setDefaultValue(ModelNode.FALSE)
+            .build();
+
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, InstMgrResolver.RESOLVER)
             .addParameter(OFFLINE)
             .addParameter(REPOSITORIES)
+            .addParameter(MANIFEST_VERSIONS)
             .addParameter(LOCAL_CACHE)
             .addParameter(NO_RESOLVE_LOCAL_CACHE)
             .addParameter(USE_DEFAULT_LOCAL_CACHE)
             .addParameter(MAVEN_REPO_FILES)
             .addParameter(LIST_UPDATES_WORK_DIR)
+            .addParameter(ALLOW_MANIFEST_DOWNGRADES)
             .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
             .setRuntimeOnly()
             .build();
@@ -89,7 +105,9 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
         final Path localRepository = pathLocalRepo != null ? Path.of(pathLocalRepo) : null;
         final List<ModelNode> mavenRepoFileIndexes = MAVEN_REPO_FILES.resolveModelAttribute(context, operation).asListOrEmpty();
         final List<ModelNode> repositoriesMn = REPOSITORIES.resolveModelAttribute(context, operation).asListOrEmpty();
+        final List<ModelNode> manifestVersionsMn = MANIFEST_VERSIONS.resolveModelAttribute(context, operation).asListOrEmpty();
         final String listUpdatesWorkDir = LIST_UPDATES_WORK_DIR.resolveModelAttribute(context, operation).asStringOrNull();
+        final Boolean allowManifestDowngrades = ALLOW_MANIFEST_DOWNGRADES.resolveModelAttribute(context, operation).asBoolean();
 
         if (noResolveLocalCache != null && useDefaultLocalCache != null) {
             throw InstMgrLogger.ROOT_LOGGER.noResolveLocalCacheWithUseDefaultLocalCache();
@@ -161,10 +179,12 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                         repositories.addAll(toRepositories(context, repositoriesMn));
                     }
 
+                    final List<ManifestVersion> manifestVersions = toManifestVersions(context, manifestVersionsMn);
+
                     InstMgrLogger.ROOT_LOGGER.debugf("Calling SPI to prepare an updates at [%s] with the following repositories [%s]",
                             imService.getPreparedServerDir(), repositories);
                     Files.createDirectories(imService.getPreparedServerDir());
-                    boolean prepared = im.prepareUpdate(imService.getPreparedServerDir(), repositories);
+                    boolean prepared = im.prepareUpdate(imService.getPreparedServerDir(), repositories, manifestVersions, allowManifestDowngrades);
                     if (prepared) {
                         // Put server in restart required?
                         // No. The documented purpose of the restart-required state is to indicate that the process need to be
