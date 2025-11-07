@@ -183,14 +183,15 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
             InstMgrLogger.ROOT_LOGGER.debug("Storing as Zip file attachment with index=" + index);
             try (InputStream is = context.getAttachmentStream(index)) {
                 Path tempFile = Files.createTempFile(baseWorkDir, tempFilePrefix, ".zip");
-                FileOutputStream outputStream = new FileOutputStream(tempFile.toFile());
-                byte[] buffer = new byte[1024];
+                try (FileOutputStream outputStream = new FileOutputStream(tempFile.toFile())) {
+                    byte[] buffer = new byte[1024];
 
-                int bytesRead;
-                while ((bytesRead = is.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
+                    int bytesRead;
+                    while ((bytesRead = is.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                    return tempFile;
                 }
-                return tempFile;
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
