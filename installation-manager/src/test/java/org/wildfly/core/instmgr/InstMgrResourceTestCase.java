@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -39,6 +40,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -66,6 +68,9 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.wildfly.installationmanager.ArtifactChange;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.ChannelChange;
@@ -77,6 +82,7 @@ import org.wildfly.test.installationmanager.TestInstallationManagerFactory;
 /**
  * Installation Manager unit tests.
  */
+@RunWith(Parameterized.class)
 public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     private static final ServiceName PATH_MANAGER_SVC = AbstractControllerService.PATH_MANAGER_CAPABILITY.getCapabilityServiceName();
     private static final ServiceName MANAGEMENT_EXECUTOR_SVC = AbstractControllerService.EXECUTOR_CAPABILITY.getCapabilityServiceName();
@@ -85,6 +91,17 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     static final Path JBOSS_HOME = TARGET_DIR.resolve("InstMgrResourceTestCase").normalize().toAbsolutePath();
     static final Path JBOSS_CONTROLLER_TEMP_DIR = JBOSS_HOME.resolve("temp");
     static final Path INSTALLATION_MANAGER_PROPERTIES = JBOSS_HOME.resolve("bin").resolve("installation-manager.properties");
+
+    @Parameters
+    public static Iterable<BiConsumer<Path, Path>> zipHandlers() {
+        return List.of((source, target) -> zipDir(source, target, false), (source, target) -> zipDir(source, target, true));
+    }
+
+    private final BiConsumer<Path, Path> zipHandler;
+
+    public InstMgrResourceTestCase(BiConsumer<Path, Path> zipHandler) {
+        this.zipHandler = zipHandler;
+    }
 
     @Before
     public void setupController() throws InterruptedException, IOException {
@@ -1544,12 +1561,16 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(hasWorkDir, response.hasDefined(InstMgrConstants.LIST_UPDATES_WORK_DIR));
     }
 
-    public static void zipDir(Path sourcePath, Path target) throws IOException {
+    public void zipDir(Path sourcePath, Path target) {
+        zipHandler.accept(sourcePath, target);
+    }
+
+    public static void zipDir(Path sourcePath, Path target, boolean addFolderEntry) {
         try (FileOutputStream fos = new FileOutputStream(target.toFile()); ZipOutputStream zos = new ZipOutputStream(fos)) {
             Files.walkFileTree(sourcePath, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-                    if (!sourcePath.equals(dir)) {
+                    if (addFolderEntry && !sourcePath.equals(dir)) {
                         zos.putNextEntry(new ZipEntry(sourcePath.relativize(dir) + "/"));
                         zos.closeEntry();
                     }
@@ -1564,6 +1585,8 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
                     return FileVisitResult.CONTINUE;
                 }
             });
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
