@@ -9,6 +9,7 @@ import java.security.KeyStore;
 import java.security.Permissions;
 import java.security.Policy;
 import java.security.Provider;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
 import javax.net.ssl.KeyManager;
@@ -276,6 +277,11 @@ class Capabilities {
 
     static final String EXPRESSION_RESOLVER_CAPABILITY = CAPABILITY_BASE + "expression-resolver";
 
+    static final String SCHEDULED_EXECUTOR_CAPABILITY = CAPABILITY_BASE + "scheduled-executor";
+
+    static final RuntimeCapability<Void> SCHEDULED_EXECUTOR_RUNTIME_CAPABILITY =  RuntimeCapability
+            .Builder.of(SCHEDULED_EXECUTOR_CAPABILITY, false, ScheduledExecutorService.class)
+            .build();
 
     /**
      * Requirements, capabilities from other subsystems.
