@@ -229,6 +229,7 @@ public enum Phase {
     public static final int STRUCTURE_DATASOURCE_RESOURCE_INJECTION                 = 0x1C01;
     public static final int STRUCTURE_JMS_CONNECTION_FACTORY_RESOURCE_INJECTION     = 0x1C02;
     public static final int STRUCTURE_BEAN_VALIDATION_RESOURCE_INJECTION_REGISTRY   = 0x1C03;
+    public static final int STRUCTURE_CONCURRENCY_RESOURCE_INJECTION_REGISTRY       = 0x1C04;
     public static final int STRUCTURE_DEPLOYMENT_DEPENDENCIES           = 0x1D00;
     public static final int STRUCTURE_GLOBAL_MODULES                    = 0x1E00;
     public static final int STRUCTURE_GLOBAL_DIRECTORIES                = 0x1E01;
@@ -312,6 +313,10 @@ public enum Phase {
     public static final int PARSE_RESOURCE_DEF_ANNOTATION_JMS_DESTINATION           = 0x2D03;
     public static final int PARSE_RESOURCE_DEF_ANNOTATION_JMS_CONNECTION_FACTORY    = 0x2D04;
     public static final int PARSE_RESOURCE_DEF_ANNOTATION_MAIL_SESSION              = 0x2D05;
+    public static final int PARSE_RESOURCE_DEF_ANNOTATION_CONTEXT_SERVICE           = 0x2D06;
+    public static final int PARSE_RESOURCE_DEF_ANNOTATION_MANAGED_EXECUTOR          = 0x2D07;
+    public static final int PARSE_RESOURCE_DEF_ANNOTATION_MANAGED_SCHEDULER         = 0x2D08;
+    public static final int PARSE_RESOURCE_DEF_ANNOTATION_MANAGED_THREAD_FACTORY    = 0x2D09;
     public static final int PARSE_EJB_CONTEXT_BINDING                   = 0x2E00;
     public static final int PARSE_EJB_TIMERSERVICE_BINDING              = 0x2E01;
     public static final int PARSE_PERSISTENCE_UNIT                      = 0x2F00;
@@ -508,6 +513,10 @@ public enum Phase {
     public static final int POST_MODULE_RESOURCE_DEF_XML_JMS_DESTINATION            = 0x1703;
     public static final int POST_MODULE_RESOURCE_DEF_XML_JMS_CONNECTION_FACTORY     = 0x1704;
     public static final int POST_MODULE_RESOURCE_DEF_XML_MAIL_SESSION               = 0x1705;
+    public static final int POST_MODULE_RESOURCE_DEF_XML_CONTEXT_SERVICE            = 0x1706;
+    public static final int POST_MODULE_RESOURCE_DEF_XML_MANAGED_EXECUTOR           = 0x1707;
+    public static final int POST_MODULE_RESOURCE_DEF_XML_MANAGED_SCHEDULER          = 0x1708;
+    public static final int POST_MODULE_RESOURCE_DEF_XML_MANAGED_THREAD_FACTORY     = 0x1709;
     public static final int POST_MODULE_CONCURRO_CDI_BEANS_BINDING      = 0x1710;
     public static final int POST_MODULE_CONCURRO_CDI_BEANS_DESCRIPTOR   = 0x1711;
     public static final int POST_MODULE_WS_REF_DESCRIPTOR               = 0x1800;
