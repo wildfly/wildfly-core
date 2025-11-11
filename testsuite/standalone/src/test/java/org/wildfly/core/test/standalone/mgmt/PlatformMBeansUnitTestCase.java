@@ -20,25 +20,36 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
+import static org.jboss.as.server.controller.descriptions.ServerDescriptionConstants.SERVER_ENVIRONMENT;
 import static org.jboss.as.test.shared.TestSuiteEnvironment.isWindows;
 
-import java.util.HashSet;
-import java.util.Set;
-import jakarta.inject.Inject;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.ObjectName;
+
+import jakarta.inject.Inject;
+
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.test.integration.management.ManagementOperations;
 import org.jboss.as.test.shared.AssumeTestGroupUtil;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.Assert;
@@ -56,6 +67,40 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 public class PlatformMBeansUnitTestCase {
 
     private static final Set<String> ignored = new HashSet<String>();
+
+    // non-default stability level elements
+    private static final TreeMap<Stability, List<String>> nonDefaultElements = new TreeMap<>() {{
+        put(Stability.EXPERIMENTAL, Collections.EMPTY_LIST);
+        put(Stability.PREVIEW, Collections.EMPTY_LIST);
+        put(Stability.COMMUNITY, List.of(
+                "committed-virtual-memory-size",
+                "cpu-load",
+                "current-thread-allocated-bytes",
+                "duration",
+                "end-time",
+                "free-memory-size",
+                "free-swap-space-size",
+                "get-thread-allocated-bytes",
+                "get-thread-cpu-times",
+                "get-thread-user-times",
+                "last-gc-info",
+                "max-file-descriptor-count",
+                "memory-usage-after-gc",
+                "memory-usage-before-gc",
+                "open-file-descriptor-count",
+                "process-cpu-load",
+                "process-cpu-load",
+                "process-cpu-time",
+                "thread-allocated-bytes",
+                "thread-allocated-memory-enabled",
+                "thread-allocated-memory-supported",
+                "thread-cpu-time",
+                "thread-user-time",
+                "threads-allocated-bytes",
+                "total-memory-size",
+                "total-swap-space-size"
+        ));
+    }};
 
     static {
         // Only a few subsystems are NOT supposed to work in the domain mode
@@ -88,42 +133,42 @@ public class PlatformMBeansUnitTestCase {
             AssumeTestGroupUtil.assumeJDKVersionExact(vers);
         }
         String[] wildflyOperations = {
-            "list-add",
-            "list-clear",
-            "list-get",
-            "list-remove",
-            "map-clear",
-            "map-get",
-            "map-put",
-            "map-remove",
-            "query",
-            "read-attribute",
-            "read-attribute-group",
-            "read-attribute-group-names",
-            "read-children-names",
-            "read-children-resources",
-            "read-children-types",
-            "read-operation-description",
-            "read-operation-names",
-            "read-resource",
-            "read-resource-description",
-            "undefine-attribute",
-            "whoami",
-            "write-attribute"
+                "list-add",
+                "list-clear",
+                "list-get",
+                "list-remove",
+                "map-clear",
+                "map-get",
+                "map-put",
+                "map-remove",
+                "query",
+                "read-attribute",
+                "read-attribute-group",
+                "read-attribute-group-names",
+                "read-children-names",
+                "read-children-resources",
+                "read-children-types",
+                "read-operation-description",
+                "read-operation-names",
+                "read-resource",
+                "read-resource-description",
+                "undefine-attribute",
+                "whoami",
+                "write-attribute"
         };
         String[] deprecated = {
-            "free-physical-memory-size",
-            "total-physical-memory-size",
-            "system-cpu-load"
+                "free-physical-memory-size",
+                "total-physical-memory-size",
+                "system-cpu-load"
         };
         // Temurin JDK17 exposes attributes that are actually defined since JDK21
         String[] notInJDK17 = {
-            "total-thread-allocated-bytes"
+                "total-thread-allocated-bytes"
         };
         // Not in Windows JVM
         String[] notOnWindows = {
-            "max-file-descriptor-count",
-            "open-file-descriptor-count"
+                "max-file-descriptor-count",
+                "open-file-descriptor-count"
         };
 
         Map<String, String> mappedOperations = new HashMap<>();
@@ -133,6 +178,8 @@ public class PlatformMBeansUnitTestCase {
         Set<String> deprecatedAttributes = new HashSet<>(Arrays.asList(deprecated));
         Set<String> notInJDK17Attributes = new HashSet<>(Arrays.asList(notInJDK17));
         Set<String> notOnWindowsAttributes = new HashSet<>(Arrays.asList(notOnWindows));
+
+        final Stability serverStability = readCurrentStability();
 
         final ObjectName pattern = new ObjectName("java.lang:*");
         Set<ObjectName> names = ManagementFactory.getPlatformMBeanServer().queryNames(pattern, null);
@@ -187,7 +234,21 @@ public class PlatformMBeansUnitTestCase {
             for (MBeanAttributeInfo aInfo : info.getAttributes()) {
                 String name = format(aInfo.getName());
                 if (!deprecatedAttributes.contains(name) && !notInJDK17Attributes.contains(name)) {
-                    Assert.assertTrue(objName + " Attribute " + name + " is not in the model", attributes.has(name));
+                    Stability stabilityRecordedElement = getStabilityRecordedElement(name);
+                    if (serverStability.enables(stabilityRecordedElement)) {
+                        Assert.assertTrue(objName + " Attribute " + name + " is not in the model.", attributes.has(name));
+                        String attModelStability = attributes.get(name).get("stability").asString();
+                        Assert.assertTrue(String.format(
+                                        "%s Attribute %s with stability %s do not have the expected stability in the model %s",
+                                        objName, name, stabilityRecordedElement, attModelStability
+                                ),
+                                stabilityRecordedElement.name().equalsIgnoreCase(attModelStability));
+                    } else {
+                        Assert.assertFalse(String.format(
+                                "%s Attribute %s is not expected to be in the model because it is not enabled for the current stability level. Current Stability level %s. Test case configured attribute stability level %s",
+                                objName, name, serverStability.name(), stabilityRecordedElement.name()
+                        ), attributes.has(name));
+                    }
                 }
             }
             for (String attribute : attributes.keys()) {
@@ -206,7 +267,21 @@ public class PlatformMBeansUnitTestCase {
             }
             for (MBeanOperationInfo aInfo : info.getOperations()) {
                 String name = format(aInfo.getName());
-                Assert.assertTrue(objName + " Operation " + name + " is not in the model", operations.has(name));
+                Stability stabilityRecordedElement = getStabilityRecordedElement(name);
+                if (serverStability.enables(stabilityRecordedElement)) {
+                    Assert.assertTrue(objName + " Operation " + name + " is not in the model", operations.has(name));
+                    String operationModelStability = operations.get(name).get("stability").asString();
+                    Assert.assertTrue(String.format(
+                                    "%s Operation %s with stability %s do not have the expected stability in the model %s",
+                                    objName, name, stabilityRecordedElement, operationModelStability
+                            ),
+                            stabilityRecordedElement.name().equalsIgnoreCase(operationModelStability));
+                } else {
+                    Assert.assertFalse(String.format(
+                            "%s Operation %s is not expected to be in the model because it is not enabled for the current stability level. Current Stability level %s. Test case configured operation stability level %s",
+                            objName, name, serverStability.name(), stabilityRecordedElement.name()
+                    ), attributes.has(name));
+                }
             }
             for (String o : operations.keys()) {
                 if (!ignoredOperations.contains(o)) {
@@ -367,10 +442,24 @@ public class PlatformMBeansUnitTestCase {
     }
 
     static void checkSuccessful(final ModelNode result, final ModelNode operation) {
-        if(! SUCCESS.equals(result.get(OUTCOME).asString())) {
+        if (!SUCCESS.equals(result.get(OUTCOME).asString())) {
             System.out.println("Failed result:\n" + result + "\n for operation:\n" + operation);
             Assert.fail("operation failed: " + result.get(FAILURE_DESCRIPTION));
         }
     }
 
+    private Stability getStabilityRecordedElement(String name) {
+        for (Map.Entry<Stability, List<String>> entry : nonDefaultElements.descendingMap().entrySet()) {
+            if (entry.getValue().contains(name)) {
+                return entry.getKey();
+            }
+        }
+        return Stability.DEFAULT;
+    }
+
+    private Stability readCurrentStability() throws Exception {
+        ModelNode op = Util.getReadAttributeOperation(PathAddress.pathAddress(CORE_SERVICE, SERVER_ENVIRONMENT), STABILITY);
+        ModelNode result = ManagementOperations.executeOperation(managementClient.getControllerClient(), op);
+        return Stability.fromString(result.asString());
+    }
 }
