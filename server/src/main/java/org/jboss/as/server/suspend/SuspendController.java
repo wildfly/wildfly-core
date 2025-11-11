@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.wildfly.common.Assert;
+import org.wildfly.common.function.Functions;
 
 /**
  * Orchestrates suspending and resuming of registered server activity.
@@ -86,10 +87,21 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
     @Override
     public CompletionStage<Void> suspend(ServerSuspendContext context) {
         if (!this.state.compareAndSet(State.RUNNING, State.PRE_SUSPEND)) {
-            // Return active suspend (which may already be complete) if not running
             return this.activeSuspend;
         }
-        CompletableFuture<Void> result = new CompletableFuture<>();
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        CompletableFuture<Void> result = future.whenComplete((ignore, exception) -> {
+            if (exception == null) {
+                this.state.set(State.SUSPENDED);
+                for (OperationListener listener: this.listeners) {
+                    try {
+                        listener.complete();
+                    } catch (Throwable e) {
+                        ServerLogger.ROOT_LOGGER.warn(e.getLocalizedMessage(), e);
+                    }
+                }
+            }
+        });
         this.activeSuspend = result;
         for (OperationListener listener: this.listeners) {
             listener.suspendStarted();
@@ -108,13 +120,9 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
                 // Suspend activity groups in priority order, i.e. first -> last order
                 phaseStages.add(phaseStage(this.activityGroups, SuspendableActivity::suspend, context, (ignore, suspendException) -> {
                     if (suspendException != null) {
-                        result.completeExceptionally(suspendException);
+                        future.completeExceptionally(suspendException);
                     } else {
-                        this.state.set(State.SUSPENDED);
-                        result.complete(null);
-                        for (OperationListener listener: this.listeners) {
-                            listener.complete();
-                        }
+                        future.complete(null);
                     }
                 }));
             }
@@ -132,12 +140,16 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
         for (OperationListener listener: this.listeners) {
             listener.cancelled();
         }
+        CompletionStage<Void> resumeStage = phaseStage(this::resumeIterator, SuspendableActivity::resume, context, Functions.discardingBiConsumer());
+        List<CompletionStage<Void>> phaseStages = List.of(resumeStage);
         // Resume activity groups in reverse priority order, i.e. last -> first
-        return phaseStage(this::resumeIterator, SuspendableActivity::resume, context, (ignore, exception) -> {
+        CompletionStage<Void> result = resumeStage.whenComplete((ignore, exception) -> {
             if (exception == null) {
                 this.state.set(State.RUNNING);
             }
         });
+        result.whenComplete(propagateCancellation(phaseStages));
+        return result;
     }
 
     private Iterator<List<SuspendableActivity>> resumeIterator() {
