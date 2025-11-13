@@ -16,6 +16,7 @@
         </feature>
     </feature>
     <feature spec="domain.server-group">
+        <param name="profile" value="default"/>
         <param name="socket-binding-group" value="standard-sockets" />
         <param name="server-group" value="other-server-group"/>
     </feature>
