@@ -11,6 +11,7 @@ import static org.jboss.as.controller.security.CredentialReference.rollbackCrede
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SCHEDULED_EXECUTOR_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
@@ -29,6 +30,7 @@ import java.security.KeyStoreException;
 import java.security.Provider;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
@@ -292,6 +294,8 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
 
             keyStoreService.getCredentialSourceSupplierInjector()
                     .inject(CredentialReference.getCredentialSourceSupplier(context, KeyStoreDefinition.CREDENTIAL_REFERENCE, model, serviceBuilder));
+
+            serviceBuilder.addDependency(SCHEDULED_EXECUTOR_RUNTIME_CAPABILITY.getCapabilityServiceName(), ScheduledExecutorService.class, keyStoreService.getScheduledExecutorInjector());
 
             commonDependencies(serviceBuilder).install();
         }
