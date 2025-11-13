@@ -224,6 +224,7 @@
         <version.jakarta.authorization.jakarta-authorization-api>2.1.0</version.jakarta.authorization.jakarta-authorization-api>
         <version.javax.xml.bind.jaxb-api>2.4.0-b180830.0359</version.javax.xml.bind.jaxb-api>
         <version.junit>4.13.2</version.junit>
+        <version.nxrm3.plugin>1.0.7</version.nxrm3.plugin>
         <version.org.aesh>2.8.4</version.org.aesh>
         <version.org.aesh-extensions>1.8</version.org.aesh-extensions>
         <version.org.aesh-readline>2.6</version.org.aesh-readline>
