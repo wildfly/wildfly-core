@@ -25,6 +25,7 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -37,6 +38,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
@@ -74,12 +76,18 @@ import org.wildfly.security.x500.cert.BasicConstraintsExtension;
 import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.internal.matchers.ThrowableMessageMatcher.hasMessage;
 
 /**
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
@@ -394,8 +402,8 @@ public class TlsTestCase extends AbstractSubsystemTest {
             testCommunication("ServerSslContextTLS12Only", "ClientSslContextSSLv2Hello", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
                     "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly");
             fail("Excepted SSLHandshakeException not thrown");
-        } catch (SSLHandshakeException e) {
-
+        } catch (RuntimeException e) {
+            assertThat(List.of(e.getSuppressed()), hasItem(allOf(instanceOf(SSLHandshakeException.class), hasMessage(containsString("SSLv2Hello")))));
         }
     }
 
@@ -455,7 +463,8 @@ public class TlsTestCase extends AbstractSubsystemTest {
             testCommunication("ServerSslContextTLS12Only", "ClientSslContextTLS13Only", false, "",
                     "", "");
             fail("Expected SSLHandshakeException not thrown");
-        } catch (SSLHandshakeException expected) {
+        } catch (RuntimeException e) {
+            assertThat(List.of(e.getSuppressed()), hasItem(allOf(instanceOf(SSLHandshakeException.class), hasMessage(containsString("supported protocol")))));
         }
     }
 
@@ -465,13 +474,18 @@ public class TlsTestCase extends AbstractSubsystemTest {
             testCommunication("ServerSslContextTLS13Only", "ClientSslContextTLS13Only", false, "",
                     "", "");
             fail("Expected SSLHandshakeException not thrown");
-        } catch (SSLHandshakeException expected) {
+        } catch (RuntimeException e) {
+            assertThat(List.of(e.getSuppressed()), hasItem(allOf(instanceOf(SSLHandshakeException.class), hasMessage(containsString("no cipher suites in common")))));
         }
     }
 
-    @Test(expected = SSLHandshakeException.class)
+    @Test
     public void testSslServiceAuthRequiredButNotProvided() throws Throwable {
-        testCommunication("ServerSslContextAuth", "ClientSslContextNoAuth", false, "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", "");
+        try {
+            testCommunication("ServerSslContextAuth", "ClientSslContextNoAuth", false, "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", "");
+        } catch (RuntimeException e) {
+            assertThat(List.of(e.getSuppressed()), hasItem(allOf(instanceOf(SSLHandshakeException.class), hasMessage(containsString("certificate chain")))));
+        }
     }
 
     @Test
@@ -509,11 +523,16 @@ public class TlsTestCase extends AbstractSubsystemTest {
      * Tests communication fails when server sends a certificate present in one of the CRLs
      * configured by the client.
      */
-    @Test(expected = SSLHandshakeException.class)
+    @Test
     public void testRevocationWithMultipleCrls() throws Throwable {
-        testCommunication("ServerSslContextNoAuth", "ClientWithMultipleCRLs",
-                false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
-                null);
+        try {
+            testCommunication("ServerSslContextNoAuth", "ClientWithMultipleCRLs",
+                    false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                    null);
+            fail("Expected exception");
+        } catch (RuntimeException e) {
+            assertThat(List.of(e.getSuppressed()), hasItem(allOf(instanceOf(SSLHandshakeException.class), hasMessage(containsString("certificate_revoked")))));
+        }
     }
 
     @Test
@@ -666,20 +685,18 @@ public class TlsTestCase extends AbstractSubsystemTest {
     private void testCommunication(String serverContextName, String clientContextName, boolean defaultClient, String expectedServerPrincipal, String expectedClientPrincipal, String expectedCipherSuite, boolean tls13Test, Map<String, String[]> protocolChecker) throws Throwable{
         SSLContext serverContext = getSslContext(serverContextName);
         SSLContext clientContext = defaultClient ? SSLContext.getDefault() : getSslContext(clientContextName);
-        ServerSocket listeningSocket;
 
+        ServerSocket listeningSocket = serverContext.getServerSocketFactory().createServerSocket(TESTING_PORT, 10, InetAddress.getByName("localhost"));
 
-        listeningSocket = serverContext.getServerSocketFactory().createServerSocket(TESTING_PORT, 10, InetAddress.getByName("localhost"));
         SSLSocket clientSocket = (SSLSocket) clientContext.getSocketFactory().createSocket("localhost", TESTING_PORT);
         SSLSocket serverSocket = (SSLSocket) listeningSocket.accept();
 
-        ExecutorService serverExecutorService = Executors.newSingleThreadExecutor();
-        Future<byte[]> serverFuture = serverExecutorService.submit(() -> {
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        Future<byte[]> serverFuture = executorService.submit(() -> {
             try {
                 byte[] received = new byte[2];
                 serverSocket.getInputStream().read(received);
                 serverSocket.getOutputStream().write(new byte[]{0x56, 0x78});
-
                 if (expectedClientPrincipal != null) {
                     Assert.assertEquals(expectedClientPrincipal, serverSocket.getSession().getPeerPrincipal().getName());
                 }
@@ -690,8 +707,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
             }
         });
 
-        ExecutorService clientExecutorService = Executors.newSingleThreadExecutor();
-        Future<byte[]> clientFuture = clientExecutorService.submit(() -> {
+        Future<byte[]> clientFuture = executorService.submit(() -> {
             try {
                 byte[] received = new byte[2];
                 clientSocket.getOutputStream().write(new byte[]{0x12, 0x34});
@@ -706,10 +722,32 @@ public class TlsTestCase extends AbstractSubsystemTest {
                 throw new RuntimeException("Client exception", e);
             }
         });
+        executorService.shutdown();
+        executorService.awaitTermination(5, TimeUnit.SECONDS);
 
         try {
-            Assert.assertArrayEquals(new byte[]{0x12, 0x34}, serverFuture.get());
-            Assert.assertArrayEquals(new byte[]{0x56, 0x78}, clientFuture.get());
+            List<Throwable> exceptions = new ArrayList<>();
+            byte[] serverReceived = new byte[0];
+            try {
+                serverReceived = serverFuture.get();
+            } catch (ExecutionException e) {
+                exceptions.add(unwrap(e));
+            }
+            byte[] clientReceived = new byte[0];
+            try {
+                clientReceived = clientFuture.get();
+            } catch(ExecutionException e) {
+                exceptions.add(unwrap(e));
+            }
+
+            if (!exceptions.isEmpty()) {
+                RuntimeException e = new RuntimeException();
+                exceptions.forEach(e::addSuppressed);
+                throw e;
+            }
+
+            Assert.assertArrayEquals(new byte[]{0x12, 0x34}, serverReceived);
+            Assert.assertArrayEquals(new byte[]{0x56, 0x78}, clientReceived);
             if (expectedCipherSuite != null) {
                 Assert.assertEquals(expectedCipherSuite, serverSocket.getSession().getCipherSuite());
                 Assert.assertEquals(expectedCipherSuite, clientSocket.getSession().getCipherSuite());
@@ -724,16 +762,18 @@ public class TlsTestCase extends AbstractSubsystemTest {
                 Assert.assertFalse(serverSocket.getSession().getProtocol().equals("TLSv1.3")); // since TLS 1.3 is not enabled by default (WFCORE-4789)
                 Assert.assertFalse(clientSocket.getSession().getProtocol().equals("TLSv1.3")); // since TLS 1.3 is not enabled by default
             }
-        } catch (ExecutionException e) {
-            if (e.getCause() != null && e.getCause() instanceof RuntimeException && e.getCause().getCause() != null) {
-                throw e.getCause().getCause(); // unpack
-            } else {
-                throw e;
-            }
         } finally {
             serverSocket.close();
             clientSocket.close();
             listeningSocket.close();
+        }
+    }
+
+    private Throwable unwrap(ExecutionException e) {
+        if (e.getCause() != null && e.getCause() instanceof RuntimeException && e.getCause().getCause() != null) {
+            return e.getCause().getCause(); // unpack
+        } else {
+            return e;
         }
     }
 
