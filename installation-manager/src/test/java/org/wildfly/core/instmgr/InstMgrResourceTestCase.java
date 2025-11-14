@@ -74,6 +74,7 @@ import org.junit.runners.Parameterized.Parameters;
 import org.wildfly.installationmanager.ArtifactChange;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.ChannelChange;
+import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.test.installationmanager.TestInstallationManager;
@@ -649,6 +650,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
         executeForResult(op);
     }
+
     @Test
     public void listUpdatesWithRepositories() throws OperationFailedException, IOException, URISyntaxException {
         PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
@@ -773,6 +775,40 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
         // remove the custom Patch
         removeCustomPatch(customPatchManifest);
+    }
+
+    @Test
+    public void listUpdatesWithManifestVersions() throws OperationFailedException, IOException, URISyntaxException {
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
+
+        ModelNode manifestVersions = new ModelNode();
+
+        ModelNode manifestVersion = new ModelNode();
+        manifestVersion.get(InstMgrConstants.CHANNEL_ID).set("channel-0");
+        manifestVersion.get(InstMgrConstants.MANIFEST_VERSION).set("1.2.3");
+        manifestVersions.add(manifestVersion);
+
+        manifestVersion = new ModelNode();
+        manifestVersion.get(InstMgrConstants.CHANNEL_ID).set("channel-1");
+        manifestVersion.get(InstMgrConstants.MANIFEST_URL).set("file:path/to/manifest.yaml");
+        manifestVersions.add(manifestVersion);
+
+        op.get(InstMgrConstants.MANIFEST_VERSIONS).set(manifestVersions);
+
+
+        ModelNode response = executeForResult(op);
+        verifyListUpdatesResult(response, false);
+
+        Assert.assertEquals(2, TestInstallationManager.findUpdatesVersions.size());
+
+        Assert.assertEquals("channel-0", TestInstallationManager.findUpdatesVersions.get(0).getChannelId());
+        Assert.assertEquals("1.2.3", TestInstallationManager.findUpdatesVersions.get(0).getVersion());
+        Assert.assertEquals(ManifestVersion.Type.MAVEN, TestInstallationManager.findUpdatesVersions.get(0).getType());
+
+        Assert.assertEquals("channel-1", TestInstallationManager.findUpdatesVersions.get(1).getChannelId());
+        Assert.assertEquals("file:path/to/manifest.yaml", TestInstallationManager.findUpdatesVersions.get(1).getVersion());
+        Assert.assertEquals(ManifestVersion.Type.URL, TestInstallationManager.findUpdatesVersions.get(1).getType());
     }
 
     /**
@@ -1138,6 +1174,47 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
             prop.load(in);
             Assert.assertEquals(JBOSS_HOME.resolve("bin") + TestInstallationManager.APPLY_UPDATE_BASE_GENERATED_COMMAND+instMgrService.getPreparedServerDir(), prop.get(InstMgrCandidateStatus.INST_MGR_COMMAND_KEY));
         }
+    }
+
+    @Test
+    public void prepareUpdatesWithManifestVersions() throws OperationFailedException, IOException {
+        InstMgrService instMgrService = (InstMgrService) this.recordedServices.get(InstMgrResourceDefinition.INSTALLATION_MANAGER_CAPABILITY.getCapabilityServiceName()).get();
+
+        Assert.assertFalse(instMgrService.getPreparedServerDir().toFile().exists());
+        Assert.assertEquals(InstMgrCandidateStatus.Status.CLEAN, instMgrService.getCandidateStatus());
+        Assert.assertTrue(instMgrService.canPrepareServer());
+
+
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrPrepareUpdateHandler.OPERATION_NAME, pathElements);
+
+        ModelNode manifestVersions = new ModelNode();
+
+        ModelNode manifestVersion = new ModelNode();
+        manifestVersion.get(InstMgrConstants.CHANNEL_ID).set("channel-0");
+        manifestVersion.get(InstMgrConstants.MANIFEST_VERSION).set("1.2.3");
+        manifestVersions.add(manifestVersion);
+
+        manifestVersion = new ModelNode();
+        manifestVersion.get(InstMgrConstants.CHANNEL_ID).set("channel-1");
+        manifestVersion.get(InstMgrConstants.MANIFEST_URL).set("file:path/to/manifest.yaml");
+        manifestVersions.add(manifestVersion);
+
+        op.get(InstMgrConstants.MANIFEST_VERSIONS).set(manifestVersions);
+
+        ModelNode response = executeForResult(op);
+
+        Assert.assertEquals(instMgrService.getPreparedServerDir().toString(), response.asString());
+
+        Assert.assertEquals(2, TestInstallationManager.prepareUpdatesVersions.size());
+
+        Assert.assertEquals("channel-0", TestInstallationManager.prepareUpdatesVersions.get(0).getChannelId());
+        Assert.assertEquals("1.2.3", TestInstallationManager.prepareUpdatesVersions.get(0).getVersion());
+        Assert.assertEquals(ManifestVersion.Type.MAVEN, TestInstallationManager.prepareUpdatesVersions.get(0).getType());
+
+        Assert.assertEquals("channel-1", TestInstallationManager.prepareUpdatesVersions.get(1).getChannelId());
+        Assert.assertEquals("file:path/to/manifest.yaml", TestInstallationManager.prepareUpdatesVersions.get(1).getVersion());
+        Assert.assertEquals(ManifestVersion.Type.URL, TestInstallationManager.prepareUpdatesVersions.get(1).getType());
     }
 
     @Test

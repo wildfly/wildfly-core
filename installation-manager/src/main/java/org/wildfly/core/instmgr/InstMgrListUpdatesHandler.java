@@ -26,6 +26,8 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.core.instmgr.logging.InstMgrLogger;
 import org.wildfly.installationmanager.ArtifactChange;
+import org.wildfly.installationmanager.InstallationUpdates;
+import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
@@ -54,9 +56,15 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
             .setAlternatives(InstMgrConstants.MAVEN_REPO_FILES)
             .build();
 
+    protected static final AttributeDefinition MANIFEST_VERSIONS = new ObjectListAttributeDefinition.Builder(InstMgrConstants.MANIFEST_VERSIONS, MANIFEST_VERSION_OBJ)
+            .setStorageRuntime()
+            .setRequired(false)
+            .build();
+
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, InstMgrResolver.RESOLVER)
             .addParameter(OFFLINE)
             .addParameter(REPOSITORIES)
+            .addParameter(MANIFEST_VERSIONS)
             .addParameter(LOCAL_CACHE)
             .addParameter(NO_RESOLVE_LOCAL_CACHE)
             .addParameter(USE_DEFAULT_LOCAL_CACHE)
@@ -78,6 +86,7 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
         final Path localRepository = pathLocalRepo != null ? Path.of(pathLocalRepo) : null;
         final List<ModelNode> mavenRepoFileIndexes = MAVEN_REPO_FILES.resolveModelAttribute(context, operation).asListOrEmpty();
         final List<ModelNode> repositoriesMn = REPOSITORIES.resolveModelAttribute(context, operation).asListOrEmpty();
+        final List<ModelNode> manifestVersionsMn = MANIFEST_VERSIONS.resolveModelAttribute(context, operation).asListOrEmpty();
 
         if (noResolveLocalCache != null && useDefaultLocalCache !=null) {
             throw InstMgrLogger.ROOT_LOGGER.noResolveLocalCacheWithUseDefaultLocalCache();
@@ -131,13 +140,16 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
                         repositories.addAll(toRepositories(context, repositoriesMn));
                     }
 
+                    List<ManifestVersion> manifestVersions = toManifestVersions(context, manifestVersionsMn);
+
                     InstMgrLogger.ROOT_LOGGER.debug("Calling SPI to list updates with the following repositories:" + repositories);
-                    final List<ArtifactChange> updates = im.findUpdates(repositories);
+                    final InstallationUpdates updates = im.findUpdates(repositories, manifestVersions);
                     final ModelNode resultValue = new ModelNode();
                     final ModelNode updatesMn = new ModelNode().addEmptyList();
 
-                    if (!updates.isEmpty()) {
-                        for (ArtifactChange artifactChange : updates) {
+                    // TODO: Handle channel updates, if channel downgrades are present they need additional confirmation.
+                    if (!updates.artifactUpdates().isEmpty()) {
+                        for (ArtifactChange artifactChange : updates.artifactUpdates()) {
                             ModelNode artifactChangeMn = new ModelNode();
                             artifactChangeMn.get(InstMgrConstants.LIST_UPDATES_STATUS).set(artifactChange.getStatus().name().toLowerCase(Locale.ENGLISH));
                             artifactChangeMn.get(InstMgrConstants.LIST_UPDATES_ARTIFACT_NAME).set(artifactChange.getArtifactName());
