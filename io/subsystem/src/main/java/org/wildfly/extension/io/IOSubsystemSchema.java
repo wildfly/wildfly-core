@@ -7,8 +7,10 @@ package org.wildfly.extension.io;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 import org.jboss.as.controller.SubsystemSchema;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.persistence.xml.ResourceXMLChoice;
 import org.jboss.as.controller.persistence.xml.ResourceXMLParticleFactory;
@@ -18,6 +20,7 @@ import org.jboss.as.controller.persistence.xml.NamedResourceRegistrationXMLEleme
 import org.jboss.as.controller.persistence.xml.ResourceRegistrationXMLElement;
 import org.jboss.as.controller.xml.VersionedNamespace;
 import org.jboss.as.controller.xml.XMLCardinality;
+import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.IntVersion;
 
 /**
@@ -49,8 +52,16 @@ public enum IOSubsystemSchema implements SubsystemResourceXMLSchema<IOSubsystemS
         if (this.since(VERSION_4_0)) {
             builder.addAttribute(IOSubsystemResourceDefinitionRegistrar.DEFAULT_WORKER);
         } else {
-            // Apply "magic" default worker referenced by other subsystems
-            builder.withDefaultValues(Map.of(IOSubsystemResourceDefinitionRegistrar.DEFAULT_WORKER, IOSubsystemResourceDefinitionRegistrar.LEGACY_DEFAULT_WORKER));
+            builder.withOperationTransformation(new BiConsumer<>() {
+                @Override
+                public void accept(Map<PathAddress, ModelNode> operations, PathAddress address) {
+                    // Apply "magic" default worker referenced by other subsystems
+                    // but only if such a worker actually exists
+                    if (operations.containsKey(address.append(WorkerResourceDefinition.pathElement(IOSubsystemResourceDefinitionRegistrar.LEGACY_DEFAULT_WORKER.asString())))) {
+                        operations.get(address).get(IOSubsystemResourceDefinitionRegistrar.DEFAULT_WORKER.getName()).set(IOSubsystemResourceDefinitionRegistrar.LEGACY_DEFAULT_WORKER);
+                    }
+                }
+            });
         }
         ResourceXMLChoice content = this.factory.choice().withCardinality(XMLCardinality.Unbounded.REQUIRED)
                 .addElement(this.workerElement())
