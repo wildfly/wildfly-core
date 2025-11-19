@@ -29,7 +29,6 @@ import java.util.Set;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -103,11 +102,10 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
 
     public SyslogAuditLogHandlerResourceDefinition(ManagedAuditLogger auditLogger, PathManagerService pathManager, EnvironmentNameReader environmentReader) {
         super(auditLogger, pathManager, new Parameters(PathElement.pathElement(SYSLOG_HANDLER),
-                DomainManagementResolver.getDeprecatedResolver(AccessAuditResourceDefinition.DEPRECATED_MESSAGE_CATEGORY, "core.management.syslog-handler"))
+                DomainManagementResolver.getResolver( "core.management.syslog-handler"))
                 .setAddHandler(new SyslogAuditLogHandlerAddHandler(auditLogger, pathManager, environmentReader))
                 .setRemoveHandler(new HandlerRemoveHandler(auditLogger)));
         this.environmentReader = environmentReader;
-        setDeprecated(ModelVersion.create(1, 7));
     }
 
     public static void createServerAddOperations(List<ModelNode> addOps, PathAddress syslogHandlerAddress, ModelNode syslogHandler) {
