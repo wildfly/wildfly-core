@@ -86,26 +86,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl-linux-x86_64</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl-linux-s390x</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl-macosx-x86_64</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl-windows-x86_64</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-auth</artifactId>
         </dependency>
@@ -427,7 +407,7 @@
                                     <feature-packs>
                                         <feature-pack>
                                             <groupId>org.wildfly.core</groupId>
-                                            <artifactId>wildfly-core-galleon-pack</artifactId>                                            
+                                            <artifactId>wildfly-core-galleon-pack</artifactId>
                                             <version>${project.version}</version>
                                             <!-- Specifically include patching -->
                                             <included-packages>
@@ -467,7 +447,7 @@
                                     <feature-packs>
                                         <feature-pack>
                                             <groupId>org.wildfly.core</groupId>
-                                            <artifactId>wildfly-core-galleon-pack</artifactId>                                            
+                                            <artifactId>wildfly-core-galleon-pack</artifactId>
                                             <version>${project.version}</version>
                                             <!-- Specifically include patching -->
                                             <included-packages>

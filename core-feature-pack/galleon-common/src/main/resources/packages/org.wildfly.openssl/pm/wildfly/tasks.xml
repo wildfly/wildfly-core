@@ -6,18 +6,9 @@
   -->
 
 <tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:2.0">
-    <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-linux-x86_64" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true">
+    <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-all" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true">
         <filter pattern="META-INF*" include="false" />
-    </copy-artifact>
-    <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-linux-s390x" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true">
-        <filter pattern="META-INF*" include="false" />
-    </copy-artifact>
-    <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-macosx-x86_64" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true" optional="true">
-        <filter pattern="META-INF*" include="false" />
-    </copy-artifact>
-    <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-windows-x86_64" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true">
-        <filter pattern="*.dll" include="true"/>
-        <filter pattern="META-INF*" include="false" />
-        <filter pattern="*.*" include="false"/>
+        <filter pattern="win-x86_64/*.exp" include="false" />
+        <filter pattern="win-x86_64/*.lib" include="false" />
     </copy-artifact>
 </tasks>
