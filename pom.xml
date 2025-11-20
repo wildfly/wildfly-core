@@ -265,7 +265,7 @@
         <version.org.jboss.spec.javax.servlet.jboss-servlet-api_4.0_spec>2.0.0.Final</version.org.jboss.spec.javax.servlet.jboss-servlet-api_4.0_spec>
         <version.org.jboss.staxmapper>1.5.0.Final</version.org.jboss.staxmapper>
         <version.org.jboss.stdio>1.1.0.Final</version.org.jboss.stdio>
-        <version.org.jboss.threads>3.9.1</version.org.jboss.threads>
+        <version.org.jboss.threads>3.9.2</version.org.jboss.threads>
         <version.org.jboss.xnio>3.8.16.Final</version.org.jboss.xnio>
         <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
