@@ -281,7 +281,7 @@
         <version.org.wildfly.installation-manager.installation-manager-api>1.1.1.Final</version.org.wildfly.installation-manager.installation-manager-api>
         <version.org.wildfly.launcher>1.0.2.Final</version.org.wildfly.launcher>
         <version.org.wildfly.legacy.test>10.0.1.Final</version.org.wildfly.legacy.test>
-        <version.org.wildfly.openssl>2.2.5.Final</version.org.wildfly.openssl>
+        <version.org.wildfly.openssl>2.3.0.Alpha1</version.org.wildfly.openssl>
         <version.org.wildfly.openssl.natives>2.2.2.Final</version.org.wildfly.openssl.natives>
         <version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>2.2.2.SP01</version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-linux-s390x>2.2.2.SP01</version.org.wildfly.openssl.wildfly-openssl-linux-s390x>
