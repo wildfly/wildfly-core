@@ -550,6 +550,9 @@
                                     <bootableJar>true</bootableJar>
                                     <skipDeployment>true</skipDeployment>
                                     <bootableJarName>test-wildfly.jar</bootableJarName>
+                                    <extra-server-content-dirs>
+                                        <dir>${project.basedir}/src/test/resources/wildfly</dir>
+                                    </extra-server-content-dirs>
                                     <record-provisioning-state>false</record-provisioning-state>
                                     <log-provisioning-time>${galleon.log.time}</log-provisioning-time>
                                     <offline-provisioning>true</offline-provisioning>
