@@ -9,7 +9,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -32,9 +31,8 @@ public class AuditLogHandlerReferenceResourceDefinition extends SimpleResourceDe
 
     public AuditLogHandlerReferenceResourceDefinition(ManagedAuditLogger auditLogger) {
         super(PATH_ELEMENT,
-                DomainManagementResolver.getDeprecatedResolver(AccessAuditResourceDefinition.DEPRECATED_MESSAGE_CATEGORY, "core.management.audit-log.handler-reference"),
+                DomainManagementResolver.getResolver( "core.management.audit-log.handler-reference"),
                 new AuditLogHandlerReferenceAddHandler(auditLogger), new AuditLogHandlerReferenceRemoveHandler(auditLogger));
-        setDeprecated(ModelVersion.create(1, 7));
     }
 
     @Override
