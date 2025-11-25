@@ -54,27 +54,35 @@ public class UnresolvedExpressionSecurityManagerTestCase {
 
     @Before
     public void setUp() throws Exception {
+        System.out.println("@@@Setting up test environment@@@");
         container.start();
         client = TestSuiteEnvironment.getModelControllerClient();
         logHandlerSetup.setup(client);
+        System.out.println("@@@Test environment setup complete@@@");
     }
 
     @After
     public void tearDown() throws Exception {
+        System.out.println("@@@Tearing down test environment@@@");
         try {
             if (client != null) {
+                System.out.println("@@@Tearing down log handler@@@");
                 logHandlerSetup.tearDown(client);
+                System.out.println("@@@Closing client@@@");
                 client.close();
             }
         } finally {
             if (container.isStarted()) {
+                System.out.println("@@@Stopping container within teardown@@@");
                 container.stop();
             }
         }
+        System.out.println("@@@Test environment torn down@@@");
     }
 
     @Test
     public void testUnresolvedExpressionInMaximumPermsFails() throws Exception {
+        System.out.println("@@@Starting testUnresolvedExpressionInMaximumPermsFails@@@");
         // with security manager enabled, boot should fail
         ServerReload.executeReloadAndWaitForCompletion(client, true);
         try {
@@ -84,10 +92,12 @@ public class UnresolvedExpressionSecurityManagerTestCase {
             cleanupSecurityManagerSubsystem(true);
         }
         verifyBootFailureInLogs();
+        System.out.println("@@@Completed testUnresolvedExpressionInMaximumPermsFails@@@");
     }
 
     @Test
     public void testUnresolvedExpressionInMinimumPermsFails() throws Exception {
+        System.out.println("@@@Starting testUnresolvedExpressionInMinimumPermsFails@@@");
         // with security manager enabled, boot should fail
         ServerReload.executeReloadAndWaitForCompletion(client, true);
         try {
@@ -97,10 +107,13 @@ public class UnresolvedExpressionSecurityManagerTestCase {
             cleanupSecurityManagerSubsystem(false);
         }
         verifyBootFailureInLogs();
+        System.out.println("@@@Completed testUnresolvedExpressionInMinimumPermsFails@@@");
     }
 
     private void addSecurityManagerSubsystemWithUnresolvedExpression(boolean isMaximumPermissions)
             throws Exception {
+        System.out.println("@@@Adding security manager subsystem with unresolved expression: isMaximumPermissions="
+                + isMaximumPermissions + "@@@");
         ModelNode address = Operations.createAddress("subsystem", "security-manager",
                 "deployment-permissions", "default");
 
@@ -123,6 +136,7 @@ public class UnresolvedExpressionSecurityManagerTestCase {
     }
 
     private void triggerFailedReloadToNormalMode() throws Exception {
+        System.out.println("@@@Triggering failed reload to normal mode@@@");
         if (AssumeTestGroupUtil.isSecurityManagerDisabled()) {
             ServerReload.executeReloadAndWaitForCompletion(this.client, false);
             return;
@@ -136,6 +150,7 @@ public class UnresolvedExpressionSecurityManagerTestCase {
     }
 
     private void verifyBootFailureInLogs() throws Exception {
+        System.out.println("@@@Verifying boot failure in logs@@@");
         boolean foundExpressionError =
                 LoggingUtil.hasLogMessage(this.client, handlerName, CANNOT_RESOLVE_EXPRESSION_ID);
 
@@ -155,6 +170,8 @@ public class UnresolvedExpressionSecurityManagerTestCase {
     }
 
     private void cleanupSecurityManagerSubsystem(boolean isMaximumPermissions) throws Exception {
+        System.out.println("@@@Cleaning up security manager subsystem: isMaximumPermissions="
+                + isMaximumPermissions + "@@@");
         if (container.isStarted()) {
             ServerReload.executeReloadAndWaitForCompletion(this.client, true);
         } else {
