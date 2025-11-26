@@ -28,6 +28,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.core.instmgr.logging.InstMgrLogger;
+import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
@@ -64,9 +65,16 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
             .setAlternatives(InstMgrConstants.LIST_UPDATES_WORK_DIR, InstMgrConstants.MAVEN_REPO_FILES)
             .build();
 
+    protected static final AttributeDefinition MANIFEST_VERSIONS = new ObjectListAttributeDefinition.Builder(InstMgrConstants.MANIFEST_VERSIONS, MANIFEST_VERSION_OBJ)
+            .setStorageRuntime()
+            .setRuntimeServiceNotRequired()
+            .setRequired(false)
+            .build();
+
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, InstMgrResolver.RESOLVER)
             .addParameter(OFFLINE)
             .addParameter(REPOSITORIES)
+            .addParameter(MANIFEST_VERSIONS)
             .addParameter(LOCAL_CACHE)
             .addParameter(NO_RESOLVE_LOCAL_CACHE)
             .addParameter(USE_DEFAULT_LOCAL_CACHE)
@@ -89,6 +97,7 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
         final Path localRepository = pathLocalRepo != null ? Path.of(pathLocalRepo) : null;
         final List<ModelNode> mavenRepoFileIndexes = MAVEN_REPO_FILES.resolveModelAttribute(context, operation).asListOrEmpty();
         final List<ModelNode> repositoriesMn = REPOSITORIES.resolveModelAttribute(context, operation).asListOrEmpty();
+        final List<ModelNode> manifestVersionsMn = MANIFEST_VERSIONS.resolveModelAttribute(context, operation).asListOrEmpty();
         final String listUpdatesWorkDir = LIST_UPDATES_WORK_DIR.resolveModelAttribute(context, operation).asStringOrNull();
 
         if (noResolveLocalCache != null && useDefaultLocalCache != null) {
@@ -161,10 +170,12 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                         repositories.addAll(toRepositories(context, repositoriesMn));
                     }
 
+                    final List<ManifestVersion> manifestVersions = toManifestVersions(context, manifestVersionsMn);
+
                     InstMgrLogger.ROOT_LOGGER.debugf("Calling SPI to prepare an updates at [%s] with the following repositories [%s]",
                             imService.getPreparedServerDir(), repositories);
                     Files.createDirectories(imService.getPreparedServerDir());
-                    boolean prepared = im.prepareUpdate(imService.getPreparedServerDir(), repositories);
+                    boolean prepared = im.prepareUpdate(imService.getPreparedServerDir(), repositories, manifestVersions);
                     if (prepared) {
                         // Put server in restart required?
                         // No. The documented purpose of the restart-required state is to indicate that the process need to be

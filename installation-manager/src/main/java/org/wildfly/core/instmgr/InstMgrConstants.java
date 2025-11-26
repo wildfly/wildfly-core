@@ -18,6 +18,7 @@ public interface InstMgrConstants {
     String CHANNEL = "channel";
     String CHANNELS = "channels";
     String CHANNEL_NAME = "name";
+    String CHANNEL_ID = "channel-id";
     String CUSTOM_PATCH_FILE = "custom-patch-file";
     String DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX = "custom-channel-";
     String HISTORY_DETAILED_ARTIFACT_NAME = "name";
@@ -49,6 +50,7 @@ public interface InstMgrConstants {
     String MANIFEST = "manifest";
     String MANIFEST_GAV = "gav";
     String MANIFEST_URL = "url";
+    String MANIFEST_VERSION = "version";
     String MAVEN_REPO_DIR_NAME_IN_ZIP_FILES = "maven-repository";
     String MAVEN_REPO_FILE = "maven-repo-file";
     String MAVEN_REPO_FILES = "maven-repo-files";
@@ -62,4 +64,5 @@ public interface InstMgrConstants {
     String REVISION = "revision";
     String TOOL_NAME = "installer";
     String INTERNAL_REPO_PREFIX = "repo-";
+    String MANIFEST_VERSIONS = "manifest-versions";
 }
