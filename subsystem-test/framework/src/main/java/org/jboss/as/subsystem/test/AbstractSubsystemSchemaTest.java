@@ -6,8 +6,10 @@ package org.jboss.as.subsystem.test;
 
 import java.io.IOException;
 import java.util.Locale;
+import java.util.Set;
 
 import org.jboss.as.controller.Extension;
+import org.jboss.as.controller.Feature;
 import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.subsystem.test.AdditionalInitialization.ManagementAdditionalInitialization;
 import org.jboss.as.version.Stability;
@@ -30,9 +32,22 @@ public abstract class AbstractSubsystemSchemaTest<S extends SubsystemSchema<S>> 
      * @param currentSchema the current schema
      */
     protected AbstractSubsystemSchemaTest(String subsystemName, Extension extension, S testSchema, S currentSchema) {
+        this(subsystemName, extension, testSchema, Set.of(currentSchema));
+    }
+
+    /**
+     * Constructs a new subsystem parsing test
+     * @param subsystemName the name of the target subsystem
+     * @param extension the target extension
+     * @param testSchema the target schema
+     * @param currentSchemas the set of current schemas
+     */
+    protected AbstractSubsystemSchemaTest(String subsystemName, Extension extension, S testSchema, Set<S> currentSchemas) {
         super(subsystemName, extension, testSchema.getStability());
         this.schema = testSchema;
-        this.latest = testSchema.since(currentSchema);
+        // Determine current schema version for the same stability
+        S current = Feature.map(currentSchemas).get(testSchema.getStability());
+        this.latest = testSchema.since(current);
     }
 
     /**
