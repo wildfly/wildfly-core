@@ -55,7 +55,10 @@ import org.xnio.management.XnioWorkerMXBean;
  */
 class WorkerResourceDefinition extends PersistentResourceDefinition {
 
-    static final PathElement PATH = PathElement.pathElement(Constants.WORKER);
+    static final PathElement PATH = pathElement(PathElement.WILDCARD_VALUE);
+    static final PathElement pathElement(String name) {
+        return PathElement.pathElement(Constants.WORKER, name);
+    }
     static final RuntimeCapability<Void> CAPABILITY = RuntimeCapability.Builder.of(IOServiceDescriptor.WORKER).build();
 
     static final OptionAttributeDefinition WORKER_TASK_CORE_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_CORE_THREADS, Options.WORKER_TASK_CORE_THREADS)
