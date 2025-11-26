@@ -106,8 +106,8 @@ public final class BootableJar implements ShutdownHandler {
     private final Arguments arguments;
     private final ModuleLoader loader;
     private final Path pidFile;
-
-    private BootableJar(BootableEnvironment environment, Arguments arguments, ModuleLoader loader, long unzipTime) throws Exception {
+    private final Path cliScript;
+    private BootableJar(BootableEnvironment environment, Arguments arguments, ModuleLoader loader, long unzipTime, List<String> cmds) throws Exception {
         this.environment = environment;
         this.arguments = arguments;
         this.loader = loader;
@@ -120,7 +120,18 @@ public final class BootableJar implements ShutdownHandler {
         if (arguments.getDeployment() != null) {
             setupDeployment(arguments.getDeployment());
         }
-
+        if (cmds != null && !cmds.isEmpty()) {
+            cliScript = Files.createTempFile("boot-config", null);
+            cliScript.toFile().deleteOnExit();
+            Files.write(cliScript, cmds);
+            Path userScript = arguments.getCLIScript();
+            if (userScript != null) {
+                List<String> userCommands = Files.readAllLines(userScript);
+                Files.write(cliScript, userCommands, StandardOpenOption.APPEND);
+            }
+        } else {
+            cliScript = arguments.getCLIScript();
+        }
         log.advertiseInstall(environment.getJBossHome(), unzipTime + (System.currentTimeMillis() - t));
         pidFile = environment.getPidFile();
     }
@@ -259,14 +270,13 @@ public final class BootableJar implements ShutdownHandler {
     }
 
     public void run() throws Exception {
-        Path script = arguments.getCLIScript();
-        if (script != null) {
+        if (cliScript != null) {
             long id = System.currentTimeMillis();
             Path markerDir = environment.getTmpDir().resolve(id + "-cli-boot-hook-dir");
             Path outputFile = environment.getTmpDir().resolve(id + "-cli-boot-hook-output-file.txt");
             Files.createDirectories(markerDir);
             startServerArgs.add("--start-mode=admin-only");
-            startServerArgs.add("-Dorg.wildfly.internal.cli.boot.hook.script=" + script.toAbsolutePath().toString());
+            startServerArgs.add("-Dorg.wildfly.internal.cli.boot.hook.script=" + cliScript.toAbsolutePath().toString());
             startServerArgs.add("-Dorg.wildfly.internal.cli.boot.hook.marker.dir=" + markerDir.toAbsolutePath().toString());
             startServerArgs.add("-Dorg.wildfly.internal.cli.boot.hook.script.output.file=" + outputFile.toAbsolutePath().toString());
         }
@@ -312,9 +322,10 @@ public final class BootableJar implements ShutdownHandler {
      * @param moduleLoader JBoss modules loader.
      * @param moduleClassLoader Bootable jar module classloader
      * @param unzipTime Time spent to unzip the server.
+     * @param cmds The list of CLI commands provided by configurators, can be null.
      * @throws Exception
      */
-    public static void run(Path jbossHome, List<String> args, ModuleLoader moduleLoader, ModuleClassLoader moduleClassLoader, Long unzipTime) throws Exception {
+    public static void run(Path jbossHome, List<String> args, ModuleLoader moduleLoader, ModuleClassLoader moduleClassLoader, Long unzipTime, List<String> cmds) throws Exception {
         setTccl(moduleClassLoader);
         // Initialize the environment
         final BootableEnvironment environment = BootableEnvironment.of(jbossHome);
@@ -333,7 +344,7 @@ public final class BootableJar implements ShutdownHandler {
         }
 
         // Side effect is to initialise Log Manager
-        BootableJar bootableJar = new BootableJar(environment, arguments, moduleLoader, unzipTime);
+        BootableJar bootableJar = new BootableJar(environment, arguments, moduleLoader, unzipTime, cmds);
 
         // First, activate the ModuleLoggerFinder
         configureModuleFinder(moduleClassLoader);
