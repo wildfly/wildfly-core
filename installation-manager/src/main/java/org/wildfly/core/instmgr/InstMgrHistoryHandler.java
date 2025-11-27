@@ -18,9 +18,11 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.installationmanager.HistoryResult;
+import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
+
 
 /**
  * Operation handler to get the history of the installation manager changes, either artifacts or configuration metadata as
@@ -51,8 +53,20 @@ public class InstMgrHistoryHandler extends InstMgrOperationStepHandler {
                     for (HistoryResult hr : history) {
                         ModelNode entry = new ModelNode();
                         entry.get(InstMgrConstants.HISTORY_RESULT_HASH).set(hr.getName());
-                        entry.get(InstMgrConstants.HISTORY_RESULT_TIMESTAMP).set(hr.timestamp().toString());
+                        if (hr.timestamp() != null) {
+                            entry.get(InstMgrConstants.HISTORY_RESULT_TIMESTAMP).set(hr.timestamp().toString());
+                        }
                         entry.get(InstMgrConstants.HISTORY_RESULT_TYPE).set(hr.getType().toLowerCase(Locale.ENGLISH));
+                        if (hr.getVersions() != null && !hr.getVersions().isEmpty()) {
+                            final ModelNode versions = entry.get(InstMgrConstants.HISTORY_RESULT_CHANNEL_VERSIONS);
+                            for (ManifestVersion manifestVersion : hr.getVersions()) {
+                                if (manifestVersion.getDescription() != null) {
+                                    versions.add(manifestVersion.getDescription());
+                                } else {
+                                    versions.add(String.format("%s:%s", manifestVersion.getChannelId(), manifestVersion.getVersion()));
+                                }
+                            }
+                        }
                         if (hr.getDescription() != null) {
                             entry.get(InstMgrConstants.HISTORY_RESULT_DESCRIPTION).set(hr.getDescription());
                         }
@@ -66,6 +80,9 @@ public class InstMgrHistoryHandler extends InstMgrOperationStepHandler {
                     throw new RuntimeException(e);
                 }
             }
-        }, OperationContext.Stage.RUNTIME);
+        }, OperationContext.Stage.RUNTIME, true); // InstallationReportHandler can add a step calling
+        // InstMgrHistoryHandler and then add its own Stage.RUNTIME
+        // step. We need our RUNTIME to step to execute before
+        // its, so we add set addFirst to true
     }
 }

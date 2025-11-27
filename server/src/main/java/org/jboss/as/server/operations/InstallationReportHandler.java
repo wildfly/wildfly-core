@@ -50,20 +50,21 @@ public class InstallationReportHandler extends AbstractInstallationReporter {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final ModelNode patchingInfo = new ModelNode();
-        PathAddress patchingAddress = PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, "patching"));
-        OperationEntry opEntry = context.getRootResourceRegistration().getOperationEntry(patchingAddress, "show-history");
-        if(opEntry != null) {
-            context.addStep(patchingInfo, Util.createOperation("show-history", patchingAddress),
-                opEntry.getOperationHandler(), OperationContext.Stage.RUNTIME);
+        final ModelNode installerInfo = new ModelNode();
+        final PathAddress installerAddress = PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, "installer"));
+        final OperationEntry installerOpEntry = context.getRootResourceRegistration().getOperationEntry(installerAddress, "history");
+        if (installerOpEntry != null) {
+            context.addStep(installerInfo, Util.createOperation("history", installerAddress),
+                    installerOpEntry.getOperationHandler(), OperationContext.Stage.RUNTIME);
         }
+
         final Path installationDir = environment.getHomeDir().toPath();
         context.addStep(new OperationStepHandler() {
              @Override
              public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 ModelNode result = context.getResult();
                 result.get(SUMMARY_DEFINITION.getName()).set(createProductNode(context, new InstallationConfiguration(
-                        environment, environment.getProductConfig(), patchingInfo, installationDir)));
+                        environment, environment.getProductConfig(), installerInfo, installationDir)));
              }
         }, OperationContext.Stage.RUNTIME);
     }
