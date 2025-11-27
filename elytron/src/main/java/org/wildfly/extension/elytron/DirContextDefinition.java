@@ -126,6 +126,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODULE, ModelType.STRING, true)
             .setAllowExpression(true)
+            .setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR)
             .setRestartAllServices()
             .build();
 
