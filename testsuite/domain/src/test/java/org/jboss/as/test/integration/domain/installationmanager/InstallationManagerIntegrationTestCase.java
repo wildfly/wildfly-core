@@ -114,12 +114,12 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         String host = "secondary";
         // Clean any previous state
         assertTrue(cli.sendLine("installer clean --host=" + host, false));
-        Assert.assertTrue(!Files.exists(secondaryPrepareServerDir));
+        Assert.assertFalse(Files.exists(secondaryPrepareServerDir));
 
         host = "primary";
         // Clean any previous state
         assertTrue(cli.sendLine("installer clean --host=" + host, false));
-        Assert.assertTrue(!Files.exists(primaryPrepareServerDir));
+        Assert.assertFalse(Files.exists(primaryPrepareServerDir));
 
        for(File testZip : TARGET_DIR.toFile().listFiles((dir, name) -> name.startsWith("installation-manager") && name.endsWith(".zip"))) {
            Files.deleteIfExists(testZip.toPath());
@@ -150,15 +150,15 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         StringBuilder sb = new StringBuilder("-------").append(returnChar).append("# " + channel.getName()).append(returnChar);
 
         if (channel.getManifestUrl().isPresent()) {
-            sb.append("  manifest: " + channel.getManifestUrl().get()).append(returnChar);
+            sb.append("  manifest: ").append(channel.getManifestUrl().get()).append(returnChar);
         } else if (channel.getManifestCoordinate().isPresent()) {
-            sb.append("  manifest: " + channel.getManifestCoordinate().get()).append(returnChar);
+            sb.append("  manifest: "). append(channel.getManifestCoordinate().get()).append(returnChar);
         }
 
         sb.append("  repositories:").append(returnChar);
 
         for (Repository repository : channel.getRepositories()) {
-            sb.append("    id: " + repository.getId()).append(returnChar).append("    url: " + repository.getUrl()).append(returnChar);
+            sb.append("    id: ").append(repository.getId()).append(returnChar).append("    url: ").append(repository.getUrl()).append(returnChar);
         }
 
         return sb.toString();
