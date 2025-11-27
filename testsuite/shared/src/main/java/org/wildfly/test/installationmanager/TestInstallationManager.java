@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -55,6 +56,9 @@ public class TestInstallationManager implements InstallationManager {
 
     public static String APPLY_REVERT_BASE_GENERATED_COMMAND = "apply revert";
     public static String APPLY_UPDATE_BASE_GENERATED_COMMAND = "apply update";
+
+    public static List<ManifestVersion> nullDescriptionMV;
+    public static List<ManifestVersion> descriptionMV;
 
     public static void initialize() throws IOException {
         if (!initialized) {
@@ -117,12 +121,22 @@ public class TestInstallationManager implements InstallationManager {
             channelChanges.add(cChangeModified);
             installationChanges = new InstallationChanges(artifactChanges, channelChanges);
 
+            // Manifest Versions
+            nullDescriptionMV = new ArrayList<>();
+            nullDescriptionMV.add(new ManifestVersion("group1:artifact1", null, "1.0", ManifestVersion.Type.MAVEN));
+            nullDescriptionMV.add(new ManifestVersion("file:/path", null, "d2ab21a256d9781238", ManifestVersion.Type.URL));
+
+            descriptionMV = new ArrayList<>();
+            descriptionMV.add(new ManifestVersion("group1:artifact1", "Maven Version 1.0", "1.0", ManifestVersion.Type.MAVEN));
+            descriptionMV.add(new ManifestVersion("file:/path", "URL Version 1.0", "d2ab21a256d9781238", ManifestVersion.Type.URL));
+
+
             // History sample data
             history = new HashMap<>();
-            history.put("update", new HistoryResult("update", Instant.now(), "update", "update description"));
-            history.put("install", new HistoryResult("install", Instant.now(), "install", "install description"));
-            history.put("rollback", new HistoryResult("rollback", Instant.now(), "rollback", "rollback description"));
-            history.put("config_change", new HistoryResult("config_change", Instant.now(), "config_change", "config_change description"));
+            history.put("update", new HistoryResult("update", Instant.now(), "update", "update description", nullDescriptionMV));
+            history.put("install", new HistoryResult("install", Instant.now(), "install", "install description", descriptionMV));
+            history.put("rollback", new HistoryResult("rollback", Instant.now(), "rollback", "rollback description", Collections.emptyList()));
+            history.put("config_change", new HistoryResult("config_change", Instant.now(), "config_change", "config_change description", Collections.emptyList()));
 
             // List Updates sample Data
 
