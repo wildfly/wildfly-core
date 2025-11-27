@@ -8,6 +8,7 @@ package org.jboss.as.test.integration.domain.installationmanager;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -34,9 +36,12 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.module.util.TestModule;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -44,6 +49,7 @@ import org.junit.runners.MethodSorters;
 import org.wildfly.core.instmgr.InstMgrConstants;
 import org.wildfly.core.instmgr.cli.UpdateCommand;
 import org.wildfly.installationmanager.Channel;
+import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.Repository;
 import org.wildfly.test.installationmanager.TestInstallationManager;
 import org.wildfly.test.installationmanager.TestInstallationManagerFactory;
@@ -109,6 +115,13 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         testModule.create(true);
     }
 
+    @Before
+    public void setup() throws Exception {
+        // Always reinitialize our TestInstallationManager mock copy so we can use it
+        // to assert the expected values provided by the copy running on the servers
+        TestInstallationManager.initialize();
+    }
+
     @After
     public void clean() throws IOException {
         String host = "secondary";
@@ -121,9 +134,10 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         assertTrue(cli.sendLine("installer clean --host=" + host, false));
         Assert.assertFalse(Files.exists(primaryPrepareServerDir));
 
-       for(File testZip : TARGET_DIR.toFile().listFiles((dir, name) -> name.startsWith("installation-manager") && name.endsWith(".zip"))) {
-           Files.deleteIfExists(testZip.toPath());
+        for (File testZip : TARGET_DIR.toFile().listFiles((dir, name) -> name.startsWith("installation-manager") && name.endsWith(".zip"))) {
+            Files.deleteIfExists(testZip.toPath());
         }
+        TestInstallationManager.initialized = false;
     }
 
     @Test
@@ -169,8 +183,6 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         cli.sendLine("installer channel-list --host=primary");
         String output = cli.readOutput();
 
-        TestInstallationManager.initialize();
-
         StringBuilder expected = new StringBuilder();
         for (Channel channel : TestInstallationManager.lstChannels) {
             expected.append(buildChannelOutput(channel));
@@ -202,7 +214,6 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
         StringBuilder expected = new StringBuilder();
 
-        TestInstallationManager.initialize();
         for (Channel channel : TestInstallationManager.lstChannels) {
             expected.append(buildChannelOutput(channel));
         }
@@ -229,7 +240,6 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         cli.sendLine("installer channel-list --host=" + host);
         output = cli.readOutput();
 
-        TestInstallationManager.initialize();
         for (Channel channel : TestInstallationManager.lstChannels) {
             expected.append(buildChannelOutput(channel));
         }
@@ -323,17 +333,46 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
         String[] lines = output.split("\n");
         assertEquals(4, lines.length);
 
-        TestInstallationManager.initialize();
-        Set<String> expectedValues = TestInstallationManager.history.keySet();
-        Set<String> actual = new HashSet<>(Arrays.asList(lines));
-        for (String actualStr : actual) {
-            for (Iterator<String> it = expectedValues.iterator(); it.hasNext();) {
-                if (actualStr.contains(it.next())) {
+        Set<String> expectedChangeKeys = TestInstallationManager.history.keySet();
+        Set<String> expectedVersionsWithoutDescription = TestInstallationManager.nullDescriptionMV.stream()
+                .map(mv -> String.format("%s:%s", mv.getChannelId(), mv.getVersion()))
+                .collect(Collectors.toSet());
+        List<String> expectedVersionsWithDescriptions = TestInstallationManager.descriptionMV.stream().map(ManifestVersion::getDescription).toList();
+
+        Set<String> actualResults = new HashSet<>(Arrays.asList(lines));
+        for (String actualResult : actualResults) {
+            for (Iterator<String> it = expectedChangeKeys.iterator(); it.hasNext();) {
+                String expectedChangeKey = it.next();
+                if (actualResult.contains(expectedChangeKey)) {
+                    switch (expectedChangeKey) {
+                        case "update": {
+                            for(String expected : expectedVersionsWithoutDescription) {
+                                assertTrue(actualResult.contains(expected));
+                            }
+                            break;
+                        }
+                        case "install": {
+                            for(String expected : expectedVersionsWithDescriptions) {
+                                assertTrue(actualResult.contains(expected));
+                            }
+                            break;
+                        }
+                        case "rollback":
+                        case "config_change": {
+                            for(String expected : expectedVersionsWithDescriptions) {
+                                assertFalse(actualResult.contains(expected));
+                            }
+                            for(String expected : expectedVersionsWithoutDescription) {
+                                assertFalse(actualResult.contains(expected));
+                            }
+                        }
+                    }
                     it.remove();
+                    break;
                 }
             }
         }
-        Assert.assertTrue(Arrays.asList(lines).toString(), expectedValues.isEmpty());
+        Assert.assertTrue(Arrays.asList(lines).toString(), expectedChangeKeys.isEmpty());
     }
 
     @Test
@@ -784,6 +823,37 @@ public class InstallationManagerIntegrationTestCase extends AbstractCliTestBase 
 
         // remove the patch 2
         removeCustomPatch(patchManifestGA_2, host, hostCustomPatchDir_2);
+    }
+
+
+    @Test
+    public void testProductInfoIncludesInstallerInfo() throws Exception {
+        cli.sendLine(":product-info");
+
+        ModelNode res = cli.readAllAsOpResult().getResponseNode();
+
+        final List<ModelNode> hostResults = res.get("result").asList();
+        for (ModelNode host : hostResults) {
+            final ModelNode summaryNode = host.get("result");
+            final List<ModelNode> summaries;
+            if (summaryNode.getType() == ModelType.LIST) {
+                summaries = summaryNode.asList();
+            } else {
+                summaries = List.of(summaryNode);
+            }
+            for (ModelNode summary : summaries) {
+                summary = summary.get("summary");
+                if (!summary.hasDefined("instance-identifier")) {
+                    continue;
+                }
+
+                Assert.assertTrue(summary.toString(), summary.hasDefined("last-update-date"));
+                Assert.assertTrue(summary.hasDefined("channel-versions"));
+                ModelNode expectedResult = new ModelNode();
+                TestInstallationManager.descriptionMV.forEach(manifestVersion -> expectedResult.add(manifestVersion.getDescription()));
+                Assert.assertEquals(expectedResult.asList(), summary.get("channel-versions").asList());
+            }
+        }
     }
 
     public void createAndUploadCustomPatch(String customPatchManifest, String host, Path hostCustomPatchDir, String mavenDirToZip, String expectedArtifact) throws IOException {
