@@ -24,6 +24,7 @@ import java.util.List;
 import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -34,7 +35,6 @@ import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
-import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.dmr.ModelNode;
@@ -55,7 +55,8 @@ import org.jboss.modules.management.ResourceLoaderInfo;
  */
 public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
 
-    private static final AttributeDefinition MODULE_NAME = new SimpleAttributeDefinitionBuilder(MODULE, ModelType.STRING).build();
+    private static final AttributeDefinition MODULE_NAME = new SimpleAttributeDefinitionBuilder(MODULE,
+            ModelType.STRING).setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR).build();
 
     public static final ModuleLoadingResourceDefinition INSTANCE = new ModuleLoadingResourceDefinition();
 
@@ -207,7 +208,7 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
     private static List<String> findResourcePaths(String moduleName) throws ModuleLoadException, ReflectiveOperationException, IOException, URISyntaxException {
         ModuleLoader moduleLoader = Module.getCallerModuleLoader();
         ModuleLoaderMXBean loader = ModuleInfoHandler.INSTANCE.getMxBean(moduleLoader);
-        moduleLoader.loadModule(JBossModulesNameUtil.parseCanonicalModuleIdentifier(moduleName));
+        moduleLoader.loadModule(moduleName);
 
         List<String> result = new LinkedList<>();
         for (ResourceLoaderInfo rl : loader.getResourceLoaders(moduleName)){

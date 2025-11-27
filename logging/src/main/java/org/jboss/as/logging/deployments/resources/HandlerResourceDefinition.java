@@ -5,6 +5,7 @@
 
 package org.jboss.as.logging.deployments.resources;
 
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -33,6 +34,7 @@ class HandlerResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     private static final SimpleAttributeDefinition MODULE = SimpleAttributeDefinitionBuilder.create("module", ModelType.STRING, true)
+            .setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR)
             .setStorageRuntime()
             .build();
 
