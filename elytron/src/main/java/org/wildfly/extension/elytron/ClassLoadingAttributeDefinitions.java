@@ -22,6 +22,7 @@ class ClassLoadingAttributeDefinitions {
     static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODULE, ModelType.STRING, true)
         .setAttributeGroup(ElytronDescriptionConstants.CLASS_LOADING)
         .setAllowExpression(false)
+        .setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR)
         .setMinSize(1)
         .setRestartAllServices()
         .build();

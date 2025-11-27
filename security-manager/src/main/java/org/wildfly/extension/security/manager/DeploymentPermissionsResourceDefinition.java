@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.PathElement;
@@ -57,6 +58,7 @@ class DeploymentPermissionsResourceDefinition extends PersistentResourceDefiniti
 
     static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(PERMISSION_MODULE, ModelType.STRING)
             .setRequired(false)
+            .setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .build();
 
