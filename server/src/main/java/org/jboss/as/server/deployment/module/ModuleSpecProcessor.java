@@ -343,7 +343,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
                         .setExportFilter(exportFilter)
                         .build();
                 specBuilder.addDependency(depSpec);
-                logger.debugf("Adding dependency %s to module %s", dependency, specBuilder.getIdentifier());
+                logger.debugf("Adding dependency %s to module %s", dependency, specBuilder.getName());
             }
         }
     }

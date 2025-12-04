@@ -119,7 +119,7 @@ public class ModuleInfoTestCase extends ContainerResourceMgmtTestBase {
         for (DependencySpec d : xmlDependencies) {
             if (d instanceof ModuleDependencySpec) {
                 ModuleDependencySpec mds = (ModuleDependencySpec) d;
-                moduleDependencies.put(mds.getIdentifier().getName(), mds);
+                moduleDependencies.put(mds.getName(), mds);
             }
         }
         int foundDependencies = 0;

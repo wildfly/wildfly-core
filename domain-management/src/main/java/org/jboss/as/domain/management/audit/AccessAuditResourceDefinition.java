@@ -7,7 +7,6 @@ package org.jboss.as.domain.management.audit;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -26,8 +25,6 @@ public class AccessAuditResourceDefinition extends SimpleResourceDefinition {
 
     public static final PathElement PATH_ELEMENT = PathElement.pathElement(ModelDescriptionConstants.ACCESS, ModelDescriptionConstants.AUDIT);
 
-    static final String DEPRECATED_MESSAGE_CATEGORY = "core.management.audit-log";
-
     private final ManagedAuditLogger auditLogger;
     private final PathManagerService pathManager;
     private final EnvironmentNameReader environmentReader;
@@ -35,7 +32,7 @@ public class AccessAuditResourceDefinition extends SimpleResourceDefinition {
     public AccessAuditResourceDefinition(final ManagedAuditLogger auditLogger, final PathManagerService pathManager, final EnvironmentNameReader environmentReader) {
         super(
                 PATH_ELEMENT,
-                DomainManagementResolver.getResolver(DEPRECATED_MESSAGE_CATEGORY),
+                DomainManagementResolver.getResolver("core.management.audit-log"),
                 new AbstractAddStepHandler() {
                     @Override
                     protected boolean requiresRuntime(OperationContext context) {
@@ -49,7 +46,6 @@ public class AccessAuditResourceDefinition extends SimpleResourceDefinition {
         this.auditLogger = auditLogger;
         this.pathManager = pathManager;
         this.environmentReader = environmentReader;
-        setDeprecated(ModelVersion.create(1, 7));
     }
 
     @Override
