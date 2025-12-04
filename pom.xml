@@ -282,7 +282,7 @@
         <version.org.wildfly.launcher>1.0.2.Final</version.org.wildfly.launcher>
         <version.org.wildfly.legacy.test>10.0.1.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.openssl>2.2.5.Final</version.org.wildfly.openssl>
-        <version.org.wildfly.openssl.natives>2.3.0.Alpha2</version.org.wildfly.openssl.natives>
+        <version.org.wildfly.openssl.natives>2.3.0.Alpha3</version.org.wildfly.openssl.natives>
         <version.org.wildfly.security.elytron>2.7.0.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>4.1.2.Final</version.org.wildfly.security.elytron-web>
         <version.org.wildfly.security.jakarta.elytron-ee>3.2.0.Final</version.org.wildfly.security.jakarta.elytron-ee>
