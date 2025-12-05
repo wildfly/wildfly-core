@@ -22,6 +22,7 @@ class ClassLoadingAttributeDefinitions {
     static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODULE, ModelType.STRING, true)
         .setAttributeGroup(ElytronDescriptionConstants.CLASS_LOADING)
         .setAllowExpression(false)
+        .setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR)
         .setMinSize(1)
         .setRestartAllServices()
         .build();
@@ -43,7 +44,7 @@ class ClassLoadingAttributeDefinitions {
     static ClassLoader resolveClassLoader(String module) throws ModuleLoadException {
         Module current = Module.getCallerModule();
         if (module != null && current != null) {
-            current = current.getModule(ModuleIdentifierUtil.parseCanonicalModuleIdentifier(module));
+            current = current.getModule(module);
         }
 
         return current != null ? current.getClassLoader() : ClassLoadingAttributeDefinitions.class.getClassLoader();
