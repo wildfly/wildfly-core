@@ -12,9 +12,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -219,7 +221,7 @@ class InstMgrService implements Service {
             try {
                 installationManager = imf.create(homeDir, mavenOptions);
                 channels = installationManager.getInstalledVersions();
-                ROOT_LOGGER.provisioningChannels(channels);
+                ROOT_LOGGER.provisioningChannels(getChannelVersions(channels));
             } catch (Exception e) {
                 if (installationManager == null) {
                     ROOT_LOGGER.failedToCreateInstallationManager(homeDir, e);
@@ -228,5 +230,53 @@ class InstMgrService implements Service {
                 }
             }
         }
+    }
+
+    private static String getChannelVersions(Collection<ManifestVersion> versions) {
+
+        List<ManifestVersion> versionList = sortManifests(versions);
+
+        int first = versionList.size() - 1;
+        StringBuilder sb = new StringBuilder();
+        for (int i = first; i >= 0; i--) {
+            if (i != first) {
+                sb.append(", ");
+            }
+            ManifestVersion mv = versionList.get(i);
+            sb.append(mv.getChannelId()); // either a maven GA or a URL
+            sb.append(':');
+            sb.append(mv.getVersion()); // either a maven version or the hash of the URL content
+            if (mv.getDescription() != null && !mv.getDescription().isEmpty()) {
+                sb.append(" (");
+                sb.append(mv.getDescription()); // the logical-version value in the manifest.yaml,
+                                                // intended to be short identifier of what the channel provides
+                                                // plus the version of that thing specified by the particular manifest version
+                sb.append(')');
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * This is a non-guaranteed attempt to order the channels such that more 'important'
+     * ones come first. Not guaranteed to work, as it assumes prospero internals.
+     * The inputs we get from prospero put the maven manifests first, but with the
+     * base channel later in the list of maven manifests. Then it provides URL manifests.
+     *
+     * @param input the manifest versions as provided by the installation manager
+     * @return the sorted manifest versions
+     */
+    private static List<ManifestVersion> sortManifests(Collection<ManifestVersion> input) {
+        List<ManifestVersion> versionList = new ArrayList<>(input.size());
+        for (ManifestVersion mv : input) {
+            if (mv.getType() == ManifestVersion.Type.MAVEN) {
+                // later in the maven input list tends to be more important, so put it first
+                versionList.add(0, mv);
+            } else {
+                // URL channels are atypical, so likely less fundamental and come later.
+                versionList.add(mv);
+            }
+        }
+        return versionList;
     }
 }
