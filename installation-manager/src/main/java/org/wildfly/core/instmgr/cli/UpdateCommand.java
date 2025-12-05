@@ -37,6 +37,8 @@ public class UpdateCommand extends AbstractInstMgrCommand {
     private boolean confirm;
     @OptionList(name = "repositories")
     private List<String> repositories;
+    @OptionList(name = "manifest-versions")
+    private List<String> manifestVersions;
     @Option(name = "local-cache")
     private File localCache;
     @Option(name = NO_RESOLVE_LOCAL_CACHE_OPTION, hasValue = false, activator = AbstractInstMgrCommand.NoResolveLocalCacheActivator.class, defaultValue = "true")
@@ -96,12 +98,12 @@ public class UpdateCommand extends AbstractInstMgrCommand {
 
             if (!changesMn.isEmpty()) {
                 if (!confirm) {
-                    String reply = null;
+                    String reply;
 
                     try {
-                        while (reply == null) {
-                            reply = commandInvocation.inputLine(new Prompt("\nWould you like to proceed with preparing this update? [y/N]:"));
-                            if (reply != null && reply.equalsIgnoreCase("N")) {
+                        while (true) {
+                            reply = commandInvocation.inputLine(new Prompt("\nWould you like to proceed with preparing this update? [y/N]: "));
+                            if (reply != null && (reply.equalsIgnoreCase("N") || reply.isEmpty())) {
                                 // clean the cache if there is one
                                 if (lstUpdatesWorkDir != null) {
                                     CleanCommand cleanCommand = new CleanCommand.Builder().setLstUpdatesWorkDir(lstUpdatesWorkDir).createCleanCommand();
