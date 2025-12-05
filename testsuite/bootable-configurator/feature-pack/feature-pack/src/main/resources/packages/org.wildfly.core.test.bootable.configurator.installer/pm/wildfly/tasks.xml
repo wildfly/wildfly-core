@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+
+<tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:3.0">
+    <append-file src="bin/test-installer.properties" target="modules/system/layers/base/org/wildfly/bootable-jar/main/bootable-configurators/bootable-configurators.properties"/>
+</tasks>

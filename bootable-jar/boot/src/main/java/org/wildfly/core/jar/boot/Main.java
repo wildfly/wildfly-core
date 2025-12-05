@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,10 +19,12 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.security.Policy;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -50,6 +53,11 @@ public final class Main {
 
     private static final String BOOTABLE_JAR = "org.wildfly.core.jar.runtime.BootableJar";
     private static final String BOOTABLE_JAR_RUN_METHOD = "run";
+    private static final String BOOTABLE_JAR_RUNTIME_CONFIGURATOR_CLASS = "org.wildfly.core.jar.runtime.BootableServerConfigurator";
+    private static final String BOOTABLE_JAR_RUNTIME_CONFIGURATOR_CONFIGURATION_CLASS = "org.wildfly.core.jar.runtime.Configuration";
+    private static final String BOOTABLE_JAR_RUNTIME_CONFIGURATOR_METHOD_NAME = "configure";
+    private static final String BOOTABLE_JAR_RUNTIME_CONFIGURATOR_CLI_OPS_METHOD_NAME = "getCliOperations";
+    private static final String BOOTABLE_JAR_RUNTIME_CONFIGURATOR_ARGS_METHOD_NAME = "getArguments";
 
     private static final String INSTALL_DIR = "--install-dir";
     private static final String SECMGR = "-secmgr";
@@ -169,9 +177,44 @@ public final class Main {
         } catch (final ClassNotFoundException cnfe) {
             throw new Exception(cnfe);
         }
+        URL url = bootableJarModule.getExportedResource("bootable-configurators.properties");
+        Properties p = new Properties();
+        try (InputStream in = url.openStream()) {
+            p.load(in);
+        }
+        List<String> cliCmds = null;
+        if (!p.isEmpty()) {
+            cliCmds = new ArrayList<>();
+            Class<?> configuratorClass = moduleCL.loadClass(BOOTABLE_JAR_RUNTIME_CONFIGURATOR_CLASS);
+            Class<?> configurationClass = moduleCL.loadClass(BOOTABLE_JAR_RUNTIME_CONFIGURATOR_CONFIGURATION_CLASS);
+            Method configure = configuratorClass.getMethod(BOOTABLE_JAR_RUNTIME_CONFIGURATOR_METHOD_NAME, List.class, Path.class);
+            Method getCliOperations = configurationClass.getMethod(BOOTABLE_JAR_RUNTIME_CONFIGURATOR_CLI_OPS_METHOD_NAME);
+            Method getArguments = configurationClass.getMethod(BOOTABLE_JAR_RUNTIME_CONFIGURATOR_ARGS_METHOD_NAME);
+            List<String> args = Collections.unmodifiableList(arguments);
+            for (String k : p.stringPropertyNames()) {
+                String moduleName = p.getProperty(k);
+                Module bootableConfiguratorModule = moduleLoader.loadModule(moduleName);
+                ServiceLoader<?> loader = bootableConfiguratorModule.loadService(configuratorClass);
+                for (Object configurator : loader) {
+                    Object config = configure.invoke(configurator, args, jbossHome);
+                    if (config != null) {
+                        @SuppressWarnings("unchecked")
+                        List<String> cliOps = (List<String>) getCliOperations.invoke(config);
+                        if (cliOps != null && !cliOps.isEmpty()) {
+                            cliCmds.addAll(cliOps);
+                        }
+                        @SuppressWarnings("unchecked")
+                        List<String> extraArguments = (List<String>) getArguments.invoke(config);
+                        if (extraArguments != null && !extraArguments.isEmpty()) {
+                            arguments.addAll(extraArguments);
+                        }
+                    }
+                }
+            }
+        }
         Method runMethod;
         try {
-            runMethod = bjFactoryClass.getMethod(BOOTABLE_JAR_RUN_METHOD, Path.class, List.class, ModuleLoader.class, ModuleClassLoader.class, Long.class);
+            runMethod = bjFactoryClass.getMethod(BOOTABLE_JAR_RUN_METHOD, Path.class, List.class, ModuleLoader.class, ModuleClassLoader.class, Long.class, List.class);
         } catch (final NoSuchMethodException nsme) {
             throw new Exception(nsme);
         }
@@ -189,7 +232,7 @@ public final class Main {
             }
         }
 
-        runMethod.invoke(null, jbossHome, arguments, moduleLoader, moduleCL, unzipTime);
+        runMethod.invoke(null, jbossHome, arguments, moduleLoader, moduleCL, unzipTime, cliCmds);
     }
 
     private static void unzip(InputStream wf, Path dir) throws Exception {
