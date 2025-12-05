@@ -113,6 +113,12 @@ abstract class AttributeTransformationDescriptionBuilderImpl<T extends BaseAttri
         return thisBuilder();
     }
 
+    @Override
+    public T addRename(AttributeDefinition oldAttribute, AttributeDefinition newAttribute) {
+        registry.addRenamedAttribute(oldAttribute.getName(), newAttribute.getName());
+        return thisBuilder();
+    }
+
 
     @Override
     public T setValueConverter(AttributeConverter attributeConverter, AttributeDefinition...convertedAttributes) {
