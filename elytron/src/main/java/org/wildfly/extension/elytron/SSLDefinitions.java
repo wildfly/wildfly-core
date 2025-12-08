@@ -90,11 +90,10 @@ import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
-import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
+import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.CredentialReference;
@@ -237,7 +236,7 @@ class SSLDefinitions {
             .setMinSize(1)
             .setRequired(false)
             .setAllowedValues(ALLOWED_PROTOCOLS)
-            .setValidator(new StringValuesValidator(ALLOWED_PROTOCOLS))
+            .setValidator(new StringAllowedValuesValidator(ALLOWED_PROTOCOLS))
             .setRestartAllServices()
             .build();
 
@@ -403,39 +402,6 @@ class SSLDefinitions {
     private static final SimpleAttributeDefinition ACTIVE_SESSION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ACTIVE_SESSION_COUNT, ModelType.INT)
             .setStorageRuntime()
             .build();
-
-
-    /**
-     * A simple {@link ModelTypeValidator} that requires that values are contained on a pre-defined list of string.
-     * <p>
-     * //TODO: couldn't find a built-in validator for that. see if there is one or even if it can be moved to its own file.
-     */
-    static class StringValuesValidator extends ModelTypeValidator implements AllowedValuesValidator {
-
-        private List<ModelNode> allowedValues = new ArrayList<>();
-
-        StringValuesValidator(String... values) {
-            super(ModelType.STRING);
-            for (String value : values) {
-                allowedValues.add(new ModelNode().set(value));
-            }
-        }
-
-        @Override
-        public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
-            super.validateParameter(parameterName, value);
-            if (value.isDefined()) {
-                if (!allowedValues.contains(value)) {
-                    throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidValue(value.asString(), parameterName, allowedValues));
-                }
-            }
-        }
-
-        @Override
-        public List<ModelNode> getAllowedValues() {
-            return this.allowedValues;
-        }
-    }
 
     static class CipherSuiteFilterValidator extends ModelTypeValidator {
 
