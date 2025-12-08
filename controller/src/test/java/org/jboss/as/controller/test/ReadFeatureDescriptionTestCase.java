@@ -74,7 +74,6 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
     private static final String RESOURCE = "resource";
     private static final String MAIN_RESOURCE = "main-resource";
     private static final String SPECIAL_NAMES_RESOURCE = "special-names-resource";
-    private static final String SPECIAL_HOST_RESOURCE = "special-host-resource";
     private static final String REFERENCING_RESOURCE = "referencing-resource";
     private static final String RUNTIME_RESOURCE = "runtime-resource";
     private static final String NON_FEATURE_RESOURCE = "non-feature-resource";
@@ -354,8 +353,8 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         assertFeatureIdParam(SUBSYSTEM, TEST_SUBSYSTEM, params);
         assertFeatureIdParam(TEST, SPECIAL_NAMES_RESOURCE, params); // note that parameter "test" is bound to address element
         Assert.assertTrue(params.containsKey(TEST + "-feature")); // while resource attribute "test" is renamed to "test-feature"
-        Assert.assertTrue(params.containsKey(HOST)); // likewise "host" should be renamed to "host-feature"
-        Assert.assertTrue(params.containsKey(PROFILE)); // and the same for "profile"
+        Assert.assertTrue(params.containsKey(HOST + "-feature")); // likewise "host" should be renamed to "host-feature"
+        Assert.assertTrue(params.containsKey(PROFILE + "-feature")); // and the same for "profile"
 
         // annotation
         ModelNode annotation = feature.require(ANNOTATION);
@@ -364,44 +363,7 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         // the renamed "*-feature" parameters should be mapped to their original names
         assertSortedArrayEquals(new String[] {HOST, TEST, PROFILE},
                 annotation.require(OP_PARAMS_MAPPING).asString().split(","));
-        assertSortedArrayEquals(new String[] {HOST, TEST + "-feature", PROFILE },
-                annotation.require(OP_PARAMS).asString().split(","));
-    }
-    /**
-     * Reads resource that:
-     *
-     * - contains attributes with special names ('host', 'profile'),
-     * - contains an attribute that conflicts with resource path element (path '_test_/storage-resource', attribute 'test'),
-     * - doesn't have add handler.
-     *
-     * Expectations:
-     *
-     * - mentioned attributes need to be remapped to '*-feature'.
-     * - annotation will reference 'write-attribute' operation instead of 'add' operation.
-     */
-    @Test
-    public void testSpecialResourceNames() throws OperationFailedException {
-        PathAddress address = PathAddress.pathAddress(SUBSYSTEM, TEST_SUBSYSTEM).append(TEST, SPECIAL_HOST_RESOURCE).append(HOST, "myHost");
-        ModelNode result = readFeatureDescription(address);
-
-        ModelNode feature = result.require(FEATURE);
-        Assert.assertEquals(serializeAddress(address), feature.require(NAME).asString());
-        Map<String, ModelNode> params = extractParamsToMap(feature);
-        assertFeatureIdParam(SUBSYSTEM, TEST_SUBSYSTEM, params);
-        assertFeatureIdParam(TEST, SPECIAL_HOST_RESOURCE, params); // note that parameter "test" is bound to address element
-        assertFeatureIdParam(HOST, "myHost", params); // note that parameter "test" is bound to address element
-        Assert.assertTrue(params.containsKey(TEST + "-feature")); // while resource attribute "test" is renamed to "test-feature"
-        Assert.assertTrue(params.containsKey(HOST + "-feature")); // likewise "host" should be renamed to "host-feature"
-        Assert.assertTrue(params.containsKey(PROFILE)); // and the same for "profile"
-
-        // annotation
-        ModelNode annotation = feature.require(ANNOTATION);
-        Assert.assertArrayEquals(new String[] {SUBSYSTEM, TEST, HOST}, annotation.require(ADDR_PARAMS).asString().split(","));
-        Assert.assertEquals(WRITE_ATTRIBUTE_OPERATION, annotation.require(NAME).asString());
-        // the renamed "*-feature" parameters should be mapped to their original names
-        assertSortedArrayEquals(new String[] {HOST, TEST, PROFILE},
-                annotation.require(OP_PARAMS_MAPPING).asString().split(","));
-        assertSortedArrayEquals(new String[] {HOST + "-feature", TEST + "-feature", PROFILE},
+        assertSortedArrayEquals(new String[] {HOST + "-feature", TEST + "-feature", PROFILE + "-feature"},
                 annotation.require(OP_PARAMS).asString().split(","));
     }
 
@@ -478,9 +440,9 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         params = extractParamsToMap(resource1);
         assertFeatureIdParam(SUBSYSTEM, TEST_SUBSYSTEM, params);
         assertFeatureIdParam(TEST, SPECIAL_NAMES_RESOURCE, params);
-        Assert.assertTrue(params.containsKey("host"));
+        Assert.assertTrue(params.containsKey("host-feature"));
         Assert.assertTrue(params.containsKey("test-feature"));
-        Assert.assertTrue(params.containsKey("profile"));
+        Assert.assertTrue(params.containsKey("profile-feature"));
 
         ModelNode resource2 = feature.require(CHILDREN).require("subsystem.testsubsystem.resource.main-resource");
         Assert.assertEquals("subsystem.testsubsystem.resource.main-resource", resource2.get(NAME).asString());
@@ -622,10 +584,6 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         // register resource "test=storage-resource" with attribute "test", so that the "test" parameter will need to be
         // remapped to "test-feature"
         subsysRegistration.registerSubModel(new TestResourceDefinition(PathElement.pathElement(TEST, SPECIAL_NAMES_RESOURCE),
-                        NonResolvingResourceDescriptionResolver.INSTANCE));
-        subsysRegistration.registerSubModel(new SimpleResourceDefinition(PathElement.pathElement(TEST, SPECIAL_HOST_RESOURCE),
-                            NonResolvingResourceDescriptionResolver.INSTANCE))
-                .registerSubModel(new TestResourceDefinition(PathElement.pathElement(HOST, "myHost"),
                         NonResolvingResourceDescriptionResolver.INSTANCE));
 
         registration.registerAlias(PathElement.pathElement("alias", "alias-to-resource"), new AliasEntry(mainResourceRegistration) {
