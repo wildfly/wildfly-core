@@ -45,7 +45,10 @@ public interface BaseAttributeTransformationDescriptionBuilder<T extends BaseAtt
      * @param rejectChecker the checker
      * @param rejectedAttributes the attributes to check
      * @return this builder
+     *
+     * @deprecated Use {@link #addRejectCheck(RejectAttributeChecker, AttributeDefinition...)}
      */
+    @Deprecated(forRemoval = true, since = "31.0")
     T addRejectCheck(RejectAttributeChecker rejectChecker, String...rejectedAttributes);
 
     /**
@@ -69,7 +72,10 @@ public interface BaseAttributeTransformationDescriptionBuilder<T extends BaseAtt
      * @param rejectCheckers the checkers
      * @param rejectedAttributes the attributes to check
      * @return this builder
+     *
+     * @deprecated use {@link #addRejectChecks(List, AttributeDefinition...)}
      */
+    @Deprecated(forRemoval = true, since = "31.0")
     T addRejectChecks(List<RejectAttributeChecker> rejectCheckers, String...rejectedAttributes);
 
     /**
@@ -93,7 +99,10 @@ public interface BaseAttributeTransformationDescriptionBuilder<T extends BaseAtt
      * @param discardChecker the checkers
      * @param discardedAttributes the attributes to check
      * @return this builder
+     *
+     * @deprecated use {@link #setDiscard(DiscardAttributeChecker, AttributeDefinition...)}
      */
+    @Deprecated(forRemoval = true, since = "31.0")
     T setDiscard(DiscardAttributeChecker discardChecker, String...discardedAttributes);
 
     /**
@@ -128,7 +137,10 @@ public interface BaseAttributeTransformationDescriptionBuilder<T extends BaseAtt
      * @param attributeName the attribute's original name
      * @param newName the new name for the attribute
      * @return this builder
+     *
+     * @deprecated use {@link #addRename(AttributeDefinition, AttributeDefinition)}
      */
+    @Deprecated(forRemoval = true, since = "31.0")
     T addRename(String attributeName, String newName);
 
     /**
@@ -139,8 +151,22 @@ public interface BaseAttributeTransformationDescriptionBuilder<T extends BaseAtt
      * @param attributeName the attribute's original name
      * @param newName the new name for the attribute
      * @return this builder
+     *
+     * @deprecated use {@link #addRename(AttributeDefinition, AttributeDefinition)}
      */
+    @Deprecated(forRemoval = true, since = "31.0")
     T addRename(AttributeDefinition attributeName, String newName);
+
+    /**
+     * Rename an attribute. An attribute can only be renamed once.
+     * <p>
+     * Renaming is done in the {@code RENAME} phase.
+     *
+     * @param oldAttribute the attribute's original definition
+     * @param newAttribute the new definition for the attribute
+     * @return this builder
+     */
+    T addRename(AttributeDefinition oldAttribute, AttributeDefinition newAttribute);
 
     /**
      * Rename attributes. Each attribute can only be renamed once.
@@ -149,7 +175,10 @@ public interface BaseAttributeTransformationDescriptionBuilder<T extends BaseAtt
      *
      * @param renames a Map where the keys are the original attribute names, and the values are the new attribute names
      * @return this builder
+     *
+     * @deprecated use multiple calls to {@link #addRename(AttributeDefinition, AttributeDefinition)}
      */
+    @Deprecated(forRemoval = true, since = "31.0")
     T addRenames(Map<String, String> renames);
 
     /**
@@ -161,7 +190,10 @@ public interface BaseAttributeTransformationDescriptionBuilder<T extends BaseAtt
      * @param attributeConverter the attribute converter used to convert the value of each attribute
      * @param convertedAttributes the attributes the attribute converter should be used on
      * @return this builder
+     *
+     * @deprecated use {@link #setValueConverter(AttributeConverter, AttributeDefinition...)}
      */
+    @Deprecated(forRemoval = true, since = "31.0")
     T setValueConverter(AttributeConverter attributeConverter, String...convertedAttributes);
 
     /**
