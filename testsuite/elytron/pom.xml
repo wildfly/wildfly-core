@@ -77,7 +77,7 @@
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-tests-common</artifactId>
-            <type>test-jar</type>
+            <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
         <dependency>

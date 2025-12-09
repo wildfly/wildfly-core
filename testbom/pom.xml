@@ -3,7 +3,7 @@
   ~ Copyright The WildFly Authors
   ~ SPDX-License-Identifier: Apache-2.0
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -23,19 +23,16 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
                 <version>${version.com.fasterxml.jackson}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
                 <version>${version.com.fasterxml.jackson}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${version.com.fasterxml.jackson.databind}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <!-- guava and jmockit specify different versions of findbugs:jsr305
@@ -44,14 +41,12 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>${version.com.google.code.findbugs}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <!-- This is a transitive dep of com.google.guava -->
                 <groupId>com.google.guava</groupId>
                 <artifactId>failureaccess</artifactId>
                 <version>${version.com.google.guava.failureaccess}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <!-- This is a transitive dep of the model-test and subsystem-test frameworks
@@ -59,7 +54,6 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${version.com.google.guava}</version>
-                <scope>test</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>com.google.code.findbugs</groupId>
@@ -91,76 +85,64 @@
                 <groupId>com.jcraft</groupId>
                 <artifactId>jsch</artifactId>
                 <version>${version.com.jcraft.jsch}</version>
-                <scope>test</scope>
             </dependency>
 
             <dependency>
                 <groupId>commons-collections</groupId>
                 <artifactId>commons-collections</artifactId>
                 <version>${version.commons-collections}</version>
-                <scope>test</scope>
             </dependency>
 
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${version.commons-io}</version>
-                <scope>test</scope>
             </dependency>
             <!-- mockserver-netty uses .... netty!  But we want a later version with some CVE fixes-->
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-buffer</artifactId>
                 <version>${version.io.netty}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec</artifactId>
                 <version>${version.io.netty}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-http</artifactId>
                 <version>${version.io.netty}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-socks</artifactId>
                 <version>${version.io.netty}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-common</artifactId>
                 <version>${version.io.netty}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
                 <version>${version.io.netty}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-handler-proxy</artifactId>
                 <version>${version.io.netty}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-transport</artifactId>
                 <version>${version.io.netty}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>jakarta.inject</groupId>
                 <artifactId>jakarta.inject-api</artifactId>
                 <version>${version.jakarta.inject.jakarta.inject-api}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <!-- We have to specify this one because mockserver-netty transitively depends
@@ -169,81 +151,68 @@
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
                 <version>${version.javax.xml.bind.jaxb-api}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${version.junit}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-all</artifactId>
                 <version>${version.org.apache.ds}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-core</artifactId>
                 <version>${version.org.apache.logging.log4j}</version>
-                <scope>test</scope>
             </dependency>
             <!-- mockserver-netty transitively uses velocity but we want a later version with a CVE fixed -->
             <dependency>
                 <groupId>org.apache.velocity</groupId>
                 <artifactId>velocity-engine-core</artifactId>
                 <version>${version.org.apache.velocity}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.velocity</groupId>
                 <artifactId>velocity-engine-scripting</artifactId>
                 <version>${version.org.apache.velocity}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-utils</artifactId>
                 <version>${version.org.codehaus.plexus.plexus-utils}</version>
-                <scope>test</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.jboss.byteman</groupId>
                 <artifactId>byteman</artifactId>
                 <version>${version.org.jboss.byteman}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.byteman</groupId>
                 <artifactId>byteman-bmunit</artifactId>
                 <version>${version.org.jboss.byteman}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.byteman</groupId>
                 <artifactId>byteman-install</artifactId>
                 <version>${version.org.jboss.byteman}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.byteman</groupId>
                 <artifactId>byteman-submit</artifactId>
                 <version>${version.org.jboss.byteman}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.spec.javax.servlet</groupId>
                 <artifactId>jboss-servlet-api_4.0_spec</artifactId>
                 <version>${version.org.jboss.spec.javax.servlet.jboss-servlet-api_4.0_spec}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mock-server</groupId>
                 <artifactId>mockserver-netty</artifactId>
                 <version>${version.org.mock-server.mockserver-netty}</version>
-                <scope>test</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>com.google.code.findbugs</groupId>
@@ -279,27 +248,23 @@
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${version.org.mockito}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.jmockit</groupId>
                 <artifactId>jmockit</artifactId>
                 <version>${version.org.jmockit}</version>
-                <scope>test</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.syslog4j</groupId>
                 <artifactId>syslog4j</artifactId>
                 <version>${version.org.syslog4j}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-tests-common</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
+                <classifier>tests</classifier>
             </dependency>
             
             <dependency>
