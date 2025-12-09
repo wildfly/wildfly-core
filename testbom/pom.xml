@@ -301,6 +301,19 @@
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
+            
+            <dependency>
+	            <groupId>ch.qos.logback</groupId>
+	            <artifactId>logback-classic</artifactId>
+	            <version>${version.ch.qos.logback}</version>
+	            <scope>test</scope>
+        	</dependency>
+        	<dependency>
+	            <groupId>ch.qos.logback</groupId>
+	            <artifactId>logback-core</artifactId>
+	            <version>${version.ch.qos.logback}</version>
+	            <scope>test</scope>
+        	</dependency>
         </dependencies>
     </dependencyManagement>
 
