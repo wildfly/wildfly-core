@@ -57,7 +57,7 @@ set "INST_MGR_COMMAND=!INST_MGR_COMMAND:\:=:!"
 set "INST_MGR_COMMAND=!INST_MGR_COMMAND:\\=\!"
 setlocal DisableDelayedExpansion
 
-set JAVA_OPTS=-Dlogging.configuration=file:"%INST_MGR_LOG_PROPERTIES%" -Dorg.jboss.boot.log.file="%INST_MGR_LOG_FILE%" -Dorg.wildfly.prospero.log.file %JAVA_OPTS%
+set JAVA_OPTS=-Dlogging.configuration=file:"%INST_MGR_LOG_PROPERTIES%" -Dorg.jboss.boot.log.file="%INST_MGR_LOG_FILE%" -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Dorg.wildfly.prospero.log.file %JAVA_OPTS%
 
 IF NOT DEFINED INST_MGR_SCRIPT_WINDOWS_COUNTDOWN set INST_MGR_SCRIPT_WINDOWS_COUNTDOWN=10
 echo Waiting %INST_MGR_SCRIPT_WINDOWS_COUNTDOWN% seconds before applying the Candidate Server...
