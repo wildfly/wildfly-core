@@ -110,12 +110,9 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
             .setReplyValueType(ModelType.OBJECT)
             .build();
 
-    private static final String PROFILE_ALIAS = "__profile";
-    private static final String HOST_ALIAS = "__host";
-    private static final String PROFILE_PREFIX = "$__profile.";
+    private static final String PROFILE_PREFIX = "$profile.";
     private static final String DOMAIN_EXTENSION = "domain.extension";
     private static final String HOST_EXTENSION = "host.extension";
-    private static final String GLN_UNDEFINED = "GLN_UNDEFINED";
 
     //Placeholder for NoSuchResourceExceptions coming from proxies to remove the child in ReadFeatureHandler
     private static final ModelNode PROXY_NO_SUCH_RESOURCE;
@@ -373,10 +370,6 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
             }
             if (isProfile) {
                 capabilityName = PROFILE_PREFIX + capabilityName;
-            } else { //In case we are providing a profie capability
-                if(capabilityName.endsWith('$' + PROFILE)) {
-                    capabilityName = capabilityName.substring(0, capabilityName.lastIndexOf(PROFILE)) + PROFILE_ALIAS;
-                }
             }
             capabilities.add(capabilityName);
         }
@@ -594,23 +587,15 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         ModelNode params = feature.get(PARAMS).setEmptyList();
         Set<String> paramNames = new HashSet<>();
         StringJoiner addressParams = new StringJoiner(",");
-        boolean aliasNeededProfile = address.toPathStyleString().startsWith("/" + PROFILE);
-        boolean aliasNeededHost = address.toPathStyleString().startsWith("/" + HOST);
         for (PathElement elt : address) {
-            ModelNode param = new ModelNode();
             String paramName = elt.getKey();
-            if (aliasNeededProfile && PROFILE.equals(elt.getKey())) {
-                aliasNeededProfile = false;
-                paramName = PROFILE_ALIAS;
-                param.get(DEFAULT).set(GLN_UNDEFINED);
-            } else if (aliasNeededHost && HOST.equals(elt.getKey())) {
-                aliasNeededHost = false;
-                paramName = HOST_ALIAS;
-                param.get(DEFAULT).set(GLN_UNDEFINED);
+            ModelNode param = new ModelNode();
+            param.get(ModelDescriptionConstants.NAME).set(paramName);
+            if (PROFILE.equals(elt.getKey()) || HOST.equals(elt.getKey())) {
+                param.get(DEFAULT).set("GLN_UNDEFINED");
             } else if (!elt.isWildcard()) {
                 param.get(DEFAULT).set(elt.getValue());
             }
-            param.get(ModelDescriptionConstants.NAME).set(paramName);
             param.get(FEATURE_ID).set(true);
             params.add(param);
             paramNames.add(paramName);
@@ -624,7 +609,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
 //            }
             ModelNode param = new ModelNode();
             String paramName;
-            if (paramNames.contains(att.getName())) {
+            if (paramNames.contains(att.getName()) || ((PROFILE.equals(att.getName()) || HOST.equals(att.getName())) && isSubsystem(address))) {
                 paramName = att.getName() + "-feature";
                 featureParamMappings.put(att.getName(), paramName);
             } else {
@@ -770,7 +755,6 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                         if (capabilityName.indexOf('$') > 0) {
                             baseName = capabilityName.substring(0, capabilityName.indexOf('$') - 1);
                         }
-                        processProfileCapabilityDependency(baseName, feature);
                         CapabilityRegistration<?> capReg = getCapability(new CapabilityId(baseName, scope));
                         if (att.getValue().hasDefined(FEATURE_REFERENCE) && att.getValue().require(FEATURE_REFERENCE).asBoolean()) {
                             if (capReg != null) {
@@ -816,7 +800,6 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 } else {
                     baseRequirementName = requirement.getBaseRequirementName();
                 }
-                processProfileCapabilityDependency(baseRequirementName, feature);
                 ModelNode capability = new ModelNode();
                 if (dynamicElements == null) {
                     capability.get(NAME).set(baseRequirementName);
@@ -844,21 +827,6 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         }
     }
 
-    /**
-     * Weneed to add a parameter called *__profile* if we are bound to the profile feature and no such parameter exists.
-     * @param baseRequirementName
-     * @param feature
-     */
-    private static void processProfileCapabilityDependency(String baseRequirementName, ModelNode feature) {
-        if ("org.wildfly.domain.profile".equals(baseRequirementName)) { //Check if equals is better
-            if (feature.get(PARAMS).asList().stream().filter(node -> (PROFILE_ALIAS).equals(node.get(NAME).asString())).findFirst().isEmpty()) {
-                ModelNode param = new ModelNode();
-                param.get(ModelDescriptionConstants.NAME).set(PROFILE_ALIAS);
-                param.get(DEFAULT).set(GLN_UNDEFINED);
-                feature.get(PARAMS).add(param);
-            }
-        }
-    }
     private ModelNode getRequiredCapabilityDefinition(ModelNode attrDescription, CapabilityScope scope, boolean isProfile, String attributeName) {
         ModelNode capability = new ModelNode();
         String capabilityName = attrDescription.get(CAPABILITY_REFERENCE).asString();
@@ -877,7 +845,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
             for (ModelNode elt : attrDescription.get(CAPABILITY_REFERENCE_PATTERN_ELEMENTS).asList()) {
                 elements.add("$" + elt.asString());
             }
-            capabilityName = RuntimeCapability.buildDynamicCapabilityName(baseName, elements.toArray(String[]::new));
+            capabilityName = RuntimeCapability.buildDynamicCapabilityName(baseName, elements.toArray(new String[elements.size()]));
         }
         capability.get(OPTIONAL).set(attrDescription.hasDefined(NILLABLE) && attrDescription.get(NILLABLE).asBoolean());
         if (isProfile) {
