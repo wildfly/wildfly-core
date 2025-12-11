@@ -10,7 +10,7 @@
     <parent>
         <artifactId>wildfly-io-bom</artifactId>
         <groupId>org.wildfly.core</groupId>
-        <version>31.0.0.Beta3</version>
+        <version>31.0.0.Beta4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
