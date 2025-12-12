@@ -80,7 +80,7 @@ if ($INST_MGR_COMMAND -eq $null) {
     exit 1
 }
 
-$JAVA_OPTS="-Dorg.jboss.boot.log.file=$instMgrLogFile -Dorg.wildfly.prospero.log.file -Dlogging.configuration=file:`"$instMgrLogProperties`" $JAVA_OPTS"
+$JAVA_OPTS="-Dorg.jboss.boot.log.file=$instMgrLogFile -Dorg.wildfly.prospero.log.file -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Dlogging.configuration=file:`"$instMgrLogProperties`" $JAVA_OPTS"
 
 Write-Log -Level "INFO" -Message "JAVA_OPTS environment variable: $JAVA_OPTS"
 Write-Log -Level "INFO" -Message "Executing the Installation Manager command: $INST_MGR_COMMAND"
