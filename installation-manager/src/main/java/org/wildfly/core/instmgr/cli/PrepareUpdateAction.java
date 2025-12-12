@@ -24,9 +24,11 @@ import org.wildfly.core.instmgr.InstMgrPrepareUpdateHandler;
 public class PrepareUpdateAction extends AbstractInstMgrCommand {
     private final List<File> mavenRepoFiles;
     private final List<String> repositories;
+    private final List<String> manifestVersions;
     private final Path localCache;
     private final Boolean noResolveLocalCache;
     private final Boolean useDefaultLocalCache;
+    private final Boolean allowManifestDowngrades;
 
     private final Path listUpdatesWorkDir;
 
@@ -37,6 +39,8 @@ public class PrepareUpdateAction extends AbstractInstMgrCommand {
     public PrepareUpdateAction(Builder builder) {
         this.mavenRepoFiles = builder.mavenRepoFiles;
         this.repositories = builder.repositories;
+        this.manifestVersions = builder.manifestVersions;
+        this.allowManifestDowngrades = builder.allowManifestDowngrades;
         this.localCache = builder.localCache;
         this.noResolveLocalCache = builder.noResolveLocalCache;
         this.useDefaultLocalCache = builder.useDefaultLocalCache;
@@ -62,6 +66,11 @@ public class PrepareUpdateAction extends AbstractInstMgrCommand {
         }
 
         addRepositoriesToModelNode(op, this.repositories);
+        addManifestVersionsToModelNode(op, this.manifestVersions);
+
+        if (allowManifestDowngrades != null) {
+            op.get(InstMgrConstants.ALLOW_MANIFEST_DOWNGRADES).set(allowManifestDowngrades);
+        }
 
         if (localCache != null) {
             op.get(InstMgrConstants.LOCAL_CACHE).set(localCache.normalize().toAbsolutePath().toString());
@@ -93,14 +102,17 @@ public class PrepareUpdateAction extends AbstractInstMgrCommand {
         private ModelNode headers;
         private List<File> mavenRepoFiles;
         private List<String> repositories;
+        private List<String> manifestVersions;
         private Path localCache;
 
         private Boolean noResolveLocalCache;
         private Boolean useDefaultLocalCache;
         private Path listUpdatesWorkDir;
+        private Boolean allowManifestDowngrades;
 
         public Builder() {
             this.repositories = new ArrayList<>();
+            this.manifestVersions = new ArrayList<>();
             this.mavenRepoFiles = new ArrayList<>();
         }
 
@@ -112,6 +124,20 @@ public class PrepareUpdateAction extends AbstractInstMgrCommand {
         public Builder setRepositories(List<String> repositories) {
             if (repositories != null) {
                 this.repositories.addAll(repositories);
+            }
+            return this;
+        }
+
+        public Builder setManifestVersions(List<String> manifestVersions) {
+            if (manifestVersions != null) {
+                this.manifestVersions.addAll(manifestVersions);
+            }
+            return this;
+        }
+
+        public Builder setAllowManifestDowngrades(Boolean allowManifestDowngrades) {
+            if (allowManifestDowngrades != null) {
+                this.allowManifestDowngrades = allowManifestDowngrades;
             }
             return this;
         }
