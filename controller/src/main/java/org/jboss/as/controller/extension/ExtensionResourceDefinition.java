@@ -9,6 +9,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -31,11 +32,14 @@ import org.jboss.dmr.ModelType;
 public class ExtensionResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MODULE, ModelType.STRING, false)
-            .setValidator(new StringLengthValidator(1)).build();
+            .setValidator(new StringLengthValidator(1))
+            .setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR)
+            .build();
 
     private static final OperationDefinition ADD_OP = new SimpleOperationDefinitionBuilder(ADD, ControllerResolver.getResolver(EXTENSION))
             .addParameter(new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MODULE, ModelType.STRING, true)
                     .setValidator(new StringLengthValidator(1))
+                    .setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR)
                     .setDeprecated(ModelVersion.create(6))
                     .build())
             .build();
