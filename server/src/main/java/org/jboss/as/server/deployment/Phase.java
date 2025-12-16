@@ -384,6 +384,7 @@ public enum Phase {
     public static final int DEPENDENCIES_PERSISTENCE_ANNOTATION         = 0x0F00;
     public static final int DEPENDENCIES_JPA                            = 0x1000;
     public static final int DEPENDENCIES_HIBERNATE_SEARCH               = 0x1001;
+    public static final int DEPENDENCIES_JAKARTA_DATA                   = 0x1080;
     public static final int DEPENDENCIES_TRANSACTIONS                   = 0x1100;
     public static final int DEPENDENCIES_XTS                            = 0x1110;
     public static final int DEPENDENCIES_JDK                            = 0x1200;
@@ -491,8 +492,7 @@ public enum Phase {
     public static final int POST_MODULE_WELD_PORTABLE_EXTENSIONS        = 0x0E00;
     public static final int POST_MODULE_XTS_PORTABLE_EXTENSIONS         = 0x0E10;
     public static final int POST_MODULE_JMS_CDI_EXTENSIONS              = 0x0F00;
-    // TODO remove after no usage by wfly
-    public static final int POST_MODULE_JMS_DEFINITION_DEPLOYMENT       = 0x0F80;
+    public static final int POST_MODULE_JAKARTA_DATA_CDI_EXTENSIONS     = 0x0F80;
     // should come before ejb jndi bindings processor
     public static final int POST_MODULE_EJB_IMPLICIT_NO_INTERFACE_VIEW  = 0x1000;
     public static final int POST_MODULE_EJB_JNDI_BINDINGS               = 0x1100;
