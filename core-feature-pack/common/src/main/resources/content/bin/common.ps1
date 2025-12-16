@@ -264,7 +264,7 @@ Param(
     if ($PROG_ARGS -notmatch "-Xlog:?gc"){
         Rotate-GC-Logs
 
-        & $JAVA -Xverbosegclog:"$JBOSS_LOG_DIR\gc.log" java.se -version >$null 2>&1
+        & $JAVA -Xverbosegclog:"$JBOSS_LOG_DIR\gc.log" -version >$null 2>&1
         if ($LastExitCode -eq 0){
             $PROG_ARGS += "-Xverbosegclog:`\`"$JBOSS_LOG_DIR\gc.log`\`""
         }elseif ($MODULAR_JDK -eq $true)
