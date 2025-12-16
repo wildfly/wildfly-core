@@ -152,6 +152,9 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
         InstMgrListUpdatesHandler lstUpdatesHandler = new InstMgrListUpdatesHandler(imService, imf);
         resourceRegistration.registerOperationHandler(InstMgrListUpdatesHandler.DEFINITION, lstUpdatesHandler);
 
+        InstMgrListManifestVersionsHandler lstManifestVersionsHandler = new InstMgrListManifestVersionsHandler(imService, imf);
+        resourceRegistration.registerOperationHandler(InstMgrListManifestVersionsHandler.DEFINITION, lstManifestVersionsHandler);
+
         InstMgrCleanHandler clean = new InstMgrCleanHandler(imService, imf);
         resourceRegistration.registerOperationHandler(InstMgrCleanHandler.DEFINITION, clean);
 

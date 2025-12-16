@@ -23,6 +23,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.wildfly.installationmanager.ArtifactChange;
+import org.wildfly.installationmanager.AvailableManifestVersions;
 import org.wildfly.installationmanager.CandidateType;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.ChannelChange;
@@ -31,6 +32,7 @@ import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.InstallationChanges;
 import org.wildfly.installationmanager.InstallationUpdates;
 import org.wildfly.installationmanager.ManifestVersion;
+import org.wildfly.installationmanager.ManifestVersionPair;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.OperationNotAvailableException;
 import org.wildfly.installationmanager.Repository;
@@ -48,6 +50,8 @@ public class TestInstallationManager implements InstallationManager {
     public static List<Repository> findUpdatesRepositories;
     public static List<ManifestVersion> findUpdatesVersions;
     public static List<ArtifactChange> findUpdatesChanges;
+    public static List<Repository> findManifestVersionsRepositories;
+    public static Boolean findManifestVersionsIncludeDowngrades;
     public static List<Repository> prepareUpdatesRepositories;
     public static List<ManifestVersion> prepareUpdatesVersions;
     public static Path prepareUpdatesTargetDir;
@@ -59,6 +63,7 @@ public class TestInstallationManager implements InstallationManager {
     public static HashMap<String, HistoryResult> history;
     public static boolean initialized = false;
     public static Boolean prepareAllowManifestDowngrades = null;
+    public static List<AvailableManifestVersions> availableManifestVersions;
 
     public static String APPLY_REVERT_BASE_GENERATED_COMMAND = "apply revert";
     public static String APPLY_UPDATE_BASE_GENERATED_COMMAND = "apply update";
@@ -166,6 +171,15 @@ public class TestInstallationManager implements InstallationManager {
                 }
             }
 
+            availableManifestVersions = new ArrayList<>();
+            ArrayList<ManifestVersionPair> manifestVersions = new ArrayList<>();
+            manifestVersions.add(new ManifestVersionPair("1.0.1", "Logical version 1.0.1"));
+            availableManifestVersions.add(new AvailableManifestVersions("test-channel", "a:b",
+                    new ManifestVersionPair("1.0.0", "Logical version 1.0.0"), manifestVersions));
+
+            findManifestVersionsIncludeDowngrades = null;
+            findManifestVersionsRepositories = new ArrayList<>();
+
             initialized = true;
         }
     }
@@ -225,6 +239,13 @@ public class TestInstallationManager implements InstallationManager {
         // TODO: test manifest updates as well
         findUpdatesVersions = new ArrayList<>(manifestVersions);
         return findUpdates(repositories);
+    }
+
+    @Override
+    public List<AvailableManifestVersions> findAvailableManifestVersions(List<Repository> repositories, boolean includeDowngrades) throws Exception {
+        findManifestVersionsRepositories = new ArrayList<>(repositories);
+        findManifestVersionsIncludeDowngrades = includeDowngrades;
+        return availableManifestVersions;
     }
 
     @Override

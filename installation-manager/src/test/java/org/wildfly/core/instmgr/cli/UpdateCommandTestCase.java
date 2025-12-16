@@ -40,7 +40,7 @@ public class UpdateCommandTestCase {
         captor.getAllValues().forEach(System.out::println); // print to check formatting visually
 
         List<String> shortenedLines = captor.getAllValues().stream()
-                .map(line -> line.replaceAll(" [ ]+", " ").trim())
+                .map(line -> line.replaceAll(" [ ]+", " ").trim()) // replace multiple spaces with single space
                 .toList();
         Assert.assertTrue(shortenedLines.contains("channel-0 org.wildfly.channels:wildfly-ee 1.0.0 ==> 1.0.1"));
         Assert.assertTrue(shortenedLines.contains("channel-1 org.wildfly.channels:wildfly-ee-something-extra 1.0.000 ==> 1.0.001"));

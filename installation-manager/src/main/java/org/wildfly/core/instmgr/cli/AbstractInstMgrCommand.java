@@ -10,8 +10,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.wildfly.core.instmgr.cli.UpdateCommand.CONFIRM_OPTION;
 import static org.wildfly.core.instmgr.cli.UpdateCommand.DRY_RUN_OPTION;
-import static org.wildfly.core.instmgr.cli.UpdateCommand.NO_RESOLVE_LOCAL_CACHE_OPTION;
-import static org.wildfly.core.instmgr.cli.UpdateCommand.USE_DEFAULT_LOCAL_CACHE_OPTION;
 
 import java.io.IOException;
 import java.net.MalformedURLException;

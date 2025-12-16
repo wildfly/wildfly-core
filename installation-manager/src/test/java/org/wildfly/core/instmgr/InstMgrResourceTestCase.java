@@ -812,6 +812,70 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(ManifestVersion.Type.URL, TestInstallationManager.findUpdatesVersions.get(1).getType());
     }
 
+    @Test
+    public void listManifestVersions_defaultParam() throws OperationFailedException {
+        listManifestVersions(null);
+    }
+
+    @Test
+    public void listManifestVersions_includeDowngrade() throws OperationFailedException {
+        listManifestVersions(true);
+    }
+
+    /**
+     * @param includeDowngrades value of the includeDowngrades operation parameter, null for default parameter value
+     *                          to be used.
+     */
+    private void listManifestVersions(Boolean includeDowngrades) throws OperationFailedException {
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrListManifestVersionsHandler.OPERATION_NAME, pathElements);
+
+        ModelNode repositories = new ModelNode();
+        ModelNode repository = new ModelNode();
+        repository.get(InstMgrConstants.REPOSITORY_ID).set("id1");
+        repository.get(InstMgrConstants.REPOSITORY_URL).set("https://localhost.one");
+        repositories.add(repository);
+
+        repository = new ModelNode();
+        repository.get(InstMgrConstants.REPOSITORY_ID).set("id2");
+        repository.get(InstMgrConstants.REPOSITORY_URL).set("https://localhost.two");
+        repositories.add(repository);
+
+        op.get(InstMgrConstants.REPOSITORIES).set(repositories);
+
+        if (includeDowngrades != null) {
+            op.get(InstMgrConstants.INCLUDE_DOWNGRADES).set(includeDowngrades);
+        }
+
+
+        ModelNode response = executeForResult(op);
+
+        Assert.assertEquals(2, TestInstallationManager.findManifestVersionsRepositories.size());
+        Repository repositoryOne = TestInstallationManager.findManifestVersionsRepositories.get(0);
+        Assert.assertEquals("id1", repositoryOne.getId());
+        Assert.assertTrue(repositoryOne.getUrl().matches("https://localhost.one"));
+
+        Repository repositoryTwo = TestInstallationManager.findManifestVersionsRepositories.get(1);
+        Assert.assertEquals("id2", repositoryTwo.getId());
+        Assert.assertTrue(repositoryTwo.getUrl().matches("https://localhost.two"));
+
+        if (includeDowngrades == null || !includeDowngrades) {
+            Assert.assertFalse(TestInstallationManager.findManifestVersionsIncludeDowngrades);
+        } else {
+            Assert.assertTrue(TestInstallationManager.findManifestVersionsIncludeDowngrades);
+        }
+
+        Assert.assertEquals(1, response.asList().size());
+        ModelNode manifestInfoMn = response.asList().get(0);
+        Assert.assertEquals("test-channel", manifestInfoMn.get(InstMgrConstants.CHANNEL_NAME).asString());
+        Assert.assertEquals("a:b", manifestInfoMn.get(InstMgrConstants.MANIFEST_LOCATION).asString());
+        Assert.assertEquals("1.0.0", manifestInfoMn.get(InstMgrConstants.MANIFEST_CURRENT_VERSION).asString());
+        Assert.assertEquals("Logical version 1.0.0", manifestInfoMn.get(InstMgrConstants.MANIFEST_CURRENT_LOGICAL_VERSION).asString());
+        Assert.assertEquals(1, manifestInfoMn.get(InstMgrConstants.MANIFEST_VERSIONS).asList().size());
+        Assert.assertEquals("1.0.1", manifestInfoMn.get(InstMgrConstants.MANIFEST_VERSIONS).asList().get(0).get(InstMgrConstants.MANIFEST_VERSION).asString());
+        Assert.assertEquals("Logical version 1.0.1", manifestInfoMn.get(InstMgrConstants.MANIFEST_VERSIONS).asList().get(0).get(InstMgrConstants.MANIFEST_LOGICAL_VERSION).asString());
+    }
+
     /**
      * Verifies that we have created the expected structure for a repository created to supply the artifacts included in an Uploaded Maven Zip File.
      *
