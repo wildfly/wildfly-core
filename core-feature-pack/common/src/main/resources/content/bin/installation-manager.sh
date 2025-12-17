@@ -50,7 +50,7 @@ if [ "x${INST_MGR_COMMAND}" = "x" ]; then
  exit 1
 fi
 
-export JAVA_OPTS="-Dlogging.configuration=file:\"${INST_MGR_LOG_PROPERTIES}\" -Dorg.jboss.boot.log.file=\"${INST_MGR_LOG_FILE}\" -Dorg.wildfly.prospero.log.file ${JAVA_OPTS}"
+export JAVA_OPTS="-Dlogging.configuration=file:\"${INST_MGR_LOG_PROPERTIES}\" -Dorg.jboss.boot.log.file=\"${INST_MGR_LOG_FILE}\" -Dorg.wildfly.prospero.log.file -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 ${JAVA_OPTS}"
 
 log "INFO" "JAVA_OPTS environment variable: ${JAVA_OPTS}"
 log "INFO" "Executing the Installation Manager command: ${INST_MGR_COMMAND}"
