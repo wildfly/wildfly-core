@@ -7,7 +7,6 @@ package org.wildfly.core.instmgr.logging;
 
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.zip.ZipException;
 
 import org.jboss.as.controller.OperationFailedException;
@@ -16,7 +15,6 @@ import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
-import org.wildfly.installationmanager.ManifestVersion;
 
 /**
  * Installation Manager logger.
@@ -94,8 +92,8 @@ public interface InstMgrLogger extends BasicLogger {
     OperationFailedException noResolveLocalCacheWithUseDefaultLocalCache();
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 23, value = "Installation was provisioned using the following channel versions: '%s'")
-    void provisioningChannels(Collection<ManifestVersion> channels);
+    @Message(id = 23, value = "Installation was provisioned using the following channel manifest versions: %s")
+    void provisioningChannels(String channels);
 
     @LogMessage(level = Logger.Level.ERROR)
     @Message(id = 24, value = "Cannot report installation status. Cannot create an InstallationManager for path '%s': '%s'")
