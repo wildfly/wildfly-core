@@ -88,8 +88,11 @@ public final class HostXml implements ManagementXmlReaderWriter {
             case 19:
                 new HostXml_18(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, version, namespaceUri).readElement(reader, operationList);
                 break;
-            default:
+            case 20:
                 new HostXml_20(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, namespace).readElement(reader, operationList);
+                break;
+            default:
+                new HostXml_21(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, namespace).readElement(reader, operationList);
         }
     }
 
@@ -97,7 +100,7 @@ public final class HostXml implements ManagementXmlReaderWriter {
     public void writeContent(final XMLExtendedStreamWriter writer, final VersionedNamespace<IntVersion, ManagementXmlSchema> namespace, final ModelMarshallingContext context)
             throws XMLStreamException {
 
-        new HostXml_20(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, namespace).writeContent(writer, context);
+        new HostXml_21(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, namespace).writeContent(writer, context);
     }
 
 }
