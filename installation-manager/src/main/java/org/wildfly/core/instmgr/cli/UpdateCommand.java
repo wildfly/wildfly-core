@@ -37,6 +37,10 @@ public class UpdateCommand extends AbstractInstMgrCommand {
     private boolean confirm;
     @OptionList(name = "repositories")
     private List<String> repositories;
+    @OptionList(name = "manifest-versions")
+    private List<String> manifestVersions;
+    @Option(name = "allow-manifest-downgrades", defaultValue = "false")
+    private boolean allowManifestDowngrades;
     @Option(name = "local-cache")
     private File localCache;
     @Option(name = NO_RESOLVE_LOCAL_CACHE_OPTION, hasValue = false, activator = AbstractInstMgrCommand.NoResolveLocalCacheActivator.class, defaultValue = "true")
@@ -73,6 +77,7 @@ public class UpdateCommand extends AbstractInstMgrCommand {
                 .setUseDefaultLocalCache(optUseDefaultLocalCache)
                 .setLocalCache(localCache)
                 .setRepositories(repositories)
+                .setManifestVersions(manifestVersions)
                 .setMavenRepoFiles(mavenRepoFiles)
                 .setOffline(offline)
                 .setHeaders(headers);
@@ -82,8 +87,21 @@ public class UpdateCommand extends AbstractInstMgrCommand {
 
         if (response.hasDefined(Util.RESULT)) {
             final ModelNode result = response.get(Util.RESULT);
-            final List<ModelNode> changesMn = result.get(InstMgrConstants.LIST_UPDATES_RESULT).asListOrEmpty();
-            printListUpdatesResult(commandInvocation, changesMn);
+
+            final List<ModelNode> manifestChangesMn = result.get(InstMgrConstants.LIST_MANIFEST_UPDATES_RESULT).asListOrEmpty();
+            printManifestUpdatesResult(commandInvocation, manifestChangesMn);
+
+            final List<ModelNode> artifactChangesMn = result.get(InstMgrConstants.LIST_ARTIFACT_UPDATES_RESULT).asListOrEmpty();
+            printArtifactUpdatesResult(commandInvocation, artifactChangesMn);
+
+            if (!allowManifestDowngrades) {
+                boolean manifestDowngradesPresent = manifestChangesMn.stream().anyMatch(node ->
+                        node.get(InstMgrConstants.LIST_UPDATES_IS_DOWNGRADE).asBoolean(false));
+                if (manifestDowngradesPresent) {
+                    commandInvocation.println("This operation would result in a manifest being downgraded, but allow-manifest-downgrades parameter is set to false. Exiting...");
+                    return CommandResult.FAILURE;
+                }
+            }
 
             if (dryRun) {
                 return CommandResult.SUCCESS;
@@ -94,14 +112,14 @@ public class UpdateCommand extends AbstractInstMgrCommand {
                 lstUpdatesWorkDir = Paths.get(result.get(InstMgrConstants.LIST_UPDATES_WORK_DIR).asString());
             }
 
-            if (!changesMn.isEmpty()) {
+            if (!artifactChangesMn.isEmpty() || !manifestChangesMn.isEmpty()) {
                 if (!confirm) {
-                    String reply = null;
+                    String reply;
 
                     try {
-                        while (reply == null) {
-                            reply = commandInvocation.inputLine(new Prompt("\nWould you like to proceed with preparing this update? [y/N]:"));
-                            if (reply != null && reply.equalsIgnoreCase("N")) {
+                        while (true) {
+                            reply = commandInvocation.inputLine(new Prompt("Would you like to proceed with preparing this update? [y/N]: "));
+                            if (reply != null && (reply.equalsIgnoreCase("N") || reply.isEmpty())) {
                                 // clean the cache if there is one
                                 if (lstUpdatesWorkDir != null) {
                                     CleanCommand cleanCommand = new CleanCommand.Builder().setLstUpdatesWorkDir(lstUpdatesWorkDir).createCleanCommand();
@@ -126,16 +144,18 @@ public class UpdateCommand extends AbstractInstMgrCommand {
 
                 commandInvocation.println("\nThe new installation is being prepared ...\n");
                 // trigger an prepare-update
-                PrepareUpdateAction.Builder prepareUpdateActionBuilder = new PrepareUpdateAction.Builder()
+                PrepareUpdateAction prepareUpdateAction = new PrepareUpdateAction.Builder()
                         .setNoResolveLocalCache(optNoResolveLocalCache)
                         .setUseDefaultLocalCache(optUseDefaultLocalCache)
                         .setLocalCache(localCache)
                         .setRepositories(repositories)
+                        .setManifestVersions(manifestVersions)
+                        .setAllowManifestDowngrades(allowManifestDowngrades)
                         .setOffline(offline)
                         .setListUpdatesWorkDir(lstUpdatesWorkDir)
-                        .setHeaders(headers);
+                        .setHeaders(headers)
+                        .build();
 
-                PrepareUpdateAction prepareUpdateAction = prepareUpdateActionBuilder.build();
                 ModelNode prepareUpdateResult = prepareUpdateAction.executeOp(ctx, this.host);
                 printUpdatesResult(ctx, prepareUpdateResult.get(Util.RESULT));
             }
@@ -146,21 +166,52 @@ public class UpdateCommand extends AbstractInstMgrCommand {
         return CommandResult.SUCCESS;
     }
 
-    private void printListUpdatesResult(CLICommandInvocation commandInvocation, List<ModelNode> changesMn) {
+    static void printManifestUpdatesResult(CLICommandInvocation commandInvocation, List<ModelNode> changesMn) {
         if (changesMn.isEmpty()) {
-            commandInvocation.println("No updates found");
+            commandInvocation.println("No manifest updates found");
+            return;
+        }
+
+        int maxNameLength = changesMn.stream()
+                .map(node -> node.get(InstMgrConstants.CHANNEL_NAME).asString().length())
+                .max(Integer::compareTo).orElse(0) + 1;
+
+        int maxLocationLength = changesMn.stream()
+                .map(node -> node.get(InstMgrConstants.MANIFEST_LOCATION).asString().length())
+                .max(Integer::compareTo).orElse(0) + 1;
+
+        commandInvocation.println("Manifest updates found:");
+        for (ModelNode change : changesMn) {
+            String channelName = change.get(InstMgrConstants.CHANNEL_NAME).asString();
+            String location = change.get(InstMgrConstants.MANIFEST_LOCATION).asString();
+            String oldVersion = change.get(InstMgrConstants.LIST_UPDATES_OLD_VERSION).asStringOrNull();
+            String newVersion = change.get(InstMgrConstants.LIST_UPDATES_NEW_VERSION).asStringOrNull();
+
+            oldVersion = oldVersion == null ? "[]" : oldVersion;
+            newVersion = newVersion == null ? "[]" : newVersion;
+
+            commandInvocation.println(String.format("    %1$-" + maxNameLength + "s %2$-" + maxLocationLength + "s %3$15s ==> %4$-15s",
+                    channelName, location, oldVersion, newVersion));
+        }
+        commandInvocation.println(""); // Add newline after the listing
+    }
+
+    static void printArtifactUpdatesResult(CLICommandInvocation commandInvocation, List<ModelNode> changesMn) {
+        if (changesMn.isEmpty()) {
+            commandInvocation.println("No artifact updates found");
             return;
         }
 
         int maxLength = 0;
         for (ModelNode artifactChange : changesMn) {
-            String channelName = artifactChange.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_NAME).asString();
-            maxLength = Math.max(maxLength, channelName.length());
+            String name = artifactChange.get(InstMgrConstants.LIST_UPDATES_ARTIFACT_NAME).asString();
+            maxLength = Math.max(maxLength, name.length());
         }
         maxLength += 1;
 
-        commandInvocation.println("Updates found:");
+        commandInvocation.println("Artifact updates found:");
         for (ModelNode change : changesMn) {
+            String status = change.get(InstMgrConstants.LIST_UPDATES_STATUS).asString();
             String artifactName = change.get(InstMgrConstants.LIST_UPDATES_ARTIFACT_NAME).asString();
             String oldVersion = change.get(InstMgrConstants.LIST_UPDATES_OLD_VERSION).asStringOrNull();
             String newVersion = change.get(InstMgrConstants.LIST_UPDATES_NEW_VERSION).asStringOrNull();
@@ -168,8 +219,9 @@ public class UpdateCommand extends AbstractInstMgrCommand {
             oldVersion = oldVersion == null ? "[]" : oldVersion;
             newVersion = newVersion == null ? "[]" : newVersion;
 
-            commandInvocation.println(String.format("    %1$-" + maxLength + "s %2$15s ==> %3$-15s", artifactName, oldVersion, newVersion));
+            commandInvocation.println(String.format("    %4$-7s %1$-" + maxLength + "s %2$15s ==> %3$-15s", artifactName, oldVersion, newVersion, status));
         }
+        commandInvocation.println(""); // Add newline after the listing
     }
 
     private void printUpdatesResult(CommandContext ctx, ModelNode result) {
