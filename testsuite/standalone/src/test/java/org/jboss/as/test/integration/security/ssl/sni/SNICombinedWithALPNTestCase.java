@@ -5,8 +5,6 @@
 
 package org.jboss.as.test.integration.security.ssl.sni;
 
-import static org.jboss.as.controller.client.helpers.ClientConstants.CONTENT;
-import static org.jboss.as.controller.client.helpers.ClientConstants.DEPLOYMENT;
 import static org.jboss.as.controller.client.helpers.Operations.createAddOperation;
 import static org.jboss.as.controller.client.helpers.Operations.createAddress;
 import static org.jboss.as.controller.client.helpers.Operations.createRemoveOperation;
@@ -37,7 +35,6 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -48,20 +45,15 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.auth.x500.X500Principal;
 
-import org.jboss.as.controller.client.OperationBuilder;
-import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.controller.client.helpers.Operations;
-import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
+import org.jboss.as.test.deployment.DeploymentArchiveUtils;
 import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
-import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -191,7 +183,7 @@ public class SNICombinedWithALPNTestCase {
                             new RuntimePermission("accessClassInPackage.sun.security.ssl"),
                             new ReflectPermission("suppressAccessChecks"))), "permissions.xml")
                     .addAsServiceProviderAndClasses(ServiceActivator.class, UndertowSSLServiceActivator.class);
-            deploy(jar, managementClient);
+            DeploymentArchiveUtils.deploy(jar, managementClient);
 
             ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient());
         }
@@ -213,7 +205,7 @@ public class SNICombinedWithALPNTestCase {
             managementClient.executeForResult(createRemoveOperation(createAddress(HOST_KEY_MANAGER)));
             managementClient.executeForResult(createRemoveOperation(createAddress(IP_KEY_STORE)));
             managementClient.executeForResult(createRemoveOperation(createAddress(HOST_KEY_STORE)));
-            undeploy(managementClient, TEST_JAR);
+            DeploymentArchiveUtils.undeploy(managementClient, TEST_JAR);
             ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient());
 
         }
@@ -398,50 +390,4 @@ public class SNICombinedWithALPNTestCase {
         return "SunX509";
     }
 
-    /**
-     * Deploys the archive to the running server.
-     *
-     * @param archive the archive to deploy
-     * @throws IOException if an error occurs deploying the archive
-     */
-    public static void deploy(final Archive<?> archive, ManagementClient managementClient) throws IOException {
-        // Use an operation to allow overriding the runtime name
-        final ModelNode address = Operations.createAddress(DEPLOYMENT, archive.getName());
-        final ModelNode addOp = createAddOperation(address);
-        addOp.get("enabled").set(true);
-        // Create the content for the add operation
-        final ModelNode contentNode = addOp.get(CONTENT);
-        final ModelNode contentItem = contentNode.get(0);
-        contentItem.get(ClientConstants.INPUT_STREAM_INDEX).set(0);
-
-        // Create an operation and add the input archive
-        final OperationBuilder builder = OperationBuilder.create(addOp);
-        builder.addInputStream(archive.as(ZipExporter.class).exportAsInputStream());
-
-        // Deploy the content and check the results
-        final ModelNode result = managementClient.getControllerClient().execute(builder.build());
-        if (!Operations.isSuccessfulOutcome(result)) {
-            Assert.fail(String.format("Failed to deploy %s: %s", archive, Operations.getFailureDescription(result).asString()));
-        }
-    }
-
-    public static void undeploy(ManagementClient client, final String runtimeName) throws ServerDeploymentHelper.ServerDeploymentException {
-        final ServerDeploymentHelper helper = new ServerDeploymentHelper(client.getControllerClient());
-        final Collection<Throwable> errors = new ArrayList<>();
-        try {
-            final ModelNode op = Operations.createReadResourceOperation(Operations.createAddress("deployment", runtimeName));
-            final ModelNode result = client.getControllerClient().execute(op);
-            if (Operations.isSuccessfulOutcome(result))
-                helper.undeploy(runtimeName);
-        } catch (Exception e) {
-            errors.add(e);
-        }
-        if (!errors.isEmpty()) {
-            final RuntimeException e = new RuntimeException("Error undeploying: " + runtimeName);
-            for (Throwable error : errors) {
-                e.addSuppressed(error);
-            }
-            throw e;
-        }
-    }
 }

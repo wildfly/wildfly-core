@@ -4,7 +4,13 @@
  */
 package org.jboss.as.test.deployment;
 
+import org.jboss.as.controller.client.OperationBuilder;
+import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.dmr.ModelNode;
+import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.GenericArchive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
@@ -13,8 +19,17 @@ import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
 import org.jboss.shrinkwrap.impl.base.path.BasicPath;
+import org.junit.Assert;
+import org.wildfly.core.testrunner.ManagementClient;
+
+import static org.jboss.as.controller.client.helpers.ClientConstants.CONTENT;
+import static org.jboss.as.controller.client.helpers.ClientConstants.DEPLOYMENT;
+import static org.jboss.as.controller.client.helpers.Operations.createAddOperation;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * Tool for creating WAR, CLI and EAR archive to test deployment
@@ -129,5 +144,53 @@ public class DeploymentArchiveUtils {
         File file = new File(tempDir, ear.getName());
         new ZipExporterImpl(ear).exportTo(file, true);
         return file;
+    }
+
+
+    /**
+     * Deploys the archive to the running server.
+     *
+     * @param archive the archive to deploy
+     * @throws IOException if an error occurs deploying the archive
+     */
+    public static void deploy(final Archive<?> archive, ManagementClient managementClient) throws IOException {
+        // Use an operation to allow overriding the runtime name
+        final ModelNode address = Operations.createAddress(DEPLOYMENT, archive.getName());
+        final ModelNode addOp = createAddOperation(address);
+        addOp.get("enabled").set(true);
+        // Create the content for the add operation
+        final ModelNode contentNode = addOp.get(CONTENT);
+        final ModelNode contentItem = contentNode.get(0);
+        contentItem.get(ClientConstants.INPUT_STREAM_INDEX).set(0);
+
+        // Create an operation and add the input archive
+        final OperationBuilder builder = OperationBuilder.create(addOp);
+        builder.addInputStream(archive.as(ZipExporter.class).exportAsInputStream());
+
+        // Deploy the content and check the results
+        final ModelNode result = managementClient.getControllerClient().execute(builder.build());
+        if (!Operations.isSuccessfulOutcome(result)) {
+            Assert.fail(String.format("Failed to deploy %s: %s", archive, Operations.getFailureDescription(result).asString()));
+        }
+    }
+
+    public static void undeploy(ManagementClient client, final String managementName) throws ServerDeploymentHelper.ServerDeploymentException {
+        final ServerDeploymentHelper helper = new ServerDeploymentHelper(client.getControllerClient());
+        final Collection<Throwable> errors = new ArrayList<>();
+        try {
+            final ModelNode op = Operations.createReadResourceOperation(Operations.createAddress("deployment", managementName));
+            final ModelNode result = client.getControllerClient().execute(op);
+            if (Operations.isSuccessfulOutcome(result))
+                helper.undeploy(managementName);
+        } catch (Exception e) {
+            errors.add(e);
+        }
+        if (!errors.isEmpty()) {
+            final RuntimeException e = new RuntimeException("Error undeploying: " + managementName);
+            for (Throwable error : errors) {
+                e.addSuppressed(error);
+            }
+            throw e;
+        }
     }
 }
