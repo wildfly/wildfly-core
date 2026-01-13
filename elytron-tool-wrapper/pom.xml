@@ -10,7 +10,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>31.0.0.Final</version>
+        <version>31.0.1.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-elytron-tool-wrapper</artifactId>
