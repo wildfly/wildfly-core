@@ -3869,4 +3869,16 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id = 532, value = "Error while inspecting network interface %s")
     void errorInspectingNetworkInterface(@Cause Throwable cause, NetworkInterface name);
+
+    @Message(id = 533, value = "Value for parameter '%1$s' must be greater than '%3$s': '%2$s'")
+    OperationFailedException exclusiveLowerBoundExceeded(String name, Object value, Object lowerBound);
+
+    @Message(id = 534, value = "Value for parameter '%1$s' must be greater than or equal to '%3$s': '%2$s'")
+    OperationFailedException inclusiveLowerBoundExceeded(String name, Object value, Object lowerBound);
+
+    @Message(id = 535, value = "Value for parameter '%1$s' must be less than '%3$s': '%2$s'")
+    OperationFailedException exclusiveUpperBoundExceeded(String name, Object value, Object upperBound);
+
+    @Message(id = 536, value = "Value for parameter '%1$s' must be less than or equal to '%3$s': '%2$s'")
+    OperationFailedException inclusiveUpperBoundExceeded(String name, Object value, Object upperBound);
 }

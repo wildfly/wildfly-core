@@ -23,11 +23,12 @@ import org.jboss.dmr.ModelType;
 /**
  * {@link org.jboss.as.controller.operations.validation.ParameterValidator} that validates the value is a string matching
  * one of the {@link java.lang.Enum} types.
- *
  * @author Jason T. Greene
  * @author Brian Stansberry
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @deprecated Use {@link EnumSetValidator} or {@link EnumStringSetValidator}, depending on desired resolution; or use {@link org.wildfly.subsystem.resource.EnumAttributeDefinition}.
  */
+@Deprecated(forRemoval = true, since = "31.0")
 public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator implements AllowedValuesValidator {
 
     private final Set<E> allowedValues;
@@ -140,6 +141,7 @@ public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator impleme
             if (!allowedValues.contains(enumValue)) {
                 throw ControllerLogger.ROOT_LOGGER.invalidEnumValue(tuString, parameterName, toStringMap.keySet());
             }
+            // N.B. A validator has no business manipulating input - and is why this implementation is deprecated.
             // Hack to store the allowed value in the model, not the user input
             if (!value.isProtected()) {
                 value.set(enumValue.toString());
