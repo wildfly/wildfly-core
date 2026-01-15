@@ -18,27 +18,28 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.core.instmgr.InstMgrConstants;
+import org.wildfly.core.instmgr.InstMgrListManifestVersionsHandler;
 import org.wildfly.core.instmgr.InstMgrListUpdatesHandler;
 
-public class ListUpdatesAction extends AbstractInstMgrCommand {
+public class ListManifestVersionsAction extends AbstractInstMgrCommand {
     private final List<File> mavenRepoFiles;
     private final List<String> repositories;
-    private final List<String> manifestVersions;
     private final Path localCache;
     private final Boolean noResolveLocalCache;
     private final Boolean useDefaultLocalCache;
     private final boolean offline;
     private final ModelNode headers;
+    private final Boolean includeDowngrades;
 
-    public ListUpdatesAction(Builder builder) {
+    public ListManifestVersionsAction(Builder builder) {
         this.mavenRepoFiles = builder.mavenRepoFiles;
         this.repositories = builder.repositories;
-        this.manifestVersions = builder.manifestVersions;
         this.localCache = builder.localCache;
         this.noResolveLocalCache = builder.noResolveLocalCache;
         this.offline = builder.offline;
         this.headers = builder.headers;
         this.useDefaultLocalCache = builder.useDefaultLocalCache;
+        this.includeDowngrades = builder.includeDowngrades;
     }
 
     @Override
@@ -46,7 +47,7 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
         final ModelNode op = new ModelNode();
         final OperationBuilder operationBuilder = OperationBuilder.create(op);
 
-        op.get(OP).set(InstMgrListUpdatesHandler.DEFINITION.getName());
+        op.get(OP).set(InstMgrListManifestVersionsHandler.DEFINITION.getName());
 
         if (mavenRepoFiles != null && !mavenRepoFiles.isEmpty()) {
             final ModelNode filesMn = new ModelNode().addEmptyList();
@@ -58,7 +59,6 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
         }
 
         addRepositoriesToModelNode(op, this.repositories);
-        addManifestVersionsToModelNode(op, this.manifestVersions);
 
         if (localCache != null) {
             op.get(InstMgrConstants.LOCAL_CACHE).set(localCache.normalize().toAbsolutePath().toString());
@@ -78,6 +78,10 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
             op.get(Util.OPERATION_HEADERS).set(headers);
         }
 
+        if (this.includeDowngrades != null) {
+            op.get(InstMgrConstants.INCLUDE_DOWNGRADES).set(this.includeDowngrades);
+        }
+
         return operationBuilder.build();
     }
 
@@ -86,15 +90,14 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
         private ModelNode headers;
         private List<File> mavenRepoFiles;
         private List<String> repositories;
-        private List<String> manifestVersions;
         private Path localCache;
+        private Boolean includeDowngrades;
 
         private Boolean noResolveLocalCache;
         private Boolean useDefaultLocalCache;
 
         public Builder() {
             this.repositories = new ArrayList<>();
-            this.manifestVersions = new ArrayList<>();
             this.offline = false;
             this.mavenRepoFiles = new ArrayList<>();
         }
@@ -109,13 +112,6 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
         public Builder setRepositories(List<String> repositories) {
             if (repositories != null) {
                 this.repositories.addAll(repositories);
-            }
-            return this;
-        }
-
-        public Builder setManifestVersions(List<String> manifestVersions) {
-            if (manifestVersions != null) {
-                this.manifestVersions = manifestVersions;
             }
             return this;
         }
@@ -147,8 +143,13 @@ public class ListUpdatesAction extends AbstractInstMgrCommand {
             return this;
         }
 
-        public ListUpdatesAction build() {
-            return new ListUpdatesAction(this);
+        public Builder setIncludeDowngrades(Boolean includeDowngrades) {
+            this.includeDowngrades = includeDowngrades;
+            return this;
+        }
+
+        public ListManifestVersionsAction build() {
+            return new ListManifestVersionsAction(this);
         }
     }
 }

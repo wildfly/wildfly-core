@@ -10,8 +10,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.wildfly.core.instmgr.cli.UpdateCommand.CONFIRM_OPTION;
 import static org.wildfly.core.instmgr.cli.UpdateCommand.DRY_RUN_OPTION;
-import static org.wildfly.core.instmgr.cli.UpdateCommand.NO_RESOLVE_LOCAL_CACHE_OPTION;
-import static org.wildfly.core.instmgr.cli.UpdateCommand.USE_DEFAULT_LOCAL_CACHE_OPTION;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -212,6 +210,37 @@ public abstract class AbstractInstMgrCommand implements Command<CLICommandInvoca
             }
         }
         op.get(InstMgrConstants.REPOSITORIES).set(repositoriesMn);
+    }
+
+    static void addManifestVersionsToModelNode(ModelNode op, List<String> manifestVersions) throws CommandException {
+        if (manifestVersions == null || manifestVersions.isEmpty()) {
+            return;
+        }
+
+        ModelNode manifestVersionsMn = new ModelNode().addEmptyList();
+        for (int i = 0; i < manifestVersions.size(); i++) {
+            String inputStr = manifestVersions.get(i);
+            ModelNode manifestVersionMn = new ModelNode();
+            String channelId;
+            String manifestVersion;
+            String[] split = inputStr.split("::");
+            try {
+                if (split.length == 2) {
+                    channelId = split[0];
+                    manifestVersion = split[1];
+                } else {
+                    throw new IllegalArgumentException();
+                }
+                manifestVersionMn.get(InstMgrConstants.CHANNEL_NAME).set(channelId);
+                manifestVersionMn.get(InstMgrConstants.MANIFEST_VERSION).set(manifestVersion);
+                manifestVersionsMn.add(manifestVersionMn);
+            } catch (Exception w) {
+                throw new CommandException(String.format(
+                        "Invalid manifest versions definition. Expected string '<channelId>::<manifestVersion>' but got '%s'.",
+                        inputStr));
+            }
+        }
+        op.get(InstMgrConstants.MANIFEST_VERSIONS).set(manifestVersionsMn);
     }
 
     static void addManifestToModelNode(ModelNode modelNode, String manifest) {
