@@ -667,6 +667,8 @@
                                         <exclude>org.wildfly.core.test.standalone.mgmt.events.*TestCase</exclude>
                                         <!-- Requires modification of the process-uuid file inside the Jar -->
                                         <exclude>org.jboss.as.test.manualmode.logging.ProcessUuidTestCase</exclude>
+                                        <!-- installation manager is not supported in the bootstrap jar -->
+                                        <exclude>org.jboss.as.test.manualmode.installationmanager.InstallationManagerIntegrationTestCase</exclude>
                                     </excludes>
                                 </configuration>
                             </execution>

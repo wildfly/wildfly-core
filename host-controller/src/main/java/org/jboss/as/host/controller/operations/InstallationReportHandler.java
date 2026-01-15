@@ -53,14 +53,14 @@ public class InstallationReportHandler extends AbstractInstallationReporter {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final ModelNode patchingInfo = new ModelNode();
-        PathAddress patchingAddress = PathAddress.pathAddress(
+        final ModelNode installerInfo = new ModelNode();
+        PathAddress installerAddress = PathAddress.pathAddress(
                 PathElement.pathElement(HOST, environment.getHostControllerName()),
-                PathElement.pathElement(CORE_SERVICE, "patching"));
-        OperationEntry opEntry = context.getRootResourceRegistration().getOperationEntry(patchingAddress, "show-history");
-        if(opEntry != null) {
-            context.addStep(patchingInfo, Util.createOperation("show-history", patchingAddress),
-                opEntry.getOperationHandler(), OperationContext.Stage.RUNTIME);
+                PathElement.pathElement(CORE_SERVICE, "installer"));
+        OperationEntry opEntry = context.getRootResourceRegistration().getOperationEntry(installerAddress, "history");
+        if (opEntry != null) {
+            context.addStep(installerInfo, Util.createOperation("history", installerAddress),
+                    opEntry.getOperationHandler(), OperationContext.Stage.RUNTIME);
         }
         final Path installationDir = environment.getHomeDir().toPath();
         context.addStep(new OperationStepHandler() {
@@ -68,7 +68,7 @@ public class InstallationReportHandler extends AbstractInstallationReporter {
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 ModelNode result = context.getResult();
                 result.get(SUMMARY_DEFINITION.getName()).set(createProductNode(context, new InstallationConfiguration(
-                        environment, environment.getProductConfig(), patchingInfo, installationDir)));
+                        environment, environment.getProductConfig(), installerInfo, installationDir)));
             }
         }, OperationContext.Stage.RUNTIME);
     }

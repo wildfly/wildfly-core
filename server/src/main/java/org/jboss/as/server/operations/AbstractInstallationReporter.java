@@ -12,6 +12,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ORGANIZATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRODUCT_NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRODUCT_VERSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.ARCH;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.AVAILABLE_PROCESSORS;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.CPU;
@@ -22,11 +23,12 @@ import static org.jboss.as.controller.operations.global.GlobalInstallationReport
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.JVM_VENDOR;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.JVM_VERSION;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.OS;
-import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_TYPE;
+import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_CHANNEL_VERSIONS;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_COMMUNITY_IDENTIFIER;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_HOME;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_INSTALLATION_DATE;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_LAST_UPDATE;
+import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PRODUCT_TYPE;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PROJECT_TYPE;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.STANDALONE_DOMAIN_IDENTIFIER;
 
@@ -36,9 +38,15 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAccessor;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -48,6 +56,7 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.interfaces.InetAddressUtil;
 import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.cpu.ProcessorInfo;
@@ -174,6 +183,10 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
         product.get(OS).set(createOSNode());
         product.get(CPU).set(createCPUNode());
         product.get(JVM).set(createJVMNode());
+        List<ModelNode> channelVersions = installation.getChannelVersions();
+        if (channelVersions != null && !channelVersions.isEmpty()) {
+            product.get(PRODUCT_CHANNEL_VERSIONS).set(channelVersions);
+        }
         return product;
     }
 
@@ -275,18 +288,18 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
 
         private final ProcessEnvironment environment;
         private final ProductConfig config;
-        private final ModelNode patchingInfo;
+        private final ModelNode installerInfo;
         private final Path installationDir;
 
-        public InstallationConfiguration(ProcessEnvironment environment, ProductConfig config, ModelNode patchingInfo, Path installationDir) {
+        public InstallationConfiguration(ProcessEnvironment environment, ProductConfig config, ModelNode installerInfo, Path installationDir) {
             assert environment != null;
             assert config != null;
-            assert patchingInfo != null;
+            assert installerInfo != null;
             assert installationDir != null;
 
             this.environment = environment;
             this.config = config;
-            this.patchingInfo = patchingInfo;
+            this.installerInfo = installerInfo;
             this.installationDir = installationDir;
         }
 
@@ -310,11 +323,36 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
         }
 
         String getLastUpdateDate() {
-            if (patchingInfo.isDefined()) {
-                List<ModelNode> result = Operations.readResult(patchingInfo).asList();
-                for (ModelNode patchAtt : result) {
-                    if (patchAtt.has("applied-at")) {
-                        return patchAtt.get("applied-at").asString();
+            if (installerInfo.hasDefined(RESULT)) {
+                List<ModelNode> result = Operations.readResult(installerInfo).asList();
+                // results are always returned in order from newest to older
+                for (ModelNode installerAtt : result) {
+                    if (installerAtt.has("timestamp") && installerAtt.has("type") &&
+                            !installerAtt.get("type").asString().equals("config_change")) {
+                        String timestamp = installerAtt.get("timestamp").asString();
+                        try {
+                            TemporalAccessor parse = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.of("UTC"))
+                                    .parse(timestamp);
+                            ZonedDateTime zonedDateTime = ZonedDateTime.from(parse);
+                            return zonedDateTime.format(DateTimeFormatter.ofPattern("M/d/yy h:mm a z"));
+                        } catch (DateTimeParseException dtpe) {
+                            // It should be always parseable since we get the timestamp in the result as an Instant formatted with ISO_INSTANT
+                            // but just in case, as last resort, let's return the same value returned by the history operation
+                            ServerLogger.ROOT_LOGGER.debug(String.format("Cannot parse timestamp using ISO_INSTANT format %s", dtpe), dtpe);
+                            return timestamp;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        List<ModelNode> getChannelVersions() {
+            if (installerInfo.hasDefined(RESULT)) {
+                List<ModelNode> result = Operations.readResult(installerInfo).asList();
+                for (ModelNode installerAtt : result) {
+                    if (installerAtt.has(PRODUCT_CHANNEL_VERSIONS)) {
+                        return installerAtt.get(PRODUCT_CHANNEL_VERSIONS).asList();
                     }
                 }
             }
