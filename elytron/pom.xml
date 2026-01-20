@@ -415,7 +415,7 @@
                                 <exclude>legacy*.xml</exclude>
                                 <exclude>elytron-subsystem-community*.xml</exclude>
                             </excludes>
-                            <systemId>src/main/resources/schema/wildfly-elytron_18_0.xsd</systemId>
+                            <systemId>src/main/resources/schema/wildfly-elytron_19_0.xsd</systemId>
                         </validationSet>
                         <validationSet>
                             <dir>src/main/resources/schema</dir>
