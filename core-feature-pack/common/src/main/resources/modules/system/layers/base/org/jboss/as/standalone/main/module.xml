@@ -8,7 +8,7 @@
 <module xmlns="urn:jboss:module:1.9" name="org.jboss.as.standalone">
     <properties>
         <property name="jboss.api" value="private"/>
-        <property name="jboss.require-java-version" value="11"/>
+        <property name="jboss.require-java-version" value="17"/>
     </properties>
 
     <main-class name="org.jboss.as.server.Main"/>
