@@ -6,7 +6,7 @@ fi
 echo "INFO: Systemd Unit File server launch script"
 
 # Disable color output for the standard output
-export JAVA_OPTS="${JAVA_OPTS} -Dorg.jboss.logmanager.nocolor=true"
+export PREPEND_JAVA_OPTS="${PREPEND_JAVA_OPTS} -Dorg.jboss.logmanager.nocolor=true"
 export PATH="${JAVA_HOME}/bin:${PATH}"
 
 logDir=$(dirname "${WILDFLY_CONSOLE_LOG}")
