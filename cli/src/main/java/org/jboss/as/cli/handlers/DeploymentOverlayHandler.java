@@ -53,6 +53,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
     private static final String REMOVE = "remove";
     private static final String UPLOAD = "upload";
 
+    private static final String WARN_DEPLOYMENT_UNKNOWN = "WARNING: The following deployment runtime names are unknown: ";
     private static final String WARN_MSG = "WARNING: redeployment is required on deployment ";
 
     private final ArgumentWithoutValue l;
@@ -1166,6 +1167,10 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
     protected void addAddRedeployLinksSteps(CommandContext ctx, ModelNode steps,
             String overlay, String serverGroup, String[] links, boolean regexp)
                     throws CommandLineException {
+        final List<String> availableDeployments = Util.getDeploymentRuntimeNames(ctx.getModelControllerClient());
+        List<String> existingDeployments = new ArrayList<>();
+        List<String> unknownDeployments = new ArrayList<>();
+
         boolean warn = false;
         for(String link : links) {
             final ModelNode op = new ModelNode();
@@ -1178,16 +1183,30 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
             op.get(Util.OPERATION).set(Util.ADD);
             steps.add(op);
 
+            if (availableDeployments.contains(link)) {
+                existingDeployments.add(link);
+            } else {
+                unknownDeployments.add(link);
+            }
+
             if (redeployAffected.isPresent(ctx.getParsedCommandLine())) {
                 addRedeployStep(overlay, link, serverGroup, steps);
             } else {
                 warn = true;
             }
         }
-        if (warn) {
+
+        if (!unknownDeployments.isEmpty()) {
+            String unknownMsg = serverGroup == null
+                    ? WARN_DEPLOYMENT_UNKNOWN + unknownDeployments
+                    : WARN_DEPLOYMENT_UNKNOWN + unknownDeployments + " in server group " + serverGroup;
+            ctx.printLine(unknownMsg);
+        }
+
+        if (warn && !existingDeployments.isEmpty()) {
             String warningMsg = serverGroup == null
-                    ? WARN_MSG + Arrays.toString(links)
-                    : WARN_MSG + Arrays.toString(links) + " in server group " + serverGroup;
+                    ? WARN_MSG + existingDeployments
+                    : WARN_MSG + existingDeployments + " in server group " + serverGroup;
             ctx.printLine(warningMsg);
         }
     }
