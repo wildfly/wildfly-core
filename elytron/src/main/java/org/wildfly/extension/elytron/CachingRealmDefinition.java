@@ -8,6 +8,10 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILI
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
+import static org.wildfly.extension.elytron.RealmDefinitions.createBruteForceRealmTransformer;
+
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -114,13 +118,21 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
             int maxEntries = MAXIMUM_ENTRIES.resolveModelAttribute(context, model).asInt();
             long maxAge = MAXIMUM_AGE.resolveModelAttribute(context, model).asInt();
             InjectedValue<SecurityRealm> cacheableRealmValue = new InjectedValue<>();
-            ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(realmName, createService(cacheableRealm, maxEntries, maxAge, cacheableRealmValue));
+
+            ServiceBuilder<?> serviceBuilder = serviceTarget.addService();
+            Consumer<SecurityRealm> valueConsumer = serviceBuilder.provides(realmName);
+
+            final Function<SecurityRealm, SecurityRealm> realmTransformer =
+                createBruteForceRealmTransformer(context.getCurrentAddressValue(), SecurityRealm.class, serviceBuilder);
+
+            serviceBuilder.setInstance(createService(cacheableRealm, maxEntries, maxAge, cacheableRealmValue, realmTransformer, valueConsumer));
 
             addRealmDependency(context, serviceBuilder, cacheableRealm, cacheableRealmValue);
             commonDependencies(serviceBuilder).setInitialMode(context.getRunningMode() == RunningMode.ADMIN_ONLY ? ServiceController.Mode.LAZY : ServiceController.Mode.ACTIVE).install();
         }
 
-        private TrivialService<SecurityRealm> createService(String realmName, int maxEntries, long maxAge, InjectedValue<SecurityRealm> injector) {
+        private TrivialService<SecurityRealm> createService(String realmName, int maxEntries, long maxAge, InjectedValue<SecurityRealm> injector,
+            Function<SecurityRealm, SecurityRealm> realmTransformer, Consumer<SecurityRealm> valueConsumer) {
             return new TrivialService<>((TrivialService.ValueSupplier<SecurityRealm>) () -> {
                 SecurityRealm securityRealm = injector.getValue();
 
@@ -129,21 +141,21 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
                     CacheableSecurityRealm cacheableRealm = CacheableSecurityRealm.class.cast(securityRealm);
 
                     if (securityRealm instanceof ModifiableSecurityRealm) {
-                        return new CachingModifiableSecurityRealm(cacheableRealm, cache);
+                        return realmTransformer.apply(new CachingModifiableSecurityRealm(cacheableRealm, cache));
                     }
 
-                    return new CachingSecurityRealm(cacheableRealm, cache);
+                    return realmTransformer.apply(new CachingSecurityRealm(cacheableRealm, cache));
                 }
 
                 throw ElytronSubsystemMessages.ROOT_LOGGER.realmDoesNotSupportCache(realmName);
-            });
+            }, valueConsumer);
         }
 
         private LRURealmIdentityCache createRealmIdentityCache(int maxEntries, long maxAge) {
             return new LRURealmIdentityCache(maxEntries, maxAge);
         }
 
-        private void addRealmDependency(OperationContext context, ServiceBuilder<SecurityRealm> serviceBuilder, String realmName, Injector<SecurityRealm> securityRealmInjector) {
+        private void addRealmDependency(OperationContext context, ServiceBuilder<?> serviceBuilder, String realmName, Injector<SecurityRealm> securityRealmInjector) {
             String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(SECURITY_REALM_CAPABILITY, realmName);
             ServiceName realmServiceName = context.getCapabilityServiceName(runtimeCapability, SecurityRealm.class);
             REALM_SERVICE_UTIL.addInjection(serviceBuilder, securityRealmInjector, realmServiceName);
