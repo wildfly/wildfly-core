@@ -5,6 +5,9 @@
 
 <!-- for needs of DomainTestCase -->
 <subsystem xmlns="urn:wildfly:elytron:19.0" register-jaspi-factory="${exp.jaspi:false}" default-ssl-context="client" disallowed-providers="${exp.providers:test}">
+    <authentication-client>
+        <authentication-context name="myAC" />
+    </authentication-client>
     <providers>
         <provider-loader name="openssl" module="org.wildfly.openssl">
             <configuration>
@@ -446,6 +449,9 @@
                 <sni-mapping host=".*\.server" ssl-context="server2" />
             </server-ssl-sni-context>
         </server-ssl-sni-contexts>
+        <dynamic-client-ssl-contexts>
+            <dynamic-client-ssl-context name="dynamicClient" authentication-context="${exp.auth.context:myAC}"/>
+        </dynamic-client-ssl-contexts>
     </tls>
     <credential-stores>
         <credential-store name="test1" relative-to="jboss.server.data.dir" location="${exp.location:test1.store}" create="true" type="${exp.type:JCEKS}" provider-name="${exp.provider:provider}">

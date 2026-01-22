@@ -41,7 +41,7 @@ public class DefaultStabilityTestCase extends AbstractSubsystemTest {
     }
 
     @Test
-    public void testAddDynamicClientSSLContextFailsInDefaultStability() {
+    public void testAddDynamicClientSSLContextPassesInDefaultStability() {
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR)
                 .add(SUBSYSTEM, ELYTRON).add(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXT, DYNAMIC_SSL_CLIENT_CONTEXT_NAME);
@@ -49,11 +49,11 @@ public class DefaultStabilityTestCase extends AbstractSubsystemTest {
         operation.get(ElytronDescriptionConstants.AUTHENTICATION_CONTEXT).set("ac");
         ModelNode response = services.executeOperation(operation);
 
-        if (!response.get(OUTCOME).asString().equals(FAILED)) {
+        if (response.get(OUTCOME).asString().equals(FAILED)) {
             Assert.fail(response.toJSONString(false));
         }
 
-        if (!response.get("failure-description").asString().contains("No resource definition is registered for address")) {
+        if (response.get("failure-description").asString().contains("No resource definition is registered for address")) {
             Assert.fail(response.toJSONString(false));
         }
     }
