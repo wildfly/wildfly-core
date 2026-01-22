@@ -61,6 +61,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
     private final ElapsedTime elapsedTime;
     private volatile FutureServiceContainer futureContainer;
     private volatile boolean everStopped;
+    private static final boolean IGNORE_ROOT_USERNAME_WARN = Boolean.getBoolean("jboss.ignore.root.username.warning");
 
     ApplicationServerService(final List<ServiceActivator> extraServices, final Bootstrap.Configuration configuration,
                              final ControlledProcessState processState, final ServerSuspendController suspendController,
@@ -90,6 +91,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         if (System.getSecurityManager() != null) {
             ServerLogger.AS_ROOT_LOGGER.securityManagerEnabled();
         }
+        checkIfRootUser();
         if (ServerLogger.CONFIG_LOGGER.isDebugEnabled()) {
             final Properties properties = System.getProperties();
             final StringBuilder b = new StringBuilder(8192);
@@ -222,4 +224,15 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
       return result.toString();
    }
 
+    private void checkIfRootUser() {
+        if (!IGNORE_ROOT_USERNAME_WARN) {
+            String userName = System.getProperty("user.name", "");
+            boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows");
+            if (isWindows && userName.equalsIgnoreCase("administrator") ||
+                    !isWindows && userName.equalsIgnoreCase("root")
+            ) {
+                ServerLogger.AS_ROOT_LOGGER.startedWithRootUser(userName);
+            }
+        }
+    }
 }
