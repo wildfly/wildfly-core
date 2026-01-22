@@ -371,4 +371,20 @@ class TlsParser {
             .addChild(serverSslSniContextParser)
             .addChild(dynamicClientSslContextParser) // new
             .build();
+
+    final PersistentResourceXMLDescription tlsParser_19_0 = decorator(TLS)
+            .addChild(decorator(KEY_STORES)
+                    .addChild(keyStoreParser)
+                    .addChild(ldapKeyStoreParser)
+                    .addChild(filteringKeyStoreParser)
+            )
+            .addChild(keyManagerParser_12_0)
+            .addChild(trustManagerParser_14_0)
+            .addChild(serverSslContextParser_9_0)
+            .addChild(clientSslContextParser_9_0)
+            .addChild(certificateAuthorityParser)
+            .addChild(certificateAuthorityAccountParser)
+            .addChild(serverSslSniContextParser)
+            .addChild(dynamicClientSslContextParser) // new in DEFAULT
+            .build();
 }
