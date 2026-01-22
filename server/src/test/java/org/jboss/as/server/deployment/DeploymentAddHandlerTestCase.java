@@ -36,7 +36,7 @@ public class DeploymentAddHandlerTestCase {
         model.get("persistent").set(true);
         model.remove("address");
         final OperationContext context = Mockito.mock(OperationContext.class);
-        Mockito.when(context.resolveExpressions(Mockito.<ModelNode>anyObject())).thenReturn(model);
+        Mockito.when(context.resolveExpressions(Mockito.<ModelNode>any())).thenReturn(model);
         handler.execute(context, operation);
     }
 
@@ -48,7 +48,7 @@ public class DeploymentAddHandlerTestCase {
         final ModelNode model = operation.clone();
         model.get("persistent").set(true);
         final OperationContext context = Mockito.mock(OperationContext.class);
-        Mockito.when(context.resolveExpressions(Mockito.<ModelNode>anyObject())).thenReturn(model);
+        Mockito.when(context.resolveExpressions(Mockito.<ModelNode>any())).thenReturn(model);
         try {
             handler.execute(context, operation);
         } catch (OperationFailedException e) {
