@@ -1496,6 +1496,10 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 315, value = "Failed to restore file %s after failing to initialize the git repository %s -- Cause: %s")
     void failedToRestoreConfiguration(Path failed, String repository, String cause);
 
+    @LogMessage(level = WARN)
+    @Message(id = 316, value = "Server started as %s. If this user has elevated privileges, it is discouraged to run the server under this account, as it can compromise system security. You can dismiss this warning by starting the server with: -Djboss.ignore.root.username.warning=true")
+    void startedWithRootUser(String userName);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 
