@@ -1527,7 +1527,7 @@ class SSLDefinitions {
             }
         };
 
-        return createSSLContextDefinition(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXT, false, add, attributes, false, Stability.COMMUNITY, ORG_WILDFLY_SECURITY_ELYTRON_DYNAMIC_SSL);
+        return createSSLContextDefinition(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXT, false, add, attributes, false, Stability.DEFAULT, ORG_WILDFLY_SECURITY_ELYTRON_DYNAMIC_SSL);
     }
 
     private static Provider[] filterProviders(Provider[] all, String provider) {

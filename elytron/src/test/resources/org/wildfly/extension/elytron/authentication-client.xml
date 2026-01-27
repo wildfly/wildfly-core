@@ -3,7 +3,7 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<subsystem xmlns="urn:wildfly:elytron:18.0" default-authentication-context="child">
+<subsystem xmlns="urn:wildfly:elytron:19.0" default-authentication-context="child">
     <authentication-client>
         <authentication-configuration name="base" anonymous="true" />
         <authentication-configuration name="most"

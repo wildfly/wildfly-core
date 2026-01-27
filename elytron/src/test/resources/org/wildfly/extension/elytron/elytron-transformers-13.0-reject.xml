@@ -9,7 +9,10 @@
     TODO Keep the from version up to date with later releases.
  -->
 
-<subsystem xmlns="urn:wildfly:elytron:18.0">
+<subsystem xmlns="urn:wildfly:elytron:19.0">
+    <authentication-client>
+        <authentication-context name="myAC" />
+    </authentication-client>
     <tls>
         <key-stores>
             <key-store name="accounts.keystore">
@@ -57,6 +60,9 @@
                 <sni-mapping host="[^.]*\.example\.com" ssl-context="server"/>
             </server-ssl-sni-context>
         </server-ssl-sni-contexts>
+        <dynamic-client-ssl-contexts>
+            <dynamic-client-ssl-context name="dcsc" authentication-context="myAC"/>
+        </dynamic-client-ssl-contexts>
     </tls>
     <credential-stores>
         <credential-store name="store1" location="path/to/store_file" >

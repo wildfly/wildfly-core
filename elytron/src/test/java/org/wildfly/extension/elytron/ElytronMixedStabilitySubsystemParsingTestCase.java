@@ -47,9 +47,21 @@ public class ElytronMixedStabilitySubsystemParsingTestCase extends AbstractSubsy
         new MockUp<>(classToMock) {
             @Mock
             private String readResource(String name) throws IOException {
-                String namespaceUri = ElytronSubsystemSchema.CURRENT.get(Stability.DEFAULT).getNamespace().getUri();
-                String version = namespaceUri.substring(namespaceUri.lastIndexOf(':') + 1);
-                if (!name.contains(version + ".xml")) {
+                boolean isCurrent = ElytronSubsystemSchema.CURRENT.entrySet().stream()
+                        .anyMatch(entry -> {
+                            Stability stability = entry.getKey();
+                            String uri = entry.getValue().getNamespace().getUri();
+                            String version = uri.substring(uri.lastIndexOf(':') + 1);
+                            boolean versionMatches = name.contains(version + ".xml");
+                            if (stability == Stability.DEFAULT) {
+                                // For DEFAULT stability, version must match and name must NOT contain stability indicators
+                                return versionMatches && !name.contains("-community-") && !name.contains("-preview-");
+                            } else {
+                                // For non-DEFAULT stability, version must match and name must contain the stability name
+                                return versionMatches && name.contains("-" + stability.toString().toLowerCase() + "-");
+                            }
+                        });
+                if (!isCurrent) {
                     return ModelTestUtils.readResource(getClass(), name.replace("elytron", "legacy-elytron-subsystem"));
                 } else {
                     return ModelTestUtils.readResource(getClass(), name.replace("elytron", "elytron-subsystem"));
