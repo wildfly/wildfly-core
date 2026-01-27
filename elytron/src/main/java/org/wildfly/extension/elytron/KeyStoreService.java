@@ -19,14 +19,15 @@ import java.security.MessageDigest;
 import java.security.Provider;
 import java.security.Security;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.TimeZone;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import javax.security.auth.x500.X500Principal;
@@ -68,17 +69,28 @@ class KeyStoreService implements ModifiableKeyStoreService {
     private static final String GENERATED_CERTIFICATE_SIGNATURE_ALGORITHM = "SHA256withRSA";
     private static final int HEX_DELIMITER = ':';
     private static final String COMMON_NAME_PREFIX = "CN=";
+    //default delay between certificate health checks: 12h
+    static final long DEFAULT_DELAY = 12*60;
+    //default threshold of warning: 7 days
+    static final long DEFAULT_EXPIRATION_WATERMARK = 7*24*60;
 
+    private final String keyStoreName;
     private final String provider;
     private final String type;
     private final String path;
     private final String relativeTo;
     private final boolean required;
     private final String aliasFilter;
+    //delay in minutes between service start and periodical check of certificate health
+    //if set to '0', this will mean one-time off warning, as prior to RFE
+    private long expirationCheckDelay = DEFAULT_DELAY;
+    //minutes value between TTL of certificate and its expiration date, if TTL-expiration<water_mark, it will mean warning is warranted
+    private long expirationWaterMark = DEFAULT_EXPIRATION_WATERMARK;
 
     private final InjectedValue<PathManager> pathManager = new InjectedValue<>();
     private final InjectedValue<Provider[]> providers = new InjectedValue<>();
     private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplier = new InjectedValue<>();
+    private final InjectedValue<ScheduledExecutorService> executoreServiceSupplier = new InjectedValue<>();
 
     private PathResolver pathResolver;
     private File resolvedPath;
@@ -87,22 +99,29 @@ class KeyStoreService implements ModifiableKeyStoreService {
     private volatile AtomicLoadKeyStore keyStore = null;
     private volatile ModifyTrackingKeyStore trackingKeyStore = null;
     private volatile KeyStore unmodifiableKeyStore = null;
+    private volatile ScheduledFuture<?> certificateTaskFuture = null;
 
-    private KeyStoreService(String provider, String type, String relativeTo, String path, boolean required, String aliasFilter) {
+    private KeyStoreService(final String keyStoreName, final String provider, final String type, final String relativeTo,
+            final String path, final boolean required, final String aliasFilter, final long expirationCheckDelay, final long expirationWaterMark) {
+        this.keyStoreName = keyStoreName == null ? "N/A" : keyStoreName;
         this.provider = provider;
         this.type = type;
         this.relativeTo = relativeTo;
         this.path = path;
         this.required = required;
         this.aliasFilter = aliasFilter;
+        this.expirationCheckDelay = expirationCheckDelay;
+        this.expirationWaterMark = expirationWaterMark;
     }
 
-    static KeyStoreService createFileLessKeyStoreService(String provider, String type, String aliasFilter) {
-        return new KeyStoreService(provider, type, null, null, false, aliasFilter);
+    static KeyStoreService createFileLessKeyStoreService(final String keyStoreName, final String provider, final String type,
+            final String aliasFilter, final long expirationCheckDelay, final long expirationWaterMark) {
+        return new KeyStoreService(keyStoreName, provider, type, null, null, false, aliasFilter, expirationCheckDelay, expirationWaterMark);
     }
 
-    static KeyStoreService createFileBasedKeyStoreService(String provider, String type, String relativeTo, String path, boolean required, String aliasFilter) {
-        return new KeyStoreService(provider, type, relativeTo, path, required, aliasFilter);
+    static KeyStoreService createFileBasedKeyStoreService(final String keyStoreName, final String provider, final String type,
+            final String relativeTo, final String path, final boolean required, final String aliasFilter, final long expirationCheckDelay, final long expirationWaterMark) {
+        return new KeyStoreService(keyStoreName, provider, type, relativeTo, path, required, aliasFilter, expirationCheckDelay, expirationWaterMark);
     }
 
     /*
@@ -176,13 +195,14 @@ class KeyStoreService implements ModifiableKeyStoreService {
                         keyStore.load(null, password);
                     }
                 }
-                checkCertificatesValidity(keyStore);
             }
 
             this.keyStore = keyStore;
             KeyStore intermediate = aliasFilter != null ? FilteringKeyStore.filteringKeyStore(keyStore, AliasFilter.fromString(aliasFilter)) :  keyStore;
             this.trackingKeyStore = ModifyTrackingKeyStore.modifyTrackingKeyStore(intermediate);
             this.unmodifiableKeyStore = UnmodifiableKeyStore.unmodifiableKeyStore(intermediate);
+
+            scheduleCertificateHealthCheck();
         } catch (Exception e) {
             throw ROOT_LOGGER.unableToStartService(e);
         }
@@ -206,20 +226,61 @@ class KeyStoreService implements ModifiableKeyStoreService {
         }
     }
 
-    private void checkCertificatesValidity(KeyStore keyStore) throws KeyStoreException {
+    private void checkCertificatesValidity(final KeyStore keyStore) throws KeyStoreException {
         if (ROOT_LOGGER.isEnabled(Logger.Level.WARN)) {
-            Enumeration<String> aliases = keyStore.aliases();
+            final Enumeration<String> aliases = keyStore.aliases();
             while (aliases.hasMoreElements()) {
-                String alias = aliases.nextElement();
-                Certificate certificate = keyStore.getCertificate(alias);
+                final String alias = aliases.nextElement();
+                final Certificate certificate = keyStore.getCertificate(alias);
                 if (certificate != null && certificate instanceof X509Certificate) {
-                    try {
-                        ((X509Certificate) certificate).checkValidity();
-                    } catch (CertificateExpiredException | CertificateNotYetValidException e) {
-                        ROOT_LOGGER.certificateNotValid(alias, e);
+                    final X509Certificate xCertificate = (X509Certificate) certificate;
+                    final CertificateValidity certificateValidity = CertificateValidity.getValidity(xCertificate.getNotBefore(), xCertificate.getNotAfter(), this.expirationWaterMark);
+                    switch(certificateValidity) {
+                        case ABOUT_TO_EXPIRE:
+                            ROOT_LOGGER.certificateAboutToExpire(keyStoreName, alias);
+                            break;
+                        case EXPIRED:
+                            ROOT_LOGGER.certificateExpired(keyStoreName, alias);
+                            break;
+                        case NOT_YET:
+                            ROOT_LOGGER.certificateNotYetValid(keyStoreName, alias);
+                            break;
+                        case VALID:
+                        default:
+                            break;
                     }
                 }
             }
+        }
+    }
+
+    private void scheduleCertificateHealthCheck() {
+        final ScheduledExecutorService scheduledExecutorService = executoreServiceSupplier.getValue();
+        //JIC
+        cancelHealthCheck(false);
+        //Check if its one-time or periodic.
+        //Schedule in executor, to have consistent log output(prefix).
+        // simple fixed rate
+        final Runnable task =() -> {
+            try {
+                checkCertificatesValidity(keyStore);
+            } catch (KeyStoreException e) {
+                ROOT_LOGGER.periodicKeyStoreCheckFailed(this.keyStoreName, e);
+            }
+        };
+
+        if(this.expirationCheckDelay == 0) {
+            this.certificateTaskFuture = scheduledExecutorService.schedule(task, 10, TimeUnit.SECONDS);
+        } else {
+            this.certificateTaskFuture = scheduledExecutorService.scheduleAtFixedRate(task, 0, this.expirationCheckDelay, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private void cancelHealthCheck(final boolean interrupt) {
+        final ScheduledFuture<?> certificateTaskFuture = this.certificateTaskFuture;
+        this.certificateTaskFuture = null;
+        if (certificateTaskFuture != null) {
+            certificateTaskFuture.cancel(false);
         }
     }
 
@@ -229,6 +290,7 @@ class KeyStoreService implements ModifiableKeyStoreService {
                 "stopping:  keyStore = %s  unmodifiableKeyStore = %s  trackingKeyStore = %s  pathResolver = %s",
                 keyStore, unmodifiableKeyStore, trackingKeyStore, pathResolver
         );
+        cancelHealthCheck(true);
         keyStore = null;
         unmodifiableKeyStore = null;
         trackingKeyStore = null;
@@ -257,6 +319,10 @@ class KeyStoreService implements ModifiableKeyStoreService {
 
     Injector<ExceptionSupplier<CredentialSource, Exception>> getCredentialSourceSupplierInjector() {
         return credentialSourceSupplier;
+    }
+
+    Injector<ScheduledExecutorService> getScheduledExecutorInjector() {
+        return this.executoreServiceSupplier;
     }
 
     String getResolvedAbsolutePath() {
