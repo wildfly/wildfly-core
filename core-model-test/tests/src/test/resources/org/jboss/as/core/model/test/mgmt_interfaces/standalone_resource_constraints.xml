@@ -5,11 +5,11 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<server xmlns="urn:jboss:domain:community:20.0">
+<server xmlns="urn:jboss:domain:21.0">
     <management>
         <management-interfaces>
             <http-interface http-authentication-factory="management-http" allowed-origins="http://www.example.com http://localhost"
-                backlog="44" connection-high-water="111" connection-low-water="77" no-request-timeout="66666">
+                            backlog="44" connection-high-water="111" connection-low-water="77" no-request-timeout="66666">
                 <http-upgrade enabled="true" sasl-authentication-factory="managament-sasl" />
                 <socket-binding http="management-http"/>
             </http-interface>
