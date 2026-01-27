@@ -32,6 +32,8 @@ class RuntimeOptions {
 
     private boolean displaySecret = false;
 
+    private boolean createFiles = false;
+
     /**
      * Enable/Disable mode is active by using --enable or --disable argument
      */
@@ -128,5 +130,13 @@ class RuntimeOptions {
 
     void setDisplaySecret(boolean displaySecret) {
         this.displaySecret = displaySecret;
+    }
+
+    public boolean isCreateFiles() {
+        return createFiles;
+    }
+
+    public void setCreateFiles(boolean createFiles) {
+        this.createFiles = createFiles;
     }
 }

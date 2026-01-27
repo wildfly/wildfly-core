@@ -139,6 +139,8 @@ public class AddUser {
                 }
                 if (CommandLineArgument.DOMAIN_CONFIG_DIR_USERS.match(temp)) {
                     options.setDomainConfigDir(it.next());
+                } else if (CommandLineArgument.CREATE_FILES.match(temp)) {
+                    options.setCreateFiles(true);
                 } else if (CommandLineArgument.SERVER_CONFIG_DIR_USERS.match(temp)) {
                     options.setServerConfigDir(it.next());
                 } else if (CommandLineArgument.APPLICATION_USERS.match(temp)) {
@@ -264,6 +266,12 @@ public class AddUser {
             @Override
             public String instructions() {
                 return DomainManagementLogger.ROOT_LOGGER.argDomainConfigDirUsers();
+            }
+        },
+        CREATE_FILES("-cf", "--create-files") {
+            @Override
+            public String instructions() {
+                return "Create files & directories if they do not exist";
             }
         },
         SERVER_CONFIG_DIR_USERS("-sc") {
