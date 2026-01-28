@@ -157,5 +157,96 @@ public class PropertyFileFinderTestCase extends PropertyTestHelper {
         assertTrue("Expected the values.getPropertiesFiles() contained the "+domainMgmtUserFile,values.getUserFiles().contains(domainMgmtUserFile));
     }
 
+    /**
+     * Tests the creation of parent directories and property files when
+     * the -cf or --create-files flag is used in Standalone mode configuration.
+     *
+     * @throws IOException if an error occurs during directory or file creation.
+     */
+    @Test
+    public void createFilesServerConfigDir() throws IOException {
+        RuntimeOptions options = new RuntimeOptions();
+        options.setCreateFiles(true);
 
+        File tempDir = new File(System.getProperty("java.io.tmpdir"));
+        // Using a unique suffix to avoid conflicts during parallel builds
+        File customDir = new File(tempDir, "user-secrets-test-" + System.currentTimeMillis());
+        File customFileMgmtUsers = new File(customDir, "mgmt-users.properties");
+        File customFileMgmtGroups = new File(customDir, "mgmt-groups.properties");
+
+        StateValues stateValues = new StateValues(options);
+        stateValues.setFileMode(AddUser.FileMode.MANAGEMENT);
+        stateValues.getOptions().setServerConfigDir(customDir.getAbsolutePath());
+
+        PropertyFileFinder finder = new PropertyFileFinder(consoleMock, stateValues);
+        State nextState = finder.execute();
+
+        assertTrue("Should transition to PromptRealmState", nextState instanceof PromptRealmState);
+        assertTrue("Directory should have been created", customDir.exists());
+        assertTrue("Path should be a directory", customDir.isDirectory());
+        assertTrue("User properties file should exist", customFileMgmtUsers.exists());
+        assertTrue("Group properties file should exist", customFileMgmtGroups.exists());
+
+        cleanFiles(customDir);
+    }
+
+    /**
+     * Tests the creation of parent directories and property files when
+     * the -cf or --create-files flag is used in Domain mode configuration.
+     *
+     * @throws IOException if an error occurs during directory or file creation.
+     */
+    @Test
+    public void createFilesDomainConfigDir() throws IOException {
+        RuntimeOptions options = new RuntimeOptions();
+        options.setCreateFiles(true);
+
+        File tempDir = new File(System.getProperty("java.io.tmpdir"));
+        // Using a unique suffix to avoid conflicts during parallel builds
+        File customDir = new File(tempDir, "user-secrets-test-" + System.currentTimeMillis());
+        File customFileMgmtUsers = new File(customDir, "mgmt-users.properties");
+        File customFileMgmtGroups = new File(customDir, "mgmt-groups.properties");
+
+        StateValues stateValues = new StateValues(options);
+        stateValues.setFileMode(AddUser.FileMode.MANAGEMENT);
+        stateValues.getOptions().setDomainConfigDir(customDir.getAbsolutePath());
+
+        PropertyFileFinder finder = new PropertyFileFinder(consoleMock, stateValues);
+        State nextState = finder.execute();
+
+        assertTrue("Should transition to PromptRealmState", nextState instanceof PromptRealmState);
+        assertTrue("Directory should have been created", customDir.exists());
+        assertTrue("Path should be a directory", customDir.isDirectory());
+        assertTrue("User properties file should exist", customFileMgmtUsers.exists());
+        assertTrue("Group properties file should exist", customFileMgmtGroups.exists());
+
+        cleanFiles(customDir);
+    }
+
+    /**
+     * Tests the error handling when the -cf or --create-files flag is used
+     * and the application lacks the necessary permissions to create the path.
+     *
+     * @throws IOException if an unexpected error occurs.
+     */
+    @Test
+    public void permissionError() throws IOException {
+        RuntimeOptions options = new RuntimeOptions();
+        options.setCreateFiles(true);
+
+        // Attempting to create a folder in a restricted system area (root level)
+        File forbiddenDir = new File("/forbidden_folder");
+
+        // Ensure we are actually testing a missing directory
+        assertFalse("Pre-condition failed: forbidden directory already exists", forbiddenDir.exists());
+
+        StateValues stateValues = new StateValues(options);
+        stateValues.setFileMode(AddUser.FileMode.MANAGEMENT);
+        stateValues.getOptions().setServerConfigDir(forbiddenDir.getAbsolutePath());
+
+        PropertyFileFinder finder = new PropertyFileFinder(consoleMock, stateValues);
+        State nextState = finder.execute();
+
+        assertTrue("Should return ErrorState due to lack of write permissions", nextState instanceof ErrorState);
+    }
 }
