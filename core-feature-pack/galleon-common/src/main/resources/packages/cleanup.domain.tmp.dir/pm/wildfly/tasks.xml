@@ -6,5 +6,5 @@
   -->
 
 <tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:2.0">
-    <mkdir name="domain/tmp/auth"/>
+    <delete path="domain/tmp" recursive="true"/>
 </tasks>
