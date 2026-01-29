@@ -35,21 +35,28 @@ class InstallationCleaner implements Runnable {
     private final BootableJarLogger logger;
     private final boolean newProcess;
     private final int retries;
+    private final boolean alreadyRunning;
 
-    InstallationCleaner(final BootableEnvironment environment, final BootableJarLogger logger) {
+    InstallationCleaner(final BootableEnvironment environment, final BootableJarLogger logger) throws IOException {
         this.environment = environment;
         cleanupMarker = environment.getJBossHome().resolve("wildfly-cleanup-marker");
+        alreadyRunning = Files.exists(cleanupMarker);
+        if (!alreadyRunning) {
+            Files.createFile(cleanupMarker);
+        }
         this.logger = logger;
         newProcess = getProperty("org.wildfly.core.jar.cleanup.newProcess", environment.isWindows());
         retries = getProperty("org.wildfly.core.jar.cleanup.retries", 3);
     }
 
+    boolean isAlreadyRunning() {
+        return alreadyRunning;
+    }
+
     @Override
     public void run() {
-        // Clean up is not already in progress
-        if (Files.notExists(cleanupMarker)) {
+        if (!alreadyRunning) {
             try {
-                Files.createFile(cleanupMarker);
                 long timeout = environment.getTimeout() * 1000;
                 final Path pidFile = environment.getPidFile();
                 final long wait = 500L;
