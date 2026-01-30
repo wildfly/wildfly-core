@@ -5,6 +5,4 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:2.0">
-    <mkdir name="standalone/lib/ext"/>
-</tasks>
+<package-spec xmlns="urn:jboss:galleon:package:2.0" name="cleanup.standalone.tmp"/>
