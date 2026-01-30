@@ -15,7 +15,7 @@ Building
 Prerequisites:
 
 * JDK 17 or newer - check `java -version`
-* Maven 3.6.0 or newer - check `mvn -v`
+* Maven 3.6.0 or newer - check mvn -v (Maven 3.9.12 or a higher Maven 3 is recommended.)
 
 To build with your own Maven installation:
 
