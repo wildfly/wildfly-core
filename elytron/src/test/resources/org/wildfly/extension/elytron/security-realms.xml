@@ -3,7 +3,7 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<subsystem xmlns="urn:wildfly:elytron:18.0">
+<subsystem xmlns="urn:wildfly:elytron:19.0">
     <security-realms>
         <aggregate-realm name="AggregateOne" authentication-realm="RealmThree" authorization-realm="RealmFour" />
         <aggregate-realm name="AggregateTwo" authentication-realm="RealmThree" authorization-realms="AggregateOne RealmFour" />

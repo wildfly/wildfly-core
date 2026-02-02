@@ -47,10 +47,24 @@ public class ElytronMixedStabilitySubsystemParsingTestCase extends AbstractSubsy
         new MockUp<>(classToMock) {
             @Mock
             private String readResource(String name) throws IOException {
-                String namespaceUri = ElytronSubsystemSchema.CURRENT.get(Stability.DEFAULT).getNamespace().getUri();
-                String version = namespaceUri.substring(namespaceUri.lastIndexOf(':') + 1);
-                if (!name.contains(version + ".xml")) {
-                    return ModelTestUtils.readResource(getClass(), name.replace("elytron", "legacy-elytron-subsystem"));
+                boolean isCurrent = ElytronSubsystemSchema.CURRENT.entrySet().stream()
+                        .anyMatch(entry -> {
+                            Stability stability = entry.getKey();
+                            String uri = entry.getValue().getNamespace().getUri();
+                            String version = uri.substring(uri.lastIndexOf(':') + 1);
+                            boolean versionMatches = name.contains(version + ".xml");
+                            if (stability == Stability.DEFAULT) {
+                                // For DEFAULT stability, version must match and name must NOT contain stability indicators
+                                return versionMatches && !name.contains("-community-") && !name.contains("-preview-");
+                            } else {
+                                // For non-DEFAULT stability, version must match and name must contain the stability name
+                                return versionMatches && name.contains("-" + stability.toString().toLowerCase() + "-");
+                            }
+                        });
+                if (!isCurrent) {
+                    // older versions use legacy-elytron-subsystem-*.xml
+                    String resourceName = name.contains("community-18.0") ? name.replace("elytron", "elytron-subsystem") : name.replace("elytron", "legacy-elytron-subsystem");
+                    return ModelTestUtils.readResource(getClass(), resourceName);
                 } else {
                     return ModelTestUtils.readResource(getClass(), name.replace("elytron", "elytron-subsystem"));
                 }
@@ -70,7 +84,7 @@ public class ElytronMixedStabilitySubsystemParsingTestCase extends AbstractSubsy
 
     public ElytronMixedStabilitySubsystemParsingTestCase(ElytronSubsystemSchema schema) {
         // mock the method that returns path to string for all except the current
-        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension(), schema, ElytronSubsystemSchema.CURRENT.get(schema.getStability()));
+        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension(), schema, ElytronSubsystemSchema.CURRENT.get(schema.getStability()) != null ? ElytronSubsystemSchema.CURRENT.get(schema.getStability()) : ElytronSubsystemSchema.CURRENT.get(Stability.DEFAULT));
     }
 
 }
