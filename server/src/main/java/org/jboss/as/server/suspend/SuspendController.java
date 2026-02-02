@@ -7,11 +7,13 @@ package org.jboss.as.server.suspend;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -22,10 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.wildfly.common.Assert;
@@ -66,18 +64,29 @@ import org.wildfly.common.function.Functions;
  * @author Paul Ferraro
  */
 public class SuspendController implements ServerSuspendController, SuspendableActivityRegistry {
-    private static final Supplier<List<SuspendableActivity>> FACTORY = CopyOnWriteArrayList::new;
+    // Suspend in priority order
+    private static final Iterable<org.jboss.as.server.suspend.SuspendPriority> SUSPEND_PRIORITIES = EnumSet.allOf(org.jboss.as.server.suspend.SuspendPriority.class);
+    // Resume in reverse priority order
+    private static final Iterable<org.jboss.as.server.suspend.SuspendPriority> RESUME_PRIORITIES = EnumSet.allOf(org.jboss.as.server.suspend.SuspendPriority.class).stream().sorted(Comparator.reverseOrder()).toList();
 
     // Server activity groups in suspend priority order (max -> min)
     // Initialized as an unmodifiable list of empty activity lists
-    private final List<List<SuspendableActivity>> activityGroups = Stream.generate(FACTORY).limit(SuspendPriority.LAST.ordinal() + 1).collect(Collectors.toUnmodifiableList());
+    private final Map<org.jboss.as.server.suspend.SuspendPriority, List<SuspendableActivity>> activityGroups;
     // Index of activity priorities
-    private final Map<SuspendableActivity, SuspendPriority> priorities = Collections.synchronizedMap(new IdentityHashMap<>());
+    private final Map<SuspendableActivity, org.jboss.as.server.suspend.SuspendPriority> priorities = Collections.synchronizedMap(new IdentityHashMap<>());
 
     private final List<OperationListener> listeners = new CopyOnWriteArrayList<>();
 
     private final AtomicReference<State> state = new AtomicReference<>(State.SUSPENDED);
     private volatile CompletionStage<Void> activeSuspend = SuspendableActivity.COMPLETED;
+
+    public SuspendController() {
+        Map<org.jboss.as.server.suspend.SuspendPriority, List<SuspendableActivity>> activityGroups = new EnumMap<>(org.jboss.as.server.suspend.SuspendPriority.class);
+        for (org.jboss.as.server.suspend.SuspendPriority priority : EnumSet.allOf(org.jboss.as.server.suspend.SuspendPriority.class)) {
+            activityGroups.put(priority, new CopyOnWriteArrayList<SuspendableActivity>());
+        }
+        this.activityGroups = Collections.unmodifiableMap(activityGroups);
+    }
 
     @Override
     public void reset() {
@@ -110,7 +119,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
         List<CompletionStage<Void>> phaseStages = new ArrayList<>(2);
         result.whenComplete(propagateCancellation(phaseStages));
         // Prepare activity groups in priority order, i.e. first -> last
-        phaseStages.add(phaseStage(this.activityGroups, SuspendableActivity::prepare, context, (ignored, prepareException) -> {
+        phaseStages.add(phaseStage(this::suspendIterator, SuspendableActivity::prepare, context, (ignored, prepareException) -> {
             if (prepareException != null) {
                 // If prepare fails, log failure and complete with cancellation
                 ServerLogger.ROOT_LOGGER.suspendFailed(prepareException);
@@ -118,7 +127,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
             } else {
                 this.state.set(State.SUSPENDING);
                 // Suspend activity groups in priority order, i.e. first -> last order
-                phaseStages.add(phaseStage(this.activityGroups, SuspendableActivity::suspend, context, (ignore, suspendException) -> {
+                phaseStages.add(phaseStage(this::suspendIterator, SuspendableActivity::suspend, context, (ignore, suspendException) -> {
                     if (suspendException != null) {
                         future.completeExceptionally(suspendException);
                     } else {
@@ -152,8 +161,28 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
         return result;
     }
 
+    private Iterator<List<SuspendableActivity>> suspendIterator() {
+        return this.iterator(SUSPEND_PRIORITIES);
+    }
+
     private Iterator<List<SuspendableActivity>> resumeIterator() {
-        return reverseIterator(this.activityGroups);
+        return this.iterator(RESUME_PRIORITIES);
+    }
+
+    private Iterator<List<SuspendableActivity>> iterator(Iterable<org.jboss.as.server.suspend.SuspendPriority> priorities) {
+        Map<org.jboss.as.server.suspend.SuspendPriority, List<SuspendableActivity>> groups = this.activityGroups;
+        Iterator<org.jboss.as.server.suspend.SuspendPriority> iterator = priorities.iterator();
+        return new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public List<SuspendableActivity> next() {
+                return groups.get(iterator.next());
+            }
+        };
     }
 
     /**
@@ -267,56 +296,32 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
         suspend.join();
     }
 
-    private static <E> Iterator<E> reverseIterator(List<E> list) {
-        ListIterator<E> iterator = list.listIterator(list.size());
-        return new Iterator<>() {
+    @Override
+    public SuspendableActivityRegistration register(SuspendableActivity activity, org.jboss.as.server.suspend.SuspendPriority priority) {
+        Assert.checkNotNullParam("activity", activity);
+        if (this.priorities.putIfAbsent(activity, priority) != null) {
+            // Activity already registered
+            throw new IllegalArgumentException(activity.toString());
+        }
+        this.activityGroups.get(priority).add(activity);
+        return new SuspendableActivityRegistration() {
             @Override
-            public boolean hasNext() {
-                return iterator.hasPrevious();
+            public State getState() {
+                return SuspendController.this.getState();
             }
 
             @Override
-            public E next() {
-                return iterator.previous();
-            }
-
-            @Override
-            public void remove() {
-                iterator.remove();
-            }
-
-            @Override
-            public void forEachRemaining(Consumer<? super E> action) {
-                while (this.hasNext()) {
-                    action.accept(this.next());
-                }
+            public void close() {
+                SuspendController.this.unregisterActivity(activity);
             }
         };
     }
 
     @Override
-    public void registerActivity(SuspendableActivity activity, SuspendPriority priority) {
-        Assert.checkNotNullParam("activity", activity);
-        Assert.checkNotNullParam("priority", priority);
-        if ((priority.ordinal() < SuspendPriority.FIRST.ordinal()) || (priority.ordinal() > SuspendPriority.LAST.ordinal())) {
-            throw new IllegalArgumentException(String.valueOf(priority.ordinal()));
-        }
-        if (this.priorities.putIfAbsent(activity, priority) == null) {
-            this.activityGroups.get(priority.ordinal()).add(activity);
-            if (this.state.get() != State.RUNNING) {
-                // if the activity is added when we are not running we just immediately suspend it
-                // this should only happen at boot, so there should be no outstanding requests anyway
-                // note that this means there is no execution group grouping of these calls.
-                activity.suspend(Context.STARTUP).toCompletableFuture().join();
-            }
-        }
-    }
-
-    @Override
     public void unregisterActivity(SuspendableActivity activity) {
-        SuspendPriority priority = this.priorities.remove(activity);
+        org.jboss.as.server.suspend.SuspendPriority priority = this.priorities.remove(activity);
         if (priority != null) {
-            this.activityGroups.get(priority.ordinal()).remove(activity);
+            this.activityGroups.get(priority).remove(activity);
         }
     }
 

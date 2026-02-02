@@ -48,35 +48,37 @@ public class SuspendControllerTestCase {
         doReturn(prepare).when(activity).prepare(suspendContext);
         doReturn(suspend).when(activity).suspend(suspendContext);
 
-        controller.registerActivity(activity);
+        try (SuspendableActivityRegistration registration = controller.register(activity)) {
+            Assert.assertSame(controller.getState(), registration.getState());
 
-        CompletableFuture<Void> result = controller.suspend(suspendContext).toCompletableFuture();
+            CompletableFuture<Void> result = controller.suspend(suspendContext).toCompletableFuture();
 
-        verify(activity).prepare(suspendContext);
-        verifyNoMoreInteractions(activity);
+            verify(activity).prepare(suspendContext);
+            verifyNoMoreInteractions(activity);
 
-        Assert.assertFalse(result.isDone());
-        Assert.assertFalse(result.isCancelled());
-        Assert.assertFalse(result.isCompletedExceptionally());
+            Assert.assertFalse(result.isDone());
+            Assert.assertFalse(result.isCancelled());
+            Assert.assertFalse(result.isCompletedExceptionally());
 
-        prepare.complete(null);
+            prepare.complete(null);
 
-        verify(activity).suspend(suspendContext);
-        verifyNoMoreInteractions(activity);
+            verify(activity).suspend(suspendContext);
+            verifyNoMoreInteractions(activity);
 
-        Assert.assertFalse(result.isDone());
-        Assert.assertFalse(result.isCancelled());
-        Assert.assertFalse(result.isCompletedExceptionally());
+            Assert.assertFalse(result.isDone());
+            Assert.assertFalse(result.isCancelled());
+            Assert.assertFalse(result.isCompletedExceptionally());
 
-        suspend.complete(null);
+            suspend.complete(null);
 
-        result.getNow(null);
+            result.getNow(null);
 
-        verifyNoMoreInteractions(activity);
+            verifyNoMoreInteractions(activity);
 
-        Assert.assertTrue(result.isDone());
-        Assert.assertFalse(result.isCancelled());
-        Assert.assertFalse(result.isCompletedExceptionally());
+            Assert.assertTrue(result.isDone());
+            Assert.assertFalse(result.isCancelled());
+            Assert.assertFalse(result.isCompletedExceptionally());
+        }
     }
 
     /**
@@ -97,23 +99,25 @@ public class SuspendControllerTestCase {
         doReturn(prepare).when(activity).prepare(suspendContext);
         doReturn(suspend).when(activity).suspend(suspendContext);
 
-        controller.registerActivity(activity);
+        try (SuspendableActivityRegistration registration = controller.register(activity)) {
+            Assert.assertSame(controller.getState(), registration.getState());
 
-        CompletableFuture<Void> result = controller.suspend(suspendContext).toCompletableFuture();
+            CompletableFuture<Void> result = controller.suspend(suspendContext).toCompletableFuture();
 
-        verify(activity).prepare(suspendContext);
-        verifyNoMoreInteractions(activity);
+            verify(activity).prepare(suspendContext);
+            verifyNoMoreInteractions(activity);
 
-        Assert.assertFalse(result.isDone());
-        Assert.assertFalse(result.isCancelled());
-        Assert.assertFalse(result.isCompletedExceptionally());
+            Assert.assertFalse(result.isDone());
+            Assert.assertFalse(result.isCancelled());
+            Assert.assertFalse(result.isCompletedExceptionally());
 
-        prepare.completeExceptionally(new Exception());
+            prepare.completeExceptionally(new Exception());
 
-        Assert.assertTrue(result.isDone());
-        Assert.assertTrue(result.isCancelled());
-        Assert.assertTrue(result.isCompletedExceptionally());
-        Assert.assertThrows(CancellationException.class, result::join);
+            Assert.assertTrue(result.isDone());
+            Assert.assertTrue(result.isCancelled());
+            Assert.assertTrue(result.isCompletedExceptionally());
+            Assert.assertThrows(CancellationException.class, result::join);
+        }
     }
 
     /**
