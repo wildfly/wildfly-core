@@ -26,6 +26,7 @@ import org.wildfly.subsystem.service.AsyncServiceBuilder;
  * ]]></code>
  * @author Paul Ferraro
  */
+@Deprecated(forRemoval = true, since = "32.0")
 public class AsyncCapabilityServiceBuilder<T> extends AsyncServiceBuilder<T> implements CapabilityServiceBuilder<T> {
 
     private final CapabilityServiceBuilder<T> builder;

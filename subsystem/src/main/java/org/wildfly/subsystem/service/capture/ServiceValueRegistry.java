@@ -6,6 +6,7 @@ package org.wildfly.subsystem.service.capture;
 
 import java.util.function.Consumer;
 
+import org.wildfly.service.BlockingLifecycle;
 import org.wildfly.service.capture.ValueRegistry;
 import org.wildfly.subsystem.service.ServiceDependency;
 import org.wildfly.subsystem.service.ServiceInstaller;
@@ -23,18 +24,18 @@ public interface ServiceValueRegistry<V> extends ValueRegistry<ServiceDependency
      * @return a service installer
      */
     default ServiceInstaller capture(ServiceDependency<V> dependency) {
-        Consumer<V> startTask = new Consumer<>() {
+        Consumer<V> start = new Consumer<>() {
             @Override
             public void accept(V value) {
                 ServiceValueRegistry.this.add(dependency).accept(value);
             }
         };
-        Consumer<V> stopTask = new Consumer<>() {
+        Consumer<V> stop = new Consumer<>() {
             @Override
             public void accept(V value) {
                 ServiceValueRegistry.this.remove(dependency);
             }
         };
-        return ServiceInstaller.builder(dependency).onStart(startTask).onStop(stopTask).build();
+        return ServiceInstaller.BlockingBuilder.of(dependency).withLifecycle(BlockingLifecycle.compose(start, stop)).build();
     }
 }

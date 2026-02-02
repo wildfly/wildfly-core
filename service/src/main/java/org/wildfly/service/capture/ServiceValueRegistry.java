@@ -7,6 +7,7 @@ package org.wildfly.service.capture;
 import java.util.function.Consumer;
 
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.service.BlockingLifecycle;
 import org.wildfly.service.ServiceDependency;
 import org.wildfly.service.ServiceInstaller;
 
@@ -19,23 +20,23 @@ public interface ServiceValueRegistry<V> extends ValueRegistry<ServiceName, V> {
 
     /**
      * Creates a service installer to capture and release the value provided by the specified service dependency.
-     * @param dependency a service dependency
+     * @param name the name identifying the service providing the value to be captured
      * @return a service installer
      */
     default ServiceInstaller capture(ServiceName name) {
-        Consumer<V> startTask = new Consumer<>() {
+        Consumer<V> start = new Consumer<>() {
             @Override
             public void accept(V value) {
                 ServiceValueRegistry.this.add(name).accept(value);
             }
         };
-        Consumer<V> stopTask = new Consumer<>() {
+        Consumer<V> stop = new Consumer<>() {
             @Override
             public void accept(V value) {
                 ServiceValueRegistry.this.remove(name);
             }
         };
         ServiceDependency<V> dependency = ServiceDependency.on(name);
-        return ServiceInstaller.builder(dependency).onStart(startTask).onStop(stopTask).build();
+        return ServiceInstaller.BlockingBuilder.of(dependency).requires(dependency).withLifecycle(BlockingLifecycle.compose(start, stop)).build();
     }
 }
