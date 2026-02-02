@@ -6,9 +6,9 @@
 package org.wildfly.extension.requestcontroller;
 
 import java.io.IOException;
+import java.util.function.Function;
 
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.ServiceNameFactory;
 import org.jboss.as.server.suspend.ServerSuspendController;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
@@ -57,7 +57,7 @@ public class RequestControllerSubsystemTestCase extends AbstractSubsystemBaseTes
 
             @Override
             protected void addExtraServices(ServiceTarget target) {
-                ServiceInstaller.builder(new SuspendController()).provides(ServiceNameFactory.resolveServiceName(ServerSuspendController.SERVICE_DESCRIPTOR)).build().install(target);
+                ServiceInstaller.BlockingBuilder.of(SuspendController::new).<ServerSuspendController>map(Function.identity()).provides(ServerSuspendController.SERVICE_DESCRIPTOR).build().install(target);
             }
 
             @Override

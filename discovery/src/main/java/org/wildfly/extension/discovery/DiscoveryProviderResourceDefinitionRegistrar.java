@@ -62,6 +62,6 @@ public abstract class DiscoveryProviderResourceDefinitionRegistrar implements Ch
 
     @Override
     public ResourceServiceInstaller configure(OperationContext context, ModelNode model) throws OperationFailedException {
-        return CapabilityServiceInstaller.builder(DiscoveryProviderResourceDefinitionRegistrar.DISCOVERY_PROVIDER_CAPABILITY, this.resolve(context, model)).build();
+        return CapabilityServiceInstaller.BlockingBuilder.of(DiscoveryProviderResourceDefinitionRegistrar.DISCOVERY_PROVIDER_CAPABILITY, this.resolve(context, model)).build();
     }
 }
