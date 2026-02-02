@@ -11,7 +11,7 @@ import org.wildfly.service.descriptor.NullaryServiceDescriptor;
  * Provides the suspend state of the server.
  */
 public interface SuspensionStateProvider {
-    NullaryServiceDescriptor<SuspensionStateProvider> SERVICE_DESCRIPTOR = NullaryServiceDescriptor.of("org.wildfly.server.suspend-controller", SuspensionStateProvider.class);
+    NullaryServiceDescriptor<SuspensionStateProvider> SERVICE_DESCRIPTOR = NullaryServiceDescriptor.of(SuspendableActivityRegistrar.SERVICE_DESCRIPTOR.getName(), SuspensionStateProvider.class);
 
     enum State {
         RUNNING,
