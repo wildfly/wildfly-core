@@ -5,8 +5,6 @@
 
 package org.wildfly.extension.elytron;
 
-import org.wildfly.extension.elytron.RealmDefinitions.CustomRealmBruteForceTransformer;
-
 import static org.jboss.as.server.security.VirtualDomainUtil.VIRTUAL_SECURITY_DOMAIN_CREATION_SERVICE;
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.ELYTRON_RUNTIME_CAPABILITY;
@@ -43,6 +41,7 @@ import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
+import jakarta.security.auth.message.config.AuthConfigFactory;
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
@@ -79,6 +78,7 @@ import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.extension.elytron.RealmDefinitions.CustomRealmBruteForceTransformer;
 import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
@@ -97,8 +97,6 @@ import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.authz.RoleMapper;
 import org.wildfly.security.jakarta.authz.AuthorizationRegistration;
 import org.wildfly.security.manager.action.ReadPropertyAction;
-
-import jakarta.security.auth.message.config.AuthConfigFactory;
 
 /**
  * Top level {@link ResourceDefinition} for the Elytron subsystem.
