@@ -12,7 +12,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-remoting-parent</artifactId>
-        <version>31.0.2.Final</version>
+        <version>31.0.3.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
