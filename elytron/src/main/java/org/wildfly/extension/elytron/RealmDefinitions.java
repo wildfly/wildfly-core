@@ -112,11 +112,14 @@ class RealmDefinitions {
         }
     }
 
-    static <T extends SecurityRealm> T addBruteForceProtection(final T original, final Class<T> clazz, final ScheduledExecutorService executor,
-                                                 final int maxAttempts, final int lockoutInterval, final int sessionTimeout, final int maxCachedSessions) {
+    static <T extends SecurityRealm> T addBruteForceProtection(final T original, final Class<T> clazz,
+        final ScheduledExecutorService executor, final String realmName, final int maxAttempts,
+        final int lockoutInterval, final int sessionTimeout, final int maxCachedSessions) {
+
         return BruteForceRealmWrapper.create()
                 .wrapping(original)
                 .withExecutor(executor)
+                .setRealmName(realmName)
                 .setMaxFailedAttempts(maxAttempts)
                 .setLockoutInterval(lockoutInterval)
                 .setFailureSessionTimeout(sessionTimeout)
@@ -137,7 +140,7 @@ class RealmDefinitions {
                 ROOT_LOGGER.tracef("Applying brute force protection to '%s' security realm. maxAttempts=%d, lockoutTimeout=%d, sessionTimeout=%d, maxCachedSessions=%d",
                     name, maxAttempts, lockoutInterval, sessionTimeout, maxCachedSessions);
 
-                transformer = (r) -> addBruteForceProtection(r, clazz, executorSupplier.get(), maxAttempts, lockoutInterval, sessionTimeout, maxCachedSessions);
+                transformer = (r) -> addBruteForceProtection(r, clazz, executorSupplier.get(), name, maxAttempts, lockoutInterval, sessionTimeout, maxCachedSessions);
             } else {
                 ROOT_LOGGER.tracef("Not applying brute force protection to '%s' security realm.", name);
                 transformer = Function.identity();
