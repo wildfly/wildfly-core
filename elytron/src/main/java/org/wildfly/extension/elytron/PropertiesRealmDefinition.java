@@ -5,6 +5,7 @@
 
 package org.wildfly.extension.elytron;
 
+
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BASE64;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HEX;
@@ -13,6 +14,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
+import static org.wildfly.extension.elytron.RealmDefinitions.createBruteForceRealmTransformer;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
@@ -29,6 +31,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.LongSupplier;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -58,6 +62,7 @@ import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.function.ExceptionBiConsumer;
 import org.wildfly.extension.elytron.TrivialResourceDefinition.Builder;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.security.auth.SupportLevel;
@@ -181,6 +186,8 @@ class PropertiesRealmDefinition {
                 }
             }
 
+            Function<SecurityRealm, SecurityRealm> realmTransformer =
+                createBruteForceRealmTransformer(context.getCurrentAddressValue(), SecurityRealm.class, serviceBuilder);
             return new ValueSupplier<SecurityRealm>() {
 
                 private final List<Handle> callbackHandles = new ArrayList<>();
@@ -192,7 +199,7 @@ class PropertiesRealmDefinition {
 
                     try (InputStream usersInputStream = new FileInputStream(usersFile);
                             InputStream groupsInputStream = groupsFile != null ? new FileInputStream(groupsFile) : null) {
-                        return new RealmWrapper(LegacyPropertiesSecurityRealm.builder()
+                        LegacyPropertiesSecurityRealm baseRealm = LegacyPropertiesSecurityRealm.builder()
                                 .setUsersStream(usersInputStream)
                                 .setGroupsStream(groupsInputStream)
                                 .setPlainText(plainText)
@@ -200,7 +207,9 @@ class PropertiesRealmDefinition {
                                 .setDefaultRealm(digestRealmName)
                                 .setHashEncoding(BASE64.equalsIgnoreCase(hashEncoding) ? Encoding.BASE64 : Encoding.HEX)
                                 .setHashCharset(Charset.forName(hashCharset))
-                                .build(), usersFile, groupsFile);
+                                .build();
+
+                        return new RealmWrapper(realmTransformer.apply(baseRealm), usersFile, groupsFile, baseRealm::getLoadTime, baseRealm::load);
 
                     } catch (FileNotFoundException e) {
                         throw ROOT_LOGGER.propertyFilesDoesNotExist(e.getMessage());
@@ -310,14 +319,19 @@ class PropertiesRealmDefinition {
 
     private static final class RealmWrapper implements SecurityRealm {
 
-        private final LegacyPropertiesSecurityRealm delegate;
+        private final SecurityRealm delegate;
         private final File usersFile;
         private final File groupsFile;
+        private final LongSupplier loadTimeSupplier;
+        private final ExceptionBiConsumer<InputStream, InputStream, IOException> propertiesFileLoader;
 
-        RealmWrapper(LegacyPropertiesSecurityRealm delegate, File usersFile, File groupsFile) {
+        RealmWrapper(SecurityRealm delegate, File usersFile, File groupsFile, LongSupplier loadTimeSupplier,
+                ExceptionBiConsumer<InputStream, InputStream, IOException>  propertiesFileLoader) {
             this.delegate = delegate;
             this.usersFile = usersFile;
             this.groupsFile = groupsFile;
+            this.loadTimeSupplier = loadTimeSupplier;
+            this.propertiesFileLoader = propertiesFileLoader;
         }
 
         @Override
@@ -364,14 +378,14 @@ class PropertiesRealmDefinition {
         }
 
         long getLoadTime() {
-            return delegate.getLoadTime();
+            return loadTimeSupplier.getAsLong();
         }
 
         void reloadIfNeeded() throws IOException {
-            long loadTime = delegate.getLoadTime();
+            long loadTime = loadTimeSupplier.getAsLong();
             if (shouldReload(loadTime)) {
                 synchronized(this) {
-                    loadTime = delegate.getLoadTime();
+                    loadTime = loadTimeSupplier.getAsLong();
                     if (shouldReload(loadTime)) {
                         reloadInternal();
                     }
@@ -394,7 +408,7 @@ class PropertiesRealmDefinition {
         void reloadInternal() throws IOException {
             try (InputStream usersInputStream = new FileInputStream(usersFile);
                     InputStream groupsInputStream = groupsFile != null ? new FileInputStream(groupsFile) : null) {
-                delegate.load(usersInputStream, groupsInputStream);
+                propertiesFileLoader.accept(usersInputStream, groupsInputStream);
             }
         }
 

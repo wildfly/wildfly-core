@@ -16,6 +16,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -58,14 +59,14 @@ class CustomComponentDefinition<C, T> extends SimpleResourceDefinition {
 
     static final AttributeDefinition[] ATTRIBUTES = {MODULE, CLASS_NAME, CONFIGURATION};
 
-    CustomComponentDefinition(Class<C> serviceType, Function<C, T> wrapper, String pathKey, @SuppressWarnings("rawtypes") RuntimeCapability ... runtimeCapabilities) {
+    CustomComponentDefinition(Class<C> serviceType, CustomComponentTransformer<C, T> transformer, String pathKey, @SuppressWarnings("rawtypes") RuntimeCapability ... runtimeCapabilities) {
         super(addAddRemoveHandlers(new Parameters(PathElement.pathElement(pathKey), ElytronExtension.getResourceDescriptionResolver(pathKey))
             .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
             .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
-            .setCapabilities(runtimeCapabilities), serviceType, wrapper, runtimeCapabilities));
+            .setCapabilities(runtimeCapabilities), serviceType, transformer, runtimeCapabilities));
     }
 
-    private static <C, T> Parameters addAddRemoveHandlers(Parameters parameters, Class<C> serviceType, Function<C, T> wrapper, RuntimeCapability<?> ... runtimeCapabilities) {
+    private static <C, T> Parameters addAddRemoveHandlers(Parameters parameters, Class<C> serviceType, CustomComponentTransformer<C, T> wrapper, RuntimeCapability<?> ... runtimeCapabilities) {
         AbstractAddStepHandler add = new ComponentAddHandler<>(serviceType, wrapper, runtimeCapabilities);
         OperationStepHandler remove = new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities);
 
@@ -86,13 +87,13 @@ class CustomComponentDefinition<C, T> extends SimpleResourceDefinition {
 
         private final RuntimeCapability<?>[] runtimeCapabilities;
         private final Class<C> serviceType;
-        private final Function<C, T> wrapper;
+        private final CustomComponentTransformer<C, T> transformer;
 
-        private ComponentAddHandler(Class<C> serviceType, Function<C, T> wrapper, RuntimeCapability<?> ... runtimeCapabilities) {
+        private ComponentAddHandler(Class<C> serviceType, CustomComponentTransformer<C, T> transformer, RuntimeCapability<?> ... runtimeCapabilities) {
             super(Set.of(runtimeCapabilities));
             this.runtimeCapabilities = runtimeCapabilities;
             this.serviceType = serviceType;
-            this.wrapper = wrapper;
+            this.transformer = transformer;
         }
 
         @Override
@@ -115,8 +116,11 @@ class CustomComponentDefinition<C, T> extends SimpleResourceDefinition {
                 serviceBuilder.addAliases(toServiceName(runtimeCapabilities[i], address));
             }
 
+            String name = context.getCurrentAddressValue();
+            Object wrapperContext = transformer.prepareTransformer(name, serviceBuilder);
+
             commonRequirements(serviceBuilder)
-                .setInstance(new TrivialService<>(() -> createValue(module, className, configurationMap)))
+                .setInstance(new TrivialService<>(() -> createValue(wrapperContext, module, className, configurationMap)))
                 .setInitialMode(Mode.ACTIVE)
                 .install();
         }
@@ -125,7 +129,7 @@ class CustomComponentDefinition<C, T> extends SimpleResourceDefinition {
             return runtimeCapability.fromBaseCapability(addressValue).getCapabilityServiceName();
         }
 
-        private T createValue(String module, String className, Map<String, String> configuration) throws StartException {
+        private T createValue(Object transformerContext, String module, String className, Map<String, String> configuration) throws StartException {
             final ClassLoader classLoader;
             try {
                 classLoader = doPrivileged((PrivilegedExceptionAction<ClassLoader>) () -> resolveClassLoader(module));
@@ -143,7 +147,7 @@ class CustomComponentDefinition<C, T> extends SimpleResourceDefinition {
                     }
                 }
 
-                return wrapper.apply(component);
+                return transformer.apply(transformerContext, component);
             } catch (PrivilegedActionException e) {
                 throw new StartException(e.getCause());
             } catch (Exception e) {
@@ -154,6 +158,19 @@ class CustomComponentDefinition<C, T> extends SimpleResourceDefinition {
                 throw new StartException(e);
             }
         }
+    }
+
+    static <A, B> CustomComponentTransformer<A, B> wrapFunction(Function<A, B> function) {
+        return (s, a ) -> function.apply(a);
+    }
+
+    @FunctionalInterface
+    interface CustomComponentTransformer<A, B> extends BiFunction<Object, A, B> {
+
+        default Object prepareTransformer(final String name, final ServiceBuilder<?> serviceBuilder) {
+            return name;
+        }
+
     }
 
 }
