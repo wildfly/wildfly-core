@@ -8,7 +8,12 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
+import static org.wildfly.extension.elytron.RealmDefinitions.createBruteForceRealmTransformer;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -32,15 +37,10 @@ import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
-
 import org.wildfly.security.auth.realm.DistributedSecurityRealm;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.auth.server.event.SecurityRealmUnavailableEvent;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * A {@link ResourceDefinition} for a {@link SecurityRealm} for authentication and authorization of identities distributed between multiple realms.
@@ -110,6 +110,12 @@ class DistributedRealmDefinition extends SimpleResourceDefinition {
 
             List<String> distributedRealms = REALMS.unwrap(context, model);
 
+            ServiceBuilder<?> serviceBuilder = serviceTarget.addService();
+            Consumer<SecurityRealm> valueConsumer = serviceBuilder.provides(realmName);
+
+            final Function<SecurityRealm, SecurityRealm> realmTransformer =
+                createBruteForceRealmTransformer(context.getCurrentAddressValue(), SecurityRealm.class, serviceBuilder);
+
             TrivialService<SecurityRealm> distributedRealmService = new TrivialService<SecurityRealm>(() ->
             {
                 SecurityRealm[] realms = new SecurityRealm[distributedRealmValues.size()];
@@ -126,10 +132,10 @@ class DistributedRealmDefinition extends SimpleResourceDefinition {
                     realms[i] = distributedRealmValues.get(i).getValue();
                 }
 
-                return new DistributedSecurityRealm(ignoreUnavailableRealms, unavailableRealmConsumer, realms);
-            });
+                return realmTransformer.apply(new DistributedSecurityRealm(ignoreUnavailableRealms, unavailableRealmConsumer, realms));
+            }, valueConsumer);
 
-            ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(realmName, distributedRealmService);
+            serviceBuilder.setInstance(distributedRealmService);
 
             for (String distributedRealm : distributedRealms) {
                 InjectedValue<SecurityRealm> authorizationRealmValue = new InjectedValue<SecurityRealm>();
@@ -142,7 +148,7 @@ class DistributedRealmDefinition extends SimpleResourceDefinition {
                     .install();
         }
 
-        private void addRealmDependency(OperationContext context, ServiceBuilder<SecurityRealm> serviceBuilder, String realmName, Injector<SecurityRealm> securityRealmInjector) {
+        private void addRealmDependency(OperationContext context, ServiceBuilder<?> serviceBuilder, String realmName, Injector<SecurityRealm> securityRealmInjector) {
             String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(SECURITY_REALM_CAPABILITY, realmName);
             ServiceName realmServiceName = context.getCapabilityServiceName(runtimeCapability, SecurityRealm.class);
 
