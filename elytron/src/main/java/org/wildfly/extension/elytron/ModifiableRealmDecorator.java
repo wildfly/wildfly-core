@@ -121,7 +121,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                 identity = modifiableRealm.getRealmIdentityForUpdate(new NamePrincipal(principalName));
 
                 if (identity.exists()) {
-                    throw ROOT_LOGGER.identityAlreadyExists(principalName);
+                    throw ROOT_LOGGER.identityAlreadyExists(principalName, identity.getClass().getName());
                 }
 
                 identity.create();

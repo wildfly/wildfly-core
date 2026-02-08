@@ -419,8 +419,8 @@ public interface ElytronSubsystemMessages extends BasicLogger {
      * Identity Resource Messages - 1000
      */
 
-    @Message(id = 1000, value = "Identity with name [%s] already exists.")
-    OperationFailedException identityAlreadyExists(final String principalName);
+    @Message(id = 1000, value = "Identity with name [%s] already exists {%s}.")
+    OperationFailedException identityAlreadyExists(final String principalName, final String className);
 
     @Message(id = 1001, value = "Could not create identity with name [%s].")
     RuntimeException couldNotCreateIdentity(final String principalName, @Cause Exception cause);
