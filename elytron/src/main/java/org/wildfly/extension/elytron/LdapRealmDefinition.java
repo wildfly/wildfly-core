@@ -14,14 +14,11 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BASE64;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HEX;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
-import static org.wildfly.extension.elytron.RealmDefinitions.createBruteForceRealmTransformer;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import javax.naming.InvalidNameException;
 import javax.naming.NamingException;
@@ -62,7 +59,6 @@ import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
 import org.wildfly.security.auth.realm.ldap.AttributeMapping;
 import org.wildfly.security.auth.realm.ldap.LdapSecurityRealmBuilder;
 import org.wildfly.security.auth.realm.ldap.LdapSecurityRealmBuilder.IdentityMappingBuilder;
-import org.wildfly.security.auth.server.ModifiableSecurityRealm;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.password.spec.Encoding;
 
@@ -439,8 +435,8 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
             ServiceTarget serviceTarget = context.getServiceTarget();
 
             String address = context.getCurrentAddressValue();
-            ServiceName modifiableServiceName = MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(address).getCapabilityServiceName();
-            ServiceName standardServiceName = SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(address).getCapabilityServiceName();
+            ServiceName mainServiceName = MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(address).getCapabilityServiceName();
+            ServiceName aliasServiceName = SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(address).getCapabilityServiceName();
 
             final LdapSecurityRealmBuilder builder = LdapSecurityRealmBuilder.builder();
 
@@ -459,26 +455,10 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
             builder.setHashEncoding(HEX.equals(hashEncoding) ? Encoding.HEX : Encoding.BASE64);
             builder.setHashCharset(charset);
 
-            ServiceBuilder<?> serviceBuilder = serviceTarget.addService();
-            // This is the Service that will get pulled into a SecurityDomain etc...
-            Consumer<SecurityRealm> standardConsumer = serviceBuilder.provides(standardServiceName);
-            // This is the modifiable variant for resources that support modification operations etc..
-            Consumer<ModifiableSecurityRealm> modifiableConsumer = serviceBuilder.provides(modifiableServiceName);
+            TrivialService<SecurityRealm> ldapRealmService = new TrivialService<>(builder::build);
+            ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(mainServiceName, ldapRealmService)
+                    .addAliases(aliasServiceName);
 
-            Function<ModifiableSecurityRealm, ModifiableSecurityRealm> realmTransformer =
-                createBruteForceRealmTransformer(context.getCurrentAddressValue(), ModifiableSecurityRealm.class, serviceBuilder);
-
-            TrivialService<SecurityRealm> ldapRealmService =
-                    new TrivialService<>(() -> {
-                        ModifiableSecurityRealm modifiable = builder.build();
-                        ModifiableSecurityRealm wrapped = realmTransformer.apply(modifiable);
-                        modifiableConsumer.accept(wrapped);
-                        standardConsumer.accept(wrapped);
-
-                        return modifiable;
-                    });
-
-            serviceBuilder.setInstance(ldapRealmService);
             commonDependencies(serviceBuilder);
 
             configureIdentityMapping(context, model, builder);
@@ -487,7 +467,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
             serviceBuilder.setInitialMode(ServiceController.Mode.ACTIVE).install();
         }
 
-        private void configureDirContext(OperationContext context, ModelNode model, LdapSecurityRealmBuilder realmBuilder, ServiceBuilder<?> serviceBuilder) throws OperationFailedException {
+        private void configureDirContext(OperationContext context, ModelNode model, LdapSecurityRealmBuilder realmBuilder, ServiceBuilder<SecurityRealm> serviceBuilder) throws OperationFailedException {
             String dirContextName = DIR_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
 
             String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(DIR_CONTEXT_CAPABILITY, dirContextName);
