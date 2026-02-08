@@ -8,7 +8,7 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.RealmDefinitions.createBruteForceRealmTransformer;
+
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -40,7 +40,6 @@ import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.auth.server.event.SecurityRealmUnavailableEvent;
 
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * A {@link ResourceDefinition} for a {@link SecurityRealm} which wraps one realm and fails over to another in case the first is unavailable.
@@ -112,12 +111,6 @@ class FailoverRealmDefinition extends SimpleResourceDefinition {
 
             boolean emitEvents = EMIT_EVENTS.resolveModelAttribute(context, model).asBoolean();
 
-            ServiceBuilder<?> serviceBuilder = serviceTarget.addService();
-            Consumer<SecurityRealm> valueConsumer = serviceBuilder.provides(realmName);
-
-            final Function<SecurityRealm, SecurityRealm> realmTransformer =
-                createBruteForceRealmTransformer(context.getCurrentAddressValue(), SecurityRealm.class, serviceBuilder);
-
             TrivialService<SecurityRealm> failoverRealmService = new TrivialService<SecurityRealm>(() ->
             {
                 SecurityRealm delegate = delegateRealmValue.getValue();
@@ -127,10 +120,10 @@ class FailoverRealmDefinition extends SimpleResourceDefinition {
                         domain.handleSecurityEvent(new SecurityRealmUnavailableEvent(domain.getCurrentSecurityIdentity(), delegateRealm));
                     }
                 } : (e) -> {};
-                return realmTransformer.apply(new FailoverSecurityRealm(delegate, failoverRealmValue.getValue(), failoverConsumer));
-            }, valueConsumer);
+                return new FailoverSecurityRealm(delegate, failoverRealmValue.getValue(), failoverConsumer);
+            });
 
-            serviceBuilder.setInstance(failoverRealmService);
+            ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(realmName, failoverRealmService);
 
             addRealmDependency(context, serviceBuilder, delegateRealm, delegateRealmValue);
             addRealmDependency(context, serviceBuilder, failoverRealm, failoverRealmValue);
@@ -140,7 +133,7 @@ class FailoverRealmDefinition extends SimpleResourceDefinition {
                     .install();
         }
 
-        private void addRealmDependency(OperationContext context, ServiceBuilder<?> serviceBuilder, String realmName, Injector<SecurityRealm> securityRealmInjector) {
+        private void addRealmDependency(OperationContext context, ServiceBuilder<SecurityRealm> serviceBuilder, String realmName, Injector<SecurityRealm> securityRealmInjector) {
             String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(SECURITY_REALM_CAPABILITY, realmName);
             ServiceName realmServiceName = context.getCapabilityServiceName(runtimeCapability, SecurityRealm.class);
 

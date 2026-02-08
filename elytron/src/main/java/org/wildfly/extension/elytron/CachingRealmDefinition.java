@@ -7,18 +7,14 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.RealmDefinitions.createBruteForceRealmTransformer;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
@@ -36,8 +32,8 @@ import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.auth.realm.CacheableSecurityRealm;
@@ -76,10 +72,6 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
             .build();
 
     static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {REALM_NAME, MAXIMUM_ENTRIES, MAXIMUM_AGE};
-
-    // Callers are expected to just use a single method get / put / remove not multiple calls so we don't
-    // need complex locking beyond the Map itself..
-    private static final Map<String, CachingSecurityRealm> REALMS = new ConcurrentHashMap<>();
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -122,55 +114,36 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
             int maxEntries = MAXIMUM_ENTRIES.resolveModelAttribute(context, model).asInt();
             long maxAge = MAXIMUM_AGE.resolveModelAttribute(context, model).asInt();
             InjectedValue<SecurityRealm> cacheableRealmValue = new InjectedValue<>();
-
-            ServiceBuilder<?> serviceBuilder = serviceTarget.addService();
-            Consumer<SecurityRealm> valueConsumer = serviceBuilder.provides(realmName);
-
-            final Function<SecurityRealm, SecurityRealm> realmTransformer =
-                createBruteForceRealmTransformer(context.getCurrentAddressValue(), SecurityRealm.class, serviceBuilder);
-
-            serviceBuilder.setInstance(createService(context.getCurrentAddressValue(), cacheableRealm, maxEntries, maxAge, cacheableRealmValue, realmTransformer, valueConsumer));
+            ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(realmName, createService(cacheableRealm, maxEntries, maxAge, cacheableRealmValue));
 
             addRealmDependency(context, serviceBuilder, cacheableRealm, cacheableRealmValue);
             commonDependencies(serviceBuilder).setInitialMode(context.getRunningMode() == RunningMode.ADMIN_ONLY ? ServiceController.Mode.LAZY : ServiceController.Mode.ACTIVE).install();
         }
 
-        private TrivialService<SecurityRealm> createService(String ourRealmName, String wrappedRealmName, int maxEntries, long maxAge,
-            InjectedValue<SecurityRealm> injector, Function<SecurityRealm, SecurityRealm> realmTransformer, Consumer<SecurityRealm> valueConsumer) {
-            return new TrivialService<>(new TrivialService.ValueSupplier<SecurityRealm>() {
+        private TrivialService<SecurityRealm> createService(String realmName, int maxEntries, long maxAge, InjectedValue<SecurityRealm> injector) {
+            return new TrivialService<>((TrivialService.ValueSupplier<SecurityRealm>) () -> {
+                SecurityRealm securityRealm = injector.getValue();
 
-                @Override
-                public SecurityRealm get() throws StartException {
-                    SecurityRealm securityRealm = injector.getValue();
+                if (securityRealm instanceof CacheableSecurityRealm) {
+                    RealmIdentityCache cache = createRealmIdentityCache(maxEntries, maxAge);
+                    CacheableSecurityRealm cacheableRealm = CacheableSecurityRealm.class.cast(securityRealm);
 
-                    if (securityRealm instanceof CacheableSecurityRealm) {
-                        RealmIdentityCache cache = createRealmIdentityCache(maxEntries, maxAge);
-                        CacheableSecurityRealm cacheableRealm = CacheableSecurityRealm.class.cast(securityRealm);
-
-                        CachingSecurityRealm cachingRealm = securityRealm instanceof ModifiableSecurityRealm ?
-                            new CachingModifiableSecurityRealm(cacheableRealm, cache) : new CachingSecurityRealm(cacheableRealm, cache);
-
-                        REALMS.put(ourRealmName, cachingRealm);
-
-                        return realmTransformer.apply(cachingRealm);
+                    if (securityRealm instanceof ModifiableSecurityRealm) {
+                        return new CachingModifiableSecurityRealm(cacheableRealm, cache);
                     }
 
-                    throw ElytronSubsystemMessages.ROOT_LOGGER.realmDoesNotSupportCache(wrappedRealmName);
+                    return new CachingSecurityRealm(cacheableRealm, cache);
                 }
 
-                @Override
-                public void dispose() {
-                    REALMS.remove(ourRealmName);
-                }
-
-            }, valueConsumer);
+                throw ElytronSubsystemMessages.ROOT_LOGGER.realmDoesNotSupportCache(realmName);
+            });
         }
 
         private LRURealmIdentityCache createRealmIdentityCache(int maxEntries, long maxAge) {
             return new LRURealmIdentityCache(maxEntries, maxAge);
         }
 
-        private void addRealmDependency(OperationContext context, ServiceBuilder<?> serviceBuilder, String realmName, Injector<SecurityRealm> securityRealmInjector) {
+        private void addRealmDependency(OperationContext context, ServiceBuilder<SecurityRealm> serviceBuilder, String realmName, Injector<SecurityRealm> securityRealmInjector) {
             String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(SECURITY_REALM_CAPABILITY, realmName);
             ServiceName realmServiceName = context.getCapabilityServiceName(runtimeCapability, SecurityRealm.class);
             REALM_SERVICE_UTIL.addInjection(serviceBuilder, securityRealmInjector, realmServiceName);
@@ -192,11 +165,15 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            CachingSecurityRealm securityRealm = REALMS.get(context.getCurrentAddressValue());
-            if (securityRealm == null) {
+            ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
+            PathAddress currentAddress = context.getCurrentAddress();
+            RuntimeCapability<Void> runtimeCapability = SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(currentAddress.getLastElement().getValue());
+            ServiceName realmName = runtimeCapability.getCapabilityServiceName();
+            ServiceController<SecurityRealm> serviceController = getRequiredService(serviceRegistry, realmName, SecurityRealm.class);
+            if(serviceController.getState() != ServiceController.State.UP) {
                 throw ElytronSubsystemMessages.ROOT_LOGGER.cachedRealmServiceNotAvailable();
             }
-
+            CachingSecurityRealm securityRealm = CachingSecurityRealm.class.cast(serviceController.getValue());
             securityRealm.removeAllFromCache();
         }
     }

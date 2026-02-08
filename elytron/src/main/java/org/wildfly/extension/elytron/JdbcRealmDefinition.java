@@ -16,7 +16,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_S
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
-import static org.wildfly.extension.elytron.RealmDefinitions.createBruteForceRealmTransformer;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.nio.charset.Charset;
@@ -25,8 +24,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import javax.sql.DataSource;
 
@@ -615,13 +612,8 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
             final JdbcSecurityRealmBuilder builder = JdbcSecurityRealm.builder();
             builder.setHashCharset(charset);
 
-            ServiceBuilder<?> serviceBuilder = serviceTarget.addService();
-            Consumer<SecurityRealm> valueConsumer = serviceBuilder.provides(realmName);
-
-            Function<SecurityRealm, SecurityRealm> realmTransformer =
-                createBruteForceRealmTransformer(context.getCurrentAddressValue(), SecurityRealm.class, serviceBuilder);
-
-            TrivialService<SecurityRealm> service = new TrivialService<SecurityRealm>(() -> realmTransformer.apply(builder.build()), valueConsumer);
+            TrivialService<SecurityRealm> service = new TrivialService<SecurityRealm>(builder::build);
+            ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(realmName, service);
 
             for (ModelNode query : principalQueries.asList()) {
                 String authenticationQuerySql = PrincipalQueryAttributes.SQL.resolveModelAttribute(context, query).asString();
@@ -647,7 +639,6 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 });
             }
 
-            serviceBuilder.setInstance(service);
             commonDependencies(serviceBuilder)
                     .setInitialMode(context.getRunningMode() == RunningMode.ADMIN_ONLY ? ServiceController.Mode.LAZY : ServiceController.Mode.ACTIVE)
                     .install();
