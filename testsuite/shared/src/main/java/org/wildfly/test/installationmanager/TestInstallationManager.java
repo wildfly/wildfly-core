@@ -23,10 +23,12 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.wildfly.installationmanager.ArtifactChange;
+import org.wildfly.installationmanager.AvailableManifestVersions;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.ChannelChange;
 import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.InstallationChanges;
+import org.wildfly.installationmanager.InstallationUpdates;
 import org.wildfly.installationmanager.ManifestVersion;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.OperationNotAvailableException;
@@ -210,12 +212,37 @@ public class TestInstallationManager implements InstallationManager {
     }
 
     @Override
+    public boolean prepareUpdate(Path path, List<Repository> list, boolean b) throws Exception {
+        throw new UnsupportedOperationException("This method is not implemented yet.");
+    }
+
+    @Override
+    public boolean prepareUpdate(Path path, List<Repository> list, List<ManifestVersion> list1, boolean b) throws Exception {
+        throw new UnsupportedOperationException("This method is not implemented yet.");
+    }
+
+    @Override
     public List<ArtifactChange> findUpdates(List<Repository> repositories) throws Exception {
         if (noUpdatesFound) {
             return new ArrayList<>();
         }
         findUpdatesRepositories = new ArrayList<>(repositories);
         return findUpdatesChanges;
+    }
+
+    @Override
+    public InstallationUpdates findInstallationUpdates(List<Repository> list) throws Exception {
+        throw new UnsupportedOperationException("This method is not implemented yet.");
+    }
+
+    @Override
+    public InstallationUpdates findInstallationUpdates(List<Repository> list, List<ManifestVersion> list1) throws Exception {
+        throw new UnsupportedOperationException("This method is not implemented yet.");
+    }
+
+    @Override
+    public List<AvailableManifestVersions> findAvailableManifestVersions(List<Repository> list, boolean b) throws Exception {
+        throw new UnsupportedOperationException("This method is not implemented yet.");
     }
 
     @Override
