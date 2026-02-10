@@ -77,6 +77,8 @@ class CliConfigImpl implements CliConfig {
     private static final String OUTPUT_JSON = "output-json";
     private static final String COLOR_OUTPUT = "color-output";
     private static final String OUTPUT_PAGING = "output-paging";
+    // Could be set by provisioning tooling that produces incomplete installation
+    private static final String IGNORE_MISSING_CLI_CONFIG = "org.wildfly.cli.ignore.missing.config";
 
     private static final Logger log = Logger.getLogger(CliConfig.class);
 
@@ -105,7 +107,9 @@ class CliConfigImpl implements CliConfig {
         CliConfigImpl config = null;
 
         if (jbossCliFile == null) {
-            System.err.println("WARN: can't find " + JBOSS_CLI_FILE + ". Using default configuration values.");
+            if (!Boolean.getBoolean(IGNORE_MISSING_CLI_CONFIG)) {
+                System.err.println("WARN: can't find " + JBOSS_CLI_FILE + ". Using default configuration values.");
+            }
             config = new CliConfigImpl();
         } else {
             config = parse(ctx, jbossCliFile);
