@@ -18,7 +18,7 @@ public interface SubsystemResourceDefinitionRegistrar extends ResourceDefinition
      * Returns the {@link PathElement} for the specified subsystem
      * @param subsystemName a subsystem name
      * @return the path element of the specified subsystem
-     * @deprecated Use {@link SubsystemResourceRegistration} instead.
+     * @deprecated Use {@link org.jboss.as.controller.SubsystemResourceRegistration} instead.
      */
     @Deprecated(forRemoval = true, since = "28.0")
     static PathElement pathElement(String subsystemName) {

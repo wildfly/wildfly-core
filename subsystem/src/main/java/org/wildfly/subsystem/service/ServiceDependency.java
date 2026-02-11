@@ -102,7 +102,7 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
     /**
      * Returns a pseudo-dependency whose {@link #get()} returns the value from the specified supplier.
      * @param <V> the value type
-     * @param factory a service value supplier
+     * @param supplier a service value supplier
      * @return a pseudo-dependency whose {@link #get()} returns the value from the specified supplier.
      * @throws NullPointerException if {@code supplier} was null
      */
@@ -145,7 +145,7 @@ public interface ServiceDependency<V> extends Dependency<RequirementServiceBuild
     /**
      * Returns a dependency on the capability with the specified name and type, resolved against the specified references names.
      * This method is provided for migration purposes.
-     * Users should prefer {@link ServiceDescriptor}-based variants of this method whenever possible.
+     * Users should prefer {@link org.wildfly.service.descriptor.ServiceDescriptor}-based variants of this method whenever possible.
      * @param <T> the dependency type
      * @param capabilityName the name of the referenced capability
      * @param type the service type of the referenced capability

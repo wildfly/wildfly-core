@@ -91,7 +91,6 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T>, 
      * By default, the requirement name will resolve against the paths of the parent and current resources, respectively.
      * @param capability the capability referencing the specified requirement
      * @param requirement the requirement of the specified capability
-     * @param requirementNameResolver function for resolving the dynamic components of the requirement name
      */
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, BinaryServiceDescriptor<T> requirement) {
         return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), BinaryCapabilityNameResolver.PARENT_CHILD);
@@ -102,7 +101,6 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T>, 
      * By default, the requirement name will resolve against the paths of the grandparent, parent, and current resources, respectively.
      * @param capability the capability referencing the specified requirement
      * @param requirement the requirement of the specified capability
-     * @param requirementNameResolver function for resolving the dynamic components of the requirement name
      */
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, TernaryServiceDescriptor<T> requirement) {
         return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), TernaryCapabilityNameResolver.GRANDPARENT_PARENT_CHILD);
@@ -113,7 +111,6 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T>, 
      * By default, the requirement name will resolve against the paths of the great-grandparent, grandparent, parent, and current resources, respectively.
      * @param capability the capability referencing the specified requirement
      * @param requirement the requirement of the specified capability
-     * @param requirementNameResolver function for resolving the dynamic components of the requirement name
      */
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, QuaternaryServiceDescriptor<T> requirement) {
         return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), QuaternaryCapabilityNameResolver.GREATGRANDPARENT_GRANDPARENT_PARENT_CHILD);

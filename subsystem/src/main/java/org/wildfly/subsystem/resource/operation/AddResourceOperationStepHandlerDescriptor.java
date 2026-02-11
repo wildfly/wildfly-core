@@ -45,7 +45,7 @@ public interface AddResourceOperationStepHandlerDescriptor extends OperationStep
      * Returns the required singleton child resources for this resource description.
      * This means only one child resource should exist for the given child type.
      * @return a collection of resource paths
-     * @deprecated Superseded by {@link #getRequiredSingletonChildResources()
+     * @deprecated Superseded by {@link #getRequiredSingletonChildResources()}
      */
     @Deprecated(forRemoval = true, since = "26.0.0")
     default Set<PathElement> getRequiredSingletonChildren() {

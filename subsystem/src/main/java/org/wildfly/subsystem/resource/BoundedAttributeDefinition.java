@@ -111,8 +111,7 @@ public class BoundedAttributeDefinition<T> extends ResolvableAttributeDefinition
 
         /**
          * Requires both lower and upper bounds for the resolved duration.
-         * @param lowerBound a lower bound
-         * @param upperBOund an upper bound
+         * @param upperBound an upper bound
          * @return a reference to this builder
          */
         public B withUpperBound(Bound<T> upperBound) {

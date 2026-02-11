@@ -37,7 +37,7 @@ public interface SubsystemConfiguration {
     /**
      * Factory method creating a basic SubsystemConfiguration.
      * @param registration a subsystem registration
-     * @param currentModel the current subsystem model version
+     * @param model the current subsystem model
      * @param registrarFactory a supplier of the resource definition registrar for this subsystem
      * @return a new subsystem configuration
      */
@@ -47,8 +47,8 @@ public interface SubsystemConfiguration {
 
     /**
      * Factory method creating a basic SubsystemConfiguration.
-     * @param subsystemName the subsystem name
-     * @param currentModel the current subsystem model version
+     * @param name the subsystem name
+     * @param model the current subsystem model
      * @param registrarFactory a supplier of the resource definition registrar for this subsystem
      * @return a new subsystem configuration
      */
