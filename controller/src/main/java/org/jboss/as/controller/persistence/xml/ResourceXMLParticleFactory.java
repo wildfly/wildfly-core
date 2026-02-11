@@ -62,7 +62,7 @@ public interface ResourceXMLParticleFactory extends FeatureRegistry, QNameResolv
     /**
      * Returns a builder of an XML choice of one or more {@link NamedResourceRegistrationXMLElement}, including the specified wildcard {@link NamedResourceRegistrationXMLElement}.
      * Elements added to this choice must be override registrations of the specified wildcard {@link NamedResourceRegistrationXMLElement}.
-     * @param element the XML element for a wildcard resource registration.
+     * @param wildcardElement the XML element for a wildcard resource registration.
      * @return a builder of an XML choice of one or more {@link NamedResourceRegistrationXMLElement}.
      * @throws IllegalArgumentException if the specified {@link NamedResourceRegistrationXMLElement} is not associated with a wildcard resource.
      */

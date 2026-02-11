@@ -46,7 +46,7 @@ public interface XMLContentWriter<C> extends XMLElementWriter<C> {
 
     /**
      * Returns a new writer that invokes {@link #writeContent(XMLExtendedStreamWriter, Object)} on the specified writer <em>after</em> invoking {@link #writeContent(XMLExtendedStreamWriter, Object)} on this writer.
-     * @param writer a content writer
+     * @param after a content writer to invoke after this writer
      * @return a new content writer combining this writer with the specified writer
      */
     default XMLContentWriter<C> andThen(XMLContentWriter<C> after) {
@@ -66,7 +66,7 @@ public interface XMLContentWriter<C> extends XMLElementWriter<C> {
 
     /**
      * Returns a new writer that invokes {@link #writeContent(XMLExtendedStreamWriter, Object)} on the specified writer <em>before</em> invoking {@link #writeContent(XMLExtendedStreamWriter, Object)} on this writer.
-     * @param writer a content writer
+     * @param before a content writer to invoke before this writer
      * @return a new content writer combining this writer with the specified writer
      */
     default XMLContentWriter<C> compose(XMLContentWriter<C> before) {

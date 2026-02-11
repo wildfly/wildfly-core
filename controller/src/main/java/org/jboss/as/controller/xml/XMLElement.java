@@ -54,17 +54,15 @@ public interface XMLElement<RC, WC> extends XMLContainer<RC, WC> {
      */
     interface Builder<RC, WC> extends XMLContainer.Builder<RC, WC, XMLElement<RC, WC>, Builder<RC, WC>> {
         /**
-         * Adds readers and writer for the attributes of this element.
-         * @param readers a map of readers per qualified name
-         * @param writer a writer of the attributes of this element
+         * Adds the specified attribute to this element.
+         * @param attribute an XML attribute
          * @return a reference to this builder
          */
         Builder<RC, WC> addAttribute(XMLAttribute<RC, WC> attribute);
 
         /**
          * Adds readers and writer for the attributes of this element.
-         * @param readers a map of readers per qualified name
-         * @param writer a writer of the attributes of this element
+         * @param attributes zero of more XML attributes
          * @return a reference to this builder
          */
         default Builder<RC, WC> addAttributes(Iterable<? extends XMLAttribute<RC, WC>> attributes) {

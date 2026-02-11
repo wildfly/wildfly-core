@@ -12,7 +12,7 @@ import org.wildfly.common.iteration.CompositeIterable;
 /**
  * A versioned namespace identified by a URN constructed using a version.
  * @author Paul Ferraro
- * @deprecated Use {@link IntVersionSchema#createURN(List, IntVersion) instead.
+ * @deprecated Use {@link IntVersionSchema#createURN(List, IntVersion)} instead.
  */
 @Deprecated(forRemoval = true)
 public class VersionedURN<N extends VersionedFeature<IntVersion, N>> extends SimpleVersionedNamespace<IntVersion, N> {
@@ -34,7 +34,7 @@ public class VersionedURN<N extends VersionedFeature<IntVersion, N>> extends Sim
 
     /**
      * Constructs a versioned URN-based namespace using the specified namespace identifier and version.
-     * @param nid a namespace identifier
+     * @param identifier a namespace identifier
      * @param version a version
      */
     public VersionedURN(String identifier, IntVersion version) {
@@ -43,7 +43,7 @@ public class VersionedURN<N extends VersionedFeature<IntVersion, N>> extends Sim
 
     /**
      * Constructs a versioned URN-based namespace using the specified URN components and version.
-     * @param components a list of URN components
+     * @param identifiers a list of URN components
      * @param version a version
      */
     public VersionedURN(List<String> identifiers, IntVersion version) {

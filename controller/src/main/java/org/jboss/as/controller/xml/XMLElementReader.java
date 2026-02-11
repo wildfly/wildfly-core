@@ -77,7 +77,7 @@ public interface XMLElementReader<C> extends org.jboss.staxmapper.XMLElementRead
     /**
      * Decorates an {@link XMLElementReader} with entry/exit criteria validation.
      * @param <C> the read context
-     * @param name the name of the expected element
+     * @param expected the name of the expected element
      * @param elementReader the reader of an element
      * @return a validating reader
      */

@@ -43,7 +43,6 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * Encapsulates an XML container of content for a resource.
- * @param <C> the writer context
  */
 public interface ResourceXMLContainer extends XMLContainer<Map.Entry<PathAddress, Map<PathAddress, ModelNode>>, ModelNode> {
 
@@ -80,7 +79,7 @@ public interface ResourceXMLContainer extends XMLContainer<Map.Entry<PathAddress
 
         /**
          * Specifies a set of attribute local names that should be allowed, but ignored during parsing.
-         * @param localNames a set of ignored attribute local names
+         * @param names a set of ignored attribute local names
          * @return a reference to this builder
          */
         B ignoreAttributeNames(Set<QName> names);

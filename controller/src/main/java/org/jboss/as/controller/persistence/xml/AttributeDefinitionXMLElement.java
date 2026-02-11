@@ -57,7 +57,7 @@ public interface AttributeDefinitionXMLElement extends ResourceXMLElement {
          * @param marshaller an alternate marshaller
          * @return a reference to this builder
          */
-        Builder withMarshaller(AttributeMarshaller parser);
+        Builder withMarshaller(AttributeMarshaller marshaller);
 
         /**
          * Builds this element.

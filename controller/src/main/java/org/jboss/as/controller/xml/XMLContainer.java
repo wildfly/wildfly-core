@@ -21,7 +21,7 @@ public interface XMLContainer<RC, WC> extends XMLParticle<RC, WC> {
     interface Builder<RC, WC, T extends XMLContainer<RC, WC>, B extends Builder<RC, WC, T, B>> extends XMLParticle.Builder<RC, WC, T, B> {
         /**
          * Applies the specified content to this container
-         * @param content XML content
+         * @param sequence an XML sequence
          * @return a reference to this builder
          */
         default B withContent(XMLSequence<RC, WC> sequence) {
@@ -30,7 +30,7 @@ public interface XMLContainer<RC, WC> extends XMLParticle<RC, WC> {
 
         /**
          * Applies the specified content to this container
-         * @param content XML content
+         * @param all an XML all
          * @return a reference to this builder
          */
         default B withContent(XMLAll<RC, WC> all) {
@@ -39,7 +39,7 @@ public interface XMLContainer<RC, WC> extends XMLParticle<RC, WC> {
 
         /**
          * Applies the specified content to this container
-         * @param content XML content
+         * @param choice an XML choice
          * @return a reference to this builder
          */
         default B withContent(XMLChoice<RC, WC> choice) {
