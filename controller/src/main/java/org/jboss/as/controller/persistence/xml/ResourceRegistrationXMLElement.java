@@ -62,7 +62,7 @@ public interface ResourceRegistrationXMLElement extends ResourceXMLElement, Reso
         B withElementLocalName(Function<PathElement, String> localName);
 
         /**
-         * Overrides the the local element name for this resource.
+         * Overrides the local element name for this resource.
          * @param name a local name override.
          * @return a reference to this builder.
          */
