@@ -6,7 +6,6 @@
 package org.wildfly.extension.requestcontroller;
 
 import java.io.IOException;
-import java.util.function.Function;
 
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.server.suspend.ServerSuspendController;
@@ -57,7 +56,7 @@ public class RequestControllerSubsystemTestCase extends AbstractSubsystemBaseTes
 
             @Override
             protected void addExtraServices(ServiceTarget target) {
-                ServiceInstaller.BlockingBuilder.of(SuspendController::new).<ServerSuspendController>map(Function.identity()).provides(ServerSuspendController.SERVICE_DESCRIPTOR).build().install(target);
+                ServiceInstaller.BlockingBuilder.<ServerSuspendController>of(SuspendController::new).provides(ServerSuspendController.SERVICE_DESCRIPTOR).build().install(target);
             }
 
             @Override
