@@ -47,7 +47,7 @@ public interface SingletonResourceRegistrationXMLChoice extends ResourceXMLChoic
          * Indicates that this choice is optional, i.e. {@link XMLCardinality.Single#OPTIONAL},
          * and that an empty {@link ModelDescriptionConstants#ADD} operation for the specified {@link ResourceRegistration} should be created when no choice is present.
          * @param implied an implied {@link ResourceRegistration} to be assumed when no choice is present.
-         * @param the operation key of the implied operation
+         * @param impliedOperationKey the operation key of the implied operation
          * @return a reference to this builder.
          * @throws IllegalArgumentException if the specified {@link ResourceRegistration} specifies a wildcard {@link PathElement}.
          */

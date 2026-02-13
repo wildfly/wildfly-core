@@ -24,7 +24,7 @@ public interface AttributeDefinitionXMLConfiguration extends QNameResolver {
     interface Configurator<C extends Configurator<C>> {
         /**
          * Overrides the qualified names for the specified attributes.
-         * @param names a mapping of qualified name overrides
+         * @param localNames a mapping of qualified name overrides
          * @return a reference to this configurator
          */
         C withLocalNames(Map<AttributeDefinition, String> localNames);

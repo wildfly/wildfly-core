@@ -19,7 +19,7 @@ import org.jboss.dmr.ModelType;
  * By default, this attribute:
  * <ul>
  * <li>Is not required</li>
- * <li>Defaults to {@value ModelNode#FALSE}</li>
+ * <li>Defaults to {@link ModelNode#FALSE}</li>
  * <li>Allows expressions</li>
  * </ul>
  * @author Paul Ferraro

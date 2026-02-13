@@ -83,7 +83,7 @@ public interface XMLAttribute<RC, WC> extends XMLComponent<RC, WC> {
         /**
          * Specifies a fixed value of this attribute, applied if the attribute is absent from the input.
          * However, if this attribute is present in the input, it must specify this fixed value.
-         * @param defaultValue the fixed value of this attribute
+         * @param fixedValue the fixed value of this attribute
          * @return a reference to this builder
          */
         Builder<RC, WC> withFixedValue(String fixedValue);

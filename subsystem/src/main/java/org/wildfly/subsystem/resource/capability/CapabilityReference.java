@@ -108,7 +108,6 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder, Cap
         /**
          * Specifies the path for the parent segment of the requirement.
          * @param path a path element used to construct the capability name pattern for this reference
-         * @param resolver a path resolver
          * @return a reference to this builder
          */
         default Builder<T> withParentPath(PathElement path) {
@@ -137,7 +136,6 @@ public interface CapabilityReference<T> extends CapabilityReferenceRecorder, Cap
         /**
          * Specifies the path for the grandparent segment of the requirement.
          * @param path a path element used to construct the capability name pattern for this reference
-         * @param resolver a path resolver
          * @return a reference to this builder
          */
         default ParentPathProvider<T> withGrandparentPath(PathElement path) {

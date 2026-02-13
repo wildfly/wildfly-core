@@ -62,7 +62,6 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
      * By default, the requirement name will resolve against the paths of the parent and current resources, respectively.
      * @param capability the capability referencing the specified requirement
      * @param requirement the requirement of the specified capability
-     * @param requirementNameResolver function for resolving the dynamic components of the requirement name
      * @deprecated Superseded by {@link ResourceCapabilityReference#builder(RuntimeCapability, BinaryServiceDescriptor)}
      */
     @Deprecated(forRemoval = true, since = "26.0.0")
@@ -75,7 +74,6 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
      * By default, the requirement name will resolve against the paths of the grandparent, parent, and current resources, respectively.
      * @param capability the capability referencing the specified requirement
      * @param requirement the requirement of the specified capability
-     * @param requirementNameResolver function for resolving the dynamic components of the requirement name
      * @deprecated Superseded by {@link ResourceCapabilityReference#builder(RuntimeCapability, NullaryServiceDescriptor)}
      */
     @Deprecated(forRemoval = true, since = "26.0.0")
@@ -88,7 +86,6 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
      * By default, the requirement name will resolve against the paths of the great-grandparent, grandparent, parent, and current resources, respectively.
      * @param capability the capability referencing the specified requirement
      * @param requirement the requirement of the specified capability
-     * @param requirementNameResolver function for resolving the dynamic components of the requirement name
      * @deprecated Superseded by {@link ResourceCapabilityReference#builder(RuntimeCapability, QuaternaryServiceDescriptor)}
      */
     @Deprecated(forRemoval = true, since = "26.0.0")

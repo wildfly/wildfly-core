@@ -439,7 +439,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
 
         /**
          * Defines a required child of this resource.  Required children will be automatically added, if no child resource exists with the specified path.
-         * @param path the path of the required child resource
+         * @param child the registration of the required child resource
          * @return a reference to this configurator
          */
         default C requireChildResource(ResourceRegistration child) {
@@ -448,7 +448,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
 
         /**
          * Defines a set of required children of this resource.  Required children will be automatically added, if no child resource exists with the specified path.
-         * @param paths a set of paths of the required child resources
+         * @param children a set of registrations for the required child resources
          * @return a reference to this configurator
          */
         C requireChildResources(Set<? extends ResourceRegistration> children);

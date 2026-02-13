@@ -64,7 +64,7 @@ public interface XMLContent<RC, WC> extends XMLContentWriter<WC> {
     /**
      * Returns XML content whose text is consumed by the specified consumer during parsing.
      * @param <RC> the read context type
-     * @param <RC> the write context type
+     * @param <WC> the write context type
      * @param consumer a consumer of text content
      * @return XML content whose text is consumed by the specified consumer.
      */
@@ -76,7 +76,7 @@ public interface XMLContent<RC, WC> extends XMLContentWriter<WC> {
      * Returns XML content whose text is consumed by the specified consumer during parsing
      * and formatted using the specified function during marshalling.
      * @param <RC> the read context type
-     * @param <RC> the write context type
+     * @param <WC> the write context type
      * @param consumer a consumer of text content
      * @param formatter a formatter of text content
      * @return XML content whose text is consumed by the specified consumer.

@@ -109,7 +109,7 @@ public interface SubsystemPersistence<S extends SubsystemSchema<S>> {
     /**
      * Creates the subsystem persistence configuration for the specified writers for current versions of the schema.
      * @param <S> the schema type
-     * @param currentWirter the schema writer per current schema version
+     * @param currentWriters the schema writers per schema
      * @return a subsystem persistence configuration
      */
     static <S extends Enum<S> & SubsystemSchema<S>> SubsystemPersistence<S> of(Map<S, XMLElementWriter<SubsystemMarshallingContext>> currentWriters) {

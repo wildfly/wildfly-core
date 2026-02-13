@@ -62,9 +62,8 @@ public interface ResourceRegistrationXMLElement extends ResourceXMLElement, Reso
         B withElementLocalName(Function<PathElement, String> localName);
 
         /**
-         * Overrides the logic used to determine the local element name of this resource.
-         * @see {@link ResourceXMLElementLocalName}
-         * @param function a function returning the qualified element name for a given path.
+         * Overrides the local element name for this resource.
+         * @param name a local name override.
          * @return a reference to this builder.
          */
         default B withElementName(QName name) {
@@ -135,7 +134,7 @@ public interface ResourceRegistrationXMLElement extends ResourceXMLElement, Reso
         /**
          * Specifies an operation transformation that applies the specified default values for the specified attributes, if otherwise undefined.
          * Used to apply legacy default values to older versions of a schema, e.g. when the default value for an attribute has since changed.
-         * @param attributes a map of values per attribute.
+         * @param overrides a map of default values per attribute.
          * @return a reference to this builder
          */
         default B withDefaultValues(Map<AttributeDefinition, ModelNode> overrides) {
