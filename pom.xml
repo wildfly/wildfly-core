@@ -280,7 +280,7 @@
         <version.org.wildfly.client.config>1.0.1.Final</version.org.wildfly.client.config>
         <version.org.wildfly.common>2.0.1</version.org.wildfly.common>
         <version.org.wildfly.discovery>1.3.0.Final</version.org.wildfly.discovery>
-        <version.org.wildfly.installation-manager.installation-manager-api>1.2.1.Beta1</version.org.wildfly.installation-manager.installation-manager-api>
+        <version.org.wildfly.installation-manager.installation-manager-api>1.2.1.Beta2</version.org.wildfly.installation-manager.installation-manager-api>
         <version.org.wildfly.launcher>1.0.2.Final</version.org.wildfly.launcher>
         <version.org.wildfly.legacy.test>10.0.2.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.openssl>2.2.5.Final</version.org.wildfly.openssl>
