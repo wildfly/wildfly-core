@@ -86,6 +86,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
     private final ServiceActivator[] extraServices;
     private final FutureServiceContainer futureContainer;
     private volatile boolean everStopped;
+    private static final boolean IGNORE_ROOT_USERNAME_WARN = Boolean.getBoolean("jboss.ignore.root.username.warning");
 
     public HostControllerService(final HostControllerEnvironment environment, final HostRunningModeControl runningModeControl,
                           final String authCode, final ControlledProcessState processState,
@@ -118,6 +119,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         if (System.getSecurityManager() != null) {
             ServerLogger.AS_ROOT_LOGGER.securityManagerEnabled();
         }
+        checkIfRootUser();
         if (ServerLogger.CONFIG_LOGGER.isDebugEnabled()) {
             final Properties properties = System.getProperties();
             final StringBuilder b = new StringBuilder(8192);
@@ -353,6 +355,18 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         @Override
         public synchronized ScheduledExecutorService getValue() throws IllegalStateException {
             return scheduledExecutorService;
+        }
+    }
+
+    private void checkIfRootUser() {
+        if (!IGNORE_ROOT_USERNAME_WARN) {
+            String userName = System.getProperty("user.name", "");
+            boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows");
+            if (isWindows && userName.equalsIgnoreCase("administrator") ||
+                    !isWindows && userName.equalsIgnoreCase("root")
+            ) {
+                ServerLogger.AS_ROOT_LOGGER.startedWithRootUser(userName);
+            }
         }
     }
 }
