@@ -78,8 +78,8 @@ class IOSubsystemResourceDefinitionRegistrar implements SubsystemResourceDefinit
         ModelNode workers = model.get(WorkerResourceDefinition.PATH.getKey());
         WorkerAdd.checkWorkerConfiguration(context, workers);
 
-        CapabilityServiceInstaller.Builder<AtomicInteger, Integer> maxThreadsBuilder =
-                CapabilityServiceInstaller.builder(MAX_THREADS_CAPABILITY, AtomicInteger::intValue, Functions.constantSupplier(this.maxThreads));
+        CapabilityServiceInstaller.BlockingBuilder<AtomicInteger, Integer> maxThreadsBuilder =
+                CapabilityServiceInstaller.BlockingBuilder.of(MAX_THREADS_CAPABILITY, Functions.constantSupplier(this.maxThreads)).map(AtomicInteger::intValue);
         if (workers.isDefined()) {
             // Give each known worker a chance to record their threads before starting
             // the service that reports the current total maxThreads.
@@ -94,7 +94,7 @@ class IOSubsystemResourceDefinitionRegistrar implements SubsystemResourceDefinit
 
         ServiceDependency<XnioWorker> defaultWorker = DEFAULT_WORKER.resolve(context, model);
         if (defaultWorker.isPresent()) {
-            installers.add(CapabilityServiceInstaller.builder(DEFAULT_WORKER_CAPABILITY, defaultWorker).build());
+            installers.add(CapabilityServiceInstaller.BlockingBuilder.of(DEFAULT_WORKER_CAPABILITY, defaultWorker).build());
         }
 
         return ResourceServiceInstaller.combine(installers);

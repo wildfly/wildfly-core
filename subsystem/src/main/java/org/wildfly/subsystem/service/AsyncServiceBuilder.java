@@ -25,6 +25,7 @@ import org.jboss.msc.service.ServiceController.Mode;
  * ]]></code>
  * @author Paul Ferraro
  */
+@Deprecated(forRemoval = true, since = "32.0")
 public class AsyncServiceBuilder<T> extends org.wildfly.service.AsyncServiceBuilder<T> implements RequirementServiceBuilder<T> {
 
     private final RequirementServiceBuilder<T> builder;

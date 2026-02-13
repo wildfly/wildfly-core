@@ -5,7 +5,11 @@
 package org.wildfly.service;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -29,12 +33,248 @@ import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 public interface ServiceInstaller extends Installer<ServiceTarget> {
 
     /**
+     * Builds an installer of a service.
+     */
+    interface Builder extends Installer.Builder<Builder, ServiceInstaller, ServiceTarget, ServiceBuilder<?>> {
+
+        /**
+         * Returns a {@link ServiceInstaller} builder that installs the specified installer into a child target.
+         * By default, the installed service will start when installed.
+         * @param installer a service installer
+         * @return a service installer builder
+         */
+        static Builder of(ServiceInstaller installer) {
+            return new DefaultBuilder(new org.jboss.msc.Service() {
+                @Override
+                public void start(StartContext context) {
+                    installer.install(context.getChildTarget());
+                }
+
+                @Override
+                public void stop(StopContext context) {
+                    // Services installed into child target are auto-removed after this service stops.
+                }
+            }).startWhen(StartWhen.INSTALLED);
+        }
+    }
+
+    /**
+     * Builds an installer of a service that provides a value.
+     * @param <V> the service value type
+     */
+    interface ValueBuilder<B, V> extends Installer.ValueBuilder<B, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, V> {
+        /**
+         * Configures the {@link ServiceName} of the value provided by the installed service, created from the specified descriptor.
+         * @param descriptor a service descriptor
+         * @return a reference to this builder
+         */
+        default B provides(NullaryServiceDescriptor<V> descriptor) {
+            return this.provides(ServiceName.parse(descriptor.getName()));
+        }
+
+        /**
+         * Configures the {@link ServiceName} of the value provided by the installed service, created from the specified descriptor.
+         * @param descriptor a service descriptor
+         * @param name a dynamic segment
+         * @return a reference to this builder
+         */
+        default B provides(UnaryServiceDescriptor<V> descriptor, String name) {
+            Map.Entry<String, String[]> resolved = descriptor.resolve(name);
+            return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
+        }
+
+        /**
+         * Configures the {@link ServiceName} of the value provided by the installed service, created from the specified descriptor.
+         * @param descriptor a service descriptor
+         * @param parent the first dynamic segment
+         * @param child the second dynamic segment
+         * @return a reference to this builder
+         */
+        default B provides(BinaryServiceDescriptor<V> descriptor, String parent, String child) {
+            Map.Entry<String, String[]> resolved = descriptor.resolve(parent, child);
+            return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
+        }
+
+        /**
+         * Configures the {@link ServiceName} of the value provided by the installed service, created from the specified descriptor.
+         * @param descriptor a service descriptor
+         * @param grandparent the first dynamic segment
+         * @param parent the second dynamic segment
+         * @param child the third dynamic segment
+         * @return a reference to this builder
+         */
+        default B provides(TernaryServiceDescriptor<V> descriptor, String grandparent, String parent, String child) {
+            Map.Entry<String, String[]> resolved = descriptor.resolve(grandparent, parent, child);
+            return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
+        }
+
+        /**
+         * Configures the {@link ServiceName} of the value provided by the installed service, created from the specified descriptor.
+         * @param descriptor a service descriptor
+         * @param greatGrandparent the first dynamic segment
+         * @param grandparent the second dynamic segment
+         * @param parent the third dynamic segment
+         * @param child the fourth dynamic segment
+         * @return a reference to this builder
+         */
+        default B provides(QuaternaryServiceDescriptor<V> descriptor, String greatGrandparent, String grandparent ,String parent, String child) {
+            Map.Entry<String, String[]> resolved = descriptor.resolve(greatGrandparent, grandparent, parent, child);
+            return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
+        }
+    }
+
+    /**
+     * Builds an installer of a service derived from a value with a configurable blocking lifecycle.
+     * Unless explicitly specified, services installed via this builder will start when required, if providing a value (via {@link ValueBuilder#provides(ServiceName)}; or when available, otherwise.
+     * @param <T> the source value type
+     * @param <V> the provided value type
+     */
+    interface BlockingBuilder<T, V> extends Installer.BlockingValueBuilder<BlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V>, ValueBuilder<BlockingBuilder<T, V>, V> {
+        @Override
+        <R> BlockingBuilder<T, R> map(Function<? super V, ? extends R> mapper);
+
+        /**
+         * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified factory via blocking operations.
+         * @param <V> the service value type
+         * @param provider provides the service value
+         * @return a service installer builder
+         */
+        static <V> BlockingBuilder<V, V> of(Supplier<V> provider) {
+            return new DefaultBlockingBuilder<>(provider, Function.identity());
+        }
+
+        /**
+         * Returns a {@link ServiceInstaller} builder whose installed service provides a value supplied by a service dependency.
+         * @param <V> the service value type
+         * @param dependency the dependency providing the service value
+         * @return a service installer builder
+         */
+        static <V> BlockingBuilder<V, V> of(ServiceDependency<V> dependency) {
+            Supplier<V> provider = dependency;
+            return of(provider).requires(dependency);
+        }
+
+        /**
+         * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified factory via asynchronously executed blocking operations.
+         * @param <V> the service value type
+         * @param provider provides the service value
+         * @param executor the executor used to run blocking operations
+         * @return a service installer builder
+         */
+        static <V> BlockingBuilder<V, V> async(Supplier<V> provider, Supplier<Executor> executor) {
+            return new DefaultAsyncBlockingBuilder<>(provider, Function.identity(), executor);
+        }
+    }
+
+    /**
+     * Builds an installer of a service derived from a value with blocking lifecycle.
+     * Unless explicitly specified, services installed via this builder will start when required, if providing a value (via {@link ValueBuilder#provides(ServiceName)}; or when available, otherwise.
+     * @param <T> the source value type
+     * @param <V> the provided value type
+     */
+    interface BlockingLifecycleBuilder<T extends BlockingLifecycle, V> extends Installer.BlockingLifecycleValueBuilder<BlockingLifecycleBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V>, ValueBuilder<BlockingLifecycleBuilder<T, V>, V> {
+        @Override
+        <R> BlockingLifecycleBuilder<T, R> map(Function<? super V, ? extends R> mapper);
+
+        /**
+         * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified factory via blocking operations.
+         * @param <V> the service value type
+         * @param provider provides the service value
+         * @return a service installer builder
+         */
+        static <V extends BlockingLifecycle> BlockingLifecycleBuilder<V, V> of(Supplier<V> provider) {
+            return new DefaultBlockingLifecycleBuilder<>(provider, Function.identity());
+        }
+
+        /**
+         * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified factory via asynchronously executed blocking operations.
+         * @param <V> the service value type
+         * @param provider provides the service value
+         * @param executor the executor used to run blocking operations
+         * @return a service installer builder
+         */
+        static <V extends BlockingLifecycle> BlockingLifecycleBuilder<V, V> async(Supplier<V> provider, Supplier<Executor> executor) {
+            return new DefaultBlockingLifecycleBuilder<>(provider, Function.identity(), executor);
+        }
+    }
+
+    /**
+     * Builds an installer of a service derived from a value with a configurable non-blocking lifecycle.
+     * Unless explicitly specified, services installed via this builder will start when required, if providing a value (via {@link ValueBuilder#provides(ServiceName)}; or when available, otherwise.
+     * @param <T> the source value type
+     * @param <V> the provided value type
+     */
+    interface NonBlockingBuilder<T, V> extends Installer.NonBlockingValueBuilder<NonBlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V>, ValueBuilder<NonBlockingBuilder<T, V>, V> {
+        @Override
+        <R> NonBlockingBuilder<T, R> map(Function<? super V, ? extends R> mapper);
+
+        /**
+         * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified factory.
+         * By default, the installed service will start when required.
+         * @param <V> the service value type
+         * @param provider provides the service value
+         * @return a service installer builder
+         */
+        static <V> NonBlockingBuilder<V, V> of(Supplier<CompletionStage<V>> provider) {
+            return new DefaultNonBlockingBuilder<>(provider, Function.identity());
+        }
+    }
+
+    /**
+     * Builds an installer of a service derived from a value with a configurable non-blocking lifecycle.
+     * Unless explicitly specified, services installed via this builder will start when required, if providing a value (via {@link ValueBuilder#provides(ServiceName)}; or when available, otherwise.
+     * @param <T> the source value type
+     * @param <V> the provided value type
+     */
+    interface NonBlockingLifecycleBuilder<T extends NonBlockingLifecycle, V> extends Installer.NonBlockingLifecycleValueBuilder<NonBlockingLifecycleBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V>, ValueBuilder<NonBlockingLifecycleBuilder<T, V>, V> {
+        @Override
+        <R> NonBlockingLifecycleBuilder<T, R> map(Function<? super V, ? extends R> mapper);
+
+        /**
+         * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified factory via blocking operations.
+         * @param <V> the service value type
+         * @param provider provides the service value
+         * @return a service installer builder
+         */
+        static <V extends NonBlockingLifecycle> NonBlockingLifecycleBuilder<V, V> of(Supplier<CompletionStage<V>> provider) {
+            return new DefaultNonBlockingLifecycleBuilder<>(provider, Function.identity());
+        }
+    }
+
+    /**
+     * Implemented by builds with asynchronous service support.
+     * @param <B> the builder type
+     * @deprecated Superseded by {@link ServiceInstaller.BlockingBuilder#async(Supplier, Supplier)}.
+     */
+    @Deprecated(forRemoval = true, since = "32.0")
+    interface AsyncBuilder<B> {
+        /**
+         * Indicates that the installed service should start and, if a stop task was specified, stop asynchronously.
+         * @param executor supplies the executor used for asynchronous execution
+         * @return a reference to this builder
+         */
+        B async(Supplier<Executor> executor);
+    }
+
+    /**
+     * Builds a {@link ServiceInstaller} whose service provides a single value.
+     * @param <T> the source value type
+     * @param <V> the service value type
+     * @deprecated Superseded by {@link ServiceInstaller.BlockingBuilder}.
+     */
+    @Deprecated(forRemoval = true, since = "32.0")
+    interface UnaryBuilder<T, V> extends AsyncBuilder<UnaryBuilder<T, V>>, ValueBuilder<UnaryBuilder<T, V>, V>, Installer.UnaryBuilder<UnaryBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> {
+    }
+
+    /**
      * Returns a {@link ServiceInstaller} builder whose installed service provides the specified value.
      * By default, the installed service will start when installed since the provided value is already available.
      * @param <V> the service value type
      * @param value the service value
      * @return a service installer builder
+     * @deprecated Superseded by {@link ServiceInstaller.BlockingBuilder#of(Supplier)}
      */
+    @Deprecated(forRemoval = true, since = "32.0")
     static <V> UnaryBuilder<V, V> builder(V value) {
         return builder(Functions.constantSupplier(value)).startWhen(StartWhen.INSTALLED);
     }
@@ -45,7 +285,9 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
      * @param <V> the service value type
      * @param dependency a service dependency
      * @return a service installer builder
+     * @deprecated Superseded by {@link ServiceInstaller.BlockingBuilder#of(ServiceDependency)}
      */
+    @Deprecated(forRemoval = true, since = "32.0")
     static <V> UnaryBuilder<V, V> builder(ServiceDependency<V> dependency) {
         Supplier<V> supplier = dependency;
         return builder(supplier).requires(dependency).startWhen(StartWhen.AVAILABLE);
@@ -57,7 +299,9 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
      * @param <V> the service value type
      * @param factory provides the service value
      * @return a service installer builder
+     * @deprecated Superseded by {@link ServiceInstaller.BlockingBuilder#of(Supplier)}
      */
+    @Deprecated(forRemoval = true, since = "32.0")
     static <V> UnaryBuilder<V, V> builder(Supplier<V> factory) {
         return builder(Function.identity(), factory);
     }
@@ -70,9 +314,11 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
      * @param mapper a function that returns the service value given the value supplied by the factory
      * @param factory provides the input to the specified mapper
      * @return a service installer builder
+     * @deprecated Superseded by {@link ServiceInstaller.BlockingBuilder#of(Supplier)} followed by {@link ServiceInstaller.BlockingBuilder#map(Function)}.
      */
+    @Deprecated(forRemoval = true, since = "32.0")
     static <T, V> UnaryBuilder<T, V> builder(Function<T, V> mapper, Supplier<T> factory) {
-        return new DefaultUnaryBuilder<>(mapper, factory);
+        return new LegacyBlockingBuilder<>(factory, mapper).startWhen(StartWhen.REQUIRED);
     }
 
     /**
@@ -80,19 +326,11 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
      * By default, the installed service will start when installed.
      * @param installer a service installer
      * @return a service installer builder
+     * @deprecated Superseded by {@link ServiceInstaller.Builder#of(ServiceInstaller)}
      */
+    @Deprecated(forRemoval = true, since = "32.0")
     static Builder builder(ServiceInstaller installer) {
-        return new DefaultNullaryBuilder(new Service() {
-            @Override
-            public void start(StartContext context) {
-                installer.install(context.getChildTarget());
-            }
-
-            @Override
-            public void stop(StopContext context) {
-                // Services installed into child target are auto-removed after this service stops.
-            }
-        }).startWhen(StartWhen.INSTALLED);
+        return Builder.of(installer);
     }
 
     /**
@@ -101,9 +339,11 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
      * @param startTask a start task
      * @param stopTask a stop task
      * @return a service installer builder
+     * @deprecated Superseded by {@link ServiceInstaller.BlockingBuilder#of(Supplier)} followed by {@link ServiceInstaller.BlockingBuilder#withLifecycle(Function)}.
      */
+    @Deprecated(forRemoval = true, since = "32.0")
     static Builder builder(Runnable startTask, Runnable stopTask) {
-        return new DefaultNullaryBuilder(new Service() {
+        return new DefaultBuilder(new Service() {
             @Override
             public void start(StartContext context) {
                 startTask.run();
@@ -113,165 +353,202 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
             public void stop(StopContext context) {
                 stopTask.run();
             }
-        }).startWhen(StartWhen.AVAILABLE);
+        });
     }
 
-    /**
-     * Implemented by builds with asynchronous service support.
-     * @param <B> the builder type
-     */
-    interface AsyncBuilder<B> {
-        /**
-         * Indicates that the installed service should start and, if a stop task was specified, stop asynchronously.
-         * @param executor supplies the executor used for asynchronous execution
-         * @return a reference to this builder
-         */
-        B async(Supplier<Executor> executor);
-    }
+    class DefaultBuilder extends Installer.AbstractBuilder<Builder, ServiceInstaller, ServiceTarget, ServiceBuilder<?>> implements Builder {
+        private final org.jboss.msc.Service service;
 
-    /**
-     * Builds a {@link ServiceInstaller}.
-     * @param <T> the source value type
-     * @param <V> the service value type
-     */
-    interface Builder extends AsyncBuilder<Builder>, Installer.Builder<Builder, ServiceInstaller, ServiceTarget, ServiceBuilder<?>> {
-    }
-
-    /**
-     * Builds a {@link ServiceInstaller} whose service provides a single value.
-     * @param <T> the source value type
-     * @param <V> the service value type
-     */
-    interface UnaryBuilder<T, V> extends AsyncBuilder<UnaryBuilder<T, V>>, Installer.UnaryBuilder<UnaryBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> {
-
-        /**
-         * Configures a service descriptor provided by this service.
-         * @param descriptor a service descriptor
-         * @return a reference to this builder
-         */
-        default UnaryBuilder<T, V> provides(NullaryServiceDescriptor<V> descriptor) {
-            return this.provides(ServiceName.parse(descriptor.getName()));
-        }
-
-        /**
-         * Configures a service descriptor provided by this service.
-         * @param descriptor a service descriptor
-         * @param name a dynamic segment
-         * @return a reference to this builder
-         */
-        default UnaryBuilder<T, V> provides(UnaryServiceDescriptor<V> descriptor, String name) {
-            Map.Entry<String, String[]> resolved = descriptor.resolve(name);
-            return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
-        }
-
-        /**
-         * Configures a service descriptor provided by this service.
-         * @param descriptor a service descriptor
-         * @param parent the first dynamic segment
-         * @param child the second dynamic segment
-         * @return a reference to this builder
-         */
-        default UnaryBuilder<T, V> provides(BinaryServiceDescriptor<V> descriptor, String parent, String child) {
-            Map.Entry<String, String[]> resolved = descriptor.resolve(parent, child);
-            return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
-        }
-
-        /**
-         * Configures a service descriptor provided by this service.
-         * @param descriptor a service descriptor
-         * @param grandparent the first dynamic segment
-         * @param parent the second dynamic segment
-         * @param child the third dynamic segment
-         * @return a reference to this builder
-         */
-        default UnaryBuilder<T, V> provides(TernaryServiceDescriptor<V> descriptor, String grandparent, String parent, String child) {
-            Map.Entry<String, String[]> resolved = descriptor.resolve(grandparent, parent, child);
-            return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
-        }
-
-        /**
-         * Configures a service descriptor provided by this service.
-         * @param descriptor a service descriptor
-         * @param greatGrandparent the first dynamic segment
-         * @param grandparent the second dynamic segment
-         * @param parent the third dynamic segment
-         * @param child the fourth dynamic segment
-         * @return a reference to this builder
-         */
-        default UnaryBuilder<T, V> provides(QuaternaryServiceDescriptor<V> descriptor, String greatGrandparent, String grandparent ,String parent, String child) {
-            Map.Entry<String, String[]> resolved = descriptor.resolve(greatGrandparent, grandparent, parent, child);
-            return this.provides(ServiceName.parse(resolved.getKey()).append(resolved.getValue()));
-        }
-    }
-
-    class DefaultServiceInstaller extends DefaultInstaller<ServiceTarget, ServiceBuilder<?>, ServiceBuilder<?>> implements ServiceInstaller {
-
-        DefaultServiceInstaller(Configuration<ServiceBuilder<?>, ServiceBuilder<?>> config, Function<ServiceTarget, ServiceBuilder<?>> serviceBuilderFactory) {
-            super(config, serviceBuilderFactory);
-        }
-    }
-
-    class DefaultNullaryBuilder extends AbstractNullaryBuilder<Builder, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, ServiceBuilder<?>> implements Builder {
-        private volatile Supplier<Executor> executor = null;
-
-        DefaultNullaryBuilder(Service service) {
-            super(service);
+        DefaultBuilder(org.jboss.msc.Service service) {
+            this.service = service;
         }
 
         @Override
-        public Builder async(Supplier<Executor> executor) {
-            this.executor = executor;
+        public Builder get() {
             return this;
+        }
+
+        @Override
+        public Function<? super ServiceBuilder<?>, org.jboss.msc.Service> getServiceFactory() {
+            return new DiscardingFunction<>(this.service);
         }
 
         @Override
         public ServiceInstaller build() {
-            Supplier<Executor> executor = this.executor;
-            return new DefaultServiceInstaller(this, new Function<>() {
-                @Override
-                public ServiceBuilder<?> apply(ServiceTarget target) {
-                    ServiceBuilder<?> builder = target.addService();
-                    return (executor != null) ? new AsyncServiceBuilder<>(builder, executor, AsyncServiceBuilder.Async.START_AND_STOP) : builder;
-                }
-            });
-        }
-
-        @Override
-        protected Builder builder() {
-            return this;
+            return new DefaultServiceInstaller(this);
         }
     }
 
-    class DefaultUnaryBuilder<T, V> extends AbstractUnaryBuilder<ServiceInstaller.UnaryBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, ServiceBuilder<?>, T, V> implements ServiceInstaller.UnaryBuilder<T, V> {
-        private volatile Supplier<Executor> executor = null;
+    class DefaultBlockingBuilder<T, V> extends AbstractBlockingValueBuilder<BlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements BlockingBuilder<T, V> {
 
-        DefaultUnaryBuilder(Function<T, V> mapper, Supplier<T> factory) {
-            super(mapper, factory);
+        <R> DefaultBlockingBuilder(DefaultBlockingBuilder<T, R> builder, Function<? super R, ? extends V> mapper) {
+            super(builder, mapper);
+        }
+
+        DefaultBlockingBuilder(Supplier<T> provider, Function<? super T, ? extends V> mapper) {
+            super(provider, mapper);
         }
 
         @Override
-        public ServiceInstaller.UnaryBuilder<T, V> async(Supplier<Executor> executor) {
-            this.executor = executor;
+        public BlockingBuilder<T, V> get() {
             return this;
+        }
+
+        @Override
+        public <R> BlockingBuilder<T, R> map(Function<? super V, ? extends R> mapper) {
+            return new DefaultBlockingBuilder<>(this, mapper);
         }
 
         @Override
         public ServiceInstaller build() {
-            Supplier<Executor> executor = this.executor;
-            // If no stop task is specified, we can stop synchronously
-            AsyncServiceBuilder.Async async = this.hasStopTask() ? AsyncServiceBuilder.Async.START_AND_STOP : AsyncServiceBuilder.Async.START_ONLY;
-            return new DefaultServiceInstaller(this, new Function<>() {
-                @Override
-                public ServiceBuilder<?> apply(ServiceTarget target) {
-                    ServiceBuilder<?> builder = target.addService();
-                    return (executor != null) ? new AsyncServiceBuilder<>(builder, executor, async) : builder;
-                }
-            });
+            return new DefaultServiceInstaller(this);
+        }
+    }
+
+    class DefaultNonBlockingBuilder<T, V> extends AbstractNonBlockingValueBuilder<NonBlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements NonBlockingBuilder<T, V> {
+
+        private <R> DefaultNonBlockingBuilder(DefaultNonBlockingBuilder<T, R> builder, Function<? super R, ? extends V> mapper) {
+            super(builder, mapper);
+        }
+
+        DefaultNonBlockingBuilder(Supplier<CompletionStage<T>> provider, Function<? super T, ? extends V> mapper) {
+            super(provider, mapper);
         }
 
         @Override
-        protected UnaryBuilder<T, V> builder() {
+        public NonBlockingBuilder<T, V> get() {
             return this;
+        }
+
+        @Override
+        public <R> NonBlockingBuilder<T, R> map(Function<? super V, ? extends R> mapper) {
+            return new DefaultNonBlockingBuilder<>(this, mapper);
+        }
+
+        @Override
+        public ServiceInstaller build() {
+            return new DefaultServiceInstaller(this);
+        }
+    }
+
+    class DefaultAsyncBlockingBuilder<T, V> extends AbstractAsyncBlockingValueBuilder<BlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements BlockingBuilder<T, V> {
+        private final NonBlockingBuilder<T, V> builder;
+        private final Supplier<Executor> executor;
+
+        DefaultAsyncBlockingBuilder(Supplier<T> provider, Function<? super T, ? extends V> mapper, Supplier<Executor> executor) {
+            this(new DefaultNonBlockingBuilder<>(compose(provider, executor), mapper), executor);
+        }
+
+        private DefaultAsyncBlockingBuilder(NonBlockingBuilder<T, V> builder, Supplier<Executor> executor) {
+            super(builder, executor);
+            this.builder = builder;
+            this.executor = executor;
+        }
+
+        @Override
+        public BlockingBuilder<T, V> get() {
+            return this;
+        }
+
+        @Override
+        public <R> DefaultAsyncBlockingBuilder<T, R> map(Function<? super V, ? extends R> mapper) {
+            return new DefaultAsyncBlockingBuilder<T, R>(this.builder.map(mapper), this.executor);
+        }
+    }
+
+    class DefaultBlockingLifecycleBuilder<T extends BlockingLifecycle, V> extends AbstractBlockingLifecycleValueBuilder<BlockingLifecycleBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements BlockingLifecycleBuilder<T, V> {
+        private final BlockingBuilder<T, V> builder;
+
+        DefaultBlockingLifecycleBuilder(Supplier<T> provider, Function<? super T, ? extends V> mapper) {
+            this(new DefaultBlockingBuilder<>(provider, mapper));
+            this.builder.withLifecycle(Function.identity());
+        }
+
+        DefaultBlockingLifecycleBuilder(Supplier<T> provider, Function<? super T, ? extends V> mapper, Supplier<Executor> executor) {
+            this(new DefaultAsyncBlockingBuilder<>(provider, mapper, executor));
+            this.builder.withLifecycle(Function.identity());
+        }
+
+        private DefaultBlockingLifecycleBuilder(BlockingBuilder<T, V> builder) {
+            super(builder);
+            this.builder = builder;
+        }
+
+        @Override
+        public BlockingLifecycleBuilder<T, V> get() {
+            return this;
+        }
+
+        @Override
+        public <R> BlockingLifecycleBuilder<T, R> map(Function<? super V, ? extends R> mapper) {
+            return new DefaultBlockingLifecycleBuilder<>(this.builder.map(mapper));
+        }
+    }
+
+    class DefaultNonBlockingLifecycleBuilder<T extends NonBlockingLifecycle, V> extends AbstractNonBlockingLifecycleValueBuilder<NonBlockingLifecycleBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements NonBlockingLifecycleBuilder<T, V> {
+        private final NonBlockingBuilder<T, V> builder;
+
+        DefaultNonBlockingLifecycleBuilder(Supplier<CompletionStage<T>> provider, Function<? super T, ? extends V> mapper) {
+            this(new DefaultNonBlockingBuilder<>(provider, mapper));
+            this.builder.withLifecycle(Function.identity());
+        }
+
+        private DefaultNonBlockingLifecycleBuilder(NonBlockingBuilder<T, V> builder) {
+            super(builder);
+            this.builder = builder;
+        }
+
+        @Override
+        public NonBlockingLifecycleBuilder<T, V> get() {
+            return this;
+        }
+
+        @Override
+        public <R> NonBlockingLifecycleBuilder<T, R> map(Function<? super V, ? extends R> mapper) {
+            return new DefaultNonBlockingLifecycleBuilder<>(this.builder.map(mapper));
+        }
+    }
+
+    @Deprecated
+    class LegacyBlockingBuilder<T, V> extends AbstractAsyncBlockingValueBuilder<UnaryBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements UnaryBuilder<T, V> {
+        private static final Supplier<Executor> DEFAULT_EXECUTOR = Functions.constantSupplier(Runnable::run);
+
+        private final AtomicReference<Supplier<Executor>> reference;
+
+        LegacyBlockingBuilder(Supplier<T> provider, Function<T, V> mapper) {
+            this(provider, mapper, new AtomicReference<>(DEFAULT_EXECUTOR));
+        }
+
+        private LegacyBlockingBuilder(Supplier<T> provider, Function<T, V> mapper, AtomicReference<Supplier<Executor>> reference) {
+            super(new DefaultNonBlockingBuilder<>(new Supplier<>() {
+                @Override
+                public CompletionStage<T> get() {
+                    try {
+                        return CompletableFuture.supplyAsync(provider, reference.getPlain().get());
+                    } catch (RejectedExecutionException e) {
+                        return CompletableFuture.supplyAsync(provider);
+                    }
+                }
+            }, mapper), () -> reference.getPlain().get());
+            this.reference = reference;
+        }
+
+        @Override
+        public UnaryBuilder<T, V> async(Supplier<Executor> executor) {
+            this.reference.setPlain(executor);
+            return this;
+        }
+
+        @Override
+        public UnaryBuilder<T, V> get() {
+            return this;
+        }
+    }
+
+    class DefaultServiceInstaller extends Installer.AbstractInstaller<ServiceTarget, ServiceBuilder<?>> implements ServiceInstaller {
+
+        DefaultServiceInstaller(Installer.Configuration<ServiceBuilder<?>> config) {
+            super(config, ServiceTarget::addService);
         }
     }
 }
