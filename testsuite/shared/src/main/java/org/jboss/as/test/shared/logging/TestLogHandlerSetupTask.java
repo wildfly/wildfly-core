@@ -94,6 +94,9 @@ public abstract class TestLogHandlerSetupTask implements ServerSetupTask {
 
         // remove file, note this needs to be done after the operations have been executed as we need to ensure that
         // no FD's are open. This can be an issue on Windows.
+        //
+        // If the server is in admin-only mode, the log handler resources may not be
+        // fully released even after removal, causing file lock issues on Windows.
         Files.deleteIfExists(logPath);
     }
 
