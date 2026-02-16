@@ -201,7 +201,7 @@
         <legacy.version.org.jboss.spec.javax.security.auth.message.jboss-jaspi-api_1.1_spec>2.0.1.Final</legacy.version.org.jboss.spec.javax.security.auth.message.jboss-jaspi-api_1.1_spec>
         <legacy.version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>2.0.0.Final</legacy.version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>
 
-		<version.ch.qos.logback>1.5.29</version.ch.qos.logback>
+		<version.ch.qos.logback>1.5.32</version.ch.qos.logback>
         <version.com.googlecode.javaewah>1.2.3</version.com.googlecode.javaewah>
         <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
         <version.com.google.guava>31.1-jre</version.com.google.guava>
