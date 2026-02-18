@@ -11,7 +11,7 @@ package org.wildfly.service;
  * @author Paul Ferraro
  */
 interface Lifecycle {
-    enum State { STOPPED, STARTING, STARTED, STOPPING }
+    enum State { STARTING, STARTED, STOPPING, STOPPED, CLOSED }
 
     /**
      * Indicates whether or not this object is started.
@@ -25,5 +25,13 @@ interface Lifecycle {
      */
     default boolean isStopped() {
         return !this.isStarted();
+    }
+
+    /**
+     * Indicates whether or not this object is closed.
+     * @return true, if this object is started, false if started or in the process of stopping.
+     */
+    default boolean isClosed() {
+        return false;
     }
 }

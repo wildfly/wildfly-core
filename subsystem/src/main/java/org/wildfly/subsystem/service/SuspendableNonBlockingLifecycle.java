@@ -54,6 +54,11 @@ public class SuspendableNonBlockingLifecycle implements NonBlockingLifecycle {
     }
 
     @Override
+    public boolean isClosed() {
+        return this.lifecycle.isClosed();
+    }
+
+    @Override
     public CompletionStage<Void> start() {
         SuspendableActivityRegistration registration = this.registrar.register(new NonBlockingLifecycleSuspendableActivity(this.lifecycle), this.priority);
         // There should be no existing registration, but if so, close it
@@ -70,5 +75,10 @@ public class SuspendableNonBlockingLifecycle implements NonBlockingLifecycle {
         // If we are suspended, SuspendableActivity.suspend(...) will have already stopped the service
         CompletionStage<Void> stop = (registration.getState() == ServerSuspendController.State.RUNNING) ? this.lifecycle.stop() : SuspendableActivity.COMPLETED;
         return stop.whenComplete((ignore, exception) -> registration.close());
+    }
+
+    @Override
+    public CompletionStage<Void> close() {
+        return this.lifecycle.close();
     }
 }

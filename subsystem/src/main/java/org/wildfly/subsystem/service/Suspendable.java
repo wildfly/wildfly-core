@@ -11,11 +11,11 @@ import org.jboss.as.server.suspend.SuspendPriority;
  * Configures a suspendable object.
  * @author Paul Ferraro
  */
-public interface Suspendable<C extends Suspendable<C>> {
+public interface Suspendable<B> {
     /**
      * Configures the suspend priority of this object.
      * @param priority a suspend priority
      * @return a reference to this object
      */
-    C withSuspendPriority(SuspendPriority priority);
+    B withSuspendPriority(SuspendPriority priority);
 }

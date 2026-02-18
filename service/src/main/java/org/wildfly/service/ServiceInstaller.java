@@ -63,6 +63,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
      * @param <V> the service value type
      */
     interface ValueBuilder<B, V> extends Installer.ValueBuilder<B, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, V> {
+
         /**
          * Configures the {@link ServiceName} of the value provided by the installed service, created from the specified descriptor.
          * @param descriptor a service descriptor
@@ -129,7 +130,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
      * @param <T> the source value type
      * @param <V> the provided value type
      */
-    interface BlockingBuilder<T, V> extends Installer.BlockingValueBuilder<BlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V>, ValueBuilder<BlockingBuilder<T, V>, V> {
+    interface BlockingBuilder<T, V> extends Installer.BlockingLifecycleBuilder<BlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V>, ValueBuilder<BlockingBuilder<T, V>, V> {
         @Override
         <R> BlockingBuilder<T, R> map(Function<? super V, ? extends R> mapper);
 
@@ -155,46 +156,14 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
         }
 
         /**
-         * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified factory via asynchronously executed blocking operations.
+         * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified factory, made non-blocking via the specified executor.
          * @param <V> the service value type
          * @param provider provides the service value
          * @param executor the executor used to run blocking operations
          * @return a service installer builder
          */
-        static <V> BlockingBuilder<V, V> async(Supplier<V> provider, Supplier<Executor> executor) {
-            return new DefaultAsyncBlockingBuilder<>(provider, Function.identity(), executor);
-        }
-    }
-
-    /**
-     * Builds an installer of a service derived from a value with blocking lifecycle.
-     * Unless explicitly specified, services installed via this builder will start when required, if providing a value (via {@link ValueBuilder#provides(ServiceName)}; or when available, otherwise.
-     * @param <T> the source value type
-     * @param <V> the provided value type
-     */
-    interface BlockingLifecycleBuilder<T extends BlockingLifecycle, V> extends Installer.BlockingLifecycleValueBuilder<BlockingLifecycleBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V>, ValueBuilder<BlockingLifecycleBuilder<T, V>, V> {
-        @Override
-        <R> BlockingLifecycleBuilder<T, R> map(Function<? super V, ? extends R> mapper);
-
-        /**
-         * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified factory via blocking operations.
-         * @param <V> the service value type
-         * @param provider provides the service value
-         * @return a service installer builder
-         */
-        static <V extends BlockingLifecycle> BlockingLifecycleBuilder<V, V> of(Supplier<V> provider) {
-            return new DefaultBlockingLifecycleBuilder<>(provider, Function.identity());
-        }
-
-        /**
-         * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified factory via asynchronously executed blocking operations.
-         * @param <V> the service value type
-         * @param provider provides the service value
-         * @param executor the executor used to run blocking operations
-         * @return a service installer builder
-         */
-        static <V extends BlockingLifecycle> BlockingLifecycleBuilder<V, V> async(Supplier<V> provider, Supplier<Executor> executor) {
-            return new DefaultBlockingLifecycleBuilder<>(provider, Function.identity(), executor);
+        static <V> BlockingBuilder<V, V> of(Supplier<V> provider, ServiceDependency<Executor> executor) {
+            return new AsyncBlockingBuilder<>(provider, Function.identity(), executor);
         }
     }
 
@@ -204,7 +173,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
      * @param <T> the source value type
      * @param <V> the provided value type
      */
-    interface NonBlockingBuilder<T, V> extends Installer.NonBlockingValueBuilder<NonBlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V>, ValueBuilder<NonBlockingBuilder<T, V>, V> {
+    interface NonBlockingBuilder<T, V> extends Installer.NonBlockingLifecycleBuilder<NonBlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V>, ValueBuilder<NonBlockingBuilder<T, V>, V> {
         @Override
         <R> NonBlockingBuilder<T, R> map(Function<? super V, ? extends R> mapper);
 
@@ -221,30 +190,54 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
     }
 
     /**
-     * Builds an installer of a service derived from a value with a configurable non-blocking lifecycle.
+     * Builds an installer of a service derived from a value with an inherent blocking lifecycle.
      * Unless explicitly specified, services installed via this builder will start when required, if providing a value (via {@link ValueBuilder#provides(ServiceName)}; or when available, otherwise.
-     * @param <T> the source value type
      * @param <V> the provided value type
      */
-    interface NonBlockingLifecycleBuilder<T extends NonBlockingLifecycle, V> extends Installer.NonBlockingLifecycleValueBuilder<NonBlockingLifecycleBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V>, ValueBuilder<NonBlockingLifecycleBuilder<T, V>, V> {
-        @Override
-        <R> NonBlockingLifecycleBuilder<T, R> map(Function<? super V, ? extends R> mapper);
-
+    interface BlockingLifecycleBuilder<V> extends ValueBuilder<BlockingLifecycleBuilder<V>, V> {
         /**
-         * Returns a {@link ServiceInstaller} builder whose installed service provides the value supplied by the specified factory via blocking operations.
+         * Returns a {@link ServiceInstaller} builder whose installed service provides a value with an inherent blocking lifecycle.
          * @param <V> the service value type
          * @param provider provides the service value
          * @return a service installer builder
          */
-        static <V extends NonBlockingLifecycle> NonBlockingLifecycleBuilder<V, V> of(Supplier<CompletionStage<V>> provider) {
-            return new DefaultNonBlockingLifecycleBuilder<>(provider, Function.identity());
+        static <V extends BlockingLifecycle> BlockingLifecycleBuilder<V> of(Supplier<V> provider) {
+            return new DefaultBlockingLifecycleBuilder<>(BlockingBuilder.of(provider).withLifecycle(Function.identity()));
+        }
+
+        /**
+         * Returns a {@link ServiceInstaller} builder whose installed service provides a value with an inherent blocking lifecycle, made non-blocking via the specified executor.
+         * @param <V> the service value type
+         * @param provider provides the service value
+         * @param executor the executor used to run blocking operations
+         * @return a service installer builder
+         */
+        static <V extends BlockingLifecycle> BlockingLifecycleBuilder<V> of(Supplier<V> provider, ServiceDependency<Executor> executor) {
+            return new DefaultBlockingLifecycleBuilder<>(BlockingBuilder.of(provider, executor).withLifecycle(Function.identity()));
         }
     }
 
     /**
-     * Implemented by builds with asynchronous service support.
+     * Builds an installer of a service derived from a value with an inherent non-blocking lifecycle.
+     * Unless explicitly specified, services installed via this builder will start when required, if providing a value (via {@link ValueBuilder#provides(ServiceName)}; or when available, otherwise.
+     * @param <V> the provided value type
+     */
+    interface NonBlockingLifecycleBuilder<V> extends ValueBuilder<NonBlockingLifecycleBuilder<V>, V> {
+        /**
+         * Returns a {@link ServiceInstaller} builder whose installed service provides a value with an inherent non-blocking lifecycle.
+         * @param <V> the service value type
+         * @param provider provides the service value
+         * @return a service installer builder
+         */
+        static <V extends NonBlockingLifecycle> NonBlockingLifecycleBuilder<V> of(Supplier<CompletionStage<V>> provider) {
+            return new DefaultNonBlockingLifecycleBuilder<>(NonBlockingBuilder.of(provider).withLifecycle(Function.identity()));
+        }
+    }
+
+    /**
+     * Implemented by builders with asynchronous service support.
      * @param <B> the builder type
-     * @deprecated Superseded by {@link ServiceInstaller.BlockingBuilder#async(Supplier, Supplier)}.
+     * @deprecated Superseded by {@link ServiceInstaller.BlockingLifecycleBuilder#of(Supplier, ServiceDependency)}.
      */
     @Deprecated(forRemoval = true, since = "32.0")
     interface AsyncBuilder<B> {
@@ -379,7 +372,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
         }
     }
 
-    class DefaultBlockingBuilder<T, V> extends AbstractBlockingValueBuilder<BlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements BlockingBuilder<T, V> {
+    class DefaultBlockingBuilder<T, V> extends AbstractBlockingLifecycleBuilder<BlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements BlockingBuilder<T, V> {
 
         <R> DefaultBlockingBuilder(DefaultBlockingBuilder<T, R> builder, Function<? super R, ? extends V> mapper) {
             super(builder, mapper);
@@ -405,7 +398,7 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
         }
     }
 
-    class DefaultNonBlockingBuilder<T, V> extends AbstractNonBlockingValueBuilder<NonBlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements NonBlockingBuilder<T, V> {
+    class DefaultNonBlockingBuilder<T, V> extends AbstractNonBlockingLifecycleBuilder<NonBlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements NonBlockingBuilder<T, V> {
 
         private <R> DefaultNonBlockingBuilder(DefaultNonBlockingBuilder<T, R> builder, Function<? super R, ? extends V> mapper) {
             super(builder, mapper);
@@ -431,15 +424,15 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
         }
     }
 
-    class DefaultAsyncBlockingBuilder<T, V> extends AbstractAsyncBlockingValueBuilder<BlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements BlockingBuilder<T, V> {
+    class AsyncBlockingBuilder<T, V> extends AbstractAsyncBlockingLifecycleBuilder<BlockingBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements BlockingBuilder<T, V> {
         private final NonBlockingBuilder<T, V> builder;
         private final Supplier<Executor> executor;
 
-        DefaultAsyncBlockingBuilder(Supplier<T> provider, Function<? super T, ? extends V> mapper, Supplier<Executor> executor) {
-            this(new DefaultNonBlockingBuilder<>(compose(provider, executor), mapper), executor);
+        AsyncBlockingBuilder(Supplier<T> provider, Function<? super T, ? extends V> mapper, ServiceDependency<Executor> executor) {
+            this(new DefaultNonBlockingBuilder<T, V>(compose(provider, executor), mapper).requires(executor), executor);
         }
 
-        private DefaultAsyncBlockingBuilder(NonBlockingBuilder<T, V> builder, Supplier<Executor> executor) {
+        private AsyncBlockingBuilder(NonBlockingBuilder<T, V> builder, Supplier<Executor> executor) {
             super(builder, executor);
             this.builder = builder;
             this.executor = executor;
@@ -451,66 +444,51 @@ public interface ServiceInstaller extends Installer<ServiceTarget> {
         }
 
         @Override
-        public <R> DefaultAsyncBlockingBuilder<T, R> map(Function<? super V, ? extends R> mapper) {
-            return new DefaultAsyncBlockingBuilder<T, R>(this.builder.map(mapper), this.executor);
+        public <R> AsyncBlockingBuilder<T, R> map(Function<? super V, ? extends R> mapper) {
+            return new AsyncBlockingBuilder<>(this.builder.map(mapper), this.executor);
         }
     }
 
-    class DefaultBlockingLifecycleBuilder<T extends BlockingLifecycle, V> extends AbstractBlockingLifecycleValueBuilder<BlockingLifecycleBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements BlockingLifecycleBuilder<T, V> {
+    class DefaultBlockingLifecycleBuilder<T extends BlockingLifecycle, V> extends AbstractValueBuilderDecorator<BlockingLifecycleBuilder<V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, V> implements BlockingLifecycleBuilder<V> {
         private final BlockingBuilder<T, V> builder;
 
-        DefaultBlockingLifecycleBuilder(Supplier<T> provider, Function<? super T, ? extends V> mapper) {
-            this(new DefaultBlockingBuilder<>(provider, mapper));
-            this.builder.withLifecycle(Function.identity());
-        }
-
-        DefaultBlockingLifecycleBuilder(Supplier<T> provider, Function<? super T, ? extends V> mapper, Supplier<Executor> executor) {
-            this(new DefaultAsyncBlockingBuilder<>(provider, mapper, executor));
-            this.builder.withLifecycle(Function.identity());
-        }
-
-        private DefaultBlockingLifecycleBuilder(BlockingBuilder<T, V> builder) {
+        DefaultBlockingLifecycleBuilder(BlockingBuilder<T, V> builder) {
             super(builder);
             this.builder = builder;
         }
 
         @Override
-        public BlockingLifecycleBuilder<T, V> get() {
+        public BlockingLifecycleBuilder<V> get() {
             return this;
         }
 
         @Override
-        public <R> BlockingLifecycleBuilder<T, R> map(Function<? super V, ? extends R> mapper) {
+        public <R> BlockingLifecycleBuilder<R> map(Function<? super V, ? extends R> mapper) {
             return new DefaultBlockingLifecycleBuilder<>(this.builder.map(mapper));
         }
     }
 
-    class DefaultNonBlockingLifecycleBuilder<T extends NonBlockingLifecycle, V> extends AbstractNonBlockingLifecycleValueBuilder<NonBlockingLifecycleBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements NonBlockingLifecycleBuilder<T, V> {
+    class DefaultNonBlockingLifecycleBuilder<T extends NonBlockingLifecycle, V> extends AbstractValueBuilderDecorator<NonBlockingLifecycleBuilder<V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, V> implements NonBlockingLifecycleBuilder<V> {
         private final NonBlockingBuilder<T, V> builder;
 
-        DefaultNonBlockingLifecycleBuilder(Supplier<CompletionStage<T>> provider, Function<? super T, ? extends V> mapper) {
-            this(new DefaultNonBlockingBuilder<>(provider, mapper));
-            this.builder.withLifecycle(Function.identity());
-        }
-
-        private DefaultNonBlockingLifecycleBuilder(NonBlockingBuilder<T, V> builder) {
+        DefaultNonBlockingLifecycleBuilder(NonBlockingBuilder<T, V> builder) {
             super(builder);
             this.builder = builder;
         }
 
         @Override
-        public NonBlockingLifecycleBuilder<T, V> get() {
+        public NonBlockingLifecycleBuilder<V> get() {
             return this;
         }
 
         @Override
-        public <R> NonBlockingLifecycleBuilder<T, R> map(Function<? super V, ? extends R> mapper) {
+        public <R> NonBlockingLifecycleBuilder<R> map(Function<? super V, ? extends R> mapper) {
             return new DefaultNonBlockingLifecycleBuilder<>(this.builder.map(mapper));
         }
     }
 
     @Deprecated
-    class LegacyBlockingBuilder<T, V> extends AbstractAsyncBlockingValueBuilder<UnaryBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements UnaryBuilder<T, V> {
+    class LegacyBlockingBuilder<T, V> extends AbstractAsyncBlockingLifecycleBuilder<UnaryBuilder<T, V>, ServiceInstaller, ServiceTarget, ServiceBuilder<?>, T, V> implements UnaryBuilder<T, V> {
         private static final Supplier<Executor> DEFAULT_EXECUTOR = Functions.constantSupplier(Runnable::run);
 
         private final AtomicReference<Supplier<Executor>> reference;

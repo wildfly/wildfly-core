@@ -4,14 +4,12 @@
  */
 package org.wildfly.service;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -196,7 +194,7 @@ public interface Installer<ST extends ServiceTarget> {
      * @param <SB> the service builder type
      * @param <V> the service value type
      */
-    interface ValueBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, V> extends Builder<B, I, ST, SB> {
+    interface ValueBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, V> extends Builder<B, I, ST, SB>, Mappable<V> {
         /**
          * Configures the {@link ServiceName} of the value provided by this service.
          * @param name a service name
@@ -213,18 +211,26 @@ public interface Installer<ST extends ServiceTarget> {
     }
 
     /**
-     * Builds an installer of a service providing a mappable value.
+     * Builds an installer of a service providing a value with a configurable lifecycle.
      * @param <B> the builder type
      * @param <I> the installer type
      * @param <ST> the service target type
      * @param <SB> the service builder type
+     * @param <T> the source value type
+     * @param <L> the lifecycle type
      * @param <V> the provided value type
      */
-    interface MappableValueBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, V> extends ValueBuilder<B, I, ST, SB, V>, Mappable<V> {
+    interface LifecycleBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, L extends Lifecycle, V> extends ValueBuilder<B, I, ST, SB, V> {
+        /**
+         * Configures the lifecycle of the provided value.
+         * @param lifecycle a function returning the lifecycle of a provided value
+         * @return a reference to this builder
+         */
+        B withLifecycle(Function<? super T, ? extends L> lifecycle);
     }
 
     /**
-     * Builds an installer of a service derived from a value with a configurable blocking lifecycle.
+     * Builds an installer of a service providing a value with a configurable blocking lifecycle.
      * @param <B> the builder type
      * @param <I> the installer type
      * @param <ST> the service target type
@@ -232,7 +238,43 @@ public interface Installer<ST extends ServiceTarget> {
      * @param <T> the source value type
      * @param <V> the provided value type
      */
-    interface BlockingValueBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends MappableValueBuilder<B, I, ST, SB, V> {
+    interface BlockingLifecycleBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends LifecycleBuilder<B, I, ST, SB, T, BlockingLifecycle, V> {
+    }
+
+    /**
+     * Builds an installer of a service providing a value with a configurable blocking non-lifecycle.
+     * @param <B> the builder type
+     * @param <I> the installer type
+     * @param <ST> the service target type
+     * @param <SB> the service builder type
+     * @param <T> the source value type
+     * @param <V> the provided value type
+     */
+    interface NonBlockingLifecycleBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends LifecycleBuilder<B, I, ST, SB, T, NonBlockingLifecycle, V> {
+    }
+
+    /**
+     * Implemented by builders with blocking service support.
+     * @param <B> the builder type
+     * @deprecated Superseded by {@link BlockingLifecycleBuilder}.
+     */
+    @Deprecated(forRemoval = true, since = "32.0")
+    interface BlockingBuilder<B> {
+        /**
+         * Indicates that the installed service performs blocking operations on start and/or stop, and should be instrumented accordingly.
+         * @return a reference to this builder
+         */
+        B blocking();
+    }
+
+    /**
+     * Builds a {@link ServiceInstaller} whose service provides a single value.
+     * @param <T> the source value type
+     * @param <V> the service value type
+     * @deprecated Superseded by {@link BlockingLifecycleBuilder}.
+     */
+    @Deprecated(forRemoval = true, since = "32.0")
+    interface UnaryBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends BlockingLifecycleBuilder<B, I, ST, SB, T, V> {
         /**
          * Configures a task to run on {@link org.jboss.msc.Service#start(org.jboss.msc.service.StartContext)}.
          * @param start specifies an operation that must complete before the service value is available
@@ -251,95 +293,6 @@ public interface Installer<ST extends ServiceTarget> {
             return this.withLifecycle(BlockingLifecycle.compose(Functions.discardingConsumer(), stop));
         }
 
-        /**
-         * Configures a blocking lifecycle of the provided value.
-         * @param lifecycle a function returning the blocking lifecycle of the provided value
-         * @return a reference to this builder
-         */
-        B withLifecycle(Function<? super T, ? extends BlockingLifecycle> lifecycle);
-    }
-
-    /**
-     * Builds an installer of a service derived from a value with a configurable non-blocking lifecycle.
-     * @param <B> the builder type
-     * @param <I> the installer type
-     * @param <ST> the service target type
-     * @param <SB> the service builder type
-     * @param <T> the source value type
-     * @param <V> the provided value type
-     */
-    interface NonBlockingValueBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends MappableValueBuilder<B, I, ST, SB, V> {
-        /**
-         * Configures a task to run on {@link org.jboss.msc.Service#start(org.jboss.msc.service.StartContext)}.
-         * @param start specifies a stage that must complete before the service value is available
-         * @return a reference to this builder
-         */
-        default B onStart(Function<? super T, CompletionStage<Void>> start) {
-            return this.withLifecycle(NonBlockingLifecycle.compose(start, DiscardingFunction.complete()));
-        }
-
-        /**
-         * Configures a task to run on {@link org.jboss.msc.Service#stop(org.jboss.msc.service.StopContext)}.
-         * @param stop specifies a stage that must complete when the service value is no longer available
-         * @return a reference to this builder
-         */
-        default B onStop(Function<? super T, CompletionStage<Void>> stop) {
-            return this.withLifecycle(NonBlockingLifecycle.compose(DiscardingFunction.complete(), stop));
-        }
-
-        /**
-         * Configures a blocking lifecycle of the provided value.
-         * @param lifecycle a function returning the blocking lifecycle of the provided value
-         * @return a reference to this builder
-         */
-        B withLifecycle(Function<? super T, ? extends NonBlockingLifecycle> lifecycle);
-    }
-
-    /**
-     * Builds an installer of a service derived from a value with a blocking lifecycle.
-     * @param <B> the builder type
-     * @param <I> the installer type
-     * @param <ST> the service target type
-     * @param <SB> the service builder type
-     * @param <T> the source value type
-     * @param <V> the provided value type
-     */
-    interface BlockingLifecycleValueBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T extends BlockingLifecycle, V> extends MappableValueBuilder<B, I, ST, SB, V> {
-    }
-
-    /**
-     * Builds an installer of a service derived from a value with a non-blocking lifecycle.
-     * @param <B> the builder type
-     * @param <I> the installer type
-     * @param <ST> the service target type
-     * @param <SB> the service builder type
-     * @param <T> the source value type
-     * @param <V> the provided value type
-     */
-    interface NonBlockingLifecycleValueBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T extends NonBlockingLifecycle, V> extends MappableValueBuilder<B, I, ST, SB, V> {
-    }
-
-    /**
-     * Implemented by builders with blocking service support.
-     * @param <B> the builder type
-     */
-    @Deprecated(forRemoval = true, since = "32.0")
-    interface BlockingBuilder<B> {
-        /**
-         * Indicates that the installed service performs blocking operations on start and/or stop, and should be instrumented accordingly.
-         * @return a reference to this builder
-         */
-        B blocking();
-    }
-
-    /**
-     * Builds a {@link ServiceInstaller} whose service provides a single value.
-     * @param <T> the source value type
-     * @param <V> the service value type
-     * @deprecated Superseded by {@link BlockingValueBuilder}.
-     */
-    @Deprecated(forRemoval = true, since = "32.0")
-    interface UnaryBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends BlockingValueBuilder<B, I, ST, SB, T, V> {
         @Override
         default <R> Mappable<R> map(Function<? super V, ? extends R> mapper) {
             // Legacy builders do not support fluent mapping
@@ -551,153 +504,69 @@ public interface Installer<ST extends ServiceTarget> {
         }
     }
 
-    abstract class AbstractBlockingValueBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends AbstractValueBuilder<B, I, ST, SB, T, V> implements BlockingValueBuilder<B, I, ST, SB, T, V> {
-        private final Supplier<T> provider;
-        private final List<Function<? super T, ? extends BlockingLifecycle>> lifecycles;
+    abstract class AbstractLifecycleBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, L extends Lifecycle, V> extends AbstractValueBuilder<B, I, ST, SB, T, V> implements LifecycleBuilder<B, I, ST, SB, T, L, V> {
+        private final List<Function<? super T, ? extends L>> lifecycles;
+        private final Function<List<Function<? super T, ? extends L>>, Function<T, L>> lifecycleCompositor;
+        private final BiFunction<Function<? super T, ? extends L>, Consumer<T>, Service> serviceFactory;
 
-        protected <R> AbstractBlockingValueBuilder(AbstractBlockingValueBuilder<?, I, ST, SB, T, R> builder, Function<? super R, ? extends V> mapper) {
+        protected <R> AbstractLifecycleBuilder(AbstractLifecycleBuilder<?, I, ST, SB, T, L, R> builder, Function<? super R, ? extends V> mapper) {
             super(builder, mapper);
-            this.provider = builder.provider;
             this.lifecycles = builder.lifecycles;
+            this.lifecycleCompositor = builder.lifecycleCompositor;
+            this.serviceFactory = builder.serviceFactory;
         }
 
-        protected AbstractBlockingValueBuilder(Supplier<T> provider, Function<? super T, ? extends V> mapper) {
+        protected AbstractLifecycleBuilder(Function<? super T, ? extends V> mapper, Function<List<Function<? super T, ? extends L>>, Function<T, L>> lifecycleCompositor, BiFunction<Function<? super T, ? extends L>, Consumer<T>, Service> serviceFactory) {
             super(mapper);
-            this.provider = provider;
+            this.lifecycleCompositor = lifecycleCompositor;
+            this.serviceFactory = serviceFactory;
             this.lifecycles = new LinkedList<>();
         }
 
         @Override
-        public B withLifecycle(Function<? super T, ? extends BlockingLifecycle> lifecycle) {
+        public B withLifecycle(Function<? super T, ? extends L> lifecycle) {
             this.lifecycles.add(lifecycle);
             return this.get();
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public Service apply(Consumer<T> captor) {
-            return new BlockingValueService<T>(this.provider, this.getLifecycleFactory(), captor);
-        }
-
-        private Function<? super T, ? extends BlockingLifecycle> getLifecycleFactory() {
-            List<Function<? super T, ? extends BlockingLifecycle>> factories = List.copyOf(this.lifecycles);
-            return (factories.size() == 1) ? factories.get(0) : new Function<>() {
-                @Override
-                public BlockingLifecycle apply(T value) {
-                    if (factories.isEmpty()) return BlockingLifecycle.NONE;
-                    List<BlockingLifecycle> lifecycles = new ArrayList<>(factories.size());
-                    for (Function<? super T, ? extends BlockingLifecycle> factory : factories) {
-                        lifecycles.add(factory.apply(value));
-                    }
-                    return new BlockingLifecycle() {
-                        @Override
-                        public boolean isStarted() {
-                            return lifecycles.stream().allMatch(Lifecycle::isStarted);
-                        }
-
-                        @Override
-                        public boolean isStopped() {
-                            return lifecycles.stream().allMatch(Lifecycle::isStopped);
-                        }
-
-                        @Override
-                        public void start() {
-                            for (BlockingLifecycle lifecycle : lifecycles) {
-                                if (lifecycle.isStopped()) {
-                                    lifecycle.start();
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void stop() {
-                            ListIterator<BlockingLifecycle> iterator = lifecycles.listIterator(lifecycles.size());
-                            while (iterator.hasPrevious()) {
-                                BlockingLifecycle lifecycle = iterator.previous();
-                                if (lifecycle.isStarted()) {
-                                    lifecycle.stop();
-                                }
-                            }
-                        }
-                    };
-                }
-            };
+            List<Function<? super T, ? extends L>> lifecycles = List.copyOf(this.lifecycles);
+            Function<T, L> lifecycle = (lifecycles.size() == 1) ? (Function<T, L>) lifecycles.get(0) : this.lifecycleCompositor.apply(lifecycles);
+            return this.serviceFactory.apply(lifecycle, captor);
         }
     }
 
-    abstract class AbstractNonBlockingValueBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends AbstractValueBuilder<B, I, ST, SB, T, V> implements NonBlockingValueBuilder<B, I, ST, SB, T, V> {
-        private final Supplier<CompletionStage<T>> provider;
-        private final List<Function<? super T, ? extends NonBlockingLifecycle>> lifecycles;
+    abstract class AbstractBlockingLifecycleBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends AbstractLifecycleBuilder<B, I, ST, SB, T, BlockingLifecycle, V> implements BlockingLifecycleBuilder<B, I, ST, SB, T, V> {
 
-        protected <R> AbstractNonBlockingValueBuilder(AbstractNonBlockingValueBuilder<?, I, ST, SB, T, R> builder, Function<? super R, ? extends V> mapper) {
+        protected <R> AbstractBlockingLifecycleBuilder(AbstractBlockingLifecycleBuilder<?, I, ST, SB, T, R> builder, Function<? super R, ? extends V> mapper) {
             super(builder, mapper);
-            this.provider = builder.provider;
-            this.lifecycles = builder.lifecycles;
         }
 
-        protected AbstractNonBlockingValueBuilder(Supplier<CompletionStage<T>> provider, Function<? super T, ? extends V> mapper) {
-            super(mapper);
-            this.provider = provider;
-            this.lifecycles = new LinkedList<>();
-        }
-
-        @Override
-        public B withLifecycle(Function<? super T, ? extends NonBlockingLifecycle> lifecycle) {
-            this.lifecycles.add(lifecycle);
-            return this.get();
-        }
-
-        @Override
-        public Service apply(Consumer<T> captor) {
-            return new NonBlockingValueService<T>(this.provider, this.getLifecycleFactory(), captor);
-        }
-
-        private Function<? super T, ? extends NonBlockingLifecycle> getLifecycleFactory() {
-            List<Function<? super T, ? extends NonBlockingLifecycle>> factories = List.copyOf(this.lifecycles);
-            return (factories.size() == 1) ? factories.get(0) : new Function<>() {
+        protected AbstractBlockingLifecycleBuilder(Supplier<T> provider, Function<? super T, ? extends V> mapper) {
+            super(mapper, BlockingLifecycle::combine, new BiFunction<>() {
                 @Override
-                public NonBlockingLifecycle apply(T value) {
-                    if (factories.isEmpty()) return NonBlockingLifecycle.NONE;
-                    List<NonBlockingLifecycle> lifecycles = new ArrayList<>(factories.size());
-                    for (Function<? super T, ? extends NonBlockingLifecycle> factory : factories) {
-                        lifecycles.add(factory.apply(value));
-                    }
-                    return new NonBlockingLifecycle() {
-                        @Override
-                        public boolean isStarted() {
-                            return lifecycles.stream().allMatch(Lifecycle::isStarted);
-                        }
-
-                        @Override
-                        public boolean isStopped() {
-                            return lifecycles.stream().allMatch(Lifecycle::isStopped);
-                        }
-
-                        @Override
-                        public CompletionStage<Void> start() {
-                            CompletionStage<Void> result = COMPLETED;
-                            for (NonBlockingLifecycle lifecycle : lifecycles) {
-                                if (lifecycle.isStopped()) {
-                                    result = result.thenCompose(ignore -> lifecycle.start());
-                                }
-                            }
-                            return result;
-                        }
-
-                        @Override
-                        public CompletionStage<Void> stop() {
-                            CompletionStage<Void> result = COMPLETED;
-                            ListIterator<NonBlockingLifecycle> iterator = lifecycles.listIterator(lifecycles.size());
-                            while (iterator.hasPrevious()) {
-                                NonBlockingLifecycle lifecycle = iterator.previous();
-                                if (lifecycle.isStarted()) {
-                                    result = result.thenCompose(ignore -> lifecycle.stop());
-                                }
-                            }
-                            return result;
-                        }
-                    };
+                public Service apply(Function<? super T, ? extends BlockingLifecycle> lifecycle, Consumer<T> captor) {
+                    return new BlockingValueService<>(provider, lifecycle, captor);
                 }
-            };
+            });
+        }
+    }
+
+    abstract class AbstractNonBlockingLifecycleBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends AbstractLifecycleBuilder<B, I, ST, SB, T, NonBlockingLifecycle, V> implements NonBlockingLifecycleBuilder<B, I, ST, SB, T, V> {
+
+        protected <R> AbstractNonBlockingLifecycleBuilder(AbstractNonBlockingLifecycleBuilder<?, I, ST, SB, T, R> builder, Function<? super R, ? extends V> mapper) {
+            super(builder, mapper);
+        }
+
+        protected AbstractNonBlockingLifecycleBuilder(Supplier<CompletionStage<T>> provider, Function<? super T, ? extends V> mapper) {
+            super(mapper, NonBlockingLifecycle::combine, new BiFunction<>() {
+                @Override
+                public Service apply(Function<? super T, ? extends NonBlockingLifecycle> lifecycle, Consumer<T> captor) {
+                    return new NonBlockingValueService<>(provider, lifecycle, captor);
+                }
+            });
         }
     }
 
@@ -747,7 +616,7 @@ public interface Installer<ST extends ServiceTarget> {
     abstract class AbstractValueBuilderDecorator<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, V> extends AbstractBuilderDecorator<B, I, ST, SB> implements ValueBuilder<B, I, ST, SB, V> {
         private final ValueBuilder<?, I, ST, SB, V> builder;
 
-        AbstractValueBuilderDecorator(ValueBuilder<?, I, ST, SB, V> builder) {
+        protected AbstractValueBuilderDecorator(ValueBuilder<?, I, ST, SB, V> builder) {
             super(builder);
             this.builder = builder;
         }
@@ -765,51 +634,37 @@ public interface Installer<ST extends ServiceTarget> {
         }
     }
 
-    abstract class AbstractBlockingValueBuilderDecorator<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends AbstractValueBuilderDecorator<B, I, ST, SB, V> implements BlockingValueBuilder<B, I, ST, SB, T, V> {
-        private final BlockingValueBuilder<?, I, ST, SB, T, V> builder;
+    abstract class AbstractLifecycleBuilderDecorator<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, L extends Lifecycle, V> extends AbstractValueBuilderDecorator<B, I, ST, SB, V> implements LifecycleBuilder<B, I, ST, SB, T, L, V> {
+        private final LifecycleBuilder<?, I, ST, SB, T, L, V> builder;
 
-        AbstractBlockingValueBuilderDecorator(BlockingValueBuilder<?, I, ST, SB, T, V> builder) {
+        protected AbstractLifecycleBuilderDecorator(LifecycleBuilder<?, I, ST, SB, T, L, V> builder) {
             super(builder);
             this.builder = builder;
         }
 
         @Override
-        public B withLifecycle(Function<? super T, ? extends BlockingLifecycle> lifecycle) {
+        public B withLifecycle(Function<? super T, ? extends L> lifecycle) {
             this.builder.withLifecycle(lifecycle);
             return this.get();
         }
     }
 
-    abstract class AbstractBlockingLifecycleValueBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T extends BlockingLifecycle, V> extends AbstractValueBuilderDecorator<B, I, ST, SB, V> implements BlockingLifecycleValueBuilder<B, I, ST, SB, T, V> {
+    abstract class AbstractBlockingLifecycleBuilderDecorator<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends AbstractLifecycleBuilderDecorator<B, I, ST, SB, T, BlockingLifecycle, V> implements BlockingLifecycleBuilder<B, I, ST, SB, T, V> {
 
-        protected AbstractBlockingLifecycleValueBuilder(BlockingValueBuilder<?, I, ST, SB, T, V> builder) {
+        protected AbstractBlockingLifecycleBuilderDecorator(BlockingLifecycleBuilder<?, I, ST, SB, T, V> builder) {
             super(builder);
         }
     }
 
-    abstract class AbstractNonBlockingValueBuilderDecorator<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends AbstractValueBuilderDecorator<B, I, ST, SB, V> implements NonBlockingValueBuilder<B, I, ST, SB, T, V> {
-        private final NonBlockingValueBuilder<?, I, ST, SB, T, V> builder;
+    abstract class AbstractNonBlockingLifecycleBuilderDecorator<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends AbstractLifecycleBuilderDecorator<B, I, ST, SB, T, NonBlockingLifecycle, V> implements NonBlockingLifecycleBuilder<B, I, ST, SB, T, V> {
 
-        AbstractNonBlockingValueBuilderDecorator(NonBlockingValueBuilder<?, I, ST, SB, T, V> builder) {
-            super(builder);
-            this.builder = builder;
-        }
-
-        @Override
-        public B withLifecycle(Function<? super T, ? extends NonBlockingLifecycle> lifecycle) {
-            this.builder.withLifecycle(lifecycle);
-            return this.get();
-        }
-    }
-
-    abstract class AbstractNonBlockingLifecycleValueBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T extends NonBlockingLifecycle, V> extends AbstractValueBuilderDecorator<B, I, ST, SB, V> implements NonBlockingLifecycleValueBuilder<B, I, ST, SB, T, V> {
-
-        protected AbstractNonBlockingLifecycleValueBuilder(NonBlockingValueBuilder<?, I, ST, SB, T, V> builder) {
+        protected AbstractNonBlockingLifecycleBuilderDecorator(NonBlockingLifecycleBuilder<?, I, ST, SB, T, V> builder) {
             super(builder);
         }
     }
 
-    abstract class AbstractAsyncBlockingValueBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends AbstractValueBuilderDecorator<B, I, ST, SB, V> implements BlockingValueBuilder<B, I, ST, SB, T, V> {
+    // A blocking facade to a non-blocking builder
+    abstract class AbstractAsyncBlockingLifecycleBuilder<B, I extends Installer<ST>, ST extends ServiceTarget, SB extends ServiceBuilder<?>, T, V> extends AbstractValueBuilderDecorator<B, I, ST, SB, V> implements BlockingLifecycleBuilder<B, I, ST, SB, T, V> {
         protected static <T> Supplier<CompletionStage<T>> compose(Supplier<T> provider, Supplier<Executor> executor) {
             return new Supplier<>() {
                 @Override
@@ -824,10 +679,10 @@ public interface Installer<ST extends ServiceTarget> {
             };
         }
 
-        private final NonBlockingValueBuilder<?, I, ST, SB, T, V> builder;
+        private final NonBlockingLifecycleBuilder<?, I, ST, SB, T, V> builder;
         private final Supplier<Executor> executor;
 
-        protected AbstractAsyncBlockingValueBuilder(NonBlockingValueBuilder<?, I, ST, SB, T, V> builder, Supplier<Executor> executor) {
+        protected AbstractAsyncBlockingLifecycleBuilder(NonBlockingLifecycleBuilder<?, I, ST, SB, T, V> builder, Supplier<Executor> executor) {
             super(builder);
             this.builder = builder;
             this.executor = executor;
@@ -896,7 +751,7 @@ public interface Installer<ST extends ServiceTarget> {
         private final Function<? super T, ? extends BlockingLifecycle> lifecycleProvider;
         private final Consumer<? super T> captor;
 
-        private final AtomicReference<BlockingLifecycle> lifecycle = new AtomicReference<>();
+        private final AtomicReference<BlockingLifecycle> reference = new AtomicReference<>();
 
         BlockingValueService(Supplier<T> provider, Function<? super T, ? extends BlockingLifecycle> lifecycleProvider, Consumer<? super T> captor) {
             this.provider = provider;
@@ -909,7 +764,7 @@ public interface Installer<ST extends ServiceTarget> {
             try {
                 T value = this.provider.get();
                 BlockingLifecycle lifecycle = this.lifecycleProvider.apply(value);
-                this.lifecycle.set(lifecycle);
+                this.reference.set(lifecycle);
                 if (lifecycle.isStopped()) {
                     lifecycle.start();
                 }
@@ -922,12 +777,13 @@ public interface Installer<ST extends ServiceTarget> {
         @Override
         public void stop(StopContext context) {
             this.captor.accept(null);
-            BlockingLifecycle lifecycle = this.lifecycle.getAndSet(null);
-            if ((lifecycle != null) && lifecycle.isStarted()) {
-                try {
-                    lifecycle.stop();
-                } catch (Throwable e) {
-                    LOGGER.warn(e.getLocalizedMessage(), e);
+            try (BlockingLifecycle lifecycle = this.reference.getAndSet(null)) {
+                if ((lifecycle != null) && lifecycle.isStarted()) {
+                    try {
+                        lifecycle.stop();
+                    } catch (Throwable e) {
+                        LOGGER.warn(e.getLocalizedMessage(), e);
+                    }
                 }
             }
         }
@@ -972,8 +828,12 @@ public interface Installer<ST extends ServiceTarget> {
         public void stop(StopContext context) {
             this.captor.accept(null);
             NonBlockingLifecycle lifecycle = this.reference.getAndSet(null);
-            if ((lifecycle != null) && lifecycle.isStarted()) {
-                lifecycle.stop().whenComplete((ignore, e) -> {
+            if (lifecycle != null) {
+                CompletionStage<Void> stop = lifecycle.isStarted() ? lifecycle.stop().exceptionally(e -> {
+                        LOGGER.warn(e.getLocalizedMessage(), e);
+                        return null;
+                    }) : NonBlockingLifecycle.COMPLETED;
+                stop.thenCompose(new DiscardingFunction<>(lifecycle::close)).whenComplete((ignore, e) -> {
                     if (e != null) {
                         LOGGER.warn(e.getLocalizedMessage(), e);
                     }

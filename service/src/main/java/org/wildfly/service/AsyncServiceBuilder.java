@@ -19,7 +19,7 @@ import org.jboss.msc.service.StopContext;
  * A {@link ServiceBuilder} decorator whose installed {@link Service} will start and/or stop asynchronously.
  * This both reduces boilerplate code, and ensures that service implementors implement async behavior correctly.
  * @author Paul Ferraro
- * @deprecated Superseded by {@link ServiceInstaller.BlockingBuilder#async(Supplier, Supplier)}.
+ * @deprecated Superseded by {@link ServiceInstaller.BlockingBuilder#of(Supplier, ServiceDependency)}.
  */
 @Deprecated(forRemoval = true)
 public class AsyncServiceBuilder<T> extends DelegatingServiceBuilder<T> {

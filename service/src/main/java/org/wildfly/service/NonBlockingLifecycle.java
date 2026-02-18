@@ -5,6 +5,9 @@
 
 package org.wildfly.service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -33,6 +36,15 @@ public interface NonBlockingLifecycle extends Lifecycle {
      * @return a stage that completes when stopped.
      */
     CompletionStage<Void> stop();
+
+    /**
+     * Initiates close behaviour.
+     * {@link #isClosed()} should return true after the returned stage completes, either successfully or exceptionally.
+     * @return a stage that completes when closed.
+     */
+    default CompletionStage<Void> close() {
+        return COMPLETED;
+    }
 
     /**
      * A non-blocking lifecycle that performs no actions on start/stop.
@@ -78,6 +90,11 @@ public interface NonBlockingLifecycle extends Lifecycle {
             }
 
             @Override
+            public boolean isClosed() {
+                return lifecycle.isClosed();
+            }
+
+            @Override
             public CompletionStage<Void> start() {
                 try {
                     return CompletableFuture.runAsync(lifecycle::start, executor);
@@ -94,6 +111,16 @@ public interface NonBlockingLifecycle extends Lifecycle {
                 } catch (RejectedExecutionException e) {
                     // Resort to work-stealing via common fork-join pool, if necessary
                     return CompletableFuture.runAsync(lifecycle::stop);
+                }
+            }
+
+            @Override
+            public CompletionStage<Void> close() {
+                try {
+                    return CompletableFuture.runAsync(lifecycle::close, executor);
+                } catch (RejectedExecutionException e) {
+                    // Resort to work-stealing via common fork-join pool, if necessary
+                    return CompletableFuture.runAsync(lifecycle::close);
                 }
             }
         };
@@ -118,11 +145,33 @@ public interface NonBlockingLifecycle extends Lifecycle {
     /**
      * Composes a non-blocking lifecycle with the specified start/stop behaviour.
      * @param <T> the operating type
+     * @param close a provider of non-blocking close behaviour
+     * @return a non-blocking lifecycle with the specified start/stop behaviour.
+     */
+    static <T> Function<T, NonBlockingLifecycle> compose(Function<T, CompletionStage<Void>> close) {
+        return compose(DiscardingFunction.complete(), DiscardingFunction.complete(), close);
+    }
+
+    /**
+     * Composes a non-blocking lifecycle with the specified start/stop behaviour.
+     * @param <T> the operating type
      * @param start a provider of non-blocking start behaviour
      * @param stop a provider of non-blocking stop behaviour
      * @return a non-blocking lifecycle with the specified start/stop behaviour.
      */
     static <T> Function<T, NonBlockingLifecycle> compose(Function<T, CompletionStage<Void>> start, Function<T, CompletionStage<Void>> stop) {
+        return compose(start, stop, DiscardingFunction.complete());
+    }
+
+    /**
+     * Composes a non-blocking lifecycle with the specified start/stop behaviour.
+     * @param <T> the operating type
+     * @param start a provider of non-blocking start behaviour
+     * @param stop a provider of non-blocking stop behaviour
+     * @param close a provider of non-blocking close behaviour
+     * @return a non-blocking lifecycle with the specified start/stop behaviour.
+     */
+    static <T> Function<T, NonBlockingLifecycle> compose(Function<T, CompletionStage<Void>> start, Function<T, CompletionStage<Void>> stop, Function<T, CompletionStage<Void>> close) {
         return new Function<>() {
             @Override
             public NonBlockingLifecycle apply(T value) {
@@ -140,15 +189,100 @@ public interface NonBlockingLifecycle extends Lifecycle {
                     }
 
                     @Override
+                    public boolean isClosed() {
+                        return this.state.get() == State.CLOSED;
+                    }
+
+                    @Override
                     public CompletionStage<Void> start() {
                         // If start fails, reset state
-                        return this.state.compareAndSet(State.STOPPED, State.STARTING) ? start.apply(value).whenComplete((ignore, exception) -> this.state.set((exception == null) ? State.STARTED : State.STOPPED)) : COMPLETED;
+                        return this.state.compareAndSet(State.STOPPED, State.STARTING) ? start.apply(value).whenComplete((ignore, exception) -> this.state.compareAndSet(State.STARTING, (exception == null) ? State.STARTED : State.STOPPED)) : COMPLETED;
                     }
 
                     @Override
                     public CompletionStage<Void> stop() {
                         // Set state to stopped, even if exceptional
-                        return this.state.compareAndSet(State.STARTED, State.STOPPING) ? stop.apply(value).whenComplete((ignore, exception) -> this.state.set(State.STOPPED)) : COMPLETED;
+                        return this.state.compareAndSet(State.STARTED, State.STOPPING) ? stop.apply(value).whenComplete((ignore, exception) -> this.state.compareAndSet(State.STOPPING, State.STOPPED)) : COMPLETED;
+                    }
+
+                    @Override
+                    public CompletionStage<Void> close() {
+                        // Terminal state
+                        return (this.state.getAndSet(State.CLOSED) != State.CLOSED) ? close.apply(value) : COMPLETED;
+                    }
+                };
+            }
+        };
+    }
+
+    /**
+     * Composes a composite lifecycle provider from multiple lifecycle providers.
+     * @param <T> the controlled object type
+     * @param lifecycleProviders a list of lifecycle providers
+     * @return a composite lifecycle provider
+     */
+    static <T> Function<T, NonBlockingLifecycle> combine(List<Function<? super T, ? extends NonBlockingLifecycle>> lifecycleProviders) {
+        return new Function<>() {
+            @Override
+            public NonBlockingLifecycle apply(T value) {
+                if (lifecycleProviders.isEmpty()) return NonBlockingLifecycle.NONE;
+                List<NonBlockingLifecycle> lifecycles = new ArrayList<>(lifecycleProviders.size());
+                for (Function<? super T, ? extends NonBlockingLifecycle> lifecycleProvider : lifecycleProviders) {
+                    lifecycles.add(lifecycleProvider.apply(value));
+                }
+                return new NonBlockingLifecycle() {
+                    @Override
+                    public boolean isStarted() {
+                        return lifecycles.stream().allMatch(Lifecycle::isStarted);
+                    }
+
+                    @Override
+                    public boolean isStopped() {
+                        return lifecycles.stream().allMatch(Lifecycle::isStopped);
+                    }
+
+                    @Override
+                    public boolean isClosed() {
+                        return lifecycles.stream().allMatch(Lifecycle::isClosed);
+                    }
+
+                    @Override
+                    public CompletionStage<Void> start() {
+                        CompletionStage<Void> result = COMPLETED;
+                        for (NonBlockingLifecycle lifecycle : lifecycles) {
+                            if (lifecycle.isStopped()) {
+                                result = result.thenApply(new DiscardingFunction<>(lifecycle)).thenCompose(NonBlockingLifecycle::start);
+                            }
+                        }
+                        return result;
+                    }
+
+                    @Override
+                    public CompletionStage<Void> stop() {
+                        CompletionStage<Void> result = COMPLETED;
+                        // Stop in reverse order
+                        ListIterator<NonBlockingLifecycle> iterator = lifecycles.listIterator(lifecycles.size());
+                        while (iterator.hasPrevious()) {
+                            NonBlockingLifecycle lifecycle = iterator.previous();
+                            if (lifecycle.isStarted()) {
+                                result = result.thenApply(new DiscardingFunction<>(lifecycle)).thenCompose(NonBlockingLifecycle::stop);
+                            }
+                        }
+                        return result;
+                    }
+
+                    @Override
+                    public CompletionStage<Void> close() {
+                        CompletionStage<Void> result = COMPLETED;
+                        // Close in reverse order
+                        ListIterator<NonBlockingLifecycle> iterator = lifecycles.listIterator(lifecycles.size());
+                        while (iterator.hasPrevious()) {
+                            NonBlockingLifecycle lifecycle = iterator.previous();
+                            if (!lifecycle.isClosed()) {
+                                result = result.thenApply(new DiscardingFunction<>(lifecycle)).thenCompose(NonBlockingLifecycle::close);
+                            }
+                        }
+                        return result;
                     }
                 };
             }

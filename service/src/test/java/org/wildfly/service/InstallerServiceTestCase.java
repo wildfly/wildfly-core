@@ -82,6 +82,8 @@ public class InstallerServiceTestCase {
         // Captor should be called before stop
         stopOrder.verify(captor).accept(null);
         stopOrder.verify(lifecycle).stop();
+        stopOrder.verify(lifecycle).close();
+        verifyNoMoreInteractions(lifecycle);
         verifyNoMoreInteractions(provider);
         verifyNoMoreInteractions(lifecycleProvider);
         verifyNoMoreInteractions(captor);
@@ -112,6 +114,7 @@ public class InstallerServiceTestCase {
         CompletableFuture<Object> providerFuture = new CompletableFuture<>();
         CompletableFuture<Void> startFuture = new CompletableFuture<>();
         CompletableFuture<Void> stopFuture = new CompletableFuture<>();
+        CompletableFuture<Void> closeFuture = new CompletableFuture<>();
 
         Service service = new Installer.NonBlockingValueService<>(provider, lifecycleProvider, captor);
 
@@ -125,13 +128,16 @@ public class InstallerServiceTestCase {
         doReturn(true).when(lifecycle).isStarted();
         doReturn(startFuture).when(lifecycle).start();
         doReturn(stopFuture).when(lifecycle).stop();
+        doReturn(closeFuture).when(lifecycle).close();
 
         StartContext startContext = mock(StartContext.class);
+        InOrder startOrder = inOrder(lifecycle, captor, startContext);
 
         service.start(startContext);
 
         verify(provider, only()).get();
-        verify(startContext, only()).asynchronous();
+        startOrder.verify(startContext).asynchronous();
+        verifyNoMoreInteractions(startContext);
         // Verify not yet complete
         verifyNoInteractions(lifecycle);
         verifyNoInteractions(captor);
@@ -142,42 +148,54 @@ public class InstallerServiceTestCase {
         verifyNoMoreInteractions(startContext);
         verifyNoMoreInteractions(provider);
         verify(lifecycleProvider, only()).apply(value);
-        verify(lifecycle).isStopped();
-        verify(lifecycle).start();
+        startOrder.verify(lifecycle).isStopped();
+        startOrder.verify(lifecycle).start();
         verifyNoMoreInteractions(lifecycle);
         verifyNoInteractions(captor);
 
         startFuture.complete(null);
 
         // Verify completion
-        verify(startContext).complete();
-        verifyNoMoreInteractions(startContext);
         verifyNoMoreInteractions(provider);
         verifyNoMoreInteractions(lifecycleProvider);
         verifyNoMoreInteractions(lifecycle);
-        verify(captor, only()).accept(value);
+        startOrder.verify(captor).accept(value);
+        verifyNoMoreInteractions(captor);
+        // Must not complete until lifecycle start completes and value is captured
+        startOrder.verify(startContext).complete();
+        verifyNoMoreInteractions(startContext);
 
         StopContext stopContext = mock(StopContext.class);
-        InOrder stopOrder = inOrder(lifecycle, captor);
+        InOrder stopOrder = inOrder(lifecycle, captor, stopContext);
 
         service.stop(stopContext);
 
-        verify(stopContext).asynchronous();
-        verify(lifecycle).isStarted();
+        // Captor should be called before stop initiates
+        stopOrder.verify(captor).accept(null);
+        verifyNoMoreInteractions(captor);
+        stopOrder.verify(lifecycle).isStarted();
+        stopOrder.verify(lifecycle).stop();
+        verifyNoMoreInteractions(lifecycle);
+        stopOrder.verify(stopContext).asynchronous();
         // Verify not yet complete
         verifyNoMoreInteractions(stopContext);
         verifyNoMoreInteractions(provider);
         verifyNoMoreInteractions(lifecycleProvider);
-        // Captor should be called before stop
-        stopOrder.verify(captor).accept(null);
-        stopOrder.verify(lifecycle).stop();
-        verifyNoMoreInteractions(lifecycle);
-        verifyNoMoreInteractions(captor);
 
         stopFuture.complete(null);
 
+        // Verify not yet complete
+        verifyNoMoreInteractions(stopContext);
+        verifyNoMoreInteractions(provider);
+        verifyNoMoreInteractions(lifecycleProvider);
+        stopOrder.verify(lifecycle).close();
+        verifyNoMoreInteractions(lifecycle);
+        verifyNoMoreInteractions(captor);
+
+        closeFuture.complete(null);
+
         // Verify complete
-        verify(stopContext).complete();
+        stopOrder.verify(stopContext).complete();
         verifyNoMoreInteractions(stopContext);
         verifyNoMoreInteractions(provider);
         verifyNoMoreInteractions(lifecycleProvider);
