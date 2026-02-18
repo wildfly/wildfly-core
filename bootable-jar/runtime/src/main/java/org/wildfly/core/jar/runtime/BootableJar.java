@@ -448,27 +448,41 @@ public final class BootableJar implements ShutdownHandler {
         @Override
         public void run() {
             log.shuttingDown();
-            final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
-                final Thread thread = new Thread(r);
-                thread.setName("installation-cleaner");
-                return thread;
-            });
-            final InstallationCleaner cleaner = new InstallationCleaner(environment, log);
-            executor.submit(cleaner);
-            if (Files.exists(pidFile)) {
-                waitForShutdown();
-            }
-            executor.shutdown();
+            InstallationCleaner cleaner = null;
             try {
-                if (!executor.awaitTermination(environment.getTimeout(), TimeUnit.SECONDS)) {
-                    // For some reason we've timed out. The deletion should likely be executing.
-                    // We can't start a new cleanup to force it. On Windows we would have the side effect to have 2 cleaner processes to
-                    // be executed, with the risk that a new installation has been installed and the new cleaner cleaning the new installation
-                    log.cleanupTimeout(environment.getTimeout(), environment.getJBossHome());
+                cleaner = new InstallationCleaner(environment, log);
+            } catch(IOException ex) {
+                log.failedToStartCleanupProcess(ex, environment.getJBossHome());
+            }
+            if (cleaner != null && !cleaner.isAlreadyRunning()) {
+                final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
+                    final Thread thread = new Thread(r);
+                    thread.setName("installation-cleaner");
+                    return thread;
+                });
+                try {
+                    executor.submit(cleaner);
+                    if (Files.exists(pidFile)) {
+                        waitForShutdown();
+                    }
+                    executor.shutdown();
+                    try {
+                        if (!executor.awaitTermination(environment.getTimeout(), TimeUnit.SECONDS)) {
+                            // For some reason we've timed out. The deletion should likely be executing.
+                            // We can't start a new cleanup to force it. On Windows we would have the side effect to have 2 cleaner processes to
+                            // be executed, with the risk that a new installation has been installed and the new cleaner cleaning the new installation
+                            log.cleanupTimeout(environment.getTimeout(), environment.getJBossHome());
+                        }
+                    } catch (InterruptedException e) {
+                        // The task has been interrupted, leaving
+                        log.cleanupTimeout(environment.getTimeout(), environment.getJBossHome());
+                        Thread.currentThread().interrupt();
+                    }
+                } finally {
+                    if (!executor.isTerminated()) {
+                        executor.shutdownNow();
+                    }
                 }
-            } catch (InterruptedException e) {
-                // The task has been interrupted, leaving
-                log.cleanupTimeout(environment.getTimeout(), environment.getJBossHome());
             }
         }
 
