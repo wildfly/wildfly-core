@@ -29,7 +29,7 @@ interface Lifecycle {
 
     /**
      * Indicates whether or not this object is closed.
-     * @return true, if this object is started, false if started or in the process of stopping.
+     * @return true, if this object is closed, false otherwise.
      */
     default boolean isClosed() {
         return false;
