@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>32.0.0.Beta4</version>
+        <version>32.0.0.Beta5-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-service</artifactId>
