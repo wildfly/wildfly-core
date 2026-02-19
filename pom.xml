@@ -24,6 +24,11 @@
     <description>WildFly: Core Parent Aggregator</description>
     <url>${wildfly.core.scm.url}</url>
 
+    <organization>
+        <name>WildFly</name>
+        <url>https://wildfly.org</url>
+    </organization>
+
     <developers>
         <developer>
             <id>yersan</id>
@@ -48,6 +53,15 @@
         </developer>
         <!-- and many others -->
     </developers>
+
+    <mailingLists>
+        <mailingList>
+            <name>WildFly</name>
+            <subscribe>https://groups.google.com/forum/#!forum/wildfly</subscribe>
+            <unsubscribe>https://groups.google.com/forum/#!forum/wildfly</unsubscribe>
+            <archive>https://groups.google.com/forum/#!forum/wildfly</archive>
+        </mailingList>
+    </mailingLists>
 
     <licenses>
         <license>
