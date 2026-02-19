@@ -22,85 +22,124 @@ public class BlockingLifecycleTestCase {
     public void compose() {
         Consumer<Object> start = mock(Consumer.class);
         Consumer<Object> stop = mock(Consumer.class);
+        Consumer<Object> close = mock(Consumer.class);
         Object value = new Object();
 
-        BlockingLifecycle lifecycle = BlockingLifecycle.compose(start, stop).apply(value);
+        try (BlockingLifecycle lifecycle = BlockingLifecycle.compose(start, stop, close).apply(value)) {
 
-        // Verify initial state
-        assertThat(lifecycle.isStarted()).isFalse();
-        assertThat(lifecycle.isStopped()).isTrue();
+            // Verify initial state
+            assertThat(lifecycle.isStarted()).isFalse();
+            assertThat(lifecycle.isStopped()).isTrue();
+            assertThat(lifecycle.isClosed()).isFalse();
 
-        verifyNoInteractions(start);
-        verifyNoInteractions(stop);
+            verifyNoInteractions(start);
+            verifyNoInteractions(stop);
+            verifyNoInteractions(close);
 
-        // Verify start
-        lifecycle.start();
+            // Verify start
+            lifecycle.start();
 
-        verify(start, only()).accept(value);
-        verifyNoInteractions(stop);
+            verify(start, only()).accept(value);
+            verifyNoInteractions(stop);
+            verifyNoInteractions(close);
 
-        assertThat(lifecycle.isStarted()).isTrue();
-        assertThat(lifecycle.isStopped()).isFalse();
+            assertThat(lifecycle.isStarted()).isTrue();
+            assertThat(lifecycle.isStopped()).isFalse();
+            assertThat(lifecycle.isClosed()).isFalse();
 
-        lifecycle.start();
+            // Verify no-op if already started
+            lifecycle.start();
 
-        // Verify no-op if already started
-        verifyNoMoreInteractions(start);
-        verifyNoInteractions(stop);
+            verifyNoMoreInteractions(start);
+            verifyNoInteractions(stop);
+            verifyNoInteractions(close);
 
-        assertThat(lifecycle.isStarted()).isTrue();
-        assertThat(lifecycle.isStopped()).isFalse();
+            assertThat(lifecycle.isStarted()).isTrue();
+            assertThat(lifecycle.isStopped()).isFalse();
+            assertThat(lifecycle.isClosed()).isFalse();
 
-        // Verify stop
-        lifecycle.stop();
+            // Verify stop
+            lifecycle.stop();
 
-        verifyNoMoreInteractions(start);
-        verify(stop, only()).accept(value);
+            verifyNoMoreInteractions(start);
+            verify(stop, only()).accept(value);
+            verifyNoInteractions(close);
 
-        assertThat(lifecycle.isStarted()).isFalse();
-        assertThat(lifecycle.isStopped()).isTrue();
+            assertThat(lifecycle.isStarted()).isFalse();
+            assertThat(lifecycle.isStopped()).isTrue();
+            assertThat(lifecycle.isClosed()).isFalse();
 
-        lifecycle.stop();
+            // Verify no-op if already stopped
+            lifecycle.stop();
 
-        // Verify no-op if already stopped
+            verifyNoMoreInteractions(start);
+            verifyNoMoreInteractions(stop);
+            verifyNoInteractions(close);
+
+            assertThat(lifecycle.isStarted()).isFalse();
+            assertThat(lifecycle.isStopped()).isTrue();
+            assertThat(lifecycle.isClosed()).isFalse();
+
+            RuntimeException startException = new RuntimeException();
+
+            // Verify failed start
+            doThrow(startException).when(start).accept(value);
+
+            assertThatRuntimeException().isThrownBy(() -> lifecycle.start()).isSameAs(startException);
+
+            verify(start, times(2)).accept(value);
+            verifyNoMoreInteractions(start);
+            verifyNoMoreInteractions(stop);
+            verifyNoInteractions(close);
+
+            assertThat(lifecycle.isStarted()).isFalse();
+            assertThat(lifecycle.isStopped()).isTrue();
+            assertThat(lifecycle.isClosed()).isFalse();
+
+            // Verify failed start can be retried
+            doNothing().when(start).accept(value);
+
+            lifecycle.start();
+
+            verify(start, times(3)).accept(value);
+            verifyNoMoreInteractions(start);
+            verifyNoMoreInteractions(stop);
+            verifyNoInteractions(close);
+
+            assertThat(lifecycle.isStarted()).isTrue();
+            assertThat(lifecycle.isStopped()).isFalse();
+            assertThat(lifecycle.isClosed()).isFalse();
+
+            RuntimeException stopException = new RuntimeException();
+
+            // Verify failed stop
+            doThrow(stopException).when(stop).accept(value);
+
+            assertThatRuntimeException().isThrownBy(() -> lifecycle.stop()).isSameAs(stopException);
+
+            verifyNoMoreInteractions(start);
+            verify(stop, times(2)).accept(value);
+            verifyNoMoreInteractions(stop);
+            verifyNoInteractions(close);
+
+            assertThat(lifecycle.isStarted()).isFalse();
+            assertThat(lifecycle.isStopped()).isTrue();
+            assertThat(lifecycle.isClosed()).isFalse();
+
+            // Verify close
+            lifecycle.close();
+
+            verify(close).accept(value);
+            verifyNoMoreInteractions(start);
+            verifyNoMoreInteractions(stop);
+
+            assertThat(lifecycle.isStarted()).isFalse();
+            assertThat(lifecycle.isStopped()).isFalse();
+            assertThat(lifecycle.isClosed()).isTrue();
+        }
+        // Verify no-op if already closed
         verifyNoMoreInteractions(start);
         verifyNoMoreInteractions(stop);
-
-        assertThat(lifecycle.isStarted()).isFalse();
-        assertThat(lifecycle.isStopped()).isTrue();
-
-        RuntimeException startException = new RuntimeException();
-
-        // Verify failed start
-        doThrow(startException).when(start).accept(value);
-
-        assertThatRuntimeException().isThrownBy(() -> lifecycle.start()).isSameAs(startException);
-
-        verify(start, times(2)).accept(value);
-
-        assertThat(lifecycle.isStarted()).isFalse();
-        assertThat(lifecycle.isStopped()).isTrue();
-
-        // Verify failed start can be retried
-        doNothing().when(start).accept(value);
-
-        lifecycle.start();
-
-        verify(start, times(3)).accept(value);
-        verifyNoMoreInteractions(start);
-        verifyNoMoreInteractions(stop);
-
-        assertThat(lifecycle.isStarted()).isTrue();
-        assertThat(lifecycle.isStopped()).isFalse();
-
-        RuntimeException stopException = new RuntimeException();
-
-        // Verify failed stop
-        doThrow(stopException).when(stop).accept(value);
-
-        assertThatRuntimeException().isThrownBy(() -> lifecycle.stop()).isSameAs(stopException);
-
-        assertThat(lifecycle.isStarted()).isFalse();
-        assertThat(lifecycle.isStopped()).isTrue();
+        verifyNoMoreInteractions(close);
     }
 }

@@ -23,6 +23,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.wildfly.common.function.Functions;
 
 /**
@@ -70,6 +71,7 @@ public class ServiceInstallerTestCase {
         verify(builder).setInitialMode(ServiceController.Mode.PASSIVE);
 
         StartContext startContext = mock(StartContext.class);
+        InOrder startOrder = inOrder(lifecycle, captor);
         Object value = new Object();
 
         doReturn(value).when(dependency).get();
@@ -82,25 +84,28 @@ public class ServiceInstallerTestCase {
         verify(dependency).get();
         verifyNoMoreInteractions(dependency);
         verify(lifecycleProvider, only()).apply(value);
-        verify(lifecycle).isStopped();
-        verify(lifecycle).start();
+        startOrder.verify(lifecycle).isStopped();
+        startOrder.verify(lifecycle).start();
         verifyNoMoreInteractions(lifecycle);
-        verify(captor).accept(value);
+        startOrder.verify(captor).accept(value);
         verifyNoMoreInteractions(captor);
 
         StopContext stopContext = mock(StopContext.class);
+        InOrder stopOrder = inOrder(lifecycle, captor);
 
         doReturn(true).when(lifecycle).isStarted();
 
         service.stop(stopContext);
 
         verifyNoInteractions(stopContext);
-        verify(captor).accept(null);
+        stopOrder.verify(captor).accept(null);
+        verifyNoMoreInteractions(captor);
         verifyNoMoreInteractions(dependency);
         verifyNoMoreInteractions(lifecycleProvider);
-        verify(lifecycle).isStarted();
-        verify(lifecycle).stop();
-        verifyNoMoreInteractions(captor);
+        stopOrder.verify(lifecycle).isStarted();
+        stopOrder.verify(lifecycle).stop();
+        stopOrder.verify(lifecycle).close();
+        verifyNoMoreInteractions(lifecycle);
     }
 
     @Test
@@ -112,7 +117,7 @@ public class ServiceInstallerTestCase {
 
         doCallRealMethod().when(captor).andThen(any());
 
-        ServiceInstaller installer = ServiceInstaller.BlockingBuilder.async(factory, () -> Runnable::run).withLifecycle(lifecycleProvider).withCaptor(captor).build();
+        ServiceInstaller installer = ServiceInstaller.BlockingBuilder.of(factory, ServiceDependency.of(Runnable::run)).withLifecycle(lifecycleProvider).withCaptor(captor).build();
 
         verifyNoInteractions(factory);
         verify(captor, atMostOnce()).andThen(any());
@@ -126,6 +131,7 @@ public class ServiceInstallerTestCase {
         verify(builder).setInitialMode(ServiceController.Mode.PASSIVE);
 
         StartContext startContext = mock(StartContext.class);
+        InOrder startOrder = inOrder(lifecycle, captor, startContext);
         Object value = new Object();
 
         doReturn(value).when(factory).get();
@@ -134,32 +140,33 @@ public class ServiceInstallerTestCase {
 
         service.start(startContext);
 
-        verify(startContext).asynchronous();
-        verify(startContext).complete();
-        verifyNoMoreInteractions(startContext);
         verify(factory, only()).get();
         verify(lifecycleProvider, only()).apply(value);
-        verify(lifecycle).isStopped();
-        verify(lifecycle).start();
+        startOrder.verify(lifecycle).isStopped();
+        startOrder.verify(lifecycle).start();
         verifyNoMoreInteractions(lifecycle);
-        verify(captor).accept(value);
+        startOrder.verify(captor).accept(value);
         verifyNoMoreInteractions(captor);
+        verify(startContext).asynchronous();
+        startOrder.verify(startContext).complete();
+        verifyNoMoreInteractions(startContext);
 
         StopContext stopContext = mock(StopContext.class);
+        InOrder stopOrder = inOrder(lifecycle, captor, stopContext);
 
         doReturn(true).when(lifecycle).isStarted();
 
         service.stop(stopContext);
 
-        verify(stopContext).asynchronous();
-        verify(stopContext).complete();
-        verifyNoMoreInteractions(stopContext);
-        verify(captor).accept(null);
+        stopOrder.verify(captor).accept(null);
         verifyNoMoreInteractions(factory);
         verifyNoMoreInteractions(lifecycleProvider);
-        verify(lifecycle).isStarted();
-        verify(lifecycle).stop();
+        stopOrder.verify(lifecycle).isStarted();
+        stopOrder.verify(lifecycle).stop();
         verifyNoMoreInteractions(captor);
+        verify(stopContext).asynchronous();
+        stopOrder.verify(stopContext).complete();
+        verifyNoMoreInteractions(stopContext);
     }
 
     @Test
@@ -200,6 +207,7 @@ public class ServiceInstallerTestCase {
         verify(builder).setInitialMode(ServiceController.Mode.ON_DEMAND);
 
         StartContext startContext = mock(StartContext.class);
+        InOrder startOrder = inOrder(lifecycle, sourceCaptor, valueCaptor);
         Object source = new Object();
         Object value = new Object();
 
@@ -215,20 +223,21 @@ public class ServiceInstallerTestCase {
         verify(factory, only()).get();
         verify(lifecycleProvider, only()).apply(source);
         // Verify lifecycle
-        verify(lifecycle).isStopped();
-        verify(lifecycle).start();
+        startOrder.verify(lifecycle).isStopped();
+        startOrder.verify(lifecycle).start();
         verifyNoMoreInteractions(lifecycle);
-        verify(sourceCaptor).accept(source);
+        startOrder.verify(sourceCaptor).accept(source);
         verifyNoMoreInteractions(sourceCaptor);
         // Verify operations on mapped value
         verify(mapper).apply(source);
         verify(injector, atMostOnce()).andThen(any());
         verify(injector).accept(value);
         verifyNoMoreInteractions(injector);
-        verify(valueCaptor).accept(value);
+        startOrder.verify(valueCaptor).accept(value);
         verifyNoMoreInteractions(valueCaptor);
 
         StopContext stopContext = mock(StopContext.class);
+        InOrder stopOrder = inOrder(lifecycle, sourceCaptor, valueCaptor);
 
         doReturn(true).when(lifecycle).isStarted();
 
@@ -238,13 +247,14 @@ public class ServiceInstallerTestCase {
         verifyNoMoreInteractions(factory);
         verifyNoMoreInteractions(lifecycleProvider);
         // Verify operations on source value
-        verify(sourceCaptor).accept(null);
+        stopOrder.verify(sourceCaptor).accept(null);
         // Verify operations on service value
-        verify(valueCaptor).accept(null);
+        stopOrder.verify(valueCaptor).accept(null);
         verify(injector).accept(null);
         // Verify lifecycle
-        verify(lifecycle).isStarted();
-        verify(lifecycle).stop();
+        stopOrder.verify(lifecycle).isStarted();
+        stopOrder.verify(lifecycle).stop();
+        stopOrder.verify(lifecycle).close();
         verifyNoMoreInteractions(lifecycle);
     }
 
@@ -319,6 +329,7 @@ public class ServiceInstallerTestCase {
 
         doReturn(true).when(lifecycle).isStarted();
         doReturn(CompletableFuture.completedStage(null)).when(lifecycle).stop();
+        doReturn(CompletableFuture.completedStage(null)).when(lifecycle).close();
 
         service.stop(stopContext);
 
@@ -328,10 +339,105 @@ public class ServiceInstallerTestCase {
         verifyNoMoreInteractions(lifecycleProvider);
         // Verify operations on source value
         verify(sourceCaptor).accept(null);
+        verifyNoMoreInteractions(sourceCaptor);
+        verify(lifecycle).isStarted();
         verify(lifecycle).stop();
+        verify(lifecycle).close();
+        verifyNoMoreInteractions(lifecycle);
         // Verify operations on service value
         verify(valueCaptor).accept(null);
+        verifyNoMoreInteractions(valueCaptor);
         verify(injector).accept(null);
+        verifyNoMoreInteractions(injector);
+    }
+
+    @Test
+    public void blockingLifecycle() throws StartException {
+        BlockingLifecycle lifecycle = mock(BlockingLifecycle.class);
+
+        ServiceInstaller installer = ServiceInstaller.BlockingLifecycleBuilder.of(Functions.constantSupplier(lifecycle)).build();
+
+        verifyNoInteractions(lifecycle);
+
+        ServiceBuilder<?> builder = mock(ServiceBuilder.class);
+
+        org.jboss.msc.Service service = verifyInstall(installer, builder);
+
+        // Default mode should be PASSIVE, since service does not provide a value
+        verify(builder).setInitialMode(ServiceController.Mode.PASSIVE);
+
+        StartContext startContext = mock(StartContext.class);
+        InOrder startOrder = inOrder(lifecycle);
+
+        doReturn(true).when(lifecycle).isStopped();
+
+        service.start(startContext);
+
+        verifyNoInteractions(startContext);
+        startOrder.verify(lifecycle).isStopped();
+        startOrder.verify(lifecycle).start();
+        verifyNoMoreInteractions(lifecycle);
+
+        StopContext stopContext = mock(StopContext.class);
+        InOrder stopOrder = inOrder(lifecycle);
+
+        doReturn(true).when(lifecycle).isStarted();
+
+        service.stop(stopContext);
+
+        verifyNoInteractions(stopContext);
+        stopOrder.verify(lifecycle).isStarted();
+        stopOrder.verify(lifecycle).stop();
+        stopOrder.verify(lifecycle).close();
+        verifyNoMoreInteractions(lifecycle);
+    }
+
+    @Test
+    public void nonBlockingLifecycle() throws StartException {
+        NonBlockingLifecycle lifecycle = mock(NonBlockingLifecycle.class);
+
+        ServiceInstaller installer = ServiceInstaller.NonBlockingLifecycleBuilder.of(Functions.constantSupplier(CompletableFuture.completedStage(lifecycle))).build();
+
+        verifyNoInteractions(lifecycle);
+
+        ServiceBuilder<?> builder = mock(ServiceBuilder.class);
+
+        org.jboss.msc.Service service = verifyInstall(installer, builder);
+
+        // Default mode should be ON_DEMAND, since service provides no value
+        verify(builder).setInitialMode(ServiceController.Mode.PASSIVE);
+
+        StartContext startContext = mock(StartContext.class);
+        InOrder startOrder = inOrder(lifecycle, startContext);
+
+        doReturn(true).when(lifecycle).isStopped();
+        doReturn(NonBlockingLifecycle.COMPLETED).when(lifecycle).start();
+
+        service.start(startContext);
+
+        startOrder.verify(lifecycle).isStopped();
+        startOrder.verify(lifecycle).start();
+        verifyNoMoreInteractions(lifecycle);
+        startOrder.verify(startContext).complete();
+        startOrder.verify(startContext).asynchronous();
+        verifyNoMoreInteractions(startContext);
+
+        StopContext stopContext = mock(StopContext.class);
+        InOrder stopOrder = inOrder(lifecycle, stopContext);
+
+        doReturn(true).when(lifecycle).isStarted();
+        doReturn(NonBlockingLifecycle.COMPLETED).when(lifecycle).stop();
+        doReturn(NonBlockingLifecycle.COMPLETED).when(lifecycle).close();
+
+        service.stop(stopContext);
+
+        stopOrder.verify(lifecycle).isStarted();
+        stopOrder.verify(lifecycle).stop();
+        stopOrder.verify(lifecycle).close();
+        verifyNoMoreInteractions(lifecycle);
+        stopOrder.verify(stopContext).complete();
+        stopOrder.verify(stopContext).asynchronous();
+        verifyNoMoreInteractions(stopContext);
     }
 
     private static org.jboss.msc.Service verifyInstall(ServiceInstaller installer, ServiceBuilder<?> builder) {
