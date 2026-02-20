@@ -13,7 +13,6 @@ import java.util.Map;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.discovery.DiscoveryOptionResourceDefinition;
@@ -76,7 +75,7 @@ public class DiscoveryOptionAddHandler extends AbstractDiscoveryOptionAddHandler
 
         try {
             String moduleID = moduleName != null
-                    ? JBossModulesNameUtil.parseCanonicalModuleIdentifier(moduleName)
+                    ? moduleName
                     : Module.forClass(getClass()).getName();
             final Class<? extends DiscoveryOption> discoveryOptionClass = Module.loadClassFromCallerModuleLoader(moduleID, discoveryOptionClassName)
                     .asSubclass(DiscoveryOption.class);

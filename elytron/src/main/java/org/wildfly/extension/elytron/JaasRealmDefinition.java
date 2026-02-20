@@ -23,6 +23,7 @@ import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -72,6 +73,7 @@ public class JaasRealmDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODULE, ModelType.STRING, false)
             .setRequired(false)
+            .setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR)
             .setRestartAllServices()
             .build();
 
