@@ -9,7 +9,7 @@
     TODO Keep the from version up to date with later releases.
  -->
 
-<subsystem xmlns="urn:wildfly:elytron:18.0">
+<subsystem xmlns="urn:wildfly:elytron:19.0">
     <mappers>
         <mapped-role-mapper name="MappedRoleMapper">
             <role-mapping from="admin" to="manager user"/>
