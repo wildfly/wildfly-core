@@ -54,21 +54,22 @@ public enum ElytronSubsystemSchema implements PersistentSubsystemSchema<ElytronS
     VERSION_17_0(17),
     VERSION_18_0(18),
     VERSION_18_0_COMMUNITY(18, Stability.COMMUNITY),
+    VERSION_19_0_COMMUNITY(19, Stability.COMMUNITY)
     ;
-    static final Map<Stability, ElytronSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_18_0, VERSION_18_0_COMMUNITY));
+    static final Map<Stability, ElytronSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_18_0, VERSION_19_0_COMMUNITY));
 
     private final VersionedNamespace<IntVersion, ElytronSubsystemSchema> namespace;
 
-    ElytronSubsystemSchema(int major) {
+    ElytronSubsystemSchema(final int major) {
         this.namespace = SubsystemSchema.createSubsystemURN(ElytronExtension.SUBSYSTEM_NAME, new IntVersion(major));
     }
 
-    ElytronSubsystemSchema(int major, int minor) {
-        this.namespace = SubsystemSchema.createSubsystemURN(ElytronExtension.SUBSYSTEM_NAME, new IntVersion(major, minor));
+    ElytronSubsystemSchema(final int major, final Stability stability) {
+        this.namespace = SubsystemSchema.createSubsystemURN(ElytronExtension.SUBSYSTEM_NAME, stability, new IntVersion(major));
     }
 
-    ElytronSubsystemSchema(int major, Stability stability) {
-        this.namespace = SubsystemSchema.createSubsystemURN(ElytronExtension.SUBSYSTEM_NAME, stability, new IntVersion(major));
+    ElytronSubsystemSchema(final int major, final int minor) {
+        this.namespace = SubsystemSchema.createSubsystemURN(ElytronExtension.SUBSYSTEM_NAME, new IntVersion(major, minor));
     }
 
     @Override
@@ -192,7 +193,13 @@ public enum ElytronSubsystemSchema implements PersistentSubsystemSchema<ElytronS
 
     private void addTlsParser(PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder) {
         TlsParser tlsParser = new TlsParser();
-        if (this.since(ElytronSubsystemSchema.VERSION_18_0_COMMUNITY) && this.enables(getDynamicClientSSLContextDefinition())) {
+        if (this.since(ElytronSubsystemSchema.VERSION_19_0_COMMUNITY)) {
+            if(this.enables(getDynamicClientSSLContextDefinition())) {
+                builder.addChild(tlsParser.tlsParserCommunity_19_0_DynamicClientSSL);
+            } else {
+                builder.addChild(tlsParser.tlsParserCommunity_19_0);
+            }
+        } else if (this.since(ElytronSubsystemSchema.VERSION_18_0_COMMUNITY) && this.enables(getDynamicClientSSLContextDefinition())) {
             builder.addChild(tlsParser.tlsParserCommunity_18_0);
         } else if (this.since(ElytronSubsystemSchema.VERSION_14_0)) {
             builder.addChild(tlsParser.tlsParser_14_0);

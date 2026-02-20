@@ -77,7 +77,7 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
     private static final Provider wildFlyElytronProvider = new WildFlyElytronProvider();
     private static CredentialStoreUtility csUtil = null;
     private static final String CS_PASSWORD = "super_secret";
-    private static final String KEYSTORE_NAME = "ModifiedKeystore";
+    protected static final String KEYSTORE_NAME = "ModifiedKeystore";
     private static final String KEY_PASSWORD = "secret";
     private static final String CERTIFICATE_AUTHORITY_ACCOUNT_NAME = "CertAuthorityAccount";
     private static final String CERTIFICATE_AUTHORITY_NAME = "CertAuthority";
@@ -117,16 +117,16 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }
 
-    private KernelServices services = null;
+    protected KernelServices services = null;
 
-    private ModelNode assertSuccess(ModelNode response) {
+    protected ModelNode assertSuccess(ModelNode response) {
         if (!response.get(OUTCOME).asString().equals(SUCCESS)) {
             Assert.fail(response.toJSONString(false));
         }
         return response;
     }
 
-    private ModelNode assertFailed(ModelNode response) {
+    protected ModelNode assertFailed(ModelNode response) {
         if (! response.get(OUTCOME).asString().equals(FAILED)) {
             Assert.fail(response.toJSONString(false));
         }
@@ -1240,7 +1240,19 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         assertEquals(30, result.get(ElytronDescriptionConstants.DAYS_TO_EXPIRY).asLong());
     }
 
+
     private ModelNode shouldRenewCertificate(ZonedDateTime notValidBeforeDate, ZonedDateTime notValidAfterDate, int expiration) throws Exception {
+        final String alias = "expiry";
+        final ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("key-store", KEYSTORE_NAME);
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE);
+        operation.get(ElytronDescriptionConstants.ALIAS).set(alias);
+        operation.get(ElytronDescriptionConstants.EXPIRATION).set(expiration);
+        return performOperationOnGeneratedKeyStore(notValidBeforeDate, notValidAfterDate, operation);
+    }
+
+
+    protected ModelNode performOperationOnGeneratedKeyStore(final ZonedDateTime notValidBeforeDate, final  ZonedDateTime notValidAfterDate, final ModelNode op) throws Exception {
         String expiryKeyStoreFileName = "expiry.keystore";
         String alias = "expiry";
         File expiryKeyStoreFile = new File(WORKING_DIRECTORY_LOCATION, expiryKeyStoreFileName);
@@ -1253,12 +1265,7 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         addKeyStore(expiryKeyStoreFileName, KEYSTORE_NAME, "Elytron");
 
         try {
-            ModelNode operation = new ModelNode();
-            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("key-store", KEYSTORE_NAME);
-            operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE);
-            operation.get(ElytronDescriptionConstants.ALIAS).set(alias);
-            operation.get(ElytronDescriptionConstants.EXPIRATION).set(expiration);
-            return assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
+            return assertSuccess(services.executeOperation(op)).get(ClientConstants.RESULT);
         } finally {
             removeKeyStore(KEYSTORE_NAME);
         }
