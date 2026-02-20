@@ -10,8 +10,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.wildfly.core.instmgr.cli.UpdateCommand.CONFIRM_OPTION;
 import static org.wildfly.core.instmgr.cli.UpdateCommand.DRY_RUN_OPTION;
-import static org.wildfly.core.instmgr.cli.UpdateCommand.NO_RESOLVE_LOCAL_CACHE_OPTION;
-import static org.wildfly.core.instmgr.cli.UpdateCommand.USE_DEFAULT_LOCAL_CACHE_OPTION;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -61,12 +59,7 @@ public abstract class AbstractInstMgrCommand implements Command<CLICommandInvoca
      * @throws CommandException If the operation was not success or an error occurred.
      */
     protected ModelNode executeOp(CommandContext ctx, String host) throws CommandException {
-        if (host != null && !ctx.isDomainMode()) {
-            throw new CommandException("The --host option is not available in the current context. "
-                    + "Connection to the controller might be unavailable or not running in domain mode.");
-        } else if (host == null && ctx.isDomainMode()) {
-            throw new CommandException("The --host option must be used in domain mode.");
-        }
+        validateHostParameter(ctx, host);
 
         PathAddress address;
         if (ctx.isDomainMode()) {
@@ -99,6 +92,15 @@ public abstract class AbstractInstMgrCommand implements Command<CLICommandInvoca
     }
 
     protected abstract Operation buildOperation() throws CommandException;
+
+    protected static void validateHostParameter(CommandContext ctx, String host) throws CommandException{
+        if (host != null && !ctx.isDomainMode()) {
+            throw new CommandException("The --host option is not available in the current context. "
+                    + "Connection to the controller might be unavailable or not running in domain mode.");
+        } else if (host == null && ctx.isDomainMode()) {
+            throw new CommandException("The --host option must be used in domain mode.");
+        }
+    }
 
     @Override
     public CommandResult execute(CLICommandInvocation commandInvocation) throws CommandException, InterruptedException {
@@ -161,11 +163,11 @@ public abstract class AbstractInstMgrCommand implements Command<CLICommandInvoca
         }
     }
 
-    private static PathAddress createStandalone() {
+    protected static PathAddress createStandalone() {
         return PathAddress.pathAddress(CORE_SERVICE_INSTALLER);
     }
 
-    private static PathAddress createHost(final String hostName, final ModelControllerClient client) {
+    protected static PathAddress createHost(final String hostName, final ModelControllerClient client) {
         final PathElement host = PathElement.pathElement(HOST, hostName);
         final PathAddress address = PathAddress.pathAddress(host, CORE_SERVICE_INSTALLER);
 
@@ -212,6 +214,37 @@ public abstract class AbstractInstMgrCommand implements Command<CLICommandInvoca
             }
         }
         op.get(InstMgrConstants.REPOSITORIES).set(repositoriesMn);
+    }
+
+    static void addManifestVersionsToModelNode(ModelNode op, List<String> manifestVersions) throws CommandException {
+        if (manifestVersions == null || manifestVersions.isEmpty()) {
+            return;
+        }
+
+        ModelNode manifestVersionsMn = new ModelNode().addEmptyList();
+        for (int i = 0; i < manifestVersions.size(); i++) {
+            String inputStr = manifestVersions.get(i);
+            ModelNode manifestVersionMn = new ModelNode();
+            String channelId;
+            String manifestVersion;
+            String[] split = inputStr.split("::");
+            try {
+                if (split.length == 2) {
+                    channelId = split[0];
+                    manifestVersion = split[1];
+                } else {
+                    throw new IllegalArgumentException();
+                }
+                manifestVersionMn.get(InstMgrConstants.CHANNEL_NAME).set(channelId);
+                manifestVersionMn.get(InstMgrConstants.MANIFEST_VERSION).set(manifestVersion);
+                manifestVersionsMn.add(manifestVersionMn);
+            } catch (Exception w) {
+                throw new CommandException(String.format(
+                        "Invalid manifest versions definition. Expected string '<channelId>::<manifestVersion>' but got '%s'.",
+                        inputStr));
+            }
+        }
+        op.get(InstMgrConstants.MANIFEST_VERSIONS).set(manifestVersionsMn);
     }
 
     static void addManifestToModelNode(ModelNode modelNode, String manifest) {
