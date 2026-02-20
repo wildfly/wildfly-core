@@ -53,10 +53,13 @@ public enum CoreManagementSubsystemSchema implements PersistentSubsystemSchema<C
     public PersistentResourceXMLDescription getXMLDescription() {
         PersistentResourceXMLDescription.Factory factory = PersistentResourceXMLDescription.factory(this);
         PersistentResourceXMLDescription.Builder builder =  factory.builder(CoreManagementExtension.SUBSYSTEM_PATH);
-        builder.addChild(
+        PersistentResourceXMLDescription.Builder configChanges =
                 factory.builder(ConfigurationChangeResourceDefinition.PATH)
-                        .addAttribute(ConfigurationChangeResourceDefinition.MAX_HISTORY)
-                        .build());
+                        .addAttribute(ConfigurationChangeResourceDefinition.MAX_HISTORY);
+        if (this.since(VERSION_1_0_COMMUNITY) && !this.equals(VERSION_1_0_PREVIEW)) {
+            configChanges.addAttribute(ConfigurationChangeResourceDefinition.REDACTED);
+        }
+        builder.addChild(configChanges.build());
         builder.addChild(
                 factory.builder(UnstableApiAnnotationResourceDefinition.RESOURCE_REGISTRATION)
                         .addAttribute(UnstableApiAnnotationResourceDefinition.LEVEL)
