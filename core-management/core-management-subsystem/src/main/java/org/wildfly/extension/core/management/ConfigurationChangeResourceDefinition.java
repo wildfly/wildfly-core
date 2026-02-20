@@ -42,6 +42,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -56,6 +57,14 @@ public class ConfigurationChangeResourceDefinition extends PersistentResourceDef
             ModelDescriptionConstants.MAX_HISTORY, ModelType.INT, true)
             .setDefaultValue(new ModelNode(10))
             .build();
+
+    public static final SimpleAttributeDefinition REDACTED = SimpleAttributeDefinitionBuilder.create(
+                    ModelDescriptionConstants.REDACTED, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setStability(Stability.COMMUNITY)
+            .setDefaultValue(ModelNode.TRUE)
+            .build();
+
     public static final PathElement PATH = PathElement.pathElement(SERVICE, CONFIGURATION_CHANGES);
     public static final String OPERATION_NAME = "list-changes";
 
@@ -82,6 +91,7 @@ public class ConfigurationChangeResourceDefinition extends PersistentResourceDef
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
         resourceRegistration.registerReadWriteAttribute(MAX_HISTORY, null, new MaxHistoryWriteHandler(ConfigurationChangesCollector.INSTANCE));
+        resourceRegistration.registerReadWriteAttribute(REDACTED, null, new RedactedWriteHandler(ConfigurationChangesCollector.INSTANCE));
     }
 
     @Override
@@ -97,7 +107,9 @@ public class ConfigurationChangeResourceDefinition extends PersistentResourceDef
             super.performRuntime(context, operation, resource);
             context.getServiceTarget().addService(CONFIGURATION_CHANGES_CAPABILITY.getCapabilityServiceName()).install();
             ModelNode maxHistory = MAX_HISTORY.resolveModelAttribute(context, operation);
+            ModelNode redacted = REDACTED.resolveModelAttribute(context, operation);
             ConfigurationChangesCollector.INSTANCE.setMaxHistory(maxHistory.asInt());
+            ConfigurationChangesCollector.INSTANCE.setRedacted(redacted.asBoolean());
         }
 
         @Override
@@ -134,14 +146,34 @@ public class ConfigurationChangeResourceDefinition extends PersistentResourceDef
         }
 
         @Override
-        protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Integer> handbackHolder) throws OperationFailedException {
+        protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Integer> handbackHolder) {
             collector.setMaxHistory(resolvedValue.asInt());
             return false;
         }
 
         @Override
-        protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Integer handback) throws OperationFailedException {
+        protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Integer handback) {
             collector.setMaxHistory(valueToRestore.asInt());
+        }
+    }
+
+    private static class RedactedWriteHandler extends AbstractWriteAttributeHandler<Boolean> {
+
+        private final ConfigurationChangesCollector collector;
+
+        private RedactedWriteHandler(ConfigurationChangesCollector collector) {
+            this.collector = collector;
+        }
+
+        @Override
+        protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Boolean> handbackHolder) {
+            collector.setRedacted(resolvedValue.asBoolean());
+            return false;
+        }
+
+        @Override
+        protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Boolean handback) {
+            collector.setRedacted(valueToRestore.asBoolean());
         }
     }
 
