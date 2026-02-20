@@ -6,10 +6,11 @@
 package org.jboss.as.domain.controller.transformers;
 
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilderFactory;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
+import org.jboss.as.version.Stability;
 import org.jboss.as.version.Version;
 
 /**
@@ -107,8 +108,18 @@ public enum KernelAPIVersion {
         return modelVersion;
     }
 
-    static ChainedTransformationDescriptionBuilder createChainFromCurrent(PathElement forPath) {
-        return TransformationDescriptionBuilder.Factory.createChainedInstance(forPath, CURRENT.modelVersion);
+    static ChainedTransformationDescriptionBuilderFactory createChainedTransformationDescriptionBuilderFactory(TransformerRegistry registry) {
+        return new ChainedTransformationDescriptionBuilderFactory() {
+            @Override
+            public Stability getStability() {
+                return registry.getStability();
+            }
+
+            @Override
+            public ModelVersion getCurrentVersion() {
+                return CURRENT.getModelVersion();
+            }
+        };
     }
 
     static ResourceTransformationDescriptionBuilder createBuilder(ChainedTransformationDescriptionBuilder chainBuilder, KernelAPIVersion from, KernelAPIVersion to) {
