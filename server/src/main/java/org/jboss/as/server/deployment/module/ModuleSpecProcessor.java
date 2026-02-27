@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.PropertyPermission;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -131,6 +132,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
             final List<AdditionalModuleSpecification> additionalModules = deploymentUnit.getAttachmentList(Attachments.ADDITIONAL_MODULES);
             for (final AdditionalModuleSpecification module : additionalModules) {
                 addAllDependenciesAndPermissions(moduleSpec, module);
+                addPrivateSubdeploymentDependencies(module, deploymentUnit);
                 List<ResourceRoot> roots = module.getResourceRoots();
                 ServiceName serviceName = createModuleService(phaseContext, deploymentUnit, roots, parentResourceRoots, module, module.getModuleName());
                 phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, serviceName);
@@ -157,6 +159,36 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         for(PermissionFactory factory : moduleSpecification.getPermissionFactories()) {
             module.addPermissionFactory(factory);
         }
+    }
+
+    /**
+     * Check any subdeployments that recorded a Class-Path dependency on the given additional module. If such
+     * a subdeployment's module is private, we won't have our own dep on it and therefore won't add ours
+     * to the additional module in {@link #addAllDependenciesAndPermissions(ModuleSpecification, AdditionalModuleSpecification)}.
+     * So add one here to ensure the additional module can see classes in its dependent.
+     * @param module the additional module
+     * @param topLevelDeploymentUnit the deployment unit being processed, which should only be a top level DU
+     */
+    private void addPrivateSubdeploymentDependencies(AdditionalModuleSpecification module, DeploymentUnit topLevelDeploymentUnit) {
+        for (DeploymentUnit subDeployment : getAdditionalModuleDependees(topLevelDeploymentUnit, module)) {
+            ModuleSpecification subDeploymentSpec = subDeployment.getAttachment(Attachments.MODULE_SPECIFICATION);
+            if (subDeploymentSpec.isPrivateModule()) {
+                final ModuleLoader moduleLoader = subDeployment.getAttachment(Attachments.SERVICE_MODULE_LOADER);
+                final String subDeploymentModuleIdentifier = subDeployment.getAttachment(Attachments.MODULE_NAME);
+                ModuleDependency dependency = ModuleDependency.Builder.of(moduleLoader, subDeploymentModuleIdentifier)
+                        .setImportServices(true).build();
+                dependency.addImportFilter(PathFilters.acceptAll(), true);
+                module.addLocalDependency(dependency);
+            }
+        }
+    }
+
+    private List<DeploymentUnit> getAdditionalModuleDependees(DeploymentUnit deploymentUnit, AdditionalModuleSpecification dependent) {
+        Map<String, List<DeploymentUnit>> attachment = deploymentUnit.getAttachment(ManifestClassPathProcessor.CLASS_PATH_MODULE_DEPENDENTS);
+        if (attachment != null) {
+            return attachment.getOrDefault(dependent.getModuleName(), Collections.emptyList());
+        }
+        return Collections.emptyList();
     }
 
     private static final Permissions DEFAULT_PERMISSIONS;
