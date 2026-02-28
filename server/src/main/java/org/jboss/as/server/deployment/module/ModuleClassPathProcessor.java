@@ -6,6 +6,7 @@
 package org.jboss.as.server.deployment.module;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.jboss.as.server.deployment.AttachmentList;
 import org.jboss.as.server.deployment.Attachments;
@@ -14,6 +15,7 @@ import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.modules.ModuleLoader;
+import org.jboss.modules.filter.PathFilters;
 
 /**
  * The processor which adds {@code MANIFEST.MF} {@code Class-Path} entries to the module configuration.
@@ -51,6 +53,43 @@ public final class ModuleClassPathProcessor implements DeploymentUnitProcessor {
                 }
                 // add a dependency on the top ear itself for good measure
                 additionalModule.addLocalDependency(ModuleDependency.Builder.of(moduleLoader, deploymentUnit.getAttachment(Attachments.MODULE_NAME)).setImportServices(true).build());
+            }
+        }
+
+
+        // If this is a private subdeployment that recorded a Class-Path dependency on an additional module,
+        // add a dep on our module to the additional module, to give it a classloading space analogous to
+        // if both its archive and the subdeployments' were loadable from a single URLClassloader.
+        //
+        // For non-private subdeployments we don't need to do this since the top level deployment will have
+        // a dep on the subdeployment (via SubDeploymentDependencyProcessor), and it will add it to all
+        // additional modules in ModuleSpecProcessor.
+        //
+        // We don't do this for war subdeployments. This behavior is a workaround for an odd classloading
+        // setup involving an appclient jar (which is private). We don't want to change the long-standing
+        // behavior of the much more widely used war deployment type without a demonstrated need.
+        if (entries != null && moduleSpecification.isPrivateModule() && deploymentUnit.getParent() != null
+                && !deploymentUnit.getName().toLowerCase(Locale.ENGLISH).endsWith(".war")) {
+
+            final String moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_NAME);
+
+            // Additional modules are attached to the parent, not the subdeployment
+            final List<AdditionalModuleSpecification> parentAdditionalModules =
+                    deploymentUnit.getParent().getAttachment(Attachments.ADDITIONAL_MODULES);
+
+            for (String classPathEntry : entries) {
+                for (AdditionalModuleSpecification additionalModule : parentAdditionalModules) {
+                    if (classPathEntry.equals(additionalModule.getModuleName())) {
+                        // This is the same dep setting that SubDeploymentDependencyProcessor would add
+                        // to the top level deployment module for a non-private subdeployment, which in turn
+                        // gets passed to the additional module in ModuleSpecProcessor
+                        ModuleDependency dependency = ModuleDependency.Builder.of(moduleLoader, moduleIdentifier)
+                                .setImportServices(true).build();
+                        dependency.addImportFilter(PathFilters.acceptAll(), true);
+                        additionalModule.addLocalDependency(dependency);
+                        break;
+                    }
+                }
             }
         }
     }
