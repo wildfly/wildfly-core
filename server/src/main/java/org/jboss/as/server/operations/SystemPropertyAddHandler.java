@@ -154,16 +154,23 @@ public class SystemPropertyAddHandler implements OperationStepHandler {
                 // so add a Stage.VERIFY step to see if one has successfully resolved our prop,
                 // and to fail the overall op if not.
                 context.addStep((context2, operation2) -> {
-                    DeferredProcesee procesee = finalDeferredResolver.getUnresolved(propertyName);
-                    if (procesee != null) {
-                        // If there is an OFE cached, throw it in preference to any cached RuntimeException
-                        if (procesee.ofe != null) {
-                            context2.setRollbackOnly();
-                            throw procesee.ofe;
-                        } else if (procesee.re != null) {
-                            context2.setRollbackOnly();
-                            throw procesee.re;
-                        } //
+                    // WFCORE-7525: We also re-attempt resolution here: by Stage.VERIFY, MSC
+                    // services that were not yet started at Stage.RUNTIME (e.g. a CredentialStore
+                    // service required to decrypt an ENC expression) may now be available, so the
+                    // retry may succeed.
+                    if (!finalDeferredResolver.processDeferredPropertyAtRuntime(propertyName, context2)) {
+                        DeferredProcesee procesee = finalDeferredResolver.getUnresolved(propertyName);
+                        if (procesee != null) {
+                            // If there is an OFE cached, throw it in preference to any cached
+                            // RuntimeException
+                            if (procesee.ofe != null) {
+                                context2.setRollbackOnly();
+                                throw procesee.ofe;
+                            } else if (procesee.re != null) {
+                                context2.setRollbackOnly();
+                                throw procesee.re;
+                            }
+                        }
                     }
                 }, OperationContext.Stage.VERIFY);
 
