@@ -57,6 +57,8 @@ public class SnapshotTakeHandler implements OperationStepHandler {
         if (authorizationResult.getDecision() == AuthorizationResult.Decision.DENY) {
             throw ControllerLogger.ROOT_LOGGER.unauthorized(operation.get(OP).asString(), context.getCurrentAddress(), authorizationResult.getExplanation());
         }
+        // Acquire the lock to prevent concurrent write operations from modifying the configuration
+        context.acquireControllerLock();
         ModelNode commentNode = COMMENT.resolveModelAttribute(context, operation);
         ModelNode snapshotNode = SNAPSHOT_NAME.resolveModelAttribute(context, operation);
         String comment = commentNode.asStringOrNull();
