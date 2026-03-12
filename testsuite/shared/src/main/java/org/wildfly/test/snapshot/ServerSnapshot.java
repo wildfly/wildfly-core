@@ -46,6 +46,13 @@ public class ServerSnapshot {
                     if (reloadToStability != null) {
                         parameters.setStability(reloadToStability);
                     }
+                    if (client.getMgmtAddress() != null) {
+                        parameters.setServerAddress(client.getMgmtAddress());
+                    }
+                    if (client.getMgmtPort() > 0) {
+                        parameters.setServerPort(client.getMgmtPort());
+                    }
+
                     ServerReload.executeReloadAndWaitForCompletion(client.getControllerClient(), parameters);
 
                     ModelNode node = new ModelNode();
