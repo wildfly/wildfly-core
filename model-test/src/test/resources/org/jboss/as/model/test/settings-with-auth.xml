@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <servers>
+        <server>
+            <id>custom-repo</id>
+            <username>custom-user</username>
+            <password>123</password>
+        </server>
+        <server>
+            <id>another-repo</id>
+            <password>abcd</password>
+        </server>
+    </servers>
+    <profiles>
+        <profile>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <id>custom-repositories</id>
+            <repositories>
+                <repository>
+                    <id>custom-repo</id>
+                    <url>https:/example.org/custom-repo/</url>
+                    <layout>default</layout>
+                </repository>
+                <repository>
+                    <id>another-repo</id>
+                    <url>https:/example.org/another-repo/</url>
+                    <layout>default</layout>
+                </repository>
+                <repository>
+                    <id>non-authenticated-repo</id>
+                    <url>https:/example.org/non-authenticated-repo/</url>
+                    <layout>default</layout>
+                </repository>
+            </repositories>
+        </profile>
+    </profiles>
+</settings>
