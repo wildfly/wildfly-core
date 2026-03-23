@@ -36,7 +36,7 @@ public final class Services {
     /**
      * The service corresponding to the {@link java.util.concurrent.ExecutorService} for this instance.
      *
-     * @deprecated use capability @code{org.wildfly.management.executor}
+     * @deprecated use capability {@code org.wildfly.management.executor}
      */
     @Deprecated(forRemoval = true)
     public static final ServiceName JBOSS_SERVER_EXECUTOR = JBOSS_AS.append("server-executor");
@@ -49,14 +49,14 @@ public final class Services {
     /**
      * The service corresponding to the {@link org.jboss.as.server.moduleservice.ExternalModuleService} for this instance.
      *
-     * @deprecated use capability @code{org.wildfly.management.external-module}
+     * @deprecated use capability {@code org.wildfly.management.external-module}
      */
     @Deprecated(forRemoval = true)
     public static final ServiceName JBOSS_EXTERNAL_MODULE_SERVICE = JBOSS_AS.append("external-module-service");
 
     public static final ServiceName JBOSS_PRODUCT_CONFIG_SERVICE = JBOSS_AS.append("product-config");
 
-    /** @deprecated use capability @code{org.wildfly.server.suspend-controller}  */
+    /** @deprecated use capability {@code org.wildfly.server.suspend-controller} */
     @Deprecated(forRemoval = true)
     public static final ServiceName JBOSS_SUSPEND_CONTROLLER = ServerService.SUSPEND_CONTROLLER_CAPABILITY.getCapabilityServiceName();
 
