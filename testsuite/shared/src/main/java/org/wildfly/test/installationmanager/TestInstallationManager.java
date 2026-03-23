@@ -23,11 +23,17 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.wildfly.installationmanager.ArtifactChange;
+import org.wildfly.installationmanager.AvailableManifestVersions;
+import org.wildfly.installationmanager.CandidateType;
 import org.wildfly.installationmanager.Channel;
 import org.wildfly.installationmanager.ChannelChange;
+import org.wildfly.installationmanager.FileConflict;
 import org.wildfly.installationmanager.HistoryResult;
 import org.wildfly.installationmanager.InstallationChanges;
+import org.wildfly.installationmanager.InstallationUpdates;
 import org.wildfly.installationmanager.ManifestVersion;
+import org.wildfly.installationmanager.ManifestVersionChange;
+import org.wildfly.installationmanager.ManifestVersionPair;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.OperationNotAvailableException;
 import org.wildfly.installationmanager.Repository;
@@ -43,8 +49,16 @@ public class TestInstallationManager implements InstallationManager {
     public static List<Channel> lstChannels;
     public static List<ManifestVersion> installedVersions;
     public static List<Repository> findUpdatesRepositories;
+    public static List<ManifestVersion> findUpdatesVersions;
+    public static List<AvailableManifestVersions> findAvailableManifestVersions;
+    public static List<Repository> findAvailableManifestVersionsRepositories;
+    public static Boolean findAvailableManifestVersionsIncludeDowngrades;
     public static List<ArtifactChange> findUpdatesChanges;
+    public static List<ManifestVersionChange> findUpdatesManifestChanges;
+    public static List<Repository> findManifestVersionsRepositories;
+    public static Boolean findManifestVersionsIncludeDowngrades;
     public static List<Repository> prepareUpdatesRepositories;
+    public static List<ManifestVersion> prepareUpdatesVersions;
     public static Path prepareUpdatesTargetDir;
 
     public static List<Repository> prepareRevertRepositories;
@@ -53,6 +67,9 @@ public class TestInstallationManager implements InstallationManager {
     public static InstallationChanges installationChanges;
     public static HashMap<String, HistoryResult> history;
     public static boolean initialized = false;
+    public static Boolean prepareAllowManifestDowngrades = null;
+    public static List<AvailableManifestVersions> availableManifestVersions;
+    public static List<AvailableManifestVersions> availableManifestVersionsWithDowngrades;
 
     public static String APPLY_REVERT_BASE_GENERATED_COMMAND = "apply revert";
     public static String APPLY_UPDATE_BASE_GENERATED_COMMAND = "apply update";
@@ -145,7 +162,18 @@ public class TestInstallationManager implements InstallationManager {
             findUpdatesChanges.add(new ArtifactChange("3.0.0.Final", "1.0.1.Final", "org.findupdates:findupdates.removed", ArtifactChange.Status.REMOVED));
             findUpdatesChanges.add(new ArtifactChange("1.0.0.Final", "1.0.1.Final", "org.findupdates:findupdates.updated", ArtifactChange.Status.UPDATED));
 
+            findUpdatesManifestChanges = new ArrayList<>();
+            findUpdatesManifestChanges.add(
+                    new ManifestVersionChange("wildfly-core", "org.wildfly.core.channels:wildfly-core",
+                            new ManifestVersionPair("1.0.0.Final", "WildFly Core 1.0.0.Final"),
+                            new ManifestVersionPair("1.1.0.Final", "WildFly Core 1.1.0.Final"),
+                            false)
+            );
+
             findUpdatesRepositories = new ArrayList<>();
+            findUpdatesVersions = new ArrayList<>();
+
+            findAvailableManifestVersions = new ArrayList<>();
 
             noUpdatesFound = false;
 
@@ -171,14 +199,32 @@ public class TestInstallationManager implements InstallationManager {
                 }
             }
 
+            // Default - excluding downgrades
+            availableManifestVersions = new ArrayList<>();
+            ArrayList<ManifestVersionPair> manifestVersions = new ArrayList<>();
+            manifestVersions.add(new ManifestVersionPair("1.0.1", "Logical version 1.0.1"));
+            availableManifestVersions.add(new AvailableManifestVersions("test-channel", "a:b",
+                    new ManifestVersionPair("1.0.0", "Logical version 1.0.0"), manifestVersions));
+
+            // Including downgrades
+            availableManifestVersionsWithDowngrades = new ArrayList<>();
+            manifestVersions = new ArrayList<>();
+            manifestVersions.add(new ManifestVersionPair("0.0.9", "Logical version 0.0.9"));
+            manifestVersions.add(new ManifestVersionPair("1.0.1", "Logical version 1.0.1"));
+            availableManifestVersionsWithDowngrades.add(new AvailableManifestVersions("test-channel", "a:b",
+                    new ManifestVersionPair("1.0.0", "Logical version 1.0.0"), manifestVersions));
+
+            findManifestVersionsIncludeDowngrades = null;
+            findManifestVersionsRepositories = new ArrayList<>();
+
             initialized = true;
         }
     }
 
     public TestInstallationManager(Path installationDir, MavenOptions mavenOptions) throws Exception {
         initialize();
-        this.installationDir = installationDir;
-        this.mavenOptions = mavenOptions;
+        TestInstallationManager.installationDir = installationDir;
+        TestInstallationManager.mavenOptions = mavenOptions;
     }
 
     @Override
@@ -200,12 +246,28 @@ public class TestInstallationManager implements InstallationManager {
 
     @Override
     public boolean prepareUpdate(Path targetDir, List<Repository> repositories) throws Exception {
+        return prepareUpdate(targetDir, repositories, Collections.emptyList(), false);
+    }
+
+    @Override
+    public boolean prepareUpdate(Path targetDir, List<Repository> repositories, boolean allowManifestDowngrades) throws Exception {
+        return prepareUpdate(targetDir, repositories, Collections.emptyList(), allowManifestDowngrades);
+    }
+
+    @Override
+    public boolean prepareUpdate(Path targetDir, List<Repository> repositories, List<ManifestVersion> manifestVersions, boolean allowManifestDowngrades) throws Exception {
+        prepareUpdatesVersions = new ArrayList<>(manifestVersions);
+        prepareUpdatesTargetDir = targetDir;
+        prepareUpdatesRepositories = new ArrayList<>(repositories);
+        prepareAllowManifestDowngrades = allowManifestDowngrades;
+
         if (noUpdatesFound) {
             return false;
         }
-        prepareUpdatesTargetDir = targetDir;
-        prepareUpdatesRepositories = new ArrayList<>(repositories);
-        Files.createTempFile(targetDir, "server-prepare-marker-", null);
+
+        Path tempFile = Files.createTempFile(targetDir, "server-prepare-marker-", null);
+        writePrepareUpdateParameters(tempFile, repositories, manifestVersions, allowManifestDowngrades);
+
         return true;
     }
 
@@ -216,6 +278,32 @@ public class TestInstallationManager implements InstallationManager {
         }
         findUpdatesRepositories = new ArrayList<>(repositories);
         return findUpdatesChanges;
+    }
+
+    public InstallationUpdates findInstallationUpdates(List<Repository> repositories) throws Exception {
+        if (noUpdatesFound) {
+            return new InstallationUpdates(Collections.emptyList(), Collections.emptyList());
+        }
+        findUpdatesRepositories = new ArrayList<>(repositories);
+        return new InstallationUpdates(findUpdatesChanges, findUpdatesManifestChanges);
+    }
+
+    @Override
+    public InstallationUpdates findInstallationUpdates(List<Repository> repositories, List<ManifestVersion> manifestVersions) throws Exception {
+        findUpdatesVersions = new ArrayList<>(manifestVersions);
+        return findInstallationUpdates(repositories);
+    }
+
+    @Override
+    public List<AvailableManifestVersions> findAvailableManifestVersions(List<Repository> repositories, boolean includeDowngrades) throws Exception {
+        findManifestVersionsRepositories = new ArrayList<>(repositories);
+        findManifestVersionsIncludeDowngrades = includeDowngrades;
+
+        if (includeDowngrades) {
+            return availableManifestVersionsWithDowngrades;
+        } else {
+            return availableManifestVersions;
+        }
     }
 
     @Override
@@ -281,8 +369,23 @@ public class TestInstallationManager implements InstallationManager {
     }
 
     @Override
+    public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
+        return generateApplyUpdateCommand(scriptHome, candidatePath, shell) + noConflictsOnly;
+    }
+
+    @Override
+    public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
+        return generateApplyRevertCommand( scriptHome, candidatePath, shell) + noConflictsOnly;
+    }
+
+    @Override
     public Collection<ManifestVersion> getInstalledVersions() throws Exception {
         return installedVersions;
+    }
+
+    @Override
+    public Collection<FileConflict> verifyCandidate(Path candidatePath, CandidateType candidateType) throws Exception {
+        return List.of();
     }
 
     public static void zipDir(Path inputFile, Path target) throws IOException {
@@ -301,5 +404,13 @@ public class TestInstallationManager implements InstallationManager {
             zos.closeEntry();
             zos.finish();
         }
+    }
+
+    private void writePrepareUpdateParameters(Path tempFile, List<Repository> repositories, List<ManifestVersion> manifestVersions, boolean allowManifestDowngrades) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        repositories.forEach(r -> sb.append(r.getId()).append("::").append(r.getUrl()).append("\n"));
+        manifestVersions.forEach(mv -> sb.append(mv.getChannelId()).append("::").append(mv.getVersion()).append("\n"));
+        sb.append("allowManifestDowngrade=").append(allowManifestDowngrades);
+        Files.write(tempFile, sb.toString().getBytes());
     }
 }
