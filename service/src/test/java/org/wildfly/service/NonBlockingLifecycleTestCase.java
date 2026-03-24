@@ -21,6 +21,55 @@ import org.junit.Test;
 public class NonBlockingLifecycleTestCase {
 
     @Test
+    public void blocking() {
+        BlockingLifecycle blocking = mock(BlockingLifecycle.class);
+        RuntimeException startException = new RuntimeException();
+        RuntimeException stopException = new RuntimeException();
+        RuntimeException closeException = new RuntimeException();
+
+        NonBlockingLifecycle lifecycle = NonBlockingLifecycle.of(blocking);
+
+        doReturn(true, false).when(blocking).isStarted();
+        doReturn(true, false).when(blocking).isStopped();
+        doReturn(true, false).when(blocking).isClosed();
+
+        assertThat(lifecycle.isStarted()).isTrue();
+        assertThat(lifecycle.isStarted()).isFalse();
+
+        verify(blocking, times(2)).isStarted();
+
+        assertThat(lifecycle.isStopped()).isTrue();
+        assertThat(lifecycle.isStopped()).isFalse();
+
+        verify(blocking, times(2)).isStopped();
+
+        assertThat(lifecycle.isClosed()).isTrue();
+        assertThat(lifecycle.isClosed()).isFalse();
+
+        verify(blocking, times(2)).isClosed();
+
+        assertThat(lifecycle.start()).isCompleted();
+
+        verify(blocking).start();
+
+        assertThat(lifecycle.stop()).isCompleted();
+
+        verify(blocking).stop();
+
+        assertThat(lifecycle.close()).isCompleted();
+
+        verify(blocking).close();
+
+        doThrow(startException).when(blocking).start();
+        doThrow(stopException).when(blocking).stop();
+        doThrow(closeException).when(blocking).close();
+
+        assertThat(lifecycle.start()).isCompletedExceptionally();
+        assertThat(lifecycle.stop()).isCompletedExceptionally();
+        assertThat(lifecycle.close()).isCompletedExceptionally();
+    }
+
+    @Test
     public void compose() {
         Function<Object, CompletionStage<Void>> start = mock(Function.class);
         Function<Object, CompletionStage<Void>> stop = mock(Function.class);

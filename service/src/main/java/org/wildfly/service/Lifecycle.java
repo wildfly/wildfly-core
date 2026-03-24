@@ -34,4 +34,42 @@ interface Lifecycle {
     default boolean isClosed() {
         return false;
     }
+
+    class DecoratedLifecycle implements Lifecycle {
+        private final Lifecycle lifecycle;
+
+        DecoratedLifecycle(Lifecycle lifecycle) {
+            this.lifecycle = lifecycle;
+        }
+
+        @Override
+        public boolean isStarted() {
+            return this.lifecycle.isStarted();
+        }
+
+        @Override
+        public boolean isStopped() {
+            return this.lifecycle.isStopped();
+        }
+
+        @Override
+        public boolean isClosed() {
+            return this.lifecycle.isClosed();
+        }
+
+        @Override
+        public int hashCode() {
+            return this.lifecycle.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            return this.lifecycle.equals(object);
+        }
+
+        @Override
+        public String toString() {
+            return this.lifecycle.toString();
+        }
+    }
 }
