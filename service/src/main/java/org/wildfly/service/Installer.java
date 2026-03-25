@@ -690,13 +690,7 @@ public interface Installer<ST extends ServiceTarget> {
 
         @Override
         public B withLifecycle(Function<? super T, ? extends BlockingLifecycle> lifecycle) {
-            Supplier<Executor> executor = this.executor;
-            this.builder.withLifecycle(new Function<>() {
-                @Override
-                public NonBlockingLifecycle apply(T value) {
-                    return NonBlockingLifecycle.async(lifecycle.apply(value), executor.get());
-                }
-            });
+            this.builder.withLifecycle(NonBlockingLifecycle.composeAsync(lifecycle, this.executor));
             return this.get();
         }
     }

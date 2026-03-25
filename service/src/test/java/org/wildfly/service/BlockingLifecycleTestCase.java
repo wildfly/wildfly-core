@@ -8,6 +8,8 @@ package org.wildfly.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 
 import org.junit.Test;
@@ -17,6 +19,54 @@ import org.junit.Test;
  * @author Paul Ferraro
  */
 public class BlockingLifecycleTestCase {
+
+    @Test
+    public void nonBlocking() {
+        NonBlockingLifecycle nonBlocking = mock(NonBlockingLifecycle.class);
+        RuntimeException startException = new RuntimeException();
+        RuntimeException stopException = new RuntimeException();
+        RuntimeException closeException = new RuntimeException();
+
+        try (BlockingLifecycle lifecycle = BlockingLifecycle.join(nonBlocking)) {
+
+            doReturn(true, false).when(nonBlocking).isStarted();
+            doReturn(true, false).when(nonBlocking).isStopped();
+            doReturn(true, false).when(nonBlocking).isClosed();
+
+            assertThat(lifecycle.isStarted()).isTrue();
+            assertThat(lifecycle.isStarted()).isFalse();
+
+            verify(nonBlocking, times(2)).isStarted();
+
+            assertThat(lifecycle.isStopped()).isTrue();
+            assertThat(lifecycle.isStopped()).isFalse();
+
+            verify(nonBlocking, times(2)).isStopped();
+
+            assertThat(lifecycle.isClosed()).isTrue();
+            assertThat(lifecycle.isClosed()).isFalse();
+
+            verify(nonBlocking, times(2)).isClosed();
+
+            doReturn(CompletableFuture.failedStage(startException), CompletableFuture.completedStage(null)).when(nonBlocking).start();
+            doReturn(CompletableFuture.failedStage(stopException), CompletableFuture.completedStage(null)).when(nonBlocking).stop();
+            doReturn(CompletableFuture.failedStage(closeException), CompletableFuture.completedStage(null)).when(nonBlocking).close();
+
+            assertThatExceptionOfType(CompletionException.class).isThrownBy(() -> lifecycle.start()).havingCause().isSameAs(startException);
+            assertThatNoException().isThrownBy(() -> lifecycle.start());
+
+            verify(nonBlocking, times(2)).start();
+
+            assertThatExceptionOfType(CompletionException.class).isThrownBy(() -> lifecycle.stop()).havingCause().isSameAs(stopException);
+            assertThatNoException().isThrownBy(() -> lifecycle.stop());
+
+            verify(nonBlocking, times(2)).stop();
+
+            assertThatExceptionOfType(CompletionException.class).isThrownBy(() -> lifecycle.close()).havingCause().isSameAs(closeException);
+        }
+
+        verify(nonBlocking, times(2)).close();
+    }
 
     @Test
     public void compose() {

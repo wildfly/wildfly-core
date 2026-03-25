@@ -78,22 +78,7 @@ public interface NonBlockingLifecycle extends Lifecycle {
      * @return a non-blocking lifecycle that asynchronously invokes blocking lifecycle operations via the specified executor.
      */
     static NonBlockingLifecycle async(BlockingLifecycle lifecycle, Executor executor) {
-        return new NonBlockingLifecycle() {
-            @Override
-            public boolean isStarted() {
-                return lifecycle.isStarted();
-            }
-
-            @Override
-            public boolean isStopped() {
-                return lifecycle.isStopped();
-            }
-
-            @Override
-            public boolean isClosed() {
-                return lifecycle.isClosed();
-            }
-
+        return new DecoratedNonBlockingLifecycle(lifecycle) {
             @Override
             public CompletionStage<Void> start() {
                 try {
@@ -121,6 +106,45 @@ public interface NonBlockingLifecycle extends Lifecycle {
                 } catch (RejectedExecutionException e) {
                     // Resort to work-stealing via common fork-join pool, if necessary
                     return CompletableFuture.runAsync(lifecycle::close);
+                }
+            }
+        };
+    }
+
+    /**
+     * Returns a non-blocking lifecycle that synchronously invokes blocking lifecycle operations.
+     * @param lifecycle a blocking lifecycle
+     * @return a non-blocking lifecycle that synchronously invokes blocking lifecycle operations.
+     */
+    static NonBlockingLifecycle of(BlockingLifecycle lifecycle) {
+        return new DecoratedNonBlockingLifecycle(lifecycle) {
+            @Override
+            public CompletionStage<Void> start() {
+                try {
+                    lifecycle.start();
+                    return COMPLETED;
+                } catch (Throwable e) {
+                    return CompletableFuture.failedStage(e);
+                }
+            }
+
+            @Override
+            public CompletionStage<Void> stop() {
+                try {
+                    lifecycle.stop();
+                    return COMPLETED;
+                } catch (Throwable e) {
+                    return CompletableFuture.failedStage(e);
+                }
+            }
+
+            @Override
+            public CompletionStage<Void> close() {
+                try {
+                    lifecycle.close();
+                    return COMPLETED;
+                } catch (Throwable e) {
+                    return CompletableFuture.failedStage(e);
                 }
             }
         };
@@ -287,5 +311,11 @@ public interface NonBlockingLifecycle extends Lifecycle {
                 };
             }
         };
+    }
+
+    abstract class DecoratedNonBlockingLifecycle extends DecoratedLifecycle implements NonBlockingLifecycle {
+        DecoratedNonBlockingLifecycle(Lifecycle lifecycle) {
+            super(lifecycle);
+        }
     }
 }

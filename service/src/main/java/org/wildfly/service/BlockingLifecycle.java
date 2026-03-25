@@ -60,6 +60,30 @@ public interface BlockingLifecycle extends Lifecycle, AutoCloseable {
         }
     };
 
+    /**
+     * Returns a blocking lifecycle that waits for completion of non-blocking lifecycle operations.
+     * @param lifecycle a non-blocking lifecycle
+     * @return a blocking lifecycle that waits for completion of non-blocking lifecycle operations.
+     */
+    static BlockingLifecycle join(NonBlockingLifecycle lifecycle) {
+        return new DecoratedBlockingLifecycle(lifecycle) {
+            @Override
+            public void start() {
+                lifecycle.start().toCompletableFuture().join();
+            }
+
+            @Override
+            public void stop() {
+                lifecycle.stop().toCompletableFuture().join();
+            }
+
+            @Override
+            public void close() {
+                lifecycle.close().toCompletableFuture().join();
+            }
+        };
+    }
+
     Function<AutoCloseable, BlockingLifecycle> AUTO_CLOSE_PROVIDER = compose(Functions.discardingConsumer(), Functions.discardingConsumer(), Functions.closingConsumer());
 
     /**
@@ -226,5 +250,11 @@ public interface BlockingLifecycle extends Lifecycle, AutoCloseable {
                 };
             }
         };
+    }
+
+    abstract class DecoratedBlockingLifecycle extends DecoratedLifecycle implements BlockingLifecycle {
+        DecoratedBlockingLifecycle(Lifecycle lifecycle) {
+            super(lifecycle);
+        }
     }
 }
