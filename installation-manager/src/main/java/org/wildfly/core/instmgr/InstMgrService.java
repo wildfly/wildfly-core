@@ -83,7 +83,7 @@ class InstMgrService implements Service {
         this.customPatchPath = homeDir.resolve(InstMgrConstants.CUSTOM_PATCH_SUBPATH);
 
         // Properties file used to send information to the launch scripts
-        Path propertiesPath = homeDir.resolve("bin").resolve("installation-manager.properties");
+        Path propertiesPath = homeDir.resolve("bin").resolve("_installation-manager_helper.properties");
 
         this.candidateStatus.initialize(propertiesPath);
         try {

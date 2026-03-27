@@ -1,6 +1,6 @@
 # This script is only for internal usage and should not be invoked directly by users from the command line.
 # This script launches the operation to apply a candidate server installation to update or revert.
-# The server JVM writes the required values into the installation-manager.properties file by using InstMgrCandidateStatus.java
+# The server JVM writes the required values into the _installation-manager_helper.properties file by using InstMgrCandidateStatus.java
 param (
     [Parameter(Mandatory=$true)]
     [string]$installationHome,
@@ -32,7 +32,7 @@ Write-Log -Level "INFO" -Message "Executing Management CLI Installer script."
 Set-Variable -Name INST_MGR_COMMAND -Scope Script
 Set-Variable -Name INST_MGR_STATUS -Scope Script
 
-$propsFile="$installationHome\bin\installation-manager.properties"
+$propsFile="$installationHome\bin\_installation-manager_helper.properties"
 if ($propsFile -eq $null) {
     Write-Log -Level "ERROR" -Message "Installation Manager properties file not found at $propsFile."
     exit 1

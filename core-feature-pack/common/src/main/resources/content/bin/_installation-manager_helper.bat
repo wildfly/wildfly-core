@@ -1,7 +1,7 @@
 setlocal DisableDelayedExpansion
 rem This script is only for internal usage and should not be invoked directly by users from the command line.
 rem This script launches the operation to apply a candidate server installation to update or revert.
-rem The server JVM writes the required values into the installation-manager.properties file by using InstMgrCandidateStatus.java
+rem The server JVM writes the required values into the _installation-manager_helper.properties file by using InstMgrCandidateStatus.java
 
 if "%INST_MGR_SCRIPT_DEBUG%"=="true" (
   @echo on
@@ -22,7 +22,7 @@ set INST_MGR_STATUS=
 
 echo %date% %time% INFO %LOG_NAME% - Executing Management CLI Installer script.
 
-set "PROPS_FILE=%INSTALLATION_HOME%\bin\installation-manager.properties"
+set "PROPS_FILE=%INSTALLATION_HOME%\bin\_installation-manager_helper.properties"
 if not exist "%PROPS_FILE%" (
     echo %date% %time% ERROR %LOG_NAME% - Installation Manager properties file not found at %PROPS_FILE%.
 

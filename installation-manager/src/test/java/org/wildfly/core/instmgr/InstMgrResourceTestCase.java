@@ -96,7 +96,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     static final Path TARGET_DIR = Paths.get(System.getProperty("basedir", ".")).resolve("target");
     static final Path JBOSS_HOME = TARGET_DIR.resolve("InstMgrResourceTestCase").normalize().toAbsolutePath();
     static final Path JBOSS_CONTROLLER_TEMP_DIR = JBOSS_HOME.resolve("temp");
-    static final Path INSTALLATION_MANAGER_PROPERTIES = JBOSS_HOME.resolve("bin").resolve("installation-manager.properties");
+    static final Path INSTALLATION_MANAGER_PROPERTIES = JBOSS_HOME.resolve("bin").resolve("_installation-manager_helper.properties");
 
     @Parameters
     public static Iterable<BiConsumer<Path, Path>> zipHandlers() {
@@ -1273,7 +1273,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(InstMgrCandidateStatus.Status.PREPARED, instMgrService.getCandidateStatus());
         Assert.assertFalse(instMgrService.canPrepareServer());
 
-        Path scriptPropertiesFile = JBOSS_HOME.resolve("bin").resolve("installation-manager.properties");
+        Path scriptPropertiesFile = JBOSS_HOME.resolve("bin").resolve("_installation-manager_helper.properties");
         try (FileInputStream in = new FileInputStream(scriptPropertiesFile.toFile())) {
             final Properties prop = new Properties();
             prop.load(in);
@@ -1442,7 +1442,7 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(InstMgrCandidateStatus.Status.PREPARED, instMgrService.getCandidateStatus());
         Assert.assertFalse(instMgrService.canPrepareServer());
 
-        Path scriptPropertiesFile = JBOSS_HOME.resolve("bin").resolve("installation-manager.properties");
+        Path scriptPropertiesFile = JBOSS_HOME.resolve("bin").resolve("_installation-manager_helper.properties");
         try (FileInputStream in = new FileInputStream(scriptPropertiesFile.toFile())) {
             final Properties prop = new Properties();
             prop.load(in);
