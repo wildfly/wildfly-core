@@ -45,7 +45,7 @@ class SaslPolicyResource extends ConnectorChildResource {
     SaslPolicyResource(String parent) {
         super(SASL_POLICY_CONFIG_PATH,
                 RemotingExtension.getResourceDescriptionResolver(POLICY),
-                new AddResourceConnectorRestartHandler(parent, ATTRIBUTES),
+                new AddResourceConnectorRestartHandler(parent),
                 new RemoveResourceConnectorRestartHandler(parent));
         this.parent = parent;
     }

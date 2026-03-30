@@ -63,7 +63,7 @@ class SaslResource extends ConnectorChildResource {
 
     SaslResource(final String parent) {
         super(new Parameters(SASL_CONFIG_PATH, RemotingExtension.getResourceDescriptionResolver(SASL))
-                .setAddHandler(new AddResourceConnectorRestartHandler(parent, ATTRIBUTES))
+                .setAddHandler(new AddResourceConnectorRestartHandler(parent))
                 .setRemoveHandler(new RemoveResourceConnectorRestartHandler(parent))
                 .setAccessConstraints(RemotingExtension.REMOTING_SECURITY_DEF));
         this.parent = parent;

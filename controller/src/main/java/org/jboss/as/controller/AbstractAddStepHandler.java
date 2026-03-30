@@ -5,8 +5,11 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTO_POPULATE_MODEL;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
+
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -30,8 +33,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
  * @author Paul Ferraro
  */
 public abstract class AbstractAddStepHandler implements OperationStepHandler, OperationDescriptor {
-
-    private static final String AUTO_POPULATE_MODEL = "auto-populate-model";
 
     /**
      * This is only retained to support {@link #getAttributes()} and for those subclasses that reference this protected attribute directly.
@@ -72,7 +73,7 @@ public abstract class AbstractAddStepHandler implements OperationStepHandler, Op
     /**
      * Constructs an add handler
      *
-     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * @param parameters source of attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      * @deprecated Use default constructor instead. Resource model auto-population logic relies on the {@link OperationDefinition#getParameters()} method of the operation definition with which this handler was registered.
      */
     @Deprecated(forRemoval = true)
@@ -167,11 +168,11 @@ public abstract class AbstractAddStepHandler implements OperationStepHandler, Op
 
         // Detect operation header written by populateModel(ModelNode, ModelNode)
         // If header exists, then subclass expects us to populate the model
-        if (operation.hasDefined(ModelDescriptionConstants.OPERATION_HEADERS, AUTO_POPULATE_MODEL)) {
+        if (operation.hasDefined(OPERATION_HEADERS, AUTO_POPULATE_MODEL)) {
             ModelNode model = resource.getModel();
             ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
             Map<String, AttributeAccess> attributes = registration.getAttributes(PathAddress.EMPTY_ADDRESS);
-            for (AttributeDefinition parameter : registration.getOperationEntry(PathAddress.EMPTY_ADDRESS, ModelDescriptionConstants.ADD).getOperationDefinition().getParameters()) {
+            for (AttributeDefinition parameter : registration.getOperationEntry(PathAddress.EMPTY_ADDRESS, ADD).getOperationDefinition().getParameters()) {
                 AttributeAccess attribute = attributes.get(parameter.getName());
                 if ((attribute != null) && !AttributeAccess.Flag.ALIAS.test(attribute)) {
                     // Auto-populate add resource operation parameters that correspond to resource attributes, omitting aliases
@@ -182,7 +183,7 @@ public abstract class AbstractAddStepHandler implements OperationStepHandler, Op
                 }
             }
             // Remove header added via populateModel(ModelNode, ModelNode)
-            operation.get(ModelDescriptionConstants.OPERATION_HEADERS).remove(AUTO_POPULATE_MODEL);
+            operation.get(OPERATION_HEADERS).remove(AUTO_POPULATE_MODEL);
         }
     }
 
@@ -221,7 +222,7 @@ public abstract class AbstractAddStepHandler implements OperationStepHandler, Op
         // Previously model auto-population happened here based on attributes provided via constructor
         // If this method was invoked, we know that the subclass expects us to populate the model
         // If so, indicate this via an operation header to be detected by our parent method
-        operation.get(ModelDescriptionConstants.OPERATION_HEADERS, AUTO_POPULATE_MODEL).set(true);
+        operation.get(OPERATION_HEADERS, AUTO_POPULATE_MODEL).set(true);
     }
 
     /**

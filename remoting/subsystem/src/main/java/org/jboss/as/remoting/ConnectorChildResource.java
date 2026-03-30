@@ -5,10 +5,8 @@
 
 package org.jboss.as.remoting;
 
-import java.util.Collection;
 import java.util.List;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -48,20 +46,17 @@ abstract class ConnectorChildResource extends SimpleResourceDefinition {
 
     static class AddResourceConnectorRestartHandler extends RestartParentResourceAddHandler {
 
-        AddResourceConnectorRestartHandler(String parent, Collection<AttributeDefinition> attributes) {
-            super(parent, attributes);
+        AddResourceConnectorRestartHandler(String parent) {
+            super(parent);
         }
 
         protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-            for (AttributeDefinition ad : attributes) {
-                validateProperty(operation);
-                ad.validateAndSet(operation, model);
-            }
+            validateProperty(operation);
         }
 
         /**
          * Perform remoting specific validation.
-         * @param operation
+         * @param operation the add operation model node
          */
         private void validateProperty(ModelNode operation) throws OperationFailedException {
             ModelNode addressModelNode = operation.get(ModelDescriptionConstants.ADDRESS);

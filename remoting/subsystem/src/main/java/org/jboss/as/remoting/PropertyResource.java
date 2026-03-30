@@ -37,7 +37,7 @@ public class PropertyResource extends ConnectorChildResource {
     PropertyResource(String parent) {
         super(PATH,
                 RemotingExtension.getResourceDescriptionResolver(PROPERTY),
-                new AddResourceConnectorRestartHandler(parent, ATTRIBUTES),
+                new AddResourceConnectorRestartHandler(parent),
                 new RemoveResourceConnectorRestartHandler(parent));
         this.parent = parent;
     }
