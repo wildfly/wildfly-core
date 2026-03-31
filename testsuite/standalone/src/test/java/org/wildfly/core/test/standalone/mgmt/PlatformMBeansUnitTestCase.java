@@ -49,6 +49,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.management.ManagementOperations;
 import org.jboss.as.test.shared.AssumeTestGroupUtil;
+import static org.jboss.as.test.shared.TestSuiteEnvironment.isJ9Jvm;
 import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -102,9 +103,70 @@ public class PlatformMBeansUnitTestCase {
         ));
     }};
 
+    private static final Map<String, Set<String>> OPENJ9_SPECIFICS = new HashMap<>();
+    private static final String GARBAGE_COLLECTOR_TYPE = "GarbageCollector";
+    private static final String MEMORY_TYPE = "Memory";
+    private static final String MEMORY_POOL_TYPE = "MemoryPool";
+    private static final String OPERATIONG_SYSTEM_TYPE = "OperatingSystem";
+    private static final String RUNTIME_TYPE = "Runtime";
+    private static final String THREADING_TYPE = "Threading";
     static {
         // Only a few subsystems are NOT supposed to work in the domain mode
         ignored.add("deployment-scanner");
+
+        OPENJ9_SPECIFICS.put(GARBAGE_COLLECTOR_TYPE, Set.of("LastCollectionEndTime",
+            "LastCollectionStartTime",
+            "MemoryUsed",
+            "TotalCompacts",
+            "TotalMemoryFreed"));
+        OPENJ9_SPECIFICS.put(MEMORY_TYPE, Set.of("CurrentGCThreads",
+            "GCMainThreadCpuUsed",
+            "GCMode",
+            "GCWorkerThreadsCpuUsed",
+            "MaxHeapSize",
+            "MaximumGCThreads",
+            "MaxHeapSizeLimit",
+            "MinHeapSize",
+            "SetMaxHeapSizeSupported",
+            "SharedClassCacheFreeSpace",
+            "SharedClassCacheMaxAotBytes",
+            "SharedClassCacheMaxAotUnstoredBytes",
+            "SharedClassCacheMaxJitDataBytes",
+            "SharedClassCacheMaxJitDataUnstoredBytes",
+            "SharedClassCacheMinAotBytes",
+            "SharedClassCacheMinJitDataBytes",
+            "SharedClassCacheSize",
+            "SharedClassCacheSoftmxBytes",
+            "SharedClassCacheSoftmxUnstoredBytes",
+            "setSharedClassCacheMaxAotBytes",
+            "setSharedClassCacheMaxJitDataBytes",
+            "setSharedClassCacheMinAotBytes",
+            "setSharedClassCacheMinJitDataBytes",
+            "setSharedClassCacheSoftmxBytes"));
+        OPENJ9_SPECIFICS.put(MEMORY_POOL_TYPE, Set.of("PreCollectionUsage"));
+        OPENJ9_SPECIFICS.put(OPERATIONG_SYSTEM_TYPE,Set.of("HardwareEmulated",
+            "HardwareModel",
+            "ProcessCpuTimeByNS",
+            "ProcessPhysicalMemorySize",
+            "ProcessPrivateMemorySize",
+            "ProcessVirtualMemorySize",
+            "ProcessingCapacity",
+            "TotalPhysicalMemory",
+            "isProcessRunning",
+            "retrieveMemoryUsage",
+            "retrieveProcessorUsage",
+            "retrieveTotalProcessorUsage"));
+        OPENJ9_SPECIFICS.put(RUNTIME_TYPE,Set.of("AttachApiTerminated",
+            "AttachApiInitialized",
+            "CPULoad",
+            "ProcessID",
+            "VMGeneratedCPULoad",
+            "VMIdle",
+            "VMIdleState",
+            "VmId"));
+        OPENJ9_SPECIFICS.put(THREADING_TYPE,Set.of("dumpAllExtendedThreads",
+            "getNativeThreadId",
+            "getNativeThreadIds"));
     }
 
     @Inject
@@ -225,6 +287,33 @@ public class PlatformMBeansUnitTestCase {
             Assert.assertTrue("MBean in the management model is not registered in the JVM " + objName,
                     ManagementFactory.getPlatformMBeanServer().isRegistered(objName));
         }
+        // Check that OpenJ9 specifics are there
+        if (isJ9Jvm()) {
+            for (ObjectName objName : names) {
+                MBeanInfo info = ManagementFactory.getPlatformMBeanServer().getMBeanInfo(objName);
+                Set<String> specifics = OPENJ9_SPECIFICS.get(objName.getKeyProperty("type"));
+                if (specifics != null) {
+                    for (String s : specifics) {
+                        boolean found = false;
+                        for (MBeanAttributeInfo aInfo : info.getAttributes()) {
+                            if (aInfo.getName().equals(s)) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            for (MBeanOperationInfo opInfo : info.getOperations()) {
+                                if (opInfo.getName().equals(s)) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        Assert.assertTrue("Specific openJ9 specific " + s + " doesn't exist", found);
+                    }
+                }
+            }
+        }
         //Check that all attributes and operations in the JVM MBeans are exposed.
         // Check that all exposed attributes and operations are in the JVM MBeans
         for (ObjectName objName : names) {
@@ -232,6 +321,12 @@ public class PlatformMBeansUnitTestCase {
             ModelNode attributes = resourcesDescriptions.get(objName).get("attributes");
             ModelNode operations = resourcesDescriptions.get(objName).get("operations");
             for (MBeanAttributeInfo aInfo : info.getAttributes()) {
+                if(isJ9Jvm()) {
+                    Set<String> specifics = OPENJ9_SPECIFICS.get(objName.getKeyProperty("type"));
+                    if (specifics != null && specifics.contains(aInfo.getName())) {
+                        continue;
+                    }
+                }
                 String name = format(aInfo.getName());
                 if (!deprecatedAttributes.contains(name) && !notInJDK17Attributes.contains(name)) {
                     Stability stabilityRecordedElement = getStabilityRecordedElement(name);
@@ -266,6 +361,12 @@ public class PlatformMBeansUnitTestCase {
                 Assert.assertTrue(objName + " Attribute " + attribute + " is not in the JVM", found);
             }
             for (MBeanOperationInfo aInfo : info.getOperations()) {
+                if(isJ9Jvm()) {
+                    Set<String> specifics = OPENJ9_SPECIFICS.get(objName.getKeyProperty("type"));
+                    if (specifics != null && specifics.contains(aInfo.getName())) {
+                        continue;
+                    }
+                }
                 String name = format(aInfo.getName());
                 Stability stabilityRecordedElement = getStabilityRecordedElement(name);
                 if (serverStability.enables(stabilityRecordedElement)) {
