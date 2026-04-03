@@ -38,6 +38,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -83,6 +84,7 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
             .build();
 
     static final SimpleAttributeDefinition KEY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY, ModelType.STRING, false)
+            .setFlags(AttributeAccess.Flag.REDACTABLE)
             .setMinSize(1)
             .build();
 

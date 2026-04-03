@@ -38,5 +38,6 @@
         <!-- used with jaas authentication -->
         <!-- for SecurityRealmService ADDITIONAL_PERMISSION -->
         <module name="org.wildfly.transaction.client" optional="true" />
+        <module name="org.jboss.as.version" />
     </dependencies>
 </module>
