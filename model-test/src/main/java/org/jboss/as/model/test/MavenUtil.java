@@ -59,6 +59,7 @@ import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.eclipse.aether.util.filter.ExclusionsDependencyFilter;
 import org.eclipse.aether.util.graph.visitor.PreorderNodeListGenerator;
+import org.eclipse.aether.util.repository.AuthenticationBuilder;
 import org.eclipse.aether.util.version.GenericVersionScheme;
 import org.eclipse.aether.version.InvalidVersionSpecificationException;
 import org.eclipse.aether.version.VersionScheme;
@@ -244,15 +245,22 @@ class MavenUtil {
                 remoteRepositories.add(stagingRepository.build());
             }
             //add repos from users settings.xml
-            List<String> remoteRepositories1 = mavenSettings.getRemoteRepositories();
+            List<MavenSettings.Repository> remoteRepositories1 = mavenSettings.getRemoteRepositories();
             for (int i = 0; i < remoteRepositories1.size(); i++) {
-                String repo = remoteRepositories1.get(i);
-                RemoteRepository.Builder myRepo = new RemoteRepository.Builder("repo-" +i, "default", repo);
-                if (httpProxy != null && repo.startsWith("http")) {
+                MavenSettings.Repository repo = remoteRepositories1.get(i);
+                RemoteRepository.Builder myRepo = new RemoteRepository.Builder(repo.getId(), "default", repo.getUrl());
+                if (httpProxy != null && repo.getUrl().startsWith("http")) {
                     myRepo.setProxy(httpProxy);
                 }
-                if (httpsProxy != null && repo.startsWith("https")) {
+                if (httpsProxy != null && repo.getUrl().startsWith("https")) {
                     myRepo.setProxy(httpsProxy);
+                }
+                if (mavenSettings.getServers().containsKey(repo.getId())) {
+                    MavenSettings.Server server = mavenSettings.getServers().get(repo.getId());
+                    myRepo.setAuthentication(new AuthenticationBuilder()
+                            .addUsername(server.getUsername())
+                            .addPassword(server.getPassword())
+                            .build());
                 }
                 remoteRepositories.add(myRepo.build());
             }
