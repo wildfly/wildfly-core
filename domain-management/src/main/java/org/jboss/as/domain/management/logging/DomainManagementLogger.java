@@ -1242,6 +1242,15 @@ public interface DomainManagementLogger extends BasicLogger {
     XMLStreamException outboundConnectionsUnsupported();
 
     /**
+     * Message stating that the required file or directory structure could not be created.
+     *
+     * @param path the path that could not be created.
+     * @return the message.
+     */
+    @Message(id = 147, value = "Failed to create the required configuration path: %s")
+    String failedToCreateFilesConfigurationPath(String path);
+
+    /**
      * Information message saying the username and password must be different.
      *
      * @return an {@link String} for the error.
