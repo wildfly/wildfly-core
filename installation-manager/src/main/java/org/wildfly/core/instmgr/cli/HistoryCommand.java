@@ -107,25 +107,27 @@ public class HistoryCommand extends AbstractInstMgrCommand {
         } else {
             List<ModelNode> results = result.asListOrEmpty();
             for (ModelNode resultMn : results) {
+
                 String hash = resultMn.get(InstMgrConstants.HISTORY_RESULT_HASH).asString();
                 String timeStamp = resultMn.get(InstMgrConstants.HISTORY_RESULT_TIMESTAMP).asString();
                 String type = resultMn.get(InstMgrConstants.HISTORY_RESULT_TYPE).asString();
+                String description = resultMn.get(InstMgrConstants.HISTORY_RESULT_DESCRIPTION).asString().replaceAll("\\[|\\]", "");
+
+                ctx.printLine(String.format("[%s] %s - %s", hash, timeStamp, type));
+
                 final List<String> versions = resultMn.get(InstMgrConstants.HISTORY_RESULT_CHANNEL_VERSIONS)
                         .asListOrEmpty()
                         .stream()
                         .map(ModelNode::asString)
                         .collect(Collectors.toList());
-                // If channel versions are available in the result, it means that installation manager tool provided version strings for this history entry.
-                // In such a case, we output those versions in the 'description' field,
-                // otherwise we output any provided description, which could be in the form of G:A:V,
-                // otherwise we output "[]"
-                String description;
-                if (versions.isEmpty()) {
-                    description = resultMn.get(InstMgrConstants.HISTORY_RESULT_DESCRIPTION).asString("[]");
+
+                if(versions.isEmpty()) {
+                    ctx.printLine(String.format("  * %s ", description));
                 } else {
-                    description = "[" + String.join(" + ", versions) + "]";
+                    versions.forEach(version -> {
+                        ctx.printLine(String.format("  * %s (%s)", description, version));
+                    });
                 }
-                ctx.printLine(String.format("[%s] %s - %s %s", hash, timeStamp, type, description));
             }
         }
 
