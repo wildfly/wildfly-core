@@ -351,7 +351,7 @@ if %errorlevel% equ 20 (
 
     setlocal EnableDelayedExpansion
     set "INST_MGR_CONSOLE_FILE=!JBOSS_LOG_DIR!\management-cli-installer-out.log"
-    call "!JBOSS_HOME!\bin\installation-manager.bat" "!JBOSS_HOME!" "!JBOSS_CONFIG_DIR!\logging.properties" "!JBOSS_LOG_DIR!\server.log" >> "!INST_MGR_CONSOLE_FILE!" 2>&1
+    call "!JBOSS_HOME!\bin\_installation-manager_helper.bat" "!JBOSS_HOME!" "!JBOSS_CONFIG_DIR!\logging.properties" "!JBOSS_LOG_DIR!\server.log" >> "!INST_MGR_CONSOLE_FILE!" 2>&1
     if !ERRORLEVEL! equ 0 (
         echo INFO: Candidate Server installation completed successfully.
     ) else (

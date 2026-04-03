@@ -1,7 +1,7 @@
 #!/bin/sh
 # This script is only for internal usage and should not be invoked directly by the users from the command line.
 # This script launches the operation to apply a candidate server installation to update or revert.
-# The server JVM writes the required values into the installation-manager.properties file by using InstMgrCandidateStatus.java
+# The server JVM writes the required values into the _installation-manager_helper.properties file by using InstMgrCandidateStatus.java
 if [ "x${INST_MGR_SCRIPT_DEBUG}" = "xtrue" ]; then
   set -x
 fi
@@ -17,27 +17,27 @@ unset INST_MGR_STATUS
 LOG_NAME="[management-cli-installer]"
 
 log() {
-    echo "$(date "+%Y-%m-%d %H:%M:%S,%3N") ${1} $LOG_NAME - ${2}"
+  echo "$(date "+%Y-%m-%d %H:%M:%S,%3N") ${1} $LOG_NAME - ${2}"
 }
 
 log "INFO" "Executing Management CLI Installer script."
 
-PROPS_FILE="${INSTALLATION_HOME}/bin/installation-manager.properties"
+PROPS_FILE="${INSTALLATION_HOME}/bin/_installation-manager_helper.properties"
 if ! [ -e "${PROPS_FILE}" ]; then
   log "ERROR" "Installation Manager properties file not found at ${PROPS_FILE}."
   exit 1
 fi
 
 while IFS='=' read -r key value; do
-   case "${key}" in
-      "#"*)  continue ;;
-       *)    export "${key}=${value}" ;;
-   esac
-done < "$PROPS_FILE"
+  case "${key}" in
+    "#"*) continue ;;
+    *) export "${key}=${value}" ;;
+  esac
+done <"$PROPS_FILE"
 
 if [ "x${INST_MGR_STATUS}" = "x" ]; then
- log "ERROR" "Cannot read the Installation Manager status."
- exit 1
+  log "ERROR" "Cannot read the Installation Manager status."
+  exit 1
 fi
 
 if ! [ "${INST_MGR_STATUS}" = "PREPARED" ]; then
@@ -46,8 +46,8 @@ if ! [ "${INST_MGR_STATUS}" = "PREPARED" ]; then
 fi
 
 if [ "x${INST_MGR_COMMAND}" = "x" ]; then
- log "ERROR" "Installation Manager command was not set."
- exit 1
+  log "ERROR" "Installation Manager command was not set."
+  exit 1
 fi
 
 export JAVA_OPTS="-Dlogging.configuration=file:\"${INST_MGR_LOG_PROPERTIES}\" -Dorg.jboss.boot.log.file=\"${INST_MGR_LOG_FILE}\" -Dorg.wildfly.prospero.log.file -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 ${JAVA_OPTS}"

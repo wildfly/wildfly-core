@@ -14,7 +14,7 @@ import java.util.Properties;
 import org.wildfly.core.instmgr.logging.InstMgrLogger;
 
 /**
- * Tracks the status of the candidate installation by using the installation-manager.properties file and configures the values that are
+ * Tracks the status of the candidate installation by using the _installation-manager_helper.properties file and configures the values that are
  * passed to the installation-manager.sh/bat scripts to apply or revert an installation.
  */
 class InstMgrCandidateStatus {
