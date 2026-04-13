@@ -4,7 +4,7 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<domain xmlns="urn:jboss:domain:20.0">
+<domain xmlns="urn:jboss:domain:21.0">
 
     <host-excludes>
         <host-exclude name="WildFly10" active-server-groups="a b" active-socket-binding-groups="c d e">

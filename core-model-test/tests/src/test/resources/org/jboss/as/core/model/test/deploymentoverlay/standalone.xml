@@ -4,7 +4,7 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<server xmlns="urn:jboss:domain:20.0">
+<server xmlns="urn:jboss:domain:21.0">
     <deployment-overlays>
         <deployment-overlay name="test-overlay">
             <content path="/test/123" content="12345678901234567890"/>
