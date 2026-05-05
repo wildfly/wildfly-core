@@ -223,7 +223,6 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         super(parameters
                 .addAccessConstraints(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES)
                 .addCapabilities(HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
-                .setDeprecatedSince(ModelVersion.create(1, 7))
         );
     }
 
