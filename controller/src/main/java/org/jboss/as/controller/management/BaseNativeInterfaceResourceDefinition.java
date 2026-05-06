@@ -77,7 +77,6 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         super(parameters
                 .addAccessConstraints(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES)
                 .addCapabilities(NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
-                .setDeprecatedSince(ModelVersion.create(1, 7))
         );
     }
 
