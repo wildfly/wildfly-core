@@ -55,6 +55,12 @@ if "%~1" == "" (
    goto READ-DEBUG-PORT
 ) else if "%~1" == "-secmgr" (
    set SECMGR=true
+) else if "%~1" == "-v" (
+   goto READ-VERSION
+) else if "%~1" == "-V" (
+   goto READ-VERSION
+) else if "%~1" == "--version" (
+   goto READ-VERSION
 )
 shift
 goto READ-ARGS
@@ -70,6 +76,12 @@ if not %DEBUG_ARG% == "" (
    shift
    goto READ-ARGS
 )
+
+:READ-VERSION
+set "JAVA_OPTS=-Xmx16m"
+set "PRESERVE_JAVA_OPTS=true"
+shift
+goto READ-ARGS
 
 :MAIN
 rem $Id$

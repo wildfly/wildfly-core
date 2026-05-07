@@ -40,6 +40,12 @@ if "%~1" == "" (
    goto MAIN
 ) else if "%~1" == "-secmgr" (
    set SECMGR=true
+) else if "%~1" == "-v" (
+   set "PROCESS_CONTROLLER_JAVA_OPTS=-Xmx16m"
+) else if "%~1" == "-V" (
+   set "PROCESS_CONTROLLER_JAVA_OPTS=-Xmx16m"
+) else if "%~1" == "--version" (
+   set "PROCESS_CONTROLLER_JAVA_OPTS=-Xmx16m"
 )
 shift
 goto READ-ARGS
