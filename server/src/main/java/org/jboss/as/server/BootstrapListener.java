@@ -4,9 +4,13 @@
  */
 package org.jboss.as.server;
 
-import java.io.BufferedWriter;
+import static org.jboss.as.process.protocol.StreamUtils.safeClose;
+
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
@@ -36,8 +40,10 @@ public final class BootstrapListener {
     private final String prettyVersion;
     private final FutureServiceContainer futureContainer;
     private final File tempDir;
-    private  String startedCleanMessage;
-    private  String startedWitErrorsMessage;
+    private String startedCleanMessage;
+    private String startedWitErrorsMessage;
+    private FileChannel markerFileChannel;
+    private FileLock markerFileLock;
 
     public BootstrapListener(final ServiceContainer serviceContainer, final ElapsedTime elapsedTime, final ServiceTarget serviceTarget, final FutureServiceContainer futureContainer, final String prettyVersion, final File tempDir) {
         this.serviceContainer = serviceContainer;
@@ -119,26 +125,26 @@ public final class BootstrapListener {
         File file = new File(tempDir, MARKER_FILE);
         try {
             Files.deleteIfExists(file.toPath());
-            if (file.createNewFile()) {
-                try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8, StandardOpenOption.WRITE)) {
-                    writer.append(result).append(":").append(String.valueOf(startTime));
-                    writer.flush();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
+            markerFileChannel = FileChannel.open(file.toPath(),
+                    StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, StandardOpenOption.READ);
+            markerFileChannel.write(ByteBuffer.wrap((result + ":" + startTime).getBytes(StandardCharsets.UTF_8)));
+            markerFileLock = markerFileChannel.lock();
         } catch (IOException e) {
             // ignore
         }
-
     }
 
-    public static void deleteStartupMarker(File tempDir) {
-        File file = new File(tempDir, BootstrapListener.MARKER_FILE);
+    public void releaseStartupMarker() {
         try {
-            Files.deleteIfExists(file.toPath());
+            if (markerFileLock != null && markerFileLock.isValid()) {
+                markerFileLock.release();
+            }
         } catch (IOException e) {
             // ignore
+        } finally {
+            safeClose(markerFileChannel);
+            markerFileLock = null;
+            markerFileChannel = null;
         }
     }
 
