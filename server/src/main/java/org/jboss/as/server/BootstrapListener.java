@@ -4,6 +4,7 @@
  */
 package org.jboss.as.server;
 
+import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.process.protocol.StreamUtils.safeClose;
 
 import java.io.File;
@@ -14,6 +15,10 @@ import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.server.logging.ServerLogger;
@@ -122,16 +127,28 @@ public final class BootstrapListener {
     }
 
     private void createStartupMarker(String result, long startTime) {
-        File file = new File(tempDir, MARKER_FILE);
+        final File file = new File(tempDir, MARKER_FILE);
+        final String content = result + ":" + startTime;
         try {
-            Files.deleteIfExists(file.toPath());
-            markerFileChannel = FileChannel.open(file.toPath(),
-                    StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, StandardOpenOption.READ);
-            markerFileChannel.write(ByteBuffer.wrap((result + ":" + startTime).getBytes(StandardCharsets.UTF_8)));
-            markerFileLock = markerFileChannel.lock();
-        } catch (IOException e) {
+            if (WildFlySecurityManager.isChecking()) {
+                doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+                    openMarkerFile(file, content);
+                    return null;
+                });
+            } else {
+                openMarkerFile(file, content);
+            }
+        } catch (PrivilegedActionException | IOException e) {
             // ignore
         }
+    }
+
+    private void openMarkerFile(File file, String content) throws IOException {
+        Files.deleteIfExists(file.toPath());
+        markerFileChannel = FileChannel.open(file.toPath(),
+                StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, StandardOpenOption.READ);
+        markerFileChannel.write(ByteBuffer.wrap(content.getBytes(StandardCharsets.UTF_8)));
+        markerFileLock = markerFileChannel.lock();
     }
 
     public void releaseStartupMarker() {
