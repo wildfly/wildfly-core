@@ -33,6 +33,7 @@ do
       -v|-V|--version|-h|--help)
           JAVA_OPTS="-Xmx16m"
           PRESERVE_JAVA_OPTS="true"
+          SKIP_CONF="true"
           SERVER_OPTS="$SERVER_OPTS \"$1\""
           ;;
       --)
@@ -115,12 +116,14 @@ else
 fi
 export JBOSS_HOME
 
-# Read an optional running configuration file
-if [ "x$RUN_CONF" = "x" ]; then
-    RUN_CONF="$DIRNAME/standalone.conf"
-fi
-if [ -r "$RUN_CONF" ]; then
-    . "$RUN_CONF"
+# Read an optional running configuration file - skip for version/help commands
+if [ "$SKIP_CONF" != "true" ]; then
+    if [ "x$RUN_CONF" = "x" ]; then
+        RUN_CONF="$DIRNAME/standalone.conf"
+    fi
+    if [ -r "$RUN_CONF" ]; then
+        . "$RUN_CONF"
+    fi
 fi
 
 # Set debug settings if not already set

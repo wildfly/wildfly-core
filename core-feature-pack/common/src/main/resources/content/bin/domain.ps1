@@ -9,15 +9,16 @@ $scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
 Set-Item -Path env:JBOSS_LAUNCH_SCRIPT -Value "powershell"
 $SERVER_OPTS = Process-Script-Parameters -Params $ARGS
 if ($global:VERSION){
-    $JAVA_OPTS = '-Xmx16m'
+    $PROCESS_CONTROLLER_JAVA_OPTS = '-Xmx16m'
     $PRESERVE_JAVA_OPTS = $true
-}
-$JAVA_OPTS = Get-Java-Opts
+} else {
+    $JAVA_OPTS = Get-Java-Opts
 
-# Read an optional running configuration file
-$DOMAIN_CONF = $scripts +'\domain.conf.ps1'
-$DOMAIN_CONF = Get-Env RUN_CONF $DOMAIN_CONF
-. $DOMAIN_CONF
+    # Read an optional running configuration file - skip for version/help commands
+    $DOMAIN_CONF = $scripts +'\domain.conf.ps1'
+    $DOMAIN_CONF = Get-Env RUN_CONF $DOMAIN_CONF
+    . $DOMAIN_CONF
+}
 
 Write-Debug "sec mgr: $SECMGR"
 

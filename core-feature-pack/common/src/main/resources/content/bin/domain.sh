@@ -25,6 +25,7 @@ do
           ;;
       -v|-V|--version|-h|--help)
           PROCESS_CONTROLLER_JAVA_OPTS="-Xmx16m"
+          SKIP_CONF="true"
           SERVER_OPTS="$SERVER_OPTS \"$1\""
           ;;
       *)
@@ -88,12 +89,14 @@ else
 fi
 export JBOSS_HOME
 
-# Read an optional running configuration file
-if [ "x$DOMAIN_CONF" = "x" ]; then
-    DOMAIN_CONF="$DIRNAME/domain.conf"
-fi
-if [ -r "$DOMAIN_CONF" ]; then
-    . "$DOMAIN_CONF"
+# Read an optional running configuration file - skip for version/help commands
+if [ "$SKIP_CONF" != "true" ]; then
+    if [ "x$DOMAIN_CONF" = "x" ]; then
+        DOMAIN_CONF="$DIRNAME/domain.conf"
+    fi
+    if [ -r "$DOMAIN_CONF" ]; then
+        . "$DOMAIN_CONF"
+    fi
 fi
 
 # Setup the JVM
