@@ -323,7 +323,7 @@ Param(
 			$global:SECMGR = $true
 		}elseif ($arg -eq '--background'){
 			$global:RUN_IN_BACKGROUND = $true
-		}elseif ($arg -eq '-v' -or $arg -eq '-V' -or $arg -eq '--version'){
+		}elseif ($arg -eq '-v' -or $arg -eq '-V' -or $arg -eq '--version' -or $arg -eq '-h' -or $arg -eq '--help'){
 			$global:VERSION = $true
 			$res+=$arg
 		}else{

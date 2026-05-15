@@ -61,6 +61,10 @@ if "%~1" == "" (
    goto READ-VERSION
 ) else if "%~1" == "--version" (
    goto READ-VERSION
+) else if "%~1" == "-h" (
+   goto READ-VERSION
+) else if "%~1" == "--help" (
+   goto READ-VERSION
 )
 shift
 goto READ-ARGS

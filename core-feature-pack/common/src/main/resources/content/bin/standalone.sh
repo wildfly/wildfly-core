@@ -30,7 +30,7 @@ do
       -secmgr)
           SECMGR="true"
           ;;
-      -v|-V|--version)
+      -v|-V|--version|-h|--help)
           JAVA_OPTS="-Xmx16m"
           PRESERVE_JAVA_OPTS="true"
           SERVER_OPTS="$SERVER_OPTS \"$1\""

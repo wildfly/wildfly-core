@@ -46,6 +46,10 @@ if "%~1" == "" (
    set "PROCESS_CONTROLLER_JAVA_OPTS=-Xmx16m"
 ) else if "%~1" == "--version" (
    set "PROCESS_CONTROLLER_JAVA_OPTS=-Xmx16m"
+) else if "%~1" == "-h" (
+   set "PROCESS_CONTROLLER_JAVA_OPTS=-Xmx16m"
+) else if "%~1" == "--help" (
+   set "PROCESS_CONTROLLER_JAVA_OPTS=-Xmx16m"
 )
 shift
 goto READ-ARGS
