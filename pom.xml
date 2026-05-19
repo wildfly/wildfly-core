@@ -187,6 +187,7 @@
         <version.org.wildfly.bom-builder-plugin>2.0.10.Final</version.org.wildfly.bom-builder-plugin>
         <version.org.wildfly.wildfly-maven-gpg-plugin>3.2.8.SP1</version.org.wildfly.wildfly-maven-gpg-plugin>
         <version.org.wildfly.licenses.plugin>2.4.4.Final</version.org.wildfly.licenses.plugin>
+        <version.verifier.plugin>1.1</version.verifier.plugin>
         <version.versions.plugin>2.5</version.versions.plugin>
         <version.xml.plugin>1.1.0</version.xml.plugin>
         <wildfly.build.output.dir>build/target/${server.output.dir.prefix}-${wildfly.core.release.version}</wildfly.build.output.dir>
@@ -753,6 +754,23 @@
                     <groupId>org.wildfly.plugins</groupId>
                     <artifactId>wildfly-maven-plugin</artifactId>
                     <version>${version.wildfly.plugin}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-verifier-plugin</artifactId>
+                    <version>${version.verifier.plugin}</version>
+                    <executions>
+                        <execution>
+                            <id>main</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <verificationFile>target/verifier/verifications.xml</verificationFile>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

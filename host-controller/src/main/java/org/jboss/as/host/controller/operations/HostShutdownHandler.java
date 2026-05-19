@@ -107,7 +107,11 @@ public class HostShutdownHandler implements OperationStepHandler {
         if (performInstallation) {
             // Cannot use the Installation Manager constants, we will generate a circular reference via maven
             final String productName = environment.getProductConfig().getProductName();
-            try (FileInputStream in = new FileInputStream(environment.getHomeDir().toPath().resolve("bin").resolve("installation-manager.properties").toFile())) {
+            try (FileInputStream in = new FileInputStream(environment.getHomeDir().toPath()
+                    .resolve(".installation")
+                    .resolve("_installation-manager_helper.properties")
+                    .toFile())
+            ) {
                 final Properties prop = new Properties();
                 prop.load(in);
                 String current = (String) prop.get("INST_MGR_STATUS");

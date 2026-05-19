@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+<verifications xmlns="http://maven.apache.org/verifications/1.0.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://maven.apache.org/verifications/1.0.0 http://maven.apache.org/xsd/verifications-1.0.0.xsd">
+    <!--
+      1) Verify that installation manager helper files are provisioned at .installation directory
+    -->
+    <files>
+        <file>
+            <location>target/${project.build.finalName}/.installation/_installation-manager_helper.sh</location>
+            <exists>true</exists>
+        </file>
+        <file>
+            <location>target/${project.build.finalName}/.installation/_installation-manager_helper.bat</location>
+            <exists>true</exists>
+        </file>
+        <file>
+            <location>target/${project.build.finalName}/.installation/_installation-manager_helper.ps1</location>
+            <exists>true</exists>
+        </file>
+        <file>
+            <location>target/${project.build.finalName}/.installation/_installation-manager_helper.properties</location>
+            <exists>true</exists>
+        </file>
+    </files>
+    <!-- end of (#1) -->
+</verifications>
