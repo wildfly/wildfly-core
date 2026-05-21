@@ -98,6 +98,21 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         }
     }
 
+    @Test
+    public void testBashScriptVersionOptions() throws InterruptedException, TimeoutException, IOException {
+        Assume.assumeTrue(!TestSuiteEnvironment.isWindows() && Shell.BASH.isSupported());
+
+        ScriptProcess script = new ScriptProcess(ServerHelper.JBOSS_HOME, STANDALONE_BASE_NAME, Shell.BASH, ServerHelper.TIMEOUT);
+        // Test WFCORE-7576
+        script.start(null, Map.of("GC_LOG", "true"), new String [] {"-v"});
+
+        Assert.assertNotNull("The process is null and may have failed to start.", script);
+        validateProcess(script);
+        final var stdout = script.getStdoutAsString();
+        Assert.assertTrue("Expected to find -Xmx16m in the JVM parameters for a version command.", stdout.contains("-Xmx16m\n"));
+        Assert.assertFalse("Did not expect to find gc.log in the JVM parameters.", stdout.contains("gc.log"));
+    }
+
     @Override
     void testScript(final ScriptProcess script) throws InterruptedException, TimeoutException, IOException {
         // This is an odd case for Windows where with the -Xlog:gc* where the file argument does not seem to work with
