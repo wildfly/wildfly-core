@@ -32,17 +32,38 @@ public class Log4j2LoggingProfilesTestCase extends AbstractLoggingProfilesTestCa
         final Permission[] permissions = {
                 // The getClassLoader permissions is required for the org.apache.logging.log4j.util.ProviderUtil.
                 new RuntimePermission("getClassLoader"),
-                // The the org.apache.logging.log4j.util.ProviderUtil requires this for the Class.getDeclaredConstructor()
+                // The org.apache.logging.log4j.util.ProviderUtil requires this for the Class.getDeclaredConstructor()
                 new RuntimePermission("accessDeclaredMembers"),
+                // The getStackWalkerWithClassReference permissions is required for the org.apache.logging.log4j.util.StackLocator
+                new RuntimePermission("getStackWalkerWithClassReference"),
                 // The FilePermissions is also for the org.apache.logging.log4j.util.ProviderUtil as it needs to read the JAR
                 // for the service loader.
                 new FilePermission(resolveFilePermissions(), "read"),
+                // The FilePermissions is also for the org.apache.logging.log4j.util.PropertiesUtil$Environment as it needs to read the JAR
+                // for the service loader.
+                new FilePermission(resolveLog4jApiFilePermissions(), "read"),
                 // Required for the EnvironmentPropertySource System.getenv().
                 new RuntimePermission("getenv.*"),
                 // Required for the SystemPropertiesPropertySource System.getProperties().
                 new PropertyPermission("*", "read,write"),
         };
         addPermissions(deployment, permissions);
+    }
+
+    private static String resolveLog4jApiFilePermissions() {
+        // WildFly Core uses "thin" server so artifacts are resolved from maven coordinates.
+        final String dir = System.getProperty("maven.repo.local");
+        if (dir == null) {
+            throw new RuntimeException("Failed to resolve system property maven.repo.local");
+        }
+        return Paths.get(dir)
+                .resolve("org")
+                .resolve("apache")
+                .resolve("logging")
+                .resolve("log4j")
+                .resolve("log4j-api")
+                .resolve("-")
+                .toString();
     }
 
     private static String resolveFilePermissions() {
