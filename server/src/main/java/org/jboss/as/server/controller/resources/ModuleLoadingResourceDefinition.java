@@ -11,15 +11,21 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MOD
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.net.JarURLConnection;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+
+import javax.management.JMX;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 
 import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -37,6 +43,7 @@ import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraint
 import org.jboss.as.controller.client.helpers.JBossModulesNameUtil;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.modules.LocalModuleFinder;
@@ -89,12 +96,28 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
                 .setRuntimeOnly()
                 .setReplyType(ModelType.LIST)
                 .setReplyValueType(ModelType.STRING)
-                .setDeprecated(ModelVersion.create(1, 4, 0))
                 .setReadOnly()
                 .build();
 
          resourceRegistration.registerOperationHandler(definition, new ModuleLocationHandler());
          resourceRegistration.registerOperationHandler(ModuleInfoHandler.DEFINITION, ModuleInfoHandler.INSTANCE);
+    }
+
+    static ModuleLoaderMXBean getMxBean(String moduleName) throws OperationFailedException {
+        try {
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            ObjectName pattern = new ObjectName("jboss.modules:type=ModuleLoader,*");
+            Set<ObjectName> names = mbs.queryNames(pattern, null);
+            for (ObjectName name : names) {
+                ModuleLoaderMXBean moduleLoaderMXBean = JMX.newMXBeanProxy(mbs, name, ModuleLoaderMXBean.class);
+                if (moduleLoaderMXBean.queryLoadedModuleNames().contains(moduleName)) {
+                    return moduleLoaderMXBean;
+                }
+            }
+        } catch (MalformedObjectNameException e) {
+            throw ServerLogger.ROOT_LOGGER.couldNotGetModuleInfo(moduleName, e);
+        }
+        throw ServerLogger.ROOT_LOGGER.couldNotGetModuleInfo(moduleName, null);
     }
 
     /** Read attribute handler for "module-roots" */
@@ -204,28 +227,21 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
     }
 
 
-    private static List<String> findResourcePaths(String moduleName) throws ModuleLoadException, ReflectiveOperationException, IOException, URISyntaxException {
+    private static List<String> findResourcePaths(String moduleName) throws ModuleLoadException, IOException, OperationFailedException {
         ModuleLoader moduleLoader = Module.getCallerModuleLoader();
-        ModuleLoaderMXBean loader = ModuleInfoHandler.INSTANCE.getMxBean(moduleLoader);
         moduleLoader.loadModule(JBossModulesNameUtil.parseCanonicalModuleIdentifier(moduleName));
+        ModuleLoaderMXBean loader = getMxBean(moduleName);
 
         List<String> result = new LinkedList<>();
-        for (ResourceLoaderInfo rl : loader.getResourceLoaders(moduleName)){
+        for (ResourceLoaderInfo rl : loader.getResourceLoaders(moduleName)) {
             final String location = rl.getLocation();
             if (location != null && !location.equals("null")) {
                 URL url = new URL(location);
-
-                switch (url.getProtocol()){
-
-                    case "jar": {
-                        JarURLConnection jarConnection = (JarURLConnection)url.openConnection();
-                        result.add(jarConnection.getJarFile().getName());
-
-                        break;
-                    }
-                    default: {
-                        result.add(new File(url.getFile() ).toString());
-                    }
+                if (url.getProtocol().equals("jar")) {
+                    JarURLConnection jarConnection = (JarURLConnection) url.openConnection();
+                    result.add(jarConnection.getJarFile().getName());
+                } else {
+                    result.add(new File(url.getFile()).toString());
                 }
             }
         }
