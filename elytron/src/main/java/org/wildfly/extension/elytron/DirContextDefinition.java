@@ -126,6 +126,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODULE, ModelType.STRING, true)
             .setAllowExpression(true)
+            .setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR)
             .setRestartAllServices()
             .build();
 
@@ -160,7 +161,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
         if(moduleName != null && !moduleName.isEmpty()){
             try {
                 Module cm = Module.getCallerModule();
-                module = cm.getModule(ModuleIdentifierUtil.parseCanonicalModuleIdentifier(moduleName));
+                module = cm.getModule(moduleName);
             } catch (ModuleLoadException e) {
                 throw ElytronSubsystemMessages.ROOT_LOGGER.unableToLoadModule(moduleName, e);
             }
