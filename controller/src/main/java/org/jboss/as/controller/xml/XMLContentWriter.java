@@ -92,7 +92,7 @@ public interface XMLContentWriter<C> extends XMLElementWriter<C> {
     static <C> XMLContentWriter<C> empty() {
         return new XMLContentWriter<>() {
             @Override
-            public void writeContent(XMLExtendedStreamWriter streamWriter, C value) throws XMLStreamException {
+            public void writeContent(XMLExtendedStreamWriter streamWriter, C value) {
                 // Nothing to write
             }
 

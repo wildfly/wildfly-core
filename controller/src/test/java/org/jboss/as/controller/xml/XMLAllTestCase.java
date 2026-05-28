@@ -34,7 +34,7 @@ public class XMLAllTestCase implements FeatureRegistry, QNameResolver {
     }
 
     @Test
-    public void test() {
+    public void testStability() {
         this.verify(EnumSet.allOf(Stability.class), Stability.DEFAULT);
         this.verify(EnumSet.complementOf(EnumSet.of(Stability.DEFAULT)), Stability.COMMUNITY);
         // Empty group
@@ -57,7 +57,7 @@ public class XMLAllTestCase implements FeatureRegistry, QNameResolver {
     }
 
     @Test
-    public void testRequiredAll() throws XMLStreamException {
+    public void testRequired() throws XMLStreamException {
         // Validate xs:all with minOccurs = 1, maxOccurs = 1
         XMLAll<Void, Void> all = this.factory.all()
                 .addElement(this.factory.element(this.resolve("required"), Stability.COMMUNITY).build())
@@ -107,7 +107,7 @@ public class XMLAllTestCase implements FeatureRegistry, QNameResolver {
     }
 
     @Test
-    public void testOptionalAll() throws XMLStreamException {
+    public void testOptional() throws XMLStreamException {
         // Validate xs:all with minOccurs = 0, maxOccurs = 1
         XMLAll<Void, Void> all = this.factory.all().withCardinality(XMLCardinality.Single.OPTIONAL)
                 .addElement(this.factory.element(this.resolve("required"), Stability.COMMUNITY).build())
@@ -157,7 +157,46 @@ public class XMLAllTestCase implements FeatureRegistry, QNameResolver {
     }
 
     @Test
-    public void testDisabledAll() throws XMLStreamException {
+    public void testOptionalChildren() throws XMLStreamException {
+        // Validate xs:all with minOccurs = 1, maxOccurs = 1, but whose children are optional
+        XMLAll<Void, Void> sequence = this.factory.all()
+                .addElement(this.factory.element(this.resolve("optional")).withCardinality(XMLCardinality.Single.OPTIONAL).build())
+                .addElement(this.factory.element(this.resolve("preview"), Stability.PREVIEW).build())
+                .addElement(this.factory.element(this.resolve("experimental"), Stability.EXPERIMENTAL).build())
+                .addElement(this.factory.element(this.resolve("disabled")).withCardinality(XMLCardinality.DISABLED).build())
+                .build();
+        XMLElement<Void, Void> containerElement = this.factory.element(this.resolve("container")).withContent(sequence).build();
+
+        try (XMLElementTester<Void, Void> tester = XMLElementTester.of(containerElement)) {
+            // Positive tests
+
+            // Verify optional group
+            tester.readElement("<container/>");
+
+            // Verify permissible group
+            tester.readElement("<container><optional/></container>");
+
+            // Negative tests
+
+            // Non-repeatable elements
+            Assert.assertThrows(XMLStreamException.class, () -> tester.readElement("<container><optional/><optional/></container>"));
+
+            // Unexpected element
+            Assert.assertThrows(XMLStreamException.class, () -> tester.readElement("<container><unexpected/></container>"));
+
+            // Preview element
+            Assert.assertThrows(XMLStreamException.class, () -> tester.readElement("<container><preview/></container>"));
+
+            // Experimental element
+            Assert.assertThrows(XMLStreamException.class, () -> tester.readElement("<container><experimental/></container>"));
+
+            // Disabled element
+            Assert.assertThrows(XMLStreamException.class, () -> tester.readElement("<container><disabled/></container>"));
+        }
+    }
+
+    @Test
+    public void testDisabled() throws XMLStreamException {
         // Validate xs:all with minOccurs = 0, maxOccurs = 0
         XMLAll<Void, Void> all = this.factory.all().withCardinality(XMLCardinality.DISABLED)
                 .addElement(this.factory.element(this.resolve("required")).build())
@@ -178,7 +217,7 @@ public class XMLAllTestCase implements FeatureRegistry, QNameResolver {
     }
 
     @Test
-    public void testIllegalAll() {
+    public void testIllegal() {
         XMLAll.Builder<Void, Void> builder = this.factory.all();
 
         // xs:all does not allow repeated elements
