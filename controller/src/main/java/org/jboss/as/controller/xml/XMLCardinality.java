@@ -149,6 +149,30 @@ public interface XMLCardinality extends XMLUsage {
         };
     }
 
+    /**
+     * Returns an optional version of the specified cardinality.
+     * @param cardinality an XML particle cardinality
+     * @return an optional version of the specified cardinality.
+     */
+    static XMLCardinality optional(XMLCardinality cardinality) {
+        return cardinality.isRequired() ? new XMLCardinality() {
+            @Override
+            public int getMinOccurs() {
+                return cardinality.getMinOccurs();
+            }
+
+            @Override
+            public OptionalInt getMaxOccurs() {
+                return cardinality.getMaxOccurs();
+            }
+
+            @Override
+            public boolean isRequired() {
+                return false;
+            }
+        } : cardinality;
+    }
+
     static String toString(XMLCardinality cardinality) {
         return String.format("minOccurs=\"%d\" maxOccurs=\"%s\"", cardinality.getMinOccurs(), cardinality.getMaxOccurs().isPresent() ? cardinality.getMaxOccurs().getAsInt() : "unbounded");
     }
