@@ -18,6 +18,7 @@ import static org.jboss.as.domain.management.security.adduser.AddUser.SERVER_CON
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,6 +43,8 @@ public class PropertyFileFinder implements State {
     private final StateValues stateValues;
     private boolean validFilePermissions = true;
     private String filePermissionsProblemPath;
+    private boolean createFilesFailed = false;
+    private String createFilesFailedCause;
 
     public PropertyFileFinder(ConsoleWrapper theConsole, final StateValues stateValues) {
         this.theConsole = theConsole;
@@ -61,6 +64,9 @@ public class PropertyFileFinder implements State {
         fileName = fileName == null ? stateValues.getFileMode() == FileMode.MANAGEMENT ? MGMT_USERS_PROPERTIES
                 : APPLICATION_USERS_PROPERTIES : fileName;
         if (!findFiles(foundFiles, fileName)) {
+            if (createFilesFailed) {
+                return new ErrorState(theConsole, DomainManagementLogger.ROOT_LOGGER.failedToCreateFilesConfigurationPath(createFilesFailedCause), null, null);
+            }
             return new ErrorState(theConsole, DomainManagementLogger.ROOT_LOGGER.propertiesFileNotFound(fileName), null, stateValues);
         } else if(!validFilePermissions) {
             return new ErrorState(theConsole, DomainManagementLogger.ROOT_LOGGER.filePermissionsProblemsFound(
@@ -180,6 +186,7 @@ public class PropertyFileFinder implements State {
 
         String serverConfigOpt = stateValues.getOptions().getServerConfigDir();
         String domainConfigOpt = stateValues.getOptions().getDomainConfigDir();
+        Boolean createFilesOpt = stateValues.getOptions().isCreateFiles();
 
         // if no option is set, add to both standalone and domain
         if (serverConfigOpt == null && domainConfigOpt == null) {
@@ -201,7 +208,10 @@ public class PropertyFileFinder implements State {
                     SERVER_CONFIG_DIR, SERVER_BASE_DIR, "standalone", fileName);
             if (standaloneProps.exists()) {
                 foundFiles.add(standaloneProps);
-            } // TODO should this invalid --sc be an error regardless of whether domainConfigOpt points to a valid dir?
+            } else if (createFilesOpt) {
+                createFiles(standaloneProps, foundFiles);
+            }
+            // TODO should this invalid --sc be an error regardless of whether domainConfigOpt points to a valid dir?
         }
 
         if (domainConfigOpt != null) {
@@ -209,7 +219,10 @@ public class PropertyFileFinder implements State {
                     DOMAIN_CONFIG_DIR, DOMAIN_BASE_DIR, "domain", fileName);
             if (domainProps.exists()) {
                 foundFiles.add(domainProps);
-            } // TODO should this invalid --dc be an error regardless of whether serverConfigOpt points to a valid dir?
+            } else if (createFilesOpt) {
+                createFiles(domainProps, foundFiles);
+            }
+            // TODO should this invalid --dc be an error regardless of whether serverConfigOpt points to a valid dir?
         }
 
         return !foundFiles.isEmpty();
@@ -290,4 +303,31 @@ public class PropertyFileFinder implements State {
 
     }
 
+    /**
+     * Attempts to create the configuration file and its parent directories if they do not exist.
+     * This is used when the --create-files (-cf) flag is provided to ensure the environment
+     * is ready for user creation, especially in cloud or containerized deployments.
+     * If an error occurs, the {@code createFilesFailed} flag is set to true and the
+     * cause is captured in {@code createFilesFailedCause}.
+     *
+     * @param file the properties file to be created.
+     * @param foundFiles the list of files to be updated if creation is successful.
+     */
+    private void createFiles(final File file, final List<File> foundFiles) {
+        File parentDir = file.getParentFile();
+
+        try {
+            if (parentDir != null && !parentDir.exists()) {
+                Files.createDirectories(parentDir.toPath());
+            }
+
+            if (!file.exists()) {
+                Files.createFile(file.toPath());
+                foundFiles.add(file);
+            }
+        } catch (IOException e) {
+            createFilesFailed = true;
+            createFilesFailedCause = file.getAbsolutePath() + " (" + e.toString() + ")";
+        }
+    }
 }
