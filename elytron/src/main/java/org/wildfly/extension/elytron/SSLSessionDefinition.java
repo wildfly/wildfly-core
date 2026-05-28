@@ -116,7 +116,7 @@ class SSLSessionDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerReadOnlyAttribute(getNamedCertificateList(ElytronDescriptionConstants.LOCAL_CERTIFICATES),
                 new SSLSessionRuntimeHandler((ModelNode r, SSLSession s) -> {
                     try {
-                        writeCertificates(r, s.getLocalCertificates());
+                        writeCertificates(r, s.getLocalCertificates(), resourceRegistration.getStability());
                     } catch (CertificateEncodingException | NoSuchAlgorithmException ignored) {
                     }
                 }));
@@ -130,7 +130,7 @@ class SSLSessionDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerReadOnlyAttribute(getNamedCertificateList(ElytronDescriptionConstants.PEER_CERTIFICATES),
                 new SSLSessionRuntimeHandler((ModelNode r, SSLSession s) -> {
                     try {
-                        writeCertificates(r, s.getPeerCertificates());
+                        writeCertificates(r, s.getPeerCertificates(), resourceRegistration.getStability());
                     } catch (CertificateEncodingException | NoSuchAlgorithmException | SSLPeerUnverifiedException ignored) {
                     }
                 }));
