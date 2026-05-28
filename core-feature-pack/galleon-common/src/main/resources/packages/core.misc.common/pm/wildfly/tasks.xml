@@ -15,11 +15,13 @@
         <permission value="664">
             <filter pattern="*.properties" include="true"/>
         </permission>
+        <permission value="700">
+            <filter pattern="*/.installation" include="true"/>
+        </permission>
         <permission value="600">
             <filter pattern="*-users.properties" include="true"/>
             <filter pattern="*-roles.properties" include="true"/>
             <filter pattern="*-groups.properties" include="true"/>
-            <filter pattern="*/.installation" include="true"/>
         </permission>
     </file-permissions>
     <copy-artifact artifact="org.jboss.modules:jboss-modules" to-location="jboss-modules.jar"/>

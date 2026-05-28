@@ -117,8 +117,16 @@ public class ProvisioningConsistencyTestCase {
                     }
                     File dist = getDistFile(dir, true, true, errors);
                     files = dist.listFiles();
-                    if (files != null && files.length > 0) {
-                        errors.add(String.format("%s has unexpected files: %s", dist, Arrays.asList(files)));
+                    if (files == null || files.length == 0) {
+                        errors.add(String.format("%s should contain installation manager helper files", dist));
+                    } else {
+                        // remove the installation manager helpers
+                        files = Arrays.stream(files)
+                                .filter( f -> !f.getName().startsWith("_installation-manager_helper"))
+                                .toArray(File[]::new);
+                        if (files.length > 0) {
+                            errors.add(String.format("%s has unexpected files: %s", dist, Arrays.asList(files)));
+                        }
                     }
                     return FileVisitResult.SKIP_SUBTREE;
                 } else {
