@@ -4,12 +4,21 @@
  */
 package org.jboss.as.server;
 
-import java.io.BufferedWriter;
+import static java.security.AccessController.doPrivileged;
+import static org.jboss.as.process.protocol.StreamUtils.safeClose;
+
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.server.logging.ServerLogger;
@@ -36,8 +45,10 @@ public final class BootstrapListener {
     private final String prettyVersion;
     private final FutureServiceContainer futureContainer;
     private final File tempDir;
-    private  String startedCleanMessage;
-    private  String startedWitErrorsMessage;
+    private String startedCleanMessage;
+    private String startedWitErrorsMessage;
+    private FileChannel markerFileChannel;
+    private FileLock markerFileLock;
 
     public BootstrapListener(final ServiceContainer serviceContainer, final ElapsedTime elapsedTime, final ServiceTarget serviceTarget, final FutureServiceContainer futureContainer, final String prettyVersion, final File tempDir) {
         this.serviceContainer = serviceContainer;
@@ -116,29 +127,41 @@ public final class BootstrapListener {
     }
 
     private void createStartupMarker(String result, long startTime) {
-        File file = new File(tempDir, MARKER_FILE);
+        final File file = new File(tempDir, MARKER_FILE);
+        final String content = result + ":" + startTime;
         try {
-            Files.deleteIfExists(file.toPath());
-            if (file.createNewFile()) {
-                try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8, StandardOpenOption.WRITE)) {
-                    writer.append(result).append(":").append(String.valueOf(startTime));
-                    writer.flush();
-                } catch (IOException e) {
-                    // ignore
-                }
+            if (WildFlySecurityManager.isChecking()) {
+                doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+                    openMarkerFile(file, content);
+                    return null;
+                });
+            } else {
+                openMarkerFile(file, content);
+            }
+        } catch (PrivilegedActionException | IOException e) {
+            // ignore
+        }
+    }
+
+    private void openMarkerFile(File file, String content) throws IOException {
+        Files.deleteIfExists(file.toPath());
+        markerFileChannel = FileChannel.open(file.toPath(),
+                StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, StandardOpenOption.READ);
+        markerFileChannel.write(ByteBuffer.wrap(content.getBytes(StandardCharsets.UTF_8)));
+        markerFileLock = markerFileChannel.lock();
+    }
+
+    public void releaseStartupMarker() {
+        try {
+            if (markerFileLock != null && markerFileLock.isValid()) {
+                markerFileLock.release();
             }
         } catch (IOException e) {
             // ignore
-        }
-
-    }
-
-    public static void deleteStartupMarker(File tempDir) {
-        File file = new File(tempDir, BootstrapListener.MARKER_FILE);
-        try {
-            Files.deleteIfExists(file.toPath());
-        } catch (IOException e) {
-            // ignore
+        } finally {
+            safeClose(markerFileChannel);
+            markerFileLock = null;
+            markerFileChannel = null;
         }
     }
 

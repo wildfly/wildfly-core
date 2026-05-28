@@ -86,6 +86,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
     private final ServiceActivator[] extraServices;
     private final FutureServiceContainer futureContainer;
     private volatile boolean everStopped;
+    private volatile BootstrapListener bootstrapListener;
     private static final boolean IGNORE_ROOT_USERNAME_WARN = Boolean.getBoolean("jboss.ignore.root.username.warning");
 
     public HostControllerService(final HostControllerEnvironment environment, final HostRunningModeControl runningModeControl,
@@ -161,8 +162,8 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
 
         final ServiceContainer serviceContainer = myController.getServiceContainer();
 
-        final BootstrapListener bootstrapListener = new BootstrapListener(serviceContainer, startupTime, serviceTarget, futureContainer, prettyVersion + " (Host Controller)", environment.getDomainTempDir());
-        bootstrapListener.getStabilityMonitor().addController(myController);
+        this.bootstrapListener = new BootstrapListener(serviceContainer, startupTime, serviceTarget, futureContainer, prettyVersion + " (Host Controller)", environment.getDomainTempDir());
+        this.bootstrapListener.getStabilityMonitor().addController(myController);
 
         // The first default services are registered before the bootstrap operations are executed.
 
@@ -228,10 +229,10 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
     @Override
     public void stop(StopContext context) {
         String prettyVersion = environment.getProductConfig().getPrettyVersionString();
-        //Moved to AbstractControllerService.stop()
-        //processState.setStopping();
         ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, (int) (context.getElapsedTime() / 1000000L));
-        BootstrapListener.deleteStartupMarker(environment.getDomainTempDir());
+        if (this.bootstrapListener != null) {
+            this.bootstrapListener.releaseStartupMarker();
+        }
         everStopped = true;
     }
 
