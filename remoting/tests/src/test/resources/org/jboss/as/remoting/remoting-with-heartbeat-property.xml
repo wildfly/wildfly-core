@@ -1,0 +1,18 @@
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+<subsystem xmlns="urn:jboss:domain:remoting:8.0">
+    <endpoint worker="default-remoting"/>
+    <outbound-connections>
+        <remote-outbound-connection name="remote-ejb-connection" outbound-socket-binding-ref="dummy-outbound-socket" protocol="remote+http">
+            <properties>
+                <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                <property name="SSL_ENABLED" value="false"/>
+                <property name="org.jboss.remoting3.RemotingOptions.HEARTBEAT_INTERVAL" value="2000"/>
+                <property name="KEEP_ALIVE" value="true"/>
+                <property name="READ_TIMEOUT" value="4000"/>
+            </properties>
+        </remote-outbound-connection>
+    </outbound-connections>
+</subsystem>
