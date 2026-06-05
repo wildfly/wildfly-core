@@ -55,7 +55,7 @@ public interface XMLContent<RC, WC> extends XMLContentWriter<WC> {
             }
 
             @Override
-            public void writeContent(XMLExtendedStreamWriter streamWriter, WC value) throws XMLStreamException {
+            public void writeContent(XMLExtendedStreamWriter streamWriter, WC value) {
                 // Do nothing
             }
         };
@@ -145,7 +145,7 @@ public interface XMLContent<RC, WC> extends XMLContentWriter<WC> {
                 this.group.getReader().whenAbsent(context);
             }
             // Validate minOccurs
-            if (occurrences < this.group.getCardinality().getMinOccurs()) {
+            if (this.group.getCardinality().isRequired() && (occurrences < this.group.getCardinality().getMinOccurs())) {
                 throw ParseUtils.minOccursNotReached(reader, this.group.getNames(), this.group.getCardinality());
             }
             // Validate exit criteria
