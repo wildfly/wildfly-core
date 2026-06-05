@@ -70,6 +70,13 @@ public interface XMLElementGroup<RC, WC> extends XMLParticle<RC, WC> {
         protected List<E> getElements() {
             return this.elements;
         }
+
+        @Override
+        protected XMLCardinality getCardinality() {
+            XMLCardinality cardinality = super.getCardinality();
+            // Group is optional, regardless of cardinality, if all children are optional
+            return cardinality.isRequired() && this.elements.stream().map(XMLParticle::getCardinality).noneMatch(XMLCardinality::isRequired) ? XMLCardinality.optional(cardinality) : cardinality;
+        }
     }
 
     class DefaultXMLElementGroup<RC, WC> extends DefaultXMLParticle<RC, WC> implements XMLElementGroup<RC, WC> {

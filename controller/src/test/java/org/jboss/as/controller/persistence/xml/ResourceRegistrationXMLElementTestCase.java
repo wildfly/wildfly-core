@@ -65,15 +65,16 @@ public class ResourceRegistrationXMLElementTestCase implements FeatureRegistry, 
 
         AttributeDefinition requiredAttribute = new SimpleAttributeDefinitionBuilder("required", ModelType.STRING).setRequired(true).build();
         AttributeDefinition optionalAttribute = new SimpleAttributeDefinitionBuilder("optional", ModelType.STRING).setRequired(false).build();
+        AttributeDefinition alternativeAttribute = new SimpleAttributeDefinitionBuilder("alternative", ModelType.STRING).setRequired(true).setAlternatives("optional").build();
         AttributeDefinition experimentalAttribute = new SimpleAttributeDefinitionBuilder("experimental", ModelType.STRING).setRequired(false).setStability(Stability.EXPERIMENTAL).build();
 
-        ResourceRegistrationXMLElement childElement = this.factory.singletonElement(child).addAttributes(List.of(requiredAttribute, optionalAttribute, experimentalAttribute)).build();
+        ResourceRegistrationXMLElement childElement = this.factory.singletonElement(child).addAttributes(List.of(requiredAttribute, alternativeAttribute, optionalAttribute, experimentalAttribute)).build();
         // Alternate child has same attributes, but parse/marshal as elements
         ResourceRegistrationXMLElement alternateChildElement = this.factory.singletonElement(alternateChild)
                 .withContent(this.factory.all()
                         .withMarshallers(Map.of(requiredAttribute, AttributeMarshallers.SIMPLE_ELEMENT, optionalAttribute, AttributeMarshallers.SIMPLE_ELEMENT, experimentalAttribute, AttributeMarshallers.SIMPLE_ELEMENT))
                         .withParsers(Map.of(requiredAttribute, AttributeParsers.SIMPLE_ELEMENT, optionalAttribute, AttributeParsers.SIMPLE_ELEMENT, experimentalAttribute, AttributeParsers.SIMPLE_ELEMENT))
-                        .addElements(List.of(requiredAttribute, optionalAttribute, experimentalAttribute))
+                        .addElements(List.of(requiredAttribute, optionalAttribute, experimentalAttribute, alternativeAttribute))
                         .build())
                 .build();
         ResourceRegistrationXMLElement subsystemElement = this.factory.subsystemElement(subsystem).withContent(this.factory.choice().addElement(childElement).addElement(alternateChildElement).build()).build();
@@ -99,11 +100,13 @@ public class ResourceRegistrationXMLElementTestCase implements FeatureRegistry, 
             Assert.assertEquals(operations.toString(), childAddress.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
             Assert.assertEquals(operations.toString(), "foo", requiredAttribute.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, operation).asStringOrNull());
             Assert.assertEquals(operations.toString(), null, optionalAttribute.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, operation).asStringOrNull());
+            Assert.assertEquals(operations.toString(), null, alternativeAttribute.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, operation).asStringOrNull());
             Assert.assertFalse(operations.toString(), experimentalAttribute.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, operation).isDefined());
 
             ModelNode model = new ModelNode();
             ModelNode subsystemModel = new ModelNode();
-            subsystemModel.get(child.getPathElement().getKeyValuePair()).get(requiredAttribute.getName()).set("foo");
+            ModelNode childModel = subsystemModel.get(child.getPathElement().getKeyValuePair());
+            childModel.get(requiredAttribute.getName()).set("foo");
             model.get(subsystem.getPathElement().getKeyValuePair()).set(subsystemModel);
             assertXMLEquals(xml, tester.writeElement(model));
 
@@ -121,13 +124,39 @@ public class ResourceRegistrationXMLElementTestCase implements FeatureRegistry, 
             Assert.assertEquals(operations.toString(), childAddress.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
             Assert.assertEquals(operations.toString(), "foo", requiredAttribute.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, operation).asStringOrNull());
             Assert.assertEquals(operations.toString(), "bar", optionalAttribute.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, operation).asStringOrNull());
+            Assert.assertEquals(operations.toString(), null, alternativeAttribute.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, operation).asStringOrNull());
             Assert.assertFalse(operations.toString(), experimentalAttribute.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, operation).isDefined());
 
             model.clear();
             subsystemModel.clear();
-            ModelNode childModel = subsystemModel.get(child.getPathElement().getKeyValuePair());
+            childModel = subsystemModel.get(child.getPathElement().getKeyValuePair());
             childModel.get(requiredAttribute.getName()).set("foo");
             childModel.get(optionalAttribute.getName()).set("bar");
+            model.get(subsystem.getPathElement().getKeyValuePair()).set(subsystemModel);
+            assertXMLEquals(xml, tester.writeElement(model));
+
+            // Verify attribute-based child with alternative attributes
+            xml = String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?><subsystem xmlns=\"%s\"><child required=\"%s\" alternative=\"%s\"/></subsystem>", NAMESPACE_URI, "foo", "bar");
+            operations = tester.readElement(xml).getValue();
+            Assert.assertEquals(operations.toString(), 2, operations.size());
+            // Verify order of operations
+            Assert.assertEquals(operations.toString(), List.of(subsystemAddress, childAddress), List.copyOf(operations.keySet()));
+            operation = operations.get(subsystemAddress);
+            Assert.assertEquals(operations.toString(), ModelDescriptionConstants.ADD, operation.get(ModelDescriptionConstants.OP).asStringOrNull());
+            Assert.assertEquals(operations.toString(), subsystemAddress.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+            operation = operations.get(childAddress);
+            Assert.assertEquals(operations.toString(), ModelDescriptionConstants.ADD, operation.get(ModelDescriptionConstants.OP).asStringOrNull());
+            Assert.assertEquals(operations.toString(), childAddress.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+            Assert.assertEquals(operations.toString(), "foo", requiredAttribute.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, operation).asStringOrNull());
+            Assert.assertEquals(operations.toString(), null, optionalAttribute.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, operation).asStringOrNull());
+            Assert.assertEquals(operations.toString(), "bar", alternativeAttribute.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, operation).asStringOrNull());
+            Assert.assertFalse(operations.toString(), experimentalAttribute.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, operation).isDefined());
+
+            model.clear();
+            subsystemModel.clear();
+            childModel = subsystemModel.get(child.getPathElement().getKeyValuePair());
+            childModel.get(requiredAttribute.getName()).set("foo");
+            childModel.get(alternativeAttribute.getName()).set("bar");
             model.get(subsystem.getPathElement().getKeyValuePair()).set(subsystemModel);
             assertXMLEquals(xml, tester.writeElement(model));
 
@@ -205,6 +234,7 @@ public class ResourceRegistrationXMLElementTestCase implements FeatureRegistry, 
 
             // Missing required attribute/element
             Assert.assertThrows(XMLStreamException.class, () -> tester.readElement(String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?><subsystem xmlns=\"%s\"><child optional=\"%s\"/></subsystem>", NAMESPACE_URI, "foo")));
+            Assert.assertThrows(XMLStreamException.class, () -> tester.readElement(String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?><subsystem xmlns=\"%s\"><child alternative=\"%s\"/></subsystem>", NAMESPACE_URI, "foo")));
             Assert.assertThrows(XMLStreamException.class, () -> tester.readElement(String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?><subsystem xmlns=\"%s\"><alternate><optional>%s</optional></alternate></subsystem>", NAMESPACE_URI, "foo")));
 
             // Unexpected attribute

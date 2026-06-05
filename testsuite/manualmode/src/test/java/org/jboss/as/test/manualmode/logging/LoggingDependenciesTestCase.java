@@ -5,6 +5,8 @@
 
 package org.jboss.as.test.manualmode.logging;
 
+import java.io.FilePermission;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.PropertyPermission;
 
@@ -64,6 +66,14 @@ public class LoggingDependenciesTestCase extends AbstractLoggingTestCase {
         final JavaArchive archive = createDeployment(Log4j2ServiceActivator.class, Log4j2ServiceActivator.DEPENDENCIES);
         // Required permissions for log4j2
         addPermissions(archive,
+                // The getStackWalkerWithClassReference permissions is required for the org.apache.logging.log4j.util.StackLocator
+                new RuntimePermission("getStackWalkerWithClassReference"),
+                // The FilePermissions is also for the org.apache.logging.log4j.util.ProviderUtil as it needs to read the JAR
+                // for the service loader.
+                new FilePermission(resolveFilePermissions(), "read"),
+                // The FilePermissions is also for the org.apache.logging.log4j.util.PropertiesUtil$Environment as it needs to read the JAR
+                // for the service loader.
+                new FilePermission(resolveLog4jApiFilePermissions(), "read"),
                 new RuntimePermission("getClassLoader"),
                 new RuntimePermission("accessDeclaredMembers"),
                 new RuntimePermission("getenv.*"),
@@ -86,5 +96,36 @@ public class LoggingDependenciesTestCase extends AbstractLoggingTestCase {
         } catch (ServerDeploymentException expected) {
 
         }
+    }
+
+    private static String resolveLog4jApiFilePermissions() {
+        // WildFly Core uses "thin" server so artifacts are resolved from maven coordinates.
+        final String dir = System.getProperty("maven.repo.local");
+        if (dir == null) {
+            throw new RuntimeException("Failed to resolve system property maven.repo.local");
+        }
+        return Paths.get(dir)
+                .resolve("org")
+                .resolve("apache")
+                .resolve("logging")
+                .resolve("log4j")
+                .resolve("log4j-api")
+                .resolve("-")
+                .toString();
+    }
+
+    private static String resolveFilePermissions() {
+        // WildFly Core uses "thin" server so artifacts are resolved from maven coordinates.
+        final String dir = System.getProperty("maven.repo.local");
+        if (dir == null) {
+            throw new RuntimeException("Failed to resolve system property maven.repo.local");
+        }
+        return Paths.get(dir)
+                .resolve("org")
+                .resolve("jboss")
+                .resolve("logmanager")
+                .resolve("log4j2-jboss-logmanager")
+                .resolve("-")
+                .toString();
     }
 }

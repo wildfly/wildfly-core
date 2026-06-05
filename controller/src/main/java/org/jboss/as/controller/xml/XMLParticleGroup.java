@@ -81,6 +81,13 @@ public interface XMLParticleGroup<RC, WC> extends XMLElementGroup<RC, WC> {
         protected List<XMLParticleGroup<RC, WC>> getGroups() {
             return this.groups;
         }
+
+        @Override
+        protected XMLCardinality getCardinality() {
+            XMLCardinality cardinality = super.getCardinality();
+            // Group is optional, regardless of cardinality, if all children are optional
+            return cardinality.isRequired() && this.groups.stream().map(XMLParticle::getCardinality).noneMatch(XMLCardinality::isRequired) ? XMLCardinality.optional(cardinality) : cardinality;
+        }
     }
 
     class DefaultXMLParticleGroup<RC, WC> extends DefaultXMLElementGroup<RC, WC> implements XMLParticleGroup<RC, WC> {

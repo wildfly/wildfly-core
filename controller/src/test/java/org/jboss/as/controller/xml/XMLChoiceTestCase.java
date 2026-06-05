@@ -33,7 +33,7 @@ public class XMLChoiceTestCase implements FeatureRegistry, QNameResolver {
     }
 
     @Test
-    public void test() {
+    public void testStability() {
         this.verify(EnumSet.allOf(Stability.class), Stability.DEFAULT);
         this.verify(EnumSet.complementOf(EnumSet.of(Stability.DEFAULT)), Stability.COMMUNITY);
         // Empty group
@@ -56,7 +56,7 @@ public class XMLChoiceTestCase implements FeatureRegistry, QNameResolver {
     }
 
     @Test
-    public void testRequiredChoice() throws XMLStreamException {
+    public void testRequired() throws XMLStreamException {
         // Validate xs:choice with minOccurs = 1, maxOccurs = 1
         XMLChoice<Void, Void> choice = this.factory.choice()
                 .addElement(this.factory.element(this.resolve("optional")).withCardinality(XMLCardinality.Single.OPTIONAL).build())
@@ -110,7 +110,7 @@ public class XMLChoiceTestCase implements FeatureRegistry, QNameResolver {
     }
 
     @Test
-    public void testOptionalChoice() throws XMLStreamException {
+    public void testOptional() throws XMLStreamException {
         // Validate xs:choice with minOccurs = 0, maxOccurs = 1
         XMLChoice<Void, Void> choice = this.factory.choice().withCardinality(XMLCardinality.Single.OPTIONAL)
                 .addElement(this.factory.element(this.resolve("optional")).withCardinality(XMLCardinality.Single.OPTIONAL).build())
@@ -164,7 +164,56 @@ public class XMLChoiceTestCase implements FeatureRegistry, QNameResolver {
     }
 
     @Test
-    public void testRepeatableChoice() throws XMLStreamException {
+    public void testOptionalChildren() throws XMLStreamException {
+        // Validate xs:choice with minOccurs = 1, maxOccurs = 1, but whose children are optional
+        XMLChoice<Void, Void> sequence = this.factory.choice()
+                .addElement(this.factory.element(this.resolve("optional")).withCardinality(XMLCardinality.Single.OPTIONAL).build())
+                .addElement(this.factory.element(this.resolve("repeatable")).withCardinality(XMLCardinality.Unbounded.OPTIONAL).build())
+                .addElement(this.factory.element(this.resolve("preview"), Stability.PREVIEW).build())
+                .addElement(this.factory.element(this.resolve("experimental"), Stability.EXPERIMENTAL).build())
+                .addElement(this.factory.element(this.resolve("disabled")).withCardinality(XMLCardinality.DISABLED).build())
+                .build();
+        XMLElement<Void, Void> containerElement = this.factory.element(this.resolve("container")).withContent(sequence).build();
+
+        try (XMLElementTester<Void, Void> tester = XMLElementTester.of(containerElement)) {
+            // Positive tests
+
+            // Verify empty
+            tester.readElement("<container/>");
+
+            // Verify choice of of single element
+            tester.readElement("<container><optional/></container>");
+
+            // Verify sequence of repeatable element
+            tester.readElement("<container><repeatable/><repeatable/></container>");
+
+            // Negative tests
+
+            // Multiple choice
+            Assert.assertThrows(XMLStreamException.class, () -> tester.readElement("<container><optional/><repeatable/></container>"));
+
+            // Choice of non-repeatable elements
+            Assert.assertThrows(XMLStreamException.class, () -> tester.readElement("<container><optional/><optional/></container>"));
+
+            // Non-repeatable sequence
+            Assert.assertThrows(XMLStreamException.class, () -> tester.readElement("<container><optional/><repeatable/></container>"));
+
+            // Unexpected element
+            Assert.assertThrows(XMLStreamException.class, () -> tester.readElement("<container><unexpected/></container>"));
+
+            // Preview element
+            Assert.assertThrows(XMLStreamException.class, () -> tester.readElement("<container><preview/></container>"));
+
+            // Experimental element
+            Assert.assertThrows(XMLStreamException.class, () -> tester.readElement("<container><experimental/></container>"));
+
+            // Disabled element
+            Assert.assertThrows(XMLStreamException.class, () -> tester.readElement("<container><disabled/></container>"));
+        }
+    }
+
+    @Test
+    public void testRepeatable() throws XMLStreamException {
         // Validate xs:choice with minOccurs = 0, maxOccurs = unbounded
         XMLChoice<Void, Void> choice = this.factory.choice().withCardinality(XMLCardinality.Unbounded.OPTIONAL)
                 .addElement(this.factory.element(this.resolve("optional")).withCardinality(XMLCardinality.Single.OPTIONAL).build())
@@ -217,7 +266,7 @@ public class XMLChoiceTestCase implements FeatureRegistry, QNameResolver {
     }
 
     @Test
-    public void testRepeatedChoice() throws XMLStreamException {
+    public void testRepeated() throws XMLStreamException {
         // Validate xs:choice with minOccurs = 0, maxOccurs = unbounded
         XMLChoice<Void, Void> choice = this.factory.choice().withCardinality(XMLCardinality.Unbounded.REQUIRED)
                 .addElement(this.factory.element(this.resolve("optional")).withCardinality(XMLCardinality.Single.OPTIONAL).build())
@@ -270,7 +319,7 @@ public class XMLChoiceTestCase implements FeatureRegistry, QNameResolver {
     }
 
     @Test
-    public void testDisabledChoice() throws XMLStreamException {
+    public void testDisabled() throws XMLStreamException {
         // Validate xs:all with minOccurs = 0, maxOccurs = 0
         XMLChoice<Void, Void> choice = this.factory.choice().withCardinality(XMLCardinality.DISABLED)
                 .addElement(this.factory.element(this.resolve("required")).build())

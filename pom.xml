@@ -16,7 +16,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>33.0.0.Beta1-SNAPSHOT</version>
+    <version>33.0.0.Beta3-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -187,6 +187,7 @@
         <version.org.wildfly.bom-builder-plugin>2.0.10.Final</version.org.wildfly.bom-builder-plugin>
         <version.org.wildfly.wildfly-maven-gpg-plugin>3.2.8.SP1</version.org.wildfly.wildfly-maven-gpg-plugin>
         <version.org.wildfly.licenses.plugin>2.4.4.Final</version.org.wildfly.licenses.plugin>
+        <version.verifier.plugin>1.1</version.verifier.plugin>
         <version.versions.plugin>2.5</version.versions.plugin>
         <version.xml.plugin>1.1.0</version.xml.plugin>
         <wildfly.build.output.dir>build/target/${server.output.dir.prefix}-${wildfly.core.release.version}</wildfly.build.output.dir>
@@ -221,7 +222,7 @@
         <legacy.version.org.jboss.spec.javax.security.auth.message.jboss-jaspi-api_1.1_spec>2.0.1.Final</legacy.version.org.jboss.spec.javax.security.auth.message.jboss-jaspi-api_1.1_spec>
         <legacy.version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>2.0.0.Final</legacy.version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>
 
-		<version.ch.qos.logback>1.5.32</version.ch.qos.logback>
+		<version.ch.qos.logback>1.5.33</version.ch.qos.logback>
         <version.com.googlecode.javaewah>1.2.3</version.com.googlecode.javaewah>
         <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
         <version.com.google.guava>31.1-jre</version.com.google.guava>
@@ -255,10 +256,10 @@
         <version.org.apache.kerby>2.0.3</version.org.apache.kerby>
         <version.org.apache.httpcomponents.httpclient>4.5.14</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.16</version.org.apache.httpcomponents.httpcore>
-        <version.org.apache.logging.log4j>2.23.1</version.org.apache.logging.log4j>
+        <version.org.apache.logging.log4j>2.25.4</version.org.apache.logging.log4j>
         <version.org.apache.maven.provider>3.5.4</version.org.apache.maven.provider>
         <version.org.apache.maven.resolver>1.1.1</version.org.apache.maven.resolver>
-        <version.org.apache.sshd>2.17.1</version.org.apache.sshd>
+        <version.org.apache.sshd>2.18.0</version.org.apache.sshd>
         <version.org.apache.velocity>2.3</version.org.apache.velocity>
         <version.org.assertj>3.27.7</version.org.assertj>
         <version.org.bouncycastle>1.84</version.org.bouncycastle>
@@ -753,6 +754,23 @@
                     <groupId>org.wildfly.plugins</groupId>
                     <artifactId>wildfly-maven-plugin</artifactId>
                     <version>${version.wildfly.plugin}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-verifier-plugin</artifactId>
+                    <version>${version.verifier.plugin}</version>
+                    <executions>
+                        <execution>
+                            <id>main</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <verificationFile>target/verifier/verifications.xml</verificationFile>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
