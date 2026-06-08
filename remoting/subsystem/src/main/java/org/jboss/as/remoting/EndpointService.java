@@ -40,7 +40,7 @@ public class EndpointService implements Service {
                            String nodeName, EndpointType type, final OptionMap optionMap) {
         this.endpointConsumer = endpointConsumer;
         this.workerSupplier = workerSupplier;
-        this.connectionInfoSupplier = connectionInfoSupplier;
+        this.connectionInfoSupplier = connectionInfoSupplier != null ? connectionInfoSupplier : () -> null;
         if (nodeName == null) {
             nodeName = "remote";
         }
