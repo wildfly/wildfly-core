@@ -69,7 +69,8 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
     private static final ModelNode JSON_FORMATTER_ADDR = createAddress("logging-profile", "syslog-profile", "json-formatter", "JSON");
     private static final ModelNode SYSLOG_PROFILE_ADDR = createAddress("logging-profile", "syslog-profile");
     private static final ModelNode SYSLOG_HANDLER_ADDR = createAddress("logging-profile", "syslog-profile", "syslog-handler", "SYSLOG");
-    private static final ModelNode SYSLOG_PROFILE_ROOT_LOGGER_ADDR = createAddress("logging-profile", "syslog-profile", "root-logger", "ROOT");
+    private static final ModelNode SYSLOG_PROFILE_LOGGER_ADDR = createAddress("logging-profile", "syslog-profile", "logger",
+            LoggingServiceActivator.LOGGER.getName());
 
     /**
      * Syslog server port.
@@ -250,7 +251,7 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
             op.get("enabled").set("true");
             builder.addStep(op);
 
-            op = Operations.createAddOperation(SYSLOG_PROFILE_ROOT_LOGGER_ADDR);
+            op = Operations.createAddOperation(SYSLOG_PROFILE_LOGGER_ADDR);
             op.get("level").set("TRACE");
             op.get("handlers").add("SYSLOG");
             builder.addStep(op);
