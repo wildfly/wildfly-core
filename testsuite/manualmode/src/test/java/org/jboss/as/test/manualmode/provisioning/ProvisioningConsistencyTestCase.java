@@ -127,9 +127,10 @@ public class ProvisioningConsistencyTestCase {
                     if (files == null || files.length == 0) {
                         errors.add(String.format("%s should contain installation manager helper files", dist));
                     } else {
-                        // remove the installation manager helpers
+                        // remove the installation manager helpers and runtime lock files
                         files = Arrays.stream(files)
-                                .filter( f -> !f.getName().startsWith("_installation-manager_helper"))
+                                .filter( f -> !f.getName().startsWith("_installation-manager_helper")
+                                           && !f.getName().equals("running.lock"))
                                 .toArray(File[]::new);
                         if (files.length > 0) {
                             errors.add(String.format("%s has unexpected files: %s", dist, Arrays.asList(files)));
