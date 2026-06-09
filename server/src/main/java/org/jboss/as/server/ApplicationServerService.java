@@ -7,8 +7,14 @@ package org.jboss.as.server;
 
 import static org.jboss.as.server.ServerService.EXTERNAL_MODULE_CAPABILITY;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -62,6 +68,12 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
     private volatile FutureServiceContainer futureContainer;
     private volatile boolean everStopped;
     private static final boolean IGNORE_ROOT_USERNAME_WARN = Boolean.getBoolean("jboss.ignore.root.username.warning");
+    // Both fields are static so the lock survives server reloads (JVM lifetime).
+    // runningLock must be kept as a strong reference: FileLockTable uses WeakReference internally,
+    // so without it the FileLock becomes GC-eligible and finalize() would call release(),
+    // dropping the OS advisory lock even while the channel remains open.
+    private static volatile FileChannel runningLockChannel;
+    private static volatile FileLock runningLock;
 
     ApplicationServerService(final List<ServiceActivator> extraServices, final Bootstrap.Configuration configuration,
                              final ControlledProcessState processState, final ServerSuspendController suspendController,
@@ -137,6 +149,11 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
 
         final BootstrapListener bootstrapListener = new BootstrapListener(container, startupTime, serviceTarget, futureContainer, prettyVersion, serverEnvironment.getServerTempDir());
         bootstrapListener.getStabilityMonitor().addController(myController);
+        ServerEnvironment.LaunchType launchType = serverEnvironment.getLaunchType();
+        if (launchType == ServerEnvironment.LaunchType.STANDALONE ||
+                launchType == ServerEnvironment.LaunchType.SELF_CONTAINED) {
+            acquireRunningLock(serverEnvironment.getHomeDir());
+        }
         // Install either a local or remote content repository
         if(standalone) {
             if ( ! selfContained ) {
@@ -212,6 +229,37 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
     @Override
     public AsyncFuture<ServiceContainer> getValue() throws IllegalStateException, IllegalArgumentException {
         return futureContainer;
+    }
+
+    private static void acquireRunningLock(File homeDir) {
+        if (runningLockChannel != null) {
+            // Lock already held from a previous start (e.g. server reload); keep it for JVM lifetime.
+            return;
+        }
+        Path lockPath = homeDir.toPath().resolve(".installation").resolve("running.lock");
+        FileChannel channel = null;
+        try {
+            channel = FileChannel.open(lockPath, StandardOpenOption.WRITE, StandardOpenOption.READ);
+            FileLock lock = channel.tryLock();
+            if (lock != null) {
+                runningLockChannel = channel;
+                runningLock = lock;
+                channel = null; // ownership transferred; do not close in finally
+                ServerLogger.AS_ROOT_LOGGER.debugf("Server running lock acquired at %s", lockPath);
+            } else {
+                ServerLogger.AS_ROOT_LOGGER.cannotAcquireServerRunningLock(lockPath.toString());
+            }
+        } catch (IOException e) {
+            ServerLogger.AS_ROOT_LOGGER.cannotAcquireServerRunningLockError(lockPath.toString(), e);
+        } finally {
+            if (channel != null) {
+                try {
+                    channel.close();
+                } catch (IOException e) {
+                    ServerLogger.AS_ROOT_LOGGER.debugf(e, "Failed to close server running lock channel");
+                }
+            }
+        }
     }
 
     private String getVMArguments() {

@@ -9,7 +9,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
@@ -46,6 +52,10 @@ public final class ProcessController {
     private final Set<Connection> managedConnections = new CopyOnWriteArraySet<Connection>();
 
     private volatile boolean shutdown;
+    private volatile FileChannel runningLockChannel;
+    // Must be held as a strong reference: FileLockTable uses WeakReference internally,
+    // so without this the FileLock is GC-eligible and finalize() would call release().
+    private volatile FileLock runningLock;
 
     private static final short AUTH_BYTES_LENGTH = 16;
     public static final short AUTH_BYTES_ENCODED_LENGTH = 24;
@@ -224,6 +234,46 @@ public final class ProcessController {
                 }
             }
             ProcessLogger.ROOT_LOGGER.shutdownComplete();
+            final FileChannel channel = runningLockChannel;
+            if (channel != null) {
+                runningLockChannel = null;
+                runningLock = null;
+                try {
+                    channel.close();
+                } catch (IOException e) {
+                    ProcessLogger.ROOT_LOGGER.debugf(e, "Failed to close process controller running lock channel");
+                }
+            }
+        }
+    }
+
+    void acquireRunningLock(String jbossHome) {
+        Path lockPath = Paths.get(jbossHome, ".installation", "running.lock");
+        FileChannel channel = null;
+        try {
+            channel = FileChannel.open(lockPath, StandardOpenOption.WRITE, StandardOpenOption.READ);
+            FileLock lock = channel.tryLock();
+            if (lock != null) {
+                this.runningLockChannel = channel;
+                this.runningLock = lock;
+                ProcessLogger.ROOT_LOGGER.debugf("Process controller running lock acquired at %s", lockPath);
+            } else {
+                ProcessLogger.ROOT_LOGGER.cannotAcquireProcessControllerRunningLock(lockPath.toString());
+                closeChannel(channel);
+            }
+        } catch (IOException | OverlappingFileLockException lockException) {
+            ProcessLogger.ROOT_LOGGER.cannotAcquireProcessControllerRunningLockError(lockPath.toString(), lockException);
+            closeChannel(channel);
+        }
+    }
+
+    private void closeChannel(FileChannel channel) {
+        if (channel != null) {
+            try {
+                channel.close();
+            } catch (IOException ioException) {
+                ProcessLogger.ROOT_LOGGER.debugf(ioException, "Failed to close process controller lock channel");
+            }
         }
     }
 
