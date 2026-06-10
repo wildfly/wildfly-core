@@ -671,6 +671,10 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @LogMessage(level = WARN)
     void noAllowedJkuValuesSpecifiedForTokenRealm(String realmName, String systemPropertyName);
 
+    @Message(id = 1091, value = "From Jakarta EE 11 setting a Policy is no longer required, the /subsystem=elytron/policy=* resource(s) can be removed.")
+    @LogMessage(level = WARN)
+    void settingPolicyNotSupported();
+
     /*
      * Expression Resolver Section
      */
