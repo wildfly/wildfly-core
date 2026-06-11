@@ -98,7 +98,7 @@ public class RemotingServices {
         final ServiceBuilder<?> builder = serviceTarget.addService(endpointName);
         final Consumer<Endpoint> endpointConsumer = builder.provides(endpointName);
         final Supplier<XnioWorker> workerSupplier = builder.requires(ServiceName.JBOSS.append("serverManagement", "controller", "management", "worker"));
-        builder.setInstance(new EndpointService(endpointConsumer, workerSupplier, hostName, type, options));
+        builder.setInstance(new EndpointService(endpointConsumer, workerSupplier, () -> null, hostName, type, options));
         builder.install();
     }
 
