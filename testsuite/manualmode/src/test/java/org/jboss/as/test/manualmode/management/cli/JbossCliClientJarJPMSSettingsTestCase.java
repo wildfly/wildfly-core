@@ -52,14 +52,46 @@ public class JbossCliClientJarJPMSSettingsTestCase {
 
     @Test
     public void testManifestEntries() throws Exception {
+        // Read the JPMS properties passed by Maven Surefire
+        String expectedExports = System.getProperty("embedding.jar.jpms.exports");
+        String expectedOpens = System.getProperty("embedding.jar.jpms.opens");
+        
+        // Validate that properties were passed (fail fast if Maven config is missing)
+        Assert.assertNotNull("System property 'embedding.jar.jpms.exports' not found. " +
+                "Ensure Maven Surefire is configured to pass this property.", expectedExports);
+        Assert.assertNotNull("System property 'embedding.jar.jpms.opens' not found. " +
+                "Ensure Maven Surefire is configured to pass this property.", expectedOpens);
+        
+        // Parse the space-separated lists
+        String[] exportsList = expectedExports.split(" ");
+        String[] opensList = expectedOpens.split(" ");
+        
+        // Read the actual JAR manifest
         JarFile clientJar = new JarFile(SERVER_HOME.resolve("bin").resolve("client").resolve("jboss-cli-client.jar").toString());
         Manifest manifest = clientJar.getManifest();
         Attributes mainAttribs = manifest.getMainAttributes();
-        String addOpens = mainAttribs.getValue("Add-Opens");
-        Assert.assertTrue("Unexpected value for Manifest Add-Opens. Current: " + addOpens,
-                addOpens.contains("java.base/java.util"));
-        Assert.assertTrue("Unexpected value for Manifest Add-Opens. Current: " + addOpens,
-                addOpens.contains("java.base/java.lang.invoke"));
+        
+        String actualExports = mainAttribs.getValue("Add-Exports");
+        String actualOpens = mainAttribs.getValue("Add-Opens");
+        
+        Assert.assertNotNull("Manifest attribute 'Add-Exports' not found in jboss-cli-client.jar", actualExports);
+        Assert.assertNotNull("Manifest attribute 'Add-Opens' not found in jboss-cli-client.jar", actualOpens);
+        
+        // Verify ALL exports
+        for (String export : exportsList) {
+            Assert.assertTrue("Missing Add-Exports in manifest: " + export +
+                    "\nExpected exports: " + expectedExports +
+                    "\nActual exports: " + actualExports,
+                    actualExports.contains(export));
+        }
+        
+        // Verify ALL opens
+        for (String open : opensList) {
+            Assert.assertTrue("Missing Add-Opens in manifest: " + open +
+                    "\nExpected opens: " + expectedOpens +
+                    "\nActual opens: " + actualOpens,
+                    actualOpens.contains(open));
+        }
     }
 
     @Test
