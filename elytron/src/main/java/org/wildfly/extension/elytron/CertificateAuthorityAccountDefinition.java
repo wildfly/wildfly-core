@@ -23,9 +23,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractAttributeDefinitionBuilder;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -40,10 +45,12 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
+import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.CredentialReference;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceBuilder;
@@ -51,6 +58,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.credential.source.CredentialSource;
@@ -66,6 +74,40 @@ import org.wildfly.security.x500.cert.acme.CertificateAuthority;
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  */
 class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
+
+    private static final String EXTERNAL_ACCOUNT_BINDING_CREDENTIAL_REFERENCE_KEY_SUFFIX = ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING;
+
+    private static final AttributeParser SIMPLE_ELEMENT_PARSER = new AttributeParser() {
+        @Override
+        public boolean isParseAsElement() {
+            return true;
+        }
+
+        @Override
+        public void parseElement(AttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
+            if (operation.hasDefined(attribute.getName())) {
+                throw ParseUtils.unexpectedElement(reader);
+            } else if (attribute.getXmlName().equals(reader.getLocalName())) {
+                ((SimpleAttributeDefinition) attribute).parseAndSetParameter(reader.getElementText(), operation, reader);
+            } else {
+                throw ParseUtils.unexpectedElement(reader);
+            }
+        }
+    };
+
+    private static final AttributeMarshaller SIMPLE_ELEMENT_MARSHALLER = new AttributeMarshaller() {
+        @Override
+        public boolean isMarshallableAsElement() {
+            return true;
+        }
+
+        @Override
+        public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+            writer.writeStartElement(attribute.getXmlName());
+            marshallElementContent(resourceModel.get(attribute.getName()).asString(), writer);
+            writer.writeEndElement();
+        }
+    };
 
     static final StringListAttributeDefinition CONTACT_URLS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.CONTACT_URLS)
             .setRequired(false)
@@ -99,7 +141,32 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
             .setAttributeGroup(ElytronDescriptionConstants.ACCOUNT_KEY)
             .build();
 
-    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { CERTIFICATE_AUTHORITY, CONTACT_URLS, KEY_STORE, ALIAS, CREDENTIAL_REFERENCE };
+    static final SimpleAttributeDefinition EXTERNAL_ACCOUNT_BINDING_KEY_IDENTIFIER = new SimpleAttributeDefinitionBuilder(
+            ElytronDescriptionConstants.KEY_IDENTIFIER, ModelType.STRING, false)
+            .setXmlName(ElytronDescriptionConstants.KEY_IDENTIFIER)
+            .setMinSize(1)
+            .setAllowExpression(true)
+            .setAttributeParser(SIMPLE_ELEMENT_PARSER)
+            .setAttributeMarshaller(SIMPLE_ELEMENT_MARSHALLER)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final ObjectTypeAttributeDefinition EXTERNAL_ACCOUNT_BINDING_CREDENTIAL_REFERENCE = CredentialReference.getAttributeBuilder(
+            CredentialReference.CREDENTIAL_REFERENCE, CredentialReference.CREDENTIAL_REFERENCE, false, true)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    static final ObjectTypeAttributeDefinition EXTERNAL_ACCOUNT_BINDING = new ObjectTypeAttributeDefinition.Builder(
+            ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING, EXTERNAL_ACCOUNT_BINDING_KEY_IDENTIFIER, EXTERNAL_ACCOUNT_BINDING_CREDENTIAL_REFERENCE)
+            .setRequired(false)
+            .setRestartAllServices()
+            .setStability(Stability.PREVIEW)
+            .build();
+
+    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { CERTIFICATE_AUTHORITY, CONTACT_URLS, KEY_STORE, ALIAS, CREDENTIAL_REFERENCE,
+            EXTERNAL_ACCOUNT_BINDING };
 
     static final SimpleAttributeDefinition AGREE_TO_TERMS_OF_SERVICE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AGREE_TO_TERMS_OF_SERVICE, ModelType.BOOLEAN, false)
             .setAllowExpression(true)
@@ -160,7 +227,13 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
         @Override
         protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws  OperationFailedException {
             super.populateModel(context, operation, resource);
+            validateExternalAccountBinding(resource.getModel());
             handleCredentialReferenceUpdate(context, resource.getModel());
+            ModelNode externalAccountBinding = resource.getModel().get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING);
+            if (externalAccountBinding.isDefined()) {
+                handleCredentialReferenceUpdate(context, externalAccountBinding.get(CredentialReference.CREDENTIAL_REFERENCE),
+                        CredentialReference.CREDENTIAL_REFERENCE, EXTERNAL_ACCOUNT_BINDING_CREDENTIAL_REFERENCE_KEY_SUFFIX);
+            }
         }
 
         @Override
@@ -169,6 +242,10 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
             String certificateAuthorityName = CERTIFICATE_AUTHORITY.resolveModelAttribute(context, model).asString();
             final String alias = ALIAS.resolveModelAttribute(context, model).asString();
             final String keyStoreName = KEY_STORE.resolveModelAttribute(context, model).asString();
+            ModelNode externalAccountBinding = EXTERNAL_ACCOUNT_BINDING.resolveModelAttribute(context, model);
+            final String externalAccountBindingKeyId = externalAccountBinding.isDefined()
+                    ? EXTERNAL_ACCOUNT_BINDING_KEY_IDENTIFIER.resolveModelAttribute(context, externalAccountBinding).asString()
+                    : null;
             ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
             if (CREDENTIAL_REFERENCE.resolveModelAttribute(context, operation).isDefined()) {
                 credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, CREDENTIAL_REFERENCE, operation, null);
@@ -179,12 +256,23 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
                 contactUrlsList.add(contactUrl.asString());
             }
 
-            AcmeAccountService acmeAccountService = new AcmeAccountService(certificateAuthorityName, contactUrlsList, alias, keyStoreName);
+            AcmeAccountService acmeAccountService = new AcmeAccountService(certificateAuthorityName, contactUrlsList, alias, keyStoreName,
+                    externalAccountBindingKeyId);
             ServiceTarget serviceTarget = context.getServiceTarget();
             RuntimeCapability<Void> certificateAuthorityAccountRuntimeCapability = CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
             ServiceName acmeAccountServiceName = certificateAuthorityAccountRuntimeCapability.getCapabilityServiceName(AcmeAccount.class);
             ServiceBuilder<AcmeAccount> acmeAccountServiceBuilder = serviceTarget.addService(acmeAccountServiceName, acmeAccountService).setInitialMode(ServiceController.Mode.ACTIVE);
             acmeAccountService.getCredentialSourceSupplierInjector().inject(credentialSourceSupplier);
+            ExceptionSupplier<CredentialSource, Exception> externalAccountBindingCredentialSourceSupplier = null;
+            if (externalAccountBinding.isDefined()) {
+                ModelNode externalAccountBindingOperation = operation.hasDefined(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING)
+                        ? operation.get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING)
+                        : model.get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING);
+                externalAccountBindingCredentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context,
+                        EXTERNAL_ACCOUNT_BINDING_CREDENTIAL_REFERENCE, externalAccountBindingOperation, acmeAccountServiceBuilder,
+                        EXTERNAL_ACCOUNT_BINDING_CREDENTIAL_REFERENCE_KEY_SUFFIX);
+            }
+            acmeAccountService.getExternalAccountBindingCredentialSourceSupplierInjector().inject(externalAccountBindingCredentialSourceSupplier);
 
             String keyStoreCapabilityName = RuntimeCapability.buildDynamicCapabilityName(KEY_STORE_CAPABILITY, keyStoreName);
             acmeAccountServiceBuilder.addDependency(context.getCapabilityServiceName(keyStoreCapabilityName, KeyStore.class), KeyStore.class, acmeAccountService.getKeyStoreInjector());
@@ -199,6 +287,21 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
         @Override
         protected void rollbackRuntime(OperationContext context, final ModelNode operation, final Resource resource) {
             rollbackCredentialStoreUpdate(CREDENTIAL_REFERENCE, context, resource);
+            ModelNode externalAccountBinding = resource.getModel().get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING);
+            if (externalAccountBinding.isDefined()) {
+                rollbackCredentialStoreUpdate(EXTERNAL_ACCOUNT_BINDING_CREDENTIAL_REFERENCE, context,
+                        externalAccountBinding.get(CredentialReference.CREDENTIAL_REFERENCE), EXTERNAL_ACCOUNT_BINDING_CREDENTIAL_REFERENCE_KEY_SUFFIX);
+            }
+        }
+    }
+
+    static void validateExternalAccountBinding(ModelNode model) throws OperationFailedException {
+        ModelNode externalAccountBinding = model.get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING);
+        if (externalAccountBinding.isDefined() && (! externalAccountBinding.hasDefined(ElytronDescriptionConstants.KEY_IDENTIFIER)
+                || ! externalAccountBinding.hasDefined(CredentialReference.CREDENTIAL_REFERENCE))) {
+            throw ROOT_LOGGER.externalAccountBindingAttributesMustBeConfiguredTogether(
+                    ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING + "." + ElytronDescriptionConstants.KEY_IDENTIFIER,
+                    ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING + "." + CredentialReference.CREDENTIAL_REFERENCE);
         }
     }
 

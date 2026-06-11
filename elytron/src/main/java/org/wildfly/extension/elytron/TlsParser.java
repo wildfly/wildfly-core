@@ -230,7 +230,8 @@ class TlsParser {
             .addAttribute(CertificateAuthorityAccountDefinition.CONTACT_URLS)
             .addAttribute(CertificateAuthorityAccountDefinition.KEY_STORE)
             .addAttribute(CertificateAuthorityAccountDefinition.ALIAS)
-            .addAttribute(CertificateAuthorityAccountDefinition.CREDENTIAL_REFERENCE);
+            .addAttribute(CertificateAuthorityAccountDefinition.CREDENTIAL_REFERENCE)
+            .addAttribute(CertificateAuthorityAccountDefinition.EXTERNAL_ACCOUNT_BINDING);
 
     private PersistentResourceXMLBuilder serverSslSniContextParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(SERVER_SSL_SNI_CONTEXT))
             .setXmlWrapperElement(SERVER_SSL_SNI_CONTEXTS)

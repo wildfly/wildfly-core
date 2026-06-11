@@ -192,6 +192,7 @@ interface ElytronDescriptionConstants {
     String EXPRESSION = "expression";
     String EXPRESSION_RESOLVER = "expression-resolver";
     String EXTERNAL_ACCOUNT_REQUIRED = "external-account-required";
+    String EXTERNAL_ACCOUNT_BINDING = "external-account-binding";
     String EXTRACT_RDN = "extract-rdn";
     String EXTENDS = "extends";
     String EXTENSION = "extension";
@@ -274,6 +275,7 @@ interface ElytronDescriptionConstants {
     String KEEP_NON_MAPPED = "keep-non-mapped";
     String KERBEROS_SECURITY_FACTORY = "kerberos-security-factory";
     String KEY = "key";
+    String KEY_IDENTIFIER = "key-identifier";
     String KEY_ATTRIBUTE = "key-attribute";
     String KEY_TYPE = "key-type";
     String KEY_MANAGER = "key-manager";

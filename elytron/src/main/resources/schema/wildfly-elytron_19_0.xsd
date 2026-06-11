@@ -5704,6 +5704,7 @@
         </xs:annotation>
         <xs:all>
             <xs:element name="account-key" type="accountKeyType" minOccurs="1"/>
+            <xs:element name="external-account-binding" type="externalAccountBindingType" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
@@ -5766,6 +5767,24 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="externalAccountBindingType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition of ACME External Account Binding values for a certificate authority account.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="key-identifier" type="xs:string" minOccurs="1"/>
+            <xs:element name="credential-reference" type="credential-reference:credentialReferenceType" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Credential reference for the External Account Binding HMAC key supplied by the certificate authority.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
     </xs:complexType>
 
     <xs:complexType name="accountKeyType">

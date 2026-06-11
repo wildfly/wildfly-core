@@ -7,6 +7,8 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
@@ -23,7 +25,9 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.source.CredentialSource;
+import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.x500.cert.acme.AcmeAccount;
 import org.wildfly.security.x500.cert.acme.CertificateAuthority;
 
@@ -36,17 +40,21 @@ class AcmeAccountService implements Service<AcmeAccount> {
 
     private final InjectedValue<KeyStore> keyStoreInjector = new InjectedValue<>();
     private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplierInjector = new InjectedValue<>();
+    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> externalAccountBindingCredentialSourceSupplierInjector = new InjectedValue<>();
     private final String certificateAuthorityName;
     private final List<String> contactUrlsList;
     private final String alias;
     private final String keyStoreName;
+    private final String externalAccountBindingKeyId;
     private volatile AcmeAccount acmeAccount;
 
-    AcmeAccountService(String certificateAuthorityName, List<String> contactUrlsList, String alias, String keyStoreName) {
+    AcmeAccountService(String certificateAuthorityName, List<String> contactUrlsList, String alias, String keyStoreName,
+            String externalAccountBindingKeyId) {
         this.certificateAuthorityName = certificateAuthorityName;
         this.contactUrlsList = contactUrlsList;
         this.alias = alias;
         this.keyStoreName = keyStoreName;
+        this.externalAccountBindingKeyId = externalAccountBindingKeyId;
     }
 
     @Override
@@ -86,6 +94,9 @@ class AcmeAccountService implements Service<AcmeAccount> {
             } else {
                 updateAccountKeyStore = true;
             }
+            if (externalAccountBindingKeyId != null) {
+                setExternalAccountBinding(acmeAccountBuilder, resolveExternalAccountBindingHmacKey());
+            }
             acmeAccount = acmeAccountBuilder.build();
             if (updateAccountKeyStore) {
                 saveCertificateAuthorityAccountKey(keyStoreService, keyPassword); // persist the generated key pair
@@ -113,11 +124,47 @@ class AcmeAccountService implements Service<AcmeAccount> {
         return credentialSourceSupplierInjector;
     }
 
+    Injector<ExceptionSupplier<CredentialSource, Exception>> getExternalAccountBindingCredentialSourceSupplierInjector() {
+        return externalAccountBindingCredentialSourceSupplierInjector;
+    }
+
     char[] resolveKeyPassword(KeyStoreService keyStoreService) throws RuntimeException {
         try {
             return keyStoreService.resolveKeyPassword(credentialSourceSupplierInjector.getOptionalValue());
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private String resolveExternalAccountBindingHmacKey() throws Exception {
+        ExceptionSupplier<CredentialSource, Exception> sourceSupplier = externalAccountBindingCredentialSourceSupplierInjector.getValue();
+        CredentialSource credentialSource = sourceSupplier != null ? sourceSupplier.get() : null;
+        if (credentialSource == null) {
+            throw ROOT_LOGGER.credentialCannotBeResolved();
+        }
+        PasswordCredential credential = credentialSource.getCredential(PasswordCredential.class);
+        if (credential == null) {
+            throw ROOT_LOGGER.credentialCannotBeResolved();
+        }
+        ClearPassword password = credential.getPassword(ClearPassword.class);
+        if (password == null) {
+            throw ROOT_LOGGER.credentialCannotBeResolved();
+        }
+        return new String(password.getPassword());
+    }
+
+    private void setExternalAccountBinding(AcmeAccount.Builder acmeAccountBuilder, String hmacKey) throws Exception {
+        try {
+            Method method = AcmeAccount.Builder.class.getMethod("setExternalAccountBinding", String.class, String.class);
+            method.invoke(acmeAccountBuilder, externalAccountBindingKeyId, hmacKey);
+        } catch (NoSuchMethodException e) {
+            throw ROOT_LOGGER.externalAccountBindingNotSupportedByAcmeClient(e);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof Exception) {
+                throw (Exception) cause;
+            }
+            throw e;
         }
     }
 
