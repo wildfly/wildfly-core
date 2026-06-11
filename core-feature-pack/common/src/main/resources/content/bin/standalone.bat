@@ -335,7 +335,7 @@ echo   JBOSS_HOME: "%JBOSS_HOME%"
 echo.
 echo   JAVA: "%JAVA%"
 echo.
-echo   JAVA_OPTS: "%JAVA_OPTS%"
+echo   JAVA_OPTS: "%JAVA_OPTS% %GC_OPTS%"
 echo.
 echo ===============================================================================
 echo.
