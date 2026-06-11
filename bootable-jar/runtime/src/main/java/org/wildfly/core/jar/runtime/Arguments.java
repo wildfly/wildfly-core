@@ -32,6 +32,11 @@ import org.wildfly.core.jar.runtime._private.BootableJarLogger;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 final class Arguments {
+    private static final String JDK_SERIAL_FILTER = "jdk.serialFilter";
+    private static final String DISABLE_JDK_SERIAL_FILTER_ENV = "DISABLE_JDK_SERIAL_FILTER";
+    private static final String JDK_SERIAL_FILTER_ENV = "JDK_SERIAL_FILTER";
+    // This default value comes from the standalone.conf file, in case it is changes, make sure to update this value.
+    private static final String DEFAULT_SERIAL_FILTER = "maxbytes=10485760;maxdepth=128;maxarray=100000;maxrefs=300000";
 
     private Arguments(final BootableEnvironment environment) {
         this.environment = environment;
@@ -54,6 +59,7 @@ final class Arguments {
     private void handleArguments(List<String> args) throws Exception {
         final Map<String, String> systemProperties = new HashMap<>();
         final Iterator<String> iter = args.iterator();
+        boolean jdkSerialFilterSet = false;
         while (iter.hasNext()) {
             final String a = iter.next();
             if (a.startsWith(DEPLOYMENT_ARG)) {
@@ -66,6 +72,7 @@ final class Arguments {
                     final String urlSpec = iter.next();
                     serverArguments.add(urlSpec);
                     addSystemProperties(makeUrl(urlSpec), systemProperties);
+                    jdkSerialFilterSet = systemProperties.containsKey(JDK_SERIAL_FILTER);
                 } else {
                     throw BootableJarLogger.ROOT_LOGGER.invalidArgument(a);
                 }
@@ -74,6 +81,7 @@ final class Arguments {
                 // We need these set as system properties early so the log manager can use them
                 final String urlSpec = parseValue(a, CommandLineConstants.PROPERTIES);
                 addSystemProperties(makeUrl(urlSpec), systemProperties);
+                jdkSerialFilterSet = systemProperties.containsKey(JDK_SERIAL_FILTER);
             } else if (a.startsWith(CommandLineConstants.SECURITY_PROP)) {
                 serverArguments.add(a);
             } else if (a.startsWith(CommandLineConstants.SYS_PROP)) {
@@ -82,6 +90,9 @@ final class Arguments {
                 // we also need to set it as a current system property for usage in the log manager.
                 serverArguments.add(a);
                 addSystemProperty(a, systemProperties);
+                if (a.startsWith(CommandLineConstants.SYS_PROP + JDK_SERIAL_FILTER)) {
+                    jdkSerialFilterSet = true;
+                }
             } else if (a.startsWith(CommandLineConstants.START_MODE)) {
                 serverArguments.add(a);
             } else if (a.startsWith(CommandLineConstants.DEFAULT_MULTICAST_ADDRESS)) {
@@ -103,6 +114,17 @@ final class Arguments {
                 serverArguments.add(a);
             } else {
                 throw BootableJarLogger.ROOT_LOGGER.unknownArgument(a);
+            }
+        }
+        // Special handling of jdk.serialFilter
+        if (!jdkSerialFilterSet) {
+            String disabled = System.getenv(DISABLE_JDK_SERIAL_FILTER_ENV);
+            if (disabled == null || !disabled.equalsIgnoreCase("true")) {
+                String filter = System.getenv(JDK_SERIAL_FILTER_ENV);
+                if (filter == null) {
+                    filter = DEFAULT_SERIAL_FILTER;
+                }
+                systemProperties.put(JDK_SERIAL_FILTER, filter);
             }
         }
         // Add the system properties to the environment
