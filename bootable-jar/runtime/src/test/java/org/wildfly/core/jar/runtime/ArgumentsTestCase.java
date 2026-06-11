@@ -4,6 +4,7 @@
  */
 package org.wildfly.core.jar.runtime;
 
+import java.io.FileWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +14,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -28,6 +30,7 @@ import org.junit.Test;
  */
 public class ArgumentsTestCase {
 
+    private static final String FILTER_PROP = "jdk.serialFilter";
 
     @Test
     public void test() throws Exception {
@@ -111,6 +114,48 @@ public class ArgumentsTestCase {
                 throw new Exception("Should have failed");
             }
         }
+
+        {
+            String[] args = {};
+            final TestPropertyUpdater propertyUpdater = new TestPropertyUpdater();
+            Arguments.parseArguments(Arrays.asList(args), createEnvironment(propertyUpdater));
+            if (System.getenv("DISABLE_JDK_SERIAL_FILTER") == null) {
+                Assert.assertTrue("Expected property " + FILTER_PROP + " to exist: " + propertyUpdater, propertyUpdater.properties.containsKey(FILTER_PROP));
+                String val = System.getenv("JDK_SERIAL_FILTER");
+                if (val != null) {
+                    Assert.assertEquals("Expected the value \"foo\" for property " + FILTER_PROP + ": " + propertyUpdater,
+                    val, propertyUpdater.properties.get(FILTER_PROP));
+                }
+            } else {
+                Assert.assertFalse("Expected property " + FILTER_PROP + " to nnot exist: " + propertyUpdater, propertyUpdater.properties.containsKey(FILTER_PROP));
+            }
+        }
+
+        {
+            Properties p = new Properties();
+            p.setProperty(FILTER_PROP, "foo");
+            Path propsFile = Files.createTempFile(null, ".properties");
+            propsFile.toFile().deleteOnExit();
+            try (FileWriter w = new FileWriter(propsFile.toFile())) {
+                p.store(w, "");
+            }
+            String[] args = {"--properties", propsFile.toString()};
+            final TestPropertyUpdater propertyUpdater = new TestPropertyUpdater();
+            Arguments.parseArguments(Arrays.asList(args), createEnvironment(propertyUpdater));
+            Assert.assertTrue("Expected property " + FILTER_PROP + " to exist: " + propertyUpdater, propertyUpdater.properties.containsKey(FILTER_PROP));
+            Assert.assertEquals("Expected the value \"foo\" for property " + FILTER_PROP + ": " + propertyUpdater,
+                "foo", propertyUpdater.properties.get(FILTER_PROP));
+        }
+    }
+
+    @Test
+    public void testSerialFilterProperty() throws Exception {
+        final List<String> args = Collections.singletonList("-D"+FILTER_PROP+"=value");
+        final TestPropertyUpdater propertyUpdater = new TestPropertyUpdater();
+        Arguments.parseArguments(args, createEnvironment(propertyUpdater));
+        Assert.assertTrue("Expected property test.name to exist: " + propertyUpdater, propertyUpdater.properties.containsKey(FILTER_PROP));
+        Assert.assertEquals("Expected the value \"value\" for property " + FILTER_PROP + ": " + propertyUpdater,
+                "value", propertyUpdater.properties.get(FILTER_PROP));
     }
 
     @Test

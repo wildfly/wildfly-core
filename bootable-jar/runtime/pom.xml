@@ -120,6 +120,32 @@
                         <test.jboss.home>${project.build.directory}</test.jboss.home>
                     </systemPropertyVariables>
                 </configuration>
+                <executions>
+                  <execution>
+                    <id>test-with-env-disabled</id>
+                    <configuration>
+                      <environmentVariables>
+                        <DISABLE_JDK_SERIAL_FILTER>true</DISABLE_JDK_SERIAL_FILTER>
+                      </environmentVariables>
+                    </configuration>
+                    <goals>
+                      <goal>test</goal>
+                    </goals>
+                    <phase>test</phase>
+                  </execution>
+                  <execution>
+                    <id>test-with-env-set</id>
+                    <configuration>
+                      <environmentVariables>
+                        <JDK_SERIAL_FILTER>custom-value</JDK_SERIAL_FILTER>
+                      </environmentVariables>
+                    </configuration>
+                    <goals>
+                      <goal>test</goal>
+                    </goals>
+                    <phase>test</phase>
+                  </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
