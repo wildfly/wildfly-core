@@ -5,8 +5,6 @@
 
 package org.jboss.as.server.controller.resources;
 
-import java.lang.reflect.Field;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
@@ -106,19 +104,15 @@ public class ModuleInfoHandler implements OperationStepHandler {
         String id = JBossModulesNameUtil.canonicalModuleIdentifier(moduleName, slot);
         ModuleLoader loader = Module.getBootModuleLoader();
         try {
-            ModuleLoaderMXBean mxBean = getMxBean(loader);
+            loader.loadModule(id);
+            ModuleLoaderMXBean mxBean = ModuleLoadingResourceDefinition.getMxBean(id);
             ModuleInfo moduleInfo = mxBean.getModuleDescription(id);
             context.getResult().set(populateModuleInfo(moduleInfo));
+        } catch(OperationFailedException e) {
+            throw e;
         } catch (Exception e) {
             throw ServerLogger.ROOT_LOGGER.couldNotGetModuleInfo(id, e);
         }
-    }
-
-
-    protected ModuleLoaderMXBean getMxBean(ModuleLoader loader) throws ReflectiveOperationException {
-        Field mxBeanField = ModuleLoader.class.getDeclaredField("mxBean");
-        mxBeanField.setAccessible(true);
-        return (ModuleLoaderMXBean) mxBeanField.get(loader);
     }
 
     /*
