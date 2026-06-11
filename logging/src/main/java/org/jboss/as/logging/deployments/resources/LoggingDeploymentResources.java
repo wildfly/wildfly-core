@@ -7,6 +7,7 @@ package org.jboss.as.logging.deployments.resources;
 
 import java.util.Collection;
 
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
@@ -121,6 +122,7 @@ public class LoggingDeploymentResources {
                 .build();
 
         static final SimpleAttributeDefinition MODULE = SimpleAttributeDefinitionBuilder.create("module", ModelType.STRING, true)
+                .setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR)
                 .setStorageRuntime()
                 .build();
 

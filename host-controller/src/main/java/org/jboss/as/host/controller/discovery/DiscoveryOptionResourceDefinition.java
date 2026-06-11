@@ -11,6 +11,7 @@ import static org.jboss.as.host.controller.discovery.Constants.DEFAULT_MODULE;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.MapAttributeDefinition;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -44,6 +45,7 @@ public class DiscoveryOptionResourceDefinition extends SimpleResourceDefinition 
     public static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MODULE, ModelType.STRING, true)
         .setDefaultValue(new ModelNode(DEFAULT_MODULE))
         .setValidator(new StringLengthValidator(1))
+        .setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR)
         .setStorageRuntime()
         .setRuntimeServiceNotRequired()
         .build();

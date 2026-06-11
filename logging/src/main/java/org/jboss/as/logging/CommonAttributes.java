@@ -14,11 +14,13 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CaseParameterCorrector;
 import org.jboss.as.controller.DefaultAttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
 import org.jboss.as.controller.registry.AttributeAccess.Flag;
 import org.jboss.as.controller.services.path.PathManager;
@@ -111,18 +113,21 @@ public interface CommonAttributes {
 
     String LOGGING_PROFILES = "logging-profiles";
 
-    SimpleAttributeDefinition MODULE = SimpleAttributeDefinitionBuilder.create("module", ModelType.STRING)
+    SimpleAttributeDefinition MODULE = SimpleAttributeDefinitionBuilder
+            .create(ModelDescriptionConstants.MODULE, ModelType.STRING)
             .setAllowExpression(false)
+            .setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR)
             .setRestartAllServices()
             .build();
 
-    SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING, true)
+    SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder
+            .create(ModelDescriptionConstants.NAME, ModelType.STRING, true)
             .setAllowExpression(false)
             .setDeprecated(ModelVersion.create(1, 2, 0))
             .setResourceOnly()
             .build();
 
-    SimpleMapAttributeDefinition PROPERTIES = new SimpleMapAttributeDefinition.Builder("properties", true)
+    SimpleMapAttributeDefinition PROPERTIES = new SimpleMapAttributeDefinition.Builder(ModelDescriptionConstants.PROPERTIES, true)
             .setAllowExpression(true)
             .setAttributeMarshaller(PropertyAttributeMarshaller.INSTANCE)
             .build();

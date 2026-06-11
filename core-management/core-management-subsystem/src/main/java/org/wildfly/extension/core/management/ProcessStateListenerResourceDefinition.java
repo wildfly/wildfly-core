@@ -17,6 +17,7 @@ import java.util.Map;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModuleIdentifierUtil;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PersistentResourceDefinition;
@@ -57,6 +58,7 @@ public class ProcessStateListenerResourceDefinition extends PersistentResourceDe
             .setRestartAllServices()
             .build();
     public static final AttributeDefinition LISTENER_MODULE = SimpleAttributeDefinitionBuilder.create(MODULE, ModelType.STRING, false)
+            .setCorrector(ModuleIdentifierUtil.MODULE_NAME_CORRECTOR)
             .setAllowExpression(false)
             .setRestartAllServices()
             .build();
