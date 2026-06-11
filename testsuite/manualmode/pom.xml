@@ -307,6 +307,8 @@
                                 <javax.net.ssl.trustStorePassword>clientPassword</javax.net.ssl.trustStorePassword>
                                 <javax.net.ssl.keyStorePassword>clientPassword</javax.net.ssl.keyStorePassword>
                                 <dist.output.dir>${wildfly.dist.output.dir}</dist.output.dir>
+                                <embedding.jar.jpms.exports>${embedding.jar.jpms.exports}</embedding.jar.jpms.exports>
+                                <embedding.jar.jpms.opens>${embedding.jar.jpms.opens}</embedding.jar.jpms.opens>
                             </systemPropertyVariables>
                             <environmentVariables>
                                 <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
