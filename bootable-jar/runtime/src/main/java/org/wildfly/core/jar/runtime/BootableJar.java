@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputFilter;
 import java.io.UncheckedIOException;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationTargetException;
@@ -116,6 +117,8 @@ public final class BootableJar implements ShutdownHandler {
 
         // logging needs to be configured before other components have a chance to initialize a logger
         configureLogger();
+        // Some traces to log could have been captured during args handling
+        arguments.logArgumentsHandling(log);
         long t = System.currentTimeMillis();
         if (arguments.getDeployment() != null) {
             setupDeployment(arguments.getDeployment());
@@ -341,6 +344,13 @@ public final class BootableJar implements ShutdownHandler {
         if (arguments.isHelp()) {
             CmdUsage.printUsage(productConfig, System.out);
             return;
+        }
+
+        if (arguments.getRequiredSerialFilter() != null) {
+            ObjectInputFilter objInputFilter = ObjectInputFilter.Config.createFilter(arguments.getRequiredSerialFilter());
+            // If a filter has already been set (it should not), this call will fail
+            // with an IllegalStateException.
+            ObjectInputFilter.Config.setSerialFilter(objInputFilter);
         }
 
         // Side effect is to initialise Log Manager
