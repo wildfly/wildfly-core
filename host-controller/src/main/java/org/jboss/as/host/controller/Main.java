@@ -32,6 +32,7 @@ import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.process.CommandLineArgumentUsageImpl;
 import org.jboss.as.process.CommandLineConstants;
+import org.jboss.as.server.logging.EarlyLoggingInit;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.process.ProcessController;
 import org.jboss.as.process.protocol.StreamUtils;
@@ -107,6 +108,7 @@ public final class Main {
             new LoggingOutputStream(Logger.getLogger("stderr"), Level.ERROR)
         );
         StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(context));
+        EarlyLoggingInit.initSlf4j();
 
         create(args, new String(pcAuthKey, StandardCharsets.US_ASCII));
 
