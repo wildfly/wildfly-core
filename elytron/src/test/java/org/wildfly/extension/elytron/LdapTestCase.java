@@ -288,7 +288,6 @@ public class LdapTestCase extends AbstractSubsystemTest {
             dns.add(it.next().getAuthorizationIdentity().getAttributes().getFirst("userDn"));
         }
         ((AutoCloseable) it).close();
-        System.out.println(dns);
         Assert.assertTrue(dns.contains("uid=plainUser,dc=users,dc=elytron,dc=wildfly,dc=org"));
         Assert.assertTrue(dns.contains("uid=refUser,dc=referredUsers,dc=elytron,dc=wildfly,dc=org"));
     }
