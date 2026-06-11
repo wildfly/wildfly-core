@@ -13,6 +13,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -252,10 +253,20 @@ public interface Transformers {
          *
          * @return the transformers instance. Will not be {@code null}
          */
+        @Deprecated(forRemoval = true, since = "27.0.0")
         public static Transformers createLocal() {
             return new TransformersImpl(TransformationTargetImpl.createLocal());
         }
 
+        /**
+         * Create a local transformer, which will use the default transformation rules, however still respect the
+         * ignored resource transformation.
+         * @param stability the stability level of the target host
+         * @return the transformers instance. Will not be {@code null}
+         */
+        public static Transformers createLocal(Stability stability) {
+            return new TransformersImpl(TransformationTargetImpl.createLocal(stability));
+        }
     }
 
     /** Provides information on whether a target process is ignoring particular resource addresses. */

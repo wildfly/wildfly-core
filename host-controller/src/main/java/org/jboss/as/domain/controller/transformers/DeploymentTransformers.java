@@ -13,7 +13,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE_CONTENT;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createBuilderFromCurrent;
-import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createChainFromCurrent;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.isUnmanagedContent;
 
 import java.util.Map;
@@ -23,6 +22,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.description.AttributeConverter;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilderFactory;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
@@ -35,8 +35,8 @@ import org.jboss.dmr.ModelNode;
  * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
  */
 class DeploymentTransformers {
-    static ChainedTransformationDescriptionBuilder buildTransformerChain() {
-        ChainedTransformationDescriptionBuilder chainedBuilder = createChainFromCurrent(DeploymentResourceDefinition.PATH);
+    static ChainedTransformationDescriptionBuilder buildTransformerChain(ChainedTransformationDescriptionBuilderFactory factory) {
+        ChainedTransformationDescriptionBuilder chainedBuilder = factory.createChainedTransformationDescriptionBuilder(DeploymentResourceDefinition.PATH);
 
         ResourceTransformationDescriptionBuilder builder = createBuilderFromCurrent(chainedBuilder, KernelAPIVersion.VERSION_4_1);
         builder
