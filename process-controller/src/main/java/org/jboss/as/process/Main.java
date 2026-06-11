@@ -11,6 +11,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -201,6 +206,9 @@ public final class Main {
         configuration.setReadExecutor(Executors.newCachedThreadPool(threadFactory));
 
         final ProcessController processController = new ProcessController(configuration, System.out, System.err);
+
+        final FileChannel lockChannel = acquireRunningLock(jbossHome);
+
         final InetSocketAddress boundAddress = processController.getServer().getBoundAddress();
 
         final List<String> initialCommand = new ArrayList<String>();
@@ -235,12 +243,40 @@ public final class Main {
         final Thread shutdownThread = new Thread(new Runnable() {
             public void run() {
                 processController.shutdown();
+                releaseRunningLock(lockChannel);
             }
         }, "Shutdown thread");
         shutdownThread.setDaemon(false);
         Runtime.getRuntime().addShutdownHook(shutdownThread);
 
         return processController;
+    }
+
+    private static FileChannel acquireRunningLock(String jbossHome) {
+        try {
+            Path lockPath = Paths.get(jbossHome, ".installation", "running.lock");
+            java.nio.file.Files.createDirectories(lockPath.getParent());
+            FileChannel channel = FileChannel.open(lockPath,
+                    StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ);
+            FileLock lock = channel.tryLock();
+            if (lock != null) {
+                return channel;
+            }
+            channel.close();
+        } catch (IOException e) {
+            // ignore
+        }
+        return null;
+    }
+
+    private static void releaseRunningLock(FileChannel channel) {
+        if (channel != null) {
+            try {
+                channel.close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
     }
 
     private static boolean isJavaSecurityManagerConfigured(final String arg) {
