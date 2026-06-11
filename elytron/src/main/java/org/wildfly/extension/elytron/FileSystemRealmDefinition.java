@@ -151,6 +151,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
                     .setRequires(ElytronDescriptionConstants.CREDENTIAL_STORE)
                     .setMinSize(1)
                     .setRestartAllServices()
+                    .setFlags(AttributeAccess.Flag.REDACTABLE)
                     .build();
 
     static final SimpleAttributeDefinition KEY_STORE =

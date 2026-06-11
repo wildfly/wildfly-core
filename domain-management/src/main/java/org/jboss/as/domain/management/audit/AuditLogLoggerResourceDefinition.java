@@ -27,6 +27,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.management._private.DomainManagementResolver;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -46,6 +47,11 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
         .setAllowExpression(true)
         .setDefaultValue(ModelNode.TRUE).build();
 
+    public static final SimpleAttributeDefinition REDACTED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.REDACTED, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setStability(Stability.COMMUNITY)
+            .setDefaultValue(ModelNode.TRUE)
+            .build();
 
     public static final SimpleAttributeDefinition LOG_READ_ONLY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.LOG_READ_ONLY, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
@@ -55,7 +61,7 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.TRUE).build();
 
-    static final List<SimpleAttributeDefinition> ATTRIBUTE_DEFINITIONS = Arrays.asList(LOG_BOOT, LOG_READ_ONLY, ENABLED);
+    static final List<SimpleAttributeDefinition> ATTRIBUTE_DEFINITIONS = Arrays.asList(LOG_BOOT, LOG_READ_ONLY, ENABLED, REDACTED);
 
     private final ManagedAuditLogger auditLogger;
 
@@ -81,6 +87,7 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
 
         resourceRegistration.registerReadWriteAttribute(LOG_READ_ONLY, null, new AuditLogReadOnlyWriteAttributeHandler(auditLogger));
         resourceRegistration.registerReadWriteAttribute(ENABLED, null, new AuditLogEnabledWriteAttributeHandler(auditLogger));
+        resourceRegistration.registerReadWriteAttribute(REDACTED, null, new AuditLogRedactedWriteAttributeHandler(auditLogger));
     }
 
     @Override
@@ -132,6 +139,7 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
 
                         auditLoggerProvider.setLogBoot(AuditLogLoggerResourceDefinition.LOG_BOOT.resolveModelAttribute(context, model).asBoolean());
                         auditLoggerProvider.setLogReadOnly(AuditLogLoggerResourceDefinition.LOG_READ_ONLY.resolveModelAttribute(context, model).asBoolean());
+                        auditLoggerProvider.setRedacted(AuditLogLoggerResourceDefinition.REDACTED.resolveModelAttribute(context, model).asBoolean());
                         boolean enabled = AuditLogLoggerResourceDefinition.ENABLED.resolveModelAttribute(context, model).asBoolean();
                         final AuditLogger.Status status = enabled ? AuditLogger.Status.LOGGING : AuditLogger.Status.DISABLED;
                         context.completeStep((OperationContext.ResultAction resultAction, OperationContext context1, ModelNode operation1) -> {
@@ -246,5 +254,35 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
             auditLogger.setLogReadOnly(handback);
         }
     }
+
+    private static class AuditLogRedactedWriteAttributeHandler extends AbstractWriteAttributeHandler<Boolean> {
+
+        private final ManagedAuditLogger auditLogger;
+
+        AuditLogRedactedWriteAttributeHandler(ManagedAuditLogger auditLogger) {
+            this.auditLogger = auditLogger;
+        }
+
+        @Override
+        protected boolean requiresRuntime(OperationContext context) {
+            return auditLogger != null;
+        }
+
+        @Override
+        protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
+                                               ModelNode resolvedValue, ModelNode currentValue,
+                                               HandbackHolder<Boolean> handbackHolder) {
+            handbackHolder.setHandback(auditLogger.isRedacted());
+            auditLogger.setRedacted(resolvedValue.asBoolean());
+            return false;
+        }
+
+        @Override
+        protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
+                                              ModelNode valueToRestore, ModelNode valueToRevert, Boolean handback) {
+            auditLogger.setRedacted(handback);
+        }
+    }
+
 
 }

@@ -186,7 +186,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
         static final SimpleAttributeDefinition CLIENT_SECRET = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CLIENT_SECRET, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setMinSize(1)
-                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES, AttributeAccess.Flag.REDACTABLE)
                 .build();
 
         static final SimpleAttributeDefinition INTROSPECTION_URL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.INTROSPECTION_URL, ModelType.STRING, false)

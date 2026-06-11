@@ -23,6 +23,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.dmr.ModelNode;
@@ -61,6 +62,7 @@ public class SslLoopbackResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static final SimpleAttributeDefinition TRUSTSTORE_PASSWORD = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TRUSTSTORE_PASSWORD, ModelType.STRING, true)
+            .setFlags(AttributeAccess.Flag.REDACTABLE)
             .setAllowExpression(true)
             .build();
 
