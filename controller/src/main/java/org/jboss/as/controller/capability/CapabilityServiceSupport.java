@@ -6,6 +6,7 @@
 package org.jboss.as.controller.capability;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.jboss.msc.service.ServiceName;
@@ -53,11 +54,11 @@ public interface CapabilityServiceSupport extends CapabilityServiceDescriptorRes
      * Indicates whether a runtime capability with the given name and segments is registered.
      *
      * @param capabilityName the name of the capability. Cannot be {@code null}
-     * @parem segments the dynamic name segments of the capability. Cannot be {@code null}
+     * @param segments the dynamic name segments of the capability. Cannot be {@code null}
      * @return {@code true} if there is a capability with the given name registered
      */
     default boolean hasCapability(String capabilityName, String... segments) {
-        return this.hasCapability(RuntimeCapability.buildDynamicCapabilityName(capabilityName, segments));
+        return (Objects.requireNonNull(segments).length > 0) ? this.hasCapability(RuntimeCapability.buildDynamicCapabilityName(capabilityName, segments)) : this.hasCapability(capabilityName);
     }
 
     /**
