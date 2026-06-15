@@ -197,7 +197,9 @@ class PolicyDefinitions {
 
                     @Override
                     public void stop(StopContext context) {
-                        setPolicy(original);
+                        if (restorePolicy) {
+                            setPolicy(original);
+                        }
                     }
 
                     @Override
