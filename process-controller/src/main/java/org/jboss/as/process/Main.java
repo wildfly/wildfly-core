@@ -207,7 +207,7 @@ public final class Main {
 
         final ProcessController processController = new ProcessController(configuration, System.out, System.err);
 
-        final FileChannel lockChannel = acquireRunningLock(jbossHome);
+        processController.setRunningLockChannel(acquireRunningLock(jbossHome));
 
         final InetSocketAddress boundAddress = processController.getServer().getBoundAddress();
 
@@ -243,7 +243,6 @@ public final class Main {
         final Thread shutdownThread = new Thread(new Runnable() {
             public void run() {
                 processController.shutdown();
-                releaseRunningLock(lockChannel);
             }
         }, "Shutdown thread");
         shutdownThread.setDaemon(false);
@@ -267,16 +266,6 @@ public final class Main {
             // ignore
         }
         return null;
-    }
-
-    private static void releaseRunningLock(FileChannel channel) {
-        if (channel != null) {
-            try {
-                channel.close();
-            } catch (IOException e) {
-                // ignore
-            }
-        }
     }
 
     private static boolean isJavaSecurityManagerConfigured(final String arg) {

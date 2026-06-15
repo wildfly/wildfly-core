@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -46,6 +47,7 @@ public final class ProcessController {
     private final Set<Connection> managedConnections = new CopyOnWriteArraySet<Connection>();
 
     private volatile boolean shutdown;
+    private volatile FileChannel runningLockChannel;
 
     private static final short AUTH_BYTES_LENGTH = 16;
     public static final short AUTH_BYTES_ENCODED_LENGTH = 24;
@@ -224,7 +226,20 @@ public final class ProcessController {
                 }
             }
             ProcessLogger.ROOT_LOGGER.shutdownComplete();
+            final FileChannel channel = runningLockChannel;
+            if (channel != null) {
+                runningLockChannel = null;
+                try {
+                    channel.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
         }
+    }
+
+    void setRunningLockChannel(FileChannel channel) {
+        this.runningLockChannel = channel;
     }
 
     public ManagedProcess getServerByAuthCode(final byte[] code) {
