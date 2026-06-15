@@ -22,10 +22,11 @@
             </logger>
         </audit-log>
         <management-interfaces>
-            <native-interface>
+            <native-interface sasl-authentication-factory="management-sasl">
                 <socket-binding native="management-native"/>
             </native-interface>
             <http-interface>
+            	<http-upgrade enabled="true" sasl-authentication-factory="management-sasl" />
                 <socket-binding http="management-http"/>
             </http-interface>
         </management-interfaces>
