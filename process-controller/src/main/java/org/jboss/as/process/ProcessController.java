@@ -10,7 +10,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
@@ -238,8 +242,20 @@ public final class ProcessController {
         }
     }
 
-    void setRunningLockChannel(FileChannel channel) {
-        this.runningLockChannel = channel;
+    void acquireRunningLock(String jbossHome) {
+        try {
+            Path lockPath = Paths.get(jbossHome, ".installation", "running.lock");
+            FileChannel channel = FileChannel.open(lockPath,
+                    StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ);
+            FileLock lock = channel.tryLock();
+            if (lock != null) {
+                this.runningLockChannel = channel;
+            } else {
+                channel.close();
+            }
+        } catch (IOException e) {
+            // ignore
+        }
     }
 
     public ManagedProcess getServerByAuthCode(final byte[] code) {

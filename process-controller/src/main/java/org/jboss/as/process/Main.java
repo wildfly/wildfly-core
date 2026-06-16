@@ -11,11 +11,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -207,7 +202,7 @@ public final class Main {
 
         final ProcessController processController = new ProcessController(configuration, System.out, System.err);
 
-        processController.setRunningLockChannel(acquireRunningLock(jbossHome));
+        processController.acquireRunningLock(jbossHome);
 
         final InetSocketAddress boundAddress = processController.getServer().getBoundAddress();
 
@@ -249,23 +244,6 @@ public final class Main {
         Runtime.getRuntime().addShutdownHook(shutdownThread);
 
         return processController;
-    }
-
-    private static FileChannel acquireRunningLock(String jbossHome) {
-        try {
-            Path lockPath = Paths.get(jbossHome, ".installation", "running.lock");
-            java.nio.file.Files.createDirectories(lockPath.getParent());
-            FileChannel channel = FileChannel.open(lockPath,
-                    StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ);
-            FileLock lock = channel.tryLock();
-            if (lock != null) {
-                return channel;
-            }
-            channel.close();
-        } catch (IOException e) {
-            // ignore
-        }
-        return null;
     }
 
     private static boolean isJavaSecurityManagerConfigured(final String arg) {

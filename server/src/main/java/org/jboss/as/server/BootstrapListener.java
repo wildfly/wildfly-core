@@ -171,7 +171,6 @@ public final class BootstrapListener {
     }
 
     private void openLockFile(Path lockPath) throws IOException {
-        Files.createDirectories(lockPath.getParent());
         FileChannel channel = FileChannel.open(lockPath,
                 StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ);
         FileLock lock = channel.tryLock();
