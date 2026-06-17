@@ -23,6 +23,7 @@ import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationExtensionFactory;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.process.CommandLineConstants;
+import org.jboss.as.server.logging.EarlyLoggingInit;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.ProductConfig;
@@ -74,6 +75,7 @@ public final class Main {
                         new LoggingOutputStream(org.jboss.logmanager.Logger.getLogger("stderr"), org.jboss.logmanager.Level.ERROR)
                 );
                 StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(context));
+                EarlyLoggingInit.initSlf4j();
             }
 
             Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule("org.jboss.vfs"));

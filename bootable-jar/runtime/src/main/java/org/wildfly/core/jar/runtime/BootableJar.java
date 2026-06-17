@@ -52,6 +52,7 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.READ_ATTRIB
 import static org.jboss.as.controller.client.helpers.ClientConstants.RESULT;
 import static org.jboss.as.controller.client.helpers.ClientConstants.RUNTIME_NAME;
 import org.jboss.as.process.CommandLineConstants;
+import org.jboss.as.server.logging.EarlyLoggingInit;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
@@ -246,6 +247,7 @@ public final class BootableJar implements ShutdownHandler {
                     new LoggingOutputStream(org.jboss.logmanager.Logger.getLogger("stderr"), org.jboss.logmanager.Level.ERROR)
             );
             StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(context));
+            EarlyLoggingInit.initSlf4j();
         }
     }
 

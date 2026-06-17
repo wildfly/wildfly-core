@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.concurrent.CompletionStage;
 
 import org.jboss.as.network.NetworkUtils;
+import org.jboss.as.server.logging.EarlyLoggingInit;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.process.ProcessController;
 import org.jboss.as.process.stdin.Base64InputStream;
@@ -102,6 +103,7 @@ public final class DomainServerMain {
             new LoggingOutputStream(org.jboss.logmanager.Logger.getLogger("stderr"), Level.ERROR)
         );
         StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(context));
+        EarlyLoggingInit.initSlf4j();
 
         final byte[] asAuthBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
         try {
