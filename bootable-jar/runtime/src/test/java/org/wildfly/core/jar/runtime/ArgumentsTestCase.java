@@ -4,6 +4,7 @@
  */
 package org.wildfly.core.jar.runtime;
 
+import java.io.FileWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +14,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -28,6 +30,7 @@ import org.junit.Test;
  */
 public class ArgumentsTestCase {
 
+    private static final String FILTER_PROP = "jdk.serialFilter";
 
     @Test
     public void test() throws Exception {
@@ -111,6 +114,46 @@ public class ArgumentsTestCase {
                 throw new Exception("Should have failed");
             }
         }
+
+        {
+            String[] args = {};
+            final TestPropertyUpdater propertyUpdater = new TestPropertyUpdater();
+            Arguments arguments = Arguments.parseArguments(Arrays.asList(args), createEnvironment(propertyUpdater));
+            if (System.getenv("DISABLE_JDK_SERIAL_FILTER") == null) {
+                Assert.assertNotNull("Expected filter to exist.", arguments.getRequiredSerialFilter());
+                String val = System.getenv("JDK_SERIAL_FILTER");
+                if (val != null) {
+                    Assert.assertEquals("Expected the value " + val + " for the serial filter", val, arguments.getRequiredSerialFilter());
+                }
+            } else {
+                Assert.assertNull("No filter expected ", arguments.getRequiredSerialFilter());
+            }
+        }
+
+        {
+            Properties p = new Properties();
+            p.setProperty(FILTER_PROP, "foo");
+            Path propsFile = Files.createTempFile(null, ".properties");
+            propsFile.toFile().deleteOnExit();
+            try (FileWriter w = new FileWriter(propsFile.toFile())) {
+                p.store(w, "");
+            }
+            String[] args = {"--properties", propsFile.toString()};
+            final TestPropertyUpdater propertyUpdater = new TestPropertyUpdater();
+            Arguments arguments = Arguments.parseArguments(Arrays.asList(args), createEnvironment(propertyUpdater));
+            // The property is not set, it has been replaced by an explicit call.
+            Assert.assertFalse("Property " + FILTER_PROP + " should not be set.", propertyUpdater.properties.containsKey(FILTER_PROP));
+            Assert.assertEquals("Expected the value foo for the serial filter", "foo", arguments.getRequiredSerialFilter());
+        }
+    }
+
+    @Test
+    public void testSerialFilterProperty() throws Exception {
+        final List<String> args = Collections.singletonList("-D"+FILTER_PROP+"=foo2");
+        final TestPropertyUpdater propertyUpdater = new TestPropertyUpdater();
+        Arguments arguments = Arguments.parseArguments(args, createEnvironment(propertyUpdater));
+        Assert.assertFalse("Property " + FILTER_PROP + " should not be set.", propertyUpdater.properties.containsKey(FILTER_PROP));
+        Assert.assertEquals("Expected the value foo2 for the serial filter", "foo2", arguments.getRequiredSerialFilter());
     }
 
     @Test

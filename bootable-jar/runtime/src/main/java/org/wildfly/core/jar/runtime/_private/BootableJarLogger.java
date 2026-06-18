@@ -164,4 +164,8 @@ public interface BootableJarLogger extends BasicLogger {
     @LogMessage(level = DEBUG)
     @Message(id = 25, value = "Failed to initialize a security provider. Reason: %s")
     void securityProviderFailed(Throwable ex);
+
+    @LogMessage(level = INFO)
+    @Message(id = 26, value = "The JDK_SERIAL_FILTER environment variable is being ignored because the global ObjectInputFilter was already configured by the jdk.serialFilter system or security property")
+    void advertiseSerialFilterSet();
 }
