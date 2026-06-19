@@ -17,6 +17,7 @@ import org.jboss.as.controller.ServiceRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -29,6 +30,9 @@ import org.jboss.dmr.ModelType;
  * @author Jaikiran Pai
  */
 class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnectionResourceDefinition {
+
+    static final RuntimeCapability<Void> CONNECTION_INFO_CAPABILITY =
+            RuntimeCapability.Builder.of(ConnectionInfo.CONNECTION_INFO_CAPABILITY).build();
 
     static final PathElement PATH = PathElement.pathElement(CommonAttributes.REMOTE_OUTBOUND_CONNECTION);
 
@@ -80,7 +84,8 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
     private RemoteOutboundConnectionResourceDefinition(RemoteOutboundConnectionAdd addHandler) {
         super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.REMOTE_OUTBOUND_CONNECTION))
                 .setAddHandler(addHandler)
-                .setRemoveHandler(new ServiceRemoveStepHandler(OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(), addHandler))
+                .setRemoveHandler(new ServiceRemoveStepHandler(addHandler))
+                .addCapabilities(CONNECTION_INFO_CAPABILITY)
         );
     }
 

@@ -55,6 +55,16 @@ if "%~1" == "" (
    goto READ-DEBUG-PORT
 ) else if "%~1" == "-secmgr" (
    set SECMGR=true
+) else if "%~1" == "-v" (
+   goto READ-VERSION
+) else if "%~1" == "-V" (
+   goto READ-VERSION
+) else if "%~1" == "--version" (
+   goto READ-VERSION
+) else if "%~1" == "-h" (
+   goto READ-VERSION
+) else if "%~1" == "--help" (
+   goto READ-VERSION
 )
 shift
 goto READ-ARGS
@@ -70,6 +80,13 @@ if not %DEBUG_ARG% == "" (
    shift
    goto READ-ARGS
 )
+
+:READ-VERSION
+set "JAVA_OPTS=-Xmx16m"
+set "PRESERVE_JAVA_OPTS=true"
+set SKIP_CONF=true
+shift
+goto READ-ARGS
 
 :MAIN
 rem $Id$
@@ -95,15 +112,17 @@ if /i "%RESOLVED_JBOSS_HOME%" NEQ "%SANITIZED_JBOSS_HOME%" (
    echo.
 )
 
-rem Read an optional configuration file.
-if "x%STANDALONE_CONF%" == "x" (
-   set "STANDALONE_CONF=%DIRNAME%standalone.conf.bat"
-)
-if exist "%STANDALONE_CONF%" (
-   echo Calling "%STANDALONE_CONF%"
-   call "%STANDALONE_CONF%" %*
-) else (
-   echo Config file not found "%STANDALONE_CONF%"
+rem Read an optional configuration file - skip for version/help commands
+if not "%SKIP_CONF%" == "true" (
+   if "x%STANDALONE_CONF%" == "x" (
+      set "STANDALONE_CONF=%DIRNAME%standalone.conf.bat"
+   )
+   if exist "%STANDALONE_CONF%" (
+      echo Calling "%STANDALONE_CONF%"
+      call "%STANDALONE_CONF%" %*
+   ) else (
+      echo Config file not found "%STANDALONE_CONF%"
+   )
 )
 
 rem Sanitize JAVA_OPTS
