@@ -336,4 +336,8 @@ public class ScriptProcess extends Process implements AutoCloseable {
             }
         }
     }
+
+    public String getLastExecutedCmd() {
+        return lastExecutedCmd;
+    }
 }

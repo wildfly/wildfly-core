@@ -8,12 +8,17 @@ $scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
 . $scripts'\common.ps1'
 Set-Item -Path env:JBOSS_LAUNCH_SCRIPT -Value "powershell"
 $SERVER_OPTS = Process-Script-Parameters -Params $ARGS
+if ($global:VERSION){
+    $JAVA_OPTS = '-Xmx16m'
+    $PRESERVE_JAVA_OPTS = $true
+} else {
 $JAVA_OPTS = Get-Java-Opts
 
-# Read an optional running configuration file
-$STANDALONE_CONF_FILE = $scripts + '\standalone.conf.ps1'
-$STANDALONE_CONF_FILE = Get-Env RUN_CONF $STANDALONE_CONF_FILE
-. $STANDALONE_CONF_FILE
+    # Read an optional running configuration file - skip for version/help commands
+    $STANDALONE_CONF_FILE = $scripts + '\standalone.conf.ps1'
+    $STANDALONE_CONF_FILE = Get-Env RUN_CONF $STANDALONE_CONF_FILE
+    . $STANDALONE_CONF_FILE
+}
 
 Write-Debug "debug is: $global:DEBUG_MODE"
 Write-Debug "debug port: $global:DEBUG_PORT"
