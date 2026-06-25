@@ -184,20 +184,8 @@ public class ScriptProcess extends Process implements AutoCloseable {
     @Override
     public void close() {
         try {
-            if (this.delegate != null) {
-                // First attempt to destroy all the child processes
-                delegate.children().forEachOrdered(child -> {
-                    if (child.destroyForcibly()) {
-                        try {
-                            child.onExit().get(timeout, TimeUnit.SECONDS);
-                        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                            LOGGER.errorf(e, "Failed to destroy child %s", child);
-                        }
-                    }
-                });
-            }
-        } finally {
             destroy(delegate);
+        } finally {
             delegate = null;
         }
     }
@@ -317,7 +305,8 @@ public class ScriptProcess extends Process implements AutoCloseable {
                 destroy(process);
                 throw new TimeoutException(getErrorMessage(String.format("The %s did not start within %d seconds.", script.getFileName(), this.timeout)));
             }
-        } catch (ExecutionException e) {
+        } catch (RuntimeException | ExecutionException e) {
+            destroy(process);
             throw new RuntimeException(getErrorMessage(String.format("Failed to determine if the %s server is running.", script.getFileName())), e);
         } finally {
             service.shutdownNow();
@@ -326,13 +315,26 @@ public class ScriptProcess extends Process implements AutoCloseable {
 
     private void destroy(final Process process) {
         if (process != null && process.isAlive()) {
-            final Process destroyed = process.destroyForcibly();
             try {
-                if (destroyed.isAlive() && !destroyed.waitFor(timeout, TimeUnit.SECONDS)) {
-                    LOGGER.errorf("The process was not destroyed within %d seconds.", timeout);
+                // First attempt to destroy all the child processes
+                process.children().forEachOrdered(child -> {
+                    if (child.destroyForcibly()) {
+                        try {
+                            child.onExit().get(timeout, TimeUnit.SECONDS);
+                        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                            LOGGER.errorf(e, "Failed to destroy child %s", child);
+                        }
+                    }
+                });
+            } finally {
+                final Process destroyed = process.destroyForcibly();
+                try {
+                    if (destroyed.isAlive() && !destroyed.waitFor(timeout, TimeUnit.SECONDS)) {
+                        LOGGER.errorf("The process was not destroyed within %d seconds.", timeout);
+                    }
+                } catch (InterruptedException e) {
+                    LOGGER.error("The process was interrupted while waiting to be destroyed.", e);
                 }
-            } catch (InterruptedException e) {
-                LOGGER.error("The process was interrupted while waiting to be destroyed.", e);
             }
         }
     }
