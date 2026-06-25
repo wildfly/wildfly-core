@@ -592,7 +592,6 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron");
         operation.get(ClientConstants.OP).set("read-resource");
-        System.out.println(services.executeOperation(operation).get(ClientConstants.RESULT).asString());
         operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronDescriptionConstants.KEY_STORE,"AutomaticKeystore");
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
