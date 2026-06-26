@@ -11,6 +11,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELEASE_VERSION;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -45,7 +46,7 @@ import org.wildfly.core.testrunner.ManagementClient;
 public class ClientAgainstOldServerTestCase {
 
     // Max time to wait for some action to complete, in s
-    private static final int TIMEOUT = TimeoutUtil.adjust(240);
+    private static final Duration TIMEOUT = TimeoutUtil.adjust(Duration.ofMinutes(4));
 
     private final Version.AsVersion version;
 
@@ -103,7 +104,7 @@ public class ClientAgainstOldServerTestCase {
 
     private void awaitDeploymentExecution(Future<?> future) {
         try {
-            future.get(TIMEOUT, TimeUnit.SECONDS);
+            future.get(TIMEOUT.toNanos(), TimeUnit.NANOSECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

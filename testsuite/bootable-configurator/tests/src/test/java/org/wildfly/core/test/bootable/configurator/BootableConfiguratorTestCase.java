@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Properties;
 
 import jakarta.inject.Inject;
@@ -36,7 +37,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 
 @RunWith(WildFlyRunner.class)
 public class BootableConfiguratorTestCase {
-    private static final long RELOAD_WAITING_TIME = TimeoutUtil.adjust(10000);
+    private static final Duration RELOAD_WAITING_TIME = TimeoutUtil.adjust(Duration.ofSeconds(10));
     @Inject
     private ManagementClient managementClient;
 
@@ -58,7 +59,7 @@ public class BootableConfiguratorTestCase {
             assertTrue(Files.exists(modulePath));
         }
         // Wait for the server to be in ready state
-        long timeout = RELOAD_WAITING_TIME;
+        long timeout = RELOAD_WAITING_TIME.toMillis();
         int freq = 500;
         while(timeout > 0) {
             if (managementClient.isServerInNormalMode() && managementClient.isServerInRunningState()) {

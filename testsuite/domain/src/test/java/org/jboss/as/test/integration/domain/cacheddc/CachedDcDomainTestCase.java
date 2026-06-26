@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.time.Duration;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
@@ -55,10 +56,10 @@ import org.junit.Test;
  */
 public class CachedDcDomainTestCase {
 
-    private static Logger log = Logger.getLogger(CachedDcDomainTestCase.class);
+    private static final Logger log = Logger.getLogger(CachedDcDomainTestCase.class);
 
-    private static final long TIMEOUT_S = TimeoutUtil.adjust(30);
-    private static final long NOT_STARTED_TIMEOUT_S = TimeoutUtil.adjust(7);
+    private static final Duration TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(30));
+    private static final Duration NOT_STARTED_TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(7));
     private static final int TIMEOUT_SLEEP_MILLIS = 50;
 
     private static final String TEST_LOGGER_NAME = "org.jboss.test";
@@ -112,7 +113,7 @@ public class CachedDcDomainTestCase {
     /**
      * DC is up, HC successfully starts if parameter --backup, both HC and DC is put down
      * and when HC is subsequently started with --cached-dc it uses cached file created during start-up
-     * with --backup param and HC is succesfully started
+     * with --backup param and HC is successfully started
      */
     @Test
     public void hcStartsWhenCachedConfigAvailable_BackupDCParamIsSet() throws Exception {
@@ -138,7 +139,7 @@ public class CachedDcDomainTestCase {
 
         // expecting that HC is not started
         try (final DomainClient client = getDomainClient(domainConfig.getSecondaryConfiguration())) {
-            waitForHostControllerBeingStarted(NOT_STARTED_TIMEOUT_S, client);
+            waitForHostControllerBeingStarted(NOT_STARTED_TIMEOUT.toSeconds(), client);
             Assert.fail("DC not started, domain.cached-remote.xml does not exist but "
                 + "secondary host controller was started ");
         } catch (IllegalStateException ise) {
@@ -211,7 +212,7 @@ public class CachedDcDomainTestCase {
 
         // timeout waits to get changes from DC propagated to HC
         // by WFCORE-2331 the host controller log file should advert need of configuration change
-        runWithTimeout(TIMEOUT_S, () -> checkHostControllerLogFile(domainConfig.getSecondaryConfiguration(), "WFLYHC0202"));
+        runWithTimeout(TIMEOUT.toSeconds(), () -> checkHostControllerLogFile(domainConfig.getSecondaryConfiguration(), "WFLYHC0202"));
     }
 
     /**
@@ -283,20 +284,20 @@ public class CachedDcDomainTestCase {
         // starting DC where domain config contains a configuration change
         domainManager.getDomainPrimaryLifecycleUtil().start();
 
-        runWithTimeout(TIMEOUT_S, () -> {
+        runWithTimeout(TIMEOUT.toSeconds(), () -> {
             ModelNode hostRead = readLoggingApiDependenciesAtServerOtherTwo(domainManager.getDomainSecondaryLifecycleUtil().getDomainClient());
             assertEquals("Read operation should suceed", SUCCESS, hostRead.get(OUTCOME).asString());
             assertEquals("Expecting change of attribute 'add-logging-api-dependencies' requests a reload: " + hostRead,
                 "reload-required", hostRead.get("response-headers").get("process-state").asString());
         });
         reloadServers(domainManager.getDomainPrimaryLifecycleUtil().getDomainClient());
-        runWithTimeout(TIMEOUT_S, () -> {
+        runWithTimeout(TIMEOUT.toSeconds(), () -> {
             ModelNode hostRead = readLoggingApiDependenciesAtServerOtherTwo(domainManager.getDomainPrimaryLifecycleUtil().getDomainClient());
             assertEquals("Expecting value of attribute 'add-logging-api-dependencies' changed: " + hostRead,
                     isAddLoggingApiDependencies, hostRead.get("result").asBoolean());
         });
         // by WFCORE-2331 the host controller log file should advert need of configuration change
-        runWithTimeout(TIMEOUT_S, () -> checkHostControllerLogFile(domainConfig.getSecondaryConfiguration(), "WFLYHC0202"));
+        runWithTimeout(TIMEOUT.toSeconds(), () -> checkHostControllerLogFile(domainConfig.getSecondaryConfiguration(), "WFLYHC0202"));
     }
 
     private void test_hcStartsWhenCachedConfigAvailable(DomainTestSupport.Configuration domainConfig) throws Exception {
@@ -323,7 +324,7 @@ public class CachedDcDomainTestCase {
 
         try (final DomainClient client = getDomainClient(domainConfig.getSecondaryConfiguration())) {
             // getting statuses of servers from secondary HC as waiting for HC being ready
-            runWithTimeout(TimeoutUtil.adjust(5), () -> client.getServerStatuses());
+            runWithTimeout(TimeoutUtil.adjust(Duration.ofSeconds(5)).toSeconds(), () -> client.getServerStatuses());
             Assert.fail("DC started with no param, it's waiting for DC but it's not possible to connect to it");
         } catch (IllegalStateException ise) {
             // as HC should not be started IllegalStateException is expected
@@ -331,8 +332,8 @@ public class CachedDcDomainTestCase {
 
         // after starting DC, HC is ready to use with all its servers
         domainManager.getDomainPrimaryLifecycleUtil().start();
-        waitForHostControllerBeingStarted(TIMEOUT_S, domainManager.getDomainSecondaryLifecycleUtil().getDomainClient());
-        waitForServersBeingStarted(TIMEOUT_S, domainManager.getDomainSecondaryLifecycleUtil().getDomainClient());
+        waitForHostControllerBeingStarted(TIMEOUT.toSeconds(), domainManager.getDomainSecondaryLifecycleUtil().getDomainClient());
+        waitForServersBeingStarted(TIMEOUT.toSeconds(), domainManager.getDomainSecondaryLifecycleUtil().getDomainClient());
     }
 
     private DomainClient getDomainClient(WildFlyManagedConfiguration config) throws UnknownHostException {
@@ -511,7 +512,7 @@ public class CachedDcDomainTestCase {
     /**
      * @param hostname the hostname to query
      * @param requiredState the {@link ControlledProcessState.State} expected, or null for any state}
-     * @return true if the host is present in the queried hosts's model (in the requiredState, if present), false otherwise.
+     * @return true if the host is present in the queried hosts' model (in the requiredState, if present), false otherwise.
      */
     private boolean isHostPresentInModel(final String hostname, final ControlledProcessState.State requiredState) throws IOException {
         final ModelNode operation = new ModelNode();

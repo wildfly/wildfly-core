@@ -28,6 +28,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 
 import jakarta.inject.Inject;
 
@@ -316,7 +317,7 @@ public class YamlExtensionTestCase {
     public void testSimpleYamlWithReload() throws Exception {
         container.startYamlExtension(new Path[]{testYaml});
         Assert.assertEquals("Yaml changes to configuration were persisted to xml. This should never happen as it's in read-only mode.", expectedXml, readConfigAsXml());
-        container.reload(TimeoutUtil.adjust(5000));
+        container.reload((int) TimeoutUtil.adjust(Duration.ofSeconds(5)).toMillis());
         compareXML(expectedXml, readConfigAsXml());
     }
 
@@ -332,7 +333,7 @@ public class YamlExtensionTestCase {
         }
         WildFlySecurityManager.setPropertyPrivileged("jvm.args", sb.toString());
         container.start(null, null, Server.StartMode.ADMIN_ONLY, System.out, false, null, null, null, null, new Path[]{testYaml});
-        container.waitForLiveServerToReload(TimeoutUtil.adjust(5000));
+        container.waitForLiveServerToReload((int) TimeoutUtil.adjust(Duration.ofSeconds(5)).toMillis());
         waitForRunningMode("NORMAL");
         String xml = readConfigAsXml();
         compareXML(expectedBootCLiXml, xml);
@@ -674,7 +675,7 @@ public class YamlExtensionTestCase {
     private void waitForRunningMode(String runningMode) throws Exception {
         // Following a reload to normal mode, we might read the running mode too early and hit the admin-only server
         // Cycle around a bit to make sure we get the server reloaded into normal mode
-        long end = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
+        long end = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(10)).toMillis();
         while (true) {
             try {
                 Thread.sleep(100);

@@ -5,6 +5,7 @@
 
 package org.jboss.as.test.integration.domain.suites;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.test.shared.TimeoutUtil;
@@ -21,7 +22,7 @@ public class SlowServiceActivator implements ServiceActivator {
     @Override
     public void activate(ServiceActivatorContext serviceActivatorContext) throws ServiceRegistryException {
         try {
-            long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(60)*1000;
+            long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofMinutes(1)).toMillis();
             while (System.currentTimeMillis() - timeout < 0) {
                 TimeUnit.SECONDS.sleep(1);
             }

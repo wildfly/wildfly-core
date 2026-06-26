@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -348,7 +349,7 @@ public class LayersTest {
             }
         };
         try {
-            executor.submit(r).get(TimeoutUtil.adjust(1), TimeUnit.MINUTES);
+            executor.submit(r).get(TimeoutUtil.adjust(Duration.ofMinutes(1)).toNanos(), TimeUnit.NANOSECONDS);
         } catch (Exception ex) {
             throw new Exception("Exception checking " + installation.getFileName().toString()
                     + "\n Server log \n" + str, ex);

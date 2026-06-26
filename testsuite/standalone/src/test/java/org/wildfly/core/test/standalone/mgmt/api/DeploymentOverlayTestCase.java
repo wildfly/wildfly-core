@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -60,8 +61,8 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 @RunWith(WildFlyRunner.class)
 public class DeploymentOverlayTestCase {
 
-    // Max time to wait for some action to complete, in ms
-    private static final int TIMEOUT = TimeoutUtil.adjust(20000);
+    // Max time to wait for some action to complete
+    private static final Duration TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(20));
     private static final PathAddress OVERLAY_ADDR = PathAddress.pathAddress(ModelDescriptionConstants.DEPLOYMENT_OVERLAY, "overlay");
     private static final ModelNode OVERLAY_CONTENT_ADDR = OVERLAY_ADDR.append(CONTENT, ServiceActivatorDeployment.PROPERTIES_RESOURCE).toModelNode();
     private static final ModelNode OVERLAY_DEPLOYMENT_ADDR = OVERLAY_ADDR.append(ModelDescriptionConstants.DEPLOYMENT, "test-deployment.jar").toModelNode();
@@ -166,7 +167,7 @@ public class DeploymentOverlayTestCase {
                         Operation.Factory.create(
                                 Operations.createReadAttributeOperation(OVERLAY_CONTENT_ADDR, "stream")), OperationMessageHandler.DISCARD);
                 try {
-                    OperationResponse response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+                    OperationResponse response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
                     Assert.assertTrue(Operations.isSuccessfulOutcome(response.getResponseNode()));
                     Assert.assertTrue(Operations.readResult(response.getResponseNode()).hasDefined(UUID));
                     List<OperationResponse.StreamEntry> streams = response.getInputStreams();
@@ -264,7 +265,7 @@ public class DeploymentOverlayTestCase {
     private void awaitDeploymentExecution(Future<?> future) {
         Object t = null;
         try {
-            t = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+            t = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

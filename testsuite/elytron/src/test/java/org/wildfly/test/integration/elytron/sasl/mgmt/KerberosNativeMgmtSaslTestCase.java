@@ -86,7 +86,7 @@ public class KerberosNativeMgmtSaslTestCase extends AbstractKerberosMgmtSaslTest
     protected ModelNode executeWhoAmI(boolean withTls) throws IOException, GeneralSecurityException {
         ModelControllerClientConfiguration.Builder clientConfigBuilder = new ModelControllerClientConfiguration.Builder()
                 .setHostName(CoreUtils.getDefaultHost(false)).setPort(PORT_NATIVE)
-                .setProtocol("remote").setConnectionTimeout(CONNECTION_TIMEOUT_IN_MS);
+                .setProtocol("remote").setConnectionTimeout((int) CONNECTION_TIMEOUT.toMillis());
         if (withTls) {
             clientConfigBuilder.setSslContext(sslFactory.create());
         }

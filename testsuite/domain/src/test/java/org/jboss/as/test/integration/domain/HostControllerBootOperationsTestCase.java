@@ -23,6 +23,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -314,7 +315,7 @@ public class HostControllerBootOperationsTestCase {
     }
 
     private static void waitUntilServerRegisteredButStarting(final ModelControllerClient client, final PathAddress serverAddress) throws IOException, MgmtOperationException {
-        final long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(TimeoutUtil.adjust(60));
+        final long deadline = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofMinutes(1)).toMillis();
         for(;;) {
             final long remaining = deadline - System.currentTimeMillis();
             if(remaining <= 0) {

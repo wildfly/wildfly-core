@@ -29,6 +29,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.time.Duration;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.HashMap;
@@ -91,7 +92,7 @@ public class HcExtensionAndSubsystemManagementTestCase {
     private static final PathAddress SECONDARY_SOCKET_BINDING_ADDRESS =
             PathAddress.pathAddress(SECONDARY_SOCKET_BINDING_GROUP_ADDRESS).append(SOCKET_BINDING, SOCKET_BINDING_NAME);
 
-    private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
+    private static final Duration ADJUSTED_SECOND = TimeoutUtil.adjust(Duration.ofSeconds(1));
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
@@ -481,10 +482,10 @@ public class HcExtensionAndSubsystemManagementTestCase {
         reloaded = reloaded || reloadHostsIfReloadRequired(domainSecondaryLifecycleUtil, PathAddress.pathAddress(SECONDARY_HOST_ELEMENT));
         if (reloaded) {
             //Wait for the secondary to reconnect, look for the secondary in the list of hosts
-            long end = System.currentTimeMillis() + 20 * ADJUSTED_SECOND;
+            long end = System.currentTimeMillis() + ADJUSTED_SECOND.multipliedBy(20).toMillis();
             boolean secondaryReconnected;
             do {
-                Thread.sleep(ADJUSTED_SECOND);
+                Thread.sleep(ADJUSTED_SECOND.toMillis());
                 secondaryReconnected = checkSecondaryReconnected(domainPrimaryLifecycleUtil.getDomainClient());
             } while (!secondaryReconnected && System.currentTimeMillis() < end);
 
@@ -509,7 +510,7 @@ public class HcExtensionAndSubsystemManagementTestCase {
 
         Set<String> required = serversByHost.get(util);
         Set<String> unstarted;
-        long timeout = TimeoutUtil.adjust(120 * 1000);
+        long timeout = TimeoutUtil.adjust(Duration.ofMinutes(2)).toMillis();
         long deadline = System.currentTimeMillis() + timeout;
         do {
             unstarted = new HashSet<>(required);

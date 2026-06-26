@@ -28,6 +28,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 
 import jakarta.inject.Inject;
 import java.io.File;
+import java.time.Duration;
 
 /**
  * Tests the processing of {@code permissions.xml} in deployments
@@ -144,7 +145,7 @@ public class PermissionsDeploymentTestCase extends AbstractDeploymentScannerBase
 
     private void waitForDeploymentToFinish(final PathAddress deploymentPathAddr) throws Exception {
         // Wait until deployed ...
-        long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
+        long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis();
         while (!exists(modelControllerClient, deploymentPathAddr) && System.currentTimeMillis() < timeout) {
             Thread.sleep(100);
         }

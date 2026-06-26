@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.nio.file.Files;
+import java.time.Duration;
 
 import jakarta.inject.Inject;
 
@@ -211,7 +212,7 @@ public class CliBootOperationsTestCase {
 
     void waitForMarkerFile(String expected) throws Exception {
         File file = getMarkerFile();
-        long end = System.currentTimeMillis() + TimeoutUtil.adjust(5000);
+        long end = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(5)).toMillis();
         String contents = null;
         while (System.currentTimeMillis() < end) {
             Thread.sleep(100);
@@ -256,7 +257,7 @@ public class CliBootOperationsTestCase {
     private void waitForRunningMode(String runningMode) throws Exception {
         // Following a reload to normal mode, we might read the running mode too early and hit the admin-only server
         // Cycle around a bit to make sure we get the server reloaded into normal mode
-        long end = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
+        long end = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(10)).toMillis();
         while (true) {
             try {
                 Thread.sleep(100);

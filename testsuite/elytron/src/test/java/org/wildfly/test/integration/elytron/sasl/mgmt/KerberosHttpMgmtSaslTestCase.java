@@ -65,7 +65,7 @@ public class KerberosHttpMgmtSaslTestCase extends AbstractKerberosMgmtSaslTestBa
 
     private static final ModelControllerClient client = ModelControllerClient.Factory
             .create(new ModelControllerClientConfiguration.Builder().setHostName(CoreUtils.getDefaultHost(false))
-                    .setPort(PORT_NATIVE).setProtocol("remote").setConnectionTimeout(CONNECTION_TIMEOUT_IN_MS).build());
+                    .setPort(PORT_NATIVE).setProtocol("remote").setConnectionTimeout((int) CONNECTION_TIMEOUT.toMillis()).build());
 
     /**
      * Configures test sasl-server-factory to use given mechanism. It also enables/disables SSL based on provided flag.
@@ -111,7 +111,7 @@ public class KerberosHttpMgmtSaslTestCase extends AbstractKerberosMgmtSaslTestBa
     protected ModelNode executeWhoAmI(boolean withTls) throws IOException, GeneralSecurityException {
         ModelControllerClientConfiguration.Builder clientConfigBuilder = new ModelControllerClientConfiguration.Builder()
                 .setHostName(CoreUtils.getDefaultHost(false)).setPort(withTls ? 9993 : 9990)
-                .setProtocol(withTls ? "https-remoting" : "http-remoting").setConnectionTimeout(CONNECTION_TIMEOUT_IN_MS);
+                .setProtocol(withTls ? "https-remoting" : "http-remoting").setConnectionTimeout((int) CONNECTION_TIMEOUT.toMillis());
         if (withTls) {
             clientConfigBuilder.setSslContext(sslFactory.create());
         }

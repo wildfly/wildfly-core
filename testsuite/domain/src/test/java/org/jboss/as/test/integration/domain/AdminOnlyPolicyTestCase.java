@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -53,7 +54,7 @@ public class AdminOnlyPolicyTestCase {
     private static final long initTime = System.currentTimeMillis();
     private static int secondaryCount;
 
-    private static int exitCodeTimeout = TimeoutUtil.adjust(30);
+    private static int exitCodeTimeout = (int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toSeconds();
 
     @BeforeClass
     public static void setupDomain() throws Exception {

@@ -38,6 +38,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -93,7 +94,7 @@ public class OperationCancellationTestCase {
 
     private static final Set<BlockerExtension.BlockPoint> RUNTIME_POINTS =
             EnumSet.of(BlockerExtension.BlockPoint.RUNTIME, BlockerExtension.BlockPoint.SERVICE_START, BlockerExtension.BlockPoint.SERVICE_STOP);
-    private static final long GET_TIMEOUT = TimeoutUtil.adjust(10000);
+    private static final Duration GET_TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(10));
 
     private static DomainTestSupport testSupport;
     private static DomainClient primaryClient;
@@ -174,7 +175,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.MODEL);
         String id = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start);
         cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertFailedOrCancelled(response);
         validateNoActiveOperation(primaryClient, "primary", null, id, false);
     }
@@ -185,7 +186,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.RUNTIME);
         String id = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start);
         cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertFailedOrCancelled(response);
         validateNoActiveOperation(primaryClient, "primary", null, id, false);
     }
@@ -197,7 +198,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.SERVICE_START);
         String id = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "primary", null, id, false);
     }
@@ -210,7 +211,7 @@ public class OperationCancellationTestCase {
         String id = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         blockFuture.cancel(true);
         try {
-            ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+            ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             fail("not cancelled: " + response);
         } catch (CancellationException good) {
             // good
@@ -224,7 +225,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.VERIFY);
         String id = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start);
         cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertFailedOrCancelled(response);
         validateNoActiveOperation(primaryClient, "primary", null, id, false);
     }
@@ -235,7 +236,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.COMMIT);
         String blockId = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
         cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "primary", null, blockId, false);
     }
@@ -246,7 +247,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.ROLLBACK);
         String blockId = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
         cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.ROLLING_BACK, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // primary has already failed when we cancel, so it reports as failed
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "primary", null, blockId, false);
@@ -259,7 +260,7 @@ public class OperationCancellationTestCase {
         String blockId = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
         Future<ModelNode> writeFuture = primaryClient.executeAsync(WRITE_FOO_OP, OperationMessageHandler.DISCARD);
         cancel(primaryClient, "primary", null, "write-attribute", OperationContext.ExecutionStatus.AWAITING_OTHER_OPERATION, start, false);
-        ModelNode response = writeFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = writeFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         blockFuture.cancel(true);
         validateNoActiveOperation(primaryClient, "primary", null, blockId, true);
@@ -273,7 +274,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> writeFuture = primaryClient.executeAsync(WRITE_FOO_OP, OperationMessageHandler.DISCARD);
         findActiveOperation(primaryClient, "primary", null, "write-attribute", OperationContext.ExecutionStatus.AWAITING_OTHER_OPERATION, start);
         cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start, false);
-        ModelNode response = writeFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = writeFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "primary", null, blockId, true);
     }
@@ -284,7 +285,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.MODEL);
         String id = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", null, id, true);
     }
@@ -295,7 +296,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.RUNTIME);
         String id = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", null, id, true);
     }
@@ -307,7 +308,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.SERVICE_START);
         String id = findActiveOperation(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", null, id, true);
     }
@@ -320,7 +321,7 @@ public class OperationCancellationTestCase {
         String id = findActiveOperation(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         blockFuture.cancel(true);
         try {
-            ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+            ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             fail("not cancelled: " + response);
         } catch (CancellationException good) {
             // good
@@ -334,7 +335,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.VERIFY);
         String id = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", null, id, true);
     }
@@ -345,7 +346,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.COMMIT);
         String id = findActiveOperation(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // The primary may or may not be done with DomainSecondaryHandler.execute and DomainRolloutStepHandler.execute
         // when cancelled. If yes, result is SUCCESS, if not result is CANCELLED
         assertSuccessOrCancelled(response);
@@ -358,7 +359,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.ROLLBACK);
         String id = findActiveOperation(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // Secondary fails before Stage.DONE so no normal prepared message in DONE with the failure. The block in
         // rollback prevents the failure coming via the final response. So the primary doesn't know about
         // the failure and just detects the local cancellation. So, CANCELLED
@@ -373,7 +374,7 @@ public class OperationCancellationTestCase {
         String blockId = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
         Future<ModelNode> writeFuture = primaryClient.executeAsync(WRITE_FOO_OP, OperationMessageHandler.DISCARD);
         cancel(primaryClient, "primary", null, "write-attribute", OperationContext.ExecutionStatus.AWAITING_OTHER_OPERATION, start, false);
-        ModelNode response = writeFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = writeFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         blockFuture.cancel(true);
         validateNoActiveOperation(primaryClient, "secondary", null, blockId, true);
@@ -385,7 +386,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.MODEL);
         String blockId = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
         cancel(primaryClient, "secondary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", null, blockId, false);
     }
@@ -396,7 +397,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.RUNTIME);
         String blockId = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
         cancel(primaryClient, "secondary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", null, blockId, false);
     }
@@ -408,7 +409,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.SERVICE_START);
         String blockId = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
         cancel(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", null, blockId, false);
     }
@@ -419,7 +420,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.VERIFY);
         String blockId = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
         cancel(primaryClient, "secondary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", null, blockId, false);
     }
@@ -430,7 +431,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.COMMIT);
         String blockId = findActiveOperation(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
         cancel(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.COMPLETING , start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // cancellation any time in Stage.DONE on secondary will not result in a prepare-phase failed response to
         // primary, so this should always be success
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
@@ -443,7 +444,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.ROLLBACK);
         String blockId = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
         cancel(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.ROLLING_BACK, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // Cancelling the rollback does not prevent the primary learning that the secondary failed.
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", null, blockId, true);
@@ -455,7 +456,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.MODEL);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
     }
@@ -466,7 +467,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.RUNTIME);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
     }
@@ -478,7 +479,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.SERVICE_START);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
     }
@@ -491,7 +492,7 @@ public class OperationCancellationTestCase {
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         blockFuture.cancel(true);
         try {
-            ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+            ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             fail("not cancelled: " + response);
         } catch (CancellationException good) {
             // good
@@ -505,7 +506,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.VERIFY);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
     }
@@ -516,7 +517,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.COMMIT);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.COMPLETING, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // The result may be success or cancelled depending on whether the cancelled executed while
         // DomainRolloutStepHandler.execute was running (CANCELLED) or afterwards (SUCCESS)
         assertSuccessOrCancelled(response);
@@ -529,7 +530,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.ROLLBACK);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // The server op does not reach the prepare stage, so the primary doesn't either and reports as cancelled
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
@@ -541,7 +542,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.MODEL);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
         cancel(primaryClient, "primary", "main-one", "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "primary", "main-one", id, false);
     }
@@ -552,7 +553,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.RUNTIME);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
         cancel(primaryClient, "primary", "main-one", "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "primary", "main-one", id, false);
     }
@@ -564,7 +565,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.SERVICE_START);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
         cancel(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "primary", "main-one", id, false);
     }
@@ -575,7 +576,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.VERIFY);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
         cancel(primaryClient, "primary", "main-one", "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "primary", "main-one", id, false);
     }
@@ -586,7 +587,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.COMMIT);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.COMPLETING, start);
         cancel(primaryClient, "primary", "main-one", "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // cancelling on the server during Stage.DONE should not result in a prepare-phase failure sent to primary,
         // so result should always be SUCCESS
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
@@ -599,7 +600,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.ROLLBACK);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
         cancel(primaryClient, "primary", "main-one", "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // Server never reaches Stage.DONE before blocking, so primary is waiting for initial response.
         // Cancelling the rollback on server doesn't change that response from FAILED. So primary sees and reports failure.
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
@@ -612,7 +613,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.MODEL);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", "main-three", id , true);
     }
@@ -623,7 +624,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.RUNTIME);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
@@ -635,7 +636,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.SERVICE_START);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
@@ -648,7 +649,7 @@ public class OperationCancellationTestCase {
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         blockFuture.cancel(true);
         try {
-            ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+            ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             fail("not cancelled: " + response);
         } catch (CancellationException good) {
             // good
@@ -662,7 +663,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.VERIFY);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
@@ -673,7 +674,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.COMMIT);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.COMPLETING, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // The result may be success or cancelled depending on whether the cancelled executed while
         // DomainRolloutStepHandler.execute was running (CANCELLED) or afterwards (SUCCESS)
         assertSuccessOrCancelled(response);
@@ -686,7 +687,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.ROLLBACK);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
         cancel(primaryClient, "primary", null, "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // Server doesn't get to DONE so doesn't report there, so primary is waiting for initial report, which is blocking
         // on server. So primary detects local cancellation and reports it
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
@@ -708,7 +709,7 @@ public class OperationCancellationTestCase {
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         // Here we must pass 'true' to the 'serverOpOnly' param to ensure we cancel the server op, and not the non-blocking HC op
         cancel(primaryClient, "secondary", null, "block", null, start, true);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
@@ -720,7 +721,7 @@ public class OperationCancellationTestCase {
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         // Here we must pass 'true' to the 'serverOpOnly' param to ensure we cancel the server op, and not the non-blocking HC op
         cancel(primaryClient, "secondary", null, "block", null, start, true);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
@@ -733,7 +734,7 @@ public class OperationCancellationTestCase {
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         // Here we must pass 'true' to the 'serverOpOnly' param to ensure we cancel the server op, and not the non-blocking HC op
         cancel(primaryClient, "secondary", null, "block", null, start, true);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
@@ -745,7 +746,7 @@ public class OperationCancellationTestCase {
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         // Here we must pass 'true' to the 'serverOpOnly' param to ensure we cancel the server op, and not the non-blocking HC op
         cancel(primaryClient, "secondary", null, "block", null, start, true);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
@@ -757,7 +758,7 @@ public class OperationCancellationTestCase {
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.COMPLETING, start);
         // Here we must pass 'true' to the 'serverOpOnly' param to ensure we cancel the server op, and not the non-blocking HC op
         cancel(primaryClient, "secondary", null, "block", null, start, true);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // The secondary will already have sent its prepare phase response to primary before the secondary op even gets started.
         // So the subsequent cancellation will not affect the overall result, so it's SUCCESS
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
@@ -771,7 +772,7 @@ public class OperationCancellationTestCase {
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
         // Here we must pass 'true' to the 'serverOpOnly' param to ensure we cancel the server op, and not the non-blocking HC op
         cancel(primaryClient, "secondary", null, "block", null, start, true);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // Server can't report it's failure as a prepared message in DONE because it doesn't get there. So primary is
         // waiting for the initial report. The secondary then cancelling releases the initial report but doesn't change
         // its outcome from FAILED. So primary sees failure
@@ -785,7 +786,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.MODEL);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         cancel(primaryClient, "secondary", "main-three", "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", "main-three", id, false);
     }
@@ -796,7 +797,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.RUNTIME);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         cancel(primaryClient, "secondary", "main-three", "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", "main-three", id, false);
     }
@@ -808,7 +809,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.SERVICE_START);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         cancel(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", "main-three", id, false);
     }
@@ -819,7 +820,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.VERIFY);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         cancel(primaryClient, "secondary", "main-three", "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", "main-three", id, false);
     }
@@ -830,7 +831,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.COMMIT);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         cancel(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.COMPLETING, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // cancelling on the server during Stage.DONE should not result in a prepare-phase failure sent to primary,
         // so result should always be SUCCESS
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
@@ -843,7 +844,7 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.ROLLBACK);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
         cancel(primaryClient, "secondary", "main-three", "block", null, start, false);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // Cancelling in rollback doesn't change the server's FAILED outcome, so primary sees it and reports it.
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         validateNoActiveOperation(primaryClient, "secondary", "main-three", id, false);
@@ -861,7 +862,7 @@ public class OperationCancellationTestCase {
         op.get("timeout").set(0);
         ModelNode result = executeForResult(op, primaryClient);
         assertEquals(result.toString(), id, result.asString());
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         // Bogus as "id" is not the id on secondary/main-three
 //        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
@@ -968,7 +969,7 @@ public class OperationCancellationTestCase {
     private String findActiveOperation(DomainClient client, PathAddress address, String opName, OperationContext.ExecutionStatus targetStatus, long executionStart, boolean serverOpOnly) throws Exception {
         ModelNode op = Util.createEmptyOperation(READ_CHILDREN_RESOURCES_OPERATION, address);
         op.get(CHILD_TYPE).set(ACTIVE_OPERATION);
-        long maxTime = TimeoutUtil.adjust(5000);
+        long maxTime = TimeoutUtil.adjust(Duration.ofSeconds(5)).toMillis();
         long timeout = executionStart + maxTime;
         List<String> activeOps = new ArrayList<String>();
         String opToCancel = null;
@@ -1030,7 +1031,7 @@ public class OperationCancellationTestCase {
 
         // The op should clear w/in a few ms but we'll wait up to 5 secs just in case
         // something strange is happening on the machine is overloaded
-        long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(5000);
+        long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(5)).toMillis();
         MgmtOperationException failure;
         do {
             String id = findActiveOperation(client, baseAddress, "block");
@@ -1061,7 +1062,7 @@ public class OperationCancellationTestCase {
 
         // The op should clear w/in a few ms but we'll wait up to 5 secs just in case
         // something strange is happening on the machine is overloaded
-        long timeout = patient ? System.currentTimeMillis() + TimeoutUtil.adjust(5000) : 0;
+        long timeout = patient ? System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(5)).toMillis() : 0;
         MgmtOperationException failure;
         do {
             try {

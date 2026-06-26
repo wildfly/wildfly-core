@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.Set;
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -70,8 +71,8 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 @RunWith(WildFlyRunner.class)
 public class ExplodedDeploymentTestCase {
 
-    // Max time to wait for some action to complete, in ms
-    private static final int TIMEOUT = TimeoutUtil.adjust(20000);
+    // Max time to wait for some action to complete
+    private static final Duration TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(20));
 
     @Inject
     private ManagementClient managementClient;
@@ -175,7 +176,7 @@ public class ExplodedDeploymentTestCase {
                 Future<OperationResponse> future = client.executeOperationAsync(OperationBuilder.create(op, false).build(), null);
 
                 try {
-                    OperationResponse response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+                    OperationResponse response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
                     if (path.isEmpty()) {
                         Assert.assertFalse("Operation read-content should not be successful without defined path parameter on exploded deployments",
                                 Operations.isSuccessfulOutcome(response.getResponseNode()));
@@ -223,7 +224,7 @@ public class ExplodedDeploymentTestCase {
                 op.get(PATH).set(path);
                 Future<OperationResponse> future = client.executeOperationAsync(OperationBuilder.create(op, false).build(), null);
                 try {
-                    OperationResponse response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+                    OperationResponse response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
                     Assert.assertFalse(Operations.isSuccessfulOutcome(response.getResponseNode()));
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -255,7 +256,7 @@ public class ExplodedDeploymentTestCase {
                 }
                 Future<ModelNode> future = client.executeAsync(OperationBuilder.create(op, false).build(), null);
                 try {
-                    ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+                    ModelNode response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
                     if (!Operations.isSuccessfulOutcome(response)) {
                         Assert.fail("Operation browse content should be successful, but failed: " +
                                 Operations.getFailureDescription(response).toString());
@@ -377,7 +378,7 @@ public class ExplodedDeploymentTestCase {
                 Future<OperationResponse> future = client.executeOperationAsync(OperationBuilder.create(op, false).build(), null);
 
                 try {
-                    OperationResponse response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+                    OperationResponse response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
                     if (path.isEmpty()) {
                         Assert.assertFalse("Operation read-content should not be successful without defined path parameter on exploded deployments",
                                 Operations.isSuccessfulOutcome(response.getResponseNode()));
@@ -427,7 +428,7 @@ public class ExplodedDeploymentTestCase {
                 op.get(PATH).set(path);
                 Future<OperationResponse> future = client.executeOperationAsync(OperationBuilder.create(op, false).build(), null);
                 try {
-                    OperationResponse response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+                    OperationResponse response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
                     Assert.assertFalse(Operations.isSuccessfulOutcome(response.getResponseNode()));
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -459,7 +460,7 @@ public class ExplodedDeploymentTestCase {
                 }
                 Future<ModelNode> future = client.executeAsync(OperationBuilder.create(op, false).build(), null);
                 try {
-                    ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+                    ModelNode response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
                     Assert.assertTrue(Operations.isSuccessfulOutcome(response));
                     List<String> unexpectedContents = new ArrayList<String>();
                     if (expectedContents.isEmpty()) {
@@ -596,7 +597,7 @@ public class ExplodedDeploymentTestCase {
     private void awaitDeploymentExecution(Future<?> future) {
         Object t = null;
         try {
-            t = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+            t = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

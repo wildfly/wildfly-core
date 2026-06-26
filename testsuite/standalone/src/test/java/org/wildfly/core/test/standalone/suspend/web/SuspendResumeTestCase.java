@@ -7,6 +7,7 @@ package org.wildfly.core.test.standalone.suspend.web;
 import java.net.HttpURLConnection;
 import java.net.SocketPermission;
 import java.net.URL;
+import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -94,10 +95,10 @@ public class SuspendResumeTestCase {
             op.get(NAME).set(SUSPEND_STATE);
             Assert.assertEquals("SUSPENDING", serverController.getClient().executeForResult(op).asString());
 
-            HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(30), TimeUnit.SECONDS);
+            HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(Duration.ofSeconds(30)).toSeconds(), TimeUnit.SECONDS);
             Assert.assertEquals(SuspendResumeHandler.TEXT, result.get());
             String suspendState;
-            long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
+            long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(10)).toMillis();
             do {
                 suspendState = serverController.getClient().executeForResult(op).asString();
                 if ("SUSPENDING".equals(suspendState)) {
