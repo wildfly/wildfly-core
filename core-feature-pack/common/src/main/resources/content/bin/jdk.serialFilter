@@ -21,15 +21,8 @@
 	!javax.swing.UIDefaults$TextAndMnemonicHashMap;\
 	!net.sf.json.JSONObject;\
 	!org.apache.commons.beanutils.BeanComparator;\
-	!org.apache.commons.collections.functors.ChainedTransformer;\
-	!org.apache.commons.collections.functors.ConstantTransformer;\
 	!org.apache.commons.collections.functors.InstantiateTransformer;\
 	!org.apache.commons.collections.functors.InvokerTransformer;\
-	!org.apache.commons.collections.keyvalue.TiedMapEntry;\
-	!org.apache.commons.collections.map.LazyMap;\
-	!org.apache.commons.collections4.comparators.TransformingComparator;\
-	!org.apache.commons.collections4.functors.ChainedTransformer;\
-	!org.apache.commons.collections4.functors.ConstantTransformer;\
 	!org.apache.commons.collections4.functors.InstantiateTransformer;\
 	!org.apache.commons.collections4.functors.InvokerTransformer;\
 	!org.apache.commons.fileupload.disk.DiskFileItem;\
