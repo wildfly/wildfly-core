@@ -9,11 +9,11 @@ using this server installation as the WildFly home.
 
 If you want to install WildFly as a systemd service from scratch as a systemd service, follow the steps below.
 
-== Install WildFly and initialize the WILDFLY_HOME variable
+== Install WildFly and initialize the JBOSS_HOME variable
 
     # unzip -d /opt wildfly-34.0.0.Final.zip
     # ln -s /opt/wildfly-34.0.0.Final /opt/wildfly
-    # WILDFLY_HOME=/opt/wildfly
+    # JBOSS_HOME=/opt/wildfly
 
 == Standalone or Domain mode ?
 
@@ -22,21 +22,21 @@ If you want to install WildFly as a systemd service from scratch as a systemd se
 == Create a wildfly user and group
 
     # groupadd -r wildfly
-    # useradd -r -g wildfly -d "${WILDFLY_HOME}" -s /sbin/nologin wildfly
+    # useradd -r -g wildfly -d "${JBOSS_HOME}" -s /sbin/nologin wildfly
 
 == Configure systemd
 
-    # cd "${WILDFLY_HOME}/bin/systemd"
+    # cd "${JBOSS_HOME}/bin/systemd"
     # cp "wildfly-${MODE}.conf" /etc/sysconfig/
     # cp "wildfly-${MODE}.service" $(pkg-config systemd --variable=systemdsystemunitdir)
-    # chown -R wildfly:wildfly "${WILDFLY_HOME}"/
-    # chmod +x "${WILDFLY_HOME}/bin/systemd/launch.sh"
+    # chown -R wildfly:wildfly "${JBOSS_HOME}"/
+    # chmod +x "${JBOSS_HOME}/bin/systemd/launch.sh"
     # systemctl daemon-reload
 
 === If SELinux is enabled, you need to set the appropriate context for the launch.sh script:
 
-    # sudo chcon -R -t bin_t "${WILDFLY_HOME}/"
-    # sudo semanage fcontext -a -t systemd_unit_file_t '${WILDFLY_HOME}(/.*)?'
+    # sudo chcon -R -t bin_t "${JBOSS_HOME}/"
+    # sudo semanage fcontext -a -t systemd_unit_file_t '${JBOSS_HOME}(/.*)?'
 
 == Start and enable WildFly
 
@@ -62,7 +62,7 @@ If you want to install WildFly as a systemd service from scratch as a systemd se
 
 == If you are using SELinux, remove the custom context added
 
-    sudo semanage fcontext -d '${WILDFLY_HOME}(/.*)?'
+    sudo semanage fcontext -d '${JBOSS_HOME}(/.*)?'
 
 == Remove WildFly systemd service
 
@@ -72,8 +72,8 @@ If you want to install WildFly as a systemd service from scratch as a systemd se
 
 == Remove WildFly installation
 
-    # rm -rf $(readlink "${WILDFLY_HOME}")
-    # rm -rf "${WILDFLY_HOME}"
+    # rm -rf $(readlink "${JBOSS_HOME}")
+    # rm -rf "${JBOSS_HOME}"
 
 == Remove WildFly user and group
 

@@ -1,7 +1,7 @@
 = How to configure WildFly as a systemd service
 
-Note: The systemd scripts provided here have been deprecated in favor of $WFLY_HOME/bin/systemd
-See $WFLY_HOME/bin/systemd/README to get more information.
+Note: The systemd scripts provided here have been deprecated in favor of $JBOSS_HOME/bin/systemd
+See $JBOSS_HOME/bin/systemd/README to get more information.
 
 == Create a wildfly user
 
