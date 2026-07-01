@@ -57,7 +57,13 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
             String nodeName = WildFlySecurityManager.getPropertyPrivileged(RemotingExtension.NODE_NAME_PROPERTY, null);
 
             Supplier<XnioWorker> workerSupplier = builder.requires(IOServiceDescriptor.WORKER, workerName);
-            builder.setInstance(new EndpointService(endpointConsumer, workerSupplier, nodeName, EndpointService.EndpointType.SUBSYSTEM, map)).install();
+
+            Supplier<ConnectionInfo> connectionInfoSupplier = () -> null;
+            if (context.hasOptionalCapability(ConnectionInfo.CONNECTION_INFO_CAPABILITY.getName(), REMOTING_ENDPOINT_CAPABILITY.getName(), null)) {
+                connectionInfoSupplier = builder.requires(ConnectionInfo.CONNECTION_INFO_CAPABILITY);
+            }
+
+            builder.setInstance(new EndpointService(endpointConsumer, workerSupplier, connectionInfoSupplier, nodeName, EndpointService.EndpointType.SUBSYSTEM, map)).install();
         }
     }
 }
