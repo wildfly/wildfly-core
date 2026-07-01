@@ -23,7 +23,9 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.source.CredentialSource;
+import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.x500.cert.acme.AcmeAccount;
 import org.wildfly.security.x500.cert.acme.CertificateAuthority;
 
@@ -36,17 +38,21 @@ class AcmeAccountService implements Service<AcmeAccount> {
 
     private final InjectedValue<KeyStore> keyStoreInjector = new InjectedValue<>();
     private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplierInjector = new InjectedValue<>();
+    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> externalAccountBindingCredentialSourceSupplierInjector = new InjectedValue<>();
     private final String certificateAuthorityName;
     private final List<String> contactUrlsList;
     private final String alias;
     private final String keyStoreName;
+    private final String externalAccountBindingKeyId;
     private volatile AcmeAccount acmeAccount;
 
-    AcmeAccountService(String certificateAuthorityName, List<String> contactUrlsList, String alias, String keyStoreName) {
+    AcmeAccountService(String certificateAuthorityName, List<String> contactUrlsList, String alias, String keyStoreName,
+            String externalAccountBindingKeyId) {
         this.certificateAuthorityName = certificateAuthorityName;
         this.contactUrlsList = contactUrlsList;
         this.alias = alias;
         this.keyStoreName = keyStoreName;
+        this.externalAccountBindingKeyId = externalAccountBindingKeyId;
     }
 
     @Override
@@ -86,6 +92,9 @@ class AcmeAccountService implements Service<AcmeAccount> {
             } else {
                 updateAccountKeyStore = true;
             }
+            if (externalAccountBindingKeyId != null) {
+                acmeAccountBuilder.setExternalAccountBinding(externalAccountBindingKeyId, resolveExternalAccountBindingHmacKey());
+            }
             acmeAccount = acmeAccountBuilder.build();
             if (updateAccountKeyStore) {
                 saveCertificateAuthorityAccountKey(keyStoreService, keyPassword); // persist the generated key pair
@@ -113,12 +122,33 @@ class AcmeAccountService implements Service<AcmeAccount> {
         return credentialSourceSupplierInjector;
     }
 
+    Injector<ExceptionSupplier<CredentialSource, Exception>> getExternalAccountBindingCredentialSourceSupplierInjector() {
+        return externalAccountBindingCredentialSourceSupplierInjector;
+    }
+
     char[] resolveKeyPassword(KeyStoreService keyStoreService) throws RuntimeException {
         try {
             return keyStoreService.resolveKeyPassword(credentialSourceSupplierInjector.getOptionalValue());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String resolveExternalAccountBindingHmacKey() throws Exception {
+        ExceptionSupplier<CredentialSource, Exception> sourceSupplier = externalAccountBindingCredentialSourceSupplierInjector.getValue();
+        CredentialSource credentialSource = sourceSupplier != null ? sourceSupplier.get() : null;
+        if (credentialSource == null) {
+            throw ROOT_LOGGER.credentialCannotBeResolved();
+        }
+        PasswordCredential credential = credentialSource.getCredential(PasswordCredential.class);
+        if (credential == null) {
+            throw ROOT_LOGGER.credentialCannotBeResolved();
+        }
+        ClearPassword password = credential.getPassword(ClearPassword.class);
+        if (password == null) {
+            throw ROOT_LOGGER.credentialCannotBeResolved();
+        }
+        return new String(password.getPassword());
     }
 
     void saveCertificateAuthorityAccountKey(OperationContext operationContext) throws OperationFailedException {
