@@ -337,7 +337,7 @@ public final class BootableJar implements ShutdownHandler {
         ProductConfig productConfig = ProductConfig.fromFilesystemSlot(moduleLoader, jbossHome.toString(), null);
         Arguments arguments;
         try {
-            arguments = Arguments.parseArguments(args, environment);
+            arguments = Arguments.parseArguments(args, environment, BootableJar.class.getClassLoader());
         } catch (Throwable ex) {
             System.err.println(ex);
             CmdUsage.printUsage(productConfig, System.out);
