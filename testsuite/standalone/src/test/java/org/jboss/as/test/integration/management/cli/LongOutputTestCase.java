@@ -35,6 +35,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -399,7 +400,7 @@ public class LongOutputTestCase {
     private void testDisabledOutputPaging() throws Exception {
         consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
         Assert.assertFalse(consoleWriter.checkError());
-        String window = queue.poll(TimeoutUtil.adjust(20), TimeUnit.SECONDS);
+        String window = queue.poll(TimeoutUtil.adjust(Duration.ofSeconds(20)).toSeconds(), TimeUnit.SECONDS);
 
         Assert.assertNotNull(window);
         checkWithRegex(window, promptPattern);

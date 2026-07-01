@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -65,7 +66,7 @@ public class JBossCliXmlConfigTestCase {
                     .launch();
             // Must flush otherwise process doesn't exit.
             flushInStream(cliProc.getInputStream());
-            cliProc.waitFor(TimeoutUtil.adjust(10000), TimeUnit.MILLISECONDS);
+            cliProc.waitFor(TimeoutUtil.adjust(Duration.ofSeconds(10)).toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException | IOException e) {
             fail("Failed to start CLI process: " + e.getLocalizedMessage());
         }

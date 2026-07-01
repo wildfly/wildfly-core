@@ -32,6 +32,7 @@ import static org.jboss.as.test.integration.domain.management.util.DomainTestSup
 
 import java.io.File;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -744,7 +745,7 @@ public class AutoIgnoredResourcesDomainTestCase {
     }
 
     private void restartDomainAndReloadReadOnlyConfig(boolean secondaryIsBackupDC, boolean secondaryIsCachedDC) throws Exception {
-        DomainTestSupport.stopHosts(TimeoutUtil.adjust(30000), domainSecondaryLifecycleUtil, domainPrimaryLifecycleUtil);
+        DomainTestSupport.stopHosts(TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis(), domainSecondaryLifecycleUtil, domainPrimaryLifecycleUtil);
         testSupport.close();
 
         //Totally reinitialize the domain client

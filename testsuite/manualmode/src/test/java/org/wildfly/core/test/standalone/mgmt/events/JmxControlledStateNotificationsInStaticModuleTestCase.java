@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -205,7 +206,7 @@ public class JmxControlledStateNotificationsInStaticModuleTestCase {
     private void checkFacadeJmxNotifications(List<Pair<String, String>> configurationStateTransitions,
                                              List<Pair<String, String>> runningStateTransitions)
             throws IOException, InterruptedException {
-        final long end = System.currentTimeMillis() + TimeoutUtil.adjust(20000);
+        final long end = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(20)).toMillis();
         while (true) {
             try {
                 readAndCheckFile(JMX_FACADE_RUNTIME, list -> {

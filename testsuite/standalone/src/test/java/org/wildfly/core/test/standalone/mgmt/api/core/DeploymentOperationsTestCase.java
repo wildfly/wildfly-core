@@ -49,6 +49,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.PropertyPermission;
+import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -94,7 +95,7 @@ public class DeploymentOperationsTestCase {
     @Inject
     private ManagementClient managementClient;
 
-    private static final int TIMEOUT = TimeoutUtil.adjust(40000);
+    private static final Duration TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(40));
     private static final String TEST_DEPLOYMENT_NAME = "test-deployment.jar";
     private static final String PROPERTIES_RESOURCE = "service-activator-deployment.properties";
 
@@ -276,7 +277,7 @@ public class DeploymentOperationsTestCase {
         op.get(NAME).set(MANAGED);
         Future<ModelNode> future = managementClient.getControllerClient().executeAsync(OperationBuilder.create(op, false).build(), null);
         try {
-            ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+            ModelNode response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             return Operations.readResult(response).asBoolean();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -368,7 +369,7 @@ public class DeploymentOperationsTestCase {
             Future<ModelNode> future = client.executeAsync(Operation.Factory.create(addContentOp, attachments), null);
             ModelNode response;
             try {
-                response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+                response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
@@ -695,7 +696,7 @@ public class DeploymentOperationsTestCase {
     private void awaitOperationExecution(ModelNode op) {
         Future<ModelNode> future = managementClient.getControllerClient().executeAsync(OperationBuilder.create(op, false).build(), null);
         try {
-            ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+            ModelNode response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             Assert.assertTrue(Operations.isSuccessfulOutcome(response));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -714,7 +715,7 @@ public class DeploymentOperationsTestCase {
     private ModelNode awaitOperationExecutionAndReturnResult(ModelNode op) {
         Future<ModelNode> future = managementClient.getControllerClient().executeAsync(OperationBuilder.create(op, false).build(), null);
         try {
-            return future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+            return future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -731,7 +732,7 @@ public class DeploymentOperationsTestCase {
 
     private ServerDeploymentPlanResult awaitDeploymentExecution(Future<ServerDeploymentPlanResult> future) {
         try {
-           return future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+           return future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

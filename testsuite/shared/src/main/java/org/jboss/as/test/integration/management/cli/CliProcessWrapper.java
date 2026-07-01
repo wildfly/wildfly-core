@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 import static org.junit.Assert.fail;
 
@@ -194,10 +195,10 @@ public class CliProcessWrapper extends CliProcessBuilder {
         }
     }
 
-    private int resultTimeout = TimeoutUtil.adjust(20000);
+    private Duration resultTimeout = TimeoutUtil.adjust(Duration.ofSeconds(20));
     private int resultInterval = 100;
 
-    public void setResultTimeout(int resultTimeout) {
+    public void setResultTimeout(Duration resultTimeout) {
         this.resultTimeout = resultTimeout;
     }
 
@@ -217,7 +218,7 @@ public class CliProcessWrapper extends CliProcessBuilder {
             waitingTime += resultInterval;
 
             // If the timeout is reached, return regardless.
-            if (waitingTime > resultTimeout) {
+            if (waitingTime > resultTimeout.toMillis()) {
                 wait = false;
             }
 
@@ -259,7 +260,7 @@ public class CliProcessWrapper extends CliProcessBuilder {
             }
 
             // If the timeout is reached, destroy the process and return false
-            if (waitingTime > resultTimeout) {
+            if (waitingTime > resultTimeout.toMillis()) {
                 cliProcess.destroyForcibly();
                 wait = false;
             }

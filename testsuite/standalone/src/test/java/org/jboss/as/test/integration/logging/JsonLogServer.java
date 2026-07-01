@@ -18,6 +18,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.security.KeyStore;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -163,7 +164,7 @@ public abstract class JsonLogServer implements Runnable, AutoCloseable {
             stop();
         } finally {
             service.shutdown();
-            service.awaitTermination(TimeoutUtil.adjust(10), TimeUnit.SECONDS);
+            service.awaitTermination(TimeoutUtil.adjust(Duration.ofSeconds(10)).toSeconds(), TimeUnit.SECONDS);
         }
     }
 

@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.time.Duration;
 import java.util.List;
 
 import org.codehaus.plexus.util.FileUtils;
@@ -190,7 +191,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         } else {
             checkNoLogging("WFLYSRV0025");
         }
-        assertState("running", TimeoutUtil.adjust(30000));
+        assertState("running", (int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis());
 
         // The app embedding the server should still be able to log
         checkClientSideLogging();
@@ -237,12 +238,12 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         assertState("running", 0);
         // embedded-hc requires admin-only
         cli.sendLine("/host=primary:reload(admin-only=true");
-        assertState("running", TimeoutUtil.adjust(30000));
+        assertState("running", (int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis());
         cli.sendLine("/extension=org.wildfly.extension.io:remove");
         assertState("running", 0);
         // High level
         cli.sendLine("reload --host=primary --admin-only=true");
-        assertState("running", TimeoutUtil.adjust(30000));
+        assertState("running", (int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis());
     }
 
     /** Confirms that the low and high level shutdown commands are not available */
@@ -422,7 +423,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine("/core-service=management/access=authorization:write-attribute(name=provider,value=rbac");
         assertState("reload-required", 0);
         cli.sendLine("reload --host=primary --admin-only=true");
-        assertState("running", TimeoutUtil.adjust(30000));
+        assertState("running", (int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis());
     }
 
     @Test
@@ -550,7 +551,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         configureManagementInterface("foo");
         cli.sendLine("/host=foo:write-attribute(name=name,value=renamed-foo)");
         cli.sendLine("/host=foo:reload(admin-only=true)");
-        assertState("running", TimeoutUtil.adjust(30000), "/host=renamed-foo:read-attribute(name=host-state)");
+        assertState("running", (int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis(), "/host=renamed-foo:read-attribute(name=host-state)");
 
         assertTrue(cli.isConnected());
 
@@ -606,7 +607,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
 
         cli.sendLine("/host=foo:write-attribute(name=name,value=renamed-foo)");
         cli.sendLine("/host=foo:reload(admin-only=true)");
-        assertState("running", TimeoutUtil.adjust(30000), "/host=renamed-foo:read-attribute(name=host-state)");
+        assertState("running", (int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis(), "/host=renamed-foo:read-attribute(name=host-state)");
 
         readManagementInterface("renamed-foo");
 
@@ -764,7 +765,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
     }
 
     private void checkLogging(String line) throws IOException {
-        long delay = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
+        long delay = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(10)).toMillis();
         boolean traceSeen = false;
         StringBuilder allOutput = new StringBuilder();
         do {

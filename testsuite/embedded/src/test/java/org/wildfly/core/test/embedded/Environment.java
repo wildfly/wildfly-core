@@ -7,6 +7,7 @@ package org.wildfly.core.test.embedded;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.wildfly.core.embedded.Configuration;
@@ -19,7 +20,7 @@ public class Environment {
     public static final Path JBOSS_HOME;
     public static final Path MODULE_PATH;
     public static final Path LOG_DIR;
-    public static final int TIMEOUT;
+    public static final Duration TIMEOUT;
 
     static {
         String jbossHome = System.getProperty("jboss.home");
@@ -42,7 +43,7 @@ public class Environment {
 
         LOG_DIR = Paths.get(System.getProperty("jboss.test.log.dir"));
         final String timeoutString = System.getProperty("jboss.test.start.timeout", "20");
-        TIMEOUT = TimeoutUtil.adjust(Integer.parseInt(timeoutString));
+        TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(Integer.parseInt(timeoutString)));
     }
 
     public static Configuration.Builder createConfigBuilder() {

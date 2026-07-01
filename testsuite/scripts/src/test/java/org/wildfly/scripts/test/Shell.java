@@ -75,7 +75,7 @@ public enum Shell {
             Process process = null;
             try {
                 process = builder.start();
-                if (!process.waitFor(ServerHelper.TIMEOUT, TimeUnit.SECONDS)) {
+                if (!process.waitFor(ServerHelper.TIMEOUT.toSeconds(), TimeUnit.SECONDS)) {
                     return false;
                 }
                 return process.exitValue() == 0;

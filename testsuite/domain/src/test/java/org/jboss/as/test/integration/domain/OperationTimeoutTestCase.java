@@ -45,6 +45,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -98,8 +99,8 @@ public class OperationTimeoutTestCase {
     private static final String TIMEOUT_CONFIG = "-Djboss.as.management.blocking.timeout=1";
     private static final String TIMEOUT_ADDER_CONFIG = "-Dorg.wildfly.unsupported.test.domain-timeout-adder=1000";
 
-    private static final long SAFE_TIMEOUT = TimeoutUtil.adjust(20);
-    private static final long GET_TIMEOUT = TimeoutUtil.adjust(10000);
+    private static final Duration SAFE_TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(20));
+    private static final Duration GET_TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(10));
 
     private static DomainTestSupport testSupport;
     private static DomainClient primaryClient;
@@ -175,7 +176,7 @@ public class OperationTimeoutTestCase {
 
     /** Applies a more normal blocking-timeout to an op so it does not get tripped up by the low timeouts on the domain processes */
     private static ModelNode safeTimeout(ModelNode op) {
-        op.get(OPERATION_HEADERS, BLOCKING_TIMEOUT).set(SAFE_TIMEOUT);
+        op.get(OPERATION_HEADERS, BLOCKING_TIMEOUT).set(SAFE_TIMEOUT.toSeconds());
         return op;
     }
 
@@ -215,7 +216,7 @@ public class OperationTimeoutTestCase {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.MODEL);
         String id = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         System.out.println(response);
         assertTrue(response.asString(), response.get(FAILURE_DESCRIPTION).asString().contains("WFLYDC0080"));
@@ -227,7 +228,7 @@ public class OperationTimeoutTestCase {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.RUNTIME);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         assertTrue(response.asString(), response.get(FAILURE_DESCRIPTION).asString().contains("main-three"));
         assertTrue(response.asString(), response.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0409"));
@@ -239,7 +240,7 @@ public class OperationTimeoutTestCase {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.RUNTIME);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         assertTrue(response.asString(), response.get(FAILURE_DESCRIPTION).asString().contains("main-one"));
         assertTrue(response.asString(), response.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0409"));
@@ -251,7 +252,7 @@ public class OperationTimeoutTestCase {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.COMMIT);
         String id = findActiveOperation(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // cancelling on the secondary during Stage.DONE should not result in a prepare-phase failure sent to primary,
         // so result should always be SUCCESS
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
@@ -263,7 +264,7 @@ public class OperationTimeoutTestCase {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.COMMIT);
         String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.COMPLETING, start);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // cancelling on the server during Stage.DONE should not result in a prepare-phase failure sent to primary,
         // so result should always be SUCCESS
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
@@ -275,7 +276,7 @@ public class OperationTimeoutTestCase {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.COMMIT);
         String id = findActiveOperation(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.COMPLETING, start);
-        ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+        ModelNode response = blockFuture.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         // cancelling on the server during Stage.DONE should not result in a prepare-phase failure sent to primary,
         // so result should always be SUCCESS
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
@@ -335,7 +336,7 @@ public class OperationTimeoutTestCase {
     private String findActiveOperation(DomainClient client, PathAddress address, String opName, OperationContext.ExecutionStatus targetStatus, long executionStart, boolean serverOpOnly) throws Exception {
         ModelNode op = Util.createEmptyOperation(READ_CHILDREN_RESOURCES_OPERATION, address);
         op.get(CHILD_TYPE).set(ACTIVE_OPERATION);
-        long maxTime = TimeoutUtil.adjust(5000);
+        long maxTime = TimeoutUtil.adjust(Duration.ofSeconds(5)).toMillis();
         long timeout = executionStart + maxTime;
         List<String> activeOps = new ArrayList<String>();
         String opToCancel = null;
@@ -390,7 +391,7 @@ public class OperationTimeoutTestCase {
 
         // The op should clear w/in a few ms but we'll wait up to 5 secs just in case
         // something strange is happening on the machine is overloaded
-        long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(5000);
+        long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(5)).toMillis();
         MgmtOperationException failure;
         do {
             String id = findActiveOperation(client, baseAddress, "block");
@@ -421,7 +422,7 @@ public class OperationTimeoutTestCase {
 
         // The op should clear w/in a few ms but we'll wait up to 5 secs just in case
         // something strange is happening on the machine is overloaded
-        long timeout = patient ? System.currentTimeMillis() + TimeoutUtil.adjust(5000) : 0;
+        long timeout = patient ? System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(5)).toMillis() : 0;
         MgmtOperationException failure;
         do {
             try {

@@ -68,18 +68,18 @@ public class SyslogIsNotAvailableDuringServerBootTestCase extends AbstractSyslog
 
         // do log when syslog is not running
         makeLog_syslogIsOffline();
-        SyslogServerEventIF udpSyslogEvent = udpQueue.poll(1 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        SyslogServerEventIF udpSyslogEvent = udpQueue.poll(ADJUSTED_SECOND.toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNull("Message was logged into the UDP syslog even if syslog server should be stopped", udpSyslogEvent);
-        SyslogServerEventIF tcpSyslogEvent = tcpQueue.poll(1 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        SyslogServerEventIF tcpSyslogEvent = tcpQueue.poll(ADJUSTED_SECOND.toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNull("Message was logged into the TCP syslog even if syslog server should be stopped", tcpSyslogEvent);
 
         startSyslogServers(host);
 
         // do log when syslog is running
         makeLog();
-        udpSyslogEvent = udpQueue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        udpSyslogEvent = udpQueue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNotNull("No message was logged into the UDP syslog", udpSyslogEvent);
-        tcpSyslogEvent = tcpQueue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        tcpSyslogEvent = tcpQueue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNotNull("No message was logged into the TCP syslog", tcpSyslogEvent);
     }
 

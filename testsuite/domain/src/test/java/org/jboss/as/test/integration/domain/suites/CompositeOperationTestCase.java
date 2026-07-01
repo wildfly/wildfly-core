@@ -43,6 +43,7 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.PropertyPermission;
@@ -585,7 +586,7 @@ public class CompositeOperationTestCase {
             List<ModelNode> steps;
 
             // it could ensure we have acquired the lock by the deployment operation executed before
-            TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(1));
+            TimeUnit.MILLISECONDS.sleep(TimeoutUtil.adjust(Duration.ofSeconds(1)).toMillis());
 
             steps = prepareReadCompositeOperations(PathAddress.pathAddress(HOST_SECONDARY), secondaryChildrenTypes);
             op = createComposite(steps);
@@ -603,7 +604,7 @@ public class CompositeOperationTestCase {
             Assert.assertEquals("It is expected deployment operation is still in progress", false, deploymentFuture.isDone());
 
             // keep the timeout in sync with SlowServiceActivator timeout
-            deploymentFuture.get(TimeoutUtil.adjust(60), TimeUnit.SECONDS);
+            deploymentFuture.get(TimeoutUtil.adjust(Duration.ofMinutes(1)).toMillis(), TimeUnit.MILLISECONDS);
 
         } finally {
             try {

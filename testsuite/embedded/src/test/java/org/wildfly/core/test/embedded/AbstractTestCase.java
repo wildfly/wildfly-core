@@ -60,7 +60,7 @@ public class AbstractTestCase {
         final Callable<Boolean> callable = new Callable<Boolean>() {
             @Override
             public Boolean call() throws InterruptedException {
-                long timeout = Environment.TIMEOUT * 1000;
+                long timeout = Environment.TIMEOUT.toMillis();
                 final long sleep = 100L;
                 while (timeout > 0) {
                     long before = System.currentTimeMillis();
@@ -77,7 +77,7 @@ public class AbstractTestCase {
         try {
             final Future<Boolean> future = service.submit(callable);
             if (!future.get()) {
-                throw new TimeoutException(String.format("The embedded server did not start within %s seconds.", Environment.TIMEOUT));
+                throw new TimeoutException(String.format("The embedded server did not start within %s seconds.", Environment.TIMEOUT.toSeconds()));
             }
         } catch (ExecutionException e) {
             throw new RuntimeException("Failed to determine if the embedded server is running.", e);

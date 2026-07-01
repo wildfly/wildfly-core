@@ -7,6 +7,7 @@ package org.jboss.as.test.manualmode.auditlog;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -52,7 +53,7 @@ import org.xnio.IoUtils;
 public class AuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase {
 
     private final BlockingQueue<SyslogServerEventIF> queue = BlockedSyslogServerEventHandler.getQueue();
-    private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
+    private static final Duration ADJUSTED_SECOND = TimeoutUtil.adjust(Duration.ofSeconds(1));
     private static final AuditLogToUDPSyslogSetup SYSLOG_SETUP = new AuditLogToUDPSyslogSetup();
     private final PathAddress auditLogConfigAddress = PathAddress.pathAddress(CoreManagementResourceDefinition.PATH_ELEMENT,
             AccessAuditResourceDefinition.PATH_ELEMENT, AuditLogLoggerResourceDefinition.PATH_ELEMENT);
@@ -121,7 +122,7 @@ public class AuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase 
         SyslogServerEventIF syslogEvent = null;
 
         Assert.assertTrue(makeOneLog());
-        syslogEvent = queue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        syslogEvent = queue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNotNull("Event wasn't logged into the syslog", syslogEvent);
 
         Rfc5424SyslogEvent event = (Rfc5424SyslogEvent) syslogEvent;
