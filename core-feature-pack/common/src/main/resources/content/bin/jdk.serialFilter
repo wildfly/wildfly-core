@@ -12,9 +12,7 @@
 	!com.sun.syndication.feed.impl.ObjectBean;\
 	!com.vaadin.data.util.NestedMethodProperty;\
 	!com.vaadin.data.util.PropertysetItem;\
-	!java.rmi.registry.Registry;\
 	!java.rmi.server.RemoteObject;\
-	!java.rmi.server.RemoteRef;\
 	!java.rmi.server.UnicastRemoteObject;\
 	!javax.swing.UIDefaults;\
 	!javax.swing.UIDefaults$ProxyLazyValue;\
@@ -34,7 +32,6 @@
 	!org.aspectj.weaver.tools.cache.SimpleCache$StoreableCachingMap;\
 	!org.codehaus.groovy.runtime.ConvertedClosure;\
 	!org.codehaus.groovy.runtime.MethodClosure;\
-	!org.hibernate.EntityMode;\
 	!org.hibernate.engine.spi.TypedValue;\
 	!org.hibernate.tuple.component.PojoComponentTuplizer;\
 	!org.hibernate.type.ComponentType;\
@@ -45,7 +42,6 @@
 	!org.python.core.PyObject;\
 	!org.springframework.aop.framework.AdvisedSupport;\
 	!org.springframework.aop.target.SingletonTargetSource;\
-	!org.springframework.beans.factory.ObjectFactory;\
 	!org.springframework.beans.factory.config.MethodInvokingFactoryBean;\
 	!org.springframework.core.SerializableTypeWrapper$MethodInvokeTypeProvider;\
 	!org.springframework.jndi.support.SimpleJndiBeanFactory;\
