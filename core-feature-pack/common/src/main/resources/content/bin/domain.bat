@@ -40,6 +40,21 @@ if "%~1" == "" (
    goto MAIN
 ) else if "%~1" == "-secmgr" (
    set SECMGR=true
+) else if "%~1" == "-v" (
+   set "PROCESS_CONTROLLER_JAVA_OPTS=-Xmx16m"
+   set SKIP_CONF=true
+) else if "%~1" == "-V" (
+   set "PROCESS_CONTROLLER_JAVA_OPTS=-Xmx16m"
+   set SKIP_CONF=true
+) else if "%~1" == "--version" (
+   set "PROCESS_CONTROLLER_JAVA_OPTS=-Xmx16m"
+   set SKIP_CONF=true
+) else if "%~1" == "-h" (
+   set "PROCESS_CONTROLLER_JAVA_OPTS=-Xmx16m"
+   set SKIP_CONF=true
+) else if "%~1" == "--help" (
+   set "PROCESS_CONTROLLER_JAVA_OPTS=-Xmx16m"
+   set SKIP_CONF=true
 )
 shift
 goto READ-ARGS
@@ -62,15 +77,17 @@ if /i "%RESOLVED_JBOSS_HOME%" NEQ "%SANITIZED_JBOSS_HOME%" (
    echo.
 )
 
-rem Read an optional configuration file.
-if "x%DOMAIN_CONF%" == "x" (
+rem Read an optional configuration file - skip for version/help commands
+if not "%SKIP_CONF%" == "true" if "x%DOMAIN_CONF%" == "x" (
    set "DOMAIN_CONF=%DIRNAME%domain.conf.bat"
 )
-if exist "%DOMAIN_CONF%" (
-   echo Calling "%DOMAIN_CONF%"
-   call "%DOMAIN_CONF%" %*
-) else (
-   echo Config file not found "%DOMAIN_CONF%"
+if not "%SKIP_CONF%" == "true" (
+   if exist "%DOMAIN_CONF%" (
+      echo Calling "%DOMAIN_CONF%"
+      call "%DOMAIN_CONF%" %*
+   ) else (
+      echo Config file not found "%DOMAIN_CONF%"
+   )
 )
 
 if "%OS%" == "Windows_NT" (

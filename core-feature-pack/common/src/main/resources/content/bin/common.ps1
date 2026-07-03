@@ -44,6 +44,7 @@ $global:SECMGR = Get-Env-Boolean SECMGR $false
 $global:DEBUG_MODE=Get-Env DEBUG $false
 $global:DEBUG_PORT=Get-Env DEBUG_PORT 8787
 $global:RUN_IN_BACKGROUND=$false
+$global:VERSION=$false
 $GC_LOG=Get-Env GC_LOG
 #module opts that are passed to jboss modules
 $global:MODULE_OPTS = @()
@@ -322,6 +323,9 @@ Param(
 			$global:SECMGR = $true
 		}elseif ($arg -eq '--background'){
 			$global:RUN_IN_BACKGROUND = $true
+		}elseif ($arg -eq '-v' -or $arg -eq '-V' -or $arg -eq '--version' -or $arg -eq '-h' -or $arg -eq '--help'){
+			$global:VERSION = $true
+			$res+=$arg
 		}else{
 			$res+=$arg
 		}
