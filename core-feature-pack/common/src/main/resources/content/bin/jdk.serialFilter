@@ -14,9 +14,6 @@
 	!com.vaadin.data.util.PropertysetItem;\
 	!java.rmi.server.RemoteObject;\
 	!java.rmi.server.UnicastRemoteObject;\
-	!javax.swing.UIDefaults;\
-	!javax.swing.UIDefaults$ProxyLazyValue;\
-	!javax.swing.UIDefaults$TextAndMnemonicHashMap;\
 	!net.sf.json.JSONObject;\
 	!org.apache.commons.beanutils.BeanComparator;\
 	!org.apache.commons.collections.functors.InstantiateTransformer;\
@@ -42,9 +39,7 @@
 	!org.python.core.PyObject;\
 	!org.springframework.aop.framework.AdvisedSupport;\
 	!org.springframework.aop.target.SingletonTargetSource;\
-	!org.springframework.beans.factory.config.MethodInvokingFactoryBean;\
 	!org.springframework.core.SerializableTypeWrapper$MethodInvokeTypeProvider;\
-	!org.springframework.jndi.support.SimpleJndiBeanFactory;\
 	!org.springframework.transaction.jta.JtaTransactionManager;\
 	!sun.rmi.server.ActivationGroupImpl;\
 	!sun.rmi.server.UnicastRef;\
@@ -52,5 +47,4 @@
 	!sun.rmi.server.UnicastServerRef;\
 	!sun.rmi.transport.LiveRef;\
 	!sun.rmi.transport.tcp.TCPEndpoint;\
-	!sun.swing.SwingLazyValue;\
 "
