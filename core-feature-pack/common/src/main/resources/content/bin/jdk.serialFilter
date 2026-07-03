@@ -39,7 +39,7 @@
 	!org.python.core.PyObject;\
 	!org.springframework.aop.framework.AdvisedSupport;\
 	!org.springframework.aop.target.SingletonTargetSource;\
-	!org.springframework.core.SerializableTypeWrapper$MethodInvokeTypeProvider;\
+	!org.springframework.core.SerializableTypeWrapper$*;\
 	!org.springframework.transaction.jta.JtaTransactionManager;\
 	!sun.rmi.server.ActivationGroupImpl;\
 	!sun.rmi.server.UnicastRef;\
