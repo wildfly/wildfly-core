@@ -5,8 +5,7 @@
 	!bsh.XThis$Handler;\
 	!clojure.lang.PersistentArrayMap;\
 	!clojure.inspector.proxy$javax.swing.table.AbstractTableModel$ff19274a;\
-	!com.mchange.v2.c3p0.PoolBackedDataSource;\
-	!com.mchange.v2.c3p0.impl.PoolBackedDataSourceBase;\
+	!com.mchange.v2.naming.ReferenceIndirector$ReferenceSerialized;\
 	!com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl;\
 	!com.sun.rowset.JdbcRowSetImpl;\
 	!com.sun.syndication.feed.impl.ObjectBean;\
