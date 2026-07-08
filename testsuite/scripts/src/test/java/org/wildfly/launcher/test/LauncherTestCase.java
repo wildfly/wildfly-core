@@ -76,7 +76,7 @@ public class LauncherTestCase {
             try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
                 ServerHelper.shutdownStandalone(client);
             }
-            process.waitFor(ServerHelper.TIMEOUT, TimeUnit.SECONDS);
+            process.waitFor(ServerHelper.TIMEOUT.toSeconds(), TimeUnit.SECONDS);
             if (process.exitValue() != 0) {
                 Assert.fail(readStdout());
             }
@@ -126,7 +126,7 @@ public class LauncherTestCase {
 
                 ServerHelper.shutdownDomain(client);
             }
-            process.waitFor(ServerHelper.TIMEOUT, TimeUnit.SECONDS);
+            process.waitFor(ServerHelper.TIMEOUT.toSeconds(), TimeUnit.SECONDS);
             if (process.exitValue() != 0) {
                 Assert.fail(readStdout());
             }

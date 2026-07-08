@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,7 +53,7 @@ public class CustomCLIExecutor {
 
     private static Logger LOGGER = Logger.getLogger(CustomCLIExecutor.class);
 
-    private static final int CLI_PROC_TIMEOUT = TimeoutUtil.adjust(30000);
+    private static final Duration CLI_PROC_TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(30));
 
     public static String execute(File cliConfigFile, String operation) {
 
@@ -104,7 +105,7 @@ public class CustomCLIExecutor {
             cliConfigPath = Paths.get(jbossDist, "bin", "jboss-cli.xml");
         }
         commandBuilder.addJavaOption("-Djboss.cli.config=" + cliConfigPath);
-        commandBuilder.addCliArgument("--timeout="+CLI_PROC_TIMEOUT);
+        commandBuilder.addCliArgument("--timeout="+CLI_PROC_TIMEOUT.toMillis());
         commandBuilder.addCliArgument("--error-on-interact"); // if server prompt for certificate to accept
         commandBuilder.addCliArgument("--no-color-output");
 
@@ -227,7 +228,7 @@ public class CustomCLIExecutor {
         CustomCLIExecutor.ConsoleConsumer.start(cliProc.getErrorStream(), err);
         int exitCode = Integer.MIN_VALUE;
         try {
-            boolean finished = cliProc.waitFor(CLI_PROC_TIMEOUT, TimeUnit.MILLISECONDS);
+            boolean finished = cliProc.waitFor(CLI_PROC_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             if (finished) {
                 exitCode = cliProc.exitValue();
             } else {

@@ -24,6 +24,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -43,8 +44,8 @@ import org.junit.Assert;
  */
 public class DomainTestUtils {
 
-    private static final int DEFAULT_TIMEOUT = TimeoutUtil.adjust(60);
-    private static final int SLEEP_TIME_MILLIS = TimeoutUtil.adjust(100);
+    private static final Duration DEFAULT_TIMEOUT = TimeoutUtil.adjust(Duration.ofMinutes(1));
+    private static final Duration SLEEP_TIME = TimeoutUtil.adjust(Duration.ofMillis(100));
 
     private DomainTestUtils() {
         //
@@ -231,7 +232,7 @@ public class DomainTestUtils {
      * @throws IOException if an I/O error occurs while executing the operation
      */
     public static void waitUntilState(final ModelControllerClient client, final PathAddress serverAddress, final String state) throws IOException {
-        waitUntilState(client, serverAddress, state, DEFAULT_TIMEOUT, TimeUnit.SECONDS, "status");
+        waitUntilState(client, serverAddress, state, DEFAULT_TIMEOUT.toSeconds(), TimeUnit.SECONDS, "status");
     }
 
     /**
@@ -242,7 +243,7 @@ public class DomainTestUtils {
      * @param state         the required state
      * @throws IOException if an I/O error occurs while executing the operation
      */
-    public static void waitUntilState(final ModelControllerClient client, final PathAddress serverAddress, final String state, int timeout, TimeUnit timeoutUnit) throws IOException {
+    public static void waitUntilState(final ModelControllerClient client, final PathAddress serverAddress, final String state, long timeout, TimeUnit timeoutUnit) throws IOException {
         waitUntilState(client, serverAddress, state, timeout, timeoutUnit, "status");
     }
 
@@ -255,7 +256,7 @@ public class DomainTestUtils {
      * @throws IOException if an I/O error occurs while executing the operation
      */
     public static void waitUntilSuspendState(final ModelControllerClient client, final PathAddress serverAddress, final String state) throws IOException {
-        waitUntilState(client, serverAddress, state, DEFAULT_TIMEOUT, TimeUnit.SECONDS, "suspend-state");
+        waitUntilState(client, serverAddress, state, DEFAULT_TIMEOUT.toSeconds(), TimeUnit.SECONDS, "suspend-state");
     }
 
     /**
@@ -366,7 +367,7 @@ public class DomainTestUtils {
                 return;
             }
             try {
-                TimeUnit.MILLISECONDS.sleep(SLEEP_TIME_MILLIS);
+                TimeUnit.MILLISECONDS.sleep(SLEEP_TIME.toMillis());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;

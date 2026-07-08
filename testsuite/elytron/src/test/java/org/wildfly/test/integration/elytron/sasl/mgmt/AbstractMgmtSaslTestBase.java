@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.security.Provider;
 import java.text.MessageFormat;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -77,7 +78,7 @@ public abstract class AbstractMgmtSaslTestBase {
     protected static final String DIGEST_ALGORITHM_SHA384 = "digest-sha-384";
     protected static final String DIGEST_ALGORITHM_SHA512 = "digest-sha-512";
 
-    protected static final int CONNECTION_TIMEOUT_IN_MS = TimeoutUtil.adjust(6 * 1000);
+    protected static final Duration CONNECTION_TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(6));
 
     protected static final Provider PROVIDER_ELYTRON = new WildFlyElytronProvider();
 
@@ -195,7 +196,7 @@ public abstract class AbstractMgmtSaslTestBase {
             fail(message);
         } catch (IOException e) {
             assertTrue("Connection reached its timeout (hang).",
-                    startTime + CONNECTION_TIMEOUT_IN_MS > System.currentTimeMillis());
+                    startTime + CONNECTION_TIMEOUT.toMillis() > System.currentTimeMillis());
             Throwable cause = e.getCause();
             assertThat("ConnectionException was expected as a cause when SASL authentication fails", cause,
                     is(instanceOf(ConnectException.class)));
@@ -214,7 +215,7 @@ public abstract class AbstractMgmtSaslTestBase {
     protected static ModelNode executeWhoAmI(String clientBindAddress) throws IOException {
         try (ModelControllerClient client = ModelControllerClient.Factory
                 .create(new ModelControllerClientConfiguration.Builder().setHostName(TestSuiteEnvironment.getServerAddress())
-                        .setPort(PORT_NATIVE).setProtocol("remote").setConnectionTimeout(CONNECTION_TIMEOUT_IN_MS).setClientBindAddress(clientBindAddress).build())) {
+                        .setPort(PORT_NATIVE).setProtocol("remote").setConnectionTimeout((int) CONNECTION_TIMEOUT.toMillis()).setClientBindAddress(clientBindAddress).build())) {
 
             ModelNode operation = new ModelNode();
             operation.get("operation").set("whoami");

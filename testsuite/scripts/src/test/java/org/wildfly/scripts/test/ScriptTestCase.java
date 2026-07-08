@@ -114,14 +114,14 @@ public abstract class ScriptTestCase {
     }
 
     void validateProcess(final ScriptProcess script) throws InterruptedException {
-        if (script.waitFor(ServerHelper.TIMEOUT, TimeUnit.SECONDS)) {
+        if (script.waitFor(ServerHelper.TIMEOUT.toSeconds(), TimeUnit.SECONDS)) {
             // The script has exited, validate the exit code is valid
             final int exitValue = script.exitValue();
             if (exitValue != 0) {
                 Assert.fail(script.getErrorMessage(String.format("Expected an exit value 0f 0 got %d", exitValue)));
             }
         } else {
-            Assert.fail(script.getErrorMessage("The script process did not exit within " + ServerHelper.TIMEOUT + " seconds."));
+            Assert.fail(script.getErrorMessage("The script process did not exit within " + ServerHelper.TIMEOUT.toSeconds() + " seconds."));
         }
     }
 
@@ -135,7 +135,7 @@ public abstract class ScriptTestCase {
 
     private void executeTests(final Shell shell) throws InterruptedException, IOException, TimeoutException {
         for (Path path : ServerConfigurator.PATHS) {
-            try (ScriptProcess script = new ScriptProcess(path, scriptBaseName, shell, ServerHelper.TIMEOUT)) {
+            try (ScriptProcess script = new ScriptProcess(path, scriptBaseName, shell, ServerHelper.TIMEOUT.toSeconds())) {
                 testScript(script);
                 script.close();
                 testCommonConf(script, shell);
@@ -177,7 +177,7 @@ public abstract class ScriptTestCase {
         }
         try {
             script.start(env);
-            if (!script.waitFor(ServerHelper.TIMEOUT, TimeUnit.SECONDS)) {
+            if (!script.waitFor(ServerHelper.TIMEOUT.toSeconds(), TimeUnit.SECONDS)) {
                 Assert.fail(script.getErrorMessage("Failed to exit script from " + confFile));
             }
             // Batch scripts print the quotes around the text

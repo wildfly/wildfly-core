@@ -12,7 +12,7 @@ import static org.jboss.as.test.integration.security.common.SecurityTestConstant
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.wildfly.test.integration.elytron.sasl.mgmt.AbstractMgmtSaslTestBase.CONNECTION_TIMEOUT_IN_MS;
+import static org.wildfly.test.integration.elytron.sasl.mgmt.AbstractMgmtSaslTestBase.CONNECTION_TIMEOUT;
 import static org.wildfly.test.integration.elytron.sasl.mgmt.AbstractMgmtSaslTestBase.PORT_NATIVE;
 import static org.wildfly.test.integration.elytron.sasl.mgmt.AbstractMgmtSaslTestBase.assertAuthenticationFails;
 import static org.wildfly.test.integration.elytron.sasl.mgmt.AbstractMgmtSaslTestBase.assertWhoAmI;
@@ -199,7 +199,7 @@ public class ExternalMgmtSaslTestCase {
             fail(message);
         } catch (IOException e) {
             assertTrue("Connection reached its timeout (hang).",
-                    startTime + CONNECTION_TIMEOUT_IN_MS > System.currentTimeMillis());
+                    startTime + CONNECTION_TIMEOUT.toMillis() > System.currentTimeMillis());
             Throwable cause = e.getCause();
             assertThat("ConnectionException was expected as a cause when certificate authentication fails", cause,
                     is(instanceOf(ConnectException.class)));

@@ -10,6 +10,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class HttpGetMgmtOpsTestCase {
     private static final int MGMT_PORT = 9990;
     private static final String MGMT_CTX = "/management";
     private static Map<String, String> properties = new HashMap<>();
-    private static final int TIMEOUT = TimeoutUtil.adjust(20000);
+    private static final Duration TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(20));
 
     @Inject
     protected ManagementClient managementClient;
@@ -194,7 +195,7 @@ public class HttpGetMgmtOpsTestCase {
     private void awaitDeploymentExecution(Future<?> future) {
         Object t = null;
         try {
-            t = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+            t = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

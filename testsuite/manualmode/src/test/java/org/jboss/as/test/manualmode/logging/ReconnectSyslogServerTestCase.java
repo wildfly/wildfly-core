@@ -64,43 +64,43 @@ public class ReconnectSyslogServerTestCase extends AbstractSyslogReconnectionTes
 
         // logging before syslog restart
         makeLog();
-        SyslogServerEventIF udpSyslogEvent = udpQueue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        SyslogServerEventIF udpSyslogEvent = udpQueue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNotNull("No message was logged into the UDP syslog", udpSyslogEvent);
-        SyslogServerEventIF tcpSyslogEvent = tcpQueue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        SyslogServerEventIF tcpSyslogEvent = tcpQueue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNotNull("No message was logged into the TCP syslog", tcpSyslogEvent);
 
         stopSyslogServers();
 
         makeLog_syslogIsOffline();
-        udpSyslogEvent = udpQueue.poll(1 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        udpSyslogEvent = udpQueue.poll(ADJUSTED_SECOND.toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNull("Message was logged into the UDP syslog even if syslog server should be stopped", udpSyslogEvent);
-        tcpSyslogEvent = tcpQueue.poll(1 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        tcpSyslogEvent = tcpQueue.poll(ADJUSTED_SECOND.toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNull("Message was logged into the TCP syslog even if syslog server should be stopped", tcpSyslogEvent);
 
         startSyslogServers(host);
 
         // logging after first syslog restart
         makeLog();
-        udpSyslogEvent = udpQueue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        udpSyslogEvent = udpQueue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNotNull("No message was logged into the UDP syslog after first syslog server restart", udpSyslogEvent);
-        tcpSyslogEvent = tcpQueue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        tcpSyslogEvent = tcpQueue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNotNull("No message was logged into the TCP syslog after first syslog server restart", tcpSyslogEvent);
 
         stopSyslogServers();
 
         makeLog_syslogIsOffline();
-        udpSyslogEvent = udpQueue.poll(1 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        udpSyslogEvent = udpQueue.poll(ADJUSTED_SECOND.toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNull("Message was logged into the UDP syslog even if syslog server should be stopped", udpSyslogEvent);
-        tcpSyslogEvent = tcpQueue.poll(1 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        tcpSyslogEvent = tcpQueue.poll(ADJUSTED_SECOND.toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNull("Message was logged into the TCP syslog even if syslog server should be stopped", tcpSyslogEvent);
 
         startSyslogServers(host);
 
         // logging after second syslog restart
         makeLog();
-        udpSyslogEvent = udpQueue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        udpSyslogEvent = udpQueue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNotNull("No message was logged into the UDP syslog after second syslog server restart", udpSyslogEvent);
-        tcpSyslogEvent = tcpQueue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        tcpSyslogEvent = tcpQueue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNotNull("No message was logged into the TCP syslog after second syslog server restart", tcpSyslogEvent);
 
     }

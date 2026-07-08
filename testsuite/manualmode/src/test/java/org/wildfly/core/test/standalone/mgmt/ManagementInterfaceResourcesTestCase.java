@@ -5,13 +5,13 @@
 
 package org.wildfly.core.test.standalone.mgmt;
 
-import static org.jboss.as.test.shared.TimeoutUtil.adjust;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.time.Duration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,6 +19,7 @@ import jakarta.inject.Inject;
 
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.common.function.ExceptionRunnable;
@@ -64,7 +65,7 @@ public class ManagementInterfaceResourcesTestCase {
 
     /**
      * Test that the management interface will not accept new connections when the number of active connections reaches the
-     * high water mark.  After the number of open connections has been reduced to the low watermark it will test that connections
+     * high watermark.  After the number of open connections has been reduced to the low watermark it will test that connections
      * are accepted again.
      */
     @Test
@@ -131,7 +132,7 @@ public class ManagementInterfaceResourcesTestCase {
             // Notice that the exception received when we tried to open a new socket could have been a timeout (SocketTimeoutException)
             // or a connection refused (IOException). It depends on the OS and the network configuration.
             // So, we could also have had 5000ms for each bad socket that triggered a SocketTimeoutException.
-            Thread.sleep(adjust(12000));
+            Thread.sleep(TimeoutUtil.adjust(Duration.ofSeconds(12)).toMillis());
 
             Socket goodSocket = new Socket();
             // This needs to be longer than 500ms to give the server time to respond to the closed connections.

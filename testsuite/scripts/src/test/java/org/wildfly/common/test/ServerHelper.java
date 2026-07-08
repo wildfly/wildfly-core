@@ -15,6 +15,7 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,7 +47,7 @@ import org.junit.Assert;
  */
 public class ServerHelper {
     public static final ModelNode EMPTY_ADDRESS = new ModelNode().setEmptyList();
-    public static final int TIMEOUT = TimeoutUtil.adjust(Integer.parseInt(System.getProperty("jboss.test.start.timeout", "15")));
+    public static final Duration TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(Integer.parseInt(System.getProperty("jboss.test.start.timeout", "15"))));
     public static final Path JBOSS_HOME;
     public static final String[] DEFAULT_SERVER_JAVA_OPTS = {
             "-Djboss.management.http.port=" + TestSuiteEnvironment.getServerPort(),
@@ -297,7 +298,7 @@ public class ServerHelper {
     }
 
     private static void waitForStart(final Process process, final Supplier<String> failureDescription, final BooleanSupplier check) throws InterruptedException {
-        long timeout = ServerHelper.TIMEOUT * 1000;
+        long timeout = ServerHelper.TIMEOUT.toMillis();
         final long sleep = 100L;
         while (timeout > 0) {
             long before = System.currentTimeMillis();
@@ -314,7 +315,7 @@ public class ServerHelper {
             if (process != null) {
                 process.destroy();
             }
-            Assert.fail(String.format("The server did not start within %s seconds: %s", ServerHelper.TIMEOUT, failureDescription.get()));
+            Assert.fail(String.format("The server did not start within %s seconds: %s", ServerHelper.TIMEOUT.toSeconds(), failureDescription.get()));
         }
     }
 }

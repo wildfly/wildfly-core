@@ -44,6 +44,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.time.Duration;
 import java.util.EnumSet;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -93,7 +94,7 @@ public class OperationErrorTestCase {
     private static final EnumSet<ErrorExtension.ErrorPoint> RUNTIME_POINTS =
             EnumSet.of(ErrorExtension.ErrorPoint.RUNTIME, ErrorExtension.ErrorPoint.SERVICE_START, ErrorExtension.ErrorPoint.SERVICE_STOP);
 
-    private static final long GET_TIMEOUT = TimeoutUtil.adjust(10000);
+    private static final Duration GET_TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(10));
 
     private static final ModelNode ROLLOUT_HEADER;
 
@@ -457,7 +458,7 @@ public class OperationErrorTestCase {
 
         // The op should clear w/in a few ms but we'll wait up to 5 secs just in case
         // something strange is happening on the machine is overloaded
-        long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(5000);
+        long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(5)).toMillis();
         MgmtOperationException failure;
         String id;
         do {
@@ -505,7 +506,7 @@ public class OperationErrorTestCase {
     private static ModelNode execute(final ModelNode op, final ModelControllerClient modelControllerClient) throws Exception {
         Future<ModelNode> future =  modelControllerClient.executeAsync(op, OperationMessageHandler.DISCARD);
         try {
-            return future.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
+            return future.get(GET_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             future.cancel(true);

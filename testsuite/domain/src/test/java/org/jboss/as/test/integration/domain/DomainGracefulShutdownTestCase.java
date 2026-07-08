@@ -23,6 +23,7 @@ import java.lang.reflect.ReflectPermission;
 import java.net.HttpURLConnection;
 import java.net.SocketPermission;
 import java.net.URL;
+import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -233,11 +234,11 @@ public class DomainGracefulShutdownTestCase {
             Future<Object> result = executorService.submit(new Callable<Object>() {
                 @Override
                 public Object call() throws Exception {
-                    return HttpRequest.get(address, TimeoutUtil.adjust(60), TimeUnit.SECONDS);
+                    return HttpRequest.get(address, TimeoutUtil.adjust(Duration.ofMinutes(1)).toSeconds(), TimeUnit.SECONDS);
                 }
             });
             appLocked = true;
-            TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(1));
+            TimeUnit.NANOSECONDS.sleep(TimeoutUtil.adjust(Duration.ofSeconds(1)).toNanos());
 
             shutdownResult = executorService.submit(new Callable<ModelNode>() {
                 @Override
@@ -245,7 +246,7 @@ public class DomainGracefulShutdownTestCase {
                     ModelNode op = new ModelNode();
                     op.get(OP).set("shutdown");
                     op.get(OP_ADDR).set(PRIMARY_ADDR.toModelNode());
-                    op.get(ModelDescriptionConstants.SUSPEND_TIMEOUT).set(TimeoutUtil.adjust(60));
+                    op.get(ModelDescriptionConstants.SUSPEND_TIMEOUT).set((int) TimeoutUtil.adjust(Duration.ofMinutes(1)).toSeconds());
                     op.get(ModelDescriptionConstants.RESTART).set(false);
                     return domainPrimaryLifecycleUtil.executeAwaitConnectionClosed(op);
                 }
@@ -264,23 +265,23 @@ public class DomainGracefulShutdownTestCase {
             }
 
             //make sure the server is still up, and trigger the actual shutdown
-            HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(10), TimeUnit.SECONDS);
+            HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(Duration.ofSeconds(10)).toSeconds(), TimeUnit.SECONDS);
             appLocked = false;
 
             //make sure our initial request completed
             Assert.assertEquals(SuspendResumeHandler.TEXT, result.get());
 
-            ModelNode shutdownOpResult = shutdownResult.get(TimeoutUtil.adjust(10), TimeUnit.SECONDS);
+            ModelNode shutdownOpResult = shutdownResult.get(TimeoutUtil.adjust(Duration.ofSeconds(10)).toSeconds(), TimeUnit.SECONDS);
             Assert.assertTrue("There was a failure executing the shutdown operation", SUCCESS.equals(shutdownOpResult.get(OUTCOME).asString()));
 
         } finally {
             if (appLocked) {
-                HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(10), TimeUnit.SECONDS);
+                HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(Duration.ofSeconds(10)).toSeconds(), TimeUnit.SECONDS);
             }
 
             if (shutdownResult != null) {
                 try {
-                    shutdownResult.get(TimeoutUtil.adjust(10), TimeUnit.SECONDS);
+                    shutdownResult.get(TimeoutUtil.adjust(Duration.ofSeconds(10)).toSeconds(), TimeUnit.SECONDS);
                 } catch (Exception e) {
                     domainPrimaryLifecycleUtil.stop();
                     domainPrimaryLifecycleUtil.start();

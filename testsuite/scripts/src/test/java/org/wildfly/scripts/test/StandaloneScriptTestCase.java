@@ -70,7 +70,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         Assume.assumeTrue(TestSuiteEnvironment.isWindows());
         final String variableToEscape = "-Dhttp.nonProxyHosts=localhost|127.0.0.1|10.10.10.*";
         ServerConfigurator.appendJavaOpts(ServerHelper.JBOSS_HOME, "standalone", variableToEscape);
-        try (ScriptProcess script = new ScriptProcess(ServerHelper.JBOSS_HOME, STANDALONE_BASE_NAME, Shell.BATCH, ServerHelper.TIMEOUT)) {
+        try (ScriptProcess script = new ScriptProcess(ServerHelper.JBOSS_HOME, STANDALONE_BASE_NAME, Shell.BATCH, ServerHelper.TIMEOUT.toSeconds())) {
             testScript(script);
         }
         ServerConfigurator.removeJavaOpts(ServerHelper.JBOSS_HOME, "standalone", variableToEscape);
@@ -81,7 +81,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         Assume.assumeTrue(TestSuiteEnvironment.isWindows());
         final String escapedVariable = "-Dhttp.nonProxyHosts=localhost^|127.0.0.1^|10.10.10.*";
         ServerConfigurator.appendJavaOpts(ServerHelper.JBOSS_HOME, STANDALONE_BASE_NAME, escapedVariable);
-        try (ScriptProcess script = new ScriptProcess(ServerHelper.JBOSS_HOME, STANDALONE_BASE_NAME, Shell.BATCH, ServerHelper.TIMEOUT)) {
+        try (ScriptProcess script = new ScriptProcess(ServerHelper.JBOSS_HOME, STANDALONE_BASE_NAME, Shell.BATCH, ServerHelper.TIMEOUT.toSeconds())) {
             testScript(script);
         }
         ServerConfigurator.removeJavaOpts(ServerHelper.JBOSS_HOME, STANDALONE_BASE_NAME, escapedVariable);

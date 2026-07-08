@@ -9,6 +9,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRU
 import static org.jboss.as.test.manualmode.auditlog.AbstractLogFieldsOfLogTestCase.executeForSuccess;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -128,7 +129,7 @@ public class AuditLogBootingSyslogTestCase {
     private void waitForExpectedOperations(int expectedOperations, BlockingQueue<SyslogServerEventIF> queue) throws InterruptedException {
         int operations = 0;
         int openClose = 0;
-        long endTime = System.currentTimeMillis() + TimeoutUtil.adjust(READ_MESSAGES_TIMEOUT_MILLISECONDS);
+        long endTime = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofMillis(READ_MESSAGES_TIMEOUT_MILLISECONDS)).toMillis();
         StringBuilder sb = new StringBuilder();
         do {
             if (queue.isEmpty()) {

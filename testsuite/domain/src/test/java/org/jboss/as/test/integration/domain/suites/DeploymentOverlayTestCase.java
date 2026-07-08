@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -66,7 +67,7 @@ import org.junit.Test;
  */
 public class DeploymentOverlayTestCase {
 
-    private static final int TIMEOUT = TimeoutUtil.adjust(20000);
+    private static final Duration TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(20));
     private static final String DEPLOYMENT_NAME = "deployment.jar";
     private static final String MAIN_RUNTIME_NAME = "main-deployment.jar";
     private static final String OTHER_RUNTIME_NAME = "other-deployment.jar";
@@ -324,7 +325,7 @@ public class DeploymentOverlayTestCase {
 
     private ModelNode awaitSimpleOperationExecution(Future<ModelNode> future) {
         try {
-            return future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+            return future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

@@ -128,7 +128,7 @@ public class ServerConfigurator {
                 ServerHelper.shutdownStandalone(client);
             }
 
-            if (!process.waitFor(ServerHelper.TIMEOUT, TimeUnit.SECONDS)) {
+            if (!process.waitFor(ServerHelper.TIMEOUT.toSeconds(), TimeUnit.SECONDS)) {
                 Assert.fail(readStdout(stdout));
             }
 
@@ -212,7 +212,7 @@ public class ServerConfigurator {
                 ServerHelper.waitForManagedServer(client, "server-three", () -> readStdout(stdout));
                 ServerHelper.shutdownDomain(client);
             }
-            if (!process.waitFor(ServerHelper.TIMEOUT, TimeUnit.SECONDS)) {
+            if (!process.waitFor(ServerHelper.TIMEOUT.toSeconds(), TimeUnit.SECONDS)) {
                 Assert.fail(readStdout(stdout));
             }
 

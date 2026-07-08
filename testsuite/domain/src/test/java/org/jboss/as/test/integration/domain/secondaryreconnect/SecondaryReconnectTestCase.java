@@ -22,6 +22,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.time.Duration;
 import java.util.List;
 
 import javax.security.auth.callback.CallbackHandler;
@@ -59,7 +60,7 @@ public class SecondaryReconnectTestCase {
     private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
     private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
-    private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
+    private static final Duration ADJUSTED_SECOND = TimeoutUtil.adjust(Duration.ofSeconds(1));
     private static final String RIGHT_PASSWORD = DomainLifecycleUtil.SECONDARY_HOST_PASSWORD;
 
 
@@ -151,18 +152,18 @@ public class SecondaryReconnectTestCase {
             primaryClient = domainPrimaryLifecycleUtil.createDomainClient();
 
             //Wait for the secondary to reconnect, look for the secondary in the list of hosts
-            long end = System.currentTimeMillis() + 20 * ADJUSTED_SECOND;
+            long end = System.currentTimeMillis() + ADJUSTED_SECOND.multipliedBy(20).toMillis();
             boolean secondaryReconnected = false;
             do {
-                Thread.sleep(1 * ADJUSTED_SECOND);
+                Thread.sleep(ADJUSTED_SECOND.toMillis());
                 secondaryReconnected = checkSecondaryReconnected(primaryClient);
             } while (!secondaryReconnected && System.currentTimeMillis() < end);
 
             //Wait for primary servers to come up
-            end = System.currentTimeMillis() + 60 * ADJUSTED_SECOND;
+            end = System.currentTimeMillis() + ADJUSTED_SECOND.multipliedBy(60).toMillis();
             boolean serversUp = false;
             do {
-                Thread.sleep(1 * ADJUSTED_SECOND);
+                Thread.sleep(ADJUSTED_SECOND.toMillis());
                 serversUp = checkHostServersStarted(primaryClient, "primary");
             } while (!serversUp && System.currentTimeMillis() < end);
 

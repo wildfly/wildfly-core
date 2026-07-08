@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.time.Duration;
 import jakarta.json.JsonObject;
 import javax.security.auth.x500.X500Principal;
 
@@ -67,7 +68,7 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
     private static final String HOSTNAME = TestSuiteEnvironment.getServerAddress();
     private static final int PORT = 10514;
     private static final int ALT_PORT = 11514;
-    private static final int DFT_TIMEOUT = TimeoutUtil.adjust(Integer.parseInt(System.getProperty("org.jboss.as.logging.timeout", "3")) * 1000);
+    private static final Duration DFT_TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(Integer.parseInt(System.getProperty("org.jboss.as.logging.timeout", "3"))));
     private static final String SOCKET_BINDING_NAME = "log-server";
     private static final String FORMATTER_NAME = "json";
     private static final ModelNode LOGGER_ADDRESS = SUBSYSTEM_ADDRESS.append("logger", LoggingServiceActivator.LOGGER.getName()).toModelNode();
@@ -123,7 +124,7 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
     public void testTcpSocket() throws Exception {
         // Create a TCP server and start it
         try (JsonLogServer server = JsonLogServer.createTcpServer(PORT)) {
-            server.start(DFT_TIMEOUT);
+            server.start(DFT_TIMEOUT.toMillis());
 
             // Add the socket handler and test all levels
             final ModelNode socketHandlerAddress = addSocketHandler("test-log-server", null, null);
@@ -139,7 +140,7 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
     public void testAsyncTcpSocket() throws Exception {
         // Create a TCP server and start it
         try (JsonLogServer server = JsonLogServer.createTcpServer(PORT)) {
-            server.start(DFT_TIMEOUT);
+            server.start(DFT_TIMEOUT.toMillis());
 
             // Add the socket handler and test all levels
             final ModelNode socketHandlerAddress = addSocketHandler("test-async-log-server", null, null, null, true);
@@ -157,7 +158,7 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
         final Path serverCertFile = createTemporaryKeyStoreFile(serverKeyStore, "server-cert-store.jks");
         // Create a TCP server and start it
         try (JsonLogServer server = JsonLogServer.createTlsServer(PORT, serverCertFile, TEST_PASSWORD)) {
-            server.start(DFT_TIMEOUT);
+            server.start(DFT_TIMEOUT.toMillis());
 
             // Add the socket handler and test all levels
             final ModelNode socketHandlerAddress = addSocketHandler("test-log-server", null, "SSL_TCP", clientTrustFile);
@@ -173,7 +174,7 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
     public void testUdpSocket() throws Exception {
         // Create a UDP server and start it
         try (JsonLogServer server = JsonLogServer.createUdpServer(PORT)) {
-            server.start(DFT_TIMEOUT);
+            server.start(DFT_TIMEOUT.toMillis());
             final ModelNode socketHandlerAddress = addSocketHandler("test-log-server", null, "UDP");
             checkLevelsLogged(server, EnumSet.allOf(Logger.Level.class), "Test UPD all levels.");
 
@@ -187,7 +188,7 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
     public void testLevelChange() throws Exception {
         // Create a TCP server and start it
         try (JsonLogServer server = JsonLogServer.createTcpServer(PORT)) {
-            server.start(DFT_TIMEOUT);
+            server.start(DFT_TIMEOUT.toMillis());
 
             // Add the socket handler and test all levels
             final ModelNode socketHandlerAddress = addSocketHandler("test-log-server", "WARN", null);
@@ -203,7 +204,7 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
     public void testWithFilter() throws Exception {
         // Create a TCP server and start it
         try (JsonLogServer server = JsonLogServer.createTcpServer(PORT)) {
-            server.start(DFT_TIMEOUT);
+            server.start(DFT_TIMEOUT.toMillis());
 
             final ModelNode address = addSocketHandler("test-log-server", "INFO", "TCP");
             executeOperation(Operations.createWriteAttributeOperation(address, "filter-spec", "substituteAll(\"\\\\s\", \"_\")"));
@@ -224,7 +225,7 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
         final ModelNode address = addSocketHandler("test-log-server", "INFO", "TCP");
         // Create a TCP server and start it
         try (JsonLogServer server = JsonLogServer.createTcpServer(PORT)) {
-            server.start(DFT_TIMEOUT);
+            server.start(DFT_TIMEOUT.toMillis());
             // We should end up with a single log INFO log message
             final JsonObject foundMessage = executeRequest("Test TCP message",
                     Collections.singletonMap(LoggingServiceActivator.LOG_LEVELS_KEY, "INFO"), server);
@@ -234,7 +235,7 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
 
         // Create a new UDP server
         try (JsonLogServer server = JsonLogServer.createUdpServer(PORT)) {
-            server.start(DFT_TIMEOUT);
+            server.start(DFT_TIMEOUT.toMillis());
 
             // Change the protocol and ensure we can connect
             executeOperation(Operations.createWriteAttributeOperation(address, "protocol", "UDP"));
@@ -260,8 +261,8 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
         try (JsonLogServer server = JsonLogServer.createTcpServer(PORT);
              JsonLogServer altServer = JsonLogServer.createTcpServer(ALT_PORT)
         ) {
-            server.start(DFT_TIMEOUT);
-            altServer.start(DFT_TIMEOUT);
+            server.start(DFT_TIMEOUT.toMillis());
+            altServer.start(DFT_TIMEOUT.toMillis());
             final ModelNode altAddress = addSocketHandler("test-log-server-alt", null, null);
 
             // Log a single message to the current log server and validate
@@ -285,9 +286,9 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
         executeRequest(msg, Collections.singletonMap("includeLevel", "true"));
         final List<JsonObject> foundMessages = new ArrayList<>();
         for (int i = 0; i < expectedLevels.size(); i++) {
-            final JsonObject foundMessage = server.getLogMessage(DFT_TIMEOUT);
+            final JsonObject foundMessage = server.getLogMessage(DFT_TIMEOUT.toMillis());
             if (foundMessage == null) {
-                final String failureMessage = "A log messages was not received within " + DFT_TIMEOUT + " milliseconds." +
+                final String failureMessage = "A log messages was not received within " + DFT_TIMEOUT.toMillis() + " milliseconds." +
                         System.lineSeparator() +
                         "Found the following messages: " + foundMessages +
                         System.lineSeparator() +
@@ -407,9 +408,9 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
         executeRequest(msg, params);
         final List<JsonObject> messages = new ArrayList<>(expectedMessages);
         for (int i = 0; i < expectedMessages; i++) {
-            final JsonObject foundMessage = server.getLogMessage(DFT_TIMEOUT);
+            final JsonObject foundMessage = server.getLogMessage(DFT_TIMEOUT.toMillis());
             if (foundMessage == null) {
-                final String failureMessage = "A log messages was not received within " + DFT_TIMEOUT + " milliseconds." +
+                final String failureMessage = "A log messages was not received within " + DFT_TIMEOUT.toMillis() + " milliseconds." +
                         System.lineSeparator() +
                         "Found the following messages: " + messages;
                 Assert.fail(failureMessage);

@@ -8,6 +8,7 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.time.Duration;
 import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.test.shared.TimeoutUtil;
@@ -57,7 +58,7 @@ public class WildFlyManagedConfiguration {
 
     private String javaVmArguments = System.getProperty("server.jvm.args", "-Xmx512m");
 
-    private int startupTimeoutInSeconds = TimeoutUtil.adjust(120);
+    private int startupTimeoutInSeconds = (int) TimeoutUtil.adjust(Duration.ofMinutes(2)).toSeconds();
 
     private boolean outputToConsole = true;
 

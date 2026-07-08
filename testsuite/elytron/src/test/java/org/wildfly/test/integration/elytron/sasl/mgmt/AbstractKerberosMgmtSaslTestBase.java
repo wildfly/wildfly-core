@@ -26,6 +26,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivilegedAction;
 import java.security.Security;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -104,7 +105,7 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
 
     protected static Logger LOGGER = Logger.getLogger(AbstractKerberosMgmtSaslTestBase.class);
 
-    protected static final int CONNECTION_TIMEOUT_IN_MS = TimeoutUtil.adjust(6 * 1000);
+    protected static final Duration CONNECTION_TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(6));
 
     protected static final int PORT_NATIVE = 10567;
 
@@ -345,7 +346,7 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
             fail(message);
         } catch (IOException | GeneralSecurityException e) {
             assertTrue("Connection reached its timeout (hang).",
-                    startTime + CONNECTION_TIMEOUT_IN_MS > System.currentTimeMillis());
+                    startTime + CONNECTION_TIMEOUT.toMillis() > System.currentTimeMillis());
             Throwable cause = e.getCause();
             assertThat("ConnectionException was expected as a cause when authentication fails", cause,
                     is(instanceOf(ConnectException.class)));

@@ -7,6 +7,7 @@ package org.wildfly.core.test.standalone.deployment;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -116,7 +117,7 @@ public class InterdependentDeploymentTestCase {
 
             // USE A SYSTEM PROPERTY TO EXECUTE full-replace-deployment repeatedly
             int loops = Integer.parseInt(System.getProperty("InterdependentDeploymentTestCase.count", "100"));
-            int blockingTime = TimeoutUtil.adjust(30); // set this to fail faster if it fails
+            long blockingTime = TimeoutUtil.adjust(Duration.ofSeconds(30)).toSeconds(); // set this to fail faster if it fails
             for (int i = 0; i < loops; i++) {
 
                 try {

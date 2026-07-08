@@ -8,6 +8,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.time.Duration;
+
 import jakarta.inject.Inject;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -40,9 +42,9 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 public class PreparedResponseTestCase {
 
     public static Logger LOGGER = Logger.getLogger(PreparedResponseTestCase.class);
-    private static final long FREQUENCY = TimeoutUtil.adjust(50);
-    private static final long SHUTDOWN_WAITING_TIME = TimeoutUtil.adjust(3000);
-    private static final long RESTART_WAITING_TIME = TimeoutUtil.adjust(20000);
+    private static final Duration FREQUENCY = TimeoutUtil.adjust(Duration.ofMillis(50));
+    private static final Duration SHUTDOWN_WAITING_TIME = TimeoutUtil.adjust(Duration.ofSeconds(3));
+    private static final Duration RESTART_WAITING_TIME = TimeoutUtil.adjust(Duration.ofSeconds(20));
 
     @Inject
     protected static ServerController controller;
@@ -69,7 +71,7 @@ public class PreparedResponseTestCase {
     private void block(ManagementClient client) throws UnsuccessfulOperationException {
         ModelNode blockOp = Operations.createOperation("block", PathAddress.pathAddress(SUBSYSTEM, BlockerExtension.SUBSYSTEM_NAME).toModelNode());
         blockOp.get("block-point").set("SERVICE_STOP");
-        blockOp.get("block-time").set(SHUTDOWN_WAITING_TIME);
+        blockOp.get("block-time").set(SHUTDOWN_WAITING_TIME.toMillis());
         client.executeForResult(blockOp);
     }
 
@@ -77,10 +79,10 @@ public class PreparedResponseTestCase {
     public void reloadServer() throws Exception {
         try (ManagementClient managementClient = getManagementClient()) {
             block(managementClient);
-            long timeout = SHUTDOWN_WAITING_TIME + System.currentTimeMillis();
+            long timeout = SHUTDOWN_WAITING_TIME.toMillis() + System.currentTimeMillis();
             ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient(), false);
             while (System.currentTimeMillis() < timeout) {
-                Thread.sleep(FREQUENCY);
+                Thread.sleep(FREQUENCY.toMillis());
                 try {
                     managementClient.isServerInRunningState();
                 } catch (RuntimeException ex) {
@@ -88,9 +90,9 @@ public class PreparedResponseTestCase {
                 }
             }
             Assert.assertFalse(System.currentTimeMillis() < timeout);
-            timeout = RESTART_WAITING_TIME + System.currentTimeMillis();
+            timeout = RESTART_WAITING_TIME.toMillis() + System.currentTimeMillis();
             while (System.currentTimeMillis() < timeout) {
-                Thread.sleep(FREQUENCY);
+                Thread.sleep(FREQUENCY.toMillis());
                 try {
                     managementClient.isServerInRunningState();
                 } catch (RuntimeException ex) {
@@ -104,10 +106,10 @@ public class PreparedResponseTestCase {
     public void shutdownServer() throws Exception {
         try (ManagementClient managementClient = getManagementClient()) {
             block(managementClient);
-            long timeout = SHUTDOWN_WAITING_TIME + System.currentTimeMillis();
+            long timeout = SHUTDOWN_WAITING_TIME.toMillis() + System.currentTimeMillis();
             managementClient.executeForResult(Operations.createOperation(SHUTDOWN, new ModelNode().setEmptyList()));
             while (System.currentTimeMillis() < timeout) {
-                Thread.sleep(FREQUENCY);
+                Thread.sleep(FREQUENCY.toMillis());
                 try {
                     controller.getClient().isServerInRunningState();
                 } catch (RuntimeException ex) {

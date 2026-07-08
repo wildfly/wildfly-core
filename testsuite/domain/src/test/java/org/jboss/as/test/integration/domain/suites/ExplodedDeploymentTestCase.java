@@ -53,6 +53,7 @@ import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.jboss.as.controller.HashUtil;
@@ -87,7 +88,7 @@ import org.junit.Test;
  */
 public class ExplodedDeploymentTestCase {
 
-    private static final int TIMEOUT = TimeoutUtil.adjust(20000);
+    private static final Duration TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(20));
     private static final String DEPLOYMENT_NAME = "deployment.jar";
     private static final String MSG = "main-server-group";
     private static final PathElement DEPLOYMENT_PATH = PathElement.pathElement(DEPLOYMENT, DEPLOYMENT_NAME);
@@ -417,7 +418,7 @@ public class ExplodedDeploymentTestCase {
 
     private ModelNode awaitSimpleOperationExecution(Future<ModelNode> future) {
         try {
-            return future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+            return future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -430,7 +431,7 @@ public class ExplodedDeploymentTestCase {
 
     private OperationResponse awaitReadContentExecution(Future<OperationResponse> future) {
         try {
-            return future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+            return future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

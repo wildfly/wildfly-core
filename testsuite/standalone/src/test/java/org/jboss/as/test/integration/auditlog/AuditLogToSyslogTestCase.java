@@ -11,6 +11,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -38,7 +39,7 @@ import org.wildfly.core.testrunner.ManagementClient;
  */
 public abstract class AuditLogToSyslogTestCase {
 
-    private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
+    private static final Duration ADJUSTED_SECOND = TimeoutUtil.adjust(Duration.ofSeconds(1));
 
     @Inject
     protected ManagementClient managementClient;
@@ -66,70 +67,70 @@ public abstract class AuditLogToSyslogTestCase {
 
         SyslogServerEventIF syslogEvent = null;
         makeOneLog();
-        syslogEvent = queue.poll(1 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        syslogEvent = queue.poll(ADJUSTED_SECOND.toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNull("No message was expected in the syslog, because syslog is disabled", syslogEvent);
 
         try {
             setAuditlogEnabled(true);
-            syslogEvent = queue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+            syslogEvent = queue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
             Assert.assertNotNull("Enabling audit log wasn't logged into the syslog", syslogEvent);
             Assert.assertEquals(1, syslogEvent.getFacility());
             assertAppName(AuditLogToSyslogSetup.DEFAULT_APPNAME, syslogEvent);
 
             makeOneLog();
-            syslogEvent = queue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+            syslogEvent = queue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
             Assert.assertNotNull("Auditable event was't logged into the syslog (adding system property)", syslogEvent);
             Assert.assertEquals(1, syslogEvent.getFacility());
             assertAppName(AuditLogToSyslogSetup.DEFAULT_APPNAME, syslogEvent);
 
             // disable audit log - auditable event
             setAuditlogEnabled(false);
-            syslogEvent = queue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+            syslogEvent = queue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
             Assert.assertNotNull("Disabling audit log wasn't logged into the syslog", syslogEvent);
             Assert.assertEquals(1, syslogEvent.getFacility());
             assertAppName(AuditLogToSyslogSetup.DEFAULT_APPNAME, syslogEvent);
 
             //remove handler
             CoreUtils.applyUpdate(Util.createRemoveOperation(AuditLogToSyslogSetup.AUDIT_LOG_LOGGER_SYSLOG_HANDLER_ADDR), managementClient.getControllerClient());
-            syslogEvent = queue.poll(1 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+            syslogEvent = queue.poll(ADJUSTED_SECOND.toMillis(), TimeUnit.MILLISECONDS);
             Assert.assertNull("No message was expected in the syslog, because syslog is disabled", syslogEvent);
 
             //add other handler which has another appname and facility = LINE_PRINTER (6)
             CoreUtils.applyUpdate(Util.createAddOperation(AuditLogToSyslogSetup.AUDIT_LOG_LOGGER_SYSLOG_HANDLER_ADDR2), managementClient.getControllerClient());
-            syslogEvent = queue.poll(1 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+            syslogEvent = queue.poll(ADJUSTED_SECOND.toMillis(), TimeUnit.MILLISECONDS);
             Assert.assertNull("No message was expected in the syslog, because syslog is disabled", syslogEvent);
 
             // enable audit log again
             setAuditlogEnabled(true);
-            syslogEvent = queue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+            syslogEvent = queue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
             Assert.assertNotNull("Enabling audit log wasn't logged into the syslog", syslogEvent);
             Assert.assertEquals(6, syslogEvent.getFacility());
             assertAppName("TestApp", syslogEvent);
 
             //Change other handler app name
             CoreUtils.applyUpdate(Util.getWriteAttributeOperation(AuditLogToSyslogSetup.AUDIT_SYSLOG_HANDLER_ADDR2, APP_NAME, new ModelNode("Stuff")), managementClient.getControllerClient());
-            syslogEvent = queue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+            syslogEvent = queue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
             Assert.assertNotNull("Auditable event was't logged into the syslog (setting new app-name in audit-log)", syslogEvent);
             Assert.assertEquals(6, syslogEvent.getFacility());
             assertAppName("Stuff", syslogEvent);
 
             //Reset other handler app name
             CoreUtils.applyUpdate(Util.getWriteAttributeOperation(AuditLogToSyslogSetup.AUDIT_SYSLOG_HANDLER_ADDR2, APP_NAME, new ModelNode()), managementClient.getControllerClient());
-            syslogEvent = queue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+            syslogEvent = queue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
             Assert.assertNotNull("Auditable event was't logged into the syslog (setting new app-name in audit-log)", syslogEvent);
             Assert.assertEquals(6, syslogEvent.getFacility());
             assertAppName(AuditLogToSyslogSetup.DEFAULT_APPNAME, syslogEvent);
 
             //Change other handler facility = LOCAL_USE_0 (16)
             CoreUtils.applyUpdate(Util.getWriteAttributeOperation(AuditLogToSyslogSetup.AUDIT_SYSLOG_HANDLER_ADDR2, FACILITY, new ModelNode("LOCAL_USE_0")), managementClient.getControllerClient());
-            syslogEvent = queue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+            syslogEvent = queue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
             Assert.assertNotNull("Auditable event was't logged into the syslog (setting new facility in audit-log)", syslogEvent);
             Assert.assertEquals(16, syslogEvent.getFacility());
             assertAppName(AuditLogToSyslogSetup.DEFAULT_APPNAME, syslogEvent);
 
             //Reset other handler facility
             CoreUtils.applyUpdate(Util.getWriteAttributeOperation(AuditLogToSyslogSetup.AUDIT_SYSLOG_HANDLER_ADDR2, FACILITY, new ModelNode()), managementClient.getControllerClient());
-            syslogEvent = queue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+            syslogEvent = queue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
             Assert.assertNotNull("Auditable event was't logged into the syslog (setting new facility in audit-log)", syslogEvent);
             Assert.assertEquals(1, syslogEvent.getFacility());
             assertAppName(AuditLogToSyslogSetup.DEFAULT_APPNAME, syslogEvent);
@@ -137,10 +138,10 @@ public abstract class AuditLogToSyslogTestCase {
         } finally {
             setAuditlogEnabled(false);
         }
-        syslogEvent = queue.poll(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        syslogEvent = queue.poll(ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNotNull("Disabling audit log wasn't logged into the syslog", syslogEvent);
         makeOneLog();
-        syslogEvent = queue.poll(1 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        syslogEvent = queue.poll(ADJUSTED_SECOND.toMillis(), TimeUnit.MILLISECONDS);
         Assert.assertNull("No message was expected in the syslog, because syslog is disabled", syslogEvent);
 
         for (Long property : properties) {

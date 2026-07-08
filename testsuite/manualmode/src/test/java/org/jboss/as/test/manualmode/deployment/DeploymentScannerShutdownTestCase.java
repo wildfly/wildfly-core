@@ -14,6 +14,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.time.Duration;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -65,7 +66,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 public class DeploymentScannerShutdownTestCase {
 
     // Max time to wait for some action to complete, in ms
-    private static final int TIMEOUT = TimeoutUtil.adjust(20000);
+    private static final Duration TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(20));
     // Pause time between checks whether some action has completed, in ms
     private static final int BACKOFF = 10;
     private static final String DEPLOYMENT_SCANNER_EXTENSION = "org.jboss.as.deployment-scanner";
@@ -145,7 +146,7 @@ public class DeploymentScannerShutdownTestCase {
         final File file = new File(dir, DEPLOYMENT_NAME);
         archive.as(ZipExporter.class).exportTo(file, true);
         deploy(file, target, deployed);
-        container.reload(TIMEOUT);
+        container.reload((int) TIMEOUT.toMillis());
         Assert.assertTrue("We should have the deployed marker", deployed.exists());
         Assert.assertTrue(container.isStarted());
         Path serverLog = getAbsoluteLogFilePath("jboss.server.log.dir", "server.log");
@@ -174,7 +175,7 @@ public class DeploymentScannerShutdownTestCase {
         deploy(file, target, deployed);
         deployRules();
         undeploy(target, undeployed);
-        container.reload(TIMEOUT);
+        container.reload((int) TIMEOUT.toMillis());
         Assert.assertTrue("We should have the undeployed marker", undeployed.exists());
         Assert.assertTrue(container.isStarted());
         Path serverLog = getAbsoluteLogFilePath("jboss.server.log.dir", "server.log");
@@ -226,7 +227,7 @@ public class DeploymentScannerShutdownTestCase {
     }
 
     private void waitForMarkerFile(File marker) {
-        for (int i = 0; i < TIMEOUT / BACKOFF; i++) {
+        for (int i = 0; i < TIMEOUT.toMillis() / BACKOFF; i++) {
             if (marker.exists()) {
                 break;
             }

@@ -10,6 +10,7 @@ import java.lang.reflect.ReflectPermission;
 import java.net.HttpURLConnection;
 import java.net.SocketPermission;
 import java.net.URL;
+import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,7 +52,7 @@ public class DomainSuspendResumeTestCase {
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
 
-    private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
+    private static final Duration ADJUSTED_SECOND = TimeoutUtil.adjust(Duration.ofSeconds(1));
 
     @BeforeClass
     public static void setupDomain() throws Exception {
@@ -88,7 +89,7 @@ public class DomainSuspendResumeTestCase {
                 }
             });
 
-            Thread.sleep(ADJUSTED_SECOND); //nasty, but we need to make sure the HTTP request has started
+            Thread.sleep(ADJUSTED_SECOND.toMillis()); //nasty, but we need to make sure the HTTP request has started
 
             ModelNode op = new ModelNode();
             op.get(ModelDescriptionConstants.OP).set("suspend-servers");

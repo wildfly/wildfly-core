@@ -17,6 +17,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.SocketPermission;
 import java.net.URL;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -117,7 +118,7 @@ public class SuspendOnSoftKillTestCase {
 
     private void startContainer(int suspendTimeout) throws Exception {
 
-        suspendTimeout = suspendTimeout < 1 ? suspendTimeout : TimeoutUtil.adjust(suspendTimeout);
+        suspendTimeout = suspendTimeout < 1 ? suspendTimeout : (int) TimeoutUtil.adjust(Duration.ofSeconds(suspendTimeout)).toSeconds();
 
         jbossArgs = System.getProperty("jboss.args");
         String newArgs = jbossArgs == null ? "" : jbossArgs;
@@ -166,7 +167,7 @@ public class SuspendOnSoftKillTestCase {
                 }
             });
 
-            Thread.sleep(TimeoutUtil.adjust(1000)); //nasty, but we need to make sure the HTTP request has started
+            Thread.sleep(TimeoutUtil.adjust(Duration.ofSeconds(1)).toMillis()); //nasty, but we need to make sure the HTTP request has started
 
             softKillServer();
 
@@ -175,7 +176,7 @@ public class SuspendOnSoftKillTestCase {
             op.get(NAME).set(SUSPEND_STATE);
 
             String suspendState;
-            long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
+            long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(10)).toMillis();
             do {
                 suspendState = serverController.getClient().executeForResult(op).asString();
                 if (!"SUSPENDING".equals(suspendState)) {
@@ -208,14 +209,14 @@ public class SuspendOnSoftKillTestCase {
             }
 
             // Send a request that will trigger the first request to complete
-            HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(30), TimeUnit.SECONDS);
+            HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(Duration.ofSeconds(30)).toSeconds(), TimeUnit.SECONDS);
             // Confirm 1st request completed
             Assert.assertEquals(SuspendResumeHandler.TEXT, result.get());
 
             // Check server behaves like a suspended, suspending or stopped server; which it will be is unknown.
             // If we are still in suspending state, wait a bit longer until get suspended or the server is down.
             try {
-                timeout = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
+                timeout = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(10)).toMillis();
                 do {
                     suspendState = serverController.getClient().executeForResult(op).asString();
                     if ("SUSPENDING".equals(suspendState)) {
@@ -245,7 +246,7 @@ public class SuspendOnSoftKillTestCase {
         // Server should be suspended already with no in-flight requests, so it should stop quickly.
         // But we're willing to be patient and wait to be sure it stops even on a slow system.
         // The point is just to make sure it eventually stops, not to check how fast
-        final long time = System.currentTimeMillis() + TimeoutUtil.adjust(20000);
+        final long time = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(20)).toMillis();
         List<RunningProcess> runningProcesses;
         do {
             runningProcesses = processUtil.getRunningProcesses();
