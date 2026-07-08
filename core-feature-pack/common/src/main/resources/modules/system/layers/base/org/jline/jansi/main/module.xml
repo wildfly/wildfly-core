@@ -5,13 +5,13 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<module xmlns="urn:jboss:module:1.9" name="org.fusesource.jansi">
+<module xmlns="urn:jboss:module:1.9" name="org.jline.jansi">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
 
     <resources>
-        <artifact name="${org.fusesource.jansi:jansi}"/>
+        <artifact name="${org.jline:jansi}"/>
     </resources>
 
     <dependencies>
