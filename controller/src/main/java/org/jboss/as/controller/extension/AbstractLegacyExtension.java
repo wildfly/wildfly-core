@@ -43,7 +43,7 @@ public abstract class AbstractLegacyExtension implements Extension {
             // to legacy servers to work
             ControllerLogger.MGMT_OP_LOGGER.ignoringUnsupportedLegacyExtension(subsystemNames, extensionName);
             return;
-        } else if (context.getProcessType() == ProcessType.STANDALONE_SERVER) {
+        } else if (context.getProcessType().isServer()) {
             if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
                 //log a message, but fall through and register the model
                 ControllerLogger.MGMT_OP_LOGGER.removeUnsupportedLegacyExtension(subsystemNames, extensionName);
@@ -66,7 +66,7 @@ public abstract class AbstractLegacyExtension implements Extension {
             // Do nothing. This allows the extension=cmp:add op that's really targeted
             // to legacy servers to work
             return;
-        } else if (context.getProcessType() == ProcessType.STANDALONE_SERVER && context.getRunningMode() != RunningMode.ADMIN_ONLY) {
+        } else if (context.getProcessType().isServer() && context.getRunningMode() != RunningMode.ADMIN_ONLY) {
             throw new UnsupportedOperationException(ControllerLogger.ROOT_LOGGER.unsupportedLegacyExtension(extensionName));
         }
 

@@ -54,6 +54,7 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
+import org.jboss.as.controller.extension.AbstractLegacyExtension;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.extension.SubsystemInformation;
@@ -155,7 +156,9 @@ final class SubsystemTestDelegate {
     void initializeParser() throws Exception {
         //Initialize the parser
         xmlMapper = XMLMapper.Factory.create();
-        extensionParsingRegistry = ExtensionRegistry.builder(this.getProcessType()).withStability(this.stability).build();
+        // legacy extensions require ADMIN-ONLY to initialize parsers on servers other than domain server
+        final RunningMode runningMode = mainExtension instanceof AbstractLegacyExtension && this.getProcessType().isServer() && this.getProcessType() != ProcessType.DOMAIN_SERVER ? RunningMode.ADMIN_ONLY : RunningMode.NORMAL;
+        extensionParsingRegistry = ExtensionRegistry.builder(this.getProcessType()).withStability(this.stability).withRunningMode(runningMode).build();
         testParser = new TestParser(mainSubsystemName, extensionParsingRegistry);
         xmlMapper.registerRootElement(new QName(TEST_NAMESPACE, "test"), testParser);
         mainExtension.initializeParsers(extensionParsingRegistry.getExtensionParsingContext("Test", xmlMapper));
