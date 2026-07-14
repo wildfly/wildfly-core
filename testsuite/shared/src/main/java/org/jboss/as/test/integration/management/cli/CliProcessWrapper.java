@@ -117,8 +117,9 @@ public class CliProcessWrapper extends CliProcessBuilder {
      * @return Returns true if the expected prompt is found. False if the timeout is reached.
      */
     public boolean pushLineAndWaitForResults(String string, String prompt) throws IOException {
+        int initialLength = cliOutputBuffer.length();
         pushToInput(string);
-        return waitForPrompt(prompt);
+        return waitForPrompt(prompt, initialLength);
     }
 
     /**
@@ -202,6 +203,10 @@ public class CliProcessWrapper extends CliProcessBuilder {
     }
 
     private boolean waitForPrompt(String prompt) {
+        return waitForPrompt(prompt, -1);
+    }
+
+    private boolean waitForPrompt(String prompt, int initialLength) {
         boolean success = false;
         boolean wait = true;
         int waitingTime = 0;
@@ -222,7 +227,7 @@ public class CliProcessWrapper extends CliProcessBuilder {
             }
 
             // If the expected prompt is not in the output, keep waiting
-            if (wait && outputHasPrompt(prompt)){
+            if (wait && cliOutputBuffer.length() > initialLength && outputHasPrompt(prompt)){
                 success = true;
                 wait = false;
             }
