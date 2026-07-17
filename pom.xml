@@ -2119,27 +2119,6 @@
             </build>
         </profile>
 
-        <profile>
-            <id>jdk23</id>
-            <activation>
-                <jdk>[23,)</jdk>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <compilerArgs combine.children="append">
-                                <!-- SE 23+ requires explicit config to turn on annotation processing -->
-                                <arg>-proc:full</arg>
-                            </compilerArgs>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
         <!-- Base jboss-release profile shared between build/dist and component-matrix-builder.
              Here, it only enables the assembly plugin used by the build/dist modules. This profile is further extended
              at component-matrix-builder module level to provide additional configuration targeting the deploy goal. -->
