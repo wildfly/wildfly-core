@@ -574,8 +574,18 @@ public abstract class ModelTestModelControllerService extends AbstractController
         }
     }
 
-    //These are here to overload the constructor used for the different legacy controllers
-
+    /**
+     * Marker classes used solely to select the correct {@link ModelTestModelControllerService} constructor
+     * for a given legacy WildFly Core controller version. Because Java does not allow distinguishing
+     * overloaded constructors by a plain version value alone (the signatures would be ambiguous), each
+     * supported legacy version has its own distinct marker type. Passing {@code ControllerXXx.INSTANCE}
+     * as the final constructor argument causes the compiler to resolve the intended overload unambiguously.
+     *
+     * <p>The actual callers of these overloaded constructors that use these marker classes as discriminators
+     * are in the <a href="https://github.com/wildfly/wildfly-legacy-test">wildfly/wildfly-legacy-test</a>
+     * module controller implementations, where a concrete {@link ModelTestModelControllerService}
+     * implementation is instantiated for each legacy controller under test.
+     */
 
     @SuppressWarnings("InstantiationOfUtilityClass")
     public static class Controller23x {
