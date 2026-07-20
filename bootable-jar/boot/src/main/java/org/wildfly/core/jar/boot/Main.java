@@ -322,27 +322,21 @@ public final class Main {
     private static void waitForDelete(final Path installDir) throws InterruptedException {
         final Path cleanupMarker = installDir.resolve("wildfly-cleanup-marker");
         if (Files.exists(cleanupMarker)) {
-            long t;
+            long timeoutSeconds;
             try {
-                t = Long.parseLong(System.getProperty("org.wildfly.core.bootable.jar.timeout", "10"));
+                timeoutSeconds = Long.parseLong(System.getProperty("org.wildfly.core.bootable.jar.timeout", "10"));
             } catch (NumberFormatException ignore) {
-                t = 10L; // 10 seconds
+                timeoutSeconds = 10L;
             }
-            long timeout = (t * 1000L);
+            final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
             while (Files.exists(cleanupMarker)) {
-                final long wait = 500L;
-                TimeUnit.MILLISECONDS.sleep(wait);
-                timeout -= wait;
-                if (timeout <= 0L) {
-                    if (Files.exists(cleanupMarker)) {
-                        final String msg = String.format("The install directory %s may still be in the process of being deleted. " +
-                                        "The marker file %s has not been deleted within %ds. Please check for a previous job running " +
-                                        "and delete the marker file if it was left behind because of an error.",
-                                installDir, cleanupMarker, t);
-                        throw new IllegalStateException(msg);
-                    }
-                    break;
+                if (System.nanoTime() >= deadline) {
+                    throw new IllegalStateException(String.format("The install directory %s may still be in the process of being deleted. " +
+                                    "The marker file %s has not been deleted within %ds. Please check for a previous job running " +
+                                    "and delete the marker file if it was left behind because of an error.",
+                            installDir, cleanupMarker, timeoutSeconds));
                 }
+                TimeUnit.MILLISECONDS.sleep(500L);
             }
         }
     }
