@@ -16,6 +16,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.EndpointBuilder;
+import org.jboss.remoting3.RemotingOptions;
 import org.xnio.OptionMap;
 import org.xnio.XnioWorker;
 
@@ -32,10 +33,14 @@ public class EndpointService implements Service {
     protected final OptionMap optionMap;
     private final Consumer<Endpoint> endpointConsumer;
     private final Supplier<XnioWorker> workerSupplier;
+    private final Supplier<ConnectionInfo> connectionInfoSupplier;
 
-    public EndpointService(final Consumer<Endpoint> endpointConsumer, final Supplier<XnioWorker> workerSupplier, String nodeName, EndpointType type, final OptionMap optionMap) {
+    public EndpointService(final Consumer<Endpoint> endpointConsumer, final Supplier<XnioWorker> workerSupplier,
+                           final Supplier<ConnectionInfo> connectionInfoSupplier,
+                           String nodeName, EndpointType type, final OptionMap optionMap) {
         this.endpointConsumer = endpointConsumer;
         this.workerSupplier = workerSupplier;
+        this.connectionInfoSupplier = connectionInfoSupplier != null ? connectionInfoSupplier : () -> null;
         if (nodeName == null) {
             nodeName = "remote";
         }
@@ -50,6 +55,16 @@ public class EndpointService implements Service {
         builder.setEndpointName(endpointName);
         builder.setXnioWorker(workerSupplier.get());
         builder.setDefaultConnectionsOptionMap(optionMap);
+
+        final ConnectionInfo info = connectionInfoSupplier.get();
+        if (info != null && info.getDestinationUri() != null) {
+            final var connectionBuilder = builder.addConnection(info.getDestinationUri());
+            final OptionMap connectionOptions = info.getConnectionCreationOptions();
+            if (connectionOptions.contains(RemotingOptions.HEARTBEAT_INTERVAL)) {
+                connectionBuilder.setHeartbeatInterval(connectionOptions.get(RemotingOptions.HEARTBEAT_INTERVAL));
+            }
+        }
+
         try {
             endpoint = builder.build();
         } catch (IOException e) {
