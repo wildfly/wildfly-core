@@ -60,6 +60,17 @@ public class ScriptProcess extends Process implements AutoCloseable {
     private Process delegate;
     private Path stdoutLog;
     private String lastExecutedCmd;
+    private boolean skipFormatter;
+
+    ScriptProcess(final Path containerHome, final String scriptBaseName, final Shell shell, final long timeout, final boolean skipFormatter) {
+        this.containerHome = containerHome;
+        final String scriptName = scriptBaseName + shell.getExtension();
+        this.script = containerHome.resolve("bin").resolve(scriptName);
+        this.timeout = timeout;
+        this.prefixCmds = Arrays.asList(shell.getPrefix());
+        this.skipFormatter = skipFormatter;
+        lastExecutedCmd = "";
+    }
 
     ScriptProcess(final Path containerHome, final String scriptBaseName, final Shell shell, final long timeout) {
         this.containerHome = containerHome;
@@ -173,7 +184,11 @@ public class ScriptProcess extends Process implements AutoCloseable {
         cmd.add(script.toString());
         if (TestSuiteEnvironment.isWindows()) {
             for (String arg : arguments) {
-                cmd.add(WINDOWS_ARG_FORMATTER.apply(arg));
+                if (skipFormatter) {
+                    cmd.add(arg);
+                } else {
+                    cmd.add(WINDOWS_ARG_FORMATTER.apply(arg));
+                }
             }
         } else {
             cmd.addAll(arguments);

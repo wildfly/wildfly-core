@@ -149,8 +149,9 @@ echo Usage:
 echo(
 echo   service install ^<options^>  , where the options are:
 echo(
-echo     /startup                    : Set the service to auto start
-echo                                 Not specifying sets the service to manual
+echo     /startup ^<startup type^>   : Set the service start to Automatic or Automatic (Delayed Start)
+echo                                 Not specifying sets the service to manual,
+echo                                 Specifying without parameter set the service to Automatic start
 echo(
 echo     /jbossuser ^<username^>     : JBoss username to use for the shutdown command.
 echo(
@@ -248,7 +249,16 @@ if /I "%~1"== "/debug" (
   goto LoopArgs
 )
 if /I "%~1"== "/startup" (
-  set STARTUP_MODE=auto
+  if /I not "%~2"=="manual" if /I not "%~2"=="auto" if /I not "%~2"=="delayed" if /I not "%~2"=="" (
+    echo ERROR: /startup must be set to manual, auto or delayed ^(Case insensitive^)
+    goto endBatch
+  )
+  if "%~2"=="" (
+    set STARTUP_MODE=auto
+  ) else (
+    set STARTUP_MODE=%~2
+  )
+  shift
   shift
   goto LoopArgs
 )
