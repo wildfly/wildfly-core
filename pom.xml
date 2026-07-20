@@ -365,6 +365,19 @@
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.jboss.logging</groupId>
+                                <artifactId>jboss-logging-processor</artifactId>
+                                <version>${version.org.jboss.logging.jboss-logging-tools}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${version.jar.plugin}</version>
                     <configuration>
@@ -1852,12 +1865,6 @@
                 <version>${version.org.jboss.logging.jboss-logging-tools}</version>
                 <scope>provided</scope>
             </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging-processor</artifactId>
-                <version>${version.org.jboss.logging.jboss-logging-tools}</version>
-                <scope>provided</scope>
-            </dependency>
 
             <dependency>
                 <groupId>org.wildfly.installation-manager</groupId>
@@ -2116,27 +2123,6 @@
             </properties>
             <build>
                 <defaultGoal>clean install</defaultGoal>
-            </build>
-        </profile>
-
-        <profile>
-            <id>jdk23</id>
-            <activation>
-                <jdk>[23,)</jdk>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <compilerArgs combine.children="append">
-                                <!-- SE 23+ requires explicit config to turn on annotation processing -->
-                                <arg>-proc:full</arg>
-                            </compilerArgs>
-                        </configuration>
-                    </plugin>
-                </plugins>
             </build>
         </profile>
 
