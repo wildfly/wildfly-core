@@ -201,6 +201,9 @@ public final class Main {
         configuration.setReadExecutor(Executors.newCachedThreadPool(threadFactory));
 
         final ProcessController processController = new ProcessController(configuration, System.out, System.err);
+
+        processController.acquireRunningLock(jbossHome);
+
         final InetSocketAddress boundAddress = processController.getServer().getBoundAddress();
 
         final List<String> initialCommand = new ArrayList<String>();

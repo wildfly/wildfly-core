@@ -4,12 +4,21 @@
  */
 package org.jboss.as.server;
 
+import static java.security.AccessController.doPrivileged;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.server.logging.ServerLogger;
@@ -28,6 +37,8 @@ import org.jboss.msc.service.StabilityStatistics;
 public final class BootstrapListener {
 
     public static final String MARKER_FILE = "startup-marker";
+    public static final String RUNNING_LOCK_FILE = "running.lock";
+    private static final String INSTALLATION_DIR = ".installation";
 
     private final StabilityMonitor monitor = new StabilityMonitor();
     private final ServiceContainer serviceContainer;
@@ -36,8 +47,10 @@ public final class BootstrapListener {
     private final String prettyVersion;
     private final FutureServiceContainer futureContainer;
     private final File tempDir;
-    private  String startedCleanMessage;
-    private  String startedWitErrorsMessage;
+    private String startedCleanMessage;
+    private String startedWitErrorsMessage;
+    private volatile FileChannel lockFileChannel;
+    private volatile FileLock runningLock;
 
     public BootstrapListener(final ServiceContainer serviceContainer, final ElapsedTime elapsedTime, final ServiceTarget serviceTarget, final FutureServiceContainer futureContainer, final String prettyVersion, final File tempDir) {
         this.serviceContainer = serviceContainer;
@@ -130,7 +143,6 @@ public final class BootstrapListener {
         } catch (IOException e) {
             // ignore
         }
-
     }
 
     public static void deleteStartupMarker(File tempDir) {
@@ -139,6 +151,46 @@ public final class BootstrapListener {
             Files.deleteIfExists(file.toPath());
         } catch (IOException e) {
             // ignore
+        }
+    }
+
+    public void acquireRunningLock(File homeDir) {
+        final Path lockPath = homeDir.toPath().resolve(INSTALLATION_DIR).resolve(RUNNING_LOCK_FILE);
+        try {
+            if (WildFlySecurityManager.isChecking()) {
+                doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+                    openLockFile(lockPath);
+                    return null;
+                });
+            } else {
+                openLockFile(lockPath);
+            }
+        } catch (PrivilegedActionException | IOException e) {
+            // ignore
+        }
+    }
+
+    private void openLockFile(Path lockPath) throws IOException {
+        FileChannel channel = FileChannel.open(lockPath,
+                StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ);
+        FileLock lock = channel.tryLock();
+        if (lock != null) {
+            lockFileChannel = channel;
+            runningLock = lock;
+        } else {
+            channel.close();
+        }
+    }
+
+    public void releaseRunningLock() {
+        if (lockFileChannel != null) {
+            try {
+                lockFileChannel.close();
+            } catch (IOException e) {
+                // ignore
+            }
+            lockFileChannel = null;
+            runningLock = null;
         }
     }
 
