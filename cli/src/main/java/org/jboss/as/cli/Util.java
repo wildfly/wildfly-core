@@ -105,8 +105,10 @@ public class Util {
     public static final String CREDENTIAL_REFERENCE = "credential-reference";
     public static final String CIPHER_SUITE_FILTER = "cipher-suite-filter";
     public static final String CIPHER_SUITE_NAMES = "cipher-suite-names";
+    public static final String DATASOURCE = "datasource";
     public static final String DATASOURCES = "datasources";
     public static final String DEFAULT = "default";
+    public static final String DEFAULT_BINDINGS = "default-bindings";
     public static final String DEFAULT_PERMISSION_MAPPER = "default-permission-mapper";
     public static final String DEPLOY = "deploy";
     public static final String DEPLOYMENT = "deployment";
@@ -121,6 +123,7 @@ public class Util {
     public static final String DOMAIN_RESULTS = "domain-results";
     public static final String DRIVER_MODULE_NAME = "driver-module-name";
     public static final String DRIVER_NAME = "driver-name";
+    public static final String EE = "ee";
     public static final String ELYTRON = "elytron";
     public static final String ENABLED = "enabled";
     public static final String EXECUTE = "execute";
@@ -163,6 +166,7 @@ public class Util {
     public static final String INPUT_STREAM_INDEX = "input-stream-index";
     public static final String INSTALLED_DRIVERS_LIST = "installed-drivers-list";
     public static final String JBOSS_SERVER_CONFIG_DIR = "jboss.server.config.dir";
+    public static final String JNDI_NAME = "jndi-name";
     public static final String KEY_MANAGER = "key-manager";
     public static final String KEY_SIZE = "key-size";
     public static final String KEY_STORE = "key-store";
@@ -260,6 +264,7 @@ public class Util {
     public static final String SECURITY_REALM = "security-realm";
     public static final String SERVER = "server";
     public static final String SERVER_GROUP = "server-group";
+    public static final String SERVICE = "service";
     public static final String SERVER_SSL_CONTEXT = "server-ssl-context";
     public static final String SHUTDOWN = "shutdown";
     public static final String SIMPLE_ROLE_DECODER = "simple-role-decoder";
