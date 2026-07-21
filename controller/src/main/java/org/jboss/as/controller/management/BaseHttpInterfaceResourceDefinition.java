@@ -96,6 +96,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
     public static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_AUTHENTICATION_FACTORY, ModelType.STRING, true)
         .setMinSize(1)
         .setCapabilityReference(SASL_AUTHENTICATION_FACTORY_CAPABILITY, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+        .setRequired(true)
         .setRestartAllServices()
         .build();
 
