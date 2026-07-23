@@ -36,6 +36,7 @@ public class CliProcessWrapper extends CliProcessBuilder {
     private Process cliProcess;
     private volatile StringBuffer cliOutputBuffer = new StringBuffer();
     private BufferedWriter bufferedWriter = null;
+    private boolean idleInput = false;
 
     /**
      * Clear current output buffer
@@ -178,7 +179,7 @@ public class CliProcessWrapper extends CliProcessBuilder {
      */
     public String getCurrentPrompt(){
         if(cliOutputBuffer.toString().contains("\n")) {
-            return cliOutputBuffer.toString().substring(cliOutputBuffer.toString().lastIndexOf("\n")+1);
+            return cliOutputBuffer.substring(cliOutputBuffer.toString().lastIndexOf("\n")+1);
         }else{
             return cliOutputBuffer.toString();
         }
@@ -279,18 +280,15 @@ public class CliProcessWrapper extends CliProcessBuilder {
         if (buffer.startsWith("Exception")){
             throw new RuntimeException(buffer);
         }
-        if(buffer.contains("\n")) {
-            if (prompt == null) {
-                return buffer.substring(buffer.lastIndexOf("\n")+1).matches(".*[\\[].*[\\]].*");
-            } else {
-                return buffer.substring(buffer.lastIndexOf("\n")).contains(prompt);
-            }
-        }else{
-            if (prompt == null) {
-                return buffer.matches(".*[\\[].*[\\]].*");
-            } else {
-                return buffer.contains(prompt);
-            }
+        if (!idleInput) {
+            return false;
+        }
+
+        String currentPrompt = getCurrentPrompt();
+        if (prompt == null) {
+            return currentPrompt.matches(".*[\\[].*[\\]].*");
+        } else {
+            return currentPrompt.contains(prompt);
         }
     }
 
@@ -302,6 +300,8 @@ public class CliProcessWrapper extends CliProcessBuilder {
             cliStream = inputStream;
         }
 
+        int idleCounter = 0;
+
         @Override
         public void run() {
             try(java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(cliStream, StandardCharsets.UTF_8))){
@@ -310,6 +310,19 @@ public class CliProcessWrapper extends CliProcessBuilder {
                 // While the next character is a valid character and isn't null
                 while ((intCharacter = br.read()) != -1 && (character = (char)intCharacter) != null) {
                     cliOutputBuffer.append(character);
+                    if (character == '\n') {
+                        idleInput = false;
+                        idleCounter = 0;
+                    }
+
+                    // reader is not ready either after processing CLI output = idle prompt (this happens at most once per line)
+                    // or intermittently while processing user input - this has to be ignored
+                    if (!br.ready()) {
+                        idleInput = idleCounter <= 1;
+                        idleCounter++;
+                    } else {
+                        idleInput = false;
+                    }
                 }
             } catch (IOException e) {
                 fail("Failed to read process output or error streams: " + e.getLocalizedMessage());
