@@ -31,6 +31,10 @@
 	!org.hibernate.engine.spi.TypedValue;\
 	!org.hibernate.tuple.component.PojoComponentTuplizer;\
 	!org.hibernate.type.ComponentType;\
+	!org.hibernate.property.access.spi.GetterFieldImpl;\
+	!org.hibernate.property.access.spi.GetterMethodImpl;\
+	!org.hibernate.property.access.spi.SetterFieldImpl;\
+	!org.hibernate.property.access.spi.SetterMethodImpl;\
 	!org.jboss.as.connector.subsystems.datasources.WildFlyDataSource;\
 	!org.mozilla.javascript.**;\
 	!org.python.core.PyBytecode;\
