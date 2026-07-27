@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
@@ -19,6 +20,7 @@ import org.jboss.as.cli.impl.CommandContextConfiguration;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.wildfly.test.api.Authentication;
 
 /**
@@ -26,6 +28,7 @@ import org.wildfly.test.api.Authentication;
  * @author Dominik Pospisil <dpospisi@redhat.com>
  */
 public class CLITestUtil {
+    private static final Duration DEFAULT_TIMEOUT = TimeoutUtil.adjust(Duration.ofMinutes(2));
 
     private static final String JBOSS_CLI_CONFIG = "jboss.cli.config";
 
@@ -38,7 +41,13 @@ public class CLITestUtil {
 
     public static CommandContext getCommandContext() throws CliInitializationException {
         setJBossCliConfig();
-        return CommandContextFactory.getInstance().newCommandContext(constructUri("remote+http", serverAddr , serverPort), isRemote ? username : null, isRemote ? password.toCharArray() : null);
+        return CommandContextFactory.getInstance().newCommandContext(new CommandContextConfiguration.Builder()
+                .setController(constructUri("remote+http", serverAddr, serverPort))
+                .setUsername(isRemote ? username : null)
+                .setPassword(isRemote ? password.toCharArray() : null)
+                .setInitConsole(false)
+                .setConnectionTimeout((int) DEFAULT_TIMEOUT.toMillis())
+                .build());
     }
 
     public static CommandContext getCommandContext(DomainTestSupport domainTestSupport) throws CliInitializationException {
@@ -47,16 +56,22 @@ public class CLITestUtil {
 
     public static CommandContext getCommandContext(WildFlyManagedConfiguration config) throws CliInitializationException {
         setJBossCliConfig();
-        return CommandContextFactory.getInstance().newCommandContext(
-                constructUri(config.getHostControllerManagementProtocol(),
+        return CommandContextFactory.getInstance().newCommandContext(new CommandContextConfiguration.Builder()
+                .setController(constructUri(config.getHostControllerManagementProtocol(),
                         config.getHostControllerManagementAddress(),
-                        config.getHostControllerManagementPort()),  isRemote ? username : null, isRemote ? password.toCharArray() : null);
+                        config.getHostControllerManagementPort()))
+                .setUsername(isRemote ? username : null)
+                .setPassword(isRemote ? password.toCharArray() : null)
+                .setInitConsole(false)
+                .setConnectionTimeout((int) DEFAULT_TIMEOUT.toMillis())
+                .build());
     }
 
     public static CommandContext getCommandContext(String address, int port, InputStream in, OutputStream out)
             throws CliInitializationException {
-        setJBossCliConfig();
-        return CommandContextFactory.getInstance().newCommandContext(address + ":" + port, isRemote ? username : null, isRemote ? password.toCharArray() : null, in, out);
+        return CommandContextFactory.getInstance().newCommandContext(
+                getCommandContextBuilder(address, port, in, out)
+                        .build());
     }
 
     public static CommandContext getCommandContext(String address, int port, InputStream in, OutputStream out, int connectionTimeout)
@@ -70,7 +85,7 @@ public class CLITestUtil {
                 .setConsoleOutput(out)
                 .setDisableLocalAuth(false)
                 .setInitConsole(false)
-                .setConnectionTimeout(connectionTimeout)
+                .setConnectionTimeout(connectionTimeout == -1 ? (int) DEFAULT_TIMEOUT.toMillis() : connectionTimeout)
                 .build());
     }
 
@@ -87,35 +102,58 @@ public class CLITestUtil {
                 .setInitConsole(false)
                 .setColorOutput(colorOutput)
                 .setEchoCommand(echoCommand)
+                .setConnectionTimeout((int) DEFAULT_TIMEOUT.toMillis())
                 .build());
     }
 
     public static CommandContext getCommandContext(String protocol, String address, int port)
             throws CliInitializationException {
         setJBossCliConfig();
-        return CommandContextFactory.getInstance().newCommandContext(constructUri(protocol, address, port), isRemote ? username : null, isRemote ? password.toCharArray() : null);
+        return CommandContextFactory.getInstance().newCommandContext(new CommandContextConfiguration.Builder()
+                .setController(constructUri(protocol, address, port))
+                .setUsername(isRemote ? username : null)
+                .setPassword(isRemote ? password.toCharArray() : null)
+                .setInitConsole(false)
+                .setConnectionTimeout((int) DEFAULT_TIMEOUT.toMillis())
+                .build());
     }
 
     public static CommandContext getCommandContext(OutputStream out) throws CliInitializationException {
         setJBossCliConfig();
-        return CommandContextFactory.getInstance().newCommandContext(constructUri(null, serverAddr , serverPort), isRemote ? username : null, isRemote ? password.toCharArray() : null, null, out);
+        return CommandContextFactory.getInstance().newCommandContext(new CommandContextConfiguration.Builder()
+                .setController(constructUri(null, serverAddr, serverPort))
+                .setUsername(isRemote ? username : null)
+                .setPassword(isRemote ? password.toCharArray() : null)
+                .setConsoleOutput(out)
+                .setDisableLocalAuth(false)
+                .setInitConsole(false)
+                .setConnectionTimeout((int) DEFAULT_TIMEOUT.toMillis())
+                .build());
     }
 
-    public static CommandContext getCommandContext(DomainTestSupport domainTestSupport, InputStream in, OutputStream out) throws CliInitializationException {
+    public static CommandContext getCommandContext(DomainTestSupport domainTestSupport, InputStream in, OutputStream out)
+            throws CliInitializationException {
         setJBossCliConfig();
         WildFlyManagedConfiguration config = domainTestSupport.getDomainPrimaryConfiguration();
-        return CommandContextFactory.getInstance().
-                newCommandContext(constructUri(config.getHostControllerManagementProtocol(),
+        return CommandContextFactory.getInstance().newCommandContext(new CommandContextConfiguration.Builder()
+                .setController(constructUri(config.getHostControllerManagementProtocol(),
                         config.getHostControllerManagementAddress(),
-                        config.getHostControllerManagementPort()), isRemote ? username : null, isRemote ? password.toCharArray() : null,
-                        in, out);
+                        config.getHostControllerManagementPort()))
+                .setUsername(isRemote ? username : null)
+                .setPassword(isRemote ? password.toCharArray() : null)
+                .setConsoleInput(in)
+                .setConsoleOutput(out)
+                .setDisableLocalAuth(false)
+                .setInitConsole(false)
+                .setConnectionTimeout((int) DEFAULT_TIMEOUT.toMillis())
+                .build());
     }
 
     protected static void setJBossCliConfig() {
         final String jbossCliConfig = SecurityActions.getSystemProperty(JBOSS_CLI_CONFIG);
-        if(jbossCliConfig == null) {
+        if (jbossCliConfig == null) {
             final String jbossDist = System.getProperty("jboss.dist");
-            if(jbossDist == null) {
+            if (jbossDist == null) {
                 fail("jboss.dist system property is not set");
             }
             SecurityActions.setSystemProperty(JBOSS_CLI_CONFIG, jbossDist + File.separator + "bin" + File.separator + "jboss-cli.xml");
@@ -132,8 +170,7 @@ public class CLITestUtil {
         }
     }
 
-    public static CommandContextConfiguration.Builder getCommandContextBuilder(String address, int port, InputStream in, OutputStream out)
-            throws CliInitializationException {
+    public static CommandContextConfiguration.Builder getCommandContextBuilder(String address, int port, InputStream in, OutputStream out) {
         setJBossCliConfig();
         return new CommandContextConfiguration.Builder()
                 .setController(address + ":" + port)
@@ -142,6 +179,7 @@ public class CLITestUtil {
                 .setConsoleInput(in)
                 .setConsoleOutput(out)
                 .setDisableLocalAuth(false)
-                .setInitConsole(false);
+                .setInitConsole(false)
+                .setConnectionTimeout((int) DEFAULT_TIMEOUT.toMillis());
     }
 }
