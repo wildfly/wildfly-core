@@ -30,7 +30,7 @@ Function Get-Env-Boolean{
   return $args[1]
 }
 
-$COMMOM_CONF_FILE = $SCRIPTS_HOME + '\common.conf.ps1'
+$COMMOM_CONF_FILE = "$SCRIPTS_HOME\common.conf.ps1"
 $COMMOM_CONF_FILE = Get-Env COMMON_CONF $COMMOM_CONF_FILE
 if ([System.IO.File]::Exists($COMMOM_CONF_FILE)) {
     . $COMMOM_CONF_FILE
