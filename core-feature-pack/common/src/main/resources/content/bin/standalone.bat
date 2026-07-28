@@ -77,9 +77,9 @@ if not %DEBUG_ARG% == "" (
       shift
       set DEBUG_PORT_VAR=%DEBUG_ARG%
    )
-   shift
-   goto READ-ARGS
 )
+shift
+goto READ-ARGS
 
 :READ-VERSION
 set "JAVA_OPTS=-Xmx16m"
