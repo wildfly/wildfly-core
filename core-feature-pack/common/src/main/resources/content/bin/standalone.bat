@@ -34,8 +34,10 @@ if "%OS%" == "Windows_NT" (
 ) else (
   set DIRNAME=.\
 )
+
+call "%DIRNAME%common.bat" :commonConf
+
 setlocal EnableDelayedExpansion
-call "!DIRNAME!common.bat" :commonConf
 rem check for the security manager system property
 echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager" > nul
 if not errorlevel == 1 (
@@ -252,9 +254,9 @@ rem Set the standalone configuration dir
 if "x!JBOSS_CONFIG_DIR!" == "x" (
   set JBOSS_CONFIG_DIR=!JBOSS_BASE_DIR!\configuration
 )
-
-call "!DIRNAME!common.bat" :setModularJdk
 setlocal DisableDelayedExpansion
+
+call "%DIRNAME%common.bat" :setModularJdk
 
 if not "%PRESERVE_JAVA_OPTS%" == "true" (
     if "%GC_LOG%" == "true" (
@@ -304,16 +306,19 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
     )
 
     rem set default modular jvm parameters
+    call "%DIRNAME%common.bat" :setDefaultModularJvmOptions "%JAVA_OPTS%"
+
     setlocal EnableDelayedExpansion
-    call "!DIRNAME!common.bat" :setDefaultModularJvmOptions "!JAVA_OPTS!"
     set JAVA_OPTS=!JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!
+    setlocal DisableDelayedExpansion
 
     rem Set default Security Manager configuration value
     if "%SECMGR%" == "true" (
-        call "!DIRNAME!common.bat" :setSecurityManagerDefault
+        call "%DIRNAME%common.bat" :setSecurityManagerDefault
+        setlocal EnableDelayedExpansion
         set JAVA_OPTS=!JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!
+        setlocal DisableDelayedExpansion
     )
-    setlocal DisableDelayedExpansion
 )
 
 if not "%PRESERVE_JAVA_OPTS%" == "true" (
