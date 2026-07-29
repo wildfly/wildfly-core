@@ -241,7 +241,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
      */
     protected ModelTestModelControllerService(final ProcessType processType, final Stability stability, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
                                               final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
-                                              final DelegatingResourceDefinition rootResourceDefinition, final ControlledProcessState processState,
+                                              final ResourceDefinition rootResourceDefinition, final ControlledProcessState processState,
                                               final ExpressionResolver expressionResolver, final CapabilityRegistry capabilityRegistry, final Controller35x version) {
         super(null,
                 null,
@@ -249,7 +249,8 @@ public abstract class ModelTestModelControllerService extends AbstractController
                 stability,
                 runningModeControl,
                 persister,
-                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition,
+                processState == null ? new ControlledProcessState(true) : processState,
+                rootResourceDefinition,
                 null,
                 expressionResolver,
                 AuditLogger.NO_OP_LOGGER,
@@ -295,7 +296,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
      */
     protected ModelTestModelControllerService(final ProcessType processType, final Stability stability, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
                                               final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
-                                              final DelegatingResourceDefinition rootResourceDefinition, final ControlledProcessState processState,
+                                              final ResourceDefinition rootResourceDefinition, final ControlledProcessState processState,
                                               final ExpressionResolver expressionResolver, final CapabilityRegistry capabilityRegistry, final Controller41x version) {
         super(null,
                 null,
@@ -303,7 +304,8 @@ public abstract class ModelTestModelControllerService extends AbstractController
                 stability,
                 runningModeControl,
                 persister,
-                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition,
+                processState == null ? new ControlledProcessState(true) : processState,
+                rootResourceDefinition,
                 null,
                 expressionResolver,
                 AuditLogger.NO_OP_LOGGER,
