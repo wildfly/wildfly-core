@@ -28,7 +28,8 @@ public enum ModelTestControllerVersion {
     EAP_XP_5("5.0.0.GA-redhat-00005", true, "29.0.0", "21.0.5.Final-redhat-00001", "xp5"),
 
     //WildFly releases
-    WILDFLY_31_0_0("31.0.0.Final", false, "31.0.0", "23.0.1.Final", "wf31");
+    WILDFLY_31_0_0("31.0.0.Final", false, "31.0.0", "23.0.1.Final", "wf31"),
+    WILDFLY_41_0_0("41.0.0.Final", false, "41.0.0", "33.0.0.Final", "wf41");
 
     private final String mavenGavVersion;
     private final String testControllerVersion;

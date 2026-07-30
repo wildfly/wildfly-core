@@ -7,6 +7,7 @@ package org.jboss.as.remoting;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_4_0;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_8_0_0;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_8_1_0;
+import static org.jboss.as.model.test.ModelTestControllerVersion.WILDFLY_41_0_0;
 import static org.jboss.as.remoting.RemotingSubsystemTestUtil.DEFAULT_ADDITIONAL_INITIALIZATION;
 import static org.junit.Assert.assertTrue;
 
@@ -38,7 +39,7 @@ public class RemotingSubsystemTransformerTestCase extends AbstractSubsystemTest 
 
     @Parameters
     public static Iterable<ModelTestControllerVersion> parameters() {
-        return EnumSet.of(EAP_8_1_0, EAP_8_0_0, EAP_7_4_0);
+        return EnumSet.of(EAP_8_1_0, EAP_8_0_0, EAP_7_4_0, WILDFLY_41_0_0);
     }
 
     private final ModelTestControllerVersion controller;
@@ -67,6 +68,8 @@ public class RemotingSubsystemTransformerTestCase extends AbstractSubsystemTest 
                 return EAP_8_0_0.getSubsystemModelVersion(getMainSubsystemName());
             case EAP_8_1_0:
                 return EAP_8_1_0.getSubsystemModelVersion(getMainSubsystemName());
+            case WILDFLY_41_0_0:
+                return WILDFLY_41_0_0.getSubsystemModelVersion(getMainSubsystemName());
             default:
                 throw new IllegalArgumentException();
         }
@@ -77,6 +80,7 @@ public class RemotingSubsystemTransformerTestCase extends AbstractSubsystemTest 
             case EAP_7_4_0:
             case EAP_8_0_0:
             case EAP_8_1_0:
+            case WILDFLY_41_0_0:
                 return new String[]{
                         formatSubsystemArtifact(),
                 };
@@ -134,14 +138,20 @@ public class RemotingSubsystemTransformerTestCase extends AbstractSubsystemTest 
         Assert.assertTrue(legacyServices.isSuccessfulBoot());
 
         List<ModelNode> ops = builder.parseXmlResource("remoting-transform-rejects.xml");
+        ModelTestUtils.checkFailedTransformedBootOperations(services, modelVersion, ops, createFailedOperationTransformationConfig());
+    }
+
+    private FailedOperationTransformationConfig createFailedOperationTransformationConfig() {
+        FailedOperationTransformationConfig config = new FailedOperationTransformationConfig();
         PathAddress subsystemAddress = PathAddress.pathAddress("subsystem", RemotingExtension.SUBSYSTEM_NAME);
 
-        ModelTestUtils.checkFailedTransformedBootOperations(services, modelVersion, ops, new FailedOperationTransformationConfig()
-                .addFailedAttribute(subsystemAddress.append(ConnectorResource.PATH),
-                        new FailedOperationTransformationConfig
-                                .NewAttributesConfig(ConnectorResource.PROTOCOL)
-                )
-        );
+        if (RemotingSubsystemModel.VERSION_8_0_0.requiresTransformation(this.version)) {
+            config.addFailedAttribute(subsystemAddress.append(ConnectorResource.PATH),
+                    new FailedOperationTransformationConfig
+                            .NewAttributesConfig(ConnectorResource.PROTOCOL)
+            );
+        }
 
+        return config;
     }
 }
