@@ -304,7 +304,7 @@
         <version.org.wildfly.discovery>1.3.0.Final</version.org.wildfly.discovery>
         <version.org.wildfly.installation-manager.installation-manager-api>1.2.1.Final</version.org.wildfly.installation-manager.installation-manager-api>
         <version.org.wildfly.launcher>1.0.3.Final</version.org.wildfly.launcher>
-        <version.org.wildfly.legacy.test>10.0.2.Final</version.org.wildfly.legacy.test>
+        <version.org.wildfly.legacy.test>11.0.0.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.openssl>2.3.0.Final</version.org.wildfly.openssl>
         <version.org.wildfly.openssl.natives>2.3.0.Final</version.org.wildfly.openssl.natives>
         <version.org.wildfly.security.elytron>2.9.2.Final</version.org.wildfly.security.elytron>
