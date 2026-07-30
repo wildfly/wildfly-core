@@ -10,6 +10,7 @@ import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_4_0;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_8_0_0;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_8_1_0;
 import static org.jboss.as.model.test.ModelTestControllerVersion.WILDFLY_31_0_0;
+import static org.jboss.as.model.test.ModelTestControllerVersion.WILDFLY_41_0_0;
 import static org.junit.Assert.assertTrue;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUST_MANAGER;
 
@@ -123,6 +124,11 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
     @Test
     public void testTransformerWFLY31() throws Exception {
         testTransformation(WILDFLY_31_0_0);
+    }
+
+    @Test
+    public void testTransformerWFLY41() throws Exception {
+        testTransformation(WILDFLY_41_0_0);
     }
 
     private KernelServices buildKernelServices(String xml, ModelTestControllerVersion controllerVersion, ModelVersion version, String... mavenResourceURLs) throws Exception {
