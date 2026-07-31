@@ -7,6 +7,7 @@ package org.jboss.as.repository;
 
 import java.io.File;
 
+import org.jboss.as.repository.logging.DeploymentRepositoryLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -32,13 +33,13 @@ public class LocalFileRepository extends LocalDeploymentFileRepository implement
     /** {@inheritDoc} */
     @Override
     public File getFile(final String relativePath) {
-        return new File(repositoryRoot, relativePath);
+        return PathUtil.resolveSecurely(repositoryRoot.toPath(), relativePath, DeploymentRepositoryLogger.ROOT_LOGGER::forbiddenHostFilePath).toFile();
     }
 
     /** {@inheritDoc} */
     @Override
     public File getConfigurationFile(String relativePath) {
-        return new File(configurationRoot, relativePath);
+        return PathUtil.resolveSecurely(configurationRoot.toPath(), relativePath, DeploymentRepositoryLogger.ROOT_LOGGER::forbiddenHostFilePath).toFile();
     }
 
     /** {@inheritDoc} */
