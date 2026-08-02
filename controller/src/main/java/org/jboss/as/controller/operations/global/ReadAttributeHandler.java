@@ -103,7 +103,11 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             try {
                 if (overrideHandler == null) {
                     doExecuteInternal(context, operation);
+                } else if (overrideHandler instanceof FilteredDataReadHandler filteredDataReadHandler) {
+                    filteredDataReadHandler.execute(context, operation, filteredData);
                 } else {
+                    ControllerLogger.ROOT_LOGGER.tracef("read-attribute override handler %s does not implement %s. It should be updated",
+                            overrideHandler.getClass().getName(), FilteredDataReadHandler.class.getSimpleName());
                     overrideHandler.execute(context, operation);
                 }
             } catch (UnauthorizedException ue) {

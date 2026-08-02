@@ -902,12 +902,16 @@ public class GlobalOperationHandlers {
      * WFCORE-573 Wraps a response to a call where the expected resource may
      * have disappeared with a flag to record that that has happened.
      */
-    static class AvailableResponse {
+    public static final class AvailableResponse {
         boolean unavailable;
         final ModelNode response;
 
-        AvailableResponse(ModelNode response) {
+        public AvailableResponse(ModelNode response) {
             this.response = response;
+        }
+
+        public void markUnavailable() {
+            this.unavailable = true;
         }
     }
 
@@ -926,7 +930,7 @@ public class GlobalOperationHandlers {
             try {
                 wrapped.execute(context, operation);
             } catch (Resource.NoSuchResourceException e) {
-                availableResponse.unavailable = true;
+                availableResponse.markUnavailable();
             }
         }
     }
