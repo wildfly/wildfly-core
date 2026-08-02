@@ -5,9 +5,17 @@
 
 package org.jboss.as.platform.mbean;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
+import java.util.List;
+import java.util.Map;
+
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.operations.global.FilteredData;
+import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -15,52 +23,37 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class OperatingSystemMXBeanReadResourceHandler implements OperationStepHandler {
+public class OperatingSystemMXBeanReadResourceHandler extends AbstractPlatformMBeanReadResourceHandler<OperatingSystemMXBean> {
 
-    public static final OperatingSystemMXBeanReadResourceHandler INSTANCE = new OperatingSystemMXBeanReadResourceHandler();
-
-    private OperatingSystemMXBeanReadResourceHandler() {
+    OperatingSystemMXBeanReadResourceHandler(List<AccessConstraintDefinition> resourceConstaints) {
+        super(resourceConstaints);
     }
 
     @Override
-    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+    OperatingSystemMXBean getPlatformMBean() {
+        return ManagementFactory.getOperatingSystemMXBean();
+    }
 
-        final ModelNode result = context.getResult();
+    @Override
+    void executeAttributeReads(OperationContext context, ModelNode operation, Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metrics, Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes, FilteredData filteredData, OperatingSystemMXBean mbean) throws OperationFailedException {
+
 
         for (String attribute : OperatingSystemResourceDefinition.OPERATING_SYSTEM_READ_ATTRIBUTES) {
-            final ModelNode store = result.get(attribute);
-            try {
-                OperatingSystemMXBeanAttributeHandler.storeResult(attribute, store);
-            } catch (SecurityException ignored) {
-                // just leave it undefined
-            } catch (UnsupportedOperationException ignored) {
-                // just leave it undefined
-            }
+            executeAttributeRead(context, operation, attribute, OperatingSystemMXBeanAttributeHandler::getResult,
+                    mbean, otherAttributes, filteredData);
         }
 
         for (String attribute : OperatingSystemResourceDefinition.OPERATING_SYSTEM_METRICS) {
-            final ModelNode store = result.get(attribute);
-            try {
-                OperatingSystemMXBeanAttributeHandler.storeResult(attribute, store);
-            } catch (SecurityException ignored) {
-                // just leave it undefined
-            } catch (UnsupportedOperationException ignored) {
-                // just leave it undefined
-            }
+            executeAttributeRead(context, operation, attribute, OperatingSystemMXBeanAttributeHandler::getResult,
+                    mbean, metrics, filteredData);
         }
 
         for (String attribute : OperatingSystemResourceDefinition.OPERATING_SYSTEM_EXTENDED_METRICS) {
-            final ModelNode store = result.get(attribute);
-            try {
-                OperatingSystemMXBeanAttributeHandler.storeExtendedResult(attribute, store);
-            } catch (SecurityException ignored) {
-                // just leave it undefined
-            } catch (UnsupportedOperationException ignored) {
-                // just leave it undefined
-            }
+            executeAttributeRead(context, operation, attribute, OperatingSystemMXBeanAttributeHandler::getExtendedResult,
+                    mbean, metrics, filteredData);
         }
 
-        final ModelNode store = result.get(PlatformMBeanConstants.OBJECT_NAME.getName());
-        OperatingSystemMXBeanAttributeHandler.storeResult(PlatformMBeanConstants.OBJECT_NAME.getName(), store);
+        executeAttributeRead(context, operation, PlatformMBeanConstants.OBJECT_NAME.getName(),
+                OperatingSystemMXBeanAttributeHandler::getResult, mbean, otherAttributes, filteredData);
     }
 }

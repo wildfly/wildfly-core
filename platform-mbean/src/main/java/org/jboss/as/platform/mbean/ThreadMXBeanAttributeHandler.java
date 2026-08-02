@@ -6,6 +6,7 @@
 package org.jboss.as.platform.mbean;
 
 import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -41,12 +42,12 @@ class ThreadMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHandler
                     || ThreadResourceDefinition.THREADING_READ_ATTRIBUTES.contains(name)
                     || ThreadResourceDefinition.THREADING_READ_WRITE_ATTRIBUTES.contains(name)
                     || ThreadResourceDefinition.THREADING_METRICS.contains(name)) {
-                storeResult(name, context.getResult());
+                context.getResult().set(getResult(name, ManagementFactory.getThreadMXBean()));
             } else {
                 if ( ThreadResourceDefinition.THREADING_EXTENDED_READ_ATTRIBUTES.contains(name)
                     || ThreadResourceDefinition.THREADING_EXTENDED_READ_WRITE_ATTRIBUTES.contains(name)
                     || ThreadResourceDefinition.THREADING_EXTENDED_METRICS.contains(name)) {
-                    storeExtendedResult(name, context.getResult());
+                    context.getResult().set(getExtendedResult(name, null));
                 } else {
                     // Shouldn't happen; the global handler should reject
                     throw unknownAttribute(operation);
@@ -58,21 +59,34 @@ class ThreadMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHandler
 
     }
 
-    static void storeExtendedResult(String name, ModelNode store) {
+    static ModelNode getExtendedResult(String name, ThreadMXBean ignored) {
         ExtendedThreadMBean mbean = new ExtendedThreadMBean();
+        ModelNode store;
         if (PlatformMBeanConstants.CURRENT_THREAD_ALLOCATED_BYTES.equals(name)) {
             if (mbean.isAttributeDefined(ExtendedThreadMBean.CURRENT_THREAD_ALLOCATED_BYTES_ATTRIBUTE)) {
-                store.set(mbean.getCurrentThreadAllocatedBytes());
+                store = new ModelNode(mbean.getCurrentThreadAllocatedBytes());
+            } else {
+                store = new ModelNode();
             }
         } else if (PlatformMBeanConstants.THREAD_ALLOCATED_MEMORY_ENABLED.equals(name)) {
             if (mbean.isAttributeDefined(ExtendedThreadMBean.THREAD_ALLOCATED_MEMORY_ENABLED_ATTRIBUTE)) {
-                store.set(mbean.isThreadAllocatedMemoryEnabled());
+                store = new ModelNode(mbean.isThreadAllocatedMemoryEnabled());
+            } else {
+                store = new ModelNode();
             }
         } else if (PlatformMBeanConstants.THREAD_ALLOCATED_MEMORY_SUPPORTED.equals(name)) {
             if (mbean.isAttributeDefined(ExtendedThreadMBean.THREAD_ALLOCATED_MEMORY_SUPPORTED_ATTRIBUTE)) {
-                store.set(mbean.isThreadAllocatedMemorySupported());
+                store = new ModelNode(mbean.isThreadAllocatedMemorySupported());
+            } else {
+                store = new ModelNode();
             }
+        } else {
+            // TODO should not happen and we should fail, but historically this would have resulted
+            //  in an undefined node, so we keep it that way
+            // throw new IllegalArgumentException(name);
+            store = new ModelNode();
         }
+        return store;
     }
 
     @Override
@@ -107,47 +121,55 @@ class ThreadMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHandler
 
     }
 
-    static void storeResult(final String name, final ModelNode store) {
+    static ModelNode getResult(final String name, final ThreadMXBean mbean) {
 
+        ModelNode store;
         if (PlatformMBeanConstants.OBJECT_NAME.getName().equals(name)) {
-            store.set(ManagementFactory.THREAD_MXBEAN_NAME);
+            store = new ModelNode(ManagementFactory.THREAD_MXBEAN_NAME);
         } else if (PlatformMBeanConstants.THREAD_COUNT.equals(name)) {
-            store.set(ManagementFactory.getThreadMXBean().getThreadCount());
+            store = new ModelNode(mbean.getThreadCount());
         } else if (PlatformMBeanConstants.PEAK_THREAD_COUNT.equals(name)) {
-            store.set(ManagementFactory.getThreadMXBean().getPeakThreadCount());
+            store = new ModelNode(mbean.getPeakThreadCount());
         } else if (PlatformMBeanConstants.TOTAL_STARTED_THREAD_COUNT.equals(name)) {
-            store.set(ManagementFactory.getThreadMXBean().getTotalStartedThreadCount());
+            store = new ModelNode(mbean.getTotalStartedThreadCount());
         } else if (PlatformMBeanConstants.DAEMON_THREAD_COUNT.equals(name)) {
-            store.set(ManagementFactory.getThreadMXBean().getDaemonThreadCount());
+            store = new ModelNode(mbean.getDaemonThreadCount());
         } else if (PlatformMBeanConstants.ALL_THREAD_IDS.equals(name)) {
+            store = new ModelNode();
             store.setEmptyList();
-            for (Long id : ManagementFactory.getThreadMXBean().getAllThreadIds()) {
+            for (Long id : mbean.getAllThreadIds()) {
                 store.add(id);
             }
         } else if (PlatformMBeanConstants.THREAD_CONTENTION_MONITORING_SUPPORTED.equals(name)) {
-            store.set(ManagementFactory.getThreadMXBean().isThreadContentionMonitoringSupported());
+            store = new ModelNode(mbean.isThreadContentionMonitoringSupported());
         } else if (PlatformMBeanConstants.THREAD_CONTENTION_MONITORING_ENABLED.equals(name)) {
-            store.set(ManagementFactory.getThreadMXBean().isThreadContentionMonitoringEnabled());
+            store = new ModelNode(mbean.isThreadContentionMonitoringEnabled());
         } else if (PlatformMBeanConstants.CURRENT_THREAD_CPU_TIME.equals(name)) {
-            store.set(ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime());
+            store = new ModelNode(mbean.getCurrentThreadCpuTime());
         } else if (PlatformMBeanConstants.CURRENT_THREAD_USER_TIME.equals(name)) {
-            store.set(ManagementFactory.getThreadMXBean().getCurrentThreadUserTime());
+            store = new ModelNode(mbean.getCurrentThreadUserTime());
         } else if (PlatformMBeanConstants.THREAD_CPU_TIME_SUPPORTED.equals(name)) {
-            store.set(ManagementFactory.getThreadMXBean().isThreadCpuTimeSupported());
+            store = new ModelNode(mbean.isThreadCpuTimeSupported());
         } else if (PlatformMBeanConstants.CURRENT_THREAD_CPU_TIME_SUPPORTED.equals(name)) {
-            store.set(ManagementFactory.getThreadMXBean().isCurrentThreadCpuTimeSupported());
+            store = new ModelNode(mbean.isCurrentThreadCpuTimeSupported());
         } else if (PlatformMBeanConstants.THREAD_CPU_TIME_ENABLED.equals(name)) {
-            store.set(ManagementFactory.getThreadMXBean().isThreadCpuTimeEnabled());
+            store = new ModelNode(mbean.isThreadCpuTimeEnabled());
         } else if (PlatformMBeanConstants.OBJECT_MONITOR_USAGE_SUPPORTED.equals(name)) {
-            store.set(ManagementFactory.getThreadMXBean().isObjectMonitorUsageSupported());
+            store = new ModelNode(mbean.isObjectMonitorUsageSupported());
         } else if (PlatformMBeanConstants.SYNCHRONIZER_USAGE_SUPPORTED.equals(name)) {
-            store.set(ManagementFactory.getThreadMXBean().isSynchronizerUsageSupported());
+            store = new ModelNode(mbean.isSynchronizerUsageSupported());
         } else if (ThreadResourceDefinition.THREADING_READ_ATTRIBUTES.contains(name)
                 || ThreadResourceDefinition.THREADING_READ_WRITE_ATTRIBUTES.contains(name)
                 || ThreadResourceDefinition.THREADING_METRICS.contains(name)) {
             // Bug
             throw PlatformMBeanLogger.ROOT_LOGGER.badReadAttributeImpl(name);
+        } else {
+            // TODO should not happen and we should fail, but historically this would have resulted
+            //  in an undefined node, so we keep it that way
+            // throw new IllegalArgumentException(name);
+            store = new ModelNode();
         }
+        return store;
 
     }
 

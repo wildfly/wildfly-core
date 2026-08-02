@@ -60,7 +60,8 @@ class PlatformLoggingResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
-        resourceRegistration.registerOperationHandler(ReadResourceHandler.DEFINITION, PlatformLoggingMXBeanReadResourceHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(ReadResourceHandler.DEFINITION,
+                new PlatformLoggingMXBeanReadResourceHandler(getAccessConstraints()));
         // Do not register any operation. The logging must be configured using the Logging subsystem.
     }
 }
