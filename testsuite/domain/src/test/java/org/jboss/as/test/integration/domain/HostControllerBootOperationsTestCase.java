@@ -116,6 +116,10 @@ public class HostControllerBootOperationsTestCase {
         op.get("jvm-option").set("-Djava.security.policy==" + System.getProperty("java.io.tmpdir") + "/test-classes/byteman-scripts/byteman.policy");
         DomainTestUtils.executeForResult(op, primaryClient);
 
+        op = Util.createEmptyOperation("add-jvm-option", SECONDARY_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_BYTEMAN));
+        op.get("jvm-option").set("-Dtest.byteman.delay=" + TimeoutUtil.adjust(Duration.ofSeconds(45)).toMillis());
+        DomainTestUtils.executeForResult(op, primaryClient);
+
         String bytemanJavaAgent = System.getProperty("jboss.test.host.server.byteman.javaagent")+"DelayServerRegistrationAndRunningState.btm";
         op = Util.getWriteAttributeOperation(SECONDARY_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_BYTEMAN), "java-agent", bytemanJavaAgent);
         DomainTestUtils.executeForResult(op, primaryClient);

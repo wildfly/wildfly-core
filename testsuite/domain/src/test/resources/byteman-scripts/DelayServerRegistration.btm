@@ -3,5 +3,5 @@ CLASS org.jboss.as.server.mgmt.domain.HostControllerConnection$ServerRegisterReq
 METHOD sendRequest
 AT ENTRY
 IF NOT waiting($this)
-DO waitFor($this, 15*1000)
+DO waitFor($this, Long.parseLong(System.getProperty("test.byteman.delay", "15000")))
 ENDRULE
