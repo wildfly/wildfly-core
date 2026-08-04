@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -195,13 +196,33 @@ public class PathUtil {
     }
 
     /**
-     * Resolve a path from the rootPath checking that it doesn't go out of the rootPath.
+     * Resolve a path from the rootPath checking that it doesn't go out of the rootPath, failing if it does with
+     * an exception appropriate for a use case involving deployment content.
+     * <p/>
+     * <strong>Note:</strong> An insecure path results in throwing the exception created by
+     * {@link DeploymentRepositoryLogger#forbiddenPath(String)}.
+     *
      * @param rootPath the starting point for resolution.
      * @param path the path we want to resolve.
      * @return the resolved path.
      * @throws IllegalArgumentException if the resolved path is out of the rootPath or if the resolution failed.
      */
-    public static final Path resolveSecurely(Path rootPath, String path) {
+    public static Path resolveSecurely(Path rootPath, String path) {
+        return resolveSecurely(rootPath, path, DeploymentRepositoryLogger.ROOT_LOGGER::forbiddenPath);
+    }
+
+    /**
+     * Resolve a path from the rootPath checking that it doesn't go out of the rootPath, failing if it does with
+     * an exception provided by the given function.
+     *
+     * @param rootPath the starting point for resolution.
+     * @param path the path we want to resolve.
+     * @param exceptionProducer function to produce an exception that will be thrown if {@code path} is not secure
+     *
+     * @return the resolved path.
+     * @throws IllegalArgumentException if the resolved path is out of the rootPath or if the resolution failed.
+     */
+    public static Path resolveSecurely(Path rootPath, String path, Function<String, RuntimeException> exceptionProducer) {
         Path resolvedPath;
         if(path == null || path.isEmpty()) {
             resolvedPath = rootPath.normalize();
@@ -210,7 +231,7 @@ public class PathUtil {
             resolvedPath = rootPath.resolve(relativePath).normalize();
         }
         if(!resolvedPath.startsWith(rootPath)) {
-            throw DeploymentRepositoryLogger.ROOT_LOGGER.forbiddenPath(path);
+            throw exceptionProducer.apply(path);
         }
         return resolvedPath;
     }
