@@ -146,4 +146,7 @@ public interface DeploymentRepositoryLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id = 24, value = "Error copying file %s")
     void cannotCopyFile(@Cause Exception ex, Path path);
+
+    @Message(id = 25, value = "Access denied to path %s")
+    IllegalArgumentException forbiddenHostFilePath(String path);
 }
