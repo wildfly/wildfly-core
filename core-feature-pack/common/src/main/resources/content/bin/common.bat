@@ -74,6 +74,8 @@ goto :eof
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.util=ALL-UNNAMED"
       rem Needed for marshalling of concurrent collections
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
+      rem Needed for marshalling of annotations
+      set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/sun.reflect.annotation=ALL-UNNAMED"
       rem EE integration with sar mbeans requires deep reflection in javax.management
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.management/javax.management=ALL-UNNAMED"
       rem InitialContext proxy generation requires deep reflection in javax.naming

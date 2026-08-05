@@ -77,6 +77,8 @@ setDefaultModularJvmOptions() {
       DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.base/java.util=ALL-UNNAMED"
       # Needed for marshalling of concurrent collections
       DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
+      # Needed for marshalling of annotations
+      DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.base/sun.reflect.annotation=ALL-UNNAMED"
       # EE integration with sar mbeans requires deep reflection in javax.management
       DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.management/javax.management=ALL-UNNAMED"
       # InitialContext proxy generation requires deep reflection in javax.naming
