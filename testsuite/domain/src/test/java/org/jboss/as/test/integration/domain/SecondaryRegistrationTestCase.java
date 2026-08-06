@@ -12,6 +12,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 
+import java.time.Duration;
+
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
@@ -19,6 +21,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -71,6 +74,10 @@ public class SecondaryRegistrationTestCase {
 
         op = Util.createEmptyOperation("add-jvm-option", PRIMARY_ADDR.append(SERVER_CONFIG_MAIN_TWO).append(JVM_DEFAULT));
         op.get("jvm-option").set("-Djboss.modules.system.pkgs=org.jboss.byteman");
+        DomainTestUtils.executeForResult(op, primaryClient);
+
+        op = Util.createEmptyOperation("add-jvm-option", PRIMARY_ADDR.append(SERVER_CONFIG_MAIN_TWO).append(JVM_DEFAULT));
+        op.get("jvm-option").set("-Dtest.byteman.delay=" + TimeoutUtil.adjust(Duration.ofSeconds(15)).toMillis());
         DomainTestUtils.executeForResult(op, primaryClient);
 
         String bytemanJavaAgent = System.getProperty("jboss.test.host.server.byteman.javaagent")+"DelayServerRegistration.btm";
