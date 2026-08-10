@@ -108,7 +108,9 @@ $PROG_ARGS += "$JBOSS_HOME"
 $PROG_ARGS += "--"  
 $PROG_ARGS += "-Dorg.jboss.boot.log.file=$JBOSS_LOG_DIR\host-controller.log"
 $PROG_ARGS += "-Dlogging.configuration=file:$JBOSS_CONFIG_DIR\logging.properties"
-$PROG_ARGS += $HOST_CONTROLLER_JAVA_OPTS
+if ($HOST_CONTROLLER_JAVA_OPTS -ne $null){
+	$PROG_ARGS += $HOST_CONTROLLER_JAVA_OPTS
+}
 $PROG_ARGS += "--"  
 $PROG_ARGS += "-default-jvm"
 $PROG_ARGS += $JAVA
