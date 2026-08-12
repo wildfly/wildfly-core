@@ -5,6 +5,8 @@
 
 package org.wildfly.scripts.test;
 
+import static org.wildfly.common.test.ServerHelper.DEFAULT_EXPECTED_INPUT_ARGS;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -13,6 +15,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -29,6 +32,8 @@ import org.wildfly.common.test.ServerHelper;
 public class DomainScriptTestCase extends ScriptTestCase {
 
     private static final Function<ModelControllerClient, Boolean> HOST_CONTROLLER_CHECK = ServerHelper::isDomainRunning;
+
+    private static final PathAddress PRIMARY_HOST = PathAddress.pathAddress("host", "primary");
 
     @Parameterized.Parameter
     public Map<String, String> env;
@@ -54,6 +59,10 @@ public class DomainScriptTestCase extends ScriptTestCase {
         } else {
             Assert.assertFalse("Did not expect to find -Djava.security.manager=allow in the JVM parameters.", stdout.contains("-Djava.security.manager=allow"));
         }
+
+        ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
+        ServerHelper.checkBootErrors(client, PRIMARY_HOST);
+        ServerHelper.checkInputArgs(client, PRIMARY_HOST, DEFAULT_EXPECTED_INPUT_ARGS);
 
         // Shutdown the server
         @SuppressWarnings("Convert2Lambda")
