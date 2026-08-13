@@ -263,6 +263,7 @@
         <version.org.apache.velocity>2.3</version.org.apache.velocity>
         <version.org.assertj>3.27.7</version.org.assertj>
         <version.org.bouncycastle>1.85</version.org.bouncycastle>
+        <version.org.bouncycastle.bcprov>${version.org.bouncycastle}.2</version.org.bouncycastle.bcprov>
         <version.org.codehaus.plexus.plexus-utils>3.5.1</version.org.codehaus.plexus.plexus-utils>
         <version.org.eclipse.jgit>7.6.0.202603022253-r</version.org.eclipse.jgit>
         <version.org.eclipse.parsson>1.1.9</version.org.eclipse.parsson>
@@ -1325,7 +1326,7 @@
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk18on</artifactId>
-                <version>${version.org.bouncycastle}</version>
+                <version>${version.org.bouncycastle.bcprov}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
