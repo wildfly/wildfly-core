@@ -5,6 +5,8 @@
 
 package org.wildfly.scripts.test;
 
+import static org.wildfly.common.test.ServerHelper.DEFAULT_EXPECTED_INPUT_ARGS;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 
 import jakarta.json.JsonObject;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -113,6 +116,10 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
 
         Assert.assertNotNull("The process is null and may have failed to start.", script);
         Assert.assertTrue("The process is not running and should be", script.isAlive());
+
+        ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
+        ServerHelper.checkBootErrors(client, PathAddress.EMPTY_ADDRESS);
+        ServerHelper.checkInputArgs(client, PathAddress.EMPTY_ADDRESS, DEFAULT_EXPECTED_INPUT_ARGS);
 
         final var stdout = script.getStdoutAsString();
         if (supportsEnhancedSecurityManager() && env.containsKey("SECMGR")) {
