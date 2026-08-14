@@ -1,5 +1,5 @@
 <!-- for JwtSecurityRealmTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:19.0" initial-providers="elytron">
+<subsystem xmlns="urn:wildfly:elytron:20.0" initial-providers="elytron">
     <providers>
         <provider-loader name="elytron" class-names="org.wildfly.security.WildFlyElytronProvider" />
     </providers>
@@ -10,6 +10,9 @@
         </token-realm>
         <token-realm name="JwtRealmWithoutAllowedJkuValues" principal-claim="sub">
             <jwt issuer="elytron-oauth2-realm" audience="my-app-valid" client-ssl-context="ClientCaSslContext" />
+        </token-realm>
+        <token-realm name="JwtRealmWithPublicKeyUrl" principal-claim="sub">
+            <jwt issuer="elytron-oauth2-realm" audience="my-app-valid" public-key-url="http://localhost:50833/publickey" />
         </token-realm>
     </security-realms>
 
