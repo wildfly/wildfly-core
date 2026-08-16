@@ -199,7 +199,7 @@ public interface ResourceDefinition extends ResourceRegistration {
     static Builder builder(ResourceRegistration registration, ResourceDescriptionResolver descriptionResolver, SubsystemModel deprecation) {
         Objects.requireNonNull(registration);
         Objects.requireNonNull(descriptionResolver);
-        return new MinimalBuilder(registration, descriptionResolver, (deprecation != null) ? new DeprecationData(deprecation.getVersion()) : null);
+        return new MinimalBuilder(registration, descriptionResolver, (deprecation != null) ? new DeprecationData(deprecation.getVersion(), true) : null);
     }
 
     /**
