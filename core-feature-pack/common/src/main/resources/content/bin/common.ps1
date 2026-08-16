@@ -65,7 +65,9 @@ Function String-To-Array($value) {
     }
     if ($value) {
       foreach ($element in $value.split()) {
-        $result += $element
+        if ($element) {
+          $result += $element
+        }
       }
     }
   }
