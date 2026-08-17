@@ -30,7 +30,7 @@ Function Get-Env-Boolean{
   return $args[1]
 }
 
-$COMMOM_CONF_FILE = $SCRIPTS_HOME + '\common.conf.ps1'
+$COMMOM_CONF_FILE = "$SCRIPTS_HOME\common.conf.ps1"
 $COMMOM_CONF_FILE = Get-Env COMMON_CONF $COMMOM_CONF_FILE
 if ([System.IO.File]::Exists($COMMOM_CONF_FILE)) {
     . $COMMOM_CONF_FILE
@@ -58,18 +58,20 @@ Function Get-String {
 }
 
 Function String-To-Array($value) {
-  $res = @()
-  if (!$value){
-  	return $res
+  $result = @()
+  if ($value -ne $null) {
+    if ($value -is [string[]]) {
+      return $value
+    }
+    if ($value) {
+      foreach ($element in $value.split()) {
+        if ($element) {
+          $result += $element
+        }
+      }
+    }
   }
-  $tmpArr = $value.split()
-
-  foreach ($str in $tmpArr) {
-    if ($str) {
-	  $res += $str
-	}
-  }
-  return $res
+  return $result
 }
 
 Function Display-Environment {
@@ -101,15 +103,14 @@ Write-Host ""
 
 #todo: bit funky at the moment, should probably be done via global variable
 Function Get-Java-Opts {
-	if($PRESERVE_JAVA_OPTS -ne 'true') { # if not perserve, then check for enviroment variable and use that
-		if( (Test-Path env:JAVA_OPTS)) {
-			$ops = Get-Env JAVA_OPTS
-			# This is Powershell, so split the incoming string on a space into array
-			return String-To-Array -value $ops
-			Write-Host "JAVA_OPTS already set in environment; overriding default settings with values: $JAVA_OPTS"
-		}
-	}
-	return $JAVA_OPTS
+    if (-Not(Test-Path variable:JAVA_OPTS)) {
+        if (Test-Path env:JAVA_OPTS) {
+            return String-To-Array -value $env:JAVA_OPTS
+        } else {
+            return @()
+        }
+    }
+    return $JAVA_OPTS
 }
 
 Function SetPackageAvailable($packageName) {
@@ -165,12 +166,11 @@ Param(
     $DEFAULT_MODULAR_JVM_OPTIONS = @()
     if ($modularJDK) {
         if ($opts -ne $null) {
-              for($i=0; $i -lt $opts.Count; $i++) {
-                  $arg = $opts[$i]
-                  if ($arg -contains "--add-modules") {
-                      return $DEFAULT_MODULAR_JVM_OPTIONS
-                  }
-              }
+            ForEach ($opt in $opts) {
+                if ($opt -contains "--add-modules") {
+                    return $DEFAULT_MODULAR_JVM_OPTIONS
+                }
+            }
         }
         # Set default modular jdk options
         # Needed by the iiop-openjdk subsystem
@@ -224,14 +224,13 @@ Function Get-Java-Arguments {
 Param(
    [Parameter(Mandatory=$true)]
    [string]$entryModule,
-   [string]$logFileProperties = "$JBOSS_CONFIG_DIR/logging.properties",
-   [string]$logFile = "$JBOSS_LOG_DIR/server.log",
+   [string]$logFileProperties = "$JBOSS_CONFIG_DIR\logging.properties",
+   [string]$logFile = "$JBOSS_LOG_DIR\server.log",
    [string[]]$serverOpts
 
 
 ) #end param
   $MODULAR_JDK = SetModularJDK
-  $JAVA_OPTS = Get-Java-Opts #takes care of looking at defind settings and/or using env:JAVA_OPTS
   $DEFAULT_MODULAR_JVM_OPTS = Get-Default-Modular-Jvm-Options -opts $JAVA_OPTS -modularJDK $MODULAR_JDK
   if ($SECMGR) {
       $ENHANCED_SM = SetEnhancedSecurityManager
@@ -239,20 +238,24 @@ Param(
   }
 
   $PROG_ARGS = @()
-  if ($JAVA_OPTS -ne $null){
-  	$PROG_ARGS += $JAVA_OPTS
+  if ($JAVA_OPTS) {
+    ForEach ($opt in $JAVA_OPTS) {
+      $PROG_ARGS += $opt
+    }
   }
-  if ($DEFAULT_MODULAR_JVM_OPTS -ne $null){
-  	$PROG_ARGS += $DEFAULT_MODULAR_JVM_OPTS
+  if ($DEFAULT_MODULAR_JVM_OPTS) {
+    ForEach ($opt in $DEFAULT_MODULAR_JVM_OPTS) {
+      $PROG_ARGS += $opt
+    }
   }
   if ($SECURITY_MANAGER_CONFIG_OPT -ne $null){
   	$PROG_ARGS += $SECURITY_MANAGER_CONFIG_OPT
   }
   if ($logFile){
-  	$PROG_ARGS += "-Dorg.jboss.boot.log.file=$logFile"
+    $PROG_ARGS += "-Dorg.jboss.boot.log.file=$logFile"
   }
   if ($logFileProperties){
-  	$PROG_ARGS += "-Dlogging.configuration=file:$logFileProperties"
+    $PROG_ARGS += "-Dlogging.configuration=file:$logFileProperties"
   }
   $PROG_ARGS += "-Djboss.home.dir=$JBOSS_HOME"
   if (-not($SERVER_OPTS -match "-Djboss.server.base.dir")) {
@@ -263,24 +266,23 @@ Param(
   if ($GC_LOG -eq $true){
     $dir = New-Item $JBOSS_LOG_DIR -type directory -ErrorAction SilentlyContinue
     if ($PROG_ARGS -notmatch "-Xlog:?gc"){
-        Rotate-GC-Logs
+      Rotate-GC-Logs
 
-        & $JAVA -Xverbosegclog:"$JBOSS_LOG_DIR\gc.log" -version >$null 2>&1
-        if ($LastExitCode -eq 0){
-            $PROG_ARGS += "-Xverbosegclog:$JBOSS_LOG_DIR\gc.log"
-        }elseif ($MODULAR_JDK -eq $true)
-        {
-            $PROG_ARGS += "-Xlog:gc*:file=`"`"`"$JBOSS_LOG_DIR\gc.log`"`"`":time,uptimemillis:filecount=5,filesize=3M"
-        } else {
-            $PROG_ARGS += "-verbose:gc"
-            $PROG_ARGS += "-XX:+PrintGCDetails"
-            $PROG_ARGS += "-XX:+PrintGCDateStamps"
-            $PROG_ARGS += "-XX:+UseGCLogFileRotation"
-            $PROG_ARGS += "-XX:NumberOfGCLogFiles=5"
-            $PROG_ARGS += "-XX:GCLogFileSize=3M"
-            $PROG_ARGS += "-XX:-TraceClassUnloading"
-            $PROG_ARGS += "-Xloggc:$JBOSS_LOG_DIR\gc.log"
-        }
+      & $JAVA "-Xverbosegclog:$JBOSS_LOG_DIR\gc.log" -version >$null 2>&1
+      if ($LastExitCode -eq 0) {
+        $PROG_ARGS += "`"-Xverbosegclog:$JBOSS_LOG_DIR\gc.log`""
+      } elseif ($MODULAR_JDK -eq $true) {
+        $PROG_ARGS += "`"-Xlog:gc*:file=$JBOSS_LOG_DIR\gc.log:time,uptimemillis:filecount=5,filesize=3M`""
+      } else {
+        $PROG_ARGS += "-verbose:gc"
+        $PROG_ARGS += "-XX:+PrintGCDetails"
+        $PROG_ARGS += "-XX:+PrintGCDateStamps"
+        $PROG_ARGS += "-XX:+UseGCLogFileRotation"
+        $PROG_ARGS += "-XX:NumberOfGCLogFiles=5"
+        $PROG_ARGS += "-XX:GCLogFileSize=3M"
+        $PROG_ARGS += "-XX:-TraceClassUnloading"
+        $PROG_ARGS += "`"-Xloggc:$JBOSS_LOG_DIR\gc.log`""
+      }
     }
   }
 

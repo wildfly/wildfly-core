@@ -118,11 +118,15 @@ if "x%JAVA_HOME%" == "x" (
 )
 
 rem set default modular jvm parameters
+call "%DIRNAME%common.bat" :setDefaultModularJvmOptions "%PROCESS_CONTROLLER_JAVA_OPTS%"
 setlocal EnableDelayedExpansion
-call "!DIRNAME!common.bat" :setDefaultModularJvmOptions "!PROCESS_CONTROLLER_JAVA_OPTS!"
-set "PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!"
-call "!DIRNAME!common.bat" :setDefaultModularJvmOptions "!HOST_CONTROLLER_JAVA_OPTS!"
-set "HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!"
+set PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!
+setlocal DisableDelayedExpansion
+
+call "%DIRNAME%common.bat" :setDefaultModularJvmOptions "%HOST_CONTROLLER_JAVA_OPTS%"
+setlocal EnableDelayedExpansion
+set HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!
+setlocal DisableDelayedExpansion
 
 rem If the -Djava.security.manager is found, enable the -secmgr and include a bogus security manager for JBoss Modules to replace
 echo(!PROCESS_CONTROLLER_JAVA_OPTS! | findstr /r /c:"-Djava.security.manager" > nul && (
@@ -132,22 +136,11 @@ echo(!PROCESS_CONTROLLER_JAVA_OPTS! | findstr /r /c:"-Djava.security.manager" > 
 
 rem Set default Security Manager configuration value
 if "%SECMGR%" == "true" (
-    call "!DIRNAME!common.bat" :setSecurityManagerDefault
-    set "PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!"
-    set "HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!"
-)
-
-setlocal DisableDelayedExpansion
-
-rem Add -Djdk.serialFilter if not specified
-echo "%JAVA_OPTS%" | findstr /I "\-Djdk.serialFilter" > nul
-if errorlevel == 1 (
-  if "x%DISABLE_JDK_SERIAL_FILTER%" == "x" (
+    call "%DIRNAME%common.bat" :setSecurityManagerDefault
     setlocal EnableDelayedExpansion
-    set "PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! -Djdk.serialFilter="!JDK_SERIAL_FILTER!""
-    set "HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! -Djdk.serialFilter="!JDK_SERIAL_FILTER!""
+    set PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!
+    set HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!
     setlocal DisableDelayedExpansion
-  )
 )
 
 rem Find run.jar, or we can't continue
@@ -217,6 +210,22 @@ if "%SECMGR%" == "true" (
     set "MODULE_OPTS=-secmgr"
 )
 
+rem Add -Djdk.serialFilter if not specified
+echo "%JAVA_OPTS% %SERVER_OPTS% %JDK_JAVA_OPTIONS%" | findstr /I "\-Djdk.serialFilter" > nul
+if errorlevel == 1 (
+  if "x%DISABLE_JDK_SERIAL_FILTER%" == "x" (
+    setlocal EnableDelayedExpansion
+    if "x!JDK_SERIAL_FILTER!" == "x" (
+      set PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! "@!DIRNAME!jdk.serialFilter"
+      set HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! "@!DIRNAME!jdk.serialFilter"
+    ) else (
+      set PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! -Djdk.serialFilter="!JDK_SERIAL_FILTER!"
+      set HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! -Djdk.serialFilter="!JDK_SERIAL_FILTER!"
+    )
+    setlocal DisableDelayedExpansion
+  )
+)
+
 echo ===============================================================================
 echo.
 echo   JBoss Bootstrap Environment
@@ -233,7 +242,7 @@ echo.
 :RESTART
 "%JAVA%" %PROCESS_CONTROLLER_JAVA_OPTS% ^
  "-Dorg.jboss.boot.log.file=%JBOSS_LOG_DIR%\process-controller.log" ^
- "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%/logging.properties" ^
+ "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%\logging.properties" ^
     -jar "%JBOSS_HOME%\jboss-modules.jar" ^
     %MODULE_OPTS% ^
     -mp "%JBOSS_MODULEPATH%" ^
@@ -244,7 +253,7 @@ echo.
     -mp "%JBOSS_MODULEPATH%" ^
     -- ^
     "-Dorg.jboss.boot.log.file=%JBOSS_LOG_DIR%\host-controller.log" ^
-    "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%/logging.properties" ^
+    "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%\logging.properties" ^
     %HOST_CONTROLLER_JAVA_OPTS% ^
     -- ^
     -default-jvm "%JAVA%" ^

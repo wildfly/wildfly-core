@@ -7,6 +7,7 @@ $PROGNAME=$MyInvocation.MyCommand.Name
 $scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
 . $scripts'\common.ps1'
 
+$JAVA_OPTS = Get-Java-Opts
 $SERVER_OPTS = Process-Script-Parameters -Params $ARGS
 
 # Override ibm JRE behavior

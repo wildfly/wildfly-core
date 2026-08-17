@@ -5,19 +5,26 @@
 #############################################################################
 
 $scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
-. $scripts'\common.ps1'
+. "$scripts\common.ps1"
 Set-Item -Path env:JBOSS_LAUNCH_SCRIPT -Value "powershell"
+
 $SERVER_OPTS = Process-Script-Parameters -Params $ARGS
-if ($global:VERSION){
-    $PROCESS_CONTROLLER_JAVA_OPTS = '-Xmx16m'
+
+if ($global:VERSION) {
+    $JAVA_OPTS = @()
+    $JAVA_OPTS += "-Xmx16m"
     $PRESERVE_JAVA_OPTS = $true
 } else {
-    $JAVA_OPTS = Get-Java-Opts
-
     # Read an optional running configuration file - skip for version/help commands
-    $DOMAIN_CONF = $scripts +'\domain.conf.ps1'
-    $DOMAIN_CONF = Get-Env RUN_CONF $DOMAIN_CONF
+    $DOMAIN_CONF = Get-Env RUN_CONF "$scripts\domain.conf.ps1"
     . $DOMAIN_CONF
+}
+
+if (-Not(Test-Path variable:PROCESS_CONTROLLER_JAVA_OPTS)) {
+    $PROCESS_CONTROLLER_JAVA_OPTS = Get-Java-Opts
+}
+if (-Not(Test-Path variable:HOST_CONTROLLER_JAVA_OPTS)) {
+    $HOST_CONTROLLER_JAVA_OPTS = Get-Java-Opts
 }
 
 Write-Debug "sec mgr: $SECMGR"
@@ -26,12 +33,25 @@ if ($SECMGR) {
     $MODULE_OPTS +="-secmgr";
 }
 
-$DISABLE_JDK_SERIAL_FILTER = Get-Env-Boolean DISABLE_JDK_SERIAL_FILTER $DISABLE_JDK_SERIAL_FILTER
-$JDK_SERIAL_FILTER = Get-Env JDK_SERIAL_FILTER $JDK_SERIAL_FILTER
-if ($PRESERVE_JAVA_OPTS -ne 'true') {
-    if (-Not($JAVA_OPTS -like "*-Djdk.serialFilter*") -and (-Not($DISABLE_JDK_SERIAL_FILTER))) {
-        $HOST_CONTROLLER_JAVA_OPTS += "-Djdk.serialFilter=$JDK_SERIAL_FILTER"
-        $PROCESS_CONTROLLER_JAVA_OPTS += "-Djdk.serialFilter=$JDK_SERIAL_FILTER"
+if (!$PRESERVE_JAVA_OPTS) {
+    if (-Not(Test-Path variable:DISABLE_JDK_SERIAL_FILTER)) {
+        $DISABLE_JDK_SERIAL_FILTER = Get-Env-Boolean DISABLE_JDK_SERIAL_FILTER $false
+    }
+    if (!$DISABLE_JDK_SERIAL_FILTER) {
+        if ("$HOST_CONTROLLER_JAVA_OPTS $SERVER_OPTS $Env:JDK_JAVA_OPTIONS" -notlike "*-Djdk.serialFilter*") {
+            if (-Not(Test-Path Env:JDK_SERIAL_FILTER)) {
+                $HOST_CONTROLLER_JAVA_OPTS += "`"@$scripts\jdk.serialFilter`""
+            } else {
+                $HOST_CONTROLLER_JAVA_OPTS += "-Djdk.serialFilter=""$Env:JDK_SERIAL_FILTER"""
+            }
+        }
+        if ("$PROCESS_CONTROLLER_JAVA_OPTS $SERVER_OPTS $Env:JDK_JAVA_OPTIONS" -notlike "*-Djdk.serialFilter*") {
+            if (-Not(Test-Path Env:JDK_SERIAL_FILTER)) {
+                $PROCESS_CONTROLLER_JAVA_OPTS += "`"@$scripts\jdk.serialFilter`""
+            } else {
+                $PROCESS_CONTROLLER_JAVA_OPTS += "-Djdk.serialFilter=""$Env:JDK_SERIAL_FILTER"""
+            }
+        }
     }
 }
 
@@ -83,7 +103,7 @@ if ($SECURITY_MANAGER_CONFIG_OPTION -ne $null){
 }
 
 Display-Environment $PROCESS_CONTROLLER_JAVA_OPTS
-      
+
 $PROG_ARGS = @()
 $PROG_ARGS +='-DProcessController' 
 $PROG_ARGS += $PROCESS_CONTROLLER_JAVA_OPTS

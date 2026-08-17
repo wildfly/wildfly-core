@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.jboss.as.controller.persistence.ConfigurationExtensionFactory;
 
 import org.jboss.as.process.CommandLineConstants;
@@ -33,11 +36,11 @@ import org.wildfly.core.jar.runtime._private.BootableJarLogger;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 final class Arguments {
-    private static final String JDK_SERIAL_FILTER = "jdk.serialFilter";
+    static final String JDK_SERIAL_FILTER = "jdk.serialFilter";
     private static final String DISABLE_JDK_SERIAL_FILTER_ENV = "DISABLE_JDK_SERIAL_FILTER";
     private static final String JDK_SERIAL_FILTER_ENV = "JDK_SERIAL_FILTER";
-    // This default value comes from the standalone.conf file, in case it is changes, make sure to update this value.
-    private static final String DEFAULT_SERIAL_FILTER = "maxbytes=10485760;maxdepth=128;maxarray=100000;maxrefs=300000";
+    private static final String DEFAULT_JDK_SERIAL_FILTER_RESOURCE = String.format("bin/%s", JDK_SERIAL_FILTER);
+    private static final Pattern DEFAULT_JDK_SERIAL_FILTER_PATTERN = Pattern.compile(String.format("\\Q-D%s=\\E\"(.+)\"", JDK_SERIAL_FILTER), Pattern.DOTALL);
 
     private Arguments(final BootableEnvironment environment) {
         this.environment = environment;
@@ -52,14 +55,14 @@ final class Arguments {
     private String serialFilter;
     private boolean logSerialFilterAlreadySet;
 
-    static Arguments parseArguments(final List<String> args, final BootableEnvironment environment) throws Exception {
+    static Arguments parseArguments(final List<String> args, final BootableEnvironment environment, ClassLoader loader) throws Exception {
         Objects.requireNonNull(args);
         Arguments arguments = new Arguments(environment);
-        arguments.handleArguments(args);
+        arguments.handleArguments(args, loader);
         return arguments;
     }
 
-    private void handleArguments(List<String> args) throws Exception {
+    private void handleArguments(List<String> args, ClassLoader loader) throws Exception {
         final Map<String, String> systemProperties = new HashMap<>();
         final Iterator<String> iter = args.iterator();
         String jdkSerialFilterSet = null;
@@ -128,7 +131,15 @@ final class Arguments {
             if (jdkSerialFilterSet == null) {
                 if (filterEnabled) {
                     if (filter == null) {
-                        filter = DEFAULT_SERIAL_FILTER;
+                        URL defaultFilterURL = loader.getResource(DEFAULT_JDK_SERIAL_FILTER_RESOURCE);
+                        if (defaultFilterURL != null) {
+                            String defaultFilterParameter = Files.readString(Path.of(defaultFilterURL.toURI()));
+                            Matcher matcher = DEFAULT_JDK_SERIAL_FILTER_PATTERN.matcher(defaultFilterParameter);
+                            if (matcher.find()) {
+                                // Join line continuations
+                                filter = matcher.group(1).replaceAll("\\\\\\v\\h*", "");
+                            }
+                        }
                     }
                     serialFilter = filter;
                 }

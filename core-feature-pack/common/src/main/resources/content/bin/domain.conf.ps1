@@ -27,10 +27,17 @@ if (-Not(test-path env:JBOSS_MODULES_SYSTEM_PKGS )) {
 
 #$PRESERVE_JAVA_OPTS=$true
 
-# Set default values if none have been set by the user
-if (-Not $JAVA_OPTS) {
+$JAVA_OPTS = @()
 
-    $JAVA_OPTS = @()
+if (Test-Path env:JAVA_OPTS) {
+    $opts = $env:JAVA_OPTS.split()
+    ForEach ($opt in $opts) {
+        $JAVA_OPTS += $opt
+    }
+}
+
+# Set default values if none have been set by the user
+if ((!$JAVA_OPTS) -or (!$PRESERVE_JAVA_OPTS)) {
 
     if (-Not(test-path env:JBOSS_JAVA_SIZING)) {
         $env:JBOSS_JAVA_SIZING = "-Xms64M -Xmx512M"
@@ -55,11 +62,6 @@ if (-Not $JAVA_OPTS) {
 
     # Use JBoss Modules lockless mode
     # $JAVA_OPTS += '-Djboss.modules.lockless=true'
-    # Default JDK_SERIAL_FILTER settings
-    #
-    if (-Not(test-path env:JDK_SERIAL_FILTER)) {
-        $JDK_SERIAL_FILTER = 'maxbytes=10485760;maxdepth=128;maxarray=100000;maxrefs=300000'
-    }
 
     # Uncomment the following line to disable jdk.serialFilter settings
     #
