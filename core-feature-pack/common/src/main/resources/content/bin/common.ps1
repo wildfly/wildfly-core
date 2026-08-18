@@ -145,70 +145,58 @@ Param(
     return $SECURITY_MANAGER_CONFIG_OPTION
 }
 
-Function SetModularJDK {
-    $MODULAR_JDK = $false
-    & $JAVA --add-modules java.se -version >$null 2>&1
-    if ($LastExitCode -eq 0){
-        $MODULAR_JDK = $true
-    }
-    return $MODULAR_JDK
-}
-
 Function Get-Default-Modular-Jvm-Options {
 Param(
-   [string[]]$opts,
-   [bool]$modularJDK
+   [string[]]$opts
 
 ) #end param
     if($PRESERVE_JAVA_OPTS -eq 'true') {
         return $null
     }
     $DEFAULT_MODULAR_JVM_OPTIONS = @()
-    if ($modularJDK) {
-        if ($opts -ne $null) {
-            ForEach ($opt in $opts) {
-                if ($opt -contains "--add-modules") {
-                    return $DEFAULT_MODULAR_JVM_OPTIONS
-                }
+    if ($opts -ne $null) {
+        ForEach ($opt in $opts) {
+            if ($opt -contains "--add-modules") {
+                return $DEFAULT_MODULAR_JVM_OPTIONS
             }
         }
-        # Set default modular jdk options
-        # Needed by the iiop-openjdk subsystem
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.desktop/sun.awt=ALL-UNNAMED"
-        # Needed to instantiate the default InitialContextFactory implementation used by the
-        # Elytron subsystem dir-context and core management ldap-connection resources
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED"
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED"
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.naming/com.sun.jndi.url.ldaps=ALL-UNNAMED"
-        # Needed by Netty
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED"
-        # Needed by WildFly Elytron Extension
-        $packageName = "java.base/com.sun.net.ssl.internal.ssl"
-        $PACKAGE_AVAILABLE = setPackageAvailable($packageName)
-        if($PACKAGE_AVAILABLE) {
-            $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=$packageName=ALL-UNNAMED"
-        }
-        # Needed if Hibernate applications use Javassist
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang=ALL-UNNAMED"
-        # Needed by the MicroProfile REST Client subsystem
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
-        # Needed for marshalling of proxies
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
-        # Needed by JBoss Marshalling
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.io=ALL-UNNAMED"
-        # Needed by WildFly Http Client
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.net=ALL-UNNAMED"
-        # Needed by WildFly Security Manager
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.security=ALL-UNNAMED"
-        # Needed for marshalling of collections
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.util=ALL-UNNAMED"
-        # Needed for marshalling of concurrent collections
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
-        # EE integration with sar mbeans requires deep reflection in javax.management
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.management/javax.management=ALL-UNNAMED"
-        # InitialContext proxy generation requires deep reflection in javax.naming
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.naming/javax.naming=ALL-UNNAMED"
     }
+    # Set default modular jdk options
+    # Needed by the iiop-openjdk subsystem
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.desktop/sun.awt=ALL-UNNAMED"
+    # Needed to instantiate the default InitialContextFactory implementation used by the
+    # Elytron subsystem dir-context and core management ldap-connection resources
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED"
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED"
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.naming/com.sun.jndi.url.ldaps=ALL-UNNAMED"
+    # Needed by Netty
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED"
+    # Needed by WildFly Elytron Extension
+    $packageName = "java.base/com.sun.net.ssl.internal.ssl"
+    $PACKAGE_AVAILABLE = setPackageAvailable($packageName)
+    if($PACKAGE_AVAILABLE) {
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=$packageName=ALL-UNNAMED"
+    }
+    # Needed if Hibernate applications use Javassist
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang=ALL-UNNAMED"
+    # Needed by the MicroProfile REST Client subsystem
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
+    # Needed for marshalling of proxies
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
+    # Needed by JBoss Marshalling
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.io=ALL-UNNAMED"
+    # Needed by WildFly Http Client
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.net=ALL-UNNAMED"
+    # Needed by WildFly Security Manager
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.security=ALL-UNNAMED"
+    # Needed for marshalling of collections
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.util=ALL-UNNAMED"
+    # Needed for marshalling of concurrent collections
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
+    # EE integration with sar mbeans requires deep reflection in javax.management
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.management/javax.management=ALL-UNNAMED"
+    # InitialContext proxy generation requires deep reflection in javax.naming
+    $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.naming/javax.naming=ALL-UNNAMED"
     return $DEFAULT_MODULAR_JVM_OPTIONS
 }
 
@@ -230,8 +218,7 @@ Param(
 
 
 ) #end param
-  $MODULAR_JDK = SetModularJDK
-  $DEFAULT_MODULAR_JVM_OPTS = Get-Default-Modular-Jvm-Options -opts $JAVA_OPTS -modularJDK $MODULAR_JDK
+  $DEFAULT_MODULAR_JVM_OPTS = Get-Default-Modular-Jvm-Options -opts $JAVA_OPTS
   if ($SECMGR) {
       $ENHANCED_SM = SetEnhancedSecurityManager
       $SECURITY_MANAGER_CONFIG_OPT = Get-Security-Manager-Default -enhancedSM $ENHANCED_SM
@@ -271,17 +258,8 @@ Param(
       & $JAVA "-Xverbosegclog:$JBOSS_LOG_DIR\gc.log" -version >$null 2>&1
       if ($LastExitCode -eq 0) {
         $PROG_ARGS += "`"-Xverbosegclog:$JBOSS_LOG_DIR\gc.log`""
-      } elseif ($MODULAR_JDK -eq $true) {
-        $PROG_ARGS += "`"-Xlog:gc*:file=$JBOSS_LOG_DIR\gc.log:time,uptimemillis:filecount=5,filesize=3M`""
       } else {
-        $PROG_ARGS += "-verbose:gc"
-        $PROG_ARGS += "-XX:+PrintGCDetails"
-        $PROG_ARGS += "-XX:+PrintGCDateStamps"
-        $PROG_ARGS += "-XX:+UseGCLogFileRotation"
-        $PROG_ARGS += "-XX:NumberOfGCLogFiles=5"
-        $PROG_ARGS += "-XX:GCLogFileSize=3M"
-        $PROG_ARGS += "-XX:-TraceClassUnloading"
-        $PROG_ARGS += "`"-Xloggc:$JBOSS_LOG_DIR\gc.log`""
+        $PROG_ARGS += "`"-Xlog:gc*:file=$JBOSS_LOG_DIR\gc.log:time,uptimemillis:filecount=5,filesize=3M`""
       }
     }
   }
