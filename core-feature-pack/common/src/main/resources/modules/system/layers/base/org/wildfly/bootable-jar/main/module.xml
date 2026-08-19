@@ -13,6 +13,13 @@
     <resources>
         <artifact name="${org.wildfly.core:wildfly-jar-runtime}"/>
         <resource-root path="bootable-configurators"/>
+        <resource-root path="../../../../../../../../">
+            <filter>
+                <include-set>
+                    <path name="bin/jdk.serialFilter"/>
+                </include-set>
+            </filter>
+        </resource-root>
     </resources>
 
     <exports>

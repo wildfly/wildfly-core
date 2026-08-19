@@ -27,7 +27,7 @@ goto :eof
 
 :setSecurityManagerDefault
   call :setEnhancedSecurityManager
-  if "!ENHANCED_SM!" == "true" (
+  if "%ENHANCED_SM%" == "true" (
     rem Needed to be able to install Security Manager dynamically since JDK18
     set "SECURITY_MANAGER_CONFIG_OPTION=-Djava.security.manager=allow"
   )
@@ -38,8 +38,9 @@ goto:eof
 goto :eof
 
 :setDefaultModularJvmOptions
+  setlocal EnableDelayedExpansion
   call :setModularJdk
-  if "!MODULAR_JDK!" == "true" (
+  if "%MODULAR_JDK%" == "true" (
     echo %* | findstr /I "\-\-add\-modules" > nul
     if errorlevel == 1 (
       rem Set default modular jdk options
@@ -82,4 +83,5 @@ goto :eof
       set "DEFAULT_MODULAR_JVM_OPTIONS="
     )
   )
+  endlocal & set "DEFAULT_MODULAR_JVM_OPTIONS=%DEFAULT_MODULAR_JVM_OPTIONS%"
 goto:eof

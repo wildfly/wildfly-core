@@ -226,10 +226,15 @@ if [ "$SECMGR" = "true" ]; then
 fi
 
 # Check If jdk.serialFilter is specified
-JDK_FILTER_SET=`echo $JAVA_OPTS | $GREP "\-Djdk.serialFilter"`
+JDK_FILTER_SET=`echo "$JAVA_OPTS $SERVER_OPTS $JDK_JAVA_OPTIONS" | $GREP "\-Djdk.serialFilter"`
 if [ "x$DISABLE_JDK_SERIAL_FILTER" = "x" -a "x$JDK_FILTER_SET" = "x" ]; then
-    PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS -Djdk.serialFilter=\"$JDK_SERIAL_FILTER\""
-    HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS -Djdk.serialFilter=\"$JDK_SERIAL_FILTER\""
+    if [ "x$JDK_SERIAL_FILTER" = "x" ]; then
+        PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS @\"$DIRNAME/jdk.serialFilter\""
+        HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS @\"$DIRNAME/jdk.serialFilter\""
+    else
+        PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS -Djdk.serialFilter=\"$JDK_SERIAL_FILTER\""
+        HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS -Djdk.serialFilter=\"$JDK_SERIAL_FILTER\""
+    fi
 fi
 
 # Set default modular JVM options
