@@ -14,6 +14,7 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.junit.Assert;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetupTask;
@@ -26,11 +27,18 @@ class DisableLocalAuthServerSetupTask implements ServerSetupTask {
     private static final String host = TestSuiteEnvironment.getServerAddress();
     private static final int port = 9999;
 
+    private final String defaultUserKey = "wildfly.sasl.local-user.default-user";
+    private final String nativeSaslFactoryName = "management-sasl-authentication-native";
+    private final String nativeSaslAuthFactoryName = "management-sasl-authentication-native";
+    private final String saslPropertyKey = "sasl-server-factory";
+
     private final ModelNode saslFactoryAddress = Operations.createAddress("subsystem", "elytron", "configurable-sasl-server-factory", "configured");
+    private final ModelNode saslAuthFactoryAddress = Operations.createAddress("subsystem", "elytron", "sasl-authentication-factory", "management-sasl-authentication");
+    private final ModelNode nativeSaslFactoryAddress = Operations.createAddress("subsystem", "elytron", "configurable-sasl-server-factory", nativeSaslFactoryName);
+    private final ModelNode nativeSaslAuthFactoryAddress = Operations.createAddress("subsystem", "elytron", "sasl-authentication-factory", nativeSaslAuthFactoryName);
     private final ModelNode nativeSocketBindingAddress = Operations.createAddress("socket-binding-group", "standard-sockets", "socket-binding", "management-native");
     private final ModelNode nativeInterfaceAddress = Operations.createAddress("core-service", "management", "management-interface", "native-interface");
 
-    private final String defaultUserKey = "wildfly.sasl.local-user.default-user";
 
     @Override
     public void setup(final ManagementClient managementClient) throws Exception {
@@ -43,21 +51,37 @@ class DisableLocalAuthServerSetupTask implements ServerSetupTask {
         op.get("port").set(9999);
         op.get("interface").set("management");
         compositeOp.addStep(op.clone());
-
-        // Add the native-interface anonymous authentication
-        op = Operations.createAddOperation(nativeInterfaceAddress);
-        op.get("socket-binding").set("management-native");
-        compositeOp.addStep(op.clone());
-
+        //read config to copy
+        op = Operations.createReadResourceOperation(saslAuthFactoryAddress);
+        final ModelNode saslAuthFactoryConfig = client.execute(op);
         // Undefine Elytron local-auth
         op = Operations.createReadResourceOperation(saslFactoryAddress);
-        ModelNode result = client.execute(op);
-        if (Operations.isSuccessfulOutcome(result)) {
+        final ModelNode saslFactoryConfig = client.execute(op);
+        if (Operations.isSuccessfulOutcome(saslFactoryConfig)) {
             op = Operations.createOperation("map-remove", saslFactoryAddress);
             op.get("name").set("properties");
             op.get("key").set(defaultUserKey);
             compositeOp.addStep(op.clone());
         }
+
+        //above removed from sasl-server-factory="configured" and subsequently from management-sasl-authentication
+        //local auth capability, we need it back for native. Define custom auth path.
+        op = Operations.createAddOperation(nativeSaslFactoryAddress);
+
+        ModelNode configToCopy = saslFactoryConfig.get("result");
+        engrave(configToCopy, op);
+        compositeOp.addStep(op.clone());
+
+        op = Operations.createAddOperation(nativeSaslAuthFactoryAddress);
+        configToCopy = saslAuthFactoryConfig.get("result");
+        engrave(configToCopy, op);
+        op.get(saslPropertyKey).set(nativeSaslFactoryName);
+        compositeOp.addStep(op.clone());
+        // Add the native-interface anonymous authentication
+        op = Operations.createAddOperation(nativeInterfaceAddress);
+        op.get("socket-binding").set("management-native");
+        op.get("sasl-authentication-factory").set(nativeSaslAuthFactoryName);
+        compositeOp.addStep(op.clone());
 
         executeForSuccess(client, compositeOp.build());
 
@@ -67,6 +91,19 @@ class DisableLocalAuthServerSetupTask implements ServerSetupTask {
                 .setServerAddress(host)
                 .setServerPort(port)
         );
+    }
+
+    private void engrave(final ModelNode source, final ModelNode target) {
+        //this is wrong.
+        for(String key: source.keys()) {
+            if(source.get(key).getType() == ModelType.OBJECT) {
+                final ModelNode object = source.get(key);
+                final ModelNode target2 = target.get(key);
+                engrave(object,target2);
+            } else {
+                target.get(key).set(source.get(key));
+            }
+        }
     }
 
     @Override
@@ -79,7 +116,9 @@ class DisableLocalAuthServerSetupTask implements ServerSetupTask {
             compositeOp.addStep(Operations.createRemoveOperation(nativeInterfaceAddress));
             // Remove the socket binding for the native-interface
             compositeOp.addStep(Operations.createRemoveOperation(nativeSocketBindingAddress));
-
+            //remove custom auth.
+            compositeOp.addStep(Operations.createRemoveOperation(nativeSaslAuthFactoryAddress));
+            compositeOp.addStep(Operations.createRemoveOperation(nativeSaslFactoryAddress));
             // Re-enable Elytron local-auth
             ModelNode op = Operations.createReadResourceOperation(saslFactoryAddress);
             ModelNode result = client.execute(op);
