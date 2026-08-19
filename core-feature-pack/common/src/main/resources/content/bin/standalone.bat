@@ -182,8 +182,6 @@ if "x%JAVA_HOME%" == "x" (
   )
 )
 
-"%JAVA%" --add-modules=java.se -version >nul 2>&1 && (set MODULAR_JDK=true) || (set MODULAR_JDK=false)
-
 setlocal EnableDelayedExpansion
 
 :SET_SERVER_END
@@ -256,8 +254,6 @@ if "x!JBOSS_CONFIG_DIR!" == "x" (
 )
 setlocal DisableDelayedExpansion
 
-call "%DIRNAME%common.bat" :setModularJdk
-
 if not "%PRESERVE_JAVA_OPTS%" == "true" (
     if "%GC_LOG%" == "true" (
         if not exist "%JBOSS_LOG_DIR%" > nul 2>&1 (
@@ -286,14 +282,8 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
                 ) else (
                    set "GC_OPTS="
                 )
-            ) else if "!MODULAR_JDK!" == "true" (
-                set TMP_PARAM="-Xlog:gc*:file=!JBOSS_LOG_DIR!\gc.log:time,uptimemillis:filecount=5,filesize=3M"
-                "!JAVA!" !TMP_PARAM! -version > nul 2>&1
-                if not errorlevel == 1 (
-                   set "JAVA_OPTS=!JAVA_OPTS! !TMP_PARAM!"
-                )
             ) else (
-                set TMP_PARAM=-verbose:gc "-Xloggc:!JBOSS_LOG_DIR!\gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading
+                set TMP_PARAM="-Xlog:gc*:file=!JBOSS_LOG_DIR!\gc.log:time,uptimemillis:filecount=5,filesize=3M"
                 "!JAVA!" !TMP_PARAM! -version > nul 2>&1
                 if not errorlevel == 1 (
                    set "JAVA_OPTS=!JAVA_OPTS! !TMP_PARAM!"
