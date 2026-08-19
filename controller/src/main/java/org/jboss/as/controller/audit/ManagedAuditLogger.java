@@ -29,9 +29,18 @@ public interface ManagedAuditLogger extends AuditLogger {
     /**
      * Set whether to log read-only operations
      *
-     * @param logReadOnly wheter to log read-only operations
+     * @param logReadOnly whether to log read-only operations
      */
     void setLogReadOnly(boolean logReadOnly);
+
+    boolean isRedacted();
+
+    /**
+     * Set whether to redact the operation parameters that has been flagged as redactable
+     *
+     * @param redacted whether to log redact operation parameters
+     */
+    void setRedacted(boolean redacted);
 
     /**
      * Get whether this audit logger logs operations on boot
