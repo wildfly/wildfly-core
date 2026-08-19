@@ -124,7 +124,7 @@ public class ManagedServerBootCmdFactoryTestCase {
         List<String> result = instance.getServerLaunchCommand();
         MatcherAssert.assertThat(result.size(), is(notNullValue()));
         if (result.size() > 18) {
-            MatcherAssert.assertThat(result.size(), is(getJavaVersion() <= 12 ? 34 : 33)); // for condition see WFCORE-4296 - java.base/com.sun.net.ssl.internal.ssl isn't available since JDK13
+            MatcherAssert.assertThat(result.size(), is(getJavaVersion() <= 12 ? 35 : 34)); // for condition see WFCORE-4296 - java.base/com.sun.net.ssl.internal.ssl isn't available since JDK13
         } else {
             MatcherAssert.assertThat(result.size(), is(18));
         }
