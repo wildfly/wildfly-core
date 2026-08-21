@@ -32,7 +32,7 @@ import org.jboss.dmr.ModelType;
 class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnectionResourceDefinition {
 
     static final RuntimeCapability<Void> CONNECTION_INFO_CAPABILITY =
-            RuntimeCapability.Builder.of(ConnectionInfo.CONNECTION_INFO_CAPABILITY).build();
+            RuntimeCapability.Builder.of(ConnectionInfo.SERVICE_DESCRIPTOR).build();
 
     static final PathElement PATH = PathElement.pathElement(CommonAttributes.REMOTE_OUTBOUND_CONNECTION);
 

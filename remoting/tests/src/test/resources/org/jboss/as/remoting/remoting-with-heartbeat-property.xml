@@ -3,8 +3,9 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 <subsystem xmlns="urn:jboss:domain:remoting:8.0">
-    <endpoint worker="default-remoting"/>
+    <endpoint worker="default-remoting" heartbeat-interval="5000"/>
     <outbound-connections>
+        <!-- conn1: explicit per-connection overrides for several transport options -->
         <remote-outbound-connection name="remote-ejb-connection" outbound-socket-binding-ref="dummy-outbound-socket" protocol="remote+http">
             <properties>
                 <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
@@ -14,5 +15,7 @@
                 <property name="READ_TIMEOUT" value="4000"/>
             </properties>
         </remote-outbound-connection>
+        <!-- conn2: no per-connection overrides; inherits endpoint-level heartbeat-interval=5000 -->
+        <remote-outbound-connection name="remote-ejb-connection-2" outbound-socket-binding-ref="dummy-outbound-socket-2"/>
     </outbound-connections>
 </subsystem>

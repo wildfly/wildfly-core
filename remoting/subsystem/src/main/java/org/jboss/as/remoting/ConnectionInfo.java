@@ -6,7 +6,7 @@
 package org.jboss.as.remoting;
 
 import java.net.URI;
-import org.wildfly.service.descriptor.NullaryServiceDescriptor;
+import org.wildfly.service.descriptor.UnaryServiceDescriptor;
 import org.xnio.OptionMap;
 
 /**
@@ -14,7 +14,8 @@ import org.xnio.OptionMap;
  */
 public interface ConnectionInfo {
 
-    NullaryServiceDescriptor<ConnectionInfo> CONNECTION_INFO_CAPABILITY = NullaryServiceDescriptor.of("org.wildfly.remoting.connection-info", ConnectionInfo.class);
+    UnaryServiceDescriptor<ConnectionInfo> SERVICE_DESCRIPTOR =
+            UnaryServiceDescriptor.of("org.wildfly.remoting.connection-info", ConnectionInfo.class);
 
     URI getDestinationUri();
 

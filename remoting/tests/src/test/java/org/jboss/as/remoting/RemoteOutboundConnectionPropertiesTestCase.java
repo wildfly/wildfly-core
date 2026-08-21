@@ -38,55 +38,62 @@ import org.junit.Test;
 import org.wildfly.extension.io.WorkerService;
 import org.wildfly.io.IOServiceDescriptor;
 import org.xnio.OptionMap;
+import org.xnio.Options;
 import org.xnio.Xnio;
 import org.xnio.XnioWorker;
 
-/**
- * Reproducer for WFLY-16388: non-SASL properties (e.g. HEARTBEAT_INTERVAL) configured on a
- * remote-outbound-connection are silently dropped and never reach the remoting channel.
- */
 public class RemoteOutboundConnectionPropertiesTestCase extends AbstractSubsystemTest {
 
     public RemoteOutboundConnectionPropertiesTestCase() {
         super(RemotingExtension.SUBSYSTEM_NAME, new RemotingExtension());
     }
 
-    /**
-     * Verifies that HEARTBEAT_INTERVAL configured in {@code <remote-outbound-connection>/<properties>}
-     * reaches the remoting endpoint so EJB clients can apply it when establishing connections.
-     */
     @Test
-    public void testHeartbeatIntervalPropertyIsPreservedInOutboundConnection() throws Exception {
+    public void testOutboundConnectionPropertiesReachEndpoint() throws Exception {
         KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
                 .setSubsystemXml(readResource("remoting-with-heartbeat-property.xml"))
                 .build();
         assertTrue("Subsystem boot must succeed", services.isSuccessfulBoot());
 
         ServiceName remotingEndpointSN = RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY.getCapabilityServiceName(Endpoint.class);
-        ServiceName remotingConnSN = AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY
+        ServiceName conn1SN = AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY
                 .getCapabilityServiceName("remote-ejb-connection");
-        DependenciesRetrievalService dependencies = DependenciesRetrievalService.create(services, remotingEndpointSN, remotingConnSN);
+        ServiceName conn2SN = AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY
+                .getCapabilityServiceName("remote-ejb-connection-2");
+        DependenciesRetrievalService dependencies = DependenciesRetrievalService.create(services, remotingEndpointSN, conn1SN, conn2SN);
 
         Endpoint endpoint = dependencies.getService(remotingEndpointSN);
         assertNotNull("Endpoint service was null", endpoint);
-        assertNotNull(endpoint.getName());
 
-        RemoteOutboundConnectionService conn = dependencies.getService(remotingConnSN);
-        assertNotNull("OutboundConnection service was null", conn);
+        RemoteOutboundConnectionService conn1 = dependencies.getService(conn1SN);
+        assertNotNull("conn1 service was null", conn1);
+        RemoteOutboundConnectionService conn2 = dependencies.getService(conn2SN);
+        assertNotNull("conn2 service was null", conn2);
 
-        URI destUri = conn.getDestinationUri();
+        URI destUri1 = conn1.getDestinationUri();
+        URI destUri2 = conn2.getDestinationUri();
 
-        // After the fix, per-URI transport options (HEARTBEAT_INTERVAL, KEEP_ALIVE, READ_TIMEOUT)
-        // must be registered in EndpointImpl.connectionOptions for the destination URI.
         Map<URI, OptionMap> perUriOptions = EndpointWrapper.getOptionMap(endpoint);
-        assertTrue(
-                "Per-URI transport options for " + destUri + " must be registered in the endpoint "
-                        + "(WFLY-16388: non-SASL <properties> are silently dropped)",
-                perUriOptions.containsKey(destUri));
-        assertEquals(
-                "HEARTBEAT_INTERVAL must be 2000ms as configured on remote-ejb-connection <properties>",
-                Integer.valueOf(2000),
-                perUriOptions.get(destUri).get(RemotingOptions.HEARTBEAT_INTERVAL));
+
+        // conn1: per-URI transport options must be registered and reflect the configured property values.
+        assertTrue("Per-URI options for conn1 must be registered in endpoint (WFLY-16388)", perUriOptions.containsKey(destUri1));
+        OptionMap opts1 = perUriOptions.get(destUri1);
+        assertEquals("HEARTBEAT_INTERVAL must be 2000ms as configured on remote-ejb-connection",
+                Integer.valueOf(2000), opts1.get(RemotingOptions.HEARTBEAT_INTERVAL));
+        assertEquals("READ_TIMEOUT must be 4000ms as configured on remote-ejb-connection",
+                Integer.valueOf(4000), opts1.get(Options.READ_TIMEOUT));
+        assertTrue("KEEP_ALIVE must be true as configured on remote-ejb-connection",
+                opts1.get(Options.KEEP_ALIVE));
+
+        // conn2: no per-connection overrides — endpoint-level heartbeat-interval=5000 must be inherited.
+        assertTrue("Per-URI options for conn2 must be registered", perUriOptions.containsKey(destUri2));
+        assertEquals("conn2 must inherit the endpoint-level heartbeat-interval=5000",
+                Integer.valueOf(5000), perUriOptions.get(destUri2).get(RemotingOptions.HEARTBEAT_INTERVAL));
+
+        // The endpoint-level default option map must reflect the configured heartbeat-interval.
+        OptionMap defaultOpts = EndpointWrapper.getDefaultOptionMap(endpoint);
+        assertEquals("Endpoint-level heartbeat-interval must be 5000ms",
+                Integer.valueOf(5000), defaultOpts.get(RemotingOptions.HEARTBEAT_INTERVAL));
     }
 
     private AdditionalInitialization createRuntimeAdditionalInitialization() {
@@ -94,6 +101,7 @@ public class RemoteOutboundConnectionPropertiesTestCase extends AbstractSubsyste
             @Override
             protected void setupController(ControllerInitializer controllerInitializer) {
                 controllerInitializer.addRemoteOutboundSocketBinding("dummy-outbound-socket", "localhost", 6799);
+                controllerInitializer.addRemoteOutboundSocketBinding("dummy-outbound-socket-2", "localhost", 6800);
             }
 
             @Override

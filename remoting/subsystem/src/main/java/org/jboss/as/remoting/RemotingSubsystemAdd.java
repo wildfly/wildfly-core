@@ -9,6 +9,8 @@ package org.jboss.as.remoting;
 import static org.jboss.as.remoting.RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY;
 import static org.jboss.as.remoting.RemotingSubsystemRootResource.WORKER;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -58,12 +60,12 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
 
             Supplier<XnioWorker> workerSupplier = builder.requires(IOServiceDescriptor.WORKER, workerName);
 
-            Supplier<ConnectionInfo> connectionInfoSupplier = () -> null;
-            if (context.hasOptionalCapability(ConnectionInfo.CONNECTION_INFO_CAPABILITY.getName(), REMOTING_ENDPOINT_CAPABILITY.getName(), null)) {
-                connectionInfoSupplier = builder.requires(ConnectionInfo.CONNECTION_INFO_CAPABILITY);
+            List<Supplier<ConnectionInfo>> connectionInfoSuppliers = new ArrayList<>();
+            for (String connectionName : resource.getChildrenNames(CommonAttributes.REMOTE_OUTBOUND_CONNECTION)) {
+                connectionInfoSuppliers.add(builder.requires(ConnectionInfo.SERVICE_DESCRIPTOR, connectionName));
             }
 
-            builder.setInstance(new EndpointService(endpointConsumer, workerSupplier, connectionInfoSupplier, nodeName, EndpointService.EndpointType.SUBSYSTEM, map)).install();
+            builder.setInstance(new EndpointService(endpointConsumer, workerSupplier, connectionInfoSuppliers, nodeName, EndpointService.EndpointType.SUBSYSTEM, map)).install();
         }
     }
 }
