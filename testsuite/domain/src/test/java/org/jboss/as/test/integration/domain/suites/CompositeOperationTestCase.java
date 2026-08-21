@@ -112,6 +112,12 @@ public class CompositeOperationTestCase {
         testSupport = DomainTestSuite.createSupport(CompositeOperationTestCase.class.getSimpleName());
         domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
         primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+
+        // Propagate ts.timeout.factor to the server group so managed servers receive it.
+        // This is necessary because ts.timeout.factor is not passed to managed server JVMs.
+        ModelNode op = Util.createAddOperation(SERVER_GROUP_MAIN_SERVER_GROUP.append(SYSTEM_PROPERTY, TimeoutUtil.FACTOR_SYS_PROP));
+        op.get(VALUE).set(Integer.toString(TimeoutUtil.getRawFactor()));
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     @AfterClass
