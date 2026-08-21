@@ -122,7 +122,7 @@ public class CompositeOperationTestCase {
     }
 
     @Before
-    public void setup() throws IOException {
+    public void setup() throws IOException, MgmtOperationException {
         sysPropVal = 0;
         ModelNode op = Util.createAddOperation(PathAddress.pathAddress(SYS_PROP_ELEMENT));
         op.get(VALUE).set(sysPropVal);
@@ -133,6 +133,12 @@ public class CompositeOperationTestCase {
         op = Util.createAddOperation(PathAddress.pathAddress(HOST_SECONDARY, HOST_SYS_PROP_ELEMENT));
         op.get(VALUE).set(sysPropVal);
         domainPrimaryLifecycleUtil.getDomainClient().execute(op);
+
+        // Propagate ts.timeout.factor to the server group so managed servers receive it.
+        // This is necessary because ts.timeout.factor is not passed to managed server JVMs.
+        op = Util.createAddOperation(SERVER_GROUP_MAIN_SERVER_GROUP.append(SYSTEM_PROPERTY, TimeoutUtil.FACTOR_SYS_PROP));
+        op.get(VALUE).set(Integer.toString(TimeoutUtil.getRawFactor()));
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
 
@@ -146,8 +152,13 @@ public class CompositeOperationTestCase {
                 ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(HOST_PRIMARY, HOST_SYS_PROP_ELEMENT));
                 domainPrimaryLifecycleUtil.getDomainClient().execute(op);
             } finally {
-                ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(HOST_SECONDARY, HOST_SYS_PROP_ELEMENT));
-                domainPrimaryLifecycleUtil.getDomainClient().execute(op);
+                try {
+                    ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(HOST_SECONDARY, HOST_SYS_PROP_ELEMENT));
+                    domainPrimaryLifecycleUtil.getDomainClient().execute(op);
+                } finally {
+                    ModelNode op = Util.createRemoveOperation(SERVER_GROUP_MAIN_SERVER_GROUP.append(SYSTEM_PROPERTY, TimeoutUtil.FACTOR_SYS_PROP));
+                    domainPrimaryLifecycleUtil.getDomainClient().execute(op);
+                }
             }
         }
     }
