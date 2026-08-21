@@ -24,6 +24,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.integration.domain.management.util.DomainControllerClientConfig;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.logging.Logger;
@@ -95,7 +96,7 @@ public class DefaultInterfaceOverridingDomainTestCase {
         hostConfig.setDomainDirectory(hostDir.getAbsolutePath());
         hostConfig.setHostName("secondary");
         hostConfig.setHostControllerManagementPort(9999);
-        hostConfig.setStartupTimeoutInSeconds(120);
+        hostConfig.setStartupTimeoutInSeconds(TimeoutUtil.adjust(120));
         hostConfig.setBackupDC(true);
         File usersFile = new File(hostConfigDir, "mgmt-users.properties");
         Files.write(usersFile.toPath(),

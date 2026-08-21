@@ -36,6 +36,7 @@ import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
 import org.jboss.as.test.integration.management.extension.error.ErrorExtension;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
@@ -132,7 +133,7 @@ public class SecondarySynchronizationTestCase {
         hostConfig.setDomainDirectory(hostDir.getAbsolutePath());
         hostConfig.setHostName(HOSTS[host]);
         hostConfig.setHostControllerManagementPort(MGMT_PORTS[host]);
-        hostConfig.setStartupTimeoutInSeconds(120);
+        hostConfig.setStartupTimeoutInSeconds(TimeoutUtil.adjust(120));
         hostConfig.setBackupDC(true);
         File usersFile = new File(hostConfigDir, "mgmt-users.properties");
         Files.write(usersFile.toPath(),
