@@ -48,5 +48,10 @@ public class StandaloneHelpVersionScriptTestCase extends ScriptTestCase {
         boolean ok = stdout.contains("-Xmx16m") && !stdout.replaceFirst("-Xmx", "").contains("-Xmx");
         Assert.assertTrue("Expected to find -Xmx16m in the JVM parameters for a server started with " + script.getLastExecutedCmd() + "\nThe server output was: \n" + stdout, ok);
         Assert.assertFalse("Did not expect to find gc.log in the JVM parameters for a server started with " + script.getLastExecutedCmd() + "\nThe server output was: \n" + stdout, stdout.contains("gc.log"));
+        if ("--help".equals(arg) || "-h".equals(arg)) {
+            Assert.assertTrue("Expected help output containing 'Usage:' for " + script.getLastExecutedCmd() + "\nThe server output was: \n" + stdout, stdout.contains("Usage:"));
+        } else if ("-v".equals(arg) || "-V".equals(arg) || "--version".equals(arg)) {
+            Assert.assertTrue("Expected version output containing 'WildFly Core' for " + script.getLastExecutedCmd() + "\nThe server output was: \n" + stdout, stdout.contains("WildFly Core"));
+        }
     }
 }
