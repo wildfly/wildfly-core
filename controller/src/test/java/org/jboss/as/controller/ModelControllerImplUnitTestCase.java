@@ -462,7 +462,8 @@ public class ModelControllerImplUnitTestCase {
         result = controller.execute(operation, null, null, null).get("result");
         assertEquals("child", result.get(0).asString());
         assertEquals("deployment", result.get(1).asString());
-        assertEquals("runtime-child", result.get(2).asString());
+        assertEquals("deprecated-resource", result.get(2).asString());
+        assertEquals("runtime-child", result.get(3).asString());
         notificationHandler.validate(0);
 
         operation = new ModelNode();
@@ -779,7 +780,26 @@ public class ModelControllerImplUnitTestCase {
         Assert.assertEquals(rspString, childWarning, validateDeprecatedWarning(compositeResponse.get(RESULT, "step-2"), childAddr));
     }
 
+    /**
+     * WFCORE-7672: A resource marked as deprecated must propagate its deprecation data to the
+     * auto-registered add operation so that a WFLYCTL0449 warning is emitted when the resource
+     * is added at runtime via a management operation.
+     */
+    @Test
+    public void testDeprecatedResourceAddWarning() {
+        PathAddress address = PathAddress.pathAddress("deprecated-resource", "test");
+
+        ModelNode addOp = Util.createAddOperation(address);
+        ModelNode addResponse = controller.execute(addOp, null, null, null);
+        Assert.assertEquals(addResponse.toString(), SUCCESS, addResponse.get(OUTCOME).asString());
+        validateDeprecatedWarning(addResponse, address, "add");
+    }
+
     private static ModelNode validateDeprecatedWarning(ModelNode response, PathAddress address) {
+        return validateDeprecatedWarning(response, address, "deprecated-op");
+    }
+
+    private static ModelNode validateDeprecatedWarning(ModelNode response, PathAddress address, String expectedOpName) {
         String rspString = response.toString();
         Assert.assertTrue(rspString, response.hasDefined(RESPONSE_HEADERS, WARNINGS));
         Assert.assertEquals(rspString, ModelType.LIST, response.get(RESPONSE_HEADERS, WARNINGS).getType());
@@ -787,7 +807,7 @@ public class ModelControllerImplUnitTestCase {
         Assert.assertEquals(rspString, 1, warnings.asInt()); // just one in list
         ModelNode warning = warnings.get(0);
         Assert.assertTrue(rspString, warning.get(WARNING).asString().contains("WFLYCTL0449"));
-        Assert.assertEquals(rspString, "deprecated-op", warning.get(OP, OP).asString());
+        Assert.assertEquals(rspString, expectedOpName, warning.get(OP, OP).asString());
         Assert.assertEquals(rspString, "WARNING", warning.get(LEVEL).asString());
         Assert.assertEquals(rspString, address, PathAddress.pathAddress(warning.get(OP, OP_ADDR)));
 
@@ -873,6 +893,17 @@ public class ModelControllerImplUnitTestCase {
                     NonResolvingResourceDescriptionResolver.INSTANCE
             ).setRuntime(true));
             rootRegistration.registerSubModel(deploymentResource);
+
+            // WFCORE-7672: deprecated resource to test add deprecation warning propagation
+            rootRegistration.registerSubModel(new SimpleResourceDefinition(
+                    new SimpleResourceDefinition.Parameters(
+                            PathElement.pathElement("deprecated-resource"),
+                            NonResolvingResourceDescriptionResolver.INSTANCE
+                    )
+                    .setAddHandler(new AbstractAddStepHandler() {})
+                    .setRemoveHandler(new AbstractRemoveStepHandler() {})
+                    .setDeprecationData(new DeprecationData(ModelVersion.create(1, 0, 0), true))
+            ));
         }
 
     }
@@ -883,7 +914,7 @@ public class ModelControllerImplUnitTestCase {
         public void execute(OperationContext context, ModelNode operation) {
             ModelNode model = new ModelNode();
 
-            //Atttributes
+            //Attributes
             model.get("attr1").set(1);
             model.get("attr2").set(2);
 
