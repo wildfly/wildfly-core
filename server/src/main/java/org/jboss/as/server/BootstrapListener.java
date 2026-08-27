@@ -4,8 +4,6 @@
  */
 package org.jboss.as.server;
 
-import static java.security.AccessController.doPrivileged;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -15,10 +13,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-
-import org.wildfly.security.manager.WildFlySecurityManager;
 
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.server.logging.ServerLogger;
@@ -49,8 +43,10 @@ public final class BootstrapListener {
     private final File tempDir;
     private String startedCleanMessage;
     private String startedWitErrorsMessage;
-    private volatile FileChannel lockFileChannel;
-    private volatile FileLock runningLock;
+    // Static so the lock survives server reloads (JVM lifetime) and is never released manually.
+    // The OS releases all advisory locks when the JVM exits or crashes.
+    private static volatile FileChannel lockFileChannel;
+    private static volatile FileLock runningLock;
 
     public BootstrapListener(final ServiceContainer serviceContainer, final ElapsedTime elapsedTime, final ServiceTarget serviceTarget, final FutureServiceContainer futureContainer, final String prettyVersion, final File tempDir) {
         this.serviceContainer = serviceContainer;
@@ -155,22 +151,19 @@ public final class BootstrapListener {
     }
 
     public void acquireRunningLock(File homeDir) {
-        final Path lockPath = homeDir.toPath().resolve(INSTALLATION_DIR).resolve(RUNNING_LOCK_FILE);
+        if (lockFileChannel != null) {
+            // Lock already held from a previous start (e.g. server reload); keep it for JVM lifetime.
+            return;
+        }
         try {
-            if (WildFlySecurityManager.isChecking()) {
-                doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                    openLockFile(lockPath);
-                    return null;
-                });
-            } else {
-                openLockFile(lockPath);
-            }
-        } catch (PrivilegedActionException | IOException e) {
+            openLockFile(homeDir.toPath().resolve(INSTALLATION_DIR).resolve(RUNNING_LOCK_FILE));
+        } catch (IOException e) {
             // ignore
         }
     }
 
     private void openLockFile(Path lockPath) throws IOException {
+        Files.createDirectories(lockPath.getParent());
         FileChannel channel = FileChannel.open(lockPath,
                 StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ);
         FileLock lock = channel.tryLock();
@@ -179,18 +172,6 @@ public final class BootstrapListener {
             runningLock = lock;
         } else {
             channel.close();
-        }
-    }
-
-    public void releaseRunningLock() {
-        if (lockFileChannel != null) {
-            try {
-                lockFileChannel.close();
-            } catch (IOException e) {
-                // ignore
-            }
-            lockFileChannel = null;
-            runningLock = null;
         }
     }
 

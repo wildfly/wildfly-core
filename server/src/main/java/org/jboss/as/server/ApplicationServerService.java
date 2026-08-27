@@ -61,7 +61,6 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
     private final ElapsedTime elapsedTime;
     private volatile FutureServiceContainer futureContainer;
     private volatile boolean everStopped;
-    private volatile BootstrapListener bootstrapListener;
     private static final boolean IGNORE_ROOT_USERNAME_WARN = Boolean.getBoolean("jboss.ignore.root.username.warning");
 
     ApplicationServerService(final List<ServiceActivator> extraServices, final Bootstrap.Configuration configuration,
@@ -136,10 +135,10 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
 
         CurrentServiceContainer.setServiceContainer(context.getController().getServiceContainer());
 
-        this.bootstrapListener = new BootstrapListener(container, startupTime, serviceTarget, futureContainer, prettyVersion, serverEnvironment.getServerTempDir());
-        this.bootstrapListener.getStabilityMonitor().addController(myController);
+        final BootstrapListener bootstrapListener = new BootstrapListener(container, startupTime, serviceTarget, futureContainer, prettyVersion, serverEnvironment.getServerTempDir());
+        bootstrapListener.getStabilityMonitor().addController(myController);
         if (serverEnvironment.getLaunchType() != ServerEnvironment.LaunchType.EMBEDDED) {
-            this.bootstrapListener.acquireRunningLock(serverEnvironment.getHomeDir());
+            bootstrapListener.acquireRunningLock(serverEnvironment.getHomeDir());
         }
         // Install either a local or remote content repository
         if(standalone) {
@@ -209,9 +208,6 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         CurrentServiceContainer.setServiceContainer(null);
         String prettyVersion = configuration.getServerEnvironment().getProductConfig().getPrettyVersionString();
         ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, (int) (context.getElapsedTime() / 1000000L));
-        if (this.bootstrapListener != null) {
-            this.bootstrapListener.releaseRunningLock();
-        }
         BootstrapListener.deleteStartupMarker(configuration.getServerEnvironment().getServerTempDir());
         everStopped = true;
     }
