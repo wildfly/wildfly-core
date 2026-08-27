@@ -36,8 +36,8 @@ public final class BootstrapListener {
     private final String prettyVersion;
     private final FutureServiceContainer futureContainer;
     private final File tempDir;
-    private String startedCleanMessage;
-    private String startedWitErrorsMessage;
+    private  String startedCleanMessage;
+    private  String startedWitErrorsMessage;
 
     public BootstrapListener(final ServiceContainer serviceContainer, final ElapsedTime elapsedTime, final ServiceTarget serviceTarget, final FutureServiceContainer futureContainer, final String prettyVersion, final File tempDir) {
         this.serviceContainer = serviceContainer;
@@ -130,6 +130,7 @@ public final class BootstrapListener {
         } catch (IOException e) {
             // ignore
         }
+
     }
 
     public static void deleteStartupMarker(File tempDir) {
