@@ -7,11 +7,8 @@ package org.jboss.as.server;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 import org.jboss.as.network.NetworkUtils;
@@ -31,8 +28,6 @@ import org.jboss.msc.service.StabilityStatistics;
 public final class BootstrapListener {
 
     public static final String MARKER_FILE = "startup-marker";
-    public static final String RUNNING_LOCK_FILE = "running.lock";
-    private static final String INSTALLATION_DIR = ".installation";
 
     private final StabilityMonitor monitor = new StabilityMonitor();
     private final ServiceContainer serviceContainer;
@@ -43,10 +38,6 @@ public final class BootstrapListener {
     private final File tempDir;
     private String startedCleanMessage;
     private String startedWitErrorsMessage;
-    // Static so the lock survives server reloads (JVM lifetime) and is never released manually.
-    // The OS releases all advisory locks when the JVM exits or crashes.
-    private static volatile FileChannel lockFileChannel;
-    private static volatile FileLock runningLock;
 
     public BootstrapListener(final ServiceContainer serviceContainer, final ElapsedTime elapsedTime, final ServiceTarget serviceTarget, final FutureServiceContainer futureContainer, final String prettyVersion, final File tempDir) {
         this.serviceContainer = serviceContainer;
@@ -147,31 +138,6 @@ public final class BootstrapListener {
             Files.deleteIfExists(file.toPath());
         } catch (IOException e) {
             // ignore
-        }
-    }
-
-    public void acquireRunningLock(File homeDir) {
-        if (lockFileChannel != null) {
-            // Lock already held from a previous start (e.g. server reload); keep it for JVM lifetime.
-            return;
-        }
-        try {
-            openLockFile(homeDir.toPath().resolve(INSTALLATION_DIR).resolve(RUNNING_LOCK_FILE));
-        } catch (IOException e) {
-            // ignore
-        }
-    }
-
-    private void openLockFile(Path lockPath) throws IOException {
-        Files.createDirectories(lockPath.getParent());
-        FileChannel channel = FileChannel.open(lockPath,
-                StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ);
-        FileLock lock = channel.tryLock();
-        if (lock != null) {
-            lockFileChannel = channel;
-            runningLock = lock;
-        } else {
-            channel.close();
         }
     }
 
