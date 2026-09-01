@@ -39,17 +39,17 @@ class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
         final OptionMap connOpts = ConnectorUtils.getOptions(context, fullModel.get(CommonAttributes.PROPERTY));
         final String username = RemoteOutboundConnectionResourceDefinition.USERNAME.resolveModelAttribute(context, fullModel).asStringOrNull();
         final String authenticationContext = RemoteOutboundConnectionResourceDefinition.AUTHENTICATION_CONTEXT.resolveModelAttribute(context, fullModel).asStringOrNull();
-        final String protocol = authenticationContext != null ? null : RemoteOutboundConnectionResourceDefinition.PROTOCOL.resolveModelAttribute(context, fullModel).asString();
+        final String protocol = RemoteOutboundConnectionResourceDefinition.PROTOCOL.resolveModelAttribute(context, fullModel).asString();
 
         // Install the RemoteOutboundConnectionInfoService
-        final CapabilityServiceBuilder<?> infoBuilder = context.getCapabilityServiceTarget().addCapability(RemoteOutboundConnectionResourceDefinition.CONNECTION_INFO_CAPABILITY);
+        final CapabilityServiceBuilder<?> infoBuilder = context.getCapabilityServiceTarget().addService();
         final Consumer<ConnectionInfo> infoConsumer = infoBuilder.provides(RemoteOutboundConnectionResourceDefinition.CONNECTION_INFO_CAPABILITY);
         final Supplier<OutboundSocketBinding> osbSupplier = infoBuilder.requires(OutboundSocketBinding.SERVICE_DESCRIPTOR, outboundSocketBindingRef);
         infoBuilder.setInstance(new RemoteOutboundConnectionInfoService(infoConsumer, osbSupplier, connOpts, username, protocol));
         infoBuilder.install();
 
         // Install the RemoteOutboundConnectionService
-        final CapabilityServiceBuilder<?> builder = context.getCapabilityServiceTarget().addCapability(OUTBOUND_CONNECTION_CAPABILITY);
+        final CapabilityServiceBuilder<?> builder = context.getCapabilityServiceTarget().addService();
         final Consumer<RemoteOutboundConnectionService> serviceConsumer = builder.provides(OUTBOUND_CONNECTION_CAPABILITY);
         final Supplier<ConnectionInfo> connectionInfoSupplier = builder.requires(ConnectionInfo.SERVICE_DESCRIPTOR, connectionName);
         builder.requiresCapability(RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY.getName(), Endpoint.class);
