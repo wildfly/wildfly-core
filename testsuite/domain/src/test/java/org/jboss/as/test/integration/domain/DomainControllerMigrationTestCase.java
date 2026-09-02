@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
@@ -32,6 +33,7 @@ import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
@@ -118,7 +120,7 @@ public class DomainControllerMigrationTestCase {
         hostConfig.setDomainDirectory(hostDir.getAbsolutePath());
         hostConfig.setHostName("failover-h" + String.valueOf(host));
         hostConfig.setHostControllerManagementPort(MGMT_PORTS[host - 1]);
-        hostConfig.setStartupTimeoutInSeconds(120);
+        hostConfig.setStartupTimeoutInSeconds((int) TimeoutUtil.adjust(Duration.ofSeconds(120)).toSeconds());
         hostConfig.setBackupDC(true);
         File usersFile = new File(hostConfigDir, "mgmt-users.properties");
         Files.write(usersFile.toPath(),
