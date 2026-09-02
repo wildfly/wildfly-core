@@ -97,7 +97,7 @@ public class DefaultInterfaceOverridingDomainTestCase {
         hostConfig.setDomainDirectory(hostDir.getAbsolutePath());
         hostConfig.setHostName("secondary");
         hostConfig.setHostControllerManagementPort(9999);
-        hostConfig.setStartupTimeoutInSeconds((int) TimeoutUtil.adjust(Duration.ofSeconds(120)).toSeconds());
+        hostConfig.setStartupTimeout(TimeoutUtil.adjust(Duration.ofSeconds(120)));
         hostConfig.setBackupDC(true);
         File usersFile = new File(hostConfigDir, "mgmt-users.properties");
         Files.write(usersFile.toPath(),
