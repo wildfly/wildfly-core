@@ -9,14 +9,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HAS
 import static org.jboss.as.server.Services.JBOSS_SERVER_EXECUTOR;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ARCHIVE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
-import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_PARAM_ALL_EXPLODED;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.OVERWRITE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.TARGET_PATH;
-import static org.jboss.as.server.deployment.DeploymentHandlerUtils.addFlushHandler;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.getContentItem;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isArchive;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isManaged;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtils.addFlushHandler;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.createFailureException;
 
 import java.io.IOException;
@@ -36,6 +36,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.operations.validation.DeploymentSourceValidator;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.ExplodedContent;
@@ -53,12 +54,14 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
 
     private final ContentRepository contentRepository;
     private final ServerEnvironment serverEnvironment;
+    private final DeploymentSourceValidator deploymentSourceValidator;
 
     public ExplodedDeploymentAddContentHandler(final ContentRepository contentRepository,
             final ServerEnvironment serverEnvironment) {
         assert contentRepository != null : "Null contentRepository";
         this.contentRepository = contentRepository;
         this.serverEnvironment = serverEnvironment;
+        this.deploymentSourceValidator = DeploymentSourceValidator.forStandalone();
     }
 
     @Override
@@ -92,7 +95,7 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
             for (ModelNode content : contents) {
                 InputStream in;
                 if(DeploymentHandlerUtils.hasValidContentAdditionParameterDefined(content)) {
-                    in = DeploymentHandlerUtils.getInputStream(context, content);
+                    in = DeploymentHandlerUtils.getInputStream(context, content, deploymentSourceValidator);
                 } else {
                     in = null;
                 }

@@ -14,6 +14,7 @@ import java.net.URL;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.operations.validation.DeploymentSourceValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.logging.ServerLogger;
@@ -30,8 +31,11 @@ public class DeploymentUploadURLHandler
 
     public static final String OPERATION_NAME = UPLOAD_DEPLOYMENT_URL;
 
+    private final DeploymentSourceValidator deploymentSourceValidator;
+
     private DeploymentUploadURLHandler(final ContentRepository repository, final AttributeDefinition attribute) {
         super(repository, attribute);
+        this.deploymentSourceValidator = DeploymentSourceValidator.forStandalone();
     }
 
 
@@ -48,6 +52,7 @@ public class DeploymentUploadURLHandler
     protected InputStream getContentInputStream(OperationContext operationContext, ModelNode operation) throws OperationFailedException {
 
         String urlSpec = attribute.resolveModelAttribute(operationContext, operation).asString();
+        deploymentSourceValidator.validateUrl(urlSpec);
         try {
             URL url = new URL(urlSpec);
             return url.openStream();

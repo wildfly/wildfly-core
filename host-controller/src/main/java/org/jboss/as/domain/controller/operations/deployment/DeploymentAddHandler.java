@@ -8,6 +8,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ARCHIVE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_PATH;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RELATIVE_TO;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RESOURCE_ALL;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.DOMAIN_ADD_ATTRIBUTES;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.EMPTY;
@@ -23,6 +25,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.operations.validation.DeploymentSourceValidator;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.repository.ContentRepository;
@@ -43,11 +46,13 @@ public class DeploymentAddHandler implements OperationStepHandler {
 
     private final ContentRepository contentRepository;
     private final HostFileRepository fileRepository;
+    private final DeploymentSourceValidator deploymentSourceValidator;
 
     /** Constructor for a slave Host Controller */
     public DeploymentAddHandler(final HostFileRepository fileRepository, final ContentRepository contentRepository) {
         this.contentRepository = contentRepository;
         this.fileRepository = fileRepository;
+        this.deploymentSourceValidator = DeploymentSourceValidator.forDomain();
     }
 
     /**
@@ -58,6 +63,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
     public DeploymentAddHandler(final ContentRepository contentRepository) {
         this.contentRepository = contentRepository;
         this.fileRepository = null;
+        this.deploymentSourceValidator = DeploymentSourceValidator.forDomain();
     }
 
     /**
@@ -123,7 +129,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
             }
             try {
                 // Store and transform operation
-                hash = DeploymentUploadUtil.storeContentAndTransformOperation(context, correctedOperation, contentRepository);
+                hash = DeploymentUploadUtil.storeContentAndTransformOperation(context, correctedOperation, contentRepository, deploymentSourceValidator);
             } catch (IOException e) {
                 throw createFailureException(e.toString());
             }
@@ -135,7 +141,14 @@ public class DeploymentAddHandler implements OperationStepHandler {
             content.add(contentItemNode);
             newModel.get(CONTENT_RESOURCE_ALL.getName()).set(content);
 
-        } // else would have failed validation
+        } else if (contentItemNode.hasDefined(CONTENT_PATH.getName())) {
+            // unmanaged deployment
+            // Validate the path and relative-to attributes.
+            String path = contentItemNode.get(CONTENT_PATH.getName()).asString();
+            String relativeTo = contentItemNode.hasDefined(CONTENT_RELATIVE_TO.getName()) ?
+                    contentItemNode.get(CONTENT_RELATIVE_TO.getName()).asString() : null;
+            deploymentSourceValidator.validatePath(path, relativeTo);
+        }
 
         if (contentRepository != null && hash != null) {
             final byte[] contentHash = hash;

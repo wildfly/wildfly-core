@@ -4,6 +4,7 @@
  */
 package org.jboss.as.domain.controller.resources;
 
+import org.jboss.as.controller.operations.validation.DeploymentSourceValidator;
 import org.jboss.as.domain.controller.operations.DomainDeploymentOverlayRedeployLinksHandler;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.DeploymentFileRepository;
@@ -16,7 +17,7 @@ import org.jboss.as.server.deploymentoverlay.DeploymentOverlayDefinition;
 public class DomainDeploymentOverlayDefinition extends DeploymentOverlayDefinition {
 
     public DomainDeploymentOverlayDefinition(boolean domainLevel, ContentRepository contentRepo, DeploymentFileRepository fileRepository) {
-        super(domainLevel, contentRepo, fileRepository);
+        super(domainLevel, contentRepo, fileRepository, DeploymentSourceValidator.forDomain());
         addOperation(DomainDeploymentOverlayRedeployLinksHandler.REDEPLOY_LINKS_DEFINITION,
                 new DomainDeploymentOverlayRedeployLinksHandler(domainLevel));
     }

@@ -28,6 +28,8 @@ import static org.jboss.as.server.deployment.DeploymentHandlerUtils.hasValidCont
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.jboss.as.controller.operations.validation.DeploymentSourceValidator;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.ResultAction;
@@ -55,6 +57,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = ADD;
 
     protected final ContentRepository contentRepository;
+    protected final DeploymentSourceValidator deploymentSourceValidator;
 
     @SuppressWarnings("deprecation")
     private final DeploymentTransformer deploymentTransformer;
@@ -63,6 +66,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
         assert contentRepository != null : "Null contentRepository";
         this.contentRepository = contentRepository;
         this.deploymentTransformer = loadDeploymentTransformer();
+        this.deploymentSourceValidator = DeploymentSourceValidator.forStandalone();
     }
 
     public static DeploymentAddHandler create(final ContentRepository contentRepository) {
@@ -191,11 +195,11 @@ public class DeploymentAddHandler implements OperationStepHandler {
 
     DeploymentHandlerUtil.ContentItem addFromContentAdditionParameter(OperationContext context, ModelNode contentItemNode, String name) throws OperationFailedException {
         byte[] hash;
-        InputStream in = getInputStream(context, contentItemNode);
+        InputStream in = getInputStream(context, contentItemNode, deploymentSourceValidator);
         InputStream transformed = null;
         try {
             try {
-                transformed = transformDeploymentBytes(context, contentItemNode, name, in, deploymentTransformer);
+                transformed = transformDeploymentBytes(context, contentItemNode, name, in, deploymentTransformer, deploymentSourceValidator);
                 hash = contentRepository.addContent(transformed);
             } catch (IOException e) {
                 throw createFailureException(e.toString());
@@ -212,6 +216,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
         final String path = contentItemNode.require(CONTENT_PATH.getName()).asString();
         final String relativeTo = asString(contentItemNode, CONTENT_RELATIVE_TO.getName());
         final boolean archive = contentItemNode.require(CONTENT_ARCHIVE.getName()).asBoolean();
+        deploymentSourceValidator.validatePath(path, relativeTo);
         return new DeploymentHandlerUtil.ContentItem(path, relativeTo, archive);
     }
 }

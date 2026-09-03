@@ -12,6 +12,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.domain.controller.operations.deployment.AbstractDeploymentHandler.createFailureException;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_PATH;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RELATIVE_TO;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
 
 import java.io.IOException;
@@ -27,6 +29,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.operations.validation.DeploymentSourceValidator;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.repository.ContentReference;
@@ -50,6 +53,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
     private final HostFileRepository fileRepository;
     private final boolean isMaster;
     private final boolean isBackup;
+    private final DeploymentSourceValidator deploymentSourceValidator;
 
     /**
      * Constructor for a master and slave Host Controllers
@@ -59,6 +63,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         this.fileRepository = fileRepository;
         this.isMaster = isMaster;
         this.isBackup = isBackup;
+        this.deploymentSourceValidator = DeploymentSourceValidator.forDomain();
     }
 
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -116,7 +121,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
             }
             try {
                 // Store and transform operation
-                newHash = DeploymentUploadUtil.storeContentAndTransformOperation(context, correctedOperation, contentRepository);
+                newHash = DeploymentUploadUtil.storeContentAndTransformOperation(context, correctedOperation, contentRepository, deploymentSourceValidator);
             } catch (IOException e) {
                 throw createFailureException(e.toString());
             }
@@ -130,6 +135,13 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         } else {
             // Unmanaged content, the user is responsible for replication
             newHash = null;
+            if (contentItemNode.hasDefined(CONTENT_PATH.getName())) {
+                // Validate the path and relative-to attributes.
+                String path = contentItemNode.get(CONTENT_PATH.getName()).asString();
+                String relativeTo = contentItemNode.hasDefined(CONTENT_RELATIVE_TO.getName()) ?
+                        contentItemNode.get(CONTENT_RELATIVE_TO.getName()).asString() : null;
+                deploymentSourceValidator.validatePath(path, relativeTo);
+            }
         }
 
         // Store state to the model
