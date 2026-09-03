@@ -1041,6 +1041,53 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="bruteForceProtectionType">
+        <xs:annotation>
+            <xs:documentation>
+                Configuration for brute force authentication protection.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Whether brute force protection is enabled for this realm.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="max-failed-attempts" type="xs:int" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Maximum number of failed authentication attempts before lockout.
+                    If not specified, uses the WildFly Elytron library default (10).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="lockout-interval" type="xs:int" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Duration in minutes to lock out an account after maximum failures.
+                    If not specified, uses the WildFly Elytron library default (15 minutes).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="session-timeout" type="xs:int" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Duration in minutes before a failure session expires.
+                    If not specified, uses the WildFly Elytron library default (30 minutes).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="max-cached-sessions" type="xs:int" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Maximum number of failure sessions to cache.
+                    If not specified, uses the WildFly Elytron library default (25000).
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="aggregateRealmType">
         <xs:annotation>
             <xs:documentation>
@@ -1096,6 +1143,15 @@
         </xs:annotation>
         <xs:complexContent>
             <xs:extension base="realmType">
+                <xs:all minOccurs="0">
+                    <xs:element name="brute-force-protection" type="bruteForceProtectionType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Configuration for brute force authentication protection.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:all>
                 <xs:attribute name="realm" type="xs:string" use="required">
                     <xs:annotation>
                         <xs:documentation>
@@ -1143,6 +1199,13 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
+                    <xs:element name="brute-force-protection" type="bruteForceProtectionType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Configuration for brute force authentication protection.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
                 </xs:sequence>
                 <xs:attributeGroup ref="customComponentAttributes" />
             </xs:extension>
@@ -1157,6 +1220,15 @@
         </xs:annotation>
         <xs:complexContent>
             <xs:extension base="realmType">
+                <xs:all minOccurs="0">
+                    <xs:element name="brute-force-protection" type="bruteForceProtectionType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Configuration for brute force authentication protection.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:all>
                 <xs:attribute name="realms" type="stringListType" use="required">
                     <xs:annotation>
                         <xs:documentation>
@@ -1192,6 +1264,15 @@
         </xs:annotation>
         <xs:complexContent>
             <xs:extension base="realmType">
+                <xs:all minOccurs="0">
+                    <xs:element name="brute-force-protection" type="bruteForceProtectionType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Configuration for brute force authentication protection.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:all>
                 <xs:attribute name="delegate-realm" type="xs:string" use="required">
                     <xs:annotation>
                         <xs:documentation>
@@ -1260,6 +1341,13 @@
             <xs:extension base="realmType">
                 <xs:sequence>
                     <xs:element name="principal-query" type="authenticationQueryType" maxOccurs="unbounded"/>
+                    <xs:element name="brute-force-protection" type="bruteForceProtectionType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Configuration for brute force authentication protection.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
                 </xs:sequence>
                 <xs:attribute name="hash-charset" default="UTF-8" type="xs:string" use="optional">
                     <xs:annotation>
@@ -1282,10 +1370,17 @@
         <xs:complexContent>
             <xs:extension base="realmType">
                 <xs:all minOccurs="0">
-                    <xs:element name="file" type="basicFileTypeOptional">
+                    <xs:element name="file" type="basicFileTypeOptional" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation>
                                 The location of the file with JAAS Login Context configuration.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="brute-force-protection" type="bruteForceProtectionType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Configuration for brute force authentication protection.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -1762,6 +1857,13 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
+                    <xs:element name="brute-force-protection" type="bruteForceProtectionType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Configuration for brute force authentication protection.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
                 </xs:all>
                 <xs:attribute name="groups-attribute" type="xs:string" default="groups">
                     <xs:annotation>
@@ -1808,6 +1910,13 @@
             <xs:extension base="realmType">
                 <xs:all>
                     <xs:element name="identity-mapping" type="identityMappingType" nillable="false"/>
+                    <xs:element name="brute-force-protection" type="bruteForceProtectionType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Configuration for brute force authentication protection.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
                 </xs:all>
                 <xs:attribute name="dir-context" type="xs:string" use="required">
                     <xs:annotation>
@@ -1870,6 +1979,13 @@
                         <xs:annotation>
                             <xs:documentation>
                                 The location of the file to use to handle the security realm.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="brute-force-protection" type="bruteForceProtectionType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Configuration for brute force authentication protection.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>

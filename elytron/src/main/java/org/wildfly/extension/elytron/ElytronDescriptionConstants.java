@@ -71,6 +71,7 @@ interface ElytronDescriptionConstants {
     String BASE64 = "base64";
     String BCRYPT = "bcrypt";
     String BCRYPT_MAPPER = "bcrypt-mapper";
+    String BRUTE_FORCE_PROTECTION = "brute-force-protection";
 
     String CAA_IDENTITIES = "caa-identities";
     String CACHING_REALM = "caching-realm";
@@ -177,6 +178,7 @@ interface ElytronDescriptionConstants {
     String DYNAMIC_CLIENT_SSL_CONTEXTS = "dynamic-client-ssl-contexts";
 
     String ELYTRON_SECURITY = "elytron-security";
+    String ENABLED = "enabled";
     String ENABLE_CONNECTION_POOLING = "enable-connection-pooling";
     String ENABLING = "enabling";
     String ENCODED = "encoded";
@@ -305,6 +307,7 @@ interface ElytronDescriptionConstants {
     String LOGICAL_OPERATION = "logical-operation";
     String LOGICAL_PERMISSION_MAPPER = "logical-permission-mapper";
     String LOGICAL_ROLE_MAPPER = "logical-role-mapper";
+    String LOCKOUT_INTERVAL = "lockout-interval";
 
     String MAPPED_REGEX_REALM_MAPPER = "mapped-regex-realm-mapper";
     String MAPPED_ROLE_MAPPER = "mapped-role-mapper";
@@ -330,6 +333,8 @@ interface ElytronDescriptionConstants {
     String MAXIMUM_SEGMENTS = "maximum-segments";
     String MAXIMUM_SESSION_CACHE_SIZE = "maximum-session-cache-size";
     String MAX_BACKUP_INDEX = "max-backup-index";
+    String MAX_CACHED_SESSIONS = "max-cached-sessions";
+    String MAX_FAILED_ATTEMPTS = "max-failed-attempts";
     String MECHANISM = "mechanism";
     String MECHANISM_CONFIGURATION = "mechanism-configuration";
     String MECHANISM_CONFIGURATIONS = "mechanism-configurations";
