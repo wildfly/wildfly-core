@@ -9,6 +9,8 @@ package org.jboss.as.remoting;
 import static org.jboss.as.remoting.RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY;
 import static org.jboss.as.remoting.RemotingSubsystemRootResource.WORKER;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -57,7 +59,13 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
             String nodeName = WildFlySecurityManager.getPropertyPrivileged(RemotingExtension.NODE_NAME_PROPERTY, null);
 
             Supplier<XnioWorker> workerSupplier = builder.requires(IOServiceDescriptor.WORKER, workerName);
-            builder.setInstance(new EndpointService(endpointConsumer, workerSupplier, nodeName, EndpointService.EndpointType.SUBSYSTEM, map)).install();
+
+            List<Supplier<ConnectionInfo>> connectionInfoSuppliers = new ArrayList<>();
+            for (String connectionName : resource.getChildrenNames(CommonAttributes.REMOTE_OUTBOUND_CONNECTION)) {
+                connectionInfoSuppliers.add(builder.requires(ConnectionInfo.SERVICE_DESCRIPTOR, connectionName));
+            }
+
+            builder.setInstance(new EndpointService(endpointConsumer, workerSupplier, connectionInfoSuppliers, nodeName, EndpointService.EndpointType.SUBSYSTEM, map)).install();
         }
     }
 }
