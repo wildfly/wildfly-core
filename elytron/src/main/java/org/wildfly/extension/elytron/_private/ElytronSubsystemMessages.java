@@ -746,6 +746,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     // Message ID 1221 Mistakenly used for DynamicSSLContext - Moved above.
 
+    @Message(id = 1222, value = "Failed to parse public-key-url '%s'")
+    OperationFailedException invalidPublicKeyUrl(String url, @Cause Exception cause);
+
 
     /*
      * Don't just add new errors to the end of the file, there may be an appropriate section above for the resource.
