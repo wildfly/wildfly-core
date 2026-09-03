@@ -634,8 +634,9 @@ public class ConfigurationFile {
 
     String snapshot(String prefix, String comment) throws ConfigurationPersistenceException {
         String sanitizedComment = FilePersistenceUtils.sanitizeFileName(comment);
-        String fileName = (sanitizedComment == null || sanitizedComment.isEmpty()) ? mainFile.getName() : sanitizedComment + "-" + mainFile.getName();
-        String name = (prefix == null || prefix.isEmpty()) ? getTimeStamp(new Date()) + fileName : prefix + fileName;
+        String sanitizedPrefix = FilePersistenceUtils.sanitizeFileName(prefix);
+        String fileName = sanitizedComment.isEmpty() ? mainFile.getName() : sanitizedComment + "-" + mainFile.getName();
+        String name = sanitizedPrefix.isEmpty() ? getTimeStamp(new Date()) + fileName : sanitizedPrefix + fileName;
         File snapshot = new File(snapshotsDirectory, name);
         File source = interactionPolicy.isReadOnly() ? lastFile : mainFile;
         try {
