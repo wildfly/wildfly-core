@@ -16,9 +16,11 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZ
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTOFLUSH;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DISTRIBUTED_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILESYSTEM_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FROM;
@@ -154,6 +156,13 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXTS));
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXT));
+        // external-account-binding is only parsed by the preview 19.0 schema, but still needs rejecting when
+        // transforming to 18.0.
+        builder.addChildResource(PathElement.pathElement(CERTIFICATE_AUTHORITY_ACCOUNT))
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, EXTERNAL_ACCOUNT_BINDING)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, EXTERNAL_ACCOUNT_BINDING)
+                .end();
     }
 
     private static void from18(ChainedTransformationDescriptionBuilder chainedBuilder) {
