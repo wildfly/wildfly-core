@@ -62,6 +62,7 @@ import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.operations.global.ReadConfigAsFeaturesOperationHandler;
 import org.jboss.as.controller.operations.global.ReadFeatureDescriptionHandler;
+import org.jboss.as.controller.operations.validation.DeploymentSourceValidator;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
@@ -552,7 +553,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         ManagementResourceRegistration deployments = resourceRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, serverEnvironment));
 
         //deployment overlays
-        resourceRegistration.registerSubModel(new DeploymentOverlayDefinition(false, contentRepository, null));
+        resourceRegistration.registerSubModel(new DeploymentOverlayDefinition(false, contentRepository, null, DeploymentSourceValidator.forStandalone()));
 
         // The sub-deployments registry
         deployments.registerSubModel(ServerSubDeploymentResourceDefinition.create());

@@ -27,7 +27,6 @@ public class DeploymentAddHandlerTestCase {
     public void testTooMuchContent() throws OperationFailedException {
         final DeploymentAddHandler handler = DeploymentAddHandler.create(contentRepository);
         final ModelNode operation = new ModelNode();
-        //operation.get("address").setEmptyList().get(0).get("deployment").set("test.war");
         operation.get("address").get(0).set("deployment", "test.war");
         operation.get("content").get(0).get("archive").set(true);
         operation.get("content").get(0).get("path").set("test.war");
@@ -36,11 +35,11 @@ public class DeploymentAddHandlerTestCase {
         model.get("persistent").set(true);
         model.remove("address");
         final OperationContext context = Mockito.mock(OperationContext.class);
-        Mockito.when(context.resolveExpressions(Mockito.<ModelNode>any())).thenReturn(model);
+        Mockito.when(context.resolveExpressions(Mockito.any())).thenReturn(model);
         handler.execute(context, operation);
     }
 
-    @Test
+    @Test (expected = OperationFailedException.class)
     public void testValidator() throws OperationFailedException {
         final DeploymentAddHandler handler = DeploymentAddHandler.create(contentRepository);
         final ModelNode operation = new ModelNode();
@@ -48,12 +47,8 @@ public class DeploymentAddHandlerTestCase {
         final ModelNode model = operation.clone();
         model.get("persistent").set(true);
         final OperationContext context = Mockito.mock(OperationContext.class);
-        Mockito.when(context.resolveExpressions(Mockito.<ModelNode>any())).thenReturn(model);
-        try {
-            handler.execute(context, operation);
-        } catch (OperationFailedException e) {
-            // TODO: check exception
-        }
+        Mockito.when(context.resolveExpressions(Mockito.any())).thenReturn(model);
+        handler.execute(context, operation);
     }
 
     private ContentRepository contentRepository = new ContentRepository() {

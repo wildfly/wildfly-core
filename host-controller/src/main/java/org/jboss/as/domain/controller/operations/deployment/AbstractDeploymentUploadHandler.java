@@ -17,6 +17,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
+import org.jboss.as.controller.operations.validation.DeploymentSourceValidator;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.dmr.ModelNode;
 
@@ -32,10 +33,12 @@ public abstract class AbstractDeploymentUploadHandler implements OperationStepHa
 
     private final ContentRepository contentRepository;
     protected final AttributeDefinition attribute;
+    protected final DeploymentSourceValidator deploymentSourceValidator;
 
     protected AbstractDeploymentUploadHandler(final ContentRepository contentRepository, final AttributeDefinition attribute) {
         this.contentRepository = contentRepository;
         this.attribute = attribute;
+        this.deploymentSourceValidator = DeploymentSourceValidator.forDomain();
     }
 
     /**
