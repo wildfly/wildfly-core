@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
 
@@ -491,8 +492,8 @@ final class NodeSubregistry {
             if (result == null) {
                 result = wildCardChildren;
             } else if (wildCardChildren != null) {
-                // Merge
-                result = new HashSet<String>(result);
+                // Merge, keeping the child types sorted by name
+                result = new TreeSet<String>(result);
                 result.addAll(wildCardChildren);
             }
         }
