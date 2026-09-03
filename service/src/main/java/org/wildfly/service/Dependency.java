@@ -5,6 +5,7 @@
 package org.wildfly.service;
 
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -81,6 +82,35 @@ public interface Dependency<B extends ServiceBuilder<?>, V> extends Consumer<B>,
             @Override
             public R get() {
                 return mapper.apply(Dependency.this.get(), dependency.get());
+            }
+        };
+    }
+
+    /**
+     * Returns a runnable task that consumes the provided dependency value.
+     * @param consumer a consumer of the dependency value.
+     * @return a runnable task that consumes the provided dependency value.
+     */
+    default Runnable thenAccept(Consumer<? super V> consumer) {
+        return new Runnable() {
+            @Override
+            public void run() {
+                consumer.accept(Dependency.this.get());
+            }
+        };
+    }
+
+    /**
+     * Returns a consumer that accepts a value using the provided dependency value.
+     * @param <T> the value type
+     * @param consumer a consumer of the dependency value paired with another value
+     * @return a composed that accepts a value using the provided dependency value.
+     */
+    default <T> Consumer<T> thenAccept(BiConsumer<? super V, ? super T> consumer) {
+        return new Consumer<>() {
+            @Override
+            public void accept(T value) {
+                consumer.accept(Dependency.this.get(), value);
             }
         };
     }
