@@ -58,7 +58,7 @@ public class WildFlyManagedConfiguration {
 
     private String javaVmArguments = System.getProperty("server.jvm.args", "-Xmx512m");
 
-    private int startupTimeoutInSeconds = (int) TimeoutUtil.adjust(Duration.ofMinutes(2)).toSeconds();
+    private Duration startupTimeout = TimeoutUtil.adjust(Duration.ofMinutes(2));
 
     private boolean outputToConsole = true;
 
@@ -181,18 +181,35 @@ public class WildFlyManagedConfiguration {
     }
 
     /**
-     * @param startupTimeoutInSeconds the startupTimeoutInSeconds to set
+     * @param startupTimeout the maximum time to wait for startup
      */
-    public WildFlyManagedConfiguration setStartupTimeoutInSeconds(int startupTimeoutInSeconds) {
-        this.startupTimeoutInSeconds = startupTimeoutInSeconds;
+    public WildFlyManagedConfiguration setStartupTimeout(Duration startupTimeout) {
+        this.startupTimeout = startupTimeout;
         return this;
     }
 
     /**
-     * @return the startupTimeoutInSeconds
+     * @return the maximum time to wait for startup
      */
+    public Duration getStartupTimeout() {
+        return startupTimeout;
+    }
+
+    /**
+     * @deprecated Use {@link #setStartupTimeout(Duration)} instead.
+     */
+    @Deprecated(forRemoval = true)
+    public WildFlyManagedConfiguration setStartupTimeoutInSeconds(int startupTimeoutInSeconds) {
+        this.startupTimeout = Duration.ofSeconds(startupTimeoutInSeconds);
+        return this;
+    }
+
+    /**
+     * @deprecated Use {@link #getStartupTimeout()} instead.
+     */
+    @Deprecated(forRemoval = true)
     public int getStartupTimeoutInSeconds() {
-        return startupTimeoutInSeconds;
+        return (int) startupTimeout.toSeconds();
     }
 
     /**

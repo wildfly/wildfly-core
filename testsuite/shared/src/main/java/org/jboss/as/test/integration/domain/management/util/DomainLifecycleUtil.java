@@ -458,7 +458,7 @@ public class DomainLifecycleUtil implements AutoCloseable {
         op.get(RESTART_SERVERS).set(parameters.restartServers);
         long startupTimeout;
         if (parameters.timeout == null) {
-            startupTimeout = configuration.getStartupTimeoutInSeconds();
+            startupTimeout = configuration.getStartupTimeout().toSeconds();
         } else {
             startupTimeout = parameters.timeout;
         }
@@ -543,7 +543,7 @@ public class DomainLifecycleUtil implements AutoCloseable {
          * Sets the timeout
          *
          * @param timeout maximum time to wait for the Host Controller and Servers reload to complete, in milliseconds,
-         *                if {@code null} {@link WildFlyManagedConfiguration.startupTimeoutInSeconds} will be used
+         *                if {@code null} {@link WildFlyManagedConfiguration#getStartupTimeout()} will be used
          * @return this ReloadParameters object
          */
         public ReloadParameters setTimeout(Long timeout) {
@@ -748,7 +748,7 @@ public class DomainLifecycleUtil implements AutoCloseable {
 
     /**
      * Poll until {@link #areServersStarted()} returns {@code true} or the
-     * {@link WildFlyManagedConfiguration#getStartupTimeoutInSeconds() configured timeout} is reached.
+     * {@link WildFlyManagedConfiguration#getStartupTimeout() configured timeout} is reached.
      *
      * @param start time in milliseconds that should be used as the starting time for the timeout check.
      *
@@ -756,7 +756,7 @@ public class DomainLifecycleUtil implements AutoCloseable {
      * @throws TimeoutException if no call {@link #areServersStarted()} returns {@code true} before the timeout
      */
     public void awaitServers(long start) throws InterruptedException, TimeoutException {
-        awaitServers(start, configuration.getStartupTimeoutInSeconds());
+        awaitServers(start, configuration.getStartupTimeout().toSeconds());
     }
 
     public void awaitServers(long start, long timeout) throws InterruptedException, TimeoutException {
@@ -778,7 +778,7 @@ public class DomainLifecycleUtil implements AutoCloseable {
 
     /**
      * Poll until {@link #isHostControllerStarted()} returns {@code true} or the
-     * {@link WildFlyManagedConfiguration#getStartupTimeoutInSeconds() configured timeout} is reached.
+     * {@link WildFlyManagedConfiguration#getStartupTimeout() configured timeout} is reached.
      *
      * @param start time in milliseconds that should be used as the starting time for the timeout check.
      *
@@ -795,7 +795,7 @@ public class DomainLifecycleUtil implements AutoCloseable {
 
     /**
      * Poll until {@link #isHostControllerInState(ControlledProcessState.State)} returns {@code true} or the
-     * {@link WildFlyManagedConfiguration#getStartupTimeoutInSeconds() configured timeout} is reached.
+     * {@link WildFlyManagedConfiguration#getStartupTimeout() configured timeout} is reached.
      *
      * @param start time in milliseconds that should be used as the starting time for the timeout check.
      * @param state The {@link ControlledProcessState.State} to compare.
@@ -804,8 +804,9 @@ public class DomainLifecycleUtil implements AutoCloseable {
      * @throws TimeoutException      if no call {@link #isHostControllerStarted()} returns {@code true} before the timeout
      */
     public void awaitHostController(long start, ControlledProcessState.State state) throws InterruptedException, TimeoutException {
-        awaitHostController(start, configuration.getStartupTimeoutInSeconds(), state);
+        awaitHostController(start, configuration.getStartupTimeout().toSeconds(), state);
     }
+
     public void awaitHostController(long start, long timeout, ControlledProcessState.State state) throws InterruptedException, TimeoutException {
         checkClosed();
         boolean hcAvailable = false;

@@ -134,7 +134,7 @@ public class SecondarySynchronizationTestCase {
         hostConfig.setDomainDirectory(hostDir.getAbsolutePath());
         hostConfig.setHostName(HOSTS[host]);
         hostConfig.setHostControllerManagementPort(MGMT_PORTS[host]);
-        hostConfig.setStartupTimeoutInSeconds((int) TimeoutUtil.adjust(Duration.ofSeconds(120)).toSeconds());
+        hostConfig.setStartupTimeout(TimeoutUtil.adjust(Duration.ofSeconds(120)));
         hostConfig.setBackupDC(true);
         File usersFile = new File(hostConfigDir, "mgmt-users.properties");
         Files.write(usersFile.toPath(),
