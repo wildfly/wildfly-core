@@ -8,9 +8,9 @@ package org.jboss.as.domain.controller.transformers;
 
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createBuilder;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createBuilderFromCurrent;
-import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createChainFromCurrent;
 
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilderFactory;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
@@ -24,8 +24,8 @@ import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
  */
 class ServerGroupTransformers {
 
-    static ChainedTransformationDescriptionBuilder buildTransformerChain() {
-        ChainedTransformationDescriptionBuilder chainedBuilder = createChainFromCurrent(ServerGroupResourceDefinition.PATH);
+    static ChainedTransformationDescriptionBuilder buildTransformerChain(ChainedTransformationDescriptionBuilderFactory factory) {
+        ChainedTransformationDescriptionBuilder chainedBuilder = factory.createChainedTransformationDescriptionBuilder(ServerGroupResourceDefinition.PATH);
 
         //////////////////////////////////
         //The EAP/AS 7.x chains

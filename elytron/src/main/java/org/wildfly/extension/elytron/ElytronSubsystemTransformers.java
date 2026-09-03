@@ -152,7 +152,6 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     private static void from19(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_19_0_0, ELYTRON_18_0_0);
 
-        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXTS));
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXT));
     }
 
