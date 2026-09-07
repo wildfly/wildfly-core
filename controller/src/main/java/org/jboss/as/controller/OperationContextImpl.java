@@ -2771,13 +2771,10 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         @Override
         public <V> Supplier<V> requiresCapability(String capabilityBaseName, Class<V> dependencyType, String... referenceNames) {
-            String capabilityName;
+            ServiceName serviceName = getCapabilityServiceName(capabilityBaseName, dependencyType);
             if (referenceNames != null && referenceNames.length > 0) {
-                capabilityName = RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, referenceNames);
-            } else {
-                capabilityName = capabilityBaseName;
+                serviceName = serviceName.append(referenceNames);
             }
-            final ServiceName serviceName = getCapabilityServiceName(capabilityName, dependencyType);
             return requires(serviceName);
         }
 
