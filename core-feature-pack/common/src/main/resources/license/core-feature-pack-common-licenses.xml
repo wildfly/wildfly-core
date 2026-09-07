@@ -7,7 +7,7 @@
 <licenseSummary>
   <dependencies>
     <dependency>
-      <groupId>org.jline</groupId>
+      <groupId>org.fusesource.jansi</groupId>
       <artifactId>jansi</artifactId>
       <licenses>
         <license>

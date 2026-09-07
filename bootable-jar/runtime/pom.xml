@@ -9,7 +9,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-jar-parent</artifactId>
-        <version>34.0.0.Beta5-SNAPSHOT</version>
+        <version>33.0.0.Beta2-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-jar-runtime</artifactId>
@@ -90,6 +90,14 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging-processor</artifactId>
+            <!-- This is a compile-time dependency of this project, but is not needed at compile or runtime by other
+            projects that depend on this project.-->
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.stdio</groupId>
             <artifactId>jboss-stdio</artifactId>
             <scope>provided</scope>
@@ -105,18 +113,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.jboss.logging</groupId>
-                            <artifactId>jboss-logging-processor</artifactId>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-            <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
@@ -124,32 +120,6 @@
                         <test.jboss.home>${project.build.directory}</test.jboss.home>
                     </systemPropertyVariables>
                 </configuration>
-                <executions>
-                  <execution>
-                    <id>test-with-env-disabled</id>
-                    <configuration>
-                      <environmentVariables>
-                        <DISABLE_JDK_SERIAL_FILTER>true</DISABLE_JDK_SERIAL_FILTER>
-                      </environmentVariables>
-                    </configuration>
-                    <goals>
-                      <goal>test</goal>
-                    </goals>
-                    <phase>test</phase>
-                  </execution>
-                  <execution>
-                    <id>test-with-env-set</id>
-                    <configuration>
-                      <environmentVariables>
-                        <JDK_SERIAL_FILTER>custom-value</JDK_SERIAL_FILTER>
-                      </environmentVariables>
-                    </configuration>
-                    <goals>
-                      <goal>test</goal>
-                    </goals>
-                    <phase>test</phase>
-                  </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

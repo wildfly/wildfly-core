@@ -8,7 +8,6 @@ package org.jboss.as.test.manualmode.deployment;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 
 import java.io.File;
-import java.time.Duration;
 
 import jakarta.inject.Inject;
 
@@ -27,7 +26,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 @ServerControl(manual = true)
 public class DeploymentScannerRedeploymentTestCase extends AbstractDeploymentScannerBasedTestCase {
     private static final int DELAY = 100;
-    private static final Duration TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(30));
+    private static final int TIMEOUT = 30000;
     private static final PathAddress DEPLOYMENT_TEST = PathAddress.pathAddress(DEPLOYMENT, "deployment-test.jar");
 
     @Inject
@@ -48,7 +47,7 @@ public class DeploymentScannerRedeploymentTestCase extends AbstractDeploymentSca
                 addDeploymentScanner(client, 0, false, true);
                 try {
                     // Wait until deployed ...
-                    long timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
                     while (!exists(client, DEPLOYMENT_TEST) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(DELAY);
                     }
@@ -65,7 +64,7 @@ public class DeploymentScannerRedeploymentTestCase extends AbstractDeploymentSca
 
                     startContainer(client);
 
-                    timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
                     while (exists(client, DEPLOYMENT_TEST) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(200);
                     }
@@ -98,7 +97,7 @@ public class DeploymentScannerRedeploymentTestCase extends AbstractDeploymentSca
         container.start();
 
         // Wait until started ...
-        long timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+        long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
         while (!isRunning(client) && System.currentTimeMillis() < timeout) {
             Thread.sleep(200);
         }

@@ -12,7 +12,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 
 import jakarta.inject.Inject;
 
@@ -57,7 +56,7 @@ public class DeploymentScannerNotificationUnitTestCase extends AbstractDeploymen
                 addDeploymentScanner(client, 1000, false, true);
                 try {
                     // Wait until deployed ...
-                    long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis();
+                    long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
                     while (!exists(client, DEPLOYMENT_ONE) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(100);
                     }
@@ -66,7 +65,7 @@ public class DeploymentScannerNotificationUnitTestCase extends AbstractDeploymen
                     final Path oneDeployed = getDeployDirPath().resolve("deployment-one.jar.deployed");
                     final Path oneUndeployed = getDeployDirPath().resolve("deployment-one.jar.undeployed");
                     Assert.assertTrue(Files.deleteIfExists(oneDeployed));
-                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis();
+                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
                     while (!Files.exists(oneUndeployed) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(10);
                     }
@@ -82,7 +81,7 @@ public class DeploymentScannerNotificationUnitTestCase extends AbstractDeploymen
                     deploy(client, deploymentOne);
                     Assert.assertTrue(exists(client, DEPLOYMENT_ONE));
                     Assert.assertEquals("OK", deploymentState(client, DEPLOYMENT_ONE));
-                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis();
+                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
                     while (!Files.exists(oneDeployed) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(10);
                     }

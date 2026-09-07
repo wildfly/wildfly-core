@@ -15,7 +15,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Duration;
 
 import jakarta.inject.Inject;
 import org.jboss.as.controller.PathAddress;
@@ -42,7 +41,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 @RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class DeploymentScannerOperationRollbackTestCase extends AbstractDeploymentScannerBasedTestCase {
-    private static final Duration FAILING_TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(3));
+    private static final int FAILING_TIMEOUT = 3000;
     @Inject
     private ServerController container;
 
@@ -59,7 +58,7 @@ public class DeploymentScannerOperationRollbackTestCase extends AbstractDeployme
                     assertThat(exists(client, DEPLOYMENT_ONE), is(false));
                     runFailingScan(client);
                     // Wait until deployed ...
-                    long timeout = System.currentTimeMillis() + FAILING_TIMEOUT.toMillis();
+                    long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(FAILING_TIMEOUT);
                     while (!exists(client, DEPLOYMENT_ONE) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(DELAY);
                     }

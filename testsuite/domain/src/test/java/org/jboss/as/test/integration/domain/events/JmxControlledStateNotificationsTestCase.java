@@ -11,7 +11,6 @@ import static org.wildfly.test.jmx.ControlledStateNotificationListener.RUNTIME_C
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Duration;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -182,7 +181,7 @@ public class JmxControlledStateNotificationsTestCase {
     private void checkFacadeJmxNotifications(List<Pair<String, String>> configurationStateTransitions,
                                              List<Pair<String, String>> runningStateTransitions)
             throws IOException, InterruptedException {
-        final long end = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(20)).toMillis();
+        final long end = System.currentTimeMillis() + TimeoutUtil.adjust(20000);
         while (true) {
             try {
                 readAndCheckFile(JMX_FACADE_RUNTIME, list -> {

@@ -55,10 +55,6 @@ public class CliControllerConfigTestCase {
         assertTrue("failed to delete test config file", tempJbossConfigFile.delete());
     }
 
-    private static void assertContains(String output, String substring) {
-        assertTrue(String.format("'%s' doesn't contain '%s'", output, substring), output.contains(substring));
-    }
-
     /**
      * Default controller from jboss-cli.xml should be invalid to ensure settings are loaded from controller alias
      */
@@ -75,7 +71,7 @@ public class CliControllerConfigTestCase {
         try {
             cli.executeInteractive();
             boolean returnValue = cli.pushLineAndWaitForResults("connect", DISCONNECTED_PROMPT);
-            assertTrue("request timed out", returnValue);
+            assertTrue(returnValue);
         } catch (IOException ex) {
             fail(ex.getLocalizedMessage());
         } finally {
@@ -103,7 +99,7 @@ public class CliControllerConfigTestCase {
             cli.executeInteractive();
             cli.pushLineAndWaitForResults("connect");
             boolean returnState = cli.pushLineAndWaitForResults(READ_SERVER_STATE, CONNECTED_PROMPT);
-            assertTrue("request timed out", returnState);
+            assertTrue(returnState);
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         } finally {
@@ -128,7 +124,7 @@ public class CliControllerConfigTestCase {
             cli.executeInteractive();
             cli.pushLineAndWaitForResults("connect");
             boolean returnState = cli.pushLineAndWaitForResults(READ_SERVER_STATE, CONNECTED_PROMPT);
-            assertTrue("request timed out", returnState);
+            assertTrue(returnState);
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         } finally {
@@ -156,10 +152,10 @@ public class CliControllerConfigTestCase {
             cli.executeInteractive();
             cli.clearOutput();
             boolean returnConnect = cli.pushLineAndWaitForResults("connect", DISCONNECTED_PROMPT);
-            assertTrue("request timed out", returnConnect);
+            assertTrue(returnConnect);
             String output = cli.getOutput();
-            assertContains(output, ":" + 9999);
-            assertTrue(String.format("'%s' doesn't contain 'remoting://' or 'remote://'", output), output.contains("remoting://") || output.contains("remote://"));
+            assertTrue(output.contains(":" + 9999));
+            assertTrue(output.contains("remoting://") || output.contains("remote://"));
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         } finally {
@@ -187,10 +183,10 @@ public class CliControllerConfigTestCase {
         try {
             cli.executeInteractive();
             boolean returnConnect = cli.pushLineAndWaitForResults("connect", DISCONNECTED_PROMPT);
-            assertTrue("request timed out", returnConnect);
+            assertTrue(returnConnect);
             String output = cli.getOutput();
-            assertContains(output, ":" + 9999);
-            assertContains(output, expectedProtocol + "://");
+            assertTrue(output.contains(":" + 9999));
+            assertTrue(output.contains(expectedProtocol + "://"));
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         } finally {
@@ -215,10 +211,10 @@ public class CliControllerConfigTestCase {
         try {
             cli.executeInteractive();
             boolean returnConnect = cli.pushLineAndWaitForResults("connect", DISCONNECTED_PROMPT);
-            assertTrue("request timed out", returnConnect);
+            assertTrue(returnConnect);
             String output = cli.getOutput();
-            assertContains(output, ":" + INVALID_PORT);
-            assertContains(output, expectedProtocol + "://");
+            assertTrue(output.contains(":" + INVALID_PORT));
+            assertTrue(output.contains(expectedProtocol + "://"));
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         } finally {
@@ -242,10 +238,10 @@ public class CliControllerConfigTestCase {
         try {
             cli.executeInteractive();
             boolean returnConnect = cli.pushLineAndWaitForResults("connect", DISCONNECTED_PROMPT);
-            assertTrue("request timed out", returnConnect);
+            assertTrue(returnConnect);
             String output = cli.getOutput();
-            assertContains(output, ":" + INVALID_PORT);
-            assertContains(output, expectedProtocol + "://");
+            assertTrue(output.contains(":" + INVALID_PORT));
+            assertTrue(output.contains(expectedProtocol + "://"));
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         } finally {
@@ -269,10 +265,10 @@ public class CliControllerConfigTestCase {
         try {
             cli.executeInteractive();
             boolean returnConnect = cli.pushLineAndWaitForResults("connect", DISCONNECTED_PROMPT);
-            assertTrue("request timed out", returnConnect);
+            assertTrue(returnConnect);
             String output = cli.getOutput();
-            assertContains(output, ":" + 9993);
-            assertContains(output, expectedProtocol + "://");
+            assertTrue(output.contains(":" + 9993));
+            assertTrue(output.contains(expectedProtocol + "://"));
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         } finally {

@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -71,7 +70,7 @@ public class AuditLogTestCase {
 
     private static final int SYSLOG_PORT = 10514;
 
-    private static final Duration ADJUSTED_SECOND = TimeoutUtil.adjust(Duration.ofSeconds(1));
+    private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
 
 
     private PathAddress primaryAuditAddress = PathAddress.pathAddress(
@@ -408,7 +407,7 @@ public class AuditLogTestCase {
     }
 
     private ModelNode expectSyslogData(PathAddress pathAddress, ModelNode op, boolean primaryOnlyOp) throws Exception {
-        byte[] data = server.receiveData((int) ADJUSTED_SECOND.multipliedBy(5).toMillis(), TimeUnit.MILLISECONDS);
+        byte[] data = server.receiveData(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
         Assert.assertNotNull(data);
         String msg = new String(data, StandardCharsets.UTF_8);
         msg = msg.substring(msg.indexOf('{')).replace("#012", "\n");
@@ -438,7 +437,7 @@ public class AuditLogTestCase {
     }
 
     private void expectNoSyslogData() throws InterruptedException {
-        byte[] data = server.receiveData((int) ADJUSTED_SECOND.toMillis(), TimeUnit.MILLISECONDS);
+        byte[] data = server.receiveData(1 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
         Assert.assertNull(data);
     }
 

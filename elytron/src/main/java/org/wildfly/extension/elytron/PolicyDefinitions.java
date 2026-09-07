@@ -174,18 +174,10 @@ class PolicyDefinitions {
             private Service<Policy> createPolicyService(Consumer<Consumer<Policy>> policyProvider) {
                 return new Service<Policy>() {
                     volatile Policy original;
-                    volatile boolean restorePolicy;
 
                     @Override
                     public void start(StartContext context) throws StartException {
-                        try {
-                            original = getPolicy();
-                            restorePolicy = true;
-                        } catch (UnsupportedOperationException e) {
-                            restorePolicy = false;
-                            ElytronSubsystemMessages.ROOT_LOGGER.settingPolicyNotSupported();
-                        }
-
+                        original = getPolicy();
 
                         try {
                             policyProvider.accept(this::setPolicy);
@@ -197,9 +189,7 @@ class PolicyDefinitions {
 
                     @Override
                     public void stop(StopContext context) {
-                        if (restorePolicy) {
-                            setPolicy(original);
-                        }
+                        setPolicy(original);
                     }
 
                     @Override
@@ -279,7 +269,6 @@ class PolicyDefinitions {
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
                 .setCapabilities(POLICY_RUNTIME_CAPABILITY)
-                .setDeprecatedSince(ElytronExtension.ELYTRON_19_0_0)
                 .setMaxOccurs(1)) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {

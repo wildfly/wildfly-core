@@ -43,7 +43,6 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.PropertyPermission;
@@ -122,7 +121,7 @@ public class CompositeOperationTestCase {
     }
 
     @Before
-    public void setup() throws IOException, MgmtOperationException {
+    public void setup() throws IOException {
         sysPropVal = 0;
         ModelNode op = Util.createAddOperation(PathAddress.pathAddress(SYS_PROP_ELEMENT));
         op.get(VALUE).set(sysPropVal);
@@ -133,12 +132,6 @@ public class CompositeOperationTestCase {
         op = Util.createAddOperation(PathAddress.pathAddress(HOST_SECONDARY, HOST_SYS_PROP_ELEMENT));
         op.get(VALUE).set(sysPropVal);
         domainPrimaryLifecycleUtil.getDomainClient().execute(op);
-
-        // Propagate ts.timeout.factor to the server group so managed servers receive it.
-        // This is necessary because ts.timeout.factor is not passed to managed server JVMs.
-        op = Util.createAddOperation(SERVER_GROUP_MAIN_SERVER_GROUP.append(SYSTEM_PROPERTY, TimeoutUtil.FACTOR_SYS_PROP));
-        op.get(VALUE).set(Integer.toString(TimeoutUtil.getRawFactor()));
-        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
 
@@ -152,13 +145,8 @@ public class CompositeOperationTestCase {
                 ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(HOST_PRIMARY, HOST_SYS_PROP_ELEMENT));
                 domainPrimaryLifecycleUtil.getDomainClient().execute(op);
             } finally {
-                try {
-                    ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(HOST_SECONDARY, HOST_SYS_PROP_ELEMENT));
-                    domainPrimaryLifecycleUtil.getDomainClient().execute(op);
-                } finally {
-                    ModelNode op = Util.createRemoveOperation(SERVER_GROUP_MAIN_SERVER_GROUP.append(SYSTEM_PROPERTY, TimeoutUtil.FACTOR_SYS_PROP));
-                    domainPrimaryLifecycleUtil.getDomainClient().execute(op);
-                }
+                ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(HOST_SECONDARY, HOST_SYS_PROP_ELEMENT));
+                domainPrimaryLifecycleUtil.getDomainClient().execute(op);
             }
         }
     }
@@ -597,7 +585,7 @@ public class CompositeOperationTestCase {
             List<ModelNode> steps;
 
             // it could ensure we have acquired the lock by the deployment operation executed before
-            TimeUnit.MILLISECONDS.sleep(TimeoutUtil.adjust(Duration.ofSeconds(1)).toMillis());
+            TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(1));
 
             steps = prepareReadCompositeOperations(PathAddress.pathAddress(HOST_SECONDARY), secondaryChildrenTypes);
             op = createComposite(steps);
@@ -615,7 +603,7 @@ public class CompositeOperationTestCase {
             Assert.assertEquals("It is expected deployment operation is still in progress", false, deploymentFuture.isDone());
 
             // keep the timeout in sync with SlowServiceActivator timeout
-            deploymentFuture.get(TimeoutUtil.adjust(Duration.ofMinutes(1)).toMillis(), TimeUnit.MILLISECONDS);
+            deploymentFuture.get(TimeoutUtil.adjust(60), TimeUnit.SECONDS);
 
         } finally {
             try {

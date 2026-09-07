@@ -19,7 +19,7 @@ rem Set to all parameters by default
 set "SERVER_OPTS=%*"
 
 if NOT "x%DEBUG%" == "x" (
-  set "DEBUG_MODE=%DEBUG%"
+  set "DEBUG_MODE=%DEBUG%
 )
 
 rem Get the program name before using shift as the command modify the variable ~nx0
@@ -34,10 +34,8 @@ if "%OS%" == "Windows_NT" (
 ) else (
   set DIRNAME=.\
 )
-
-call "%DIRNAME%common.bat" :commonConf
-
 setlocal EnableDelayedExpansion
+call "!DIRNAME!common.bat" :commonConf
 rem check for the security manager system property
 echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager" > nul
 if not errorlevel == 1 (
@@ -57,16 +55,6 @@ if "%~1" == "" (
    goto READ-DEBUG-PORT
 ) else if "%~1" == "-secmgr" (
    set SECMGR=true
-) else if "%~1" == "-v" (
-   goto READ-VERSION
-) else if "%~1" == "-V" (
-   goto READ-VERSION
-) else if "%~1" == "--version" (
-   goto READ-VERSION
-) else if "%~1" == "-h" (
-   goto READ-VERSION
-) else if "%~1" == "--help" (
-   goto READ-VERSION
 )
 shift
 goto READ-ARGS
@@ -79,16 +67,9 @@ if not %DEBUG_ARG% == "" (
       shift
       set DEBUG_PORT_VAR=%DEBUG_ARG%
    )
+   shift
+   goto READ-ARGS
 )
-shift
-goto READ-ARGS
-
-:READ-VERSION
-set "JAVA_OPTS=-Xmx16m"
-set "PRESERVE_JAVA_OPTS=true"
-set SKIP_CONF=true
-shift
-goto READ-ARGS
 
 :MAIN
 rem $Id$
@@ -114,17 +95,15 @@ if /i "%RESOLVED_JBOSS_HOME%" NEQ "%SANITIZED_JBOSS_HOME%" (
    echo.
 )
 
-rem Read an optional configuration file - skip for version/help commands
-if not "%SKIP_CONF%" == "true" if "x%STANDALONE_CONF%" == "x" (
+rem Read an optional configuration file.
+if "x%STANDALONE_CONF%" == "x" (
    set "STANDALONE_CONF=%DIRNAME%standalone.conf.bat"
 )
-if not "%SKIP_CONF%" == "true" (
-   if exist "%STANDALONE_CONF%" (
-      echo Calling "%STANDALONE_CONF%"
-      call "%STANDALONE_CONF%" %*
-   ) else (
-      echo Config file not found "%STANDALONE_CONF%"
-   )
+if exist "%STANDALONE_CONF%" (
+   echo Calling "%STANDALONE_CONF%"
+   call "%STANDALONE_CONF%" %*
+) else (
+   echo Config file not found "%STANDALONE_CONF%"
 )
 
 rem Sanitize JAVA_OPTS
@@ -182,6 +161,8 @@ if "x%JAVA_HOME%" == "x" (
   )
 )
 
+"%JAVA%" --add-modules=java.se -version >nul 2>&1 && (set MODULAR_JDK=true) || (set MODULAR_JDK=false)
+
 setlocal EnableDelayedExpansion
 
 :SET_SERVER_END
@@ -201,7 +182,7 @@ rem Setup JBoss specific properties
 
 rem Setup directories, note directories with spaces do not work
 setlocal EnableDelayedExpansion
-set CONSOLIDATED_OPTS=!JAVA_OPTS! !SERVER_OPTS!
+set "CONSOLIDATED_OPTS=%JAVA_OPTS% %SERVER_OPTS%"
 set baseDirFound=false
 set configDirFound=false
 set logDirFound=false
@@ -234,91 +215,103 @@ echo("!JAVA_OPTS!" | findstr /r /c:"-Djava.security.manager" > nul && (
     echo ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable.
     GOTO :EOF
 )
+setlocal DisableDelayedExpansion
 
 rem Set default module root paths
-if "x!JBOSS_MODULEPATH!" == "x" (
-  set JBOSS_MODULEPATH=!JBOSS_HOME!\modules
+if "x%JBOSS_MODULEPATH%" == "x" (
+  set  "JBOSS_MODULEPATH=%JBOSS_HOME%\modules"
 )
 
 rem Set the standalone base dir
-if "x!JBOSS_BASE_DIR!" == "x" (
-  set JBOSS_BASE_DIR=!JBOSS_HOME!\standalone
+if "x%JBOSS_BASE_DIR%" == "x" (
+  set  "JBOSS_BASE_DIR=%JBOSS_HOME%\standalone"
 )
 rem Set the standalone log dir
-if "x!JBOSS_LOG_DIR!" == "x" (
-  set JBOSS_LOG_DIR=!JBOSS_BASE_DIR!\log
+if "x%JBOSS_LOG_DIR%" == "x" (
+  set  "JBOSS_LOG_DIR=%JBOSS_BASE_DIR%\log"
 )
 rem Set the standalone configuration dir
-if "x!JBOSS_CONFIG_DIR!" == "x" (
-  set JBOSS_CONFIG_DIR=!JBOSS_BASE_DIR!\configuration
+if "x%JBOSS_CONFIG_DIR%" == "x" (
+  set  "JBOSS_CONFIG_DIR=%JBOSS_BASE_DIR%\configuration"
 )
+
+setlocal EnableDelayedExpansion
+call "!DIRNAME!common.bat" :setModularJdk
 setlocal DisableDelayedExpansion
+
+if not "%PRESERVE_JAVA_OPTS%" == "true" (
+  rem Add -Djdk.serialFilter if not specified
+  echo "%JAVA_OPTS%" | findstr /I "\-Djdk.serialFilter" > nul
+  if errorlevel == 1 (
+    if "x%DISABLE_JDK_SERIAL_FILTER%" == "x" (
+      setlocal EnableDelayedExpansion
+      set "JAVA_OPTS=!JAVA_OPTS! -Djdk.serialFilter="!JDK_SERIAL_FILTER!""
+      setlocal DisableDelayedExpansion
+    )
+  )
+)
 
 if not "%PRESERVE_JAVA_OPTS%" == "true" (
     if "%GC_LOG%" == "true" (
         if not exist "%JBOSS_LOG_DIR%" > nul 2>&1 (
             mkdir "%JBOSS_LOG_DIR%"
         )
-        rem Add rotating GC logs, if supported, and not already defined
-        echo "%JAVA_OPTS%" | findstr /I "\-Xlog:*gc" > nul
-        if errorlevel == 1 (
-            rem Back up any prior logs
-            move /y "%JBOSS_LOG_DIR%\gc.log" "%JBOSS_LOG_DIR%\backupgc.log" > nul 2>&1
-            move /y "%JBOSS_LOG_DIR%\gc.log.0" "%JBOSS_LOG_DIR%\backupgc.log.0" > nul 2>&1
-            move /y "%JBOSS_LOG_DIR%\gc.log.1" "%JBOSS_LOG_DIR%\backupgc.log.1" > nul 2>&1
-            move /y "%JBOSS_LOG_DIR%\gc.log.2" "%JBOSS_LOG_DIR%\backupgc.log.2" > nul 2>&1
-            move /y "%JBOSS_LOG_DIR%\gc.log.3" "%JBOSS_LOG_DIR%\backupgc.log.3" > nul 2>&1
-            move /y "%JBOSS_LOG_DIR%\gc.log.4" "%JBOSS_LOG_DIR%\backupgc.log.4" > nul 2>&1
-            move /y "%JBOSS_LOG_DIR%\gc.log.*.current" "%JBOSS_LOG_DIR%\backupgc.log.current" > nul 2>&1
+      rem Add rotating GC logs, if supported, and not already defined
+      echo "%JAVA_OPTS%" | findstr /I "\-Xlog:*gc" > nul
+      if errorlevel == 1 (
+        rem Back up any prior logs
+        move /y "%JBOSS_LOG_DIR%\gc.log" "%JBOSS_LOG_DIR%\backupgc.log" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.0" "%JBOSS_LOG_DIR%\backupgc.log.0" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.1" "%JBOSS_LOG_DIR%\backupgc.log.1" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.2" "%JBOSS_LOG_DIR%\backupgc.log.2" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.3" "%JBOSS_LOG_DIR%\backupgc.log.3" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.4" "%JBOSS_LOG_DIR%\backupgc.log.4" > nul 2>&1
+        move /y "%JBOSS_LOG_DIR%\gc.log.*.current" "%JBOSS_LOG_DIR%\backupgc.log.current" > nul 2>&1
 
             setlocal EnableDelayedExpansion
-            "!JAVA!" "-Xverbosegclog:!JBOSS_LOG_DIR!\gc.log" -version >nul 2>&1 && (set OPEN_J9_JDK=true) || (set OPEN_J9_JDK=false)
+            "!JAVA!" -Xverbosegclog:"!JBOSS_LOG_DIR!\gc.log" -version >nul 2>&1 && (set OPEN_J9_JDK=true) || (set OPEN_J9_JDK=false)
             if "!OPEN_J9_JDK!" == "true" (
-                set TMP_PARAM="-Xverbosegclog:!JBOSS_LOG_DIR!\gc.log"
+                set TMP_PARAM=-Xverbosegclog:"!JBOSS_LOG_DIR!\gc.log"
+                "!JAVA!" !TMP_PARAM! -version > nul 2>&1
+                if not errorlevel == 1 (
+                   set "GC_OPTS=!TMP_PARAM!"
+                ) else (
+                   set "GC_OPTS="
+                )
+            ) else if "!MODULAR_JDK!" == "true" (
+                set TMP_PARAM=-Xlog:gc*:file="\"!JBOSS_LOG_DIR!\gc.log\"":time,uptimemillis:filecount=5,filesize=3M
+                "!JAVA!" !TMP_PARAM! -version > nul 2>&1
+                if not errorlevel == 1 (
+                   set "JAVA_OPTS=!JAVA_OPTS! !TMP_PARAM!"
+                )
             ) else (
-                set TMP_PARAM="-Xlog:gc*:file=!JBOSS_LOG_DIR!\gc.log:time,uptimemillis:filecount=5,filesize=3M"
-            )
-            "!JAVA!" !TMP_PARAM! -version > nul 2>&1
-            if not errorlevel == 1 (
-               set "JAVA_OPTS=!JAVA_OPTS! !TMP_PARAM!"
+                set TMP_PARAM=-verbose:gc -Xloggc:"!JBOSS_LOG_DIR!\gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading
+                "!JAVA!" !TMP_PARAM! -version > nul 2>&1
+                if not errorlevel == 1 (
+                   set "JAVA_OPTS=!JAVA_OPTS! !TMP_PARAM!"
+                )
             )
             rem Remove the gc.log file from the -version check
-            del /F /Q "!JBOSS_LOG_DIR!\gc.log" > nul 2>&1
-            setlocal DisableDelayedExpansion
+            del /F /Q "%JBOSS_LOG_DIR%\gc.log" > nul 2>&1
         )
+        setlocal DisableDelayedExpansion
     )
 
     rem set default modular jvm parameters
-    call "%DIRNAME%common.bat" :setDefaultModularJvmOptions "%JAVA_OPTS%"
-
     setlocal EnableDelayedExpansion
-    set JAVA_OPTS=!JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!
-    setlocal DisableDelayedExpansion
+    call "!DIRNAME!common.bat" :setDefaultModularJvmOptions "!JAVA_OPTS!"
+    set "JAVA_OPTS=!JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!"
 
     rem Set default Security Manager configuration value
     if "%SECMGR%" == "true" (
-        call "%DIRNAME%common.bat" :setSecurityManagerDefault
-        setlocal EnableDelayedExpansion
-        set JAVA_OPTS=!JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!
-        setlocal DisableDelayedExpansion
+        call "!DIRNAME!common.bat" :setSecurityManagerDefault
+        set "JAVA_OPTS=!JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!"
     )
+    setlocal DisableDelayedExpansion
 )
 
-if not "%PRESERVE_JAVA_OPTS%" == "true" (
-  rem Add -Djdk.serialFilter if not specified
-  setlocal EnableDelayedExpansion
-  echo "!JAVA_OPTS! !SERVER_OPTS! !JDK_JAVA_OPTIONS!" | findstr /I "\-Djdk.serialFilter" > nul
-  if errorlevel == 1 (
-    if "x!DISABLE_JDK_SERIAL_FILTER!" == "x" (
-      if "x!JDK_SERIAL_FILTER!" == "x" (
-        set JAVA_OPTS=!JAVA_OPTS! "@!DIRNAME!jdk.serialFilter"
-      ) else (
-        set JAVA_OPTS=!JAVA_OPTS! -Djdk.serialFilter="!JDK_SERIAL_FILTER!"
-      )
-    )
-  )
-  setlocal DisableDelayedExpansion
-)
+
+
 
 rem Set the module options
 set "MODULE_OPTS=%MODULE_OPTS%"
@@ -330,7 +323,7 @@ rem Add -client to the JVM options, if supported (32 bit VM), and not overridden
 echo "!MODULE_OPTS!" | findstr /I \-javaagent: > nul
 if not errorlevel == 1 (
     set AGENT_PARAM=-javaagent:"!JBOSS_HOME!\jboss-modules.jar"
-    set JAVA_OPTS=!AGENT_PARAM! !JAVA_OPTS!
+    set "JAVA_OPTS=!AGENT_PARAM! !JAVA_OPTS!"
 )
 setlocal DisableDelayedExpansion
 
@@ -348,9 +341,9 @@ echo ===========================================================================
 echo.
 
 :RESTART
-  "%JAVA%" %JAVA_OPTS% ^
+  "%JAVA%" %JAVA_OPTS% %GC_OPTS% ^
    "-Dorg.jboss.boot.log.file=%JBOSS_LOG_DIR%\server.log" ^
-   "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%\logging.properties" ^
+   "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%/logging.properties" ^
       -jar "%JBOSS_HOME%\jboss-modules.jar" ^
       %MODULE_OPTS% ^
       -mp "%JBOSS_MODULEPATH%" ^

@@ -23,11 +23,6 @@ do
           echo "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
           exit 1
           ;;
-      -v|-V|--version|-h|--help)
-          PROCESS_CONTROLLER_JAVA_OPTS="-Xmx16m"
-          SKIP_CONF="true"
-          SERVER_OPTS="$SERVER_OPTS \"$1\""
-          ;;
       *)
           SERVER_OPTS="$SERVER_OPTS \"$1\""
           ;;
@@ -89,14 +84,12 @@ else
 fi
 export JBOSS_HOME
 
-# Read an optional running configuration file - skip for version/help commands
-if [ "$SKIP_CONF" != "true" ]; then
-    if [ "x$DOMAIN_CONF" = "x" ]; then
-        DOMAIN_CONF="$DIRNAME/domain.conf"
-    fi
-    if [ -r "$DOMAIN_CONF" ]; then
-        . "$DOMAIN_CONF"
-    fi
+# Read an optional running configuration file
+if [ "x$DOMAIN_CONF" = "x" ]; then
+    DOMAIN_CONF="$DIRNAME/domain.conf"
+fi
+if [ -r "$DOMAIN_CONF" ]; then
+    . "$DOMAIN_CONF"
 fi
 
 # Setup the JVM
@@ -226,15 +219,10 @@ if [ "$SECMGR" = "true" ]; then
 fi
 
 # Check If jdk.serialFilter is specified
-JDK_FILTER_SET=`echo "$JAVA_OPTS $SERVER_OPTS $JDK_JAVA_OPTIONS" | $GREP "\-Djdk.serialFilter"`
+JDK_FILTER_SET=`echo $JAVA_OPTS | $GREP "\-Djdk.serialFilter"`
 if [ "x$DISABLE_JDK_SERIAL_FILTER" = "x" -a "x$JDK_FILTER_SET" = "x" ]; then
-    if [ "x$JDK_SERIAL_FILTER" = "x" ]; then
-        PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS @\"$DIRNAME/jdk.serialFilter\""
-        HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS @\"$DIRNAME/jdk.serialFilter\""
-    else
-        PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS -Djdk.serialFilter=\"$JDK_SERIAL_FILTER\""
-        HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS -Djdk.serialFilter=\"$JDK_SERIAL_FILTER\""
-    fi
+    PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS -Djdk.serialFilter=\"$JDK_SERIAL_FILTER\""
+    HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS -Djdk.serialFilter=\"$JDK_SERIAL_FILTER\""
 fi
 
 # Set default modular JVM options

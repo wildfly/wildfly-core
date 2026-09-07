@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 
 import static org.junit.Assert.fail;
 
@@ -118,9 +117,8 @@ public class CliProcessWrapper extends CliProcessBuilder {
      * @return Returns true if the expected prompt is found. False if the timeout is reached.
      */
     public boolean pushLineAndWaitForResults(String string, String prompt) throws IOException {
-        int initialLength = cliOutputBuffer.length();
         pushToInput(string);
-        return waitForPrompt(prompt, initialLength);
+        return waitForPrompt(prompt);
     }
 
     /**
@@ -196,18 +194,14 @@ public class CliProcessWrapper extends CliProcessBuilder {
         }
     }
 
-    private Duration resultTimeout = TimeoutUtil.adjust(Duration.ofSeconds(20));
+    private int resultTimeout = TimeoutUtil.adjust(20000);
     private int resultInterval = 100;
 
-    public void setResultTimeout(Duration resultTimeout) {
+    public void setResultTimeout(int resultTimeout) {
         this.resultTimeout = resultTimeout;
     }
 
     private boolean waitForPrompt(String prompt) {
-        return waitForPrompt(prompt, -1);
-    }
-
-    private boolean waitForPrompt(String prompt, int initialLength) {
         boolean success = false;
         boolean wait = true;
         int waitingTime = 0;
@@ -223,12 +217,12 @@ public class CliProcessWrapper extends CliProcessBuilder {
             waitingTime += resultInterval;
 
             // If the timeout is reached, return regardless.
-            if (waitingTime > resultTimeout.toMillis()) {
+            if (waitingTime > resultTimeout) {
                 wait = false;
             }
 
             // If the expected prompt is not in the output, keep waiting
-            if (wait && cliOutputBuffer.length() > initialLength && outputHasPrompt(prompt)){
+            if (wait && outputHasPrompt(prompt)){
                 success = true;
                 wait = false;
             }
@@ -265,7 +259,7 @@ public class CliProcessWrapper extends CliProcessBuilder {
             }
 
             // If the timeout is reached, destroy the process and return false
-            if (waitingTime > resultTimeout.toMillis()) {
+            if (waitingTime > resultTimeout) {
                 cliProcess.destroyForcibly();
                 wait = false;
             }

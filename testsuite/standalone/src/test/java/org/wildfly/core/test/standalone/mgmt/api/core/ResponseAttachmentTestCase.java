@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -239,7 +238,7 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
                     httpget.setHeader("org.wildfly.useStreamAsResponse", "0");
                     HttpClient client = getConcurrentHttpClient(url);
                     gate.countDown();
-                    gate.await(TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis(), TimeUnit.MILLISECONDS);
+                    gate.await(TimeoutUtil.adjust(30000), TimeUnit.MILLISECONDS);
                     readHttpResponse(client.execute(httpget), 200);
                     //System.out.println(idx + " succeeded");
                     return null;
@@ -252,7 +251,7 @@ public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
 
         for (Future<Throwable> future : futures) {
             @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-            Throwable t = future.get(TimeoutUtil.adjust(Duration.ofMinutes(1)).toNanos(), TimeUnit.NANOSECONDS);
+            Throwable t = future.get(TimeoutUtil.adjust(1), TimeUnit.MINUTES);
             if (t != null) {
                 if (t instanceof Error) {
                     throw (Error) t;

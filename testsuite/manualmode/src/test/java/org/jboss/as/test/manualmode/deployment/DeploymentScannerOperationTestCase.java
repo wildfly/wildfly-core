@@ -11,7 +11,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
-import java.time.Duration;
 
 
 import jakarta.inject.Inject;
@@ -37,7 +36,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 @ServerControl(manual = true)
 public class DeploymentScannerOperationTestCase extends AbstractDeploymentScannerBasedTestCase {
 
-    private static final Duration TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(30));
+    private static final int TIMEOUT = 30000;
 
     @Inject
     private ServerController container;
@@ -56,7 +55,7 @@ public class DeploymentScannerOperationTestCase extends AbstractDeploymentScanne
                     Assert.assertFalse(exists(client, DEPLOYMENT_ONE));
                     runScan(client);
                     // Wait until deployed ...
-                    long timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
                     while (!exists(client, DEPLOYMENT_ONE) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(DELAY);
                     }
@@ -71,7 +70,7 @@ public class DeploymentScannerOperationTestCase extends AbstractDeploymentScanne
                     Assert.assertEquals("OK", deploymentState(client, DEPLOYMENT_ONE));
                     runScan(client);
                     // Wait until undeployed ...
-                    timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    timeout = System.currentTimeMillis() + TimeoutUtil.adjust(TIMEOUT);
                     while (exists(client, DEPLOYMENT_ONE) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(DELAY);
                     }

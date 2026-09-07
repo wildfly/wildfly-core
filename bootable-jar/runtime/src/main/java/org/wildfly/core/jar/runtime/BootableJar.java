@@ -11,7 +11,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputFilter;
 import java.io.UncheckedIOException;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationTargetException;
@@ -53,7 +52,6 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.READ_ATTRIB
 import static org.jboss.as.controller.client.helpers.ClientConstants.RESULT;
 import static org.jboss.as.controller.client.helpers.ClientConstants.RUNTIME_NAME;
 import org.jboss.as.process.CommandLineConstants;
-import org.jboss.as.server.logging.EarlyLoggingInit;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
@@ -118,8 +116,6 @@ public final class BootableJar implements ShutdownHandler {
 
         // logging needs to be configured before other components have a chance to initialize a logger
         configureLogger();
-        // Some traces to log could have been captured during args handling
-        arguments.logArgumentsHandling(log);
         long t = System.currentTimeMillis();
         if (arguments.getDeployment() != null) {
             setupDeployment(arguments.getDeployment());
@@ -250,7 +246,6 @@ public final class BootableJar implements ShutdownHandler {
                     new LoggingOutputStream(org.jboss.logmanager.Logger.getLogger("stderr"), org.jboss.logmanager.Level.ERROR)
             );
             StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(context));
-            EarlyLoggingInit.initSlf4j();
         }
     }
 
@@ -337,7 +332,7 @@ public final class BootableJar implements ShutdownHandler {
         ProductConfig productConfig = ProductConfig.fromFilesystemSlot(moduleLoader, jbossHome.toString(), null);
         Arguments arguments;
         try {
-            arguments = Arguments.parseArguments(args, environment, BootableJar.class.getClassLoader());
+            arguments = Arguments.parseArguments(args, environment);
         } catch (Throwable ex) {
             System.err.println(ex);
             CmdUsage.printUsage(productConfig, System.out);
@@ -346,13 +341,6 @@ public final class BootableJar implements ShutdownHandler {
         if (arguments.isHelp()) {
             CmdUsage.printUsage(productConfig, System.out);
             return;
-        }
-
-        if (arguments.getRequiredSerialFilter() != null) {
-            ObjectInputFilter objInputFilter = ObjectInputFilter.Config.createFilter(arguments.getRequiredSerialFilter());
-            // If a filter has already been set (it should not), this call will fail
-            // with an IllegalStateException.
-            ObjectInputFilter.Config.setSerialFilter(objInputFilter);
         }
 
         // Side effect is to initialise Log Manager

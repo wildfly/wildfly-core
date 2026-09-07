@@ -150,6 +150,7 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         readAliases.get(ClientConstants.OP).set("read-aliases");
 
         ModelNode aliases = assertSuccess(services.executeOperation(readAliases)).get("result");
+        System.out.println(aliases.toString());
         List<ModelNode> aliasValues = aliases.asList();
         assertEquals("Expected alias count", expectedAlias != null ? 1 : 0, aliasValues.size());
         if (expectedAlias != null) {

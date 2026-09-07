@@ -30,7 +30,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -223,11 +222,11 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         String line = "embed-server --admin-only=false --server-config=standalone-cli.xml " + stdoutParam + JBOSS_HOME;
         cli.sendLine(line);
         if (expectServerLogging) {
-            checkLogging("WFLYSRV0025", (int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis());
+            checkLogging("WFLYSRV0025", TimeoutUtil.adjust(30000));
         } else {
             checkNoLogging("WFLYSRV0025");
         }
-        assertState("running", (int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis());
+        assertState("running", TimeoutUtil.adjust(30000));
 
         // The app embedding the server should still be able to log
         checkClientSideLogging();
@@ -274,12 +273,12 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         assertState("reload-required", 0);
         // Low level
         cli.sendLine(":reload");
-        assertState("running", (int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis());
+        assertState("running", TimeoutUtil.adjust(30000));
         cli.sendLine("/subsystem=request-controller:add");
         assertState("reload-required", 0);
         // High level
         cli.sendLine("reload");
-        assertState("running", (int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis());
+        assertState("running", TimeoutUtil.adjust(30000));
     }
 
     /** Confirms that the low and high level shutdown commands are not available */
@@ -414,7 +413,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         assertState("reload-required", 0);
 
         cli.sendLine("reload --admin-only=false");
-        assertState("running", (int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis());
+        assertState("running", TimeoutUtil.adjust(30000));
 
         // We could use the CLI to do this, but since the code using MCC already exists, re-use it
         ModelControllerClient mcc = cli.getCommandContext().getModelControllerClient();
@@ -664,7 +663,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         cli.sendLine("/core-service=management/access=authorization:write-attribute(name=provider,value=rbac");
         assertState("reload-required", 0);
         cli.sendLine("reload --admin-only=true");
-        assertState("running", (int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis());
+        assertState("running", TimeoutUtil.adjust(30000));
     }
 
     @Test

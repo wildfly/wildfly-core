@@ -6,7 +6,6 @@ package org.jboss.as.test.manualmode.management.cli;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -456,7 +455,7 @@ public class CommandTimeoutHandlerTestCase {
                 TimeoutCommandContext tc = (TimeoutCommandContext) context;
                 tc.setLastHandlerTask(null);
                 try {
-                    long sleep = TimeoutUtil.adjust(Duration.ofSeconds(1)).toMillis();
+                    long sleep = TimeoutUtil.adjust(1000);
                     Thread.sleep(sleep);
                     holder.add(null);
                 } catch (InterruptedException ex) {

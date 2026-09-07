@@ -29,7 +29,7 @@ jobs:
           echo "artifacts=${ARTIFACTS}" >> $GITHUB_OUTPUT
 
       - name: Clone base version
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
         with:
           ref: ${{ steps.prepare.outputs.base }}
           path: base
@@ -42,7 +42,7 @@ jobs:
 
       # Run the caching against the base version only
       - name: Cache local Maven repository
-        uses: actions/cache@v6
+        uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -50,7 +50,7 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Clone PR version
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
         with:
           path: pr
 

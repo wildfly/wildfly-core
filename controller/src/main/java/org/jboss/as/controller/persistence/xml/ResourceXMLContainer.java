@@ -254,7 +254,7 @@ public interface ResourceXMLContainer extends XMLContainer<Map.Entry<PathAddress
                 if (!configuration.getParser(attribute).isParseAsElement()) {
                     QName name = configuration.getName(attribute);
                     this.attributes.put(name, attribute);
-                    if (!attribute.isNillable()) {
+                    if (attribute.isRequired()) {
                         this.requiredAttributes.add(name);
                     }
                 }

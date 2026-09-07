@@ -10,7 +10,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 
 import java.lang.reflect.ReflectPermission;
 import java.net.SocketPermission;
-import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -127,11 +126,11 @@ public class HostSuspendResumeTestCase {
             Future<Object> result = executorService.submit(new Callable<Object>() {
                 @Override
                 public Object call() throws Exception {
-                    return HttpRequest.get(appUrl, TimeoutUtil.adjust(Duration.ofSeconds(30)).toSeconds(), TimeUnit.SECONDS);
+                    return HttpRequest.get(appUrl, TimeoutUtil.adjust(30), TimeUnit.SECONDS);
                 }
             });
 
-            TimeUnit.NANOSECONDS.sleep(TimeoutUtil.adjust(Duration.ofSeconds(1)).toNanos()); //nasty, but we need to make sure the HTTP request has started
+            TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(1)); //nasty, but we need to make sure the HTTP request has started
 
             final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
             final DomainClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
@@ -140,7 +139,7 @@ public class HostSuspendResumeTestCase {
                 @Override
                 public String call() throws Exception {
                     ModelNode op = Util.createOperation(SUSPEND_SERVERS, PRIMARY_ADDR);
-                    op.get(ModelDescriptionConstants.SUSPEND_TIMEOUT).set((int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toSeconds());
+                    op.get(ModelDescriptionConstants.SUSPEND_TIMEOUT).set(TimeoutUtil.adjust(30));
                     return DomainTestUtils.executeForResult(op, domainPrimaryLifecycleUtil.createDomainClient()).asString();
                 }
             });
@@ -150,7 +149,7 @@ public class HostSuspendResumeTestCase {
             ModelNode op = Util.getReadAttributeOperation(SECONDARY_ADDR.append(SERVER_MAIN_THREE), SUSPEND_STATE);
             Assert.assertEquals(RUNNING, DomainTestUtils.executeForResult(op, secondaryClient).asString());
 
-            HttpRequest.get(appUrl + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(Duration.ofSeconds(30)).toSeconds(), TimeUnit.SECONDS);
+            HttpRequest.get(appUrl + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(30), TimeUnit.SECONDS);
             Assert.assertEquals(SuspendResumeHandler.TEXT, result.get());
 
             op = Util.getReadAttributeOperation(PRIMARY_ADDR.append(SERVER_MAIN_ONE), SUSPEND_STATE);
@@ -166,7 +165,7 @@ public class HostSuspendResumeTestCase {
             Assert.assertEquals(RUNNING, DomainTestUtils.executeForResult(op, secondaryClient).asString());
 
         } finally {
-            HttpRequest.get(appUrl + "?" + TestUndertowService.SKIP_GRACEFUL, TimeoutUtil.adjust(Duration.ofSeconds(30)).toSeconds(), TimeUnit.SECONDS);
+            HttpRequest.get(appUrl + "?" + TestUndertowService.SKIP_GRACEFUL, TimeoutUtil.adjust(30), TimeUnit.SECONDS);
             executorService.shutdown();
         }
     }

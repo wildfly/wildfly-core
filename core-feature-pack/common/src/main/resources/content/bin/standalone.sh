@@ -30,12 +30,6 @@ do
       -secmgr)
           SECMGR="true"
           ;;
-      -v|-V|--version|-h|--help)
-          JAVA_OPTS="-Xmx16m"
-          PRESERVE_JAVA_OPTS="true"
-          SKIP_CONF="true"
-          SERVER_OPTS="$SERVER_OPTS \"$1\""
-          ;;
       --)
           shift
           break;;
@@ -116,14 +110,12 @@ else
 fi
 export JBOSS_HOME
 
-# Read an optional running configuration file - skip for version/help commands
-if [ "$SKIP_CONF" != "true" ]; then
-    if [ "x$RUN_CONF" = "x" ]; then
-        RUN_CONF="$DIRNAME/standalone.conf"
-    fi
-    if [ -r "$RUN_CONF" ]; then
-        . "$RUN_CONF"
-    fi
+# Read an optional running configuration file
+if [ "x$RUN_CONF" = "x" ]; then
+    RUN_CONF="$DIRNAME/standalone.conf"
+fi
+if [ -r "$RUN_CONF" ]; then
+    . "$RUN_CONF"
 fi
 
 # Set debug settings if not already set
@@ -256,6 +248,9 @@ fi
 
 
 if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
+    # Set flag if JVM is modular
+    setModularJdk
+
     if [ "$GC_LOG" = "true" ]; then
         # Enable rotating GC logs if the JVM supports it and GC logs are not already enabled
         mkdir -p $JBOSS_LOG_DIR
@@ -273,8 +268,10 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
             "$JAVA" -Xverbosegclog:"$JBOSS_LOG_DIR/gc.log" -version > /dev/null 2>&1 && OPEN_J9_JDK=true || OPEN_J9_JDK=false
             if [ "$OPEN_J9_JDK" = "true" ]; then
                 TMP_PARAM="-Xverbosegclog:\"$JBOSS_LOG_DIR/gc.log\""
-            else
+            elif [ "$MODULAR_JDK" = "true" ]; then
                 TMP_PARAM="-Xlog:gc*:file=\"$JBOSS_LOG_DIR/gc.log\":time,uptimemillis:filecount=5,filesize=3M"
+            else
+                TMP_PARAM="-verbose:gc -Xloggc:\"$JBOSS_LOG_DIR/gc.log\" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading"
             fi
 
             eval "$JAVA" $TMP_PARAM -version >/dev/null 2>&1 && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS $TMP_PARAM"
@@ -283,13 +280,9 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
         fi
     fi
 
-    JDK_FILTER_SET=`echo "$JAVA_OPTS $SERVER_OPTS $JDK_JAVA_OPTIONS" | $GREP "\-Djdk.serialFilter"`
+    JDK_FILTER_SET=`echo $JAVA_OPTS | $GREP "\-Djdk.serialFilter"`
     if [ "x$DISABLE_JDK_SERIAL_FILTER" = "x" -a "x$JDK_FILTER_SET" = "x" ]; then
-        if [ "x$JDK_SERIAL_FILTER" = "x" ]; then
-            PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS @\"$DIRNAME/jdk.serialFilter\""
-        else
-            PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -Djdk.serialFilter=\"$JDK_SERIAL_FILTER\""
-        fi
+        PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -Djdk.serialFilter=\"$JDK_SERIAL_FILTER\""
     fi
 
     # Set default modular JVM options

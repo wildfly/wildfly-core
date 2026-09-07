@@ -39,7 +39,7 @@ import org.wildfly.core.launcher.StandaloneCommandBuilder;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class ServerConfigurator {
-    public static final AtomicBoolean CONFIGURED = new AtomicBoolean(false);
+    private static final AtomicBoolean CONFIGURED = new AtomicBoolean(false);
     public static final Set<Path> PATHS = new LinkedHashSet<>(16);
 
     public static void configure() throws IOException, InterruptedException {
@@ -59,22 +59,16 @@ public class ServerConfigurator {
                 throw new UncheckedIOException("Failed to update the script config files.", e);
             }
 
-            initializePaths();
-        }
-    }
+            // Always add the default path
+            PATHS.add(ServerHelper.JBOSS_HOME);
 
-    public static void initializePaths() {
-        PATHS.clear();
+            final String serverName = System.getProperty("server.name");
 
-        // Always add the default path
-        PATHS.add(ServerHelper.JBOSS_HOME);
-
-        final String serverName = System.getProperty("server.name");
-
-        // Create special characters in paths to test with assuming the -Dserver.name was not used
-        if (serverName == null || serverName.isEmpty()) {
-            PATHS.add(copy("wildfly core"));
-            PATHS.add(copy("wildfly (core)"));
+            // Create special characters in paths to test with assuming the -Dserver.name was not used
+            if (serverName == null || serverName.isEmpty()) {
+                PATHS.add(copy("wildfly core"));
+                PATHS.add(copy("wildfly (core)"));
+            }
         }
     }
 
@@ -128,7 +122,7 @@ public class ServerConfigurator {
                 ServerHelper.shutdownStandalone(client);
             }
 
-            if (!process.waitFor(ServerHelper.TIMEOUT.toSeconds(), TimeUnit.SECONDS)) {
+            if (!process.waitFor(ServerHelper.TIMEOUT, TimeUnit.SECONDS)) {
                 Assert.fail(readStdout(stdout));
             }
 
@@ -212,7 +206,7 @@ public class ServerConfigurator {
                 ServerHelper.waitForManagedServer(client, "server-three", () -> readStdout(stdout));
                 ServerHelper.shutdownDomain(client);
             }
-            if (!process.waitFor(ServerHelper.TIMEOUT.toSeconds(), TimeUnit.SECONDS)) {
+            if (!process.waitFor(ServerHelper.TIMEOUT, TimeUnit.SECONDS)) {
                 Assert.fail(readStdout(stdout));
             }
 

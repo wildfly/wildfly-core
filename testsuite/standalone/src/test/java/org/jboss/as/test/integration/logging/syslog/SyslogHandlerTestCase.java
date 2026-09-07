@@ -14,7 +14,6 @@ import static org.productivity.java.syslog4j.SyslogConstants.UDP;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -70,15 +69,14 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
     private static final ModelNode JSON_FORMATTER_ADDR = createAddress("logging-profile", "syslog-profile", "json-formatter", "JSON");
     private static final ModelNode SYSLOG_PROFILE_ADDR = createAddress("logging-profile", "syslog-profile");
     private static final ModelNode SYSLOG_HANDLER_ADDR = createAddress("logging-profile", "syslog-profile", "syslog-handler", "SYSLOG");
-    private static final ModelNode SYSLOG_PROFILE_LOGGER_ADDR = createAddress("logging-profile", "syslog-profile", "logger",
-            LoggingServiceActivator.LOGGER.getName());
+    private static final ModelNode SYSLOG_PROFILE_ROOT_LOGGER_ADDR = createAddress("logging-profile", "syslog-profile", "root-logger", "ROOT");
 
     /**
      * Syslog server port.
      */
     private static final int PORT = 10514;
 
-    private static final Duration ADJUSTED_SECOND = TimeoutUtil.adjust(Duration.ofSeconds(1));
+    private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
 
     @BeforeClass
     public static void deploy() throws Exception {
@@ -148,7 +146,7 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
      * @throws Exception
      */
     private void testLog(final BlockingQueue<SyslogServerEventIF> queue, final Level expectedLevel) throws Exception {
-        SyslogServerEventIF log = queue.poll(ADJUSTED_SECOND.multipliedBy(15).toMillis(), TimeUnit.MILLISECONDS);
+        SyslogServerEventIF log = queue.poll(15L * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
         assertNotNull(log);
         String msg = log.getMessage();
         assertEquals("Message with unexpected Syslog event level received: " + msg, getSyslogLevel(expectedLevel), log.getLevel());
@@ -164,7 +162,7 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
      * @throws Exception
      */
     private void testJsonLog(final BlockingQueue<SyslogServerEventIF> queue, final Level expectedLevel) throws Exception {
-        final SyslogServerEventIF log = queue.poll(ADJUSTED_SECOND.multipliedBy(15).toMillis(), TimeUnit.MILLISECONDS);
+        final SyslogServerEventIF log = queue.poll(15L * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
         assertNotNull(log);
         final String msg = log.getMessage();
         assertNotNull(msg);
@@ -252,7 +250,7 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
             op.get("enabled").set("true");
             builder.addStep(op);
 
-            op = Operations.createAddOperation(SYSLOG_PROFILE_LOGGER_ADDR);
+            op = Operations.createAddOperation(SYSLOG_PROFILE_ROOT_LOGGER_ADDR);
             op.get("level").set("TRACE");
             op.get("handlers").add("SYSLOG");
             builder.addStep(op);

@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +60,6 @@ public class ScriptProcess extends Process implements AutoCloseable {
     private Process delegate;
     private Path stdoutLog;
     private String lastExecutedCmd;
-    private final Map<String, String> lastEnv;
 
     ScriptProcess(final Path containerHome, final String scriptBaseName, final Shell shell, final long timeout) {
         this.containerHome = containerHome;
@@ -70,7 +68,6 @@ public class ScriptProcess extends Process implements AutoCloseable {
         this.timeout = timeout;
         this.prefixCmds = Arrays.asList(shell.getPrefix());
         lastExecutedCmd = "";
-        this.lastEnv = new HashMap<>();
     }
 
     void start(final String... arguments) throws IOException, TimeoutException, InterruptedException {
@@ -112,9 +109,6 @@ public class ScriptProcess extends Process implements AutoCloseable {
         if (env != null && !env.isEmpty()) {
             builder.environment().putAll(env);
         }
-        // Capture the final environment state for error reporting
-        lastEnv.clear();
-        lastEnv.putAll(builder.environment());
         final Process process = builder.start();
         if (check != null) {
             waitFor(process, check);
@@ -149,15 +143,8 @@ public class ScriptProcess extends Process implements AutoCloseable {
                 .append(lastExecutedCmd)
                 .append(System.lineSeparator())
                 .append("Environment:")
-                .append(System.lineSeparator());
-        for (Map.Entry<String, String> entry : lastEnv.entrySet()) {
-            errorMessage.append("  ")
-                    .append(entry.getKey())
-                    .append("=")
-                    .append(entry.getValue())
-                    .append(System.lineSeparator());
-        }
-        errorMessage.append("Output:")
+                .append(System.lineSeparator())
+                .append("Output:")
                 .append(System.lineSeparator());
         try {
             for (String line : getStdout()) {
@@ -197,8 +184,20 @@ public class ScriptProcess extends Process implements AutoCloseable {
     @Override
     public void close() {
         try {
-            destroy(delegate);
+            if (this.delegate != null) {
+                // First attempt to destroy all the child processes
+                delegate.children().forEachOrdered(child -> {
+                    if (child.destroyForcibly()) {
+                        try {
+                            child.onExit().get(timeout, TimeUnit.SECONDS);
+                        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                            LOGGER.errorf(e, "Failed to destroy child %s", child);
+                        }
+                    }
+                });
+            }
         } finally {
+            destroy(delegate);
             delegate = null;
         }
     }
@@ -318,8 +317,7 @@ public class ScriptProcess extends Process implements AutoCloseable {
                 destroy(process);
                 throw new TimeoutException(getErrorMessage(String.format("The %s did not start within %d seconds.", script.getFileName(), this.timeout)));
             }
-        } catch (RuntimeException | ExecutionException e) {
-            destroy(process);
+        } catch (ExecutionException e) {
             throw new RuntimeException(getErrorMessage(String.format("Failed to determine if the %s server is running.", script.getFileName())), e);
         } finally {
             service.shutdownNow();
@@ -328,31 +326,14 @@ public class ScriptProcess extends Process implements AutoCloseable {
 
     private void destroy(final Process process) {
         if (process != null && process.isAlive()) {
+            final Process destroyed = process.destroyForcibly();
             try {
-                // First attempt to destroy all the child processes
-                process.children().forEachOrdered(child -> {
-                    if (child.destroyForcibly()) {
-                        try {
-                            child.onExit().get(timeout, TimeUnit.SECONDS);
-                        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                            LOGGER.errorf(e, "Failed to destroy child %s", child);
-                        }
-                    }
-                });
-            } finally {
-                final Process destroyed = process.destroyForcibly();
-                try {
-                    if (destroyed.isAlive() && !destroyed.waitFor(timeout, TimeUnit.SECONDS)) {
-                        LOGGER.errorf("The process was not destroyed within %d seconds.", timeout);
-                    }
-                } catch (InterruptedException e) {
-                    LOGGER.error("The process was interrupted while waiting to be destroyed.", e);
+                if (destroyed.isAlive() && !destroyed.waitFor(timeout, TimeUnit.SECONDS)) {
+                    LOGGER.errorf("The process was not destroyed within %d seconds.", timeout);
                 }
+            } catch (InterruptedException e) {
+                LOGGER.error("The process was interrupted while waiting to be destroyed.", e);
             }
         }
-    }
-
-    public String getLastExecutedCmd() {
-        return lastExecutedCmd;
     }
 }

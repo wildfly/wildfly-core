@@ -9,7 +9,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TLS;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -45,7 +44,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 @ServerSetup(TLSAuditLogToTCPSyslogTestCase.AuditLogToTCPSyslogTestCaseSetup.class)
 public class TLSAuditLogToTCPSyslogTestCase {
 
-    private static final Duration ADJUSTED_SECOND = TimeoutUtil.adjust(Duration.ofSeconds(1));
+    private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
 
     @Inject
     private ManagementClient managementClient;
@@ -63,7 +62,7 @@ public class TLSAuditLogToTCPSyslogTestCase {
         try {
             setAuditlogEnabled(true);
             // enabling audit-log is auditable event
-            syslogEvent = queue.poll(ADJUSTED_SECOND.toMillis(), TimeUnit.MILLISECONDS);
+            syslogEvent = queue.poll(1 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
             // but we don't expect a message in TCP syslog server
             Assert.assertNull("No message was expected in the syslog, because TCP syslog server is used", syslogEvent);
         } finally {

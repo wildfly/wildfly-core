@@ -8,7 +8,6 @@ import static org.wildfly.core.jar.runtime.Constants.DEPLOYMENT_ARG;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputFilter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -22,9 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.jboss.as.controller.persistence.ConfigurationExtensionFactory;
 
 import org.jboss.as.process.CommandLineConstants;
@@ -36,11 +32,6 @@ import org.wildfly.core.jar.runtime._private.BootableJarLogger;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 final class Arguments {
-    static final String JDK_SERIAL_FILTER = "jdk.serialFilter";
-    private static final String DISABLE_JDK_SERIAL_FILTER_ENV = "DISABLE_JDK_SERIAL_FILTER";
-    private static final String JDK_SERIAL_FILTER_ENV = "JDK_SERIAL_FILTER";
-    private static final String DEFAULT_JDK_SERIAL_FILTER_RESOURCE = String.format("bin/%s", JDK_SERIAL_FILTER);
-    private static final Pattern DEFAULT_JDK_SERIAL_FILTER_PATTERN = Pattern.compile(String.format("\\Q-D%s=\\E\"(.+)\"", JDK_SERIAL_FILTER), Pattern.DOTALL);
 
     private Arguments(final BootableEnvironment environment) {
         this.environment = environment;
@@ -52,20 +43,17 @@ final class Arguments {
     private final BootableEnvironment environment;
     private Path deployment;
     private Path cliScript;
-    private String serialFilter;
-    private boolean logSerialFilterAlreadySet;
 
-    static Arguments parseArguments(final List<String> args, final BootableEnvironment environment, ClassLoader loader) throws Exception {
+    static Arguments parseArguments(final List<String> args, final BootableEnvironment environment) throws Exception {
         Objects.requireNonNull(args);
         Arguments arguments = new Arguments(environment);
-        arguments.handleArguments(args, loader);
+        arguments.handleArguments(args);
         return arguments;
     }
 
-    private void handleArguments(List<String> args, ClassLoader loader) throws Exception {
+    private void handleArguments(List<String> args) throws Exception {
         final Map<String, String> systemProperties = new HashMap<>();
         final Iterator<String> iter = args.iterator();
-        String jdkSerialFilterSet = null;
         while (iter.hasNext()) {
             final String a = iter.next();
             if (a.startsWith(DEPLOYMENT_ARG)) {
@@ -78,7 +66,6 @@ final class Arguments {
                     final String urlSpec = iter.next();
                     serverArguments.add(urlSpec);
                     addSystemProperties(makeUrl(urlSpec), systemProperties);
-                    jdkSerialFilterSet = systemProperties.get(JDK_SERIAL_FILTER);
                 } else {
                     throw BootableJarLogger.ROOT_LOGGER.invalidArgument(a);
                 }
@@ -87,7 +74,6 @@ final class Arguments {
                 // We need these set as system properties early so the log manager can use them
                 final String urlSpec = parseValue(a, CommandLineConstants.PROPERTIES);
                 addSystemProperties(makeUrl(urlSpec), systemProperties);
-                jdkSerialFilterSet = systemProperties.get(JDK_SERIAL_FILTER);
             } else if (a.startsWith(CommandLineConstants.SECURITY_PROP)) {
                 serverArguments.add(a);
             } else if (a.startsWith(CommandLineConstants.SYS_PROP)) {
@@ -96,7 +82,6 @@ final class Arguments {
                 // we also need to set it as a current system property for usage in the log manager.
                 serverArguments.add(a);
                 addSystemProperty(a, systemProperties);
-                jdkSerialFilterSet = systemProperties.get(JDK_SERIAL_FILTER);
             } else if (a.startsWith(CommandLineConstants.START_MODE)) {
                 serverArguments.add(a);
             } else if (a.startsWith(CommandLineConstants.DEFAULT_MULTICAST_ADDRESS)) {
@@ -120,47 +105,10 @@ final class Arguments {
                 throw BootableJarLogger.ROOT_LOGGER.unknownArgument(a);
             }
         }
-        // Special handling of jdk.serialFilter
-        // The filter could have been set by a system property not handled in the user arguments.
-        // We will know after having check for the existence of a filter.
-        ObjectInputFilter configuredFilter = ObjectInputFilter.Config.getSerialFilter();
-        String filter = System.getenv(JDK_SERIAL_FILTER_ENV);
-        String disabled = System.getenv(DISABLE_JDK_SERIAL_FILTER_ENV);
-        boolean filterEnabled = disabled == null || !disabled.equalsIgnoreCase("true");
-        if (configuredFilter == null) {
-            if (jdkSerialFilterSet == null) {
-                if (filterEnabled) {
-                    if (filter == null) {
-                        URL defaultFilterURL = loader.getResource(DEFAULT_JDK_SERIAL_FILTER_RESOURCE);
-                        if (defaultFilterURL != null) {
-                            String defaultFilterParameter = Files.readString(Path.of(defaultFilterURL.toURI()));
-                            Matcher matcher = DEFAULT_JDK_SERIAL_FILTER_PATTERN.matcher(defaultFilterParameter);
-                            if (matcher.find()) {
-                                // Join line continuations
-                                filter = matcher.group(1).replaceAll("\\\\\\v\\h*", "");
-                            }
-                        }
-                    }
-                    serialFilter = filter;
-                }
-            } else {
-                // The filter has been explicitly set, don't keep the system property.
-                // The filter will be set by the Bootable JAR runtime.
-                serialFilter = jdkSerialFilterSet;
-                systemProperties.remove(JDK_SERIAL_FILTER);
-            }
-        } else if (filter != null && filterEnabled) {
-            logSerialFilterAlreadySet = true;
-        }
         // Add the system properties to the environment
         environment.setSystemProperties(systemProperties);
     }
 
-    void logArgumentsHandling(BootableJarLogger log) {
-        if (logSerialFilterAlreadySet) {
-            log.advertiseSerialFilterSet();
-        }
-    }
     private Path checkPath(String path) {
         Path filePath = Paths.get(path);
         if (!Files.exists(filePath)) {
@@ -207,14 +155,6 @@ final class Arguments {
 
     public Path getCLIScript() {
         return cliScript;
-    }
-
-    /**
-     * The serialization filter that must be explicitely set.
-     * @return The filter, null if no filter to set.
-     */
-    public String getRequiredSerialFilter() {
-        return serialFilter;
     }
 
     private static void addSystemProperty(final String arg, final Map<String, String> properties) {

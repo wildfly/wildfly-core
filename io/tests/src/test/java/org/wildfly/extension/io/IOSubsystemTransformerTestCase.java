@@ -32,7 +32,7 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemTest {
 
     @Parameters
     public static Iterable<ModelTestControllerVersion> parameters() {
-        return EnumSet.of(ModelTestControllerVersion.EAP_7_4_0, ModelTestControllerVersion.EAP_8_0_0, ModelTestControllerVersion.EAP_8_1_0, ModelTestControllerVersion.WILDFLY_41_0_0);
+        return EnumSet.of(ModelTestControllerVersion.EAP_7_4_0, ModelTestControllerVersion.EAP_8_0_0, ModelTestControllerVersion.EAP_8_1_0);
     }
 
     private final ModelTestControllerVersion controller;
@@ -60,7 +60,6 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemTest {
             case EAP_8_0_0:
                 return IOSubsystemModel.VERSION_5_0_0;
             case EAP_8_1_0:
-            case WILDFLY_41_0_0:
                 return IOSubsystemModel.VERSION_6_0_0;
             default:
                 throw new IllegalArgumentException();
@@ -71,12 +70,11 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemTest {
         switch (this.controller) {
             case EAP_7_4_0:
             case EAP_8_0_0:
-                return new String[]{
+                return new String[] {
                         formatSubsystemArtifact(),
                 };
             case EAP_8_1_0:
-            case WILDFLY_41_0_0:
-                return new String[]{
+                return new String[] {
                         formatArtifact("org.wildfly.core:wildfly-io:%s"),
                         formatArtifact("org.wildfly.core:wildfly-subsystem:%s"),
                 };

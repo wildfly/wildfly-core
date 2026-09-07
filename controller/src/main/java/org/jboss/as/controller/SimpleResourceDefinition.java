@@ -213,17 +213,14 @@ public class SimpleResourceDefinition extends ResourceDefinition.MinimalResource
      */
     protected void registerAddOperation(final ManagementResourceRegistration registration, final OperationStepHandler handler, OperationEntry.Flag... flags) {
         DescriptionProvider descriptionProvider = (handler instanceof DescriptionProvider) ? (DescriptionProvider) handler : new DefaultResourceAddDescriptionProvider(registration, this.descriptionResolver, this.isOrderedChild());
-        SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD, this.descriptionResolver)
+        OperationDefinition definition = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD, this.descriptionResolver)
                 .setParameters(this.getAddOperationParameters(registration))
                 .setDescriptionProvider(descriptionProvider)
                 .setEntryType(OperationEntry.EntryType.PUBLIC)
                 .setStability(registration.getStability())
-                .withFlags(flags);
-        DeprecationData deprecationData = this.getDeprecationData();
-        if (deprecationData != null) {
-            builder.setDeprecated(deprecationData.getSince(), deprecationData.isNotificationUseful());
-        }
-        registration.registerOperationHandler(builder.build(), handler);
+                .withFlags(flags)
+                .build();
+        registration.registerOperationHandler(definition, handler);
     }
 
     /**

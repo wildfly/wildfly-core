@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-testsuite-unstable-api-annotation-feature-pack-parent</artifactId>
-        <version>34.0.0.Beta5-SNAPSHOT</version>
+        <version>33.0.0.Beta2-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-testsuite-unstable-api-annotation-feature-pack-subsystem</artifactId>
@@ -34,6 +34,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging-processor</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>wildfly-controller</artifactId>
             <scope>provided</scope>
@@ -46,20 +53,6 @@
         </dependency>
     </dependencies>
     
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.jboss.logging</groupId>
-                            <artifactId>jboss-logging-processor</artifactId>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+
+
 </project>

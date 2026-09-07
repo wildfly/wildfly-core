@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -82,8 +81,8 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 @ServerSetup({DeploymentScannerSetupTask.class})
 public class DeploymentTestCase {
 
-    // Max time to wait for some action to complete
-    private static final Duration TIMEOUT = TimeoutUtil.adjust(Duration.ofSeconds(20));
+    // Max time to wait for some action to complete, in ms
+    private static final int TIMEOUT = TimeoutUtil.adjust(20000);
     // Pause time between checks whether some action has completed, in ms
     private static final int BACKOFF = 10;
 
@@ -364,7 +363,7 @@ public class DeploymentTestCase {
                         out.write(deploymentName.getBytes());
                     }
                     Assert.assertTrue(dodeploy.exists());
-                    long timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
@@ -389,7 +388,7 @@ public class DeploymentTestCase {
                     archive2.as(ZipExporter.class).exportTo(target, true);
                     dodeploy.createNewFile();
                     Assert.assertTrue(dodeploy.exists());
-                    long timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
@@ -421,7 +420,7 @@ public class DeploymentTestCase {
                     final File dodeploy = new File(deployDir, deploymentName + ".dodeploy");
                     final File isdeploying = new File(deployDir, deploymentName +".isdeploying");
                     final File undeployed = new File(deployDir, deploymentName+ ".undeployed");
-                    long timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
@@ -440,7 +439,7 @@ public class DeploymentTestCase {
 
                     // Delete file from deploy directory
                     deployed.delete();
-                    timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (undeployed.exists()) {
                             break;
@@ -492,7 +491,7 @@ public class DeploymentTestCase {
                     Files.copy(file.toPath(), target.toPath());
                     Assert.assertTrue(file.exists());
 
-                    long timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (!isdeploying.exists() && deployed.exists()) {
                             break;
@@ -523,7 +522,7 @@ public class DeploymentTestCase {
                             +  Files.getLastModifiedTime(target).toInstant(), Files.getLastModifiedTime(target).toInstant().isAfter(deploymentLastModified));
                     // Wait until filesystem action gets picked up by scanner
                     boolean wasUndeployed = false;
-                    long timeout = System.currentTimeMillis() + TIMEOUT.toMillis() + TIMEOUT.toMillis();
+                    long timeout = System.currentTimeMillis() + TIMEOUT + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if ((isdeploying.exists() && !deployed.exists()) || Files.getLastModifiedTime(deployed.toPath()).toMillis() > deployedlastModified.toMillis()) {
                             wasUndeployed = true;
@@ -538,7 +537,7 @@ public class DeploymentTestCase {
                     }
                     Assert.assertTrue("fullReplace step did not complete in a reasonably timely fashion " + Files.getLastModifiedTime(deployed.toPath()), wasUndeployed);
                     // Wait for redeploy to finish
-                    timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (!isdeploying.exists() && deployed.exists()) {
                             break;
@@ -568,7 +567,7 @@ public class DeploymentTestCase {
                 public void undeploy() {
                     final File isdeploying = new File(deployDir, deploymentName + ".isdeploying");
                     final File undeployed = new File(deployDir, deploymentName + ".undeployed");
-                    long timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (!isdeploying.exists() && deployed.exists()) {
                             break;
@@ -587,7 +586,7 @@ public class DeploymentTestCase {
 
                     // Delete file from deploy directory
                     target.delete();
-                    timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (undeployed.exists()) {
                             break;
@@ -631,7 +630,7 @@ public class DeploymentTestCase {
         Assert.assertTrue(Files.exists(target));
         addDeploymentScanner(deployDir.toFile(), client, scannerName, true, -1);
         try {
-            long timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+            long timeout = System.currentTimeMillis() + TIMEOUT;
             while(System.currentTimeMillis() <= timeout) {
                 if (Files.exists(deployed)) {
                     break;
@@ -678,7 +677,7 @@ public class DeploymentTestCase {
                     final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
                     Files.write(dodeploy.toPath(), "test-deployment.jar".getBytes(StandardCharsets.UTF_8));
                     Assert.assertTrue(dodeploy.exists());
-                    long timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
@@ -708,7 +707,7 @@ public class DeploymentTestCase {
                     }
                     dodeploy.createNewFile();
                     Assert.assertTrue(dodeploy.exists());
-                    long timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
@@ -733,7 +732,7 @@ public class DeploymentTestCase {
                     op.get(ClientConstants.PATH).set(path);
                     Future<ModelNode> future = client.executeAsync(OperationBuilder.create(op, false).build(), null);
                     try {
-                        ModelNode response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                        ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
                         Assert.assertFalse("Operation browse-content should not be successful with unmanaged deployments.",
                                 Operations.isSuccessfulOutcome(response));
                         String failureDescription = Operations.getFailureDescription(response).toString();
@@ -760,7 +759,7 @@ public class DeploymentTestCase {
                     op.get(ClientConstants.OP_ADDR).add(DEPLOYMENT, "test-deployment.jar");
                     Future<ModelNode> future = client.executeAsync(OperationBuilder.create(op, false).build(), null);
                     try {
-                        ModelNode response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                        ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
                         Assert.assertFalse("Operation browse-content should not be successful with unmanaged deployments.",
                                 Operations.isSuccessfulOutcome(response));
                         String failureDescription = Operations.getFailureDescription(response).toString();
@@ -785,7 +784,7 @@ public class DeploymentTestCase {
                     final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
                     final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
                     final File undeployed = new File(deployDir, "test-deployment.jar.undeployed");
-                    long timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    long timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
                             break;
@@ -804,7 +803,7 @@ public class DeploymentTestCase {
 
                     // Delete file from deploy directory
                     deployed.delete();
-                    timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
+                    timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (undeployed.exists()) {
                             break;
@@ -954,7 +953,7 @@ public class DeploymentTestCase {
 
     private void awaitDeploymentExecution(Future<?> future) {
         try {
-            future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            future.get(TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -988,7 +987,7 @@ public class DeploymentTestCase {
         Future<OperationResponse> future = client.executeOperationAsync(OperationBuilder.create(op, false).build(), null);
 
         try {
-            OperationResponse response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            OperationResponse response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
             if (path.isEmpty()) {
                 Assert.assertFalse("Operation read-content should not be successful without defined path parameter on exploded deployments",
                         Operations.isSuccessfulOutcome(response.getResponseNode()));
@@ -1036,7 +1035,7 @@ public class DeploymentTestCase {
         }
         Future<ModelNode> future = client.executeAsync(OperationBuilder.create(op, false).build(), null);
         try {
-            ModelNode response = future.get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            ModelNode response = future.get(TIMEOUT, TimeUnit.MILLISECONDS);
             if (!Operations.isSuccessfulOutcome(response)) {
                 Assert.fail("Operation browse content should be successful, but failed: " +
                         Operations.getFailureDescription(response).toString());

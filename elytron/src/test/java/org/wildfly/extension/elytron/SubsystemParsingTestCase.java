@@ -118,7 +118,6 @@ public class SubsystemParsingTestCase extends AbstractElytronSubsystemBaseTest {
         standardSubsystemTest("credential-stores.xml");
     }
 
-    @Test
     public void testParseAndMarshalModel_JASPI() throws Exception {
         standardSubsystemTest("jaspi.xml");
     }

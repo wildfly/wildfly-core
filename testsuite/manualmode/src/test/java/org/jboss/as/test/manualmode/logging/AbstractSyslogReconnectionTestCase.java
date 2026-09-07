@@ -4,8 +4,6 @@
  */
 package org.jboss.as.test.manualmode.logging;
 
-import java.time.Duration;
-
 import org.apache.http.HttpStatus;
 import org.jboss.as.controller.PathAddress;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
@@ -34,7 +32,7 @@ public abstract class AbstractSyslogReconnectionTestCase extends AbstractLogging
     protected static final String SYSLOG_UDP_HANDLER_NAME = "SYSLOG_UDP_HANDLER";
     protected static final String SYSLOG_TCP_HANDLER_NAME = "SYSLOG_TCP_HANDLER";
 
-    protected static final Duration ADJUSTED_SECOND = TimeoutUtil.adjust(Duration.ofSeconds(1));
+    protected static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
 
     protected static SyslogServerIF udpServer;
     protected static SyslogServerIF tcpServer;
@@ -128,7 +126,7 @@ public abstract class AbstractSyslogReconnectionTestCase extends AbstractLogging
                 SYSLOG_TCP_PORT,
                 SyslogConstants.TCP);
         // reconnection timeout is 5sec for TCP syslog handler
-        Thread.sleep(ADJUSTED_SECOND.multipliedBy(6).toMillis());
+        Thread.sleep(6 * ADJUSTED_SECOND);
     }
 
     protected static void stopSyslogServers() throws InterruptedException {
@@ -142,7 +140,7 @@ public abstract class AbstractSyslogReconnectionTestCase extends AbstractLogging
             tcpServer.getConfig().removeAllEventHandlers();
         }
         // wait for 1 second to stop syslog server instances properly
-        Thread.sleep(ADJUSTED_SECOND.toMillis());
+        Thread.sleep(1 * ADJUSTED_SECOND);
     }
 
     protected void makeLog() throws Exception {

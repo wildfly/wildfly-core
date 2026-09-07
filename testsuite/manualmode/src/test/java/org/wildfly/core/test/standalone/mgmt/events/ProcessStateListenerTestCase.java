@@ -17,7 +17,6 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -82,7 +81,7 @@ public class ProcessStateListenerTestCase extends AbstractLoggingTestCase {
         // setup listener in server
         try {
             controller.startInAdminMode();
-            addListener(LISTENER_ADDRESS, TestListener.class.getPackage().getName(), null, (int) TimeoutUtil.adjust(Duration.ofSeconds(5)).toSeconds());
+            addListener(LISTENER_ADDRESS, TestListener.class.getPackage().getName(), null, TimeoutUtil.adjust(5));
         } finally {
             controller.stop();
         }
@@ -153,7 +152,7 @@ public class ProcessStateListenerTestCase extends AbstractLoggingTestCase {
 
             // try to add new listener with non-existing module
             try {
-                addListener(WRONG_MODULE_LISTENER_ADDRESS, "non.existing.module", null, (int) TimeoutUtil.adjust(Duration.ofSeconds(5)).toSeconds());
+                addListener(WRONG_MODULE_LISTENER_ADDRESS, "non.existing.module", null, TimeoutUtil.adjust(5));
                 fail("Command should fail");
             } catch (UnsuccessfulOperationException uoe) {
                 // expected

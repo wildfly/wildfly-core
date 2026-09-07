@@ -14,7 +14,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.PathAddress;
@@ -65,7 +64,7 @@ public class JVMServerPropertiesTestCase {
         testSupport = DomainTestSupport.create(configuration);
         primaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
         testSupport.start();
-        primaryLifecycleUtil.awaitServers(TimeoutUtil.adjust(Duration.ofSeconds(30)).toMillis());
+        primaryLifecycleUtil.awaitServers(TimeoutUtil.adjust(30 * 1000));
     }
 
     @AfterClass

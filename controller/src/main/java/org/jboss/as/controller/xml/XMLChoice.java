@@ -77,7 +77,6 @@ public interface XMLChoice<RC, WC> extends XMLParticleGroup<RC, WC> {
 
         private DefaultXMLChoice(Map<QName, XMLParticleGroup<RC, WC>> choices, Collection<XMLParticleGroup<RC, WC>> groups, XMLCardinality cardinality) {
             super(choices.keySet(), groups, cardinality, new XMLElementReader<>() {
-
                 @Override
                 public void readElement(XMLExtendedStreamReader reader, RC context) throws XMLStreamException {
                     Assert.assertTrue(reader.isStartElement());
@@ -138,7 +137,7 @@ public interface XMLChoice<RC, WC> extends XMLParticleGroup<RC, WC> {
         private DefaultXMLElementChoice(Map<QName, XMLElement<RC, WC>> choices, XMLCardinality cardinality, Consumer<RC> absenteeHandler, Collection<XMLElement<RC, WC>> elements, Stability stability) {
             this(choices.keySet(), cardinality, new ExceptionFunction<>() {
                 @Override
-                public XMLElement<RC, WC> apply(XMLExtendedStreamReader reader) {
+                public XMLElement<RC, WC> apply(XMLExtendedStreamReader reader) throws XMLStreamException {
                     return choices.get(reader.getName());
                 }
             }, absenteeHandler, XMLContentWriter.composite(elements), stability);

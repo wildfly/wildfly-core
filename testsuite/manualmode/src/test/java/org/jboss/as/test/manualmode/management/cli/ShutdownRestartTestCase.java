@@ -4,8 +4,6 @@
  */
 package org.jboss.as.test.manualmode.management.cli;
 
-import java.time.Duration;
-
 import jakarta.inject.Inject;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
@@ -44,6 +42,6 @@ public class ShutdownRestartTestCase {
             }
         };
 
-        serverController.handleServerRestart(restartTrigger, TimeoutUtil.adjust(Duration.ofSeconds(10)).toMillis(), false);
+        serverController.handleServerRestart(restartTrigger, TimeoutUtil.adjust(10000), false);
     }
 }

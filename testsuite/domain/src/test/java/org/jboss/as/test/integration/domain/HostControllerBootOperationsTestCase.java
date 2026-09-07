@@ -23,7 +23,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -114,10 +113,6 @@ public class HostControllerBootOperationsTestCase {
 
         op = Util.createEmptyOperation("add-jvm-option", SECONDARY_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_BYTEMAN));
         op.get("jvm-option").set("-Djava.security.policy==" + System.getProperty("java.io.tmpdir") + "/test-classes/byteman-scripts/byteman.policy");
-        DomainTestUtils.executeForResult(op, primaryClient);
-
-        op = Util.createEmptyOperation("add-jvm-option", SECONDARY_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_BYTEMAN));
-        op.get("jvm-option").set("-Dtest.byteman.delay=" + TimeoutUtil.adjust(Duration.ofSeconds(45)).toMillis());
         DomainTestUtils.executeForResult(op, primaryClient);
 
         String bytemanJavaAgent = System.getProperty("jboss.test.host.server.byteman.javaagent")+"DelayServerRegistrationAndRunningState.btm";
@@ -319,7 +314,7 @@ public class HostControllerBootOperationsTestCase {
     }
 
     private static void waitUntilServerRegisteredButStarting(final ModelControllerClient client, final PathAddress serverAddress) throws IOException, MgmtOperationException {
-        final long deadline = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofMinutes(1)).toMillis();
+        final long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(TimeoutUtil.adjust(60));
         for(;;) {
             final long remaining = deadline - System.currentTimeMillis();
             if(remaining <= 0) {

@@ -15,7 +15,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUS
 import java.net.HttpURLConnection;
 import java.net.SocketPermission;
 import java.net.URL;
-import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -115,21 +114,21 @@ public class SuspendOnShutdownTestCase {
             final Future<String> result = executorService.submit(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
-                    return HttpRequest.get(address, TimeoutUtil.adjust(Duration.ofSeconds(10)).toSeconds(), TimeUnit.SECONDS);
+                    return HttpRequest.get(address, TimeoutUtil.adjust(10), TimeUnit.SECONDS);
                 }
             });
 
             appLocked = true;
 
             //Try to ensure that the HTTP request arrives
-            TimeUnit.NANOSECONDS.sleep(TimeoutUtil.adjust(Duration.ofSeconds(1)).toNanos());
+            TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(1));
 
             shutdownResult = executorService.submit(new Callable<ModelNode>() {
                 @Override
                 public ModelNode call() throws Exception {
                     ModelNode op = new ModelNode();
                     op.get(OP).set(SHUTDOWN);
-                    op.get(SUSPEND_TIMEOUT).set((int) TimeoutUtil.adjust(Duration.ofSeconds(30)).toSeconds());
+                    op.get(SUSPEND_TIMEOUT).set(TimeoutUtil.adjust(30));
                     return serverController.getClient().executeForResult(op);
                 }
             });
@@ -147,7 +146,7 @@ public class SuspendOnShutdownTestCase {
 
             HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", 10, TimeUnit.SECONDS);
             appLocked = false;
-            Assert.assertEquals(SuspendResumeHandler.TEXT, result.get(TimeoutUtil.adjust(Duration.ofSeconds(10)).toSeconds(), TimeUnit.SECONDS));
+            Assert.assertEquals(SuspendResumeHandler.TEXT, result.get(TimeoutUtil.adjust(10), TimeUnit.SECONDS));
 
             //check if it is in SUSPENDED or ignore if the server was already stopped
             waitForSuspendState(SUSPENDED, true);
@@ -156,12 +155,12 @@ public class SuspendOnShutdownTestCase {
             executorService.shutdown();
 
             if (appLocked) {
-                HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(Duration.ofSeconds(10)).toSeconds(), TimeUnit.SECONDS);
+                HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(10), TimeUnit.SECONDS);
             }
 
             if (shutdownResult != null) {
                 try {
-                    shutdownResult.get(TimeoutUtil.adjust(Duration.ofSeconds(10)).toSeconds(), TimeUnit.SECONDS);
+                    shutdownResult.get(TimeoutUtil.adjust(10), TimeUnit.SECONDS);
                     serverController.stop(true);
                     serverController.start();
                 } catch (Exception e) {
@@ -179,12 +178,12 @@ public class SuspendOnShutdownTestCase {
         op.get(NAME).set(SUSPEND_STATE);
 
         String suspendState;
-        long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(Duration.ofSeconds(10)).toMillis();
+        long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
         try {
             do {
                 suspendState = serverController.getClient().executeForResult(op).asString();
                 if (!state.equals(suspendState)) {
-                    TimeUnit.MILLISECONDS.sleep(TimeoutUtil.adjust(Duration.ofMillis(50)).toMillis());
+                    TimeUnit.MILLISECONDS.sleep(TimeoutUtil.adjust(50));
                 } else {
                     break;
                 }

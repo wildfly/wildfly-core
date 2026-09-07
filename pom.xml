@@ -16,7 +16,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>34.0.0.Beta5-SNAPSHOT</version>
+    <version>33.0.0.Beta2-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -177,16 +177,16 @@
         <!-- Non-default maven plugin versions and configuration -->
         <version.buildhelper.plugin>3.4.0</version.buildhelper.plugin>
         <version.jacoco.plugin>0.8.10</version.jacoco.plugin>
-        <version.org.jboss.galleon>7.0.10.Final</version.org.jboss.galleon>
+        <version.org.jboss.galleon>7.0.7.Final</version.org.jboss.galleon>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
-        <version.org.wildfly.galleon-plugins>8.1.7.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>8.1.5.Final</version.org.wildfly.galleon-plugins>
         <version.org.eclipse.m2e.lifecycle-mapping>1.0.0</version.org.eclipse.m2e.lifecycle-mapping>
         <!-- wildfly-maven-plugin-->
         <version.wildfly.plugin>5.1.5.Final</version.wildfly.plugin>
         <!-- plugins related to wildfly build and tooling -->
-        <version.org.wildfly.bom-builder-plugin>2.0.11.Final</version.org.wildfly.bom-builder-plugin>
+        <version.org.wildfly.bom-builder-plugin>2.0.10.Final</version.org.wildfly.bom-builder-plugin>
         <version.org.wildfly.wildfly-maven-gpg-plugin>3.2.8.SP1</version.org.wildfly.wildfly-maven-gpg-plugin>
-        <version.org.wildfly.licenses.plugin>2.4.6.Final</version.org.wildfly.licenses.plugin>
+        <version.org.wildfly.licenses.plugin>2.4.4.Final</version.org.wildfly.licenses.plugin>
         <version.verifier.plugin>1.1</version.verifier.plugin>
         <version.versions.plugin>2.5</version.versions.plugin>
         <version.xml.plugin>1.1.0</version.xml.plugin>
@@ -222,24 +222,24 @@
         <legacy.version.org.jboss.spec.javax.security.auth.message.jboss-jaspi-api_1.1_spec>2.0.1.Final</legacy.version.org.jboss.spec.javax.security.auth.message.jboss-jaspi-api_1.1_spec>
         <legacy.version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>2.0.0.Final</legacy.version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>
 
-		<version.ch.qos.logback>1.5.38</version.ch.qos.logback>
+		<version.ch.qos.logback>1.5.32</version.ch.qos.logback>
         <version.com.googlecode.javaewah>1.2.3</version.com.googlecode.javaewah>
         <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
         <version.com.google.guava>31.1-jre</version.com.google.guava>
         <version.com.google.guava.failureaccess>1.0.3</version.com.google.guava.failureaccess>
-        <version.com.fasterxml.jackson>2.21.6</version.com.fasterxml.jackson>
+        <version.com.fasterxml.jackson>2.21.3</version.com.fasterxml.jackson>
         <version.com.fasterxml.jackson.annotations>2.21</version.com.fasterxml.jackson.annotations>
         <version.com.fasterxml.jackson.databind>${version.com.fasterxml.jackson}</version.com.fasterxml.jackson.databind>
         <version.com.jcraft.jsch>0.1.55</version.com.jcraft.jsch>
         <version.commons-cli>1.11.0</version.commons-cli>
         <version.commons-collections>3.2.2</version.commons-collections>
-        <version.commons-daemon>1.6.0</version.commons-daemon>
+        <version.commons-daemon>1.5.1</version.commons-daemon>
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.commons-io>2.21.0</version.commons-io>
-        <version.io.netty>4.1.137.Final</version.io.netty>
-        <version.io.smallrye.jandex>3.6.0</version.io.smallrye.jandex>
-        <version.io.smallrye.smallrye-common>2.19.0</version.io.smallrye.smallrye-common>
-        <version.io.undertow>2.4.3.Final</version.io.undertow>
+        <version.io.netty>4.1.134.Final</version.io.netty>
+        <version.io.smallrye.jandex>3.5.3</version.io.smallrye.jandex>
+        <version.io.smallrye.smallrye-common>2.17.1</version.io.smallrye.smallrye-common>
+        <version.io.undertow>2.4.1.Final</version.io.undertow>
         <version.jakarta.json.jakarta-json-api>2.1.3</version.jakarta.json.jakarta-json-api>
         <version.jakarta.interceptor.jakarta-interceptor-api>2.1.0</version.jakarta.interceptor.jakarta-interceptor-api>
         <version.jakarta.inject.jakarta.inject-api>2.0.1</version.jakarta.inject.jakarta.inject-api>
@@ -250,26 +250,25 @@
         <version.nxrm3.plugin>1.0.7</version.nxrm3.plugin>
         <version.org.aesh>2.8.4</version.org.aesh>
         <version.org.aesh-extensions>1.8</version.org.aesh-extensions>
-        <version.org.aesh-readline>2.6.3</version.org.aesh-readline>
+        <version.org.aesh-readline>2.6</version.org.aesh-readline>
         <version.org.apache.ds>2.0.0.AM27</version.org.apache.ds>
         <version.org.apache.directory.api>2.1.7</version.org.apache.directory.api>
         <version.org.apache.kerby>2.0.3</version.org.apache.kerby>
         <version.org.apache.httpcomponents.httpclient>4.5.14</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.16</version.org.apache.httpcomponents.httpcore>
-        <version.org.apache.logging.log4j>2.25.5</version.org.apache.logging.log4j>
+        <version.org.apache.logging.log4j>2.25.4</version.org.apache.logging.log4j>
         <version.org.apache.maven.provider>3.5.4</version.org.apache.maven.provider>
         <version.org.apache.maven.resolver>1.1.1</version.org.apache.maven.resolver>
-        <version.org.apache.sshd>2.19.0</version.org.apache.sshd>
+        <version.org.apache.sshd>2.17.1</version.org.apache.sshd>
         <version.org.apache.velocity>2.3</version.org.apache.velocity>
         <version.org.assertj>3.27.7</version.org.assertj>
-        <version.org.bouncycastle>1.85</version.org.bouncycastle>
-        <version.org.bouncycastle.bcprov>${version.org.bouncycastle}.2</version.org.bouncycastle.bcprov>
+        <version.org.bouncycastle>1.84</version.org.bouncycastle>
         <version.org.codehaus.plexus.plexus-utils>3.5.1</version.org.codehaus.plexus.plexus-utils>
         <version.org.eclipse.jgit>7.6.0.202603022253-r</version.org.eclipse.jgit>
-        <version.org.eclipse.parsson>1.1.9</version.org.eclipse.parsson>
-        <version.org.jline.jansi>4.2.1</version.org.jline.jansi>
+        <version.org.eclipse.parsson>1.1.7</version.org.eclipse.parsson>
+        <version.org.fusesource.jansi>2.4.3</version.org.fusesource.jansi>
         <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
-        <version.org.jboss.byteman>4.0.27</version.org.jboss.byteman>
+        <version.org.jboss.byteman>4.0.26</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.3.1.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>2.0.1.Final</version.org.jboss.invocation>
         <version.org.jboss.jboss-dmr>1.7.0.Final</version.org.jboss.jboss-dmr>
@@ -283,10 +282,10 @@
         <version.org.jboss.marshalling.jboss-marshalling>2.3.0</version.org.jboss.marshalling.jboss-marshalling>
         <version.org.jboss.modules.jboss-modules>2.1.6.Final</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.5.6.Final</version.org.jboss.msc.jboss-msc>
-        <version.org.jboss.remoting>5.0.32.Final</version.org.jboss.remoting>
+        <version.org.jboss.remoting>5.0.31.Final</version.org.jboss.remoting>
         <version.org.jboss.remotingjmx.remoting-jmx>3.1.0.Final</version.org.jboss.remotingjmx.remoting-jmx>
         <version.org.jboss.shrinkwrap.shrinkwrap>1.2.6</version.org.jboss.shrinkwrap.shrinkwrap>
-        <version.org.jboss.slf4j.slf4j-jboss-logmanager>2.1.0.Final</version.org.jboss.slf4j.slf4j-jboss-logmanager>
+        <version.org.jboss.slf4j.slf4j-jboss-logmanager>2.0.2.Final</version.org.jboss.slf4j.slf4j-jboss-logmanager>
         <version.org.jboss.spec.javax.servlet.jboss-servlet-api_4.0_spec>2.0.0.Final</version.org.jboss.spec.javax.servlet.jboss-servlet-api_4.0_spec>
         <version.org.jboss.staxmapper>1.5.0.Final</version.org.jboss.staxmapper>
         <version.org.jboss.stdio>1.1.0.Final</version.org.jboss.stdio>
@@ -305,10 +304,10 @@
         <version.org.wildfly.discovery>1.3.0.Final</version.org.wildfly.discovery>
         <version.org.wildfly.installation-manager.installation-manager-api>1.2.1.Final</version.org.wildfly.installation-manager.installation-manager-api>
         <version.org.wildfly.launcher>1.0.3.Final</version.org.wildfly.launcher>
-        <version.org.wildfly.legacy.test>11.0.0.Final</version.org.wildfly.legacy.test>
+        <version.org.wildfly.legacy.test>10.0.2.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.openssl>2.3.0.Final</version.org.wildfly.openssl>
         <version.org.wildfly.openssl.natives>2.3.0.Final</version.org.wildfly.openssl.natives>
-        <version.org.wildfly.security.elytron>2.9.2.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>2.9.1.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>4.2.1.Final</version.org.wildfly.security.elytron-web>
         <version.org.wildfly.security.jakarta.elytron-ee>3.2.1.Final</version.org.wildfly.security.jakarta.elytron-ee>
         <version.org.wildfly.unstable.api.annotation>1.0.2.Final</version.org.wildfly.unstable.api.annotation>
@@ -997,9 +996,9 @@
             </dependency>
             <!-- This dependency needs to be managed due to the dependency convergence enforcer rule -->
             <dependency>
-                <groupId>org.jline</groupId>
+                <groupId>org.fusesource.jansi</groupId>
                 <artifactId>jansi</artifactId>
-                <version>${version.org.jline.jansi}</version>
+                <version>${version.org.fusesource.jansi}</version>
             </dependency>
 
             <dependency>
@@ -1326,7 +1325,7 @@
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk18on</artifactId>
-                <version>${version.org.bouncycastle.bcprov}</version>
+                <version>${version.org.bouncycastle}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
@@ -2117,6 +2116,27 @@
             </properties>
             <build>
                 <defaultGoal>clean install</defaultGoal>
+            </build>
+        </profile>
+
+        <profile>
+            <id>jdk23</id>
+            <activation>
+                <jdk>[23,)</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <compilerArgs combine.children="append">
+                                <!-- SE 23+ requires explicit config to turn on annotation processing -->
+                                <arg>-proc:full</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
 
