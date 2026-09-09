@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * @author Emanuel Muckenhuber
  */
-class ContentPolicyBuilderImpl implements PatchTool.ContentPolicyBuilder {
+class ContentPolicyBuilderImpl implements ContentPolicyBuilder {
 
     boolean overrideAll;
     boolean ignoreModulesChanges;
@@ -19,25 +19,25 @@ class ContentPolicyBuilderImpl implements PatchTool.ContentPolicyBuilder {
     final List<String> preserve = new ArrayList<String>();
 
     @Override
-    public PatchTool.ContentPolicyBuilder ignoreModuleChanges() {
+    public ContentPolicyBuilder ignoreModuleChanges() {
         ignoreModulesChanges = true;
         return this;
     }
 
     @Override
-    public PatchTool.ContentPolicyBuilder overrideItem(String path) {
+    public ContentPolicyBuilder overrideItem(String path) {
         override.add(path);
         return this;
     }
 
     @Override
-    public PatchTool.ContentPolicyBuilder preserveItem(String path) {
+    public ContentPolicyBuilder preserveItem(String path) {
         preserve.add(path);
         return this;
     }
 
     @Override
-    public PatchTool.ContentPolicyBuilder overrideAll() {
+    public ContentPolicyBuilder overrideAll() {
         overrideAll = true;
         return this;
     }
