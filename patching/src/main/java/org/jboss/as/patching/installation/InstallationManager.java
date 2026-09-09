@@ -81,21 +81,6 @@ public abstract class InstallationManager {
          */
         void apply(String patchId, Patch.PatchType patchType);
 
-        /**
-         * Check whether a patch is applied.
-         *
-         * @param patchId the patch id
-         * @return {@code true} if the given patch is currently applied, {@code false} otherwise
-         */
-        boolean isApplied(String patchId);
-
-        /**
-         * Get the modified state.
-         *
-         * @return the modified state
-         */
-        PatchableTarget.TargetInfo getModifiedState();
-
     }
 
     /**

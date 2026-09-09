@@ -52,14 +52,6 @@ class MutableTargetImpl implements InstallationManager.MutablePatchingTarget {
     }
 
     @Override
-    public boolean isApplied(String patchId) {
-        if (cumulativeID.equals(patchId)) {
-            return true;
-        }
-        return patchIds.contains(patchId);
-    }
-
-    @Override
     public void rollback(final String patchId) {
         if (!patchIds.remove(patchId)) {
             if (patchId.equals(cumulativeID)) {
@@ -162,15 +154,6 @@ class MutableTargetImpl implements InstallationManager.MutablePatchingTarget {
 
         // Write layer.conf
         PatchUtils.writeProperties(structure.getInstallationInfo(), properties);
-    }
-
-    @Override
-    public PatchableTarget.TargetInfo getModifiedState() {
-        if (modified) {
-            return new LayerInfo.TargetInfoImpl(properties, cumulativeID, patchIds, structure);
-        } else {
-            return current;
-        }
     }
 
 }

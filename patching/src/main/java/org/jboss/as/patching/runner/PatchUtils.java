@@ -33,9 +33,6 @@ import org.jboss.as.patching.installation.PatchableTarget;
  */
 public final class PatchUtils {
 
-    public static final String JAR_EXT = ".jar";
-    public static final String BACKUP_EXT = ".jar.patched";
-
     public static String readRef(final Properties properties, final String name) {
         final String ref = (String) properties.get(name);
         if(ref == null) {
@@ -139,15 +136,5 @@ public final class PatchUtils {
         } finally {
             safeClose(reader);
         }
-    }
-
-    public static File getRenamedFileName(final File file) {
-        String fileName = file.getName();
-        if (fileName.endsWith(BACKUP_EXT)) {
-            return new File(file.getParentFile(), fileName.substring(0, fileName.length() - BACKUP_EXT.length()) + JAR_EXT);
-        } else if (fileName.endsWith(JAR_EXT)) {
-            return new File(file.getParentFile(), fileName.substring(0, fileName.length() - JAR_EXT.length()) + BACKUP_EXT);
-        }
-        return file;
     }
 }

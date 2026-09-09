@@ -5,17 +5,14 @@
 
 package org.jboss.as.patching.logging;
 
-import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 
 import org.jboss.as.patching.PatchingException;
-//import org.jboss.as.patching.validation.PatchingArtifact;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
-import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 
@@ -32,9 +29,9 @@ public interface PatchLogger extends BasicLogger {
 //    @Message(id = 1, value = "Cannot delete file %s")
 //    void cannotDeleteFile(String name);
 
-    @LogMessage(level = WARN)
-    @Message(id = 2, value = "Cannot invalidate %s")
-    void cannotInvalidateZip(String name);
+//    @LogMessage(level = WARN)
+//    @Message(id = 2, value = "Cannot invalidate %s")
+//    void cannotInvalidateZip(String name);
 
 //    @Message(id = Message.NONE, value = "Conflicts detected")
 //    String detectedConflicts();
@@ -169,15 +166,15 @@ public interface PatchLogger extends BasicLogger {
 //    @Message(id = 34, value = "in error: '%s'")
 //    String artifactInError(PatchingArtifact.ArtifactState state);
 
-    @LogMessage(level = WARN)
-    @Message(id = 35, value = "Cannot rename file %s")
-    void cannotRenameFile(String name);
+//    @LogMessage(level = WARN)
+//    @Message(id = 35, value = "Cannot rename file %s")
+//    void cannotRenameFile(String name);
 
-    @Message(id = 36, value = "Cannot process backup by renaming file %s")
-    IllegalStateException cannotRenameFileDuringBackup(String name);
+//    @Message(id = 36, value = "Cannot process backup by renaming file %s")
+//    IllegalStateException cannotRenameFileDuringBackup(String name);
 
-    @Message(id = 37, value = "Cannot process restore by renaming file %s")
-    IllegalStateException cannotRenameFileDuringRestore(String name);
+//    @Message(id = 37, value = "Cannot process restore by renaming file %s")
+//    IllegalStateException cannotRenameFileDuringRestore(String name);
 
     @Message(id = 38, value = "Duplicate element patch-id (%s)")
     IllegalStateException duplicateElementPatchId(String id);
