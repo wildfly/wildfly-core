@@ -38,7 +38,7 @@ public abstract class PatchOperationTarget {
      * @param client the connected controller client to the master host.
      * @return the remote target
      */
-    public static final PatchOperationTarget createHost(final String hostName, final ModelControllerClient client) {
+    public static PatchOperationTarget createHost(final String hostName, final ModelControllerClient client) {
         final PathElement host = PathElement.pathElement(HOST, hostName);
         final PathAddress address = PathAddress.EMPTY_ADDRESS.append(host, CORE_SERVICES);
         return new RemotePatchOperationTarget(address, client);
@@ -69,7 +69,6 @@ public abstract class PatchOperationTarget {
     protected abstract ModelNode rollback(final String streamName, final String patchId,
             final ContentPolicyBuilderImpl builder, boolean rollbackTo, final boolean restoreConfiguration) throws PatchingException;
 
-    protected abstract ModelNode rollbackLast(final ContentPolicyBuilderImpl builder, final boolean restoreConfiguration) throws PatchingException;
     protected abstract ModelNode rollbackLast(final String streamName, final ContentPolicyBuilderImpl builder, final boolean restoreConfiguration) throws PatchingException;
 
     protected static class RemotePatchOperationTarget extends PatchOperationTarget {
@@ -151,11 +150,6 @@ public abstract class PatchOperationTarget {
                 operation.get(ModelDescriptionConstants.OP_ADDR).add(Constants.PATCH_STREAM, streamName);
             }
             return executeOp(operation);
-        }
-
-        @Override
-        protected ModelNode rollbackLast(ContentPolicyBuilderImpl builder, boolean restoreConfiguration) throws PatchingException {
-            return rollbackLast(null, builder, restoreConfiguration);
         }
 
         @Override

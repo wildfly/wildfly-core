@@ -31,28 +31,6 @@ public class IoUtils {
     private static final int DEFAULT_BUFFER_SIZE = 65536;
 
     /**
-     * Copy input stream to output stream and close them both
-     *
-     * @param is input stream
-     * @param os output stream
-     *
-     * @throws IOException for any error
-     */
-    public static void copyStreamAndClose(InputStream is, OutputStream os) throws IOException {
-        try {
-            copyStream(is, os, DEFAULT_BUFFER_SIZE);
-            // throw an exception if the close fails since some data might be lost
-            is.close();
-            os.close();
-        }
-        finally {
-            // ...but still guarantee that they're both closed
-            safeClose(is);
-            safeClose(os);
-        }
-    }
-
-    /**
      * Copy input stream to output stream without closing streams. Flushes output stream when done.
      *
      * @param is input stream
