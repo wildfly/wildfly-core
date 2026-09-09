@@ -10,12 +10,10 @@ import static org.jboss.as.patching.Constants.LAYERS;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.DirectoryStructure;
@@ -310,8 +308,6 @@ class LayersFactory {
 
         final File metadata;
         final InstalledImage installedImage;
-        final Set<String> installedLayers = new HashSet<String>();
-        final Set<String> installedAddOns = new HashSet<String>();
 
         InstalledConfiguration(final InstalledImage installedImage) {
             this.metadata = installedImage.getInstallationMetadata();

@@ -5,10 +5,6 @@
 
 package org.jboss.as.patching.metadata;
 
-import static org.jboss.as.patching.IoUtils.NO_CONTENT;
-
-import java.util.List;
-
 import org.jboss.as.patching.runner.ContentItemFilter;
 
 /**
@@ -42,33 +38,6 @@ public abstract class ModificationBuilderTarget<T> {
             internalAddModification(modification);
         }
         return returnThis();
-    }
-
-    /**
-     * Remove a misc file.
-     *
-     * @param name the file name
-     * @param path the relative path
-     * @param existingHash the existing hash
-     * @param isDirectory whether the file is a directory or not
-     * @return the builder
-     */
-    public T removeFile(final String name, final List<String> path, final byte[] existingHash, final boolean isDirectory) {
-        return removeFile(name, path, existingHash, isDirectory, null);
-    }
-
-    public T removeFile(final String name, final List<String> path, final byte[] existingHash, final boolean isDirectory, ModificationCondition condition) {
-        final ContentItem item = createMiscItem(name, path, NO_CONTENT, isDirectory);
-        addContentModification(createContentModification(item, ModificationType.REMOVE, existingHash, condition));
-        return returnThis();
-    }
-
-    protected ContentModification createContentModification(final ContentItem item, final ModificationType type, final byte[] existingHash, ModificationCondition condition) {
-        return new ContentModification(item, existingHash, type, condition);
-    }
-
-    protected MiscContentItem createMiscItem(final String name, final List<String> path, final byte[] newHash, final boolean isDirectory) {
-        return new MiscContentItem(name, path, newHash, isDirectory);
     }
 
 }

@@ -74,10 +74,6 @@ public interface ModificationCondition {
             this.contentItem = contentItem;
         }
 
-        public ContentItem getContentItem() {
-            return contentItem;
-        }
-
         @Override
         public String toString() {
             final StringBuilder buf = new StringBuilder();

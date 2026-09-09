@@ -5,7 +5,6 @@
 
 package org.jboss.as.patching.runner;
 
-import static org.jboss.as.patching.Constants.BASE;
 import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.IoUtils.safeClose;
 
@@ -25,8 +24,6 @@ import java.util.List;
 import java.util.Properties;
 
 import org.jboss.as.patching.Constants;
-import org.jboss.as.patching.DirectoryStructure;
-import org.jboss.as.patching.installation.PatchableTarget;
 
 /**
  * @author Emanuel Muckenhuber
@@ -96,20 +93,6 @@ public final class PatchUtils {
     static void writeLine(final OutputStream os, final String s) throws IOException {
         os.write(s.getBytes(StandardCharsets.UTF_8));
         os.write('\n');
-    }
-
-    static File[] getModulePath(final DirectoryStructure structure, final PatchableTarget.TargetInfo info) {
-        final List<File> path = new ArrayList<File>();
-        final List<String> patches = info.getPatchIDs();
-        for (final String patch : patches) {
-            path.add(structure.getModulePatchDirectory(patch));
-        }
-        final String ref = info.getCumulativePatchID();
-        if (!BASE.equals(ref)) {
-            path.add(structure.getModulePatchDirectory(ref));
-        }
-        path.add(structure.getModuleRoot());
-        return path.toArray(new File[path.size()]);
     }
 
     public static void writeProperties(final File file, final Properties properties) throws IOException {

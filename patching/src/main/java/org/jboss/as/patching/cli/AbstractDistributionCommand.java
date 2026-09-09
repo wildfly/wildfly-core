@@ -6,7 +6,6 @@ package org.jboss.as.patching.cli;
 
 import static java.lang.System.getProperty;
 import static java.lang.System.getSecurityManager;
-import static java.lang.System.getenv;
 import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION;
@@ -250,9 +249,6 @@ public abstract class AbstractDistributionCommand implements Command<CLICommandI
         }
         return PatchOperationTarget.createHost(host, ctx.getModelControllerClient());
     }
-
-    private static final String HOME = "JBOSS_HOME";
-    private static final String HOME_DIR = "jboss.home.dir";
 
     private static void formatConflictsList(final StringBuilder buf, final ModelNode conflicts, String title, String contentType) {
         buf.append(title);

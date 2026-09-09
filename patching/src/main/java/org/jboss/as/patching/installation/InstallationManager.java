@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.metadata.LayerType;
 import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.version.ProductConfig;
@@ -22,8 +21,6 @@ import org.jboss.as.version.ProductConfig;
 public abstract class InstallationManager {
 
     public abstract InstalledIdentity getDefaultIdentity();
-
-    public abstract InstalledIdentity getInstalledIdentity(String productName, String productVersion) throws PatchingException;
 
     public abstract InstalledImage getInstalledImage();
 

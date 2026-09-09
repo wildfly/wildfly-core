@@ -36,14 +36,6 @@ public interface InstalledImage {
     File getInstallationMetadata();
 
     /**
-     * Get the patch history dir.
-     *
-     * @param patchId the patch id
-     * @return the patch history dir
-     */
-    File getPatchHistoryDir(String patchId);
-
-    /**
      * Get the patches history root directory.
      *
      * @return the patch root directory

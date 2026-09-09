@@ -12,7 +12,6 @@ import static org.jboss.as.patching.Constants.INSTALLATION_METADATA;
 import static org.jboss.as.patching.Constants.METADATA;
 import static org.jboss.as.patching.Constants.MODULES;
 import static org.jboss.as.patching.Constants.PATCHES;
-import static org.jboss.as.patching.IoUtils.newFile;
 import static org.jboss.as.patching.logging.PatchLogger.ROOT_LOGGER;
 
 import java.io.File;
@@ -24,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.DirectoryStructure;
 import org.jboss.as.patching.installation.InstalledImage;
-import org.jboss.as.patching.installation.PatchableTarget;
 
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2012, Red Hat Inc
@@ -158,14 +156,6 @@ public class TestUtils {
         return dir;
     }
 
-    public static File[] getModuleRoot(final PatchableTarget target) {
-        try {
-            return PatchUtils.getModulePath(target.getDirectoryStructure(), target.loadTargetInfo());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     /**
      * Create the legacy patch environment based on the default layout.
      *
@@ -209,11 +199,6 @@ public class TestUtils {
             @Override
             public File getPatchesDir() {
                 return patches;
-            }
-
-            @Override
-            public File getPatchHistoryDir(String patchId) {
-                return newFile(getInstallationMetadata(), PATCHES, patchId);
             }
         });
     }

@@ -82,16 +82,6 @@ public class PatchBuilder extends ModificationBuilderTarget<PatchBuilder> implem
         return this;
     }
 
-    public PatchElementBuilder upgradeElement(final String patchId, final String layerName, final boolean addOn) {
-        if (!Patch.PATCH_NAME_PATTERN.matcher(patchId).matches()) {
-            throw PatchLogger.ROOT_LOGGER.illegalPatchName(patchId);
-        }
-        final PatchElementBuilder builder = new PatchElementBuilder(patchId, layerName, addOn, this);
-        builder.upgrade();
-        addElement(patchId, builder);
-        return builder;
-    }
-
     public PatchElementBuilder oneOffPatchElement(final String patchId, final String layerName, final boolean addOn) {
         if (!Patch.PATCH_NAME_PATTERN.matcher(patchId).matches()) {
             throw PatchLogger.ROOT_LOGGER.illegalPatchName(patchId);

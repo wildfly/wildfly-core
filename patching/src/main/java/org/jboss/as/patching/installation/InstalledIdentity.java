@@ -162,11 +162,6 @@ public abstract class InstalledIdentity {
             }
 
             @Override
-            public File getPatchHistoryDir(String patchId) {
-                return new File(getPatchesDir(), patchId);
-            }
-
-            @Override
             public File getLayersConf() {
                 return layersConf;
             }

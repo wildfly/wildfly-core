@@ -36,8 +36,8 @@ public interface PatchLogger extends BasicLogger {
 //    @Message(id = Message.NONE, value = "Conflicts detected")
 //    String detectedConflicts();
 
-    @Message(id = Message.NONE, value = "failed to resolve a jboss.home.dir use the --distribution attribute to point to a valid installation")
-    IllegalStateException cliFailedToResolveDistribution();
+//    @Message(id = Message.NONE, value = "failed to resolve a jboss.home.dir use the --distribution attribute to point to a valid installation")
+//    IllegalStateException cliFailedToResolveDistribution();
 
     @Message(id = Message.NONE, value ="No layers directory found at %s")
     IllegalStateException installationNoLayersConfigFound(String path);
@@ -179,11 +179,11 @@ public interface PatchLogger extends BasicLogger {
     @Message(id = 38, value = "Duplicate element patch-id (%s)")
     IllegalStateException duplicateElementPatchId(String id);
 
-    @Message(id = 39, value = "Requested %s version %s did not match the installed version %s")
-    String productVersionDidNotMatchInstalled(String product, String expected, String installed);
+//    @Message(id = 39, value = "Requested %s version %s did not match the installed version %s")
+//    String productVersionDidNotMatchInstalled(String product, String expected, String installed);
 
-    @Message(id = 40, value = "failed to load %s info")
-    String failedToLoadInfo(String name);
+//    @Message(id = 40, value = "failed to load %s info")
+//    String failedToLoadInfo(String name);
 
 //    @Message(id = 41, value = "Patch %s found in more than one stream: %s and %s")
 //    String patchIdFoundInMoreThanOneStream(String id, String stream1, String stream2);

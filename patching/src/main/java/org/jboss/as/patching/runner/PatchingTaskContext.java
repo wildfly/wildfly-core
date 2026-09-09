@@ -5,10 +5,6 @@
 
 package org.jboss.as.patching.runner;
 
-import java.io.File;
-
-import org.jboss.as.patching.metadata.ContentItem;
-
 /**
  * @author Emanuel Muckenhuber
  */
@@ -22,13 +18,5 @@ public interface PatchingTaskContext {
         ;
 
     }
-
-    /**
-     * Get the target location for a given content item.
-     *
-     * @param item the content item
-     * @return the target location
-     */
-    File getTargetFile(ContentItem item);
 
 }
