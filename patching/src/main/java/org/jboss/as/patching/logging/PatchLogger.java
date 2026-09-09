@@ -43,8 +43,8 @@ public interface PatchLogger extends BasicLogger {
     @Message(id = 2, value = "Cannot invalidate %s")
     void cannotInvalidateZip(String name);
 
-    @Message(id = Message.NONE, value = "Conflicts detected")
-    String detectedConflicts();
+//    @Message(id = Message.NONE, value = "Conflicts detected")
+//    String detectedConflicts();
 
     @Message(id = Message.NONE, value = "failed to resolve a jboss.home.dir use the --distribution attribute to point to a valid installation")
     IllegalStateException cliFailedToResolveDistribution();

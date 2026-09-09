@@ -6,20 +6,13 @@
 package org.jboss.as.patching.tool;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INPUT_STREAM_INDEX;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -28,17 +21,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.patching.Constants;
-import org.jboss.as.patching.ContentConflictsException;
-import org.jboss.as.patching.PatchInfo;
 import org.jboss.as.patching.PatchingException;
-import org.jboss.as.patching.VerbosePatchInfo;
-import org.jboss.as.patching.installation.PatchableTarget.TargetInfo;
-import org.jboss.as.patching.logging.PatchLogger;
-import org.jboss.as.patching.metadata.ContentItem;
-import org.jboss.as.patching.metadata.ContentType;
-import org.jboss.as.patching.metadata.Patch;
-import org.jboss.as.patching.metadata.PatchElement;
-import org.jboss.as.patching.tool.PatchingHistory.Entry;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -47,31 +30,6 @@ import org.jboss.dmr.ModelNode;
 public abstract class PatchOperationTarget {
 
     static final PathElement CORE_SERVICES = PathElement.pathElement(CORE_SERVICE, "patching");
-
-    /**
-     * Create a local target.
-     *
-     * @param jbossHome    the jboss home
-     * @param moduleRoots  the module roots
-     * @param bundlesRoots the bundle roots
-     * @return             the local target
-     * @throws IOException
-     */
-    public static final PatchOperationTarget createLocal(final File jbossHome, List<File> moduleRoots, List<File> bundlesRoots) throws IOException {
-        final PatchTool tool = PatchTool.Factory.createLocalTool(jbossHome, moduleRoots, bundlesRoots);
-        return new LocalPatchOperationTarget(tool);
-    }
-
-    /**
-     * Create a standalone target.
-     *
-     * @param controllerClient the connected controller client to a standalone instance.
-     * @return the remote target
-     */
-    public static final PatchOperationTarget createStandalone(final ModelControllerClient controllerClient) {
-        final PathAddress address = PathAddress.EMPTY_ADDRESS.append(CORE_SERVICES);
-        return new RemotePatchOperationTarget(address, controllerClient);
-    }
 
     /**
      * Create a host target.
@@ -113,191 +71,6 @@ public abstract class PatchOperationTarget {
 
     protected abstract ModelNode rollbackLast(final ContentPolicyBuilderImpl builder, final boolean restoreConfiguration) throws PatchingException;
     protected abstract ModelNode rollbackLast(final String streamName, final ContentPolicyBuilderImpl builder, final boolean restoreConfiguration) throws PatchingException;
-
-    protected static class LocalPatchOperationTarget extends PatchOperationTarget {
-
-        private final PatchTool tool;
-        public LocalPatchOperationTarget(PatchTool tool) {
-            this.tool = tool;
-        }
-
-        @Override
-        protected ModelNode streams() throws PatchingException {
-            final List<String> streams = tool.getPatchStreams();
-            final ModelNode result = new ModelNode();
-            result.get(OUTCOME).set(SUCCESS);
-            final ModelNode list = result.get(RESULT).setEmptyList();
-            for(final String stream : streams) {
-                list.add(stream);
-            }
-            return result;
-        }
-
-        @Override
-        protected ModelNode info() throws PatchingException {
-            return info(null);
-        }
-
-        @Override
-        protected ModelNode info(String streamName) throws PatchingException {
-            final PatchInfo info = tool.getPatchInfo(streamName);
-            final ModelNode response = new ModelNode();
-            response.get(OUTCOME).set(SUCCESS);
-            final ModelNode result = response.get(RESULT);
-            result.get(Constants.VERSION).set(info.getVersion());
-            result.get(Constants.CUMULATIVE).set(info.getCumulativePatchID());
-            result.get(Constants.PATCHES).setEmptyList();
-            for(final String patch : info.getPatchIDs()) {
-                result.get(Constants.PATCHES).add(patch);
-            }
-            if(info instanceof VerbosePatchInfo) {
-                final VerbosePatchInfo vInfo = (VerbosePatchInfo) info;
-                if(vInfo.hasLayers()) {
-                    final ModelNode layersNode = result.get(Constants.LAYER);
-                    for(String name : vInfo.getLayerNames()) {
-                        addLayerInfo(layersNode.get(name), vInfo.getLayerInfo(name));
-                    }
-                }
-                if(vInfo.hasAddOns()) {
-                    final ModelNode layersNode = result.get(Constants.ADD_ON);
-                    for(String name : vInfo.getAddOnNames()) {
-                        addLayerInfo(layersNode.get(name), vInfo.getAddOnInfo(name));
-                    }
-                }
-            }
-            return response;
-        }
-
-        private void addLayerInfo(final ModelNode layerNode, final TargetInfo layerInfo) {
-            layerNode.get(Constants.CUMULATIVE).set(layerInfo.getCumulativePatchID());
-            final ModelNode patchesNode = layerNode.get(Constants.PATCHES).setEmptyList();
-            if(!layerInfo.getPatchIDs().isEmpty()) {
-                for(String patchId : layerInfo.getPatchIDs()) {
-                    patchesNode.add(patchId);
-                }
-            }
-        }
-
-        @Override
-        protected ModelNode history(boolean excludeAgedOut) {
-            return history(null, excludeAgedOut);
-        }
-
-        @Override
-        protected ModelNode history(String streamName, boolean excludeAgedOut) {
-            final ModelNode result = new ModelNode();
-            result.get(OUTCOME).set(SUCCESS);
-            try {
-                result.get(RESULT).set(tool.getPatchingHistory(streamName).getHistory(excludeAgedOut));
-            } catch (PatchingException e) {
-                return formatFailedResponse(e);
-            }
-            return result;
-        }
-
-        @Override
-        protected ModelNode applyPatch(final File file, final ContentPolicyBuilderImpl builder) {
-            final ContentVerificationPolicy policy = builder.createPolicy();
-            ModelNode result = new ModelNode();
-            try {
-                PatchingResult apply = tool.applyPatch(file, policy);
-                apply.commit();
-                result.get(OUTCOME).set(SUCCESS);
-                result.get(RESULT).setEmptyObject();
-            } catch (PatchingException e) {
-                return formatFailedResponse(e);
-            }
-            return result;
-        }
-
-        @Override
-        protected ModelNode rollback(final String patchId, final ContentPolicyBuilderImpl builder, boolean rollbackTo, boolean resetConfiguration) {
-            return rollback(null, patchId, builder, rollbackTo, resetConfiguration);
-        }
-
-        @Override
-        protected ModelNode rollback(final String streamName, final String patchId, final ContentPolicyBuilderImpl builder, boolean rollbackTo, boolean resetConfiguration) {
-            final ContentVerificationPolicy policy = builder.createPolicy();
-            ModelNode result = new ModelNode();
-            try {
-                PatchingResult rollback = tool.rollback(streamName, patchId, policy, rollbackTo, resetConfiguration);
-                rollback.commit();
-                result.get(OUTCOME).set(SUCCESS);
-                result.get(RESULT).setEmptyObject();
-            } catch (PatchingException e) {
-                return formatFailedResponse(e);
-            }
-            return result;
-        }
-
-        @Override
-        protected ModelNode rollbackLast(final ContentPolicyBuilderImpl builder, boolean restoreConfiguration) {
-            return rollbackLast(null, builder, restoreConfiguration);
-        }
-
-        @Override
-        protected ModelNode rollbackLast(final String streamName, final ContentPolicyBuilderImpl builder, boolean restoreConfiguration) {
-            final ContentVerificationPolicy policy = builder.createPolicy();
-            ModelNode result = new ModelNode();
-            try {
-                PatchingResult rollback = tool.rollbackLast(streamName, policy, restoreConfiguration);
-                rollback.commit();
-                result.get(OUTCOME).set(SUCCESS);
-                result.get(RESULT).setEmptyObject();
-            } catch (PatchingException e) {
-                return formatFailedResponse(e);
-            }
-            return result;
-        }
-
-        @Override
-        protected ModelNode info(String patchId, boolean verbose) throws PatchingException {
-            return info(null, patchId, verbose);
-        }
-
-        @Override
-        protected ModelNode info(String streamName, String patchId, boolean verbose) throws PatchingException {
-            checkNotNullParam("patchId", patchId);
-
-            final PatchingHistory history = tool.getPatchingHistory(streamName);
-            try {
-                final PatchingHistory.Iterator iterator = history.iterator();
-                while(iterator.hasNext()) {
-                    final Entry next = iterator.next();
-                    if(patchId.equals(next.getPatchId())) {
-                        final ModelNode response = new ModelNode();
-                        response.get(OUTCOME).set(SUCCESS);
-                        final ModelNode result = response.get(RESULT);
-                        result.get(Constants.PATCH_ID).set(next.getPatchId());
-                        result.get(Constants.TYPE).set(next.getType().getName());
-                        final Patch metadata = next.getMetadata();
-                        result.get(Constants.IDENTITY_NAME).set(metadata.getIdentity().getName());
-                        result.get(Constants.IDENTITY_VERSION).set(metadata.getIdentity().getVersion());
-                        result.get(Constants.DESCRIPTION).set(next.getMetadata().getDescription());
-                        if (next.getMetadata().getLink() != null) {
-                            result.get(Constants.LINK).set(next.getMetadata().getLink());
-                        }
-
-                        if (verbose) {
-                            final ModelNode elements = result.get(Constants.ELEMENTS).setEmptyList();
-                            for(PatchElement e : metadata.getElements()) {
-                                final ModelNode element = new ModelNode();
-                                element.get(Constants.PATCH_ID).set(e.getId());
-                                element.get(Constants.NAME).set(e.getProvider().getName());
-                                element.get(Constants.TYPE).set(e.getProvider().isAddOn() ? Constants.ADD_ON : Constants.LAYER);
-                                element.get(Constants.DESCRIPTION).set(e.getDescription());
-                                elements.add(element);
-                            }
-                        }
-                        return response;
-                    }
-                }
-            } catch (PatchingException e) {
-                return formatFailedResponse(e);
-            }
-            return formatFailedResponse(PatchLogger.ROOT_LOGGER.patchNotFoundInHistory(patchId).getLocalizedMessage());
-        }
-    }
 
     protected static class RemotePatchOperationTarget extends PatchOperationTarget {
 
@@ -429,43 +202,6 @@ public abstract class PatchOperationTarget {
             } catch (IOException e) {
                 throw new PatchingException("Failed to execute operation " + operation.getOperation(), e);
             }
-        }
-    }
-
-    static ModelNode formatFailedResponse(final String msg) {
-        final ModelNode result = new ModelNode();
-        result.get(OUTCOME).set(FAILED);
-        result.get(FAILURE_DESCRIPTION, Constants.MESSAGE).set(msg);
-        return result;
-    }
-
-    static ModelNode formatFailedResponse(final PatchingException e) {
-        final ModelNode result = new ModelNode();
-        result.get(OUTCOME).set(FAILED);
-        formatFailedResponse(e, result.get(FAILURE_DESCRIPTION));
-        return result;
-    }
-
-    public static void formatFailedResponse(final PatchingException e, final ModelNode failureDescription) {
-        if(e instanceof ContentConflictsException) {
-            failureDescription.get(Constants.MESSAGE).set(PatchLogger.ROOT_LOGGER.detectedConflicts());
-            final ModelNode conflicts = failureDescription.get(Constants.CONFLICTS);
-            for(final ContentItem item : ((ContentConflictsException)e).getConflicts()) {
-                final ContentType type = item.getContentType();
-                switch (type) {
-                    case BUNDLE:
-                        conflicts.get(Constants.BUNDLES).add(item.getRelativePath());
-                        break;
-                    case MODULE:
-                        conflicts.get(Constants.MODULES).add(item.getRelativePath());
-                        break;
-                    case MISC:
-                        conflicts.get(Constants.MISC).add(item.getRelativePath());
-                        break;
-                }
-            }
-        } else {
-            failureDescription.set(e.getLocalizedMessage());
         }
     }
 

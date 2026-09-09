@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.jboss.as.patching.Constants;
@@ -22,10 +21,7 @@ import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.MiscContentItem;
 import org.jboss.as.patching.runner.PatchToolImpl;
 import org.jboss.as.patching.runner.PatchUtils;
-import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
-import org.jboss.modules.LocalModuleLoader;
-import org.jboss.modules.ModuleLoader;
 
 /**
  * The patch tool.
@@ -194,23 +190,6 @@ public interface PatchTool {
                 }
             }
             return builder.createPolicy();
-        }
-
-        /**
-         * Create an offline local patch tool.
-         *
-         * @param jbossHome   the distribution root
-         * @param moduleRoots the module roots
-         * @param bundleRoots the bundle roots
-         * @return the patch tool
-         * @throws IOException
-         */
-        public static PatchTool createLocalTool(final File jbossHome, final List<File> moduleRoots, final List<File> bundleRoots) throws IOException {
-            final File[] resolvedPath = resolveLayeredModulePath(moduleRoots); // Resolve the patched module root for the module loader
-            final ModuleLoader loader = new LocalModuleLoader(resolvedPath);
-            final ProductConfig config = ProductConfig.fromFilesystemSlot(loader, jbossHome.getAbsolutePath(), Collections.emptyMap());
-            final InstallationManager manager = InstallationManager.load(jbossHome, moduleRoots, bundleRoots, config);
-            return create(manager);
         }
 
         /**
