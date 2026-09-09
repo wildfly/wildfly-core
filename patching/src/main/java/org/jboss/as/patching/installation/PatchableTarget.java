@@ -39,7 +39,7 @@ public interface PatchableTarget {
      */
     DirectoryStructure getDirectoryStructure();
 
-    public interface TargetInfo {
+    interface TargetInfo {
 
         /**
          * Get the cumulative patch id.

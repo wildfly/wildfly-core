@@ -23,35 +23,9 @@ public abstract class InstallationManager {
 
     public abstract InstalledIdentity getDefaultIdentity();
 
-    public abstract List<InstalledIdentity> getInstalledIdentities() throws PatchingException;
-
     public abstract InstalledIdentity getInstalledIdentity(String productName, String productVersion) throws PatchingException;
 
     public abstract InstalledImage getInstalledImage();
-
-    /**
-     * Check whether the instance requires a restart.
-     *
-     * @return {@code true} if a restart is required, {@code false} otherwise
-     */
-    public abstract boolean requiresRestart();
-
-    /**
-     * Require a restart. This will set the patching service to read-only
-     * and the server has to be restarted in order to execute the next
-     * patch operation.
-     * <p/>
-     * In case the patch operation does not succeed it needs to clear the
-     * reload required state using {@link #clearRestartRequired()}.
-     *
-     * @return this will return {@code true}
-     */
-    public abstract boolean restartRequired();
-
-    /**
-     * Clear the the restart required state.
-     */
-    public abstract void clearRestartRequired();
 
     public interface InstallationModification extends MutablePatchingTarget {
 
@@ -68,35 +42,6 @@ public abstract class InstallationManager {
          * @return the identity version
          */
         String getVersion();
-
-        /**
-         * Set the resulting version.
-         *
-         * @param version the resulting version
-         */
-        void setResultingVersion(String version);
-
-        /**
-         * Add a patch to the installed list.
-         *
-         * @param patchId the patch id
-         */
-        void addInstalledPatch(String patchId) throws PatchingException;
-
-        /**
-         * Remove a patch from the installed list.
-         *
-         * @param patchId the patch id
-         * @throws PatchingException
-         */
-        void removeInstalledPatch(String patchId) throws PatchingException;
-
-        /**
-         * Get the unmodified state.
-         *
-         * @return the originals tate
-         */
-        InstalledIdentity getUnmodifiedInstallationState();
 
         /**
          * Resolve a target for patching.
@@ -129,14 +74,6 @@ public abstract class InstallationManager {
         void rollback(String patchId);
 
         /**
-         * Checks whether the specified patch id was rolled back in the current process.
-         *
-         * @param patchId  patch is to check
-         * @return  true if the patch was rolled back in the current process, otherwise - false
-         */
-        boolean isRolledback(String patchId);
-
-        /**
          * Apply a patch.
          *
          * @param patchId   the patch id
@@ -158,20 +95,6 @@ public abstract class InstallationManager {
          * @return the modified state
          */
         PatchableTarget.TargetInfo getModifiedState();
-
-    }
-
-    public interface ModificationCompletionCallback {
-
-        /**
-         * The modification has been successfully completed.
-         */
-        void completed();
-
-        /**
-         * The modification has been canceled. The installation did not change.
-         */
-        void canceled();
 
     }
 

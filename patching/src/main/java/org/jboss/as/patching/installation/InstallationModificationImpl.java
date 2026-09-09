@@ -10,11 +10,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.patching.Constants;
-import org.jboss.as.patching.PatchingException;
-import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.LayerType;
 import org.jboss.as.patching.runner.PatchUtils;
 
@@ -26,7 +23,6 @@ abstract class InstallationModificationImpl extends MutableTargetImpl implements
     private final String name;
     private final InstallationState installationState;
     private final List<String> allPatches;
-    private final AtomicBoolean done = new AtomicBoolean();
 
     protected InstallationModificationImpl(final PatchableTarget.TargetInfo identity, final String name,
                                            final String version, final List<String> allPatches,
@@ -47,26 +43,6 @@ abstract class InstallationModificationImpl extends MutableTargetImpl implements
     }
 
     @Override
-    public void addInstalledPatch(String patchId) throws PatchingException {
-        if (allPatches.contains(patchId)) {
-            throw PatchLogger.ROOT_LOGGER.alreadyApplied(patchId);
-        }
-        allPatches.add(patchId);
-    }
-
-    @Override
-    public void removeInstalledPatch(String patchId) throws PatchingException {
-        if (! allPatches.contains(patchId)) {
-            throw PatchLogger.ROOT_LOGGER.cannotRollbackPatch(patchId);
-        }
-        allPatches.remove(patchId);
-    }
-
-    List<String> getAllPatches() {
-        return allPatches;
-    }
-
-    @Override
     public String getName() {
         return name;
     }
@@ -75,28 +51,6 @@ abstract class InstallationModificationImpl extends MutableTargetImpl implements
     protected void persist() throws IOException {
         getMutableProperties().put(Constants.ALL_PATCHES, PatchUtils.asString(allPatches));
         super.persist();
-    }
-
-    boolean setDone() {
-        return done.compareAndSet(false, true);
-    }
-
-    InstallationState internalComplete() throws Exception {
-        if (!setDone()) {
-            throw new IllegalStateException();
-        }
-        try {
-            installationState.persist();
-        } catch (Exception e) {
-            installationState.restore();
-            throw e;
-        }
-        try {
-            persist();
-        } catch (Exception e) {
-            installationState.restore();
-        }
-        return installationState;
     }
 
     static class InstallationState {
@@ -117,37 +71,12 @@ abstract class InstallationModificationImpl extends MutableTargetImpl implements
             map.put(name, new MutableTargetImpl(info));
         }
 
-        Map<String, MutableTargetImpl> getLayers() {
-            return layers;
-        }
-
-        Map<String, MutableTargetImpl> getAddOns() {
-            return addOns;
-        }
-
         protected void persist() throws IOException {
             for (final MutableTargetImpl target : layers.values()) {
                 target.persist();
             }
             for (final MutableTargetImpl target : addOns.values()) {
                 target.persist();
-            }
-        }
-
-        private void restore() {
-            for (final MutableTargetImpl target : layers.values()) {
-                try {
-                    target.restore();
-                } catch (IOException e) {
-                    PatchLogger.ROOT_LOGGER.debugf(e, "failed to restore original state for layer %s", target);
-                }
-            }
-            for (final MutableTargetImpl target : addOns.values()) {
-                try {
-                    target.restore();
-                } catch (IOException e) {
-                    PatchLogger.ROOT_LOGGER.debugf(e, "failed to restore original state for add-on %s", target);
-                }
             }
         }
 

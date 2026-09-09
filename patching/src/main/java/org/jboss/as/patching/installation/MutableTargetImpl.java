@@ -82,11 +82,6 @@ class MutableTargetImpl implements InstallationManager.MutablePatchingTarget {
     }
 
     @Override
-    public boolean isRolledback(final String patchId) {
-        return rolledback.contains(patchId);
-    }
-
-    @Override
     public void apply(String patchId, Patch.PatchType patchType) {
         if (patchType == Patch.PatchType.CUMULATIVE) {
             if (!patchIds.isEmpty()) {
@@ -121,10 +116,6 @@ class MutableTargetImpl implements InstallationManager.MutablePatchingTarget {
 
     public String getVersion() {
         return version;
-    }
-
-    public void setResultingVersion(String version) {
-        this.version = version;
     }
 
     protected Properties getMutableProperties() {

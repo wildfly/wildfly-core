@@ -333,14 +333,6 @@ class LayersFactory {
         File getAddOnMetadataDir(final String name) {
             return new File(getAddOnsMetadataDir(), name);
         }
-
-        Set<String> getInstalledLayers() {
-            return installedLayers;
-        }
-
-        Set<String> getInstalledAddOns() {
-            return installedAddOns;
-        }
     }
 
     /**

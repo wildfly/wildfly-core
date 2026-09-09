@@ -168,11 +168,6 @@ class IdentityPatchContext {
         }
 
         @Override
-        public boolean isRolledback(String patchId) {
-            return rollbacks.contains(patchId);
-        }
-
-        @Override
         public void apply(String patchId, Patch.PatchType patchType) {
             delegate.apply(patchId, patchType);
             applyPatchId = patchId;

@@ -14,7 +14,6 @@ import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.validation.PatchingArtifact;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
-import org.jboss.logging.Logger.Level;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
@@ -97,11 +96,11 @@ public interface PatchLogger extends BasicLogger {
 //    @Message(id = 10, value = "File at path specified by argument %s is a directory")
 //    String fileIsADirectory(String arg);
 
-    @Message(id = 11, value = "Cannot rollback patch (%s)")
-    PatchingException cannotRollbackPatch(String id);
+//    @Message(id = 11, value = "Cannot rollback patch (%s)")
+//    PatchingException cannotRollbackPatch(String id);
 
-    @Message(id = 12, value = "Patch '%s' already applied")
-    PatchingException alreadyApplied(String patchId);
+//    @Message(id = 12, value = "Patch '%s' already applied")
+//    PatchingException alreadyApplied(String patchId);
 
 //    @Message(id = 13, value = "There is no layer called %s installed")
 //    PatchingException noSuchLayer(String name);
@@ -142,20 +141,20 @@ public interface PatchLogger extends BasicLogger {
 //    @Message(id = 25, value = "failed to load identity info")
 //    String failedToLoadIdentity();
 
-    @Message(id = 26, value = "No more patches")
-    String noMorePatches();
+//    @Message(id = 26, value = "No more patches")
+//    String noMorePatches();
 
-    @Message(id = 27, value = "No patch history %s")
-    String noPatchHistory(String path);
+//    @Message(id = 27, value = "No patch history %s")
+//    String noPatchHistory(String path);
 
-    @Message(id = 28, value = "Patch is missing file %s")
-    String patchIsMissingFile(String path);
+//    @Message(id = 28, value = "Patch is missing file %s")
+//    String patchIsMissingFile(String path);
 
-    @Message(id = 29, value = "File is not readable %s")
-    String fileIsNotReadable(String path);
+//    @Message(id = 29, value = "File is not readable %s")
+//    String fileIsNotReadable(String path);
 
-    @Message(id = 30, value = "Layer not found %s")
-    String layerNotFound(String name);
+//    @Message(id = 30, value = "Layer not found %s")
+//    String layerNotFound(String name);
 
 //    @LogMessage(level = ERROR)
 //    @Message(id = 31, value = "failed to undo change for: '%s'")
@@ -217,9 +216,9 @@ public interface PatchLogger extends BasicLogger {
 //    @Message(id = 49, value = "Some backup files were not removed.")
 //    IOException failedToDeleteBackup();
 
-    @LogMessage(level = Level.INFO)
-    @Message(id = 50, value = "%s cumulative patch ID is: %s, one-off patches include: %s")
-    void logPatchingInfo(String identityName, String cp, String patches);
+//    @LogMessage(level = Level.INFO)
+//    @Message(id = 50, value = "%s cumulative patch ID is: %s, one-off patches include: %s")
+//    void logPatchingInfo(String identityName, String cp, String patches);
 
     @Message(id = 51, value = "Invalid zip file. Found an entry that resolves to a path outside of the patch directory: %s")
     IOException entryOutsideOfPatchDirectory(String path);

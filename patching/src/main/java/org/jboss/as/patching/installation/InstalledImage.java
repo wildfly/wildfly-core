@@ -22,25 +22,11 @@ public interface InstalledImage {
     File getJbossHome();
 
     /**
-     * Get the app-client directory.
-     *
-     * @return the app client dir
-     */
-    File getAppClientDir();
-
-    /**
      * Get the bundles directory.
      *
      * @return the bundles directory
      */
     File getBundlesDir();
-
-    /**
-     * Get the domain directory.
-     *
-     * @return the domain dir
-     */
-    File getDomainDir();
 
     /**
      * Get the installation metadata directory.
@@ -70,13 +56,6 @@ public interface InstalledImage {
      * @return the modules dir
      */
     File getModulesDir();
-
-    /**
-     * Get the standalone dir.
-     *
-     * @return the standalone dir
-     */
-    File getStandaloneDir();
 
     /**
      * Get the path to the layers.conf file.

@@ -7,16 +7,13 @@ package org.jboss.as.patching.runner;
 
 import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
-import static org.jboss.as.patching.Constants.APP_CLIENT;
 import static org.jboss.as.patching.Constants.BASE;
 import static org.jboss.as.patching.Constants.BUNDLES;
-import static org.jboss.as.patching.Constants.DOMAIN;
 import static org.jboss.as.patching.Constants.INSTALLATION_METADATA;
 import static org.jboss.as.patching.Constants.LAYERS;
 import static org.jboss.as.patching.Constants.METADATA;
 import static org.jboss.as.patching.Constants.MODULES;
 import static org.jboss.as.patching.Constants.PATCHES;
-import static org.jboss.as.patching.Constants.STANDALONE;
 import static org.jboss.as.patching.Constants.SYSTEM;
 import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.IoUtils.newFile;
@@ -291,13 +288,10 @@ public class TestUtils {
      */
     @Deprecated
     public static DirectoryStructure createLegacyTestStructure(final File jbossHome) {
-        final File appClient = new File(jbossHome, APP_CLIENT);
         final File bundles = new File(jbossHome, BUNDLES);
-        final File domain = new File(jbossHome, DOMAIN);
         final File modules = new File(jbossHome, MODULES);
         final File installation = new File(jbossHome, Constants.INSTALLATION);
         final File patches = new File(modules, PATCHES);
-        final File standalone = new File(jbossHome, STANDALONE);
         return new LegacyDirectoryStructure(new InstalledImage() {
 
             @Override
@@ -333,21 +327,6 @@ public class TestUtils {
             @Override
             public File getPatchHistoryDir(String patchId) {
                 return newFile(getInstallationMetadata(), PATCHES, patchId);
-            }
-
-            @Override
-            public File getAppClientDir() {
-                return appClient;
-            }
-
-            @Override
-            public File getDomainDir() {
-                return domain;
-            }
-
-            @Override
-            public File getStandaloneDir() {
-                return standalone;
             }
         });
     }

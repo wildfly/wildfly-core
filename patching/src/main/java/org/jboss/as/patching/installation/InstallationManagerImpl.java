@@ -6,14 +6,10 @@
 package org.jboss.as.patching.installation;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.PatchingException;
@@ -30,17 +26,8 @@ public class InstallationManagerImpl extends InstallationManager {
     private final InstalledImage installedImage;
     private InstalledIdentity defaultIdentity;
 
-    private List<File> moduleRoots;
-    private List<File> bundleRoots;
-
-    /**
-     * This field is set to true when a patch is applied/rolled back at runtime.
-     * It prevents another patch to be applied and overrides the modifications brought by the previous one
-     * unless the process is restarted first
-     *
-     * This field has to be {@code static} in order to survive server reloads.
-     */
-    private static final AtomicBoolean restartRequired = new AtomicBoolean(false);
+    private final List<File> moduleRoots;
+    private final List<File> bundleRoots;
 
     public InstallationManagerImpl(InstalledImage installedImage, final List<File> moduleRoots, final List<File> bundlesRoots, final ProductConfig productConfig)
             throws IOException {
@@ -144,68 +131,8 @@ public class InstallationManagerImpl extends InstallationManager {
         return defaultIdentity;
     }
 
-    /**
-     * This method will return a list of installed identities for which
-     * the corresponding .conf file exists under .installation directory.
-     * The list will also include the default identity even if the .conf
-     * file has not been created for it.
-     */
-    @Override
-    public List<InstalledIdentity> getInstalledIdentities() throws PatchingException {
-
-        List<InstalledIdentity> installedIdentities;
-
-        final File metadataDir = installedImage.getInstallationMetadata();
-        if(!metadataDir.exists()) {
-            installedIdentities = Collections.singletonList(defaultIdentity);
-        } else {
-            final String defaultConf = defaultIdentity.getIdentity().getName() + Constants.DOT_CONF;
-            final File[] identityConfs = metadataDir.listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File pathname) {
-                    return pathname.isFile() &&
-                            pathname.getName().endsWith(Constants.DOT_CONF) &&
-                            !pathname.getName().equals(defaultConf);
-                }
-            });
-            if(identityConfs == null || identityConfs.length == 0) {
-                installedIdentities = Collections.singletonList(defaultIdentity);
-            } else {
-                installedIdentities = new ArrayList<InstalledIdentity>(identityConfs.length + 1);
-                installedIdentities.add(defaultIdentity);
-                for(File conf : identityConfs) {
-                    final Properties props = loadProductConf(conf);
-                    String productName = conf.getName();
-                    productName = productName.substring(0, productName.length() - Constants.DOT_CONF.length());
-                    final String productVersion = props.getProperty(Constants.CURRENT_VERSION);
-
-                    InstalledIdentity identity;
-                    try {
-                        identity = LayersFactory.load(installedImage, new ProductConfig(productName, productVersion, null), moduleRoots, bundleRoots);
-                    } catch (IOException e) {
-                        throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(productName), e);
-                    }
-                    installedIdentities.add(identity);
-                }
-            }
-        }
-        return installedIdentities;
-    }
-
     @Override
     public InstalledImage getInstalledImage() {
         return installedImage;
-    }
-
-    public boolean requiresRestart() {
-        return restartRequired.get();
-    }
-
-    public boolean restartRequired() {
-        return restartRequired.compareAndSet(false, true);
-    }
-
-    public void clearRestartRequired() {
-        restartRequired.set(false);
     }
 }

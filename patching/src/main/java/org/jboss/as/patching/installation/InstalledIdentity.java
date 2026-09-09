@@ -10,13 +10,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.ConcurrentModificationException;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.patching.Constants;
-import org.jboss.as.patching.installation.InstallationManager.InstallationModification;
-import org.jboss.as.patching.installation.InstallationManager.ModificationCompletionCallback;
 import org.jboss.as.version.ProductConfig;
 
 /**
@@ -25,9 +21,6 @@ import org.jboss.as.version.ProductConfig;
  * @author Emanuel Muckenhuber
  */
 public abstract class InstalledIdentity {
-
-    // TODO track this state a better way
-    private final AtomicBoolean writable = new AtomicBoolean(true);
 
     /**
      * Get a list of all installed patches.
@@ -42,13 +35,6 @@ public abstract class InstalledIdentity {
      * @return the identity
      */
     public abstract Identity getIdentity();
-
-    /**
-     * Get a list of available layer names.
-     *
-     * @return the available layers
-     */
-    public abstract List<String> getLayerNames();
 
     /**
      * Get a layer by name.
@@ -66,13 +52,6 @@ public abstract class InstalledIdentity {
     public abstract List<Layer> getLayers();
 
     /**
-     * Get a list of available add-on names.
-     *
-     * @return the available add-ons
-     */
-    public abstract Collection<String> getAddOnNames();
-
-    /**
      * Get an add-on by name.
      *
      * @param addOnName the add-on name
@@ -87,64 +66,12 @@ public abstract class InstalledIdentity {
      */
     public abstract Collection<AddOn> getAddOns();
 
-    protected abstract void updateState(final String name, final InstallationModificationImpl modification, final InstallationModificationImpl.InstallationState state);
-
     /**
      * Get the installed image.
      *
      * @return the installed image
      */
     public abstract InstalledImage getInstalledImage();
-
-    public InstallationModification modifyInstallation(final ModificationCompletionCallback callback) {
-        if (! writable.compareAndSet(true, false)) {
-            throw new ConcurrentModificationException();
-        }
-        try {
-            // Load the state
-            final InstalledIdentity original = copy(this);
-            final Identity identity = original.getIdentity();
-            final PatchableTarget.TargetInfo identityInfo = identity.loadTargetInfo();
-            final InstallationModificationImpl.InstallationState state = load(this);
-
-            return new InstallationModificationImpl(identityInfo, identity.getName(), identity.getVersion(), this.getAllInstalledPatches(), state) {
-
-                @Override
-                public InstalledIdentity getUnmodifiedInstallationState() {
-                    return original;
-                }
-
-                @Override
-                public void complete() {
-                    try {
-                        // Update the state
-                        updateState(identity.getName(), this, internalComplete());
-                        writable.set(true);
-                    } catch (Exception e) {
-                        cancel();
-                        throw new RuntimeException(e);
-                    }
-                    if (callback != null) {
-                        callback.completed();
-                    }
-                }
-
-                @Override
-                public void cancel() {
-                    try {
-                        if (callback != null) {
-                            callback.canceled();
-                        }
-                    } finally {
-                        writable.set(true);
-                    }
-                }
-            };
-        } catch (Exception e) {
-            writable.set(true);
-            throw new RuntimeException(e);
-        }
-    }
 
     /**
      * Load the installation state based on the identity
@@ -204,13 +131,10 @@ public abstract class InstalledIdentity {
     }
 
     static InstalledImage installedImage(final File jbossHome) {
-        final File appClient = new File(jbossHome, Constants.APP_CLIENT);
         final File bundles = new File(jbossHome, Constants.BUNDLES);
-        final File domain = new File(jbossHome, Constants.DOMAIN);
         final File modules = new File(jbossHome, Constants.MODULES);
         final File metadata = new File(jbossHome, Constants.INSTALLATION);
         final File layersConf = new File(modules, Constants.LAYERS_CONF);
-        final File standalone = new File(jbossHome, Constants.STANDALONE);
         return new InstalledImage() {
             @Override
             public File getJbossHome() {
@@ -218,18 +142,8 @@ public abstract class InstalledIdentity {
             }
 
             @Override
-            public File getAppClientDir() {
-                return appClient;
-            }
-
-            @Override
             public File getBundlesDir() {
                 return bundles;
-            }
-
-            @Override
-            public File getDomainDir() {
-                return domain;
             }
 
             @Override
@@ -250,11 +164,6 @@ public abstract class InstalledIdentity {
             @Override
             public File getPatchHistoryDir(String patchId) {
                 return new File(getPatchesDir(), patchId);
-            }
-
-            @Override
-            public File getStandaloneDir() {
-                return standalone;
             }
 
             @Override
