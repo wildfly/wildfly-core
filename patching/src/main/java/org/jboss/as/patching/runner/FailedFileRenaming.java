@@ -23,14 +23,6 @@ public class FailedFileRenaming {
         this.patchId = applyPatchId;
     }
 
-    public String getSourceFile() {
-        return sourceFile;
-    }
-
-    public String getTargetFile() {
-        return targetFile;
-    }
-
     public String getPatchId() {
         return patchId;
     }

@@ -6,13 +6,10 @@
 package org.jboss.as.patching.runner;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import org.jboss.as.patching.DirectoryStructure;
 import org.jboss.as.patching.installation.InstallationManager;
@@ -34,7 +31,6 @@ class IdentityPatchContext {
     private final File miscTargetRoot;
 
     private final PatchEntry identityEntry;
-    private final Map<String, PatchContentLoader> contentLoaders = new HashMap<>();
 
     // TODO initialize layers in the correct order
     private final State state = State.NEW;
@@ -72,38 +68,6 @@ class IdentityPatchContext {
             renames.put(file.getAbsolutePath(), new FailedFileRenaming(file, target, getIdentityEntry().applyPatchId));
             PatchLogger.ROOT_LOGGER.cannotRenameFile(file.getAbsolutePath());
         }
-    }
-
-    /**
-     * Add a rollback loader for a give patch.
-     *
-     * @param patchId the patch id.
-     * @param target  the patchable target
-     */
-    private void recordRollbackLoader(final String patchId, PatchableTarget.TargetInfo target) {
-        // set up the content loader paths
-        final DirectoryStructure structure = target.getDirectoryStructure();
-        final InstalledImage image = structure.getInstalledImage();
-        final File historyDir = image.getPatchHistoryDir(patchId);
-        final File miscRoot = new File(historyDir, PatchContentLoader.MISC);
-        final File modulesRoot = structure.getModulePatchDirectory(patchId);
-        final File bundlesRoot = structure.getBundlesPatchDirectory(patchId);
-        final PatchContentLoader loader = PatchContentLoader.create(miscRoot, bundlesRoot, modulesRoot);
-        //
-        recordContentLoader(patchId, loader);
-    }
-
-    /**
-     * Record a content loader for a given patch id.
-     *
-     * @param patchID       the patch id
-     * @param contentLoader the content loader
-     */
-    protected void recordContentLoader(final String patchID, final PatchContentLoader contentLoader) {
-        if (contentLoaders.containsKey(patchID)) {
-            throw new IllegalStateException("Content loader already registered for patch " + patchID); // internal wrong usage, no i18n
-        }
-        contentLoaders.put(patchID, contentLoader);
     }
 
     /**
@@ -146,7 +110,6 @@ class IdentityPatchContext {
 
         private String applyPatchId;
         private final InstallationManager.MutablePatchingTarget delegate;
-        private final Set<String> rollbacks = new HashSet<>();
 
         PatchEntry(final InstallationManager.MutablePatchingTarget delegate) {
             assert delegate != null;
@@ -160,11 +123,8 @@ class IdentityPatchContext {
 
         @Override
         public void rollback(String patchId) {
-            rollbacks.add(patchId);
             // Rollback
             delegate.rollback(patchId);
-            // Record rollback loader
-            recordRollbackLoader(patchId, delegate);
         }
 
         @Override
