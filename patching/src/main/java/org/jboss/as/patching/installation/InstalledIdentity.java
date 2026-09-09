@@ -6,14 +6,10 @@
 package org.jboss.as.patching.installation;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import org.jboss.as.patching.Constants;
-import org.jboss.as.version.ProductConfig;
 
 /**
  * Information about the installed identity.
@@ -21,13 +17,6 @@ import org.jboss.as.version.ProductConfig;
  * @author Emanuel Muckenhuber
  */
 public abstract class InstalledIdentity {
-
-    /**
-     * Get a list of all installed patches.
-     *
-     * @return the list of all installed patches
-     */
-    public abstract List<String> getAllInstalledPatches();
 
     /**
      * Get information about the installed identity.
@@ -72,63 +61,6 @@ public abstract class InstalledIdentity {
      * @return the installed image
      */
     public abstract InstalledImage getInstalledImage();
-
-    /**
-     * Load the installation state based on the identity
-     *
-     * @param installedIdentity the installed identity
-     * @return the installation state
-     * @throws IOException
-     */
-    protected static InstallationModificationImpl.InstallationState load(final InstalledIdentity installedIdentity) throws IOException {
-        final InstallationModificationImpl.InstallationState state = new InstallationModificationImpl.InstallationState();
-        for (final Layer layer : installedIdentity.getLayers()) {
-            state.putLayer(layer);
-        }
-        for (final AddOn addOn : installedIdentity.getAddOns()) {
-            state.putAddOn(addOn);
-        }
-        return state;
-    }
-
-    /**
-     * Load the layers based on the default setup.
-     *
-     * @param jbossHome     the jboss home directory
-     * @param productConfig the product config
-     * @param repoRoots     the repository roots
-     * @return the available layers
-     * @throws IOException
-     */
-    public static InstalledIdentity load(final File jbossHome, final ProductConfig productConfig, final File... repoRoots) throws IOException {
-        final InstalledImage installedImage = installedImage(jbossHome);
-        return load(installedImage, productConfig, Arrays.<File>asList(repoRoots), Collections.<File>emptyList());
-    }
-
-    /**
-     * Load the InstalledIdentity configuration based on the module.path
-     *
-     * @param installedImage the installed image
-     * @param productConfig  the product config
-     * @param moduleRoots    the module roots
-     * @param bundleRoots    the bundle roots
-     * @return the available layers
-     * @throws IOException
-     */
-    public static InstalledIdentity load(final InstalledImage installedImage, final ProductConfig productConfig,  List<File> moduleRoots, final List<File> bundleRoots) throws IOException {
-        return LayersFactory.load(installedImage, productConfig, moduleRoots, bundleRoots);
-    }
-
-    protected static InstalledIdentity copy(InstalledIdentity original) throws IOException {
-        final InstalledIdentityImpl copy = new InstalledIdentityImpl(original.getIdentity(), original.getAllInstalledPatches(), original.getInstalledImage());
-        for (final Layer layer : original.getLayers()) {
-            copy.putLayer(layer.getName(), new LayerInfo(layer.getName(), layer.loadTargetInfo(), layer.getDirectoryStructure()));
-        }
-        for (final AddOn addOn : original.getAddOns()) {
-            copy.putAddOn(addOn.getName(), new LayerInfo(addOn.getName(), addOn.loadTargetInfo(), addOn.getDirectoryStructure()));
-        }
-        return copy;
-    }
 
     static InstalledImage installedImage(final File jbossHome) {
         final File bundles = new File(jbossHome, Constants.BUNDLES);

@@ -69,7 +69,7 @@ class LayersFactory {
 
         // Step 3 - create the actual config objects
         // Process layers
-        final InstalledIdentityImpl installedIdentity = new InstalledIdentityImpl(identity, allPatches, image);
+        final InstalledIdentityImpl installedIdentity = new InstalledIdentityImpl(identity, image);
         for (final LayerPathConfig layer : processedLayers.getLayers().values()) {
             final String name = layer.name;
             installedIdentity.putLayer(name, createPatchableTarget(name, layer, config.getLayerMetadataDir(name), image));

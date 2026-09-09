@@ -18,27 +18,15 @@ import org.jboss.as.version.ProductConfig;
  */
 public class InstallationManagerImpl extends InstallationManager {
 
-    private final InstalledImage installedImage;
     private InstalledIdentity defaultIdentity;
-
-    private final List<File> bundleRoots;
 
     public InstallationManagerImpl(InstalledImage installedImage, final List<File> moduleRoots, final List<File> bundlesRoots, final ProductConfig productConfig)
             throws IOException {
-        this.installedImage = installedImage;
-
-        this.bundleRoots = bundlesRoots;
-
-        defaultIdentity = LayersFactory.load(installedImage, productConfig, moduleRoots, bundleRoots);
+        defaultIdentity = LayersFactory.load(installedImage, productConfig, moduleRoots, bundlesRoots);
     }
 
     @Override
     public InstalledIdentity getDefaultIdentity() {
         return defaultIdentity;
-    }
-
-    @Override
-    public InstalledImage getInstalledImage() {
-        return installedImage;
     }
 }

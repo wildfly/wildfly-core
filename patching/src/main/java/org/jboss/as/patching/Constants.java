@@ -14,7 +14,6 @@ public class Constants {
     public static final String BUNDLES = "bundles";
     public static final String CONFLICTS = "conflicts";
     public static final String CUMULATIVE = "cumulative-patch-id";
-    public static final String CURRENT_VERSION = "current-version";
     public static final String MESSAGE = "message";
     public static final String MISC = "misc";
     public static final String MODULES = "modules";
@@ -34,7 +33,6 @@ public class Constants {
     public static final String SHOW_HISTORY = "show-history";
     /** The default if no patches are active. */
     public static final String BASE = "base";
-    public static final String NOT_PATCHED = BASE;
 
     public static final String OVERRIDE_MODULES = "override-modules";
     public static final String OVERRIDE_ALL = "override-all";
