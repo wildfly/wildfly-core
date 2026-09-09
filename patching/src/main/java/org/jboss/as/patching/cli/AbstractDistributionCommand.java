@@ -33,13 +33,11 @@ import org.aesh.command.validator.OptionValidatorException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
-import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.patching.Constants;
-import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.tool.PatchOperationBuilder;
 import org.jboss.as.patching.tool.PatchOperationTarget;
 import org.jboss.dmr.ModelNode;
@@ -49,7 +47,6 @@ import org.wildfly.core.cli.command.aesh.CLIConverterInvocation;
 import org.wildfly.core.cli.command.aesh.activator.AbstractOptionActivator;
 import org.wildfly.core.cli.command.aesh.activator.DomainOptionActivator;
 import org.wildfly.core.instmgr.cli.InstMgrGroupCommand;
-import org.wildfly.security.manager.action.ReadEnvironmentPropertyAction;
 import org.wildfly.security.manager.action.ReadPropertyAction;
 
 /**
@@ -256,28 +253,6 @@ public abstract class AbstractDistributionCommand implements Command<CLICommandI
 
     private static final String HOME = "JBOSS_HOME";
     private static final String HOME_DIR = "jboss.home.dir";
-
-    private File getJBossHome() {
-        if (distribution != null) {
-            return distribution;
-        }
-
-        String resolved = getSecurityManager() == null ? getenv(HOME) : doPrivileged(new ReadEnvironmentPropertyAction(HOME));
-        if (resolved == null) {
-            resolved = getSecurityManager() == null ? getProperty(HOME_DIR) : doPrivileged(new ReadPropertyAction(HOME_DIR));
-        }
-        if (resolved == null) {
-            throw PatchLogger.ROOT_LOGGER.cliFailedToResolveDistribution();
-        }
-        return new File(resolved);
-    }
-
-    private static List<File> getFSArgument(List<File> files, final ParsedCommandLine args, final File root, final String param) {
-        if (files != null) {
-            return files;
-        }
-        return Collections.singletonList(new File(root, param));
-    }
 
     private static void formatConflictsList(final StringBuilder buf, final ModelNode conflicts, String title, String contentType) {
         buf.append(title);
