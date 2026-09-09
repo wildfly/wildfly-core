@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-import org.jboss.as.patching.logging.PatchLogger;
-import org.jboss.as.patching.metadata.LayerType;
 import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.patching.metadata.PatchElementProvider;
 
@@ -49,18 +47,8 @@ public class PatchElementProviderImpl implements PatchElementProvider, RequiresC
     }
 
     @Override
-    public Collection<String> getIncompatibleWith() {
-        return incompatibleWith;
-    }
-
-    @Override
     public boolean isAddOn() {
         return isAddOn;
-    }
-
-    @Override
-    public LayerType getLayerType() {
-        return isAddOn ? LayerType.AddOn : LayerType.Layer;
     }
 
     public void upgrade() {
@@ -88,14 +76,6 @@ public class PatchElementProviderImpl implements PatchElementProvider, RequiresC
         }
         requires.add(elementId);
         return this;
-    }
-
-    @Override
-    public <T extends PatchElementProvider> T forType(Patch.PatchType patchType, Class<T> clazz) {
-        if (patchType != this.patchType) {
-            throw PatchLogger.ROOT_LOGGER.patchTypesDontMatch();
-        }
-        return clazz.cast(this);
     }
 
 }

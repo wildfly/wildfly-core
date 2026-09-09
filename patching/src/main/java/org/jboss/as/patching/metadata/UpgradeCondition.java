@@ -33,11 +33,4 @@ public interface UpgradeCondition {
      */
     Collection<String> getRequires();
 
-    /**
-     * Get a list of patch-ids, this patch is incompatible with.
-     *
-     * @return a list of incompatible patches
-     */
-    Collection<String> getIncompatibleWith();
-
 }

@@ -37,10 +37,6 @@ public class ContentModification {
         return item;
     }
 
-    public <T extends ContentItem> T getItem(Class<T> expected) {
-        return expected.cast(item);
-    }
-
     public byte[] getTargetHash() {
         return targetHash;
     }
