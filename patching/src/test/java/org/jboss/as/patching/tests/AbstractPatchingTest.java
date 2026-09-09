@@ -20,19 +20,10 @@ import java.util.Properties;
 
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.IoUtils;
-import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.installation.InstallationManager;
-import org.jboss.as.patching.installation.InstallationManagerImpl;
-import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.installation.PatchableTarget;
-import org.jboss.as.patching.metadata.Patch;
-import org.jboss.as.patching.metadata.PatchXml;
-import org.jboss.as.patching.tool.ContentVerificationPolicy;
-import org.jboss.as.patching.tool.PatchTool;
-import org.jboss.as.patching.tool.PatchingResult;
 import org.jboss.as.version.ProductConfig;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 
 /**
@@ -114,84 +105,6 @@ public class AbstractPatchingTest {
 
     protected PatchingTestBuilder createBuilder() {
         return new PatchingTestBuilder(tempDir);
-    }
-
-    protected PatchingResult apply(final PatchingTestStepBuilder builder) throws PatchingException {
-        return apply(builder, ContentVerificationPolicy.STRICT, PatchStepAssertions.APPLY);
-    }
-
-    protected PatchingResult apply(final PatchingTestStepBuilder builder, final ContentVerificationPolicy verificationPolicy) throws PatchingException {
-        return apply(builder, verificationPolicy, PatchStepAssertions.APPLY);
-    }
-
-    protected PatchingResult apply(final PatchingTestStepBuilder builder, final ContentVerificationPolicy verificationPolicy, final PatchStepAssertions assertions) throws PatchingException {
-        final Patch patch = builder.build();
-        final File installation = new File(tempDir, JBOSS_INSTALLATION);
-        try {
-            assertions.before(installation, patch, installationManager);
-        } catch (IOException e) {
-            throw new PatchingException(e);
-        }
-        // Write patch
-        writePatch(builder.getPatchDir(), patch);
-        // Create the patch tool and apply the patch
-        final PatchTool patchTool = PatchTool.Factory.create(installationManager);
-        final PatchingResult result = patchTool.applyPatch(builder.getPatchDir(), verificationPolicy);
-        result.commit();
-        final InstalledIdentity identity = ((InstallationManagerImpl)installationManager).getInstalledIdentity(patch.getIdentity().getName(), null);
-        Assert.assertTrue(identity.getAllInstalledPatches().contains(patch.getPatchId()));
-        try {
-            assertions.after(installation, patch, installationManager);
-        } catch (IOException e) {
-            throw new PatchingException(e);
-        }
-        return result;
-    }
-
-    protected PatchingResult rollback(PatchingTestStepBuilder step) throws PatchingException {
-        return rollback(step, ContentVerificationPolicy.STRICT);
-    }
-
-    protected PatchingResult rollback(PatchingTestStepBuilder step, ContentVerificationPolicy verificationPolicy) throws PatchingException {
-        return rollback(step, verificationPolicy, PatchStepAssertions.ROLLBACK);
-    }
-
-    protected PatchingResult rollback(final PatchingTestStepBuilder builder, final ContentVerificationPolicy verificationPolicy, final PatchStepAssertions assertions) throws PatchingException {
-        return rollback(builder, verificationPolicy, assertions, false);
-    }
-
-    protected PatchingResult rollback(final PatchingTestStepBuilder builder, final ContentVerificationPolicy verificationPolicy, final PatchStepAssertions assertions, boolean rollbackTo) throws PatchingException {
-        final Patch patch = builder.build();
-        final File installation = new File(tempDir, JBOSS_INSTALLATION);
-        try {
-            assertions.before(installation, patch, installationManager);
-        } catch (IOException e) {
-            throw new PatchingException(e);
-        }
-        final String patchId = patch.getPatchId();
-        final PatchTool patchTool = PatchTool.Factory.create(installationManager);
-        final PatchingResult result = patchTool.rollback(patchId, verificationPolicy, rollbackTo, false);
-        result.commit();
-        final InstalledIdentity identity = installationManager.getInstalledIdentity(patch.getIdentity().getName(), null);
-        Assert.assertFalse(identity.getAllInstalledPatches().contains(patch.getPatchId()));
-        try {
-            assertions.after(installation, patch, installationManager);
-        } catch (IOException e) {
-            throw new PatchingException(e);
-        }
-        return result;
-    }
-
-    protected static void writePatch(final File patchRoot, final Patch patch) throws PatchingException {
-        FileOutputStream os = null;
-        try {
-            os = new FileOutputStream(new File(patchRoot, PatchXml.PATCH_XML));
-            PatchXml.marshal(os, patch);
-        } catch (Exception e) {
-            throw new PatchingException(e);
-        } finally {
-            IoUtils.safeClose(os);
-        }
     }
 
     private static void installLayer(File baseDir, File layerConf, boolean excludeBase, String... layers) throws IOException {

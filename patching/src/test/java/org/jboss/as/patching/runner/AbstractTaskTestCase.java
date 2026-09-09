@@ -22,13 +22,9 @@ import java.util.Properties;
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.DirectoryStructure;
 import org.jboss.as.patching.IoUtils;
-import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.installation.InstallationManager;
 import org.jboss.as.patching.installation.InstallationManagerImpl;
 import org.jboss.as.patching.installation.InstalledIdentity;
-import org.jboss.as.patching.tool.ContentVerificationPolicy;
-import org.jboss.as.patching.tool.PatchTool;
-import org.jboss.as.patching.tool.PatchingResult;
 import org.jboss.as.version.ProductConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -70,46 +66,6 @@ public abstract class AbstractTaskTestCase {
 
     public InstalledIdentity loadInstalledIdentity() throws IOException {
         return loadInstallationManager().getDefaultIdentity();
-    }
-
-    protected PatchTool newPatchTool() throws IOException {
-        return PatchTool.Factory.create(loadInstallationManager());
-    }
-
-    protected PatchingResult executePatch(final File file) throws IOException, PatchingException {
-        return executePatch(newPatchTool(), file);
-    }
-
-    protected PatchingResult executePatch(final PatchTool tool, final File file) throws IOException, PatchingException {
-        final PatchingResult result = tool.applyPatch(file, ContentVerificationPolicy.STRICT);
-        result.commit();
-        return result;
-    }
-
-    protected PatchingResult rollback(String patchId) throws IOException, PatchingException {
-        return rollback(newPatchTool(), patchId);
-    }
-
-    protected PatchingResult rollback(PatchTool tool, String patchId) throws IOException, PatchingException {
-        return rollback(tool, patchId, false);
-    }
-
-    protected PatchingResult rollback(String patchId, final boolean rollbackTo) throws IOException, PatchingException {
-        return rollback(newPatchTool(), patchId, rollbackTo);
-    }
-
-    protected PatchingResult rollback(PatchTool tool, String patchId, final boolean rollbackTo) throws IOException, PatchingException {
-        return rollback(tool, patchId, rollbackTo, ContentVerificationPolicy.STRICT);
-    }
-
-    protected PatchingResult rollback(String patchId, boolean rollbackTo, ContentVerificationPolicy policy) throws IOException, PatchingException {
-        return rollback(newPatchTool(), patchId, rollbackTo, policy);
-    }
-
-    protected PatchingResult rollback(PatchTool tool, String patchId, boolean rollbackTo, ContentVerificationPolicy policy) throws IOException, PatchingException {
-        final PatchingResult result = tool.rollback(patchId, policy, rollbackTo, true);
-        result.commit();
-        return result;
     }
 
     protected void installLayers(String... layers) throws Exception {

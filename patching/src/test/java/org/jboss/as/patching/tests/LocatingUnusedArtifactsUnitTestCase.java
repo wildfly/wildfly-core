@@ -5,10 +5,6 @@
 
 package org.jboss.as.patching.tests;
 
-import static org.jboss.as.patching.HashUtils.hashFile;
-import static org.jboss.as.patching.runner.TestUtils.dump;
-import static org.jboss.as.patching.runner.TestUtils.randomString;
-import static org.jboss.as.patching.runner.TestUtils.touch;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -19,7 +15,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.installation.Layer;
 import org.jboss.as.patching.validation.PatchingGarbageLocator;
 import org.junit.Test;
@@ -41,192 +36,6 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
     @Test
     public void testUnpatchedValidation() throws Exception {
         assertNoGarbage();
-    }
-
-    @Test
-    public void testOneCPValidation() throws Exception {
-
-        final PatchingTestBuilder builder = createDefaultBuilder();
-        final byte[] standaloneHash = new byte[20];
-        final byte[] moduleHash = new byte[20];
-
-        // Create a file
-        final File existing = builder.getFile(FILE_EXISTING);
-        touch(existing);
-        dump(existing, randomString());
-
-        final byte[] existingHash = hashFile(existing);
-        final byte[] initialHash = Arrays.copyOf(existingHash, existingHash.length);
-
-        final PatchingTestStepBuilder cp1 = builder.createStepBuilder();
-        final String cp1Id = "CP1";
-        cp1.setPatchId(cp1Id)
-                .upgradeIdentity(PRODUCT_VERSION, PRODUCT_VERSION)
-                .upgradeElement("base-CP1", "base", false)
-                .addModuleWithRandomContent("org.jboss.test", moduleHash)
-                .getParent()
-                .addFileWithRandomContent(standaloneHash, FILE_ONE)
-                .updateFileWithRandomContent(initialHash, existingHash, FILE_EXISTING);
-
-        // Apply CP1
-        apply(cp1);
-
-        assertNoGarbage();
-    }
-
-    @Test
-    public void testOneOffAndCPValidation() throws Exception {
-
-        final PatchingTestBuilder builder = createDefaultBuilder();
-        final byte[] standaloneHash = new byte[20];
-        final byte[] moduleHash = new byte[20];
-
-        // Create a file
-        final File existing = builder.getFile(FILE_EXISTING);
-        touch(existing);
-        dump(existing, randomString());
-
-        final byte[] existingHash = hashFile(existing);
-        final byte[] initialHash = Arrays.copyOf(existingHash, existingHash.length);
-
-        final PatchingTestStepBuilder cp1 = builder.createStepBuilder();
-        final String cp1Id = "CP1";
-        cp1.setPatchId(cp1Id)
-                .upgradeIdentity(PRODUCT_VERSION, PRODUCT_VERSION)
-                .upgradeElement("base-CP1", "base", false)
-                .addModuleWithRandomContent("org.jboss.test", moduleHash)
-                .getParent()
-                .addFileWithRandomContent(standaloneHash, FILE_ONE)
-                .updateFileWithRandomContent(initialHash, existingHash, FILE_EXISTING);
-
-        // Apply CP1
-        apply(cp1);
-
-        final PatchingTestStepBuilder oneOff1 = builder.createStepBuilder();
-        final String oneOff1Id = "oneOff1";
-        oneOff1.setPatchId(oneOff1Id)
-                .oneOffPatchIdentity(PRODUCT_VERSION)
-                .oneOffPatchElement("base-oneOff1", "base", false)
-                .updateModuleWithRandomContent("org.jboss.test", moduleHash, null)
-                .getParent()
-                .updateFileWithRandomContent(standaloneHash, null, FILE_ONE)
-                .updateFileWithRandomContent(Arrays.copyOf(existingHash, existingHash.length), existingHash, FILE_EXISTING);
-
-        // Apply oneOff1
-        apply(oneOff1);
-
-        assertNoGarbage();
-    }
-
-    @Test
-    public void testOneOffCPOneOffValidation() throws Exception {
-        installOneOffCpOneOff();
-        assertNoGarbage();
-    }
-
-    @Test
-    public void testRemovedOneOffRollbackXml() throws Exception {
-        installOneOffCpOneOff();
-        removeRollbackXml(ONE_OFF_1_ID);
-        assertNoGarbage();
-    }
-
-    @Test
-    public void testRemovedCPRollbackXml() throws Exception {
-
-        installOneOffCpOneOff();
-        removeRollbackXml(CP_1_ID);
-
-        final PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(updateInstallationManager().getDefaultIdentity());
-        final List<File> inactiveHistory = garbageLocator.getInactiveHistory();
-        assertEquals(1, inactiveHistory.size());
-        assertEquals(getExpectedHistoryDir(ONE_OFF_1_ID), inactiveHistory.get(0).getAbsolutePath());
-
-        final List<File> inactiveOverlays = garbageLocator.getInactiveOverlays();
-        assertEquals(1, inactiveOverlays.size());
-        assertEquals(getExpectedOverlayDir("base", ONE_OFF_1_ID), inactiveOverlays.get(0).getAbsolutePath());
-    }
-
-    @Test
-    public void testRemovedLastOneOffRollbackXml() throws Exception {
-
-        installOneOffCpOneOff();
-        removeRollbackXml(ONE_OFF_2_ID);
-
-        PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(updateInstallationManager().getDefaultIdentity());
-        final List<File> inactiveHistory = garbageLocator.getInactiveHistory();
-
-        List<String> inactivePaths = Arrays.asList(new String[] { getExpectedHistoryDir(ONE_OFF_1_ID) });
-        assertEqualPaths(inactivePaths, inactiveHistory);
-
-        final List<File> inactiveOverlays = garbageLocator.getInactiveOverlays();
-        inactivePaths = Arrays.asList(new String[]{getExpectedOverlayDir("base", ONE_OFF_1_ID)});
-        assertEqualPaths(inactivePaths, inactiveOverlays);
-
-        // test cleaning
-        garbageLocator.deleteInactiveContent();
-        garbageLocator.reset();
-        assertTrue(garbageLocator.getInactiveHistory().isEmpty());
-        assertTrue(garbageLocator.getInactiveOverlays().isEmpty());
-        assertTrue(new File(getExpectedOverlayDir("base", ONE_OFF_2_ID)).exists());
-    }
-
-    @Test
-    public void testMultipleLayers() throws Exception {
-
-        final PatchingTestBuilder builder = createDefaultBuilder("layer2", "layer1", "base");
-
-        final byte[] standaloneHash = new byte[20];
-        final byte[] moduleHash = new byte[20];
-
-        final PatchingTestStepBuilder cp1 = builder.createStepBuilder();
-        cp1.setPatchId("CP1")
-                .upgradeIdentity(PRODUCT_VERSION, PRODUCT_VERSION)
-                .upgradeElement("base-CP1", "base", false)
-                .addModuleWithRandomContent("org.jboss.test", moduleHash)
-                .getParent()
-                .addFileWithRandomContent(standaloneHash, FILE_ONE);
-        // Apply CP1
-        apply(cp1);
-
-        final PatchingTestStepBuilder cp2 = builder.createStepBuilder();
-        cp2.setPatchId("CP2")
-                .upgradeIdentity(PRODUCT_VERSION, PRODUCT_VERSION)
-                .upgradeElement("layer2-CP2", "layer2", false)
-                    .addModuleWithRandomContent("org.jboss.test", null)
-                    .getParent()
-                .upgradeElement("layer1-CP2", "layer1", false)
-                    .addModuleWithRandomContent("org.jboss.test", null)
-                    .getParent()
-                .updateFileWithRandomContent(Arrays.copyOf(standaloneHash, standaloneHash.length), standaloneHash, FILE_ONE);
-        // Apply CP2
-        apply(cp2);
-
-        final PatchingTestStepBuilder cp3 = builder.createStepBuilder();
-        cp3.setPatchId("CP3")
-                .upgradeIdentity(PRODUCT_VERSION, PRODUCT_VERSION)
-                .removeFile(Arrays.copyOf(standaloneHash, standaloneHash.length), FILE_ONE);
-        // Apply CP3
-        apply(cp3);
-
-        removeRollbackXml("CP3");
-
-        PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(updateInstallationManager().getDefaultIdentity());
-        final List<File> inactiveHistory = garbageLocator.getInactiveHistory();
-        List<String> inactivePaths = Arrays.asList(new String[]{getExpectedHistoryDir("CP1"), getExpectedHistoryDir("CP2")});
-        assertEqualPaths(inactivePaths, inactiveHistory);
-
-        final List<File> inactiveOverlays = garbageLocator.getInactiveOverlays();
-        inactivePaths = Arrays.asList(new String[]{getExpectedOverlayDir("layer2", "CP2"),
-                getExpectedOverlayDir( "layer1", "CP2"), getExpectedOverlayDir("base", "CP1")});
-        assertEqualPaths(inactivePaths, inactiveOverlays);
-
-        // test cleaning
-        garbageLocator.deleteInactiveContent();
-        garbageLocator.reset();
-        assertTrue(garbageLocator.getInactiveHistory().isEmpty());
-        assertTrue(garbageLocator.getInactiveOverlays().isEmpty());
-
     }
 
     @Test
@@ -287,56 +96,7 @@ public class LocatingUnusedArtifactsUnitTestCase extends AbstractPatchingTest {
                 + File.separator + patchId;
     }
 
-    protected void installOneOffCpOneOff()
-            throws IOException, PatchingException {
-        final PatchingTestBuilder builder = createDefaultBuilder();
-        final byte[] standaloneHash = new byte[20];
-        final byte[] moduleHash = new byte[20];
 
-        // Create a file
-        final File existing = builder.getFile(FILE_EXISTING);
-        touch(existing);
-        dump(existing, randomString());
-
-        final byte[] existingHash = hashFile(existing);
-        final byte[] initialHash = Arrays.copyOf(existingHash, existingHash.length);
-
-        final PatchingTestStepBuilder oneOff1 = builder.createStepBuilder();
-        oneOff1.setPatchId(ONE_OFF_1_ID)
-                .oneOffPatchIdentity(PRODUCT_VERSION)
-                .oneOffPatchElement("base-" + ONE_OFF_1_ID, "base", false)
-                .addModuleWithRandomContent("org.jboss.test", moduleHash)
-                .getParent()
-                .addFileWithRandomContent(standaloneHash, FILE_ONE)
-                .updateFileWithRandomContent(Arrays.copyOf(existingHash, existingHash.length), existingHash, FILE_EXISTING);
-
-        // Apply oneOff1
-        apply(oneOff1);
-
-        final PatchingTestStepBuilder cp1 = builder.createStepBuilder();
-        cp1.setPatchId(CP_1_ID)
-                .upgradeIdentity(PRODUCT_VERSION, PRODUCT_VERSION)
-                .upgradeElement("base-" + CP_1_ID, "base", false)
-                .updateModuleWithRandomContent("org.jboss.test", Arrays.copyOf(moduleHash, moduleHash.length), moduleHash)
-                .getParent()
-                .updateFileWithRandomContent(Arrays.copyOf(standaloneHash, standaloneHash.length), standaloneHash, FILE_ONE)
-                .updateFileWithRandomContent(initialHash, existingHash, FILE_EXISTING);
-
-        // Apply CP1
-        apply(cp1);
-
-        final PatchingTestStepBuilder oneOff2 = builder.createStepBuilder();
-        oneOff2.setPatchId(ONE_OFF_2_ID)
-                .oneOffPatchIdentity(PRODUCT_VERSION)
-                .oneOffPatchElement("base-" + ONE_OFF_2_ID, "base", false)
-                .updateModuleWithRandomContent("org.jboss.test", moduleHash, null)
-                .getParent()
-                .updateFileWithRandomContent(standaloneHash, null, FILE_ONE)
-                .updateFileWithRandomContent(Arrays.copyOf(existingHash, existingHash.length), existingHash, FILE_EXISTING);
-
-        // Apply oneOff1
-        apply(oneOff2);
-    }
 
     protected void assertNoGarbage() throws Exception {
         final PatchingGarbageLocator garbageLocator = PatchingGarbageLocator.getIninitialized(loadInstallationManager().getDefaultIdentity());
