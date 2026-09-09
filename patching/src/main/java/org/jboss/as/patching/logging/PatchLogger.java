@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 
 import org.jboss.as.patching.PatchingException;
-import org.jboss.as.patching.validation.PatchingArtifact;
+//import org.jboss.as.patching.validation.PatchingArtifact;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -28,9 +28,9 @@ public interface PatchLogger extends BasicLogger {
 
     PatchLogger ROOT_LOGGER = Logger.getMessageLogger(MethodHandles.lookup(), PatchLogger.class, "org.jboss.as.patching");
 
-    @LogMessage(level = WARN)
-    @Message(id = 1, value = "Cannot delete file %s")
-    void cannotDeleteFile(String name);
+//    @LogMessage(level = WARN)
+//    @Message(id = 1, value = "Cannot delete file %s")
+//    void cannotDeleteFile(String name);
 
     @LogMessage(level = WARN)
     @Message(id = 2, value = "Cannot invalidate %s")
@@ -126,8 +126,8 @@ public interface PatchLogger extends BasicLogger {
 //    @Message(id = 20, value = "Cannot rollback. No patches applied.")
 //    IllegalArgumentException noPatchesApplied();
 
-    @Message(id = 21, value = "Patch '%s' not found in history.")
-    PatchingException patchNotFoundInHistory(String patchId);
+//    @Message(id = 21, value = "Patch '%s' not found in history.")
+//    PatchingException patchNotFoundInHistory(String patchId);
 
 //    @Message(id = 22, value = "Cannot complete operation. Patch '%s' is currently active")
 //    OperationFailedException patchActive(String patchId);
@@ -160,14 +160,14 @@ public interface PatchLogger extends BasicLogger {
 //    @Message(id = 31, value = "failed to undo change for: '%s'")
 //    void failedToUndoChange(String name);
 
-    @Message(id = 32, value = "missing: '%s'")
-    String missingArtifact(PatchingArtifact.ArtifactState state);
+//    @Message(id = 32, value = "missing: '%s'")
+//    String missingArtifact(PatchingArtifact.ArtifactState state);
 
-    @Message(id = 33, value = "inconsistent state: '%s'")
-    String inconsistentArtifact(PatchingArtifact.ArtifactState state);
+//    @Message(id = 33, value = "inconsistent state: '%s'")
+//    String inconsistentArtifact(PatchingArtifact.ArtifactState state);
 
-    @Message(id = 34, value = "in error: '%s'")
-    String artifactInError(PatchingArtifact.ArtifactState state);
+//    @Message(id = 34, value = "in error: '%s'")
+//    String artifactInError(PatchingArtifact.ArtifactState state);
 
     @LogMessage(level = WARN)
     @Message(id = 35, value = "Cannot rename file %s")
@@ -220,6 +220,6 @@ public interface PatchLogger extends BasicLogger {
 //    @Message(id = 50, value = "%s cumulative patch ID is: %s, one-off patches include: %s")
 //    void logPatchingInfo(String identityName, String cp, String patches);
 
-    @Message(id = 51, value = "Invalid zip file. Found an entry that resolves to a path outside of the patch directory: %s")
-    IOException entryOutsideOfPatchDirectory(String path);
+//    @Message(id = 51, value = "Invalid zip file. Found an entry that resolves to a path outside of the patch directory: %s")
+//    IOException entryOutsideOfPatchDirectory(String path);
 }
