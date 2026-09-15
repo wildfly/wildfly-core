@@ -45,6 +45,7 @@ public abstract class ScriptTestCase {
     // [WFCORE-7064] Setting SM is not allowed on JDK24+
     static final String SECMGR_VALUE = Runtime.version().feature() < 24 ? "true" : "false";
     static final Map<String, String> MAVEN_JAVA_OPTS = new LinkedHashMap<>();
+    static final Map<String, String> JDK_JAVA_OPTIONS = new LinkedHashMap<>();
 
     private final String scriptBaseName;
     private final boolean enhancedSecurityManager;
@@ -62,6 +63,7 @@ public abstract class ScriptTestCase {
         final String localRepo = System.getProperty("maven.repo.local");
         if (localRepo != null) {
             MAVEN_JAVA_OPTS.put("JAVA_OPTS", "-Dmaven.repo.local=" + localRepo);
+            JDK_JAVA_OPTIONS.put("JDK_JAVA_OPTIONS", "-Dmaven.repo.local=" + localRepo);
         }
         ServerConfigurator.configure();
     }

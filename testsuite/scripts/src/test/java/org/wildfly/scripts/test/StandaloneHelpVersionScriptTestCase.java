@@ -39,7 +39,7 @@ public class StandaloneHelpVersionScriptTestCase extends ScriptTestCase {
 
     @Override
     void testScript(final ScriptProcess script) throws InterruptedException, TimeoutException, IOException {
-        script.start(null, MAVEN_JAVA_OPTS, new String [] {arg});
+        script.start(null, JDK_JAVA_OPTIONS, new String [] {arg});
         if (!script.waitFor(TimeoutUtil.adjust(10), TimeUnit.SECONDS)) {
             throw new TimeoutException("Timeout waiting for script to finish. Last executed command: " + script.getLastExecutedCmd() + "\nThe server output was: \n" + script.getStdoutAsString());
         }
