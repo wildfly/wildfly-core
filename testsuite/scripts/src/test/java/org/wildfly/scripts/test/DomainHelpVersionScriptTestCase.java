@@ -7,7 +7,9 @@ package org.wildfly.scripts.test;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -39,7 +41,13 @@ public class DomainHelpVersionScriptTestCase extends ScriptTestCase {
 
     @Override
     void testScript(final ScriptProcess script) throws InterruptedException, TimeoutException, IOException {
-        script.start(null, MAVEN_JAVA_OPTS, new String [] {arg});
+        final Map<String, String> env = new LinkedHashMap<>();
+        final String localRepo = System.getProperty("maven.repo.local");
+        if (localRepo != null) {
+            env.put("JDK_JAVA_OPTIONS", "-Dmaven.repo.local=" + localRepo);
+        }
+
+        script.start(null, env, new String [] {arg});
         if (!script.waitFor(TimeoutUtil.adjust(10), TimeUnit.SECONDS)) {
             throw new TimeoutException("Timeout waiting for script to finish. Last executed command: " + script.getLastExecutedCmd() + "\nThe server output was: \n" + script.getStdoutAsString());
         }
