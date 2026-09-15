@@ -7,6 +7,7 @@ package org.jboss.as.remoting;
 import static org.jboss.as.remoting.RemotingSubsystemRootResource.HTTP_LISTENER_REGISTRY_CAPABILITY;
 import static org.jboss.as.remoting.RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY;
 
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
@@ -98,7 +99,7 @@ public class RemotingServices {
         final ServiceBuilder<?> builder = serviceTarget.addService(endpointName);
         final Consumer<Endpoint> endpointConsumer = builder.provides(endpointName);
         final Supplier<XnioWorker> workerSupplier = builder.requires(ServiceName.JBOSS.append("serverManagement", "controller", "management", "worker"));
-        builder.setInstance(new EndpointService(endpointConsumer, workerSupplier, hostName, type, options));
+        builder.setInstance(new EndpointService(endpointConsumer, workerSupplier, List.of(), hostName, type, options));
         builder.install();
     }
 
