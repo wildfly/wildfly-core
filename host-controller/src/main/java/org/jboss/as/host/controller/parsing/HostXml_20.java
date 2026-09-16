@@ -137,12 +137,12 @@ final class HostXml_20 extends CommonXml implements ManagementXmlDelegate {
         super(new SocketBindingsXml.HostSocketBindingsXml());
         this.namespace = namespace.getUri();
         this.version = namespace.getVersion();
-        this.auditLogDelegate = AuditLogXml.newInstance(version, true);
+        this.stability = namespace.getStability();
+        this.auditLogDelegate = AuditLogXml.newInstance(version, true, this.stability);
         this.defaultHostControllerName = defaultHostControllerName;
         this.runningMode = runningMode;
         this.isCachedDc = isCachedDC;
         this.extensionRegistry = extensionRegistry;
-        this.stability = namespace.getStability();
         this.extensionXml = extensionXml;
     }
 
