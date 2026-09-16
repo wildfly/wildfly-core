@@ -136,6 +136,7 @@ import org.jboss.as.cli.handlers.ifelse.ElseHandler;
 import org.jboss.as.cli.handlers.ifelse.EndIfHandler;
 import org.jboss.as.cli.handlers.ifelse.IfHandler;
 import org.jboss.as.cli.handlers.jca.DataSourceAddCompositeHandler;
+import org.jboss.as.cli.handlers.jca.DataSourceRemoveCompositeHandler;
 import org.jboss.as.cli.handlers.jca.JDBCDriverInfoHandler;
 import org.jboss.as.cli.handlers.jca.JDBCDriverNameProvider;
 import org.jboss.as.cli.handlers.jca.XADataSourceAddCompositeHandler;
@@ -639,6 +640,9 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         final DataSourceAddCompositeHandler dsAddHandler = new DataSourceAddCompositeHandler(this, "/subsystem=datasources/data-source");
         dsAddHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
         dsHandler.addHandler(Util.ADD, dsAddHandler);
+        // override the remove operation with the handler that can clean up the EE default datasource reference
+        final DataSourceRemoveCompositeHandler dsRemoveHandler = new DataSourceRemoveCompositeHandler(this, "/subsystem=datasources/data-source");
+        dsHandler.addHandler(Util.REMOVE, dsRemoveHandler);
         cmdRegistry.registerHandler(dsHandler, dsHandler.getCommandName());
         final GenericTypeOperationHandler xaDsHandler = new GenericTypeOperationHandler(this, "/subsystem=datasources/xa-data-source", null);
         xaDsHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
@@ -646,6 +650,9 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         final XADataSourceAddCompositeHandler xaDsAddHandler = new XADataSourceAddCompositeHandler(this, "/subsystem=datasources/xa-data-source");
         xaDsAddHandler.addValueCompleter(Util.DRIVER_NAME, driverNameCompleter);
         xaDsHandler.addHandler(Util.ADD, xaDsAddHandler);
+        // override the xa remove operation with the handler that can clean up the EE default datasource reference
+        final DataSourceRemoveCompositeHandler xaDsRemoveHandler = new DataSourceRemoveCompositeHandler(this, "/subsystem=datasources/xa-data-source");
+        xaDsHandler.addHandler(Util.REMOVE, xaDsRemoveHandler);
         cmdRegistry.registerHandler(xaDsHandler, xaDsHandler.getCommandName());
         cmdRegistry.registerHandler(new JDBCDriverInfoHandler(this), "jdbc-driver-info");
 
