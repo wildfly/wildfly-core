@@ -13,18 +13,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.Enumeration;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
-
-import org.jboss.as.patching.logging.PatchLogger;
 
 /**
  * @author Brian Stansberry (c) 2012 Red Hat Inc.
+ *
+ * @deprecated will be removed via WFCORE-7696 once the sole use in the full WildFly testsuite is removed
  */
+@Deprecated(forRemoval = true)
 public class ZipUtils {
 
     public static void zip(File sourceDir, File zipFile) {
@@ -72,49 +69,6 @@ public class ZipUtils {
             }
 
             zos.closeEntry();
-        }
-    }
-
-    /**
-     * unpack...
-     *
-     * @param zip the zip
-     * @param patchDir the patch dir
-     * @throws IOException
-     */
-    public static void unzip(final File zip, final File patchDir) throws IOException {
-        try (final ZipFile zipFile = new ZipFile(zip)){
-            unzip(zipFile, patchDir);
-        }
-    }
-
-    /**
-     * unpack...
-     *
-     * @param zip the zip
-     * @param patchDir the patch dir
-     * @throws IOException
-     */
-    private static void unzip(final ZipFile zip, final File patchDir) throws IOException {
-        final Enumeration<? extends ZipEntry> entries = zip.entries();
-        while(entries.hasMoreElements()) {
-            final ZipEntry entry = entries.nextElement();
-            final String name = entry.getName();
-            final File current = new File(patchDir, name);
-            if (! current.getCanonicalFile().toPath().startsWith(patchDir.getCanonicalFile().toPath())) {
-                throw PatchLogger.ROOT_LOGGER.entryOutsideOfPatchDirectory(current.getCanonicalPath());
-            }
-            if (entry.isDirectory()) {
-                continue;
-            } else {
-                if(! current.getParentFile().exists()) {
-                    current.getParentFile().mkdirs();
-                }
-                try (final InputStream eis = zip.getInputStream(entry)){
-                    Files.copy(eis, current.toPath());
-                    //copy(eis, current);
-                }
-            }
         }
     }
 

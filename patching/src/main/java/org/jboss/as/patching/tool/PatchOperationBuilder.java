@@ -15,7 +15,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Emanuel Muckenhuber
  */
-public interface PatchOperationBuilder extends PatchTool.ContentPolicyBuilder {
+public interface PatchOperationBuilder extends ContentPolicyBuilder {
 
     /**
      * Execute this operation on a target.
@@ -26,7 +26,7 @@ public interface PatchOperationBuilder extends PatchTool.ContentPolicyBuilder {
      */
     ModelNode execute(PatchOperationTarget target) throws PatchingException;
 
-    public class Factory {
+    class Factory {
 
         private Factory() {
             //
@@ -118,16 +118,6 @@ public interface PatchOperationBuilder extends PatchTool.ContentPolicyBuilder {
                     return target.rollback(patchStream, patchId, this, rollbackTo, resetConfiguration);
                 }
             };
-        }
-
-        /**
-         * Create a builder to rollback the last applied patch.
-         *
-         * @param resetConfiguration whether to reset the configuration to the previous state
-         * @return the operation builder
-         */
-        public static PatchOperationBuilder rollbackLast(final boolean resetConfiguration) {
-            return rollbackLast(null, resetConfiguration);
         }
 
         public static PatchOperationBuilder rollbackLast(final String patchStream, final boolean resetConfiguration) {

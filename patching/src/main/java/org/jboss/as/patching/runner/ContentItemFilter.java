@@ -38,12 +38,4 @@ public interface ContentItemFilter {
         }
     };
 
-    ContentItemFilter ALL_BUT_MISC = new ContentItemFilter() {
-        @Override
-        public boolean accepts(ContentItem item) {
-            final ContentType type = item.getContentType();
-            return type != ContentType.MISC;
-        }
-    };
-
 }

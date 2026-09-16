@@ -9,7 +9,6 @@ import java.util.Arrays;
 
 import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.logging.PatchLogger;
-import org.jboss.as.patching.runner.PatchingTaskContext;
 
 /**
  * Represents a condition that has to be satisfied during the patch application process
@@ -18,8 +17,6 @@ import org.jboss.as.patching.runner.PatchingTaskContext;
  * @author Alexey Loubyansky
  */
 public interface ModificationCondition {
-
-    boolean isSatisfied(PatchingTaskContext ctx) throws PatchingException;
 
     class Factory {
 
@@ -66,7 +63,7 @@ public interface ModificationCondition {
 
     }
 
-    public static final class ExistsCondition implements ModificationCondition {
+    final class ExistsCondition implements ModificationCondition {
 
         static final String ID = "exists";
 
@@ -75,15 +72,6 @@ public interface ModificationCondition {
         private ExistsCondition(ContentItem contentItem) {
             assert contentItem != null : "contentItem is null";
             this.contentItem = contentItem;
-        }
-
-        public ContentItem getContentItem() {
-            return contentItem;
-        }
-
-        @Override
-        public boolean isSatisfied(PatchingTaskContext ctx) throws PatchingException {
-            return ctx.getTargetFile(contentItem).exists();
         }
 
         @Override

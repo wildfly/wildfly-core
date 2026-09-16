@@ -22,13 +22,6 @@ public interface InstalledImage {
     File getJbossHome();
 
     /**
-     * Get the app-client directory.
-     *
-     * @return the app client dir
-     */
-    File getAppClientDir();
-
-    /**
      * Get the bundles directory.
      *
      * @return the bundles directory
@@ -36,26 +29,11 @@ public interface InstalledImage {
     File getBundlesDir();
 
     /**
-     * Get the domain directory.
-     *
-     * @return the domain dir
-     */
-    File getDomainDir();
-
-    /**
      * Get the installation metadata directory.
      *
      * @return the patches metadata dir
      */
     File getInstallationMetadata();
-
-    /**
-     * Get the patch history dir.
-     *
-     * @param patchId the patch id
-     * @return the patch history dir
-     */
-    File getPatchHistoryDir(String patchId);
 
     /**
      * Get the patches history root directory.
@@ -70,13 +48,6 @@ public interface InstalledImage {
      * @return the modules dir
      */
     File getModulesDir();
-
-    /**
-     * Get the standalone dir.
-     *
-     * @return the standalone dir
-     */
-    File getStandaloneDir();
 
     /**
      * Get the path to the layers.conf file.

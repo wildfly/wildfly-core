@@ -5,7 +5,6 @@
 
 package org.jboss.as.patching.runner;
 
-import static org.jboss.as.patching.Constants.BASE;
 import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.IoUtils.safeClose;
 
@@ -13,33 +12,23 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
 import org.jboss.as.patching.Constants;
-import org.jboss.as.patching.DirectoryStructure;
-import org.jboss.as.patching.HashUtils;
-import org.jboss.as.patching.installation.PatchableTarget;
-import org.jboss.as.patching.metadata.ModuleItem;
 
 /**
  * @author Emanuel Muckenhuber
  */
 public final class PatchUtils {
-
-    public static final String JAR_EXT = ".jar";
-    public static final String BACKUP_EXT = ".jar.patched";
 
     public static String readRef(final Properties properties, final String name) {
         final String ref = (String) properties.get(name);
@@ -79,62 +68,6 @@ public final class PatchUtils {
         return builder.toString();
     }
 
-    public static String readRef(final File file) throws IOException {
-        if(! file.exists()) {
-            return Constants.BASE;
-        }
-        final InputStream is = new FileInputStream(file);
-        try {
-            return readRef(is);
-        } finally {
-            safeClose(is);
-        }
-    }
-
-    public static List<String> readRefs(final File file) throws IOException {
-        if(! file.exists()) {
-            return Collections.emptyList();
-        }
-        final InputStream is = new FileInputStream(file);
-        try {
-            return readRefs(is);
-        } finally {
-            safeClose(is);
-        }
-    }
-
-    static String readRef(final InputStream is) throws IOException {
-        final StringBuffer buffer = new StringBuffer();
-        readLine(is, buffer);
-        return buffer.toString();
-    }
-
-    static List<String> readRefs(final InputStream is) throws IOException {
-        final List<String> refs = new ArrayList<String>();
-        final StringBuffer buffer = new StringBuffer();
-        do {
-            if(buffer.length() > 0) {
-                final String ref = buffer.toString().trim();
-                if(ref.length() > 0) {
-                    refs.add(ref);
-                }
-            }
-        } while(readLine(is, buffer));
-        return refs;
-    }
-
-    public static void writeRef(final File file, final String ref) throws IOException {
-        mkdir(file.getParentFile());
-        final OutputStream os = new FileOutputStream(file);
-        try {
-            writeLine(os, ref);
-            os.flush();
-            os.close();
-        } finally {
-            safeClose(os);
-        }
-    }
-
     public static void writeRefs(final File file, final List<String> refs, boolean append) throws IOException {
         mkdir(file.getParentFile());
         final OutputStream os = new FileOutputStream(file, append);
@@ -162,55 +95,6 @@ public final class PatchUtils {
         os.write('\n');
     }
 
-    static boolean readLine(InputStream is, StringBuffer buffer) throws IOException {
-        buffer.setLength(0);
-        int c;
-        for(;;) {
-            c = is.read();
-            switch(c) {
-                case '\t':
-                case '\r':
-                    break;
-                case -1: return false;
-                case '\n': return true;
-                default: buffer.append((char) c);
-            }
-        }
-    }
-
-    // FIXME do we need to i18nize the timestamp?
-    static String generateTimestamp() {
-        return DateFormat.getInstance().format(new Date());
-    }
-
-    static File[] getModulePath(final DirectoryStructure structure, final PatchableTarget.TargetInfo info) {
-        final List<File> path = new ArrayList<File>();
-        final List<String> patches = info.getPatchIDs();
-        for (final String patch : patches) {
-            path.add(structure.getModulePatchDirectory(patch));
-        }
-        final String ref = info.getCumulativePatchID();
-        if (!BASE.equals(ref)) {
-            path.add(structure.getModulePatchDirectory(ref));
-        }
-        path.add(structure.getModuleRoot());
-        return path.toArray(new File[path.size()]);
-    }
-
-    static File[] getBundlePath(final DirectoryStructure structure, final PatchableTarget.TargetInfo info) {
-        final List<String> patches = info.getPatchIDs();
-        final List<File> path = new ArrayList<File>();
-        for (final String patch : patches) {
-            path.add(structure.getBundlesPatchDirectory(patch));
-        }
-        final String ref = info.getCumulativePatchID();
-        if (!BASE.equals(ref)) {
-            path.add(structure.getBundlesPatchDirectory(ref));
-        }
-        path.add(structure.getBundleRepositoryRoot());
-        return path.toArray(new File[path.size()]);
-    }
-
     public static void writeProperties(final File file, final Properties properties) throws IOException {
         final OutputStream os = new FileOutputStream(file);
         try {
@@ -235,29 +119,5 @@ public final class PatchUtils {
         } finally {
             safeClose(reader);
         }
-    }
-
-    public static File getRenamedFileName(final File file) {
-        String fileName = file.getName();
-        if (fileName.endsWith(BACKUP_EXT)) {
-            return new File(file.getParentFile(), fileName.substring(0, fileName.length() - BACKUP_EXT.length()) + JAR_EXT);
-        } else if (fileName.endsWith(JAR_EXT)) {
-            return new File(file.getParentFile(), fileName.substring(0, fileName.length() - JAR_EXT.length()) + BACKUP_EXT);
-        }
-        return file;
-    }
-
-    public static byte[] getAbsentModuleContent(final ModuleItem item) {
-        final StringBuilder builder = new StringBuilder(128);
-        builder.append("<?xml version='1.0' encoding='UTF-8'?>\n<module-absent xmlns=\"urn:jboss:module:1.2\"");
-        builder.append(" name=\"").append(item.getName()).append("\"");
-        builder.append(" slot=\"").append(item.getSlot()).append("\"");
-        builder.append(" />\n");
-        return builder.toString().getBytes(StandardCharsets.UTF_8);
-    }
-
-    public static byte[] getAbsentModuleContentHash(final ModuleItem item) throws IOException {
-        final byte[] content = getAbsentModuleContent(item);
-        return HashUtils.hashBytes(content);
     }
 }

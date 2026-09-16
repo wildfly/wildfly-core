@@ -10,7 +10,6 @@ import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -274,7 +273,7 @@ class RollbackPatchXml_1_0 extends PatchXmlUtils implements XMLStreamConstants, 
                 public DirectoryStructure getDirectoryStructure() {
                     return identity.getDirectoryStructure();
                 }
-            }, Collections.<String>emptyList(), structure == null ? null : structure.getInstalledImage());
+            }, structure == null ? null : structure.getInstalledImage());
             this.identity = identity;
         }
 

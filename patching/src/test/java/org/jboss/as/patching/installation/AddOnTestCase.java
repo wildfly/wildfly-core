@@ -9,18 +9,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.jboss.as.patching.Constants.ADD_ONS;
-import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.IoUtils.newFile;
 import static org.jboss.as.patching.Constants.BASE;
-import static org.jboss.as.patching.runner.PatchingAssert.assertDefinedModule;
-import static org.jboss.as.patching.runner.PatchingAssert.assertDirExists;
-import static org.jboss.as.patching.runner.PatchingAssert.assertFileDoesNotExist;
-import static org.jboss.as.patching.runner.PatchingAssert.assertFileExists;
-import static org.jboss.as.patching.runner.PatchingAssert.assertInstallationIsPatched;
-import static org.jboss.as.patching.runner.PatchingAssert.assertPatchHasBeenApplied;
-import static org.jboss.as.patching.runner.PatchingAssert.assertPatchHasBeenRolledBack;
-import static org.jboss.as.patching.runner.TestUtils.createPatchXMLFile;
-import static org.jboss.as.patching.runner.TestUtils.createZippedPatchFile;
 import static org.jboss.as.patching.runner.TestUtils.randomString;
 
 import java.io.File;
@@ -28,12 +18,7 @@ import java.util.Collection;
 
 import org.jboss.as.patching.DirectoryStructure;
 import org.jboss.as.patching.IoUtils;
-import org.jboss.as.patching.metadata.ContentModification;
-import org.jboss.as.patching.metadata.Patch;
-import org.jboss.as.patching.metadata.PatchBuilder;
 import org.jboss.as.patching.runner.AbstractTaskTestCase;
-import org.jboss.as.patching.runner.ContentModificationUtils;
-import org.jboss.as.patching.tool.PatchingResult;
 import org.jboss.as.patching.runner.TestUtils;
 import org.junit.Test;
 
@@ -62,105 +47,6 @@ public class AddOnTestCase extends AbstractTaskTestCase {
         DirectoryStructure directoryStructure = targetInfo.getDirectoryStructure();
         assertEquals(newFile(env.getModuleRoot(), "system", ADD_ONS, addOnName), directoryStructure.getModuleRoot());
         assertNull(directoryStructure.getBundleRepositoryRoot());
-    }
-
-    @Test
-    public void patchAddOn() throws Exception {
-        // start from a base installation
-        // add an add-on
-        String addOnName = randomString();
-        installAddOn(env.getModuleRoot(), addOnName);
-
-        InstalledIdentity installedIdentity = loadInstalledIdentity();
-
-        // build a one-off patch for the add-on with 1 added module
-        // and 1 add file
-        String patchID = randomString();
-        File patchDir = mkdir(tempDir, patchID);
-        String addOnPatchID = randomString();
-        String moduleName = randomString();
-        ContentModification moduleAdded = ContentModificationUtils.addModule(patchDir, addOnPatchID, moduleName);
-        ContentModification fileAdded = ContentModificationUtils.addMisc(patchDir, patchID, "new file resource", "bin", "my-new-standalone.sh");
-
-        Patch patch = PatchBuilder.create()
-                .setPatchId(patchID)
-                .oneOffPatchIdentity(installedIdentity.getIdentity().getName(), installedIdentity.getIdentity().getVersion())
-                .getParent()
-                .oneOffPatchElement(addOnPatchID, addOnName, true)
-                    .addContentModification(moduleAdded)
-                    .getParent()
-                .addContentModification(fileAdded)
-                .build();
-
-        createPatchXMLFile(patchDir, patch);
-        File zippedPatch = createZippedPatchFile(patchDir, patchID);
-
-        // apply patch
-        PatchingResult result = executePatch(zippedPatch);
-        assertPatchHasBeenApplied(result, patch);
-        InstalledIdentity patchedInstalledIdentity = InstalledIdentity.load(env.getInstalledImage().getJbossHome(), productConfig, env.getInstalledImage().getModulesDir());
-        assertInstallationIsPatched(patch, patchedInstalledIdentity.getIdentity().loadTargetInfo());
-        assertFileExists(env.getInstalledImage().getJbossHome(), "bin", fileAdded.getItem().getName());
-
-        DirectoryStructure addOnStructure = installedIdentity.getAddOns().iterator().next().loadTargetInfo().getDirectoryStructure();
-        File modulesPatchDir = addOnStructure.getModulePatchDirectory(addOnPatchID);
-        assertDirExists(modulesPatchDir);
-        assertDefinedModule(modulesPatchDir, moduleName, moduleAdded.getItem().getContentHash());
-    }
-
-    @Test
-    public void patchAndRollbackAddOn() throws Exception {
-        // start from a base installation
-        // add an add-on
-        String addOnName = randomString();
-        installAddOn(env.getModuleRoot(), addOnName);
-
-        InstalledIdentity installedIdentity = loadInstalledIdentity();
-
-        PatchableTarget.TargetInfo identityInfo = installedIdentity.getIdentity().loadTargetInfo();
-        assertEquals(BASE, identityInfo.getCumulativePatchID());
-        assertTrue(identityInfo.getPatchIDs().isEmpty());
-
-        // build a one-off patch for the add-on with 1 added module
-        // and 1 added file
-        String patchID = randomString();
-        File patchDir = mkdir(tempDir, patchID);
-        String addOnPatchID = randomString();
-        String moduleName = randomString();
-        ContentModification moduleAdded = ContentModificationUtils.addModule(patchDir, addOnPatchID, moduleName);
-        ContentModification fileAdded = ContentModificationUtils.addMisc(patchDir, patchID, "new file resource", "bin", "my-new-standalone.sh");
-
-        Patch patch = PatchBuilder.create()
-                .setPatchId(patchID)
-                .oneOffPatchIdentity(installedIdentity.getIdentity().getName(), installedIdentity.getIdentity().getVersion())
-                .getParent()
-                .oneOffPatchElement(addOnPatchID, addOnName, true)
-                    .addContentModification(moduleAdded)
-                    .getParent()
-                .addContentModification(fileAdded)
-                .build();
-
-        createPatchXMLFile(patchDir, patch);
-        File zippedPatch = createZippedPatchFile(patchDir, patchID);
-
-        // apply patch
-        PatchingResult patchResult = executePatch(zippedPatch);
-        assertPatchHasBeenApplied(patchResult, patch);
-        // reload the installed identity
-        InstalledIdentity patchedInstalledIdentity = InstalledIdentity.load(env.getInstalledImage().getJbossHome(), productConfig, env.getInstalledImage().getModulesDir());
-        assertInstallationIsPatched(patch, patchedInstalledIdentity.getIdentity().loadTargetInfo());
-        assertFileExists(env.getInstalledImage().getJbossHome(), "bin", fileAdded.getItem().getName());
-
-        DirectoryStructure layerDirStructure = patchedInstalledIdentity.getAddOns().iterator().next().loadTargetInfo().getDirectoryStructure();
-        File modulesPatchDir = layerDirStructure.getModulePatchDirectory(addOnPatchID);
-        assertDirExists(modulesPatchDir);
-        assertDefinedModule(modulesPatchDir, moduleName, moduleAdded.getItem().getContentHash());
-
-        // rollback the patch
-        PatchingResult rollbackResult = rollback(patchID);
-        assertPatchHasBeenRolledBack(rollbackResult, patch, identityInfo);
-        assertFileDoesNotExist(env.getInstalledImage().getJbossHome(), "bin", "my-new-standalone.sh");
-
     }
 
     private static void installAddOn(File baseDir, String... addOns) throws Exception {

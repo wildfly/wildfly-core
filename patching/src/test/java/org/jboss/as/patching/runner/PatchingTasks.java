@@ -5,20 +5,15 @@
 
 package org.jboss.as.patching.runner;
 
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.jboss.as.patching.metadata.ContentItem;
 import org.jboss.as.patching.metadata.ContentModification;
-import org.jboss.as.patching.metadata.ModificationType;
-import org.jboss.as.patching.runner.IdentityPatchContext.PatchEntry;
 
 /**
  * Utility class to auto resolve conflicts when rolling back/invalidating patches.
@@ -31,9 +26,6 @@ import org.jboss.as.patching.runner.IdentityPatchContext.PatchEntry;
  * @author Emanuel Muckenhuber
  */
 class PatchingTasks {
-
-    static final EnumSet<ModificationType> ALL_MODIFICATIONS = EnumSet.allOf(ModificationType.class);
-    static final EnumSet<ModificationType> ALL_BUT_MODIFY = EnumSet.of(ModificationType.ADD, ModificationType.REMOVE);
 
     /**
      * Process multiple patches for rollback, trying to determine the current and target state for this applying this combination.
@@ -108,60 +100,6 @@ class PatchingTasks {
                 if (!Arrays.equals(backupItem, originalTarget)) {
                     definition.addConflict(contentEntry);
                 }
-            }
-        }
-    }
-
-    static void addMissingModifications(IdentityPatchContext.PatchEntry target, Collection<ContentModification> modifications, final ContentItemFilter filter) throws IOException {
-        final String cpId = target.getCumulativePatchID();
-        for (final ContentModification modification : modifications) {
-
-            final ContentItem item = modification.getItem();
-            // Check if we accept the item
-            if (!filter.accepts(item)) {
-                continue;
-            }
-
-            final Location location = new Location(item);
-            final ContentTaskDefinition definition = target.get(location);
-            if (definition == null) {
-                target.put(location, new ContentTaskDefinition(location, new ContentEntry(cpId, modification), false));
-            } else if(definition.isRollback()) {
-                target.prepareForPortForward(item, cpId);
-                definition.setTarget(new ContentEntry(cpId, modification));
-            }
-        }
-    }
-
-    static void apply(final String patchId, final Collection<ContentModification> modifications, final PatchEntry patchEntry) {
-        apply(patchId, modifications, patchEntry, ContentItemFilter.ALL);
-    }
-
-    /**
-     * Apply modifications to a content task definition.
-     *
-     * @param patchId       the patch id
-     * @param modifications the modifications
-     * @param definitions   the task definitions
-     * @param filter        the content item filter
-     */
-    static void apply(final String patchId, final Collection<ContentModification> modifications, final PatchEntry patchEntry, final ContentItemFilter filter) {
-        for (final ContentModification modification : modifications) {
-
-            final ContentItem item = modification.getItem();
-            // Check if we accept the item
-            if (!filter.accepts(item)) {
-                continue;
-            }
-
-            final Location location = new Location(item);
-            final ContentEntry contentEntry = new ContentEntry(patchId, modification);
-            ContentTaskDefinition definition = patchEntry.get(location);
-            if (definition == null) {
-                definition = new ContentTaskDefinition(location, contentEntry, false);
-                patchEntry.put(location, definition);
-            } else {
-                definition.setTarget(contentEntry);
             }
         }
     }

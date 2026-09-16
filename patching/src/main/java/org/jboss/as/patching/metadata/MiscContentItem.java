@@ -6,7 +6,6 @@
 package org.jboss.as.patching.metadata;
 
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * @author Emanuel Muckenhuber
@@ -16,10 +15,6 @@ public class MiscContentItem extends ContentItem {
     private final String[] path;
     private final boolean isDirectory;
     private final boolean affectsRuntime;
-
-    public MiscContentItem(String name, List<String> path, byte[] contentHash, boolean directory) {
-        this(name, path.toArray(new String[path.size()]), contentHash, directory, false);
-    }
 
     public MiscContentItem(String name, String[] path, byte[] contentHash) {
         this(name, path, contentHash, false, false);

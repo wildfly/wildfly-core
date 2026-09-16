@@ -13,7 +13,6 @@ import java.util.List;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
-import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.DefaultCompleter.CandidatesProvider;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
@@ -56,15 +55,4 @@ class CandidatesProviders {
             return getChildrenNames(client, address, Util.HOST);
         }
     };
-
-    static final CandidatesProvider newServerCandidatesProvider(final ArgumentWithValue host) {
-        return new CandidatesProvider() {
-            @Override
-            public Collection<String> getAllCandidates(CommandContext ctx) {
-                final ModelControllerClient client = ctx.getModelControllerClient();
-                final ModelNode address = new ModelNode().set(Util.HOST, host.getValue(ctx.getParsedCommandLine()));
-                return getChildrenNames(client, address, Util.SERVER);
-            }
-        };
-    }
 }

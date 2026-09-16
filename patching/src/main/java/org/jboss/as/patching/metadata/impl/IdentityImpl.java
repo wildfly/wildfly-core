@@ -59,11 +59,6 @@ public class IdentityImpl implements Identity, RequiresCallback, IncompatibleWit
     }
 
     @Override
-    public Collection<String> getIncompatibleWith() {
-        return incompatibleWith;
-    }
-
-    @Override
     public IdentityImpl require(String patchId) {
         assert patchId != null;
         if(requires.isEmpty()) {

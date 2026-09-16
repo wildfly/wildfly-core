@@ -8,6 +8,7 @@ package org.jboss.as.patching.runner;
 import java.util.Arrays;
 import java.util.Collections;
 
+import org.jboss.as.patching.metadata.ContentItem;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.MiscContentItem;
 import org.jboss.as.patching.metadata.ModificationType;
@@ -55,7 +56,7 @@ public class PatchMergeUnitTestCase {
         Assert.assertEquals(two, def.getLatest().getItem().getContentHash());
 
         // The resulting operation should replace 'three' with 'one'
-        final ContentModification modification = PatchingTaskDescription.resolveDefinition(def);
+        final ContentModification modification = resolveDefinition(def);
         Assert.assertEquals(one, modification.getItem().getContentHash());
         Assert.assertEquals(three, modification.getTargetHash());
     }
@@ -86,7 +87,7 @@ public class PatchMergeUnitTestCase {
         Assert.assertEquals(two, def.getLatest().getItem().getContentHash());
 
         // The resulting operation should replace 'three' with 'four'
-        final ContentModification modification = PatchingTaskDescription.resolveDefinition(def);
+        final ContentModification modification = resolveDefinition(def);
         Assert.assertEquals(four, modification.getItem().getContentHash());
         Assert.assertEquals(three, modification.getTargetHash());
     }
@@ -117,7 +118,7 @@ public class PatchMergeUnitTestCase {
         Assert.assertEquals(four, def.getLatest().getItem().getContentHash());
 
         // The resulting operation should replace 'three' with 'four'
-        final ContentModification modification = PatchingTaskDescription.resolveDefinition(def);
+        final ContentModification modification = resolveDefinition(def);
         Assert.assertEquals(four, modification.getItem().getContentHash());
         Assert.assertEquals(three, modification.getTargetHash());
 
@@ -144,6 +145,19 @@ public class PatchMergeUnitTestCase {
         final Patch r = createPatch(id, Patch.PatchType.ONE_OFF, new ContentModification(ri, rth, ModificationType.MODIFY));
         //
         return new RollbackInfo(o, r);
+    }
+
+    static ContentModification resolveDefinition(final PatchingTasks.ContentTaskDefinition definition) {
+        // Only available in a single patch, yay!
+        if(definition.getLatest() == definition.getTarget()) {
+            return definition.getTarget().getModification();
+        }
+
+        // Create a new modification replacing the latest
+        final ContentItem backupItem = definition.getTarget().getItem();
+        final ContentModification modification = definition.getTarget().getModification();
+        final byte[] target = definition.getLatest().getTargetHash();
+        return new ContentModification(backupItem, target, modification.getType(), modification.getCondition());
     }
 
     static class RollbackInfo {

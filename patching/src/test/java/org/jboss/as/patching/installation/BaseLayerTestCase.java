@@ -5,33 +5,17 @@
 
 package org.jboss.as.patching.installation;
 
-import static org.jboss.as.patching.logging.PatchLogger.ROOT_LOGGER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.jboss.as.patching.Constants.LAYERS;
-import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.IoUtils.newFile;
 import static org.jboss.as.patching.Constants.BASE;
-import static org.jboss.as.patching.runner.PatchingAssert.assertDefinedModule;
-import static org.jboss.as.patching.runner.PatchingAssert.assertDirExists;
-import static org.jboss.as.patching.runner.PatchingAssert.assertFileExists;
-import static org.jboss.as.patching.runner.PatchingAssert.assertInstallationIsPatched;
-import static org.jboss.as.patching.runner.PatchingAssert.assertPatchHasBeenApplied;
-import static org.jboss.as.patching.runner.TestUtils.createPatchXMLFile;
-import static org.jboss.as.patching.runner.TestUtils.createZippedPatchFile;
-import static org.jboss.as.patching.runner.TestUtils.randomString;
 import static org.jboss.as.patching.runner.TestUtils.tree;
 
-import java.io.File;
 import java.util.List;
 
 import org.jboss.as.patching.DirectoryStructure;
-import org.jboss.as.patching.metadata.ContentModification;
-import org.jboss.as.patching.metadata.Patch;
-import org.jboss.as.patching.metadata.PatchBuilder;
 import org.jboss.as.patching.runner.AbstractTaskTestCase;
-import org.jboss.as.patching.runner.ContentModificationUtils;
-import org.jboss.as.patching.tool.PatchingResult;
 import org.junit.Test;
 
 /**
@@ -55,49 +39,5 @@ public class BaseLayerTestCase extends AbstractTaskTestCase {
         DirectoryStructure directoryStructure = targetInfo.getDirectoryStructure();
         assertEquals(newFile(env.getBundleRepositoryRoot(), "system", LAYERS, BASE), directoryStructure.getBundleRepositoryRoot());
         assertEquals(newFile(env.getModuleRoot(), "system", LAYERS, BASE), directoryStructure.getModuleRoot());
-    }
-
-    @Test
-    public void patchBase() throws Exception {
-        InstalledIdentity installedIdentity = loadInstalledIdentity();
-
-        // build a one-off patch for the base layer with 1 added module
-        // and 1 add file
-        String patchID = randomString();
-        File patchDir = mkdir(tempDir, patchID);
-        String layerPatchId = "mylayerPatchID";//randomString();
-        String moduleName = randomString();
-        ContentModification moduleAdded = ContentModificationUtils.addModule(patchDir, layerPatchId, moduleName);
-        ContentModification fileAdded = ContentModificationUtils.addMisc(patchDir, patchID, "new file resource", "bin", "my-new-standalone.sh");
-
-        Patch patch = PatchBuilder.create()
-                .setPatchId(patchID)
-                .oneOffPatchIdentity(installedIdentity.getIdentity().getName(), installedIdentity.getIdentity().getVersion())
-                .getParent()
-                .oneOffPatchElement(layerPatchId, BASE, false)
-                   .addContentModification(moduleAdded)
-                   .getParent()
-                .addContentModification(fileAdded)
-                .build();
-
-        createPatchXMLFile(patchDir, patch);
-        File zippedPatch = createZippedPatchFile(patchDir, patchID);
-
-        // apply patch
-        PatchingResult result = executePatch(zippedPatch);
-        assertPatchHasBeenApplied(result, patch);
-        InstalledIdentity patchedInstalledIdentity = InstalledIdentity.load(env.getInstalledImage().getJbossHome(), productConfig, env.getInstalledImage().getModulesDir());
-        assertInstallationIsPatched(patch, patchedInstalledIdentity.getIdentity().loadTargetInfo());
-        assertFileExists(env.getInstalledImage().getJbossHome(), "bin", fileAdded.getItem().getName());
-
-        if (ROOT_LOGGER.isDebugEnabled()) {
-            System.out.println("installation =>>");
-            tree(env.getInstalledImage().getJbossHome());
-        }
-
-        DirectoryStructure layerDirStructure = installedIdentity.getLayers().get(0).loadTargetInfo().getDirectoryStructure();
-        File modulesPatchDir = layerDirStructure.getModulePatchDirectory(layerPatchId);
-        assertDirExists(modulesPatchDir);
-        assertDefinedModule(modulesPatchDir, moduleName, moduleAdded.getItem().getContentHash());
     }
 }

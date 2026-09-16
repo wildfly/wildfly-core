@@ -10,12 +10,10 @@ import static org.jboss.as.patching.Constants.LAYERS;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.DirectoryStructure;
@@ -71,7 +69,7 @@ class LayersFactory {
 
         // Step 3 - create the actual config objects
         // Process layers
-        final InstalledIdentityImpl installedIdentity = new InstalledIdentityImpl(identity, allPatches, image);
+        final InstalledIdentityImpl installedIdentity = new InstalledIdentityImpl(identity, image);
         for (final LayerPathConfig layer : processedLayers.getLayers().values()) {
             final String name = layer.name;
             installedIdentity.putLayer(name, createPatchableTarget(name, layer, config.getLayerMetadataDir(name), image));
@@ -310,8 +308,6 @@ class LayersFactory {
 
         final File metadata;
         final InstalledImage installedImage;
-        final Set<String> installedLayers = new HashSet<String>();
-        final Set<String> installedAddOns = new HashSet<String>();
 
         InstalledConfiguration(final InstalledImage installedImage) {
             this.metadata = installedImage.getInstallationMetadata();
@@ -332,14 +328,6 @@ class LayersFactory {
 
         File getAddOnMetadataDir(final String name) {
             return new File(getAddOnsMetadataDir(), name);
-        }
-
-        Set<String> getInstalledLayers() {
-            return installedLayers;
-        }
-
-        Set<String> getInstalledAddOns() {
-            return installedAddOns;
         }
     }
 

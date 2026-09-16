@@ -711,14 +711,6 @@ class PatchXmlUtils implements XMLStreamConstants {
         return new MiscContentItem(name, itemPath, hash, directory, affectsRuntime);
     }
 
-    protected static void writeAppliesToVersions(XMLExtendedStreamWriter writer, List<String> appliesTo) throws XMLStreamException {
-        for (String version : appliesTo) {
-//            writer.writeStartElement(Element.APPLIES_TO_VERSION.name);
-            writer.writeCharacters(version);
-            writer.writeEndElement();
-        }
-    }
-
     protected static void writeSlottedItems(final XMLExtendedStreamWriter writer, final Element element, final List<ContentModification> modifications) throws XMLStreamException {
         for(final ContentModification modification : modifications) {
             writeSlottedItem(writer, element, modification);

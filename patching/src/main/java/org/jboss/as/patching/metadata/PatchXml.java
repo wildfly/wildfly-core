@@ -32,7 +32,6 @@ import org.jboss.staxmapper.XMLMapper;
 public class PatchXml {
 
     public static final String PATCH_XML = "patch.xml";
-    public static final String ROLLBACK_XML = "rollback.xml";
 
     private static final XMLMapper MAPPER = XMLMapper.Factory.create();
     private static final PatchXml_1_0 XML1_0 = new PatchXml_1_0();
@@ -77,11 +76,6 @@ public class PatchXml {
                     elements.put(element.namespace, element);
                 }
             }
-        }
-
-        static Namespace forUri(String name) {
-            final Namespace element = elements.get(name);
-            return element == null ? UNKNOWN : element;
         }
 
     }
