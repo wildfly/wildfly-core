@@ -114,6 +114,8 @@ public final class StandaloneXml implements ManagementXmlReaderWriter {
             case 19:
                 new StandaloneXml_18(extensionHandler, version, namespaceUri, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
+            case 20:
+            case 21:
             default:
                 new StandaloneXml_20(extensionHandler, namespace, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
         }

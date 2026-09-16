@@ -5,7 +5,7 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<host xmlns="urn:jboss:domain:20.0" name="primary">
+<host xmlns="urn:jboss:domain:21.0" name="primary">
     <extensions>
         <extension module="org.jboss.as.jmx"/>
         <extension module="org.wildfly.extension.core-management"/>
