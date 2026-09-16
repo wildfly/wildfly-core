@@ -31,6 +31,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.wildfly.security.auth.client.AuthenticationContext;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -287,7 +289,15 @@ class DeploymentUploadUtil {
             final String urlSpec = content.get(URL).asString();
             try {
                 message = DomainControllerLogger.ROOT_LOGGER.invalidUrlStream();
-                in = new URL(urlSpec).openStream();
+                URL url = new URL(urlSpec);
+                ModelNode authCtxNode = DeploymentAttributes.URL_AUTHENTICATION_CONTEXT.resolveModelAttribute(context, content);
+                if (authCtxNode.isDefined()) {
+                    AuthenticationContext authCtx = context.getCapabilityRuntimeAPI(
+                            "org.wildfly.security.authentication-context", authCtxNode.asString(), AuthenticationContext.class);
+                    in = DeploymentUploadURLHandler.openAuthenticatedStream(url, authCtx);
+                } else {
+                    in = url.openStream();
+                }
             } catch (MalformedURLException e) {
                 throw createFailureException(message);
             } catch (IOException e) {
