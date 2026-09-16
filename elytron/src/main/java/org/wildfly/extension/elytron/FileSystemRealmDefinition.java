@@ -20,6 +20,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostContr
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron.KeyStoreServiceUtil.getModifiableKeyStoreService;
+import static org.wildfly.extension.elytron.RealmDefinitions.BRUTE_FORCE_PROTECTION;
 import static org.wildfly.extension.elytron.RealmDefinitions.createBruteForceRealmTransformer;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
@@ -171,7 +172,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
                     .setRestartAllServices()
                     .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PATH, RELATIVE_TO, LEVELS, ENCODED, HASH_ENCODING, HASH_CHARSET};
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PATH, RELATIVE_TO, LEVELS, ENCODED, HASH_ENCODING, HASH_CHARSET, BRUTE_FORCE_PROTECTION};
     static final AttributeDefinition[] INTEGRITY_ATTRIBUTES = new AttributeDefinition[]{KEY_STORE, KEY_STORE_ALIAS};
     static final AttributeDefinition[] ENCRYPTION_ATTRIBUTES = new AttributeDefinition[]{CREDENTIAL_STORE, SECRET_KEY};
     static final AttributeDefinition[] ALL_ATTRIBUTES = Stream.of(ATTRIBUTES, INTEGRITY_ATTRIBUTES, ENCRYPTION_ATTRIBUTES)
@@ -338,7 +339,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
             Consumer<ModifiableSecurityRealm> modifiableConsumer = serviceBuilder.provides(modifiableServiceName);
 
             Function<ModifiableSecurityRealm, ModifiableSecurityRealm> realmTransformer =
-                    createBruteForceRealmTransformer(context.getCurrentAddressValue(), ModifiableSecurityRealm.class, serviceBuilder);
+                    createBruteForceRealmTransformer(context.getCurrentAddressValue(), ModifiableSecurityRealm.class, serviceBuilder, context, model);
 
             TrivialService<SecurityRealm> fileSystemRealmService = new TrivialService<>(
                     new TrivialService.ValueSupplier<SecurityRealm>() {
