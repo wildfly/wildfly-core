@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 
 import org.apache.commons.io.IOUtils;
 import org.mockserver.integration.ClientAndServer;
@@ -75,6 +76,33 @@ class AcmeMockServerBuilder {
         String link = "<https://boulder:4431/terms/v7>;rel=\"terms-of-service\"";
         return addPostRequestAndResponse(expectedNewAccountRequestBody, "/acme/new-acct", newAccountResponseBody, newAccountReplayNonce,
                 link, newAccountLocation, newAccountStatusCode, useProblemContentType);
+    }
+
+    public AcmeMockServerBuilder addNewAccountRequestValidatorAndResponse(Consumer<String> requestBodyValidator, String newAccountResponseBody,
+                                                                          String newAccountReplayNonce, String newAccountLocation, int newAccountStatusCode) {
+        String link = "<https://boulder:4431/terms/v7>;rel=\"terms-of-service\"";
+        HttpResponse response = response()
+                .withHeader("Cache-Control", "public, max-age=0, no-cache")
+                .withHeader("Replay-Nonce", newAccountReplayNonce)
+                .withStatusCode(newAccountStatusCode);
+        if (! newAccountResponseBody.isEmpty()) {
+            response = response
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(newAccountResponseBody);
+        }
+        if (! link.isEmpty()) {
+            response = response.withHeader("Link", link);
+        }
+        if (! newAccountLocation.isEmpty()) {
+            response = response.withHeader("Location", newAccountLocation);
+        }
+        final HttpResponse newAccountResponse = response;
+        server.when(request().withMethod("POST").withPath("/acme/new-acct"), Times.once())
+                .respond(request -> {
+                    requestBodyValidator.accept(request.getBodyAsString());
+                    return newAccountResponse;
+                });
+        return this;
     }
 
     public AcmeMockServerBuilder updateAccountRequestAndResponse(String expectedUpdateAccountRequestBody, String updateAccountResponseBody, String updateAccountReplayNonce,

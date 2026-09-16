@@ -224,13 +224,24 @@ class TlsParser {
             .addAttribute(SSLDefinitions.PROVIDERS)
             .addAttribute(SSLDefinitions.PROVIDER_NAME);
 
-    private PersistentResourceXMLBuilder certificateAuthorityAccountParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(CERTIFICATE_AUTHORITY_ACCOUNT))
+    private PersistentResourceXMLBuilder certificateAuthorityAccountParser = PersistentResourceXMLDescription.builder(
+            PathElement.pathElement(CERTIFICATE_AUTHORITY_ACCOUNT))
             .setXmlWrapperElement(CERTIFICATE_AUTHORITY_ACCOUNTS)
             .addAttribute(CertificateAuthorityAccountDefinition.CERTIFICATE_AUTHORITY)
             .addAttribute(CertificateAuthorityAccountDefinition.CONTACT_URLS)
             .addAttribute(CertificateAuthorityAccountDefinition.KEY_STORE)
             .addAttribute(CertificateAuthorityAccountDefinition.ALIAS)
             .addAttribute(CertificateAuthorityAccountDefinition.CREDENTIAL_REFERENCE);
+
+    private PersistentResourceXMLBuilder caAccountPreviewParser = PersistentResourceXMLDescription.builder(
+            PathElement.pathElement(CERTIFICATE_AUTHORITY_ACCOUNT))
+            .setXmlWrapperElement(CERTIFICATE_AUTHORITY_ACCOUNTS)
+            .addAttribute(CertificateAuthorityAccountDefinition.CERTIFICATE_AUTHORITY)
+            .addAttribute(CertificateAuthorityAccountDefinition.CONTACT_URLS)
+            .addAttribute(CertificateAuthorityAccountDefinition.KEY_STORE)
+            .addAttribute(CertificateAuthorityAccountDefinition.ALIAS)
+            .addAttribute(CertificateAuthorityAccountDefinition.CREDENTIAL_REFERENCE)
+            .addAttribute(CertificateAuthorityAccountDefinition.EXTERNAL_ACCOUNT_BINDING);
 
     private PersistentResourceXMLBuilder serverSslSniContextParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(SERVER_SSL_SNI_CONTEXT))
             .setXmlWrapperElement(SERVER_SSL_SNI_CONTEXTS)
@@ -386,5 +397,21 @@ class TlsParser {
             .addChild(certificateAuthorityAccountParser)
             .addChild(serverSslSniContextParser)
             .addChild(dynamicClientSslContextParser) // new in DEFAULT
+            .build();
+
+    final PersistentResourceXMLDescription tlsParserPreview_19_0 = decorator(TLS)
+            .addChild(decorator(KEY_STORES)
+                    .addChild(keyStoreParser)
+                    .addChild(ldapKeyStoreParser)
+                    .addChild(filteringKeyStoreParser)
+            )
+            .addChild(keyManagerParser_12_0)
+            .addChild(trustManagerParser_14_0)
+            .addChild(serverSslContextParser_9_0)
+            .addChild(clientSslContextParser_9_0)
+            .addChild(certificateAuthorityParser)
+            .addChild(caAccountPreviewParser)
+            .addChild(serverSslSniContextParser)
+            .addChild(dynamicClientSslContextParser)
             .build();
 }
