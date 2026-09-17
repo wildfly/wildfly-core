@@ -22,15 +22,18 @@ public interface Feature {
     }
 
     /**
-     * Returns a complete map of a feature per stability level.
+     * Returns a complete map of a feature per stability.
      * @param <F> the feature type
-     * @param features a collection of features of different stability levels.
+     * @param features a collection of features with distinct stabilities.
      * @return a full mapping of feature per stability level.
+     * @throw IllegalArgumentException if the collection of features do not have distinct stabilities.
      */
     static <F extends Feature> Map<Stability, F> map(Iterable<F> features) {
         Map<Stability, F> map = new EnumMap<>(Stability.class);
         for (F feature : features) {
-            map.put(feature.getStability(), feature);
+            if (map.putIfAbsent(feature.getStability(), feature) != null) {
+                throw new IllegalArgumentException(features.toString());
+            }
         }
         return Stability.map(map::get);
     }
