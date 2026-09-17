@@ -1963,6 +1963,13 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="principal-transformer" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Reference to a principal transformer to be applied to the principal.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

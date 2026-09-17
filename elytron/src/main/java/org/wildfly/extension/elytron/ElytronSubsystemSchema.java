@@ -235,7 +235,10 @@ public enum ElytronSubsystemSchema implements PersistentSubsystemSchema<ElytronS
 
     private void addRealmParser(PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder) {
         RealmParser realmParser = new RealmParser();
-        if (this.since(ElytronSubsystemSchema.VERSION_18_0)) {
+        if (this.since(ElytronSubsystemSchema.VERSION_19_0_COMMUNITY)) {
+            builder.addChild(realmParser.realmParser_19_0_community);
+        }
+        else if (this.since(ElytronSubsystemSchema.VERSION_18_0)) {
             builder.addChild(realmParser.realmParser_18);
         } else if (this.since(ElytronSubsystemSchema.VERSION_16_0)) {
             builder.addChild(realmParser.realmParser_16);
