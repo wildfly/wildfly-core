@@ -97,6 +97,9 @@
         <filesystem-realm name="FileRealm" levels="2" encoded="false">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir"/>
         </filesystem-realm>
+        <token-realm name="TokenRealmWithTransformer" principal-claim="sub" principal-transformer="myCasePrincipalTransformerUpper">
+            <jwt issuer="elytron-oauth2-realm" audience="my-app-valid"/>
+        </token-realm>
         <distributed-realm name="DistributedRealm" realms="FileRealm PropRealm"/>
         <failover-realm name="FailoverRealm" delegate-realm="JdbcRealm" failover-realm="PropRealm"/>
     </security-realms>
@@ -221,6 +224,7 @@
             <role-decoder name="ipRoleDecoder"/>
             <role-decoder name="regexRoleDecoder"/>
         </aggregate-role-decoder>
+        <case-principal-transformer name="myCasePrincipalTransformerUpper" upper-case="true"/>
     </mappers>
     <permission-sets>
         <permission-set name="my-permissions">
