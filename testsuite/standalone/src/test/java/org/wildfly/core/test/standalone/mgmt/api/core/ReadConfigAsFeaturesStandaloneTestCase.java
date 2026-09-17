@@ -65,13 +65,12 @@ public class ReadConfigAsFeaturesStandaloneTestCase extends ReadConfigAsFeatures
     @Test
     public void undefineParameterTest() throws UnsuccessfulOperationException {
         ModelNode undefineParameterOperation = Util.getUndefineAttributeOperation(
-                PathAddress.pathAddress(SUBSYSTEM, "security-manager").append("deployment-permissions", "default"),
-                "maximum-permissions");
-
+                PathAddress.pathAddress(SUBSYSTEM, "request-controller"),
+                "track-individual-endpoints");
         ModelNode expectedConfigAsFeatures = defaultConfigAsFeatures.clone();
-        ModelNode securityManagerSubsystem = getFeatureNodeChild(expectedConfigAsFeatures.get(0), "subsystem.security-manager");
-        securityManagerSubsystem.get(CHILDREN).get(0).remove(PARAMS);
-
+        ModelNode requestControllerSubsystem = getFeatureNodeChild(
+                expectedConfigAsFeatures.get(0), "subsystem.request-controller");
+        requestControllerSubsystem.remove(PARAMS);
         doTest(Collections.singletonList(undefineParameterOperation), expectedConfigAsFeatures);
     }
 

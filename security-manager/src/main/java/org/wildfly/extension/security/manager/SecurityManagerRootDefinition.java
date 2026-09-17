@@ -7,14 +7,14 @@ package org.wildfly.extension.security.manager;
 
 import static org.wildfly.extension.security.manager.SecurityManagerExtension.DEPRECATED_SINCE;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
+import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.PersistentResourceDefinition;
-import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 
 /**
  * Defines the security manager subsystem root resource.
@@ -26,11 +26,11 @@ class SecurityManagerRootDefinition extends PersistentResourceDefinition {
     static final SecurityManagerRootDefinition INSTANCE = new SecurityManagerRootDefinition();
 
     private static final List<? extends PersistentResourceDefinition> CHILDREN = Collections.unmodifiableList(
-            Arrays.asList(DeploymentPermissionsResourceDefinition.INSTANCE));
+            List.of(DeploymentPermissionsResourceDefinition.INSTANCE));
 
     private SecurityManagerRootDefinition() {
         super (SecurityManagerExtension.SUBSYSTEM_PATH, SecurityManagerExtension.getResolver(),
-                SecurityManagerSubsystemAdd.INSTANCE, ReloadRequiredRemoveStepHandler.INSTANCE);
+                ModelOnlyAddStepHandler.INSTANCE, ModelOnlyRemoveStepHandler.INSTANCE);
         setDeprecated(DEPRECATED_SINCE);
     }
 
