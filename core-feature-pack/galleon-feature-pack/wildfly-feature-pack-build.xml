@@ -61,7 +61,6 @@
                 <extension>org.wildfly.extension.elytron</extension>
                 <extension>org.wildfly.extension.io</extension>
                 <extension>org.wildfly.extension.request-controller</extension>
-                <extension>org.wildfly.extension.security.manager</extension>
             </standalone>
             <domain>
                 <extension>org.jboss.as.jmx</extension>
@@ -72,7 +71,6 @@
                 <extension>org.wildfly.extension.elytron</extension>
                 <extension>org.wildfly.extension.io</extension>
                 <extension>org.wildfly.extension.request-controller</extension>
-                <extension>org.wildfly.extension.security.manager</extension>
             </domain>
             <host>
                 <extension>org.jboss.as.jmx</extension>
