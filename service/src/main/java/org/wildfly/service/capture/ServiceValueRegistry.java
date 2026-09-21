@@ -7,22 +7,19 @@ package org.wildfly.service.capture;
 import java.util.function.Consumer;
 
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.service.BlockingLifecycle;
 import org.wildfly.service.ServiceDependency;
 import org.wildfly.service.ServiceInstaller;
 
 /**
- * A registry of service values, keyed by {@link ServiceName}.
+ * The provider interface for a registry of captured values provided by MSC services.
  * @author Paul Ferraro
  * @param <V> the registry value type
  */
-public interface ServiceValueRegistry<V> extends ValueRegistry<ServiceName, V> {
+public interface ServiceValueRegistry<V> extends ValueRegistry<ServiceName, V>, ServiceValueCaptor<ServiceName, ServiceTarget> {
 
-    /**
-     * Creates a service installer to capture and release the value provided by the specified service dependency.
-     * @param name the name identifying the service providing the value to be captured
-     * @return a service installer
-     */
+    @Override
     default ServiceInstaller capture(ServiceName name) {
         Consumer<V> start = new Consumer<>() {
             @Override
@@ -36,7 +33,8 @@ public interface ServiceValueRegistry<V> extends ValueRegistry<ServiceName, V> {
                 ServiceValueRegistry.this.remove(name);
             }
         };
-        ServiceDependency<V> dependency = ServiceDependency.on(name);
-        return ServiceInstaller.BlockingBuilder.of(dependency).requires(dependency).withLifecycle(BlockingLifecycle.compose(start, stop)).build();
+        return ServiceInstaller.BlockingBuilder.of(ServiceDependency.<V>on(name))
+                .withLifecycle(BlockingLifecycle.compose(start, stop))
+                .build();
     }
 }
