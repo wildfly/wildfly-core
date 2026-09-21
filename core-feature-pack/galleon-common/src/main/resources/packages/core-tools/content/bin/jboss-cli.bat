@@ -80,7 +80,7 @@ set "JAVA_OPTS=%JAVA_OPTS% -Dcom.ibm.jsse2.overrideDefaultTLS=true"
 
 set LOGGING_CONFIG=
 echo "%JAVA_OPTS%" | findstr /I "logging.configuration" > nul
-if errorlevel == 1 (
+if errorlevel 1 (
   rem It must be quoted in case JBOSS_HOME contains whitespaces 
   set LOGGING_CONFIG="-Dlogging.configuration=file:%JBOSS_HOME%\bin\jboss-cli-logging.properties"
 ) else (

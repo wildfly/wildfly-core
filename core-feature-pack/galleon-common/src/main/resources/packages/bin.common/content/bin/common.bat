@@ -36,7 +36,7 @@ goto:eof
 :setDefaultModularJvmOptions
   setlocal EnableDelayedExpansion
   echo %* | findstr /I "\-\-add\-modules" > nul
-  if errorlevel == 1 (
+  if errorlevel 1 (
     rem Set default modular jdk options
     rem Needed by the iiop-openjdk subsystem
     set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-exports=java.desktop/sun.awt=ALL-UNNAMED"

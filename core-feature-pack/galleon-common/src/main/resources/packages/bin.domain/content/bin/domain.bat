@@ -28,7 +28,7 @@ call "%DIRNAME%common.bat" :commonConf
 setlocal EnableDelayedExpansion
 rem check for the security manager system property
 echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager" > nul
-if not errorlevel == 1 (
+if not errorlevel 1 (
     echo ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable.
     GOTO :EOF
 )
@@ -212,7 +212,7 @@ if "%SECMGR%" == "true" (
 
 rem Add -Djdk.serialFilter if not specified
 echo "%JAVA_OPTS% %SERVER_OPTS% %JDK_JAVA_OPTIONS%" | findstr /I "\-Djdk.serialFilter" > nul
-if errorlevel == 1 (
+if errorlevel 1 (
   if "x%DISABLE_JDK_SERIAL_FILTER%" == "x" (
     setlocal EnableDelayedExpansion
     if "x!JDK_SERIAL_FILTER!" == "x" (

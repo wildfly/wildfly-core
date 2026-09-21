@@ -40,9 +40,9 @@ call "%DIRNAME%common.bat" :commonConf
 setlocal EnableDelayedExpansion
 rem check for the security manager system property
 echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager" > nul
-if not errorlevel == 1 (
+if not errorlevel 1 (
     echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager=allow" > nul
-    if errorlevel == 1 (
+    if errorlevel 1 (
         echo ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable.
         GOTO :EOF
     )
@@ -154,7 +154,7 @@ if NOT "x%GC_LOG%" == "x" (
 rem Set debug settings if not already set
 if "%DEBUG_MODE%" == "true" (
    echo "%JAVA_OPTS%" | findstr /I "\-agentlib:jdwp" > nul
-  if errorlevel == 1 (
+  if errorlevel 1 (
      set "JAVA_OPTS=%JAVA_OPTS% -agentlib:jdwp=transport=dt_socket,address=%DEBUG_PORT_VAR%,server=y,suspend=n"
   ) else (
      echo Debug already enabled in JAVA_OPTS, ignoring --debug argument
@@ -261,7 +261,7 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
         )
         rem Add rotating GC logs, if supported, and not already defined
         echo "%JAVA_OPTS%" | findstr /I "\-Xlog:*gc" > nul
-        if errorlevel == 1 (
+        if errorlevel 1 (
             rem Back up any prior logs
             move /y "%JBOSS_LOG_DIR%\gc.log" "%JBOSS_LOG_DIR%\backupgc.log" > nul 2>&1
             move /y "%JBOSS_LOG_DIR%\gc.log.0" "%JBOSS_LOG_DIR%\backupgc.log.0" > nul 2>&1
@@ -279,7 +279,7 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
                 set TMP_PARAM="-Xlog:gc*:file=!JBOSS_LOG_DIR!\gc.log:time,uptimemillis:filecount=5,filesize=3M"
             )
             "!JAVA!" !TMP_PARAM! -version > nul 2>&1
-            if not errorlevel == 1 (
+            if not errorlevel 1 (
                set "JAVA_OPTS=!JAVA_OPTS! !TMP_PARAM!"
             )
             rem Remove the gc.log file from the -version check
@@ -308,7 +308,7 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
   rem Add -Djdk.serialFilter if not specified
   setlocal EnableDelayedExpansion
   echo "!JAVA_OPTS! !SERVER_OPTS! !JDK_JAVA_OPTIONS!" | findstr /I "\-Djdk.serialFilter" > nul
-  if errorlevel == 1 (
+  if errorlevel 1 (
     if "x!DISABLE_JDK_SERIAL_FILTER!" == "x" (
       if "x!JDK_SERIAL_FILTER!" == "x" (
         set JAVA_OPTS=!JAVA_OPTS! "@!DIRNAME!jdk.serialFilter"
@@ -328,7 +328,7 @@ if "%SECMGR%" == "true" (
 setlocal EnableDelayedExpansion
 rem Add -client to the JVM options, if supported (32 bit VM), and not overridden
 echo "!MODULE_OPTS!" | findstr /I \-javaagent: > nul
-if not errorlevel == 1 (
+if not errorlevel 1 (
     set AGENT_PARAM=-javaagent:"!JBOSS_HOME!\jboss-modules.jar"
     set JAVA_OPTS=!AGENT_PARAM! !JAVA_OPTS!
 )
