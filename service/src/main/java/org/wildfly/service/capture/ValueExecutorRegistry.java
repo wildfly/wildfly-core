@@ -5,13 +5,10 @@
 
 package org.wildfly.service.capture;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
- * A registry of captured values.
+ * A registry of captured values with {@link ValueRegistry provider-side} and {@link FunctionExecutorRegistry consumer-side} interfaces.
  * @author Paul Ferraro
  * @param <K> the registry key type
  * @param <V> the registry value type
@@ -19,37 +16,27 @@ import java.util.function.Consumer;
 public interface ValueExecutorRegistry<K, V> extends ValueRegistry<K, V>, FunctionExecutorRegistry<K, V> {
 
     /**
-     * Creates a new registry of values.
+     * Creates a new registry of executors.
      * @param <K> the registry key type
      * @param <V> the registry value type
-     * @return a new registry instance
+     * @return a new executor registry.
      */
     static <K, V> ValueExecutorRegistry<K, V> newInstance() {
+        ReferenceValueRegistry<K, V> registry = ReferenceValueRegistry.newInstance();
         return new ValueExecutorRegistry<>() {
-            private final Map<K, AtomicReference<V>> references = new ConcurrentHashMap<>();
-
-            private AtomicReference<V> create(K dependency) {
-                return new AtomicReference<>();
-            }
-
             @Override
             public Consumer<V> add(K key) {
-                AtomicReference<V> reference = this.references.computeIfAbsent(key, this::create);
-                return reference::set;
+                return registry.add(key);
             }
 
             @Override
             public void remove(K key) {
-                AtomicReference<V> reference = this.references.remove(key);
-                if (reference != null) {
-                    reference.set(null);
-                }
+                registry.remove(key);
             }
 
             @Override
             public FunctionExecutor<V> getExecutor(K key) {
-                AtomicReference<V> reference = this.references.get(key);
-                return (reference != null) ? FunctionExecutor.of(reference::get) : null;
+                return FunctionExecutor.of(registry.getReference(key));
             }
         };
     }

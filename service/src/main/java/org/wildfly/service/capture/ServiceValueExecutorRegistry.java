@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 import org.jboss.msc.service.ServiceName;
 
 /**
- * A registry of captured values.
+ * A registry of captured values provided by MSC services with {@link ServiceValueRegistry provider-side} and {@link FunctionExecutorRegistry consumer-side} interfaces.
  * @author Paul Ferraro
  * @param <V> the captured value type
  */

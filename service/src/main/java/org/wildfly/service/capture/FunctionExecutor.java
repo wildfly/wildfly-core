@@ -4,6 +4,7 @@
  */
 package org.wildfly.service.capture;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.wildfly.common.function.ExceptionFunction;
@@ -16,15 +17,15 @@ import org.wildfly.common.function.ExceptionFunction;
 public interface FunctionExecutor<V> {
 
     /**
-     * Creates a function executor from the specified argument supplier.
+     * Creates a function executor from the specified reference.
      * @param <V> the value type of the function argument
      * @param reference a supplier of the function argument
      * @return a new function executor instance
      */
-    static <V> FunctionExecutor<V> of(Supplier<V> reference) {
+    static <V> FunctionExecutor<V> of(Supplier<? extends V> reference) {
         return new FunctionExecutor<>() {
             @Override
-            public <R, E extends Exception> R execute(ExceptionFunction<V, R, E> function) throws E {
+            public <R, E extends Exception> R execute(ExceptionFunction<? super V, ? extends R, E> function) throws E {
                 V value = reference.get();
                 return (value != null) ? function.apply(value) : null;
             }
@@ -39,5 +40,25 @@ public interface FunctionExecutor<V> {
      * @return the result of the function
      * @throws E if the function fails to execute
      */
-    <R, E extends Exception> R execute(ExceptionFunction<V, R, E> function) throws E;
+    <R, E extends Exception> R execute(ExceptionFunction<? super V, ? extends R, E> function) throws E;
+
+    /**
+     * Returns a registry of executors composed from this registry via the specified function.
+     * @param <T> the composition type
+     * @param composer a composing function
+     * @return a registry of executors composed from this registry via the specified function.
+     */
+    default <T> FunctionExecutor<T> compose(Function<? super V, ? extends T> composer) {
+        return new FunctionExecutor<>() {
+            @Override
+            public <R, E extends Exception> R execute(ExceptionFunction<? super T, ? extends R, E> function) throws E {
+                return FunctionExecutor.this.<R, E>execute(new ExceptionFunction<>() {
+                    @Override
+                    public R apply(V value) throws E {
+                        return function.apply(composer.apply(value));
+                    }
+                });
+            }
+        };
+    }
 }

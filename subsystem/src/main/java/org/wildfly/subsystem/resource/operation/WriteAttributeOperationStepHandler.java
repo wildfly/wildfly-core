@@ -12,10 +12,12 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.service.capture.ValueRegistry;
 
 /**
  * A {@link ReloadRequiredWriteAttributeHandler} that supports resource service restarts via a {@link ResourceOperationRuntimeHandler}.
@@ -31,7 +33,7 @@ public class WriteAttributeOperationStepHandler extends ReloadRequiredWriteAttri
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return super.requiresRuntime(context) && this.descriptor.getRuntimeHandler().isPresent();
+        return super.requiresRuntime(context) && (this.descriptor.getRuntimeHandler().isPresent() || this.descriptor.getValueRegistry(context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, context.getCurrentOperationParameter(ModelDescriptionConstants.NAME).asString()).getAttributeDefinition()) != null);
     }
 
     @Override
@@ -66,12 +68,19 @@ public class WriteAttributeOperationStepHandler extends ReloadRequiredWriteAttri
 
     @Override
     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Void> handback) throws OperationFailedException {
-        // This method is only triggered when runtime handler is present
-        ResourceOperationRuntimeHandler handler = this.descriptor.getRuntimeHandler().get();
+        ResourceOperationRuntimeHandler handler = this.descriptor.getRuntimeHandler().orElse(null);
         boolean updated = super.applyUpdateToRuntime(context, operation, attributeName, resolvedValue, currentValue, handback);
         if (updated) {
             PathAddress address = context.getCurrentAddress();
             AttributeAccess attribute = context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
+            ValueRegistry<PathAddress, ModelNode> registry = this.descriptor.getValueRegistry(attribute.getAttributeDefinition());
+            if (registry != null) {
+                registry.add(address).accept(resolvedValue);
+            }
+            if ((handler == null) || AttributeAccess.Flag.RESTART_NONE.test(attribute)) {
+                // Returning false prevents going into reload required state
+                return false;
+            }
             if (context.isResourceServiceRestartAllowed() && AttributeAccess.Flag.RESTART_RESOURCE_SERVICES.test(attribute) && context.markResourceRestarted(address, handler)) {
                 handler.removeRuntime(context, context.getOriginalRootResource().navigate(context.getCurrentAddress()));
                 handler.addRuntime(context, context.readResource(PathAddress.EMPTY_ADDRESS, false));
@@ -84,11 +93,14 @@ public class WriteAttributeOperationStepHandler extends ReloadRequiredWriteAttri
 
     @Override
     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode resolvedValue, Void handback) throws OperationFailedException {
-        // This method is only triggered when runtime handler is present
-        ResourceOperationRuntimeHandler handler = this.descriptor.getRuntimeHandler().get();
+        ResourceOperationRuntimeHandler handler = this.descriptor.getRuntimeHandler().orElse(null);
         PathAddress address = context.getCurrentAddress();
         AttributeAccess attribute = context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
-        if (context.isResourceServiceRestartAllowed() && AttributeAccess.Flag.RESTART_RESOURCE_SERVICES.test(attribute) && context.revertResourceRestarted(address, handler)) {
+        ValueRegistry<PathAddress, ModelNode> registry = this.descriptor.getValueRegistry(attribute.getAttributeDefinition());
+        if (registry != null) {
+            registry.add(address).accept(resolvedValue);
+        }
+        if ((handler != null) && context.isResourceServiceRestartAllowed() && AttributeAccess.Flag.RESTART_RESOURCE_SERVICES.test(attribute) && context.revertResourceRestarted(address, handler)) {
             handler.removeRuntime(context, context.readResource(PathAddress.EMPTY_ADDRESS, false));
             handler.addRuntime(context, context.getOriginalRootResource().navigate(context.getCurrentAddress()));
         }
