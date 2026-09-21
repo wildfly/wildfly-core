@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+
+<package-spec xmlns="urn:jboss:galleon:package:3.0" name="bin.domain">
+    <dependencies>
+        <package name="bin"/>
+    </dependencies>
+</package-spec>
