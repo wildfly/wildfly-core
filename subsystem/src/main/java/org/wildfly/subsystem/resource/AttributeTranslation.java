@@ -21,7 +21,7 @@ public interface AttributeTranslation {
     interface AttributeValueTranslator {
         static AttributeValueTranslator IDENTITY = new AttributeValueTranslator() {
             @Override
-            public ModelNode translate(OperationContext context, ModelNode value) throws OperationFailedException {
+            public ModelNode translate(OperationContext context, ModelNode value) {
                 return value;
             }
         };
@@ -94,7 +94,7 @@ public interface AttributeTranslation {
             public AttributeValueTranslator getReadAttributeOperationTranslator() {
                 return new AttributeValueTranslator() {
                     @Override
-                    public ModelNode translate(OperationContext context, ModelNode value) throws OperationFailedException {
+                    public ModelNode translate(OperationContext context, ModelNode value) {
                         return value.isDefined() ? value.asList().get(0) : value;
                     }
                 };
@@ -104,7 +104,7 @@ public interface AttributeTranslation {
             public AttributeValueTranslator getWriteAttributeOperationTranslator() {
                 return new AttributeValueTranslator() {
                     @Override
-                    public ModelNode translate(OperationContext context, ModelNode value) throws OperationFailedException {
+                    public ModelNode translate(OperationContext context, ModelNode value) {
                         return new ModelNode().add(value);
                     }
                 };

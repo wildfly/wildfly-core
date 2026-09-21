@@ -436,7 +436,7 @@ public interface CapabilityServiceInstaller extends ResourceServiceInstaller, In
         private final Supplier<Executor> executor;
 
         private DefaultAsyncBlockingBuilder(RuntimeCapability<Void> capability, Supplier<T> provider, Function<? super T, ? extends V> mapper, ServiceDependency<Executor> executor) {
-            this(new DefaultNonBlockingBuilder<T, V>(capability, compose(provider, executor), mapper), executor);
+            this(new DefaultNonBlockingBuilder<>(capability, compose(provider, executor), mapper), executor);
             this.requires(executor);
         }
 
