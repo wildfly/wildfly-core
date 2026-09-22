@@ -6,8 +6,13 @@ package org.wildfly.service;
 
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -87,5 +92,33 @@ public class ServiceDependencyTestCase {
         Assert.assertSame(injection3.get(), cast.get());
         Assert.assertSame(injection3.get(), mapped.get());
         Assert.assertSame(injection3.get(), dependency.get());
+    }
+
+    @Test
+    public void thenAccept() {
+        UUID dependencyValue = UUID.randomUUID();
+        UUID otherValue = UUID.randomUUID();
+        ServiceDependency<UUID> dependency = ServiceDependency.of(dependencyValue);
+        Consumer<UUID> unaryConsumer = mock(Consumer.class);
+
+        Runnable runner = dependency.thenAccept(unaryConsumer);
+
+        verifyNoInteractions(unaryConsumer);
+
+        runner.run();
+
+        verify(unaryConsumer).accept(dependencyValue);
+        verifyNoMoreInteractions(unaryConsumer);
+
+        BiConsumer<UUID, UUID> binaryConsumer = mock(BiConsumer.class);
+
+        Consumer<UUID> consumer = dependency.thenAccept(binaryConsumer);
+
+        verifyNoInteractions(binaryConsumer);
+
+        consumer.accept(otherValue);
+
+        verify(binaryConsumer).accept(dependencyValue, otherValue);
+        verifyNoMoreInteractions(binaryConsumer);
     }
 }
