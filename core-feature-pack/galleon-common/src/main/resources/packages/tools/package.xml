@@ -4,5 +4,7 @@
     <dependencies>
         <package name="org.wildfly.core.wildfly-cli.shaded"/>
         <package name="org.wildfly.core.wildfly-elytron-tool-wrapper.shaded"/>
+        <package name="core-tools" optional="true"/>
+        <package name="bin.common"/>
     </dependencies>
 </package-spec>
