@@ -8,6 +8,7 @@ package org.wildfly.extension.security.manager;
 import java.io.IOException;
 
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
+import org.jboss.as.subsystem.test.AdditionalInitialization;
 
 /**
  * Security Manager version 3.0 subsystem tests.
@@ -24,5 +25,15 @@ public class SecurityManagerSubsystemTestCase extends AbstractSubsystemBaseTest 
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("security-manager-1.0.xml");
+    }
+
+    @Override
+    protected String getSubsystemXsdPath() throws Exception {
+        return "schema/wildfly-security-manager_1_0.xsd";
+    }
+
+    @Override
+    protected AdditionalInitialization createAdditionalInitialization() {
+        return AdditionalInitialization.ADMIN_ONLY_HC;
     }
 }

@@ -137,8 +137,6 @@ public class ManagementReadXmlTestCase {
 
             cli.sendLine("/subsystem=request-controller:add()");
 
-            cli.sendLine("/subsystem=security-manager:add()");
-            cli.sendLine("/subsystem=security-manager/deployment-permissions=default:add(maximum-permissions=[{class=java.security.AllPermission}]");
             if(!propertyOne) {
                 cli.sendLine("/interface=management:write-attribute(name=inet-address,value=\"${jboss.test.host.secondary.address}\")");
                 cli.sendLine("/interface=public:write-attribute(name=inet-address,value=\"${jboss.test.host.secondary.address}\")");

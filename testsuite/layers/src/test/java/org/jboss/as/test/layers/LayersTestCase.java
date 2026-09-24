@@ -26,6 +26,8 @@ public class LayersTestCase {
         // No patching modules in layers
         "org.jboss.as.patching",
         "org.jboss.as.patching.cli",
+        // No Security manager modules in layers
+        "org.wildfly.extension.security.manager"
     };
     // Packages that are not referenced from the module graph but needed.
     // This is the expected set of un-referenced modules found when scanning
@@ -58,6 +60,8 @@ public class LayersTestCase {
         "org.apache.commons.lang3",
         "org.wildfly.extension.elytron.jaas-realm",
         "org.wildfly.security.elytron-tool",
+        // Read Only module required for Domain Mode
+        "org.wildfly.extension.security.manager"
     };
 
     private static final String[] NOT_USED_OR_REFERENCED = {
