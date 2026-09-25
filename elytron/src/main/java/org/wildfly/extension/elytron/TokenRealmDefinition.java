@@ -19,6 +19,7 @@ import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAtt
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.KEY_MAP;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.KEY_STORE;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.PUBLIC_KEY;
+import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.PUBLIC_KEY_URL;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.net.MalformedURLException;
@@ -129,6 +130,14 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
+        static final SimpleAttributeDefinition PUBLIC_KEY_URL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PUBLIC_KEY_URL, ModelType.STRING, true)
+                .setAlternatives(ElytronDescriptionConstants.KEY_STORE, ElytronDescriptionConstants.CERTIFICATE)
+                .setAllowExpression(true)
+                .setValidator(new URLValidator())
+                .setMinSize(1)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
         static final SimpleAttributeDefinition KEY_STORE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_STORE, ModelType.STRING, true)
                 .setAlternatives(ElytronDescriptionConstants.PUBLIC_KEY)
                 .setRequires(ElytronDescriptionConstants.CERTIFICATE)
@@ -169,7 +178,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .setRestartAllServices()
                 .build();
 
-        static final ObjectTypeAttributeDefinition JWT_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(JWT, ISSUER, AUDIENCE, PUBLIC_KEY, KEY_STORE, CERTIFICATE, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY, KEY_MAP)
+        static final ObjectTypeAttributeDefinition JWT_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(JWT, ISSUER, AUDIENCE, PUBLIC_KEY, PUBLIC_KEY_URL, KEY_STORE, CERTIFICATE, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY, KEY_MAP)
                 .setRequired(false)
                 .setRestartAllServices()
                 .build();
@@ -262,6 +271,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 String[] issuer = asStringArrayIfDefined(context, ISSUER, jwtValidatorNode);
                 String[] audience = asStringArrayIfDefined(context, AUDIENCE, jwtValidatorNode);
                 String publicKey = PUBLIC_KEY.resolveModelAttribute(context, jwtValidatorNode).asStringOrNull();
+                String publicKeyUrl = PUBLIC_KEY_URL.resolveModelAttribute(context, jwtValidatorNode).asStringOrNull();
                 InjectedValue<KeyStore> keyStoreInjector = new InjectedValue<>();
                 String keyStoreName = KEY_STORE.resolveModelAttribute(context, jwtValidatorNode).asStringOrNull();
                 String certificateAlias = CERTIFICATE.resolveModelAttribute(context, jwtValidatorNode).asStringOrNull();
@@ -307,6 +317,10 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                         }
                         if (publicKey != null) {
                             jwtValidatorBuilder.publicKey(publicKey.getBytes(StandardCharsets.UTF_8));
+                        }
+                        if (publicKeyUrl != null) {
+                            // TODO: wire up once wildfly-elytron ships JwtValidator.Builder.publicKeyUrl() (WFCORE-7347)
+                            // jwtValidatorBuilder.publicKeyUrl(new URL(publicKeyUrl));
                         }
                         if (sslContextRef != null) {
                             jwtValidatorBuilder.useSslContext(sslContextInjector.getOptionalValue());
