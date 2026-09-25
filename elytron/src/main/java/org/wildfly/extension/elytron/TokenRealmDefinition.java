@@ -11,8 +11,10 @@ import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REA
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JWT;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.OAUTH2_INTROSPECTION;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.AUDIENCE;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.CERTIFICATE;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.ISSUER;
@@ -62,6 +64,7 @@ import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceBuilder;
@@ -71,6 +74,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.wildfly.common.iteration.CodePointIterator;
+import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.TokenRealmDefinition.OAuth2IntrospectionValidatorAttributes.HostnameVerificationPolicy;
 import org.wildfly.security.auth.realm.token.TokenSecurityRealm;
 import org.wildfly.security.auth.realm.token.validator.JwtValidator;
@@ -174,7 +178,6 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .setRestartAllServices()
                 .build();
     }
-
     static class OAuth2IntrospectionValidatorAttributes {
 
         static final SimpleAttributeDefinition CLIENT_ID = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CLIENT_ID, ModelType.STRING, false)
@@ -195,8 +198,6 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .setMinSize(1)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
-
-        static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{CLIENT_ID, CLIENT_SECRET, INTROSPECTION_URL, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY};
 
         static final ObjectTypeAttributeDefinition OAUTH2_INTROSPECTION_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(OAUTH2_INTROSPECTION, CLIENT_ID, CLIENT_SECRET, INTROSPECTION_URL, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY)
                 .setRequired(false)
@@ -219,7 +220,16 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
         }
     }
 
+    static final SimpleAttributeDefinition PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
+        .setMinSize(1)
+        .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SECURITY_REALM_CAPABILITY)
+        .setStability(Stability.COMMUNITY)
+        .setRestartAllServices()
+        .setAllowExpression(true)
+        .build();
+
     static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PRINCIPAL_CLAIM, JwtValidatorAttributes.JWT_VALIDATOR, OAuth2IntrospectionValidatorAttributes.OAUTH2_INTROSPECTION_VALIDATOR};
+    static final AttributeDefinition[] ATTRIBUTES_COMMUNITY_19_0 = new AttributeDefinition[] {PRINCIPAL_CLAIM, JwtValidatorAttributes.JWT_VALIDATOR, OAuth2IntrospectionValidatorAttributes.OAUTH2_INTROSPECTION_VALIDATOR, PRINCIPAL_TRANSFORMER };
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -234,9 +244,10 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                       .setCapabilities(MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY));
     }
 
+
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        for (AttributeDefinition attr : ATTRIBUTES) {
+        for (AttributeDefinition attr : ATTRIBUTES_COMMUNITY_19_0) {
             resourceRegistration.registerReadWriteAttribute(attr, null, ElytronReloadRequiredWriteAttributeHandler.INSTANCE);
         }
     }
@@ -255,6 +266,16 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
             ServiceName mainServiceName = MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(address).getCapabilityServiceName();
             ServiceName aliasServiceName = SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(address).getCapabilityServiceName();
             ModelNode principalClaimNode = PRINCIPAL_CLAIM.resolveModelAttribute(context, operation);
+            String principalTransformer = PRINCIPAL_TRANSFORMER.resolveModelAttribute(context, model).asStringOrNull();
+            InjectedValue<PrincipalTransformer> principalTransformerValue = null;
+            String principalTransformerRuntimeCapability;
+            ServiceName principalTransformerServiceName = null;
+            if (principalTransformer != null) {
+                principalTransformerValue = new InjectedValue<PrincipalTransformer>();
+                principalTransformerRuntimeCapability = RuntimeCapability.buildDynamicCapabilityName(PRINCIPAL_TRANSFORMER_CAPABILITY, principalTransformer);
+                principalTransformerServiceName = context.getCapabilityServiceName(principalTransformerRuntimeCapability, PrincipalTransformer.class);
+            }
+            final InjectedValue<PrincipalTransformer> finalPrincipalTransformerValue = principalTransformerValue;
             TrivialService<SecurityRealm> service;
 
             if (operation.hasDefined(JWT)) {
@@ -294,7 +315,6 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                     }
 
                 }
-
                 service = new TrivialService<>(new TrivialService.ValueSupplier<SecurityRealm>() {
                     @Override
                     public SecurityRealm get() throws StartException {
@@ -340,9 +360,15 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                             jwtValidatorBuilder.setAllowedJkuValues(allowedJkuValuesForTokenRealm.split("\\s+"));
                         }
 
-                        return TokenSecurityRealm.builder().principalClaimName(principalClaimNode.asString())
-                                       .validator(jwtValidatorBuilder.build())
-                                       .build();
+                        TokenSecurityRealm.Builder realmBuilder = TokenSecurityRealm.builder()
+                                        .principalClaimName(principalClaimNode.asString())
+                                        .validator(jwtValidatorBuilder.build());
+
+                        if (finalPrincipalTransformerValue != null) {
+                            realmBuilder.principalTransformer(finalPrincipalTransformerValue.getValue());
+
+                        }
+                        return realmBuilder.build();
                     }
 
                     @Override
@@ -364,7 +390,11 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                     serviceBuilder.addDependency(context.getCapabilityServiceName(runtimeCapability, SSLContext.class), SSLContext.class, sslContextInjector);
                 }
 
+                if (principalTransformerServiceName != null) {
+                    serviceBuilder.addDependency(principalTransformerServiceName, PrincipalTransformer.class, principalTransformerValue);
+                }
                 serviceBuilder.addAliases(aliasServiceName).install();
+
             } else if (operation.hasDefined(OAUTH2_INTROSPECTION)) {
                 ModelNode oAuth2IntrospectionNode = OAuth2IntrospectionValidatorAttributes.OAUTH2_INTROSPECTION_VALIDATOR.resolveModelAttribute(context, operation);
                 String clientId = OAuth2IntrospectionValidatorAttributes.CLIENT_ID.resolveModelAttribute(context, oAuth2IntrospectionNode).asString();
@@ -386,9 +416,14 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                                     .tokenIntrospectionUrl(new URL(introspectionUrl))
                                     .useSslContext(sslContextInjector.getOptionalValue())
                                     .useSslHostnameVerifier(verifier);
-                            return TokenSecurityRealm.builder().principalClaimName(principalClaimNode.asString())
-                                    .validator(builder.build())
-                                    .build();
+                            TokenSecurityRealm.Builder realmBuilder = TokenSecurityRealm.builder()
+                                    .principalClaimName(principalClaimNode.asString())
+                                    .validator(builder.build());
+                            if (finalPrincipalTransformerValue != null) {
+                                realmBuilder.principalTransformer(finalPrincipalTransformerValue.getValue());
+                            }
+                            return realmBuilder.build();
+
                         } catch (MalformedURLException e) {
                             throw new RuntimeException("Failed to parse token introspection URL.", e);
                         }
@@ -406,6 +441,9 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                     serviceBuilder.addDependency(context.getCapabilityServiceName(runtimeCapability, SSLContext.class), SSLContext.class, sslContextInjector);
                 }
 
+                if (principalTransformerServiceName != null) {
+                    serviceBuilder.addDependency(principalTransformerServiceName, PrincipalTransformer.class, principalTransformerValue);
+                }
                 serviceBuilder.install();
             }
         }

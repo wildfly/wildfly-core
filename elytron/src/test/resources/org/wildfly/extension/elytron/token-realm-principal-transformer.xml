@@ -1,0 +1,24 @@
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+
+<!-- for needs of TokenRealmPrincipalTransformerTestCase -->
+<subsystem xmlns="urn:wildfly:elytron:community:19.0" initial-providers="elytron">
+    <providers>
+        <provider-loader name="elytron" class-names="org.wildfly.security.WildFlyElytronProvider" />
+    </providers>
+
+    <security-realms>
+        <token-realm name="JwtRealmWithPrincipalTransformer" principal-claim="sub" principal-transformer="upperCase">
+            <jwt issuer="elytron-oauth2-realm" audience="my-app-valid" public-key="PUBLIC_KEY_PLACEHOLDER"/>
+        </token-realm>
+        <token-realm name="JwtRealmWithoutPrincipalTransformer" principal-claim="sub">
+            <jwt issuer="elytron-oauth2-realm" audience="my-app-valid" public-key="PUBLIC_KEY_PLACEHOLDER"/>
+        </token-realm>
+    </security-realms>
+
+    <mappers>
+        <case-principal-transformer name="upperCase" upper-case="true"/>
+    </mappers>
+</subsystem>
