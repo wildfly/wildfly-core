@@ -117,7 +117,7 @@ class CustomComponentDefinition<C, T> extends SimpleResourceDefinition {
             }
 
             String name = context.getCurrentAddressValue();
-            Object wrapperContext = transformer.prepareTransformer(name, serviceBuilder);
+            Object wrapperContext = transformer.prepareTransformer(name, serviceBuilder, context, model);
 
             commonRequirements(serviceBuilder)
                 .setInstance(new TrivialService<>(() -> createValue(wrapperContext, module, className, configurationMap)))
@@ -167,7 +167,9 @@ class CustomComponentDefinition<C, T> extends SimpleResourceDefinition {
     @FunctionalInterface
     interface CustomComponentTransformer<A, B> extends BiFunction<Object, A, B> {
 
-        default Object prepareTransformer(final String name, final ServiceBuilder<?> serviceBuilder) {
+        default Object prepareTransformer(final String name, final ServiceBuilder<?> serviceBuilder,
+                                          final OperationContext context, final ModelNode model)
+                throws OperationFailedException {
             return name;
         }
 

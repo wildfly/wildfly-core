@@ -55,8 +55,9 @@ public enum ElytronSubsystemSchema implements PersistentSubsystemSchema<ElytronS
     VERSION_18_0(18),
     VERSION_18_0_COMMUNITY(18, Stability.COMMUNITY),
     VERSION_19_0(19),
+    VERSION_19_0_COMMUNITY(19, Stability.COMMUNITY), // WildFly 42.0-onwards
     ;
-    static final Map<Stability, ElytronSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_19_0));
+    static final Map<Stability, ElytronSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_19_0, VERSION_19_0_COMMUNITY));
 
     private final VersionedNamespace<IntVersion, ElytronSubsystemSchema> namespace;
 
@@ -234,7 +235,9 @@ public enum ElytronSubsystemSchema implements PersistentSubsystemSchema<ElytronS
 
     private void addRealmParser(PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder) {
         RealmParser realmParser = new RealmParser();
-        if (this.since(ElytronSubsystemSchema.VERSION_18_0)) {
+        if (this.since(ElytronSubsystemSchema.VERSION_19_0_COMMUNITY) && this.getStability() == Stability.COMMUNITY) {
+            builder.addChild(realmParser.realmParser_19_0_community);
+        } else if (this.since(ElytronSubsystemSchema.VERSION_18_0)) {
             builder.addChild(realmParser.realmParser_18);
         } else if (this.since(ElytronSubsystemSchema.VERSION_16_0)) {
             builder.addChild(realmParser.realmParser_16);
