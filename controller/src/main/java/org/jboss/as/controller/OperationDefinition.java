@@ -9,10 +9,12 @@ import static org.jboss.as.controller.registry.OperationEntry.Flag.immutableSetO
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.version.Stability;
@@ -113,6 +115,41 @@ public abstract class OperationDefinition implements Feature {
 
     public AttributeDefinition[] getReplyParameters() {
         return replyParameters;
+    }
+
+    /**
+     * Returns the names of the attributes that are susceptible to be redacted. This method
+     * recursively inspects all parameters, including nested attributes within complex types
+     * ({@link ObjectTypeAttributeDefinition}, {@link ObjectListAttributeDefinition},
+     * {@link ObjectMapAttributeDefinition}), collecting the names of those that have the
+     * {@link AttributeAccess.Flag#REDACTABLE} flag set.
+     *
+     * @return a set of attribute names requiring redaction, or an empty set if none
+     */
+    public Set<String> getRedactableAttributeNames() {
+        Set<String> result = new HashSet<>();
+        for (AttributeDefinition parameter : parameters) {
+            collectRedactableNames(parameter, result);
+        }
+        return Collections.unmodifiableSet(result);
+    }
+
+    private void collectRedactableNames(AttributeDefinition attr, Set<String> result) {
+        if (attr instanceof ObjectTypeAttributeDefinition objectType) {
+            for (AttributeDefinition nested : objectType.getValueTypes()) {
+                collectRedactableNames(nested, result);
+            }
+        } else if (attr instanceof ObjectListAttributeDefinition listType) {
+            for (AttributeDefinition nested : listType.getValueType().getValueTypes()) {
+                collectRedactableNames(nested, result);
+            }
+        } else if (attr instanceof ObjectMapAttributeDefinition mapType) {
+            for (AttributeDefinition nested : mapType.getValueType().getValueTypes()) {
+                collectRedactableNames(nested, result);
+            }
+        } else if (attr.getFlags().contains(AttributeAccess.Flag.REDACTABLE)) {
+            result.add(attr.getName());
+        }
     }
 
 }

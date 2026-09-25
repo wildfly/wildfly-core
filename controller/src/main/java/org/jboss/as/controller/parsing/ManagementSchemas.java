@@ -6,7 +6,9 @@
 package org.jboss.as.controller.parsing;
 
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.Feature;
@@ -57,6 +59,7 @@ public abstract class ManagementSchemas {
         VERSION_19(19),
         VERSION_20(20),
         VERSION_20_COMMUNITY(20, Stability.COMMUNITY),
+        VERSION_21_COMMUNITY(21, Stability.COMMUNITY),
         ;
 
         private final int majorVersion;
@@ -100,18 +103,17 @@ public abstract class ManagementSchemas {
 
     protected ManagementSchemas(final Stability stability, final ManagementXmlReaderWriter readerWriterDelegate, final String localName) {
         Set<ManagementXmlSchema> allSchemas = new HashSet<>();
-        int maxVersion = 0;
+        Map<Stability, Integer> maxVersionPerStability = new EnumMap<>(Stability.class);
         for (Version version : Version.values()) {
-            if (version.getMajorVersion() > maxVersion) {
-                maxVersion = version.getMajorVersion();
-            }
+            maxVersionPerStability.merge(version.getStability(), version.getMajorVersion(), Math::max);
             allSchemas.add(ManagementSchema.create(stability.enables(version.getStability()) ? readerWriterDelegate
                 : UnstableManagementReaderWriter.INSTANCE, version.getStability(), version.getMajorVersion(), version.getMinorVersion(), localName));
         }
 
         Set<ManagementXmlSchema> current = new HashSet<>();
         for (ManagementXmlSchema schema : allSchemas) {
-            if (schema.getNamespace().getVersion().major() == maxVersion) {
+            Integer maxVersion = maxVersionPerStability.get(schema.getStability());
+            if (maxVersion != null && schema.getNamespace().getVersion().major() == maxVersion) {
                 current.add(schema);
             }
         }

@@ -28,8 +28,11 @@ import java.util.Map;
 public enum CoreManagementSubsystemSchema implements PersistentSubsystemSchema<CoreManagementSubsystemSchema> {
 
     VERSION_1_0(1),
-    VERSION_1_0_PREVIEW(1, Stability.PREVIEW);
-    static final Map<Stability, CoreManagementSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_1_0, VERSION_1_0_PREVIEW));
+    VERSION_1_0_PREVIEW(1, Stability.PREVIEW),
+    VERSION_1_0_COMMUNITY(1, Stability.COMMUNITY),
+    VERSION_2_0_PREVIEW(2, Stability.PREVIEW),
+    ;
+    static final Map<Stability, CoreManagementSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_1_0, VERSION_1_0_COMMUNITY, VERSION_2_0_PREVIEW));
 
     private final VersionedNamespace<IntVersion, CoreManagementSubsystemSchema> namespace;
 
@@ -50,10 +53,13 @@ public enum CoreManagementSubsystemSchema implements PersistentSubsystemSchema<C
     public PersistentResourceXMLDescription getXMLDescription() {
         PersistentResourceXMLDescription.Factory factory = PersistentResourceXMLDescription.factory(this);
         PersistentResourceXMLDescription.Builder builder =  factory.builder(CoreManagementExtension.SUBSYSTEM_PATH);
-        builder.addChild(
+        PersistentResourceXMLDescription.Builder configChanges =
                 factory.builder(ConfigurationChangeResourceDefinition.PATH)
-                        .addAttribute(ConfigurationChangeResourceDefinition.MAX_HISTORY)
-                        .build());
+                        .addAttribute(ConfigurationChangeResourceDefinition.MAX_HISTORY);
+        if (this.since(VERSION_1_0_COMMUNITY) && !this.equals(VERSION_1_0_PREVIEW)) {
+            configChanges.addAttribute(ConfigurationChangeResourceDefinition.REDACTED);
+        }
+        builder.addChild(configChanges.build());
         builder.addChild(
                 factory.builder(UnstableApiAnnotationResourceDefinition.RESOURCE_REGISTRATION)
                         .addAttribute(UnstableApiAnnotationResourceDefinition.LEVEL)

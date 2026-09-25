@@ -145,6 +145,7 @@ public enum Attribute {
     REALM("realm"),
     RECONNECT_TIMEOUT("reconnect-timeout"),
     RECURSIVE("recursive"),
+    REDACTED("redacted"),
     REF("ref"),
     REFERRALS("referrals"),
     REGULAR_EXPRESSION("regular-expression"),
