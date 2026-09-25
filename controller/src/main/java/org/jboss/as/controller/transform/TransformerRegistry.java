@@ -22,6 +22,8 @@ import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.GlobalTransformerRegistry;
 import org.jboss.as.controller.registry.OperationTransformerRegistry;
+import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilderFactory;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.modules.Module;
@@ -33,7 +35,7 @@ import org.jboss.modules.ModuleLoadException;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  * @author Emanuel Muckenhuber
  */
-public final class TransformerRegistry {
+public final class TransformerRegistry implements ResourceTransformationDescriptionBuilderFactory {
 
     public static final ModelNode DISCARD_OPERATION = new ModelNode();
     static {
@@ -46,19 +48,26 @@ public final class TransformerRegistry {
     private static final PathElement PROFILE = PathElement.pathElement(ModelDescriptionConstants.PROFILE);
     private static final PathElement SERVER = PathElement.pathElement(ModelDescriptionConstants.RUNNING_SERVER);
 
+    private final Stability stability;
     private final GlobalTransformerRegistry domain = new GlobalTransformerRegistry();
     private final GlobalTransformerRegistry subsystem = new GlobalTransformerRegistry();
 
-    TransformerRegistry() {
+    TransformerRegistry(Stability stability) {
+        this.stability = stability;
         // Initialize the empty paths
         domain.createChildRegistry(PathAddress.pathAddress(PROFILE), ModelVersion.create(0), ResourceTransformer.DEFAULT, false);
         domain.createChildRegistry(PathAddress.pathAddress(HOST), ModelVersion.create(0), ResourceTransformer.DEFAULT, false);
         domain.createChildRegistry(PathAddress.pathAddress(HOST, SERVER), ModelVersion.create(0), ResourceTransformer.DEFAULT, false);
     }
 
+    @Override
+    public Stability getStability() {
+        return this.stability;
+    }
+
     public void loadAndRegisterTransformers(String name, ModelVersion subsystemVersion, String extensionModuleName) {
         try {
-            SubsystemTransformerRegistration transformerRegistration = new SubsystemTransformerRegistrationImpl(name, subsystemVersion);
+            SubsystemTransformerRegistration transformerRegistration = this.createSubsystemTransformerRegistration(name, subsystemVersion);
             if (Module.getCallerModule() != null) { //only register when running in modular environment, testsuite does its own loading
                 for (ExtensionTransformerRegistration registration : Module.loadServiceFromCallerModuleLoader(extensionModuleName, ExtensionTransformerRegistration.class)) {
                     if (registration.getSubsystemName().equals(name)) { //to prevent registering transformers for different subsystems
@@ -71,16 +80,15 @@ public final class TransformerRegistry {
         }
     }
 
-    public SubsystemTransformerRegistration createSubsystemTransformerRegistration(String name, ModelVersion currentVersion){
+    public SubsystemTransformerRegistration createSubsystemTransformerRegistration(String name, ModelVersion currentVersion) {
         return new SubsystemTransformerRegistrationImpl(name, currentVersion);
     }
 
-    private class SubsystemTransformerRegistrationImpl implements SubsystemTransformerRegistration{
+    private class SubsystemTransformerRegistrationImpl implements SubsystemTransformerRegistration {
         private final String name;
         private final ModelVersion currentVersion;
 
-
-        public SubsystemTransformerRegistrationImpl(String name, ModelVersion currentVersion) {
+        SubsystemTransformerRegistrationImpl(String name, ModelVersion currentVersion) {
             this.name = name;
             this.currentVersion = currentVersion;
         }
@@ -101,8 +109,13 @@ public final class TransformerRegistry {
         }
 
         @Override
-        public ModelVersion getCurrentSubsystemVersion() {
+        public ModelVersion getCurrentVersion() {
             return currentVersion;
+        }
+
+        @Override
+        public Stability getStability() {
+            return TransformerRegistry.this.getStability();
         }
     }
 
@@ -275,11 +288,16 @@ public final class TransformerRegistry {
          * Create a new Transformer registry.
          *
          * @return the created transformer registry
+         * @deprecated Superseded by {@link #create(Stability)}.
          */
+        @Deprecated(forRemoval = true)
         public static TransformerRegistry create() {
-            return new TransformerRegistry();
+            return create(Stability.DEFAULT);
         }
 
+        public static TransformerRegistry create(Stability stability) {
+            return new TransformerRegistry(stability);
+        }
     }
 
     public static class TransformersSubRegistrationImpl implements TransformersSubRegistration {

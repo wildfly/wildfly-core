@@ -18,12 +18,14 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.PathAddressTransformer;
 import org.jboss.as.controller.transform.ResourceTransformer;
+import org.jboss.as.version.Stability;
 
 /**
  * @author Emanuel Muckenhuber
  */
 abstract class AbstractTransformationDescriptionBuilder implements TransformationDescriptionBuilder {
 
+    private final Stability stability;
     protected final PathElement pathElement;
 
     protected PathAddressTransformer pathAddressTransformer;
@@ -34,15 +36,21 @@ abstract class AbstractTransformationDescriptionBuilder implements Transformatio
     protected final List<TransformationDescriptionBuilder> children = new ArrayList<TransformationDescriptionBuilder>();
     protected  final DynamicDiscardPolicy dynamicDiscardPolicy;
 
-    protected AbstractTransformationDescriptionBuilder(PathElement pathElement, PathAddressTransformer pathAddressTransformer,
+    protected AbstractTransformationDescriptionBuilder(Stability stability, PathElement pathElement, PathAddressTransformer pathAddressTransformer,
                                              ResourceTransformer resourceTransformer,
                                              OperationTransformer operationTransformer,
                                              DynamicDiscardPolicy dynamicDiscardPolicy) {
+        this.stability = stability;
         this.pathElement = pathElement;
         this.pathAddressTransformer = pathAddressTransformer;
         this.resourceTransformer = resourceTransformer;
         this.operationTransformer = operationTransformer;
         this.dynamicDiscardPolicy = dynamicDiscardPolicy;
+    }
+
+    @Override
+    public Stability getStability() {
+        return this.stability;
     }
 
     public TransformationDescriptionBuilder setResourceTransformer(ResourceTransformer resourceTransformer) {
