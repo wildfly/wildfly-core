@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -59,7 +61,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     // We assume at least 2 attrs, so just instantiate a hash map
     private final Map<String, AttributeAccess> attributes = new HashMap<>();
 
-    private Set <String> orderedChildTypes;
+    private SortedSet<String> orderedChildTypes;
 
     private final boolean runtimeOnly;
     private final boolean ordered;
@@ -173,7 +175,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             checkPermission();
             readLock.lock();
             try {
-                return orderedChildTypes == null ? Collections.emptySet() : new HashSet<>(orderedChildTypes);
+                return orderedChildTypes == null ? Collections.emptySortedSet() : new TreeSet<>(orderedChildTypes);
             } finally {
                 readLock.unlock();
             }
@@ -994,13 +996,9 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         writeLock.lock();
         try {
             if (orderedChildTypes == null) {
-                orderedChildTypes = Collections.singleton(type);
-            } else {
-                if (orderedChildTypes.size() == 1) {
-                    orderedChildTypes = new HashSet<>(orderedChildTypes);
-                }
-                orderedChildTypes.add(type);
+                orderedChildTypes = new TreeSet<>();
             }
+            orderedChildTypes.add(type);
         } finally {
             writeLock.unlock();
         }
