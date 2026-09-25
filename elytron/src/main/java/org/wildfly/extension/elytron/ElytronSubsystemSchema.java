@@ -55,8 +55,9 @@ public enum ElytronSubsystemSchema implements PersistentSubsystemSchema<ElytronS
     VERSION_18_0(18),
     VERSION_18_0_COMMUNITY(18, Stability.COMMUNITY),
     VERSION_19_0(19),
+    VERSION_19_0_COMMUNITY(19, Stability.COMMUNITY),
     ;
-    static final Map<Stability, ElytronSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_19_0));
+    static final Map<Stability, ElytronSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_19_0, VERSION_19_0_COMMUNITY));
 
     private final VersionedNamespace<IntVersion, ElytronSubsystemSchema> namespace;
 
@@ -193,7 +194,9 @@ public enum ElytronSubsystemSchema implements PersistentSubsystemSchema<ElytronS
 
     private void addTlsParser(PersistentResourceXMLDescription.PersistentResourceXMLBuilder builder) {
         TlsParser tlsParser = new TlsParser();
-        if (this.since(ElytronSubsystemSchema.VERSION_19_0)) {
+        if (this.since(ElytronSubsystemSchema.VERSION_19_0_COMMUNITY)) {
+            builder.addChild(tlsParser.tlsParserCommunity_19_0);
+        } else if (this.since(ElytronSubsystemSchema.VERSION_19_0)) {
             builder.addChild(tlsParser.tlsParser_19_0);
         } else if (this.since(ElytronSubsystemSchema.VERSION_18_0_COMMUNITY) && this.enables(getDynamicClientSSLContextDefinition())) {
             builder.addChild(tlsParser.tlsParserCommunity_18_0);
