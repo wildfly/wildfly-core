@@ -8,16 +8,14 @@ package org.wildfly.extension.elytron;
 import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
 import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
 import static org.wildfly.common.Assert.checkNotNullParam;
-import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONFIGURATION_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONFIGURATION_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDefinition.commonRequirements;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.util.HashMap;
@@ -29,12 +27,10 @@ import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -46,11 +42,11 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.ServiceController.Mode;
-import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.value.InjectedValue;
-import org.wildfly.common.function.ExceptionFunction;
 import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
@@ -256,8 +252,7 @@ class AuthenticationClientDefinitions {
 
     static ResourceDefinition getAuthenticationClientDefinition() {
 
-        DoohickeyAddHandler<AuthenticationConfiguration> add = new DoohickeyAddHandler<AuthenticationConfiguration>(
-                AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY, AUTHENTICATION_CONFIGURATION_API_CAPABILITY) {
+        TrivialAddHandler<AuthenticationConfiguration> add = new TrivialAddHandler<>(AuthenticationConfiguration.class, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY) {
 
             @Override
             protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
@@ -266,238 +261,140 @@ class AuthenticationClientDefinitions {
             }
 
             @Override
+            protected ValueSupplier<AuthenticationConfiguration> getValueSupplier(
+                    ServiceBuilder<AuthenticationConfiguration> serviceBuilder, OperationContext context, ModelNode model)
+                    throws OperationFailedException {
+                String parent = CONFIGURATION_EXTENDS.resolveModelAttribute(context, model).asStringOrNull();
+                Supplier<AuthenticationConfiguration> parentSupplier;
+                if (parent != null) {
+                    InjectedValue<AuthenticationConfiguration> parentInjector = new InjectedValue<>();
+
+                    serviceBuilder.addDependency(context.getCapabilityServiceName(
+                            RuntimeCapability.buildDynamicCapabilityName(AUTHENTICATION_CONFIGURATION_CAPABILITY, parent), AuthenticationConfiguration.class),
+                            AuthenticationConfiguration.class, parentInjector);
+
+                    parentSupplier = parentInjector::getValue;
+                } else {
+                    parentSupplier = () -> AuthenticationConfiguration.EMPTY;
+                }
+
+                Function<AuthenticationConfiguration, AuthenticationConfiguration> configuration = ignored -> parentSupplier.get();
+
+                boolean anonymous = ANONYMOUS.resolveModelAttribute(context, model).asBoolean();
+                configuration = anonymous ? configuration.andThen(c -> c.useAnonymous()) : configuration;
+
+                String authenticationName = AUTHENTICATION_NAME.resolveModelAttribute(context, model).asStringOrNull();
+                configuration = authenticationName != null ? configuration.andThen(c -> c.useName(authenticationName)) : configuration;
+
+                String authorizationName = AUTHORIZATION_NAME.resolveModelAttribute(context, model).asStringOrNull();
+                configuration = authorizationName != null ? configuration.andThen(c -> c.useAuthorizationName(authorizationName)) : configuration;
+
+                String host = HOST.resolveModelAttribute(context, model).asStringOrNull();
+                configuration = host != null ? configuration.andThen(c -> c.useHost(host)) : configuration;
+
+                String protocol = PROTOCOL.resolveModelAttribute(context, model).asStringOrNull();
+                configuration = protocol != null ? configuration.andThen(c -> c.useProtocol(protocol)) : configuration;
+
+                int port = PORT.resolveModelAttribute(context, model).asInt(-1);
+                configuration = port > 0 ? configuration.andThen(c -> c.usePort(port)) : configuration;
+
+                String realm = REALM.resolveModelAttribute(context, model).asStringOrNull();
+                configuration = realm != null ? configuration.andThen(c -> c.useRealm(realm)) : configuration;
+
+                String securityDomain = SECURITY_DOMAIN.resolveModelAttribute(context, model).asStringOrNull();
+                String forwardAuth = FORWARDING_MODE.resolveModelAttribute(context, model).asStringOrNull();
+
+                if (securityDomain != null) {
+                    InjectedValue<SecurityDomain> securityDomainInjector = getSecurityDomain(serviceBuilder, context, securityDomain);
+                    if (ElytronDescriptionConstants.AUTHORIZATION.equals(forwardAuth)) {
+                        configuration = configuration.andThen(c -> c.useForwardedAuthorizationIdentity(securityDomainInjector.getValue()));
+                    } else {
+                        configuration = configuration.andThen(c -> c.useForwardedIdentity(securityDomainInjector.getValue()));
+                    }
+                }
+
+                String saslMechanismSelector = SASL_MECHANISM_SELECTOR.resolveModelAttribute(context, model).asStringOrNull();
+                if (saslMechanismSelector != null) {
+                    SaslMechanismSelector selector = SaslMechanismSelector.fromString(saslMechanismSelector);
+                    configuration = selector != null ? configuration.andThen(c -> c.setSaslMechanismSelector(selector)) : configuration;
+                }
+
+                String kerberosSecurityFactory = KERBEROS_SECURITY_FACTORY.resolveModelAttribute(context, model).asStringOrNull();
+                if (kerberosSecurityFactory != null) {
+                    InjectedValue<CredentialSecurityFactory> kerberosFactoryInjector = new InjectedValue<>();
+                    serviceBuilder.addDependency(context.getCapabilityServiceName(SECURITY_FACTORY_CREDENTIAL_CAPABILITY, kerberosSecurityFactory, CredentialSecurityFactory.class),
+                            CredentialSecurityFactory.class, kerberosFactoryInjector);
+                    configuration = configuration.andThen(c -> c.useKerberosSecurityFactory(kerberosFactoryInjector.getValue()));
+                }
+
+                ModelNode properties = MECHANISM_PROPERTIES.resolveModelAttribute(context, model);
+                if (properties.isDefined()) {
+                    Map<String, String> propertiesMap = new HashMap<String, String>();
+                    for (String s : properties.keys()) {
+                        propertiesMap.put(s, properties.require(s).asString());
+                    }
+                    configuration = configuration.andThen(c -> c.useMechanismProperties(propertiesMap, parent == null));
+                }
+
+                ModelNode credentialReference = CREDENTIAL_REFERENCE.resolveModelAttribute(context, model);
+                if (credentialReference.isDefined()) {
+                    final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplierInjector = new InjectedValue<>();
+                    credentialSourceSupplierInjector.inject(CredentialReference.getCredentialSourceSupplier(context, CREDENTIAL_REFERENCE, model, serviceBuilder));
+                    configuration = configuration.andThen(c -> {
+                        ExceptionSupplier<CredentialSource, Exception> sourceSupplier = credentialSourceSupplierInjector
+                                .getValue();
+                        try {
+                            CredentialSource cs = sourceSupplier.get();
+                            if (cs != null) {
+                                PasswordCredential passCredential = cs.getCredential(PasswordCredential.class);
+                                String alias = credentialReference.hasDefined(CredentialReference.ALIAS) ? credentialReference.get(CredentialReference.ALIAS).asString() : null;
+                                if (passCredential == null) {
+                                    if (alias != null && alias.length() > 0) {
+                                        throw ROOT_LOGGER.credentialDoesNotExist(alias, PasswordCredential.class.getName());
+                                    }
+                                    throw ROOT_LOGGER.credentialCannotBeResolved();
+                                }
+                                return c.usePassword(passCredential.getPassword());
+                            } else {
+                                throw ROOT_LOGGER.credentialCannotBeResolved();
+                            }
+                        } catch (Exception e) {
+                            throw new IllegalStateException(e);
+                        }
+                    });
+                }
+
+                ModelNode webServices = WEBSERVICES.resolveModelAttribute(context, model);
+                if (webServices.isDefined()) {
+                    Map<String, Object> wsMap = new HashMap<String, Object>();
+                    for (String s : webServices.keys()) {
+                        wsMap.put(s, webServices.require(s));
+                    }
+                    configuration = wsMap.isEmpty() ? configuration : configuration.andThen(c -> c.useWebServices(wsMap));
+                }
+
+                final Function<AuthenticationConfiguration, AuthenticationConfiguration> finalConfiguration = configuration;
+                return () -> {
+                    try {
+                        return finalConfiguration.apply(null);
+                    } catch (IllegalStateException e) {
+                        if (e.getCause() != null) {
+                            throw ROOT_LOGGER.unableToStartService((Exception)e.getCause());
+                        }
+                        throw ROOT_LOGGER.unableToStartService(e);
+                    }
+                };
+            }
+
+            @Override
             protected void rollbackRuntime(OperationContext context, final ModelNode operation, final Resource resource) {
                 rollbackCredentialStoreUpdate(CREDENTIAL_REFERENCE, context, resource);
             }
 
-            @Override
-            protected ElytronDoohickey<AuthenticationConfiguration> createDoohickey(PathAddress resourceAddress) {
-                return new ElytronDoohickey<AuthenticationConfiguration>(resourceAddress) {
-
-                    // Resolved model values captured in resolveRuntime
-                    private volatile String parentName;
-                    private volatile boolean anonymous;
-                    private volatile String authenticationName;
-                    private volatile String authorizationName;
-                    private volatile String host;
-                    private volatile String protocol;
-                    private volatile int port;
-                    private volatile String realm;
-                    private volatile String securityDomainName;
-                    private volatile String forwardAuth;
-                    private volatile String saslMechanismSelector;
-                    private volatile String kerberosSecurityFactoryName;
-                    private volatile Map<String, String> mechanismProperties;
-                    private volatile ModelNode credentialReferenceModel;
-                    private volatile Map<String, Object> webServicesMap;
-
-                    @Override
-                    protected void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException {
-                        parentName = CONFIGURATION_EXTENDS.resolveModelAttribute(context, model).asStringOrNull();
-                        anonymous = ANONYMOUS.resolveModelAttribute(context, model).asBoolean();
-                        authenticationName = AUTHENTICATION_NAME.resolveModelAttribute(context, model).asStringOrNull();
-                        authorizationName = AUTHORIZATION_NAME.resolveModelAttribute(context, model).asStringOrNull();
-                        host = HOST.resolveModelAttribute(context, model).asStringOrNull();
-                        protocol = PROTOCOL.resolveModelAttribute(context, model).asStringOrNull();
-                        port = PORT.resolveModelAttribute(context, model).asInt(-1);
-                        realm = REALM.resolveModelAttribute(context, model).asStringOrNull();
-                        securityDomainName = SECURITY_DOMAIN.resolveModelAttribute(context, model).asStringOrNull();
-                        forwardAuth = FORWARDING_MODE.resolveModelAttribute(context, model).asStringOrNull();
-                        saslMechanismSelector = SASL_MECHANISM_SELECTOR.resolveModelAttribute(context, model).asStringOrNull();
-                        kerberosSecurityFactoryName = KERBEROS_SECURITY_FACTORY.resolveModelAttribute(context, model).asStringOrNull();
-
-                        ModelNode properties = MECHANISM_PROPERTIES.resolveModelAttribute(context, model);
-                        if (properties.isDefined()) {
-                            mechanismProperties = new HashMap<>();
-                            for (String s : properties.keys()) {
-                                mechanismProperties.put(s, properties.require(s).asString());
-                            }
-                        } else {
-                            mechanismProperties = null;
-                        }
-
-                        credentialReferenceModel = CREDENTIAL_REFERENCE.resolveModelAttribute(context, model);
-
-                        ModelNode webServices = WEBSERVICES.resolveModelAttribute(context, model);
-                        if (webServices.isDefined()) {
-                            webServicesMap = new HashMap<>();
-                            for (String s : webServices.keys()) {
-                                webServicesMap.put(s, webServices.require(s));
-                            }
-                        } else {
-                            webServicesMap = null;
-                        }
-                    }
-
-                    @Override
-                    protected ExceptionSupplier<AuthenticationConfiguration, StartException> prepareServiceSupplier(
-                            OperationContext context, CapabilityServiceBuilder<?> serviceBuilder) throws OperationFailedException {
-
-                        Supplier<AuthenticationConfiguration> parentSupplier;
-                        if (parentName != null) {
-                            InjectedValue<AuthenticationConfiguration> parentInjector = new InjectedValue<>();
-                            serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                    RuntimeCapability.buildDynamicCapabilityName(AUTHENTICATION_CONFIGURATION_CAPABILITY, parentName),
-                                    AuthenticationConfiguration.class), AuthenticationConfiguration.class, parentInjector);
-                            parentSupplier = parentInjector::getValue;
-                        } else {
-                            parentSupplier = () -> AuthenticationConfiguration.EMPTY;
-                        }
-
-                        Function<AuthenticationConfiguration, AuthenticationConfiguration> configuration = ignored -> parentSupplier.get();
-                        configuration = applySimpleAttributes(configuration);
-
-                        if (securityDomainName != null) {
-                            InjectedValue<SecurityDomain> securityDomainInjector = new InjectedValue<>();
-                            serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                    SECURITY_DOMAIN_CAPABILITY, securityDomainName, SecurityDomain.class),
-                                    SecurityDomain.class, securityDomainInjector);
-                            if (ElytronDescriptionConstants.AUTHORIZATION.equals(forwardAuth)) {
-                                configuration = configuration.andThen(c -> c.useForwardedAuthorizationIdentity(securityDomainInjector.getValue()));
-                            } else {
-                                configuration = configuration.andThen(c -> c.useForwardedIdentity(securityDomainInjector.getValue()));
-                            }
-                        }
-
-                        if (kerberosSecurityFactoryName != null) {
-                            InjectedValue<CredentialSecurityFactory> kerberosFactoryInjector = new InjectedValue<>();
-                            serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                    SECURITY_FACTORY_CREDENTIAL_CAPABILITY, kerberosSecurityFactoryName, CredentialSecurityFactory.class),
-                                    CredentialSecurityFactory.class, kerberosFactoryInjector);
-                            configuration = configuration.andThen(c -> c.useKerberosSecurityFactory(kerberosFactoryInjector.getValue()));
-                        }
-
-                        if (credentialReferenceModel.isDefined()) {
-                            // Re-read the full model from the resource address for the credential supplier.
-                            ModelNode fullModel = context.readResourceFromRoot(resourceAddress).getModel();
-                            final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplierInjector = new InjectedValue<>();
-                            credentialSourceSupplierInjector.inject(CredentialReference.getCredentialSourceSupplier(
-                                    context, CREDENTIAL_REFERENCE, fullModel, serviceBuilder));
-                            configuration = configuration.andThen(c -> resolvePasswordConfig(c, credentialSourceSupplierInjector.getValue()));
-                        }
-
-                        final Function<AuthenticationConfiguration, AuthenticationConfiguration> finalConfiguration = configuration;
-                        return () -> {
-                            try {
-                                return finalConfiguration.apply(null);
-                            } catch (IllegalStateException e) {
-                                if (e.getCause() != null) {
-                                    throw ROOT_LOGGER.unableToStartService((Exception) e.getCause());
-                                }
-                                throw ROOT_LOGGER.unableToStartService(e);
-                            }
-                        };
-                    }
-
-                    @Override
-                    protected AuthenticationConfiguration createImmediately(OperationContext foreignContext) throws OperationFailedException {
-                        // Re-read this resource's own model via its root address.
-                        ModelNode model = foreignContext.readResourceFromRoot(resourceAddress).getModel();
-
-                        AuthenticationConfiguration parent;
-                        if (parentName != null) {
-                            @SuppressWarnings("unchecked")
-                            ExceptionFunction<OperationContext, AuthenticationConfiguration, OperationFailedException> parentApi =
-                                    foreignContext.getCapabilityRuntimeAPI(AUTHENTICATION_CONFIGURATION_API_CAPABILITY,
-                                            parentName, ExceptionFunction.class);
-                            parent = parentApi.apply(foreignContext);
-                        } else {
-                            parent = AuthenticationConfiguration.EMPTY;
-                        }
-
-                        Function<AuthenticationConfiguration, AuthenticationConfiguration> configuration = ignored -> parent;
-                        configuration = applySimpleAttributes(configuration);
-
-                        // security-domain: not supported in early path (no SecurityDomain API capability).
-                        // If configured, skip identity forwarding silently — the service path applies it.
-
-                        if (kerberosSecurityFactoryName != null) {
-                            @SuppressWarnings("unchecked")
-                            ExceptionFunction<OperationContext, CredentialSecurityFactory, OperationFailedException> ksfApi =
-                                    foreignContext.getCapabilityRuntimeAPI(SECURITY_FACTORY_CREDENTIAL_API_CAPABILITY,
-                                            kerberosSecurityFactoryName, ExceptionFunction.class);
-                            CredentialSecurityFactory ksf = ksfApi.apply(foreignContext);
-                            configuration = configuration.andThen(c -> c.useKerberosSecurityFactory(ksf));
-                        }
-
-                        if (credentialReferenceModel.isDefined()) {
-                            CredentialSource cs = CredentialReference.getCredentialSource(foreignContext, CREDENTIAL_REFERENCE, model);
-                            configuration = configuration.andThen(c -> {
-                                try {
-                                    return resolvePasswordConfigImmediate(c, cs);
-                                } catch (OperationFailedException e) {
-                                    throw new IllegalStateException(e);
-                                }
-                            });
-                        }
-
-                        try {
-                            AuthenticationConfiguration result = configuration.apply(null);
-                            setValue(result);
-                            return result;
-                        } catch (IllegalStateException e) {
-                            if (e.getCause() instanceof OperationFailedException) {
-                                throw (OperationFailedException) e.getCause();
-                            }
-                            throw new OperationFailedException(e);
-                        }
-                    }
-
-                    /** Applies all simple (non-injected) attribute transformations to a configuration chain. */
-                    private Function<AuthenticationConfiguration, AuthenticationConfiguration> applySimpleAttributes(
-                            Function<AuthenticationConfiguration, AuthenticationConfiguration> configuration) {
-                        if (anonymous) configuration = configuration.andThen(c -> c.useAnonymous());
-                        if (authenticationName != null) configuration = configuration.andThen(c -> c.useName(authenticationName));
-                        if (authorizationName != null) configuration = configuration.andThen(c -> c.useAuthorizationName(authorizationName));
-                        if (host != null) configuration = configuration.andThen(c -> c.useHost(host));
-                        if (protocol != null) configuration = configuration.andThen(c -> c.useProtocol(protocol));
-                        if (port > 0) configuration = configuration.andThen(c -> c.usePort(port));
-                        if (realm != null) configuration = configuration.andThen(c -> c.useRealm(realm));
-                        if (saslMechanismSelector != null) {
-                            SaslMechanismSelector selector = SaslMechanismSelector.fromString(saslMechanismSelector);
-                            if (selector != null) configuration = configuration.andThen(c -> c.setSaslMechanismSelector(selector));
-                        }
-                        if (mechanismProperties != null) {
-                            configuration = configuration.andThen(c -> c.useMechanismProperties(mechanismProperties, parentName == null));
-                        }
-                        if (webServicesMap != null && !webServicesMap.isEmpty()) {
-                            configuration = configuration.andThen(c -> c.useWebServices(webServicesMap));
-                        }
-                        return configuration;
-                    }
-
-                    private AuthenticationConfiguration resolvePasswordConfig(AuthenticationConfiguration c,
-                            ExceptionSupplier<CredentialSource, Exception> sourceSupplier) {
-                        try {
-                            CredentialSource cs = sourceSupplier.get();
-                            return resolvePasswordConfigImmediate(c, cs);
-                        } catch (OperationFailedException e) {
-                            throw new IllegalStateException(e);
-                        } catch (Exception e) {
-                            throw new IllegalStateException(e);
-                        }
-                    }
-
-                    private AuthenticationConfiguration resolvePasswordConfigImmediate(AuthenticationConfiguration c,
-                            CredentialSource cs) throws OperationFailedException {
-                        if (cs == null) throw ROOT_LOGGER.credentialCannotBeResolved();
-                        PasswordCredential passCredential = null;
-                        try {
-                            passCredential = cs.getCredential(PasswordCredential.class);
-                        } catch (Exception e) {
-                            throw new OperationFailedException(e);
-                        }
-                        String alias = credentialReferenceModel.hasDefined(CredentialReference.ALIAS)
-                                ? credentialReferenceModel.get(CredentialReference.ALIAS).asString() : null;
-                        if (passCredential == null) {
-                            if (alias != null && alias.length() > 0) {
-                                throw ROOT_LOGGER.credentialDoesNotExist(alias, PasswordCredential.class.getName());
-                            }
-                            throw ROOT_LOGGER.credentialCannotBeResolved();
-                        }
-                        return c.usePassword(passCredential.getPassword());
-                    }
-                };
+            private InjectedValue<SecurityDomain> getSecurityDomain(ServiceBuilder<AuthenticationConfiguration> serviceBuilder, OperationContext context, String securityDomain) {
+                InjectedValue<SecurityDomain> securityDomainInjector = new InjectedValue<>();
+                serviceBuilder.addDependency(context.getCapabilityServiceName(SECURITY_DOMAIN_CAPABILITY, securityDomain, SecurityDomain.class), SecurityDomain.class, securityDomainInjector);
+                return securityDomainInjector;
             }
         };
         return new TrivialResourceDefinition(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, add, AUTHENTICATION_CONFIGURATION_ALL_ATTRIBUTES, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY);
@@ -506,183 +403,109 @@ class AuthenticationClientDefinitions {
     static ResourceDefinition getAuthenticationContextDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { CONTEXT_EXTENDS, MATCH_RULES };
 
-        DoohickeyAddHandler<AuthenticationContext> add = new DoohickeyAddHandler<AuthenticationContext>(
-                AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY, Capabilities.AUTHENTICATION_CONTEXT_API_CAPABILITY) {
+        TrivialAddHandler<AuthenticationContext> add = new TrivialAddHandler<AuthenticationContext>(AuthenticationContext.class, AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY) {
 
             @Override
-            protected Mode getInitialMode() {
-                return Mode.ON_DEMAND;
+            protected ValueSupplier<AuthenticationContext> getValueSupplier(ServiceBuilder<AuthenticationContext> serviceBuilder, OperationContext context, ModelNode model)
+                    throws OperationFailedException {
+                String parent = CONTEXT_EXTENDS.resolveModelAttribute(context, model).asStringOrNull();
+                Supplier<AuthenticationContext> parentSupplier;
+                if (parent != null) {
+                    InjectedValue<AuthenticationContext> parentInjector = new InjectedValue<>();
+
+                    serviceBuilder.addDependency(context.getCapabilityServiceName(
+                            RuntimeCapability.buildDynamicCapabilityName(AUTHENTICATION_CONTEXT_CAPABILITY, parent), AuthenticationContext.class),
+                            AuthenticationContext.class, parentInjector);
+
+                    parentSupplier = parentInjector::getValue;
+                } else {
+                    parentSupplier = AuthenticationContext::empty;
+                }
+
+                Function<AuthenticationContext, AuthenticationContext> authContext = Function.identity();
+
+                if (model.hasDefined(ElytronDescriptionConstants.MATCH_RULES)) {
+                    List<ModelNode> nodes = model.require(ElytronDescriptionConstants.MATCH_RULES).asList();
+                    for (ModelNode current : nodes) {
+                        String authenticationConfiguration = AUTHENTICATION_CONFIGURATION.resolveModelAttribute(context, current).asStringOrNull();
+                        String sslContext = SSL_CONTEXT.resolveModelAttribute(context, current).asStringOrNull();
+                        if (authenticationConfiguration == null && sslContext == null) {
+                            continue;
+                        }
+
+                        Function<MatchRule, MatchRule> matchRule = ignored -> MatchRule.ALL;
+
+                        String abstractType = MATCH_ABSTRACT_TYPE.resolveModelAttribute(context, current).asStringOrNull();
+                        String abstractTypeAuthority = MATCH_ABSTRACT_TYPE_AUTHORITY.resolveModelAttribute(context, current).asStringOrNull();
+                        matchRule = abstractType != null || abstractTypeAuthority != null ? matchRule.andThen(m -> m.matchAbstractType(abstractType, abstractTypeAuthority))  : matchRule;
+
+                        ModelNode host = MATCH_HOST.resolveModelAttribute(context, current);
+                        matchRule = host.isDefined() ? matchRule.andThen(m -> m.matchHost(host.asString())) : matchRule;
+
+                        ModelNode localSecurityDomain = MATCH_LOCAL_SECURITY_DOMAIN.resolveModelAttribute(context, current);
+                        matchRule = localSecurityDomain.isDefined() ? matchRule.andThen(m -> m.matchLocalSecurityDomain(localSecurityDomain.asString())) : matchRule;
+
+                        ModelNode matchNoUser = MATCH_NO_USER.resolveModelAttribute(context, current);
+                        matchRule = matchNoUser.asBoolean() ? matchRule.andThen(m -> m.matchNoUser()) : matchRule;
+
+                        ModelNode path = MATCH_PATH.resolveModelAttribute(context, current);
+                        matchRule = path.isDefined() ? matchRule.andThen(m -> m.matchPath(path.asString())) : matchRule;
+
+                        ModelNode port = MATCH_PORT.resolveModelAttribute(context, current);
+                        matchRule = port.isDefined() ? matchRule.andThen(m -> m.matchPort(port.asInt())) : matchRule;
+
+                        ModelNode protocol = MATCH_PROTOCOL.resolveModelAttribute(context, current);
+                        matchRule = protocol.isDefined() ? matchRule.andThen(m -> m.matchProtocol(protocol.asString())) : matchRule;
+
+                        ModelNode urn = MATCH_URN.resolveModelAttribute(context, current);
+                        matchRule = urn.isDefined() ? matchRule.andThen(m -> m.matchUrnName(urn.asString())) : matchRule;
+
+                        ModelNode user = MATCH_USER.resolveModelAttribute(context, current);
+                        matchRule = user.isDefined() ? matchRule.andThen(m -> m.matchUser(user.asString())) : matchRule;
+
+                        final Function<MatchRule, MatchRule> finalMatchRule = matchRule;
+                        Supplier<MatchRule> matchRuleSuppler = new OneTimeSupplier<>(() -> finalMatchRule.apply(null));
+
+                        if (authenticationConfiguration != null) {
+                            InjectedValue<AuthenticationConfiguration> authenticationConfigurationInjector = new InjectedValue<>();
+
+                            serviceBuilder.addDependency(context.getCapabilityServiceName(
+                                    RuntimeCapability.buildDynamicCapabilityName(AUTHENTICATION_CONFIGURATION_CAPABILITY, authenticationConfiguration), AuthenticationConfiguration.class),
+                                    AuthenticationConfiguration.class, authenticationConfigurationInjector);
+
+                            authContext = authContext.andThen(a -> a.with(matchRuleSuppler.get(), authenticationConfigurationInjector.getValue()));
+                        }
+
+                        if (sslContext != null) {
+                            InjectedValue<SSLContext> sslContextInjector = new InjectedValue<>();
+
+                            serviceBuilder.addDependency(context.getCapabilityServiceName(
+                                    RuntimeCapability.buildDynamicCapabilityName(SSL_CONTEXT_CAPABILITY, sslContext), SSLContext.class),
+                                    SSLContext.class, sslContextInjector);
+
+                            authContext = authContext.andThen(a -> a.withSsl(matchRuleSuppler.get(), sslContextInjector::getValue));
+                        }
+                    }
+                }
+
+                final Function<AuthenticationContext, AuthenticationContext> finalContext = authContext;
+                return () -> finalContext.apply(parentSupplier.get());
             }
 
             @Override
-            protected ElytronDoohickey<AuthenticationContext> createDoohickey(PathAddress resourceAddress) {
-                return new ElytronDoohickey<AuthenticationContext>(resourceAddress) {
+            protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+                commonRequirements(installService(context, model)).setInitialMode(ServiceController.Mode.ON_DEMAND).install();
+            }
 
-                    // Resolved match-rule data (parallel lists, one entry per defined match rule)
-                    private volatile List<ResolvedMatchRule> resolvedMatchRules;
-                    private volatile String parentContextName;
-
-                    @Override
-                    protected void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException {
-                        parentContextName = CONTEXT_EXTENDS.resolveModelAttribute(context, model).asStringOrNull();
-                        resolvedMatchRules = new java.util.ArrayList<>();
-                        if (model.hasDefined(ElytronDescriptionConstants.MATCH_RULES)) {
-                            for (ModelNode current : model.require(ElytronDescriptionConstants.MATCH_RULES).asList()) {
-                                String authenticationConfiguration = AUTHENTICATION_CONFIGURATION.resolveModelAttribute(context, current).asStringOrNull();
-                                String sslContext = SSL_CONTEXT.resolveModelAttribute(context, current).asStringOrNull();
-                                if (authenticationConfiguration == null && sslContext == null) {
-                                    continue;
-                                }
-                                resolvedMatchRules.add(new ResolvedMatchRule(
-                                        MATCH_ABSTRACT_TYPE.resolveModelAttribute(context, current).asStringOrNull(),
-                                        MATCH_ABSTRACT_TYPE_AUTHORITY.resolveModelAttribute(context, current).asStringOrNull(),
-                                        MATCH_HOST.resolveModelAttribute(context, current),
-                                        MATCH_LOCAL_SECURITY_DOMAIN.resolveModelAttribute(context, current),
-                                        MATCH_NO_USER.resolveModelAttribute(context, current).asBoolean(),
-                                        MATCH_PATH.resolveModelAttribute(context, current),
-                                        MATCH_PORT.resolveModelAttribute(context, current),
-                                        MATCH_PROTOCOL.resolveModelAttribute(context, current),
-                                        MATCH_URN.resolveModelAttribute(context, current),
-                                        MATCH_USER.resolveModelAttribute(context, current),
-                                        authenticationConfiguration,
-                                        sslContext));
-                            }
-                        }
-                    }
-
-                    @Override
-                    protected ExceptionSupplier<AuthenticationContext, StartException> prepareServiceSupplier(
-                            OperationContext context, CapabilityServiceBuilder<?> serviceBuilder)
-                            throws OperationFailedException {
-                        final Supplier<AuthenticationContext> parentSupplier;
-                        if (parentContextName != null) {
-                            InjectedValue<AuthenticationContext> parentInjector = new InjectedValue<>();
-                            serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                    RuntimeCapability.buildDynamicCapabilityName(AUTHENTICATION_CONTEXT_CAPABILITY, parentContextName),
-                                    AuthenticationContext.class), AuthenticationContext.class, parentInjector);
-                            parentSupplier = parentInjector::getValue;
-                        } else {
-                            parentSupplier = AuthenticationContext::empty;
-                        }
-
-                        Function<AuthenticationContext, AuthenticationContext> authContextFn = Function.identity();
-                        for (ResolvedMatchRule rule : resolvedMatchRules) {
-                            Supplier<MatchRule> matchRuleSupplier = new OneTimeSupplier<>(rule::buildMatchRule);
-                            if (rule.authenticationConfiguration != null) {
-                                InjectedValue<AuthenticationConfiguration> acInjector = new InjectedValue<>();
-                                serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                        RuntimeCapability.buildDynamicCapabilityName(AUTHENTICATION_CONFIGURATION_CAPABILITY, rule.authenticationConfiguration),
-                                        AuthenticationConfiguration.class), AuthenticationConfiguration.class, acInjector);
-                                authContextFn = authContextFn.andThen(a -> a.with(matchRuleSupplier.get(), acInjector.getValue()));
-                            }
-                            if (rule.sslContext != null) {
-                                InjectedValue<SSLContext> sslInjector = new InjectedValue<>();
-                                serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                        RuntimeCapability.buildDynamicCapabilityName(SSL_CONTEXT_CAPABILITY, rule.sslContext),
-                                        SSLContext.class), SSLContext.class, sslInjector);
-                                authContextFn = authContextFn.andThen(a -> a.withSsl(matchRuleSupplier.get(), sslInjector::getValue));
-                            }
-                        }
-
-                        final Function<AuthenticationContext, AuthenticationContext> finalContextFn = authContextFn;
-                        return () -> finalContextFn.apply(parentSupplier.get());
-                    }
-
-                    @Override
-                    protected AuthenticationContext createImmediately(OperationContext foreignContext) throws OperationFailedException {
-                        AuthenticationContext parent;
-                        if (parentContextName != null) {
-                            @SuppressWarnings("unchecked")
-                            org.wildfly.common.function.ExceptionFunction<OperationContext, AuthenticationContext, OperationFailedException> parentApi =
-                                    foreignContext.getCapabilityRuntimeAPI(Capabilities.AUTHENTICATION_CONTEXT_API_CAPABILITY, parentContextName,
-                                            org.wildfly.common.function.ExceptionFunction.class);
-                            parent = parentApi.apply(foreignContext);
-                        } else {
-                            parent = AuthenticationContext.empty();
-                        }
-
-                        AuthenticationContext ctx = parent;
-                        for (ResolvedMatchRule rule : resolvedMatchRules) {
-                            MatchRule matchRule = rule.buildMatchRule();
-                            if (rule.authenticationConfiguration != null) {
-                                @SuppressWarnings("unchecked")
-                                ExceptionFunction<OperationContext, AuthenticationConfiguration, OperationFailedException> acApi =
-                                        foreignContext.getCapabilityRuntimeAPI(AUTHENTICATION_CONFIGURATION_API_CAPABILITY,
-                                                rule.authenticationConfiguration, ExceptionFunction.class);
-                                AuthenticationConfiguration resolvedAc = acApi.apply(foreignContext);
-                                ctx = ctx.with(matchRule, resolvedAc);
-                            }
-                            if (rule.sslContext != null) {
-                                @SuppressWarnings("unchecked")
-                                ExceptionFunction<OperationContext, SSLContext, OperationFailedException> sslApi =
-                                        foreignContext.getCapabilityRuntimeAPI(SSL_CONTEXT_API_CAPABILITY, rule.sslContext,
-                                                ExceptionFunction.class);
-                                SSLContext resolvedSsl = sslApi.apply(foreignContext);
-                                ctx = ctx.withSsl(matchRule, () -> resolvedSsl);
-                            }
-                        }
-
-                        setValue(ctx);
-                        return ctx;
-                    }
-                };
+            ServiceBuilder<AuthenticationContext> installService(OperationContext context, ModelNode model)  throws OperationFailedException {
+                ServiceBuilder<AuthenticationContext> serviceBuilder = (ServiceBuilder<AuthenticationContext>) context.getCapabilityServiceTarget().addCapability(AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY);
+                TrivialService<AuthenticationContext> authenticationContextTrivialService = new TrivialService<>(getValueSupplier(serviceBuilder, context, model));
+                return serviceBuilder.setInstance(authenticationContextTrivialService);
             }
         };
 
         return new TrivialResourceDefinition(ElytronDescriptionConstants.AUTHENTICATION_CONTEXT, add, attributes,
                 AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY);
-    }
-
-    /**
-     * Holds the resolved match-rule data for a single match rule entry in an {@code authentication-context}.
-     * Pure data — no MSC wiring. Used by both the service path and the early-access path.
-     */
-    private static final class ResolvedMatchRule {
-        final String abstractType;
-        final String abstractTypeAuthority;
-        final ModelNode host;
-        final ModelNode localSecurityDomain;
-        final boolean noUser;
-        final ModelNode path;
-        final ModelNode port;
-        final ModelNode protocol;
-        final ModelNode urn;
-        final ModelNode user;
-        final String authenticationConfiguration;
-        final String sslContext;
-
-        ResolvedMatchRule(String abstractType, String abstractTypeAuthority,
-                ModelNode host, ModelNode localSecurityDomain, boolean noUser,
-                ModelNode path, ModelNode port, ModelNode protocol,
-                ModelNode urn, ModelNode user,
-                String authenticationConfiguration, String sslContext) {
-            this.abstractType = abstractType;
-            this.abstractTypeAuthority = abstractTypeAuthority;
-            this.host = host;
-            this.localSecurityDomain = localSecurityDomain;
-            this.noUser = noUser;
-            this.path = path;
-            this.port = port;
-            this.protocol = protocol;
-            this.urn = urn;
-            this.user = user;
-            this.authenticationConfiguration = authenticationConfiguration;
-            this.sslContext = sslContext;
-        }
-
-        MatchRule buildMatchRule() {
-            Function<MatchRule, MatchRule> fn = ignored -> MatchRule.ALL;
-            if (abstractType != null || abstractTypeAuthority != null) fn = fn.andThen(m -> m.matchAbstractType(abstractType, abstractTypeAuthority));
-            if (host.isDefined()) fn = fn.andThen(m -> m.matchHost(host.asString()));
-            if (localSecurityDomain.isDefined()) fn = fn.andThen(m -> m.matchLocalSecurityDomain(localSecurityDomain.asString()));
-            if (noUser) fn = fn.andThen(m -> m.matchNoUser());
-            if (path.isDefined()) fn = fn.andThen(m -> m.matchPath(path.asString()));
-            if (port.isDefined()) fn = fn.andThen(m -> m.matchPort(port.asInt()));
-            if (protocol.isDefined()) fn = fn.andThen(m -> m.matchProtocol(protocol.asString()));
-            if (urn.isDefined()) fn = fn.andThen(m -> m.matchUrnName(urn.asString()));
-            if (user.isDefined()) fn = fn.andThen(m -> m.matchUser(user.asString()));
-            return fn.apply(null);
-        }
     }
 
     static final class OneTimeSupplier<T>  implements Supplier<T> {

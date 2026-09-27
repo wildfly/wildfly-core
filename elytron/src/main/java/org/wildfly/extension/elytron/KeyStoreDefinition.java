@@ -29,6 +29,7 @@ import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.RO
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -346,8 +347,21 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
         private volatile boolean required;
         private volatile String aliasFilter;
 
-        // Back-reference to the KeyStoreService, set by performRuntime so that createImmediately
-        // can hand the AtomicLoadKeyStore directly to the service rather than storing it here.
+        /**
+         * The {@link AtomicLoadKeyStore} that underlies the cached doohickey value.  Set atomically
+         * alongside {@code value} inside the doohickey lock (either the early-access path or the
+         * service path).  {@link KeyStoreService#start()} reads this after {@code getForService()}
+         * returns so that {@code this.keyStore} and {@code this.unmodifiableKeyStore} always refer to
+         * the same underlying store — whichever path won the construction race.
+         *
+         * <p>Cleared automatically when {@link ElytronDoohickey#reset()} calls {@link #onReset()} so
+         * that a service restart forces a fresh load.</p>
+         */
+        private volatile AtomicLoadKeyStore cachedAtomicKeyStore;
+        private volatile File cachedResolvedPath;
+        private volatile CredentialSource cachedCredentialSource;
+        // Set when performRuntime creates the service. Early self-signed key managers retain a
+        // supplier to this reference and resolve it only when the certificate is first needed.
         private volatile KeyStoreService keyStoreService;
 
         private final PathAddress resourceAddress;
@@ -357,8 +371,90 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
             this.resourceAddress = resourceAddress;
         }
 
+        /**
+         * Returns the {@link AtomicLoadKeyStore} that was built and cached (by either the early-access
+         * path or the service path), or {@code null} if construction has not yet run under the lock.
+         * Called by {@link KeyStoreService#start()} after {@code getForService()} returns to obtain the
+         * underlying store so that {@code this.keyStore} and {@code this.unmodifiableKeyStore} refer to
+         * the same instance.
+         */
+        AtomicLoadKeyStore getCachedAtomicKeyStore() {
+            return cachedAtomicKeyStore;
+        }
+
+        File getCachedResolvedPath() {
+            return cachedResolvedPath;
+        }
+
+        /**
+         * Records the {@link AtomicLoadKeyStore} built by the service-first path.  Called from within
+         * the {@code getForService()} builder lambda in {@link KeyStoreService#startWithDoohickey()},
+         * i.e. while the doohickey lock is held, so this write is visible to any subsequent reader
+         * that acquires the same lock.
+         */
+        void setCachedServiceStore(AtomicLoadKeyStore aks, File file) {
+            this.cachedAtomicKeyStore = aks;
+            this.cachedResolvedPath = file;
+        }
+
+        /** Publishes the early store and its save inputs together while the Doohickey lock is held. */
+        void cacheEarlyValue(AtomicLoadKeyStore aks, File file, CredentialSource credentialSource, KeyStore unmodifiable) {
+            this.cachedAtomicKeyStore = aks;
+            this.cachedResolvedPath = file;
+            this.cachedCredentialSource = credentialSource;
+            setValue(unmodifiable);
+        }
+
         void setKeyStoreService(KeyStoreService service) {
             this.keyStoreService = service;
+        }
+
+        KeyStoreService getKeyStoreService() {
+            return keyStoreService;
+        }
+
+        String getCachedResolvedAbsolutePath() {
+            File file = cachedResolvedPath;
+            return file != null ? file.getAbsolutePath() : null;
+        }
+
+        boolean shouldAutoGenerateSelfSignedCertificate(String host) {
+            KeyStoreService service = keyStoreService;
+            if (service != null && service.getValue() != null) {
+                return service.shouldAutoGenerateSelfSignedCertificate(host);
+            }
+            return host != null && cachedResolvedPath != null && !cachedResolvedPath.exists();
+        }
+
+        void generateAndSaveSelfSignedCertificate(String host, char[] keyPassword) {
+            File file = cachedResolvedPath;
+            if (host == null || file == null || file.exists()) {
+                return;
+            }
+            try {
+                AtomicLoadKeyStore target = cachedAtomicKeyStore;
+                if (target == null) {
+                    throw new IllegalStateException("Early key-store value is no longer available");
+                }
+                KeyStoreService.addSelfSignedCertificate(target, file, host, keyPassword);
+                try (FileOutputStream output = new FileOutputStream(file)) {
+                    target.store(output, resolvePassword(cachedCredentialSource, file));
+                }
+            } catch (Exception e) {
+                throw ROOT_LOGGER.failedToStoreGeneratedSelfSignedCertificate(e);
+            }
+        }
+
+        /**
+         * Clears the cached {@link AtomicLoadKeyStore} in lockstep with the primary doohickey value.
+         * Called automatically by {@link ElytronDoohickey#reset()} so that callers never need to cast
+         * or call a separate method.
+         */
+        @Override
+        protected void onReset() {
+            cachedAtomicKeyStore = null;
+            cachedResolvedPath = null;
+            cachedCredentialSource = null;
         }
 
         @Override
@@ -399,20 +495,14 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
 
             try {
                 AtomicLoadKeyStore aks = buildAtomicKeyStore(resolvedPath, resolvedProviders, credentialSource);
-                // Hand the AtomicLoadKeyStore directly to the service so it can skip the file load
-                // in start().  The service owns the field; this doohickey holds no reference to it.
-                if (keyStoreService != null) {
-                    keyStoreService.setPreloadedKeyStore(aks);
-                }
-
-                // Build the canonical wrappers — the same objects will be used by KeyStoreService.start().
+                // Build the canonical wrappers — the same objects will be returned by KeyStoreService.getValue().
                 KeyStore intermediate = aliasFilter != null
                         ? FilteringKeyStore.filteringKeyStore(aks, AliasFilter.fromString(aliasFilter))
                         : aks;
                 KeyStore unmodifiable = UnmodifiableKeyStore.unmodifiableKeyStore(intermediate);
-                // setValue so callers who invoke this before the service starts get the same object
-                // the service will later expose via getValue().
-                setValue(unmodifiable);
+                // Publish the wrapper, its atomic store, resolved file and credential source
+                // together under the Doohickey lock. Service startup reuses the same store.
+                cacheEarlyValue(aks, resolvedPath, credentialSource, unmodifiable);
                 return unmodifiable;
             } catch (StartException | GeneralSecurityException | IOException e) {
                 throw new OperationFailedException(e);
@@ -481,7 +571,20 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
                     }
                 }
                 if (type == null) {
-                    throw ROOT_LOGGER.filelessKeyStoreMissingType();
+                    // Match the service-path behaviour exactly: use the JVM default type with no
+                    // provider filter.  KeyStoreService uses AtomicLoadKeyStore.newInstance(defaultType)
+                    // without consulting the configured providers injector for this case, so filtering
+                    // by resolvedProviders here would produce a different result when a providers
+                    // attribute is configured.
+                    String effectiveType = KeyStore.getDefaultType();
+                    ROOT_LOGGER.debugf(
+                            "KeyStore (early path): path = %s does not exist and type is unset; "
+                            + "creating empty %s keystore", resolvedPath, effectiveType);
+                    aks = AtomicLoadKeyStore.newInstance(effectiveType);
+                    synchronized (EmptyProvider.getInstance()) {
+                        aks.load(null, password);
+                    }
+                    return aks;
                 }
                 Provider provider = findProvider(resolvedProviders, type);
                 aks = AtomicLoadKeyStore.newInstance(type, provider);

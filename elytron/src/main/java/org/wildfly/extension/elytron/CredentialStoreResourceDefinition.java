@@ -533,6 +533,8 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             if (location != null) {
                 resolvedPath = resolveRelativeToImmediately(location, relativeTo, foreignContext);
                 credentialStoreAttributes.put(ElytronDescriptionConstants.LOCATION, resolvedPath.getAbsolutePath());
+            } else {
+                credentialStoreAttributes.put(ElytronDescriptionConstants.LOCATION, null);
             }
 
             Provider[] providers = null;

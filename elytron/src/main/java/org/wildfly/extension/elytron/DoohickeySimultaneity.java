@@ -109,6 +109,29 @@ public final class DoohickeySimultaneity {
     }
 
     /**
+     * Runs lifecycle work under the construction lock. The work does not follow a new resource
+     * dependency, so it does not push an address onto the initialization stack.
+     */
+    static <T> T withLockForLifecycle(ExceptionSupplier<T, Exception> action) throws Exception {
+        GLOBAL_LOCK.lock();
+        try {
+            return action.get();
+        } finally {
+            GLOBAL_LOCK.unlock();
+        }
+    }
+
+    /** Invalidates a cached value under the same lock used to construct it. */
+    static void withLockForReset(Runnable action) {
+        GLOBAL_LOCK.lock();
+        try {
+            action.run();
+        } finally {
+            GLOBAL_LOCK.unlock();
+        }
+    }
+
+    /**
      * Checks whether {@code resourceAddress} is already on this thread's initialization stack and, if
      * not, pushes it. Throws {@link OperationFailedException} with the cycle path if a cycle is found.
      *

@@ -5,9 +5,7 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.DIR_CONTEXT_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.DIR_CONTEXT_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
@@ -26,19 +24,14 @@ import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.BasicAttributes;
 import javax.naming.ldap.LdapName;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
-import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -58,12 +51,8 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.service.StartException;
-import org.wildfly.common.function.ExceptionFunction;
-import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
 import org.wildfly.security.keystore.LdapKeyStore;
-import org.wildfly.security.keystore.UnmodifiableKeyStore;
 
 /**
  * A {@link ResourceDefinition} for a single {@link LdapKeyStore}.
@@ -265,33 +254,9 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource)
-                throws OperationFailedException {
-            super.recordCapabilitiesAndRequirements(context, operation, resource);
-
-            if (requiresRuntime(context)) {
-                LdapKeyStoreDoohickey doohickey = new LdapKeyStoreDoohickey(context.getCurrentAddress());
-                context.registerCapability(RuntimeCapability.Builder
-                        .<ExceptionFunction<OperationContext, KeyStore, OperationFailedException>> of(
-                                KEY_STORE_API_CAPABILITY, true, doohickey)
-                        .build().fromBaseCapability(context.getCurrentAddressValue()));
-            }
-        }
-
-        @Override
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
             final String name = context.getCurrentAddressValue();
             ModelNode model = resource.getModel();
-
-            // Retrieve the doohickey registered during recordCapabilitiesAndRequirements, resolve its
-            // model fields, and cross-link it with the LdapKeyStoreService so both paths share one instance.
-            LdapKeyStoreDoohickey doohickey = null;
-            if (requiresRuntime(context)) {
-                ExceptionFunction<OperationContext, KeyStore, OperationFailedException> runtimeApi =
-                        context.getCapabilityRuntimeAPI(KEY_STORE_API_CAPABILITY, name, ExceptionFunction.class);
-                doohickey = (LdapKeyStoreDoohickey) runtimeApi;
-                doohickey.resolveRuntime(context);
-            }
 
             String dirContextName = DIR_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
             String searchPath = SEARCH_PATH.resolveModelAttribute(context, model).asStringOrNull();
@@ -351,11 +316,6 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
                     certificateAttribute, certificateType, certificateChainAttribute, certificateChainEncoding,
                     keyAttribute, keyType);
 
-            if (doohickey != null) {
-                doohickey.setLdapKeyStoreService(keyStoreService);
-                keyStoreService.setDoohickey(doohickey);
-            }
-
             ServiceTarget serviceTarget = context.getServiceTarget();
             RuntimeCapability<Void> runtimeCapability = KEY_STORE_RUNTIME_CAPABILITY.fromBaseCapability(name);
             ServiceName serviceName = runtimeCapability.getCapabilityServiceName(KeyStore.class);
@@ -366,137 +326,6 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             serviceBuilder.addDependency(dirContextServiceName, DirContextSupplier.class, keyStoreService.getDirContextSupplierInjector());
 
             commonDependencies(serviceBuilder).install();
-        }
-    }
-
-
-    /**
-     * Doohickey for an LDAP key-store resource.  Both instantiation paths — early API and MSC service start —
-     * converge on a single {@link KeyStore} instance via the single-instantiation contract of
-     * {@link ElytronDoohickey}.
-     */
-    private static class LdapKeyStoreDoohickey extends ElytronDoohickey<KeyStore> {
-
-        private volatile String dirContextName;
-        private volatile String searchPath;
-        private volatile String filterAlias;
-        private volatile String filterCertificate;
-        private volatile String filterIterate;
-        private volatile LdapName createPathLdapName;
-        private volatile String createRdn;
-        private volatile Attributes createAttributes;
-        private volatile String aliasAttribute;
-        private volatile String certificateAttribute;
-        private volatile String certificateType;
-        private volatile String certificateChainAttribute;
-        private volatile String certificateChainEncoding;
-        private volatile String keyAttribute;
-        private volatile String keyType;
-
-        // Cross-link to the LdapKeyStoreService set during performRuntime.
-        private volatile LdapKeyStoreService ldapKeyStoreService;
-
-        LdapKeyStoreDoohickey(PathAddress resourceAddress) {
-            super(resourceAddress);
-        }
-
-        void setLdapKeyStoreService(LdapKeyStoreService service) {
-            this.ldapKeyStoreService = service;
-        }
-
-        @Override
-        protected void resolveRuntime(ModelNode model, OperationContext ctx) throws OperationFailedException {
-            dirContextName = DIR_CONTEXT.resolveModelAttribute(ctx, model).asStringOrNull();
-            searchPath = SEARCH_PATH.resolveModelAttribute(ctx, model).asStringOrNull();
-            aliasAttribute = ALIAS_ATTRIBUTE.resolveModelAttribute(ctx, model).asStringOrNull();
-            certificateAttribute = CERTIFICATE_ATTRIBUTE.resolveModelAttribute(ctx, model).asStringOrNull();
-            certificateType = CERTIFICATE_TYPE.resolveModelAttribute(ctx, model).asStringOrNull();
-            certificateChainAttribute = CERTIFICATE_CHAIN_ATTRIBUTE.resolveModelAttribute(ctx, model).asStringOrNull();
-            certificateChainEncoding = CERTIFICATE_CHAIN_ENCODING.resolveModelAttribute(ctx, model).asStringOrNull();
-            keyAttribute = KEY_ATTRIBUTE.resolveModelAttribute(ctx, model).asStringOrNull();
-            keyType = KEY_TYPE.resolveModelAttribute(ctx, model).asStringOrNull();
-
-            filterAlias = FILTER_ALIAS.resolveModelAttribute(ctx, model).asStringOrNull();
-            filterCertificate = FILTER_CERTIFICATE.resolveModelAttribute(ctx, model).asStringOrNull();
-            filterIterate = FILTER_ITERATE.resolveModelAttribute(ctx, model).asStringOrNull();
-            if (filterAlias == null) filterAlias = "(" + aliasAttribute + "={0})";
-            if (filterCertificate == null) filterCertificate = "(" + certificateAttribute + "={0})";
-            if (filterIterate == null) filterIterate = "(" + aliasAttribute + "=*)";
-
-            ModelNode newNode = NewItemTemplateObjectDefinition.OBJECT_DEFINITION.resolveModelAttribute(ctx, model);
-            if (newNode.isDefined()) {
-                String createPath = NewItemTemplateObjectDefinition.NEW_ITEM_PATH.resolveModelAttribute(ctx, newNode).asString();
-                createRdn = NewItemTemplateObjectDefinition.NEW_ITEM_RDN.resolveModelAttribute(ctx, newNode).asString();
-                if (createPath != null) {
-                    try {
-                        createPathLdapName = new LdapName(createPath);
-                    } catch (InvalidNameException e) {
-                        throw new OperationFailedException(e);
-                    }
-                }
-                ModelNode createAttributesNode = NewItemTemplateObjectDefinition.NEW_ITEM_ATTRIBUTES.resolveModelAttribute(ctx, newNode);
-                if (createAttributesNode.isDefined()) {
-                    createAttributes = new BasicAttributes(true);
-                    for (ModelNode attributeNode : createAttributesNode.asList()) {
-                        ModelNode nameNode = NewItemTemplateAttributeObjectDefinition.NAME.resolveModelAttribute(ctx, attributeNode);
-                        ModelNode valuesNode = NewItemTemplateAttributeObjectDefinition.VALUE.resolveModelAttribute(ctx, attributeNode);
-                        if (valuesNode.getType() == ModelType.LIST) {
-                            BasicAttribute listAttribute = new BasicAttribute(nameNode.asString());
-                            for (ModelNode valueNode : valuesNode.asList()) {
-                                listAttribute.add(valueNode.asString());
-                            }
-                            createAttributes.put(listAttribute);
-                        } else {
-                            createAttributes.put(new BasicAttribute(nameNode.asString(), valuesNode.asString()));
-                        }
-                    }
-                }
-            }
-        }
-
-        @Override
-        protected ExceptionSupplier<KeyStore, StartException> prepareServiceSupplier(OperationContext ctx,
-                CapabilityServiceBuilder<?> serviceBuilder) throws OperationFailedException {
-            // The dir-context MSC dependency is wired directly into LdapKeyStoreService by performRuntime;
-            // this supplier is a fallback in case get() is ever called without the service having started.
-            return () -> ldapKeyStoreService.getValue();
-        }
-
-        @Override
-        protected KeyStore createImmediately(OperationContext foreignContext) throws OperationFailedException {
-            // Obtain DirContextSupplier via the dir-context-api early path.
-            @SuppressWarnings("unchecked")
-            ExceptionFunction<OperationContext, DirContextSupplier, OperationFailedException> dcApi =
-                    foreignContext.getCapabilityRuntimeAPI(DIR_CONTEXT_API_CAPABILITY,
-                            dirContextName, ExceptionFunction.class);
-            DirContextSupplier dirContextSupplier = dcApi.apply(foreignContext);
-
-            try {
-                LdapKeyStore.Builder builder = LdapKeyStore.builder()
-                        .setDirContextSupplier(dirContextSupplier)
-                        .setSearchPath(searchPath);
-                if (filterAlias != null) builder.setFilterAlias(filterAlias);
-                if (filterCertificate != null) builder.setFilterCertificate(filterCertificate);
-                if (filterIterate != null) builder.setFilterIterate(filterIterate);
-                if (createPathLdapName != null) builder.setCreatePath(createPathLdapName);
-                if (createRdn != null) builder.setCreateRdn(createRdn);
-                if (createAttributes != null) builder.setCreateAttributes(createAttributes);
-                if (aliasAttribute != null) builder.setAliasAttribute(aliasAttribute);
-                if (certificateAttribute != null) builder.setCertificateAttribute(certificateAttribute);
-                if (certificateType != null) builder.setCertificateType(certificateType);
-                if (certificateChainAttribute != null) builder.setCertificateChainAttribute(certificateChainAttribute);
-                if (certificateChainEncoding != null) builder.setCertificateChainEncoding(certificateChainEncoding);
-                if (keyAttribute != null) builder.setKeyAttribute(keyAttribute);
-                if (keyType != null) builder.setKeyType(keyType);
-
-                KeyStore keyStore = builder.build();
-                keyStore.load(null); // initialize the LDAP connection
-                KeyStore unmodifiable = UnmodifiableKeyStore.unmodifiableKeyStore(keyStore);
-                setValue(unmodifiable);
-                return unmodifiable;
-            } catch (GeneralSecurityException | IOException e) {
-                throw new OperationFailedException(e);
-            }
         }
     }
 

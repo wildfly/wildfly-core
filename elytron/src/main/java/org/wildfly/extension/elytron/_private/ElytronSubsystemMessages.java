@@ -655,10 +655,6 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @LogMessage(level = WARN)
     void selfSignedCertificateHasBeenCreated(String file, String sha1, String sha256);
 
-    @Message(id = 1222, value = "Early expression resolution is not supported for a key-manager configured with 'generate-self-signed-certificate-host'; " +
-            "self-signed certificate generation requires the MSC service lifecycle.")
-    OperationFailedException earlyResolutionNotSupportedForSelfSignedKeyManager();
-
     @Message(id=1086, value = "Unable to initialize Elytron JACC support while legacy JACC support is enabled.")
     IllegalStateException unableToEnableJaccSupport();
 

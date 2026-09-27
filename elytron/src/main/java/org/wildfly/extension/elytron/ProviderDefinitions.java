@@ -153,7 +153,7 @@ class ProviderDefinitions {
                     protected ExceptionSupplier<Provider[], StartException> prepareServiceSupplier(OperationContext context,
                             CapabilityServiceBuilder<?> serviceBuilder) throws OperationFailedException {
                         final Supplier<PathManagerService> pathManager;
-                        if (properties == null && relativeTo != null) {
+                        if (properties == null && path != null && relativeTo != null) {
                             pathManager = serviceBuilder.requires(PathManagerService.SERVICE_NAME);
                             serviceBuilder.requires(pathName(relativeTo));
                         } else {
@@ -165,7 +165,9 @@ class ProviderDefinitions {
                             @Override
                             public Provider[] get() throws StartException {
                                 File resolved = null;
-                                if (properties == null && relativeTo != null) {
+                                // A configured path is used even without relative-to, just as it is
+                                // by the early API path. Only relative paths need PathManager.
+                                if (properties == null && path != null) {
                                     PathResolver pathResolver = pathResolver();
                                     pathResolver.path(path);
                                     if (relativeTo != null) {

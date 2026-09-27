@@ -51,19 +51,22 @@ class FilteringKeyStoreService implements ModifiableKeyStoreService {
         try {
             KeyStore keyStore = keyStoreInjector.getValue();
             AliasFilter filter = AliasFilter.fromString(aliasFilter);
-            KeyStore modifiable = keyStore;
-            modifiableFilteringKeyStore = FilteringKeyStore.filteringKeyStore(modifiable, filter);
+            modifiableFilteringKeyStore = FilteringKeyStore.filteringKeyStore(keyStore, filter);
 
-            // Honour the single-creation contract: reuse the instance from the early API path if
-            // it already ran, otherwise build and publish it now.
-            if (doohickey != null && doohickey.hasValue()) {
-                filteringKeyStore = doohickey.cachedValue();
+            // Use getForService() to guarantee single-creation under the same global lock used by
+            // the early-access apply() path.
+            if (doohickey != null) {
+                KeyStore unmodifiable = UnmodifiableKeyStore.unmodifiableKeyStore(keyStore);
+                filteringKeyStore = doohickey.getForService(() -> {
+                    try {
+                        return FilteringKeyStore.filteringKeyStore(unmodifiable, filter);
+                    } catch (Exception e) {
+                        throw new StartException(e);
+                    }
+                });
             } else {
                 KeyStore unmodifiable = UnmodifiableKeyStore.unmodifiableKeyStore(keyStore);
                 filteringKeyStore = FilteringKeyStore.filteringKeyStore(unmodifiable, filter);
-                if (doohickey != null) {
-                    doohickey.setValue(filteringKeyStore);
-                }
             }
 
             ROOT_LOGGER.tracef(
@@ -81,7 +84,14 @@ class FilteringKeyStoreService implements ModifiableKeyStoreService {
                 "stopping:  filteringKeyStore = %s  modifiableFilteringKeyStore = %s",
                 filteringKeyStore, modifiableFilteringKeyStore
         );
+        if (doohickey != null) {
+            DoohickeySimultaneity.withLockForReset(this::clearForStop);
+        } else {
+            clearForStop();
+        }
+    }
 
+    private void clearForStop() {
         filteringKeyStore = null;
         modifiableFilteringKeyStore = null;
         if (doohickey != null) {

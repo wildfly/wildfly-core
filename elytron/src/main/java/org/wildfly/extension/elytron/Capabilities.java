@@ -58,23 +58,11 @@ class Capabilities {
 
     static final String AUTHENTICATION_CONFIGURATION_CAPABILITY = CAPABILITY_BASE + "authentication-configuration";
 
-    /*
-     * A variant of the authentication-configuration capability which also provides access to the underlying
-     * {@code AuthenticationConfiguration} as a runtime API from a {@code ExceptionFunction<OperationContext, AuthenticationConfiguration, OperationFailedException>}.
-     */
-    static final String AUTHENTICATION_CONFIGURATION_API_CAPABILITY = CAPABILITY_BASE + "authentication-configuration-api";
-
     static final RuntimeCapability<Void> AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY = RuntimeCapability
             .Builder.of(AUTHENTICATION_CONFIGURATION_CAPABILITY, true, AuthenticationConfiguration.class)
             .build();
 
     static final String AUTHENTICATION_CONTEXT_CAPABILITY = CAPABILITY_BASE + "authentication-context";
-
-    /*
-     * A variant of the authentication-context capability which also provides access to the underlying
-     * {@code AuthenticationContext} as a runtime API from a {@code ExceptionFunction<OperationContext, AuthenticationContext, OperationFailedException>}.
-     */
-    static final String AUTHENTICATION_CONTEXT_API_CAPABILITY = CAPABILITY_BASE + "authentication-context-api";
 
     static final RuntimeCapability<Void> AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY = RuntimeCapability
             .Builder.of(AUTHENTICATION_CONTEXT_CAPABILITY, true, AuthenticationContext.class)
@@ -250,12 +238,6 @@ class Capabilities {
 
     static final String SECURITY_FACTORY_CREDENTIAL_CAPABILITY = SECURITY_FACTORY_CAPABILITY_BASE + "credential";
 
-    /*
-     * A variant of the security-factory.credential capability which also provides access to the underlying
-     * {@code CredentialSecurityFactory} as a runtime API from a {@code ExceptionFunction<OperationContext, CredentialSecurityFactory, OperationFailedException>}.
-     */
-    static final String SECURITY_FACTORY_CREDENTIAL_API_CAPABILITY = SECURITY_FACTORY_CAPABILITY_BASE + "credential-api";
-
     static final RuntimeCapability<Void> SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY = RuntimeCapability
             .Builder.of(SECURITY_FACTORY_CREDENTIAL_CAPABILITY, true, CredentialSecurityFactory.class)
             .build();
@@ -275,10 +257,12 @@ class Capabilities {
     static final String SSL_CONTEXT_CAPABILITY = CAPABILITY_BASE + "ssl-context";
 
     /*
-     * A variant of the ssl-context capability which also provides access to the underlying
+     * A dedicated capability for the client-ssl-context resource which also provides access to the underlying
      * {@code SSLContext} as a runtime API from a {@code ExceptionFunction<OperationContext, SSLContext, OperationFailedException>}.
+     * This is distinct from the generic ssl-context capability so external extensions can reference outbound TLS
+     * via client-ssl-context specifically.
      */
-    static final String SSL_CONTEXT_API_CAPABILITY = CAPABILITY_BASE + "ssl-context-api";
+    static final String CLIENT_SSL_CONTEXT_API_CAPABILITY = CAPABILITY_BASE + "client-ssl-context-api";
 
     static final RuntimeCapability<Void> SSL_CONTEXT_RUNTIME_CAPABILITY = RuntimeCapability
         .Builder.of(SSL_CONTEXT_CAPABILITY, true, SSLContext.class)
@@ -297,8 +281,6 @@ class Capabilities {
             .build();
 
     static final String DIR_CONTEXT_CAPABILITY = CAPABILITY_BASE + "dir-context";
-
-    static final String DIR_CONTEXT_API_CAPABILITY = CAPABILITY_BASE + "dir-context-api";
 
     static final RuntimeCapability<Void> DIR_CONTEXT_RUNTIME_CAPABILITY = RuntimeCapability
             .Builder.of(DIR_CONTEXT_CAPABILITY, true, DirContextSupplier.class)

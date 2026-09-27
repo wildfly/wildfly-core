@@ -8,6 +8,7 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.common.Assert.checkNotNullParam;
 import static org.wildfly.extension.elytron.DoohickeySimultaneity.withLock;
 import static org.wildfly.extension.elytron.DoohickeySimultaneity.withLockForService;
+import static org.wildfly.extension.elytron.DoohickeySimultaneity.withLockForReset;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
@@ -47,42 +48,73 @@ abstract class ElytronDoohickey<T> implements ExceptionFunction<OperationContext
     @Override
     public final T apply(final OperationContext foreignContext) throws OperationFailedException {
         // The apply method is assumed to be called from the runtime API - i.e. MSC dependencies are not available.
-        if (value == null) {
-            withLock(resourceAddress, () -> {
-                if (value == null) {
-                    if (foreignContext == null) {
-                        // If a caller that can't provide an OperationContext needs to initialize,
-                        // there's a programming bug as this object should be initialized
-                        // before any call paths are executed that don't come through
-                        // the OperationStepHandlers that provide a context.
-                        throw ROOT_LOGGER.illegalNonManagementInitialization(getClass());
-                    }
-                    resolveRuntime(foreignContext, true);
-                    value = createImmediately(foreignContext);
-                }
-                return null;
-            });
+        T current = value;
+        if (current != null) {
+            return current;
         }
-
-        return value;
+        return withLock(resourceAddress, () -> {
+            if (value == null) {
+                if (foreignContext == null) {
+                    // If a caller that can't provide an OperationContext needs to initialize,
+                    // there's a programming bug as this object should be initialized
+                    // before any call paths are executed that don't come through
+                    // the OperationStepHandlers that provide a context.
+                    throw ROOT_LOGGER.illegalNonManagementInitialization(getClass());
+                }
+                resolveRuntime(foreignContext, true);
+                value = createImmediately(foreignContext);
+            }
+            return value;
+        });
     }
 
     public final T get() throws StartException {
         // The get method is assumed to be called as part of the MSC lifecycle.
-        if (value == null) {
-            try {
-                withLockForService(resourceAddress, () -> {
-                    if (value == null) {
-                        value = serviceValueSupplier.get();
-                    }
-                    return null;
-                });
-            } catch (OperationFailedException e) {
-                throw new StartException(e);
-            }
+        T current = value;
+        if (current != null) {
+            return current;
         }
+        try {
+            return withLockForService(resourceAddress, () -> {
+                if (value == null) {
+                    value = serviceValueSupplier.get();
+                }
+                return value;
+            });
+        } catch (OperationFailedException e) {
+            throw new StartException(e);
+        }
+    }
 
-        return value;
+    /**
+     * Called by custom service {@code start()} implementations that manage their own construction
+     * rather than delegating to a {@link TrivialService}.  Executes the provided {@code builder}
+     * under the same global lock used by {@link #apply(OperationContext)} and {@link #get()},
+     * guaranteeing that exactly one of the two paths constructs and caches the value.
+     *
+     * <p>The {@code builder} is only invoked if no value has been cached yet.  If a value is
+     * already present (because the early API ran first) the builder is skipped and the cached
+     * value is returned, allowing the service to reuse it.</p>
+     *
+     * @param builder the construction logic to run if the value is not yet initialised
+     * @return the canonical cached value (either pre-existing or freshly built by {@code builder})
+     * @throws StartException if {@code builder} throws, or if cycle detection fires
+     */
+    T getForService(ExceptionSupplier<T, StartException> builder) throws StartException {
+        T current = value;
+        if (current != null) {
+            return current;
+        }
+        try {
+            return withLockForService(resourceAddress, () -> {
+                if (value == null) {
+                    value = builder.get();
+                }
+                return value;
+            });
+        } catch (OperationFailedException e) {
+            throw new StartException(e);
+        }
     }
 
     public final void prepareService(OperationContext context, CapabilityServiceBuilder<?> serviceBuilder) throws OperationFailedException {
@@ -164,12 +196,26 @@ abstract class ElytronDoohickey<T> implements ExceptionFunction<OperationContext
     }
 
     /**
-     * Clears the cached value so that the next call to {@link #get()} re-invokes the service-path supplier.
-     * Package-private so that the {@code init} operation can reset the value when stop+start is used
-     * to re-initialise the service (e.g. after the underlying key-store has been reloaded).
+     * Clears the cached value so that the next call to {@link #get()} re-invokes the service-path supplier,
+     * then delegates to {@link #onReset()} so that subclasses can clear any additional derived state they
+     * cache alongside the primary value (e.g. an unwrapped {@code AtomicLoadKeyStore}).
+     *
+     * <p>Package-private so that service {@code stop()} implementations can call it without casting.</p>
      */
     void reset() {
-        this.value = null;
+        withLockForReset(() -> {
+            this.value = null;
+            onReset();
+        });
+    }
+
+    /**
+     * Called by {@link #reset()} after the primary cached value has been cleared.  Subclasses that
+     * maintain additional derived state (e.g. {@code KeyStoreDoohickey} caches an
+     * {@code AtomicLoadKeyStore} alongside the unmodifiable wrapper) override this to clear that state
+     * in lockstep with the primary value.  The default implementation does nothing.
+     */
+    protected void onReset() {
     }
 
     /**

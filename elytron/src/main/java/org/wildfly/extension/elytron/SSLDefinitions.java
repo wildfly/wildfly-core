@@ -8,8 +8,8 @@ package org.wildfly.extension.elytron;
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
 import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
-import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.CLIENT_SSL_CONTEXT_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_API_CAPABILITY;
@@ -19,7 +19,6 @@ import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPAB
 import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.TRUST_MANAGER_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.REALM_MAPPER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
@@ -59,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
@@ -118,6 +118,7 @@ import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionFunction;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.TrivialResourceDefinition.Builder;
+import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.security.auth.client.AuthenticationContext;
@@ -513,6 +514,7 @@ class SSLDefinitions {
                     private volatile String keyStoreName;
                     private volatile String aliasFilter;
                     private volatile String generateSelfSignedCertificateHost;
+                    private final DelegatingKeyManager delegatingKeyManager = new DelegatingKeyManager();
 
                     @Override
                     protected void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException {
@@ -545,19 +547,19 @@ class SSLDefinitions {
                         @SuppressWarnings("unchecked")
                         ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier =
                                 CredentialReference.getCredentialSourceSupplier(context, credentialReferenceDefinition, resourceModel, serviceBuilder);
-                        DelegatingKeyManager delegatingKeyManager = new DelegatingKeyManager();
-
-                        return () -> buildKeyManager(providersInjector.getOptionalValue(),
-                                keyStoreInjector.getOptionalValue(), keyStoreService,
-                                credentialSourceSupplier, algorithm, delegatingKeyManager);
+                        return () -> {
+                            KeyStoreService plainKeyStoreService = keyStoreService instanceof KeyStoreService
+                                    ? (KeyStoreService) keyStoreService : null;
+                            boolean generateSelfSigned = plainKeyStoreService != null
+                                    && plainKeyStoreService.shouldAutoGenerateSelfSignedCertificate(generateSelfSignedCertificateHost);
+                            return buildKeyManager(providersInjector.getOptionalValue(),
+                                    keyStoreInjector.getOptionalValue(), credentialSourceSupplier, algorithm,
+                                    generateSelfSigned, () -> plainKeyStoreService, null);
+                        };
                     }
 
                     @Override
                     protected KeyManager createImmediately(OperationContext foreignContext) throws OperationFailedException {
-                        if (generateSelfSignedCertificateHost != null) {
-                            throw ROOT_LOGGER.earlyResolutionNotSupportedForSelfSignedKeyManager();
-                        }
-
                         Provider[] providers = null;
                         if (providerLoader != null) {
                             @SuppressWarnings("unchecked")
@@ -567,11 +569,15 @@ class SSLDefinitions {
                         }
 
                         KeyStore keyStore = null;
+                        KeyStoreDefinition.KeyStoreDoohickey keyStoreDoohickey = null;
                         if (keyStoreName != null) {
                             @SuppressWarnings("unchecked")
                             ExceptionFunction<OperationContext, KeyStore, OperationFailedException> ksApi =
                                     foreignContext.getCapabilityRuntimeAPI(KEY_STORE_API_CAPABILITY, keyStoreName, ExceptionFunction.class);
                             keyStore = ksApi.apply(foreignContext);
+                            if (ksApi instanceof KeyStoreDefinition.KeyStoreDoohickey) {
+                                keyStoreDoohickey = (KeyStoreDefinition.KeyStoreDoohickey) ksApi;
+                            }
                         }
 
                         final String algorithm = algorithmName != null ? algorithmName : KeyManagerFactory.getDefaultAlgorithm();
@@ -584,10 +590,14 @@ class SSLDefinitions {
                                 foreignContext.readResourceFromRoot(resourceAddress).getModel());
                         ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = () -> credentialSource;
 
-                        DelegatingKeyManager delegatingKeyManager = new DelegatingKeyManager();
+                        final KeyStoreDefinition.KeyStoreDoohickey plainKeyStoreDoohickey = keyStoreDoohickey;
+                        boolean generateSelfSigned = plainKeyStoreDoohickey != null
+                                && plainKeyStoreDoohickey.shouldAutoGenerateSelfSignedCertificate(generateSelfSignedCertificateHost);
                         try {
-                            KeyManager km = buildKeyManager(providers, keyStore, null /* no self-signed service */,
-                                    credentialSourceSupplier, algorithm, delegatingKeyManager);
+                            KeyManager km = buildKeyManager(providers, keyStore, credentialSourceSupplier,
+                                    algorithm, generateSelfSigned,
+                                    plainKeyStoreDoohickey != null ? plainKeyStoreDoohickey::getKeyStoreService : null,
+                                    plainKeyStoreDoohickey);
                             setValue(km);
                             return km;
                         } catch (StartException e) {
@@ -596,9 +606,10 @@ class SSLDefinitions {
                     }
 
                     private KeyManager buildKeyManager(Provider[] providers, KeyStore keyStore,
-                            ModifiableKeyStoreService keyStoreService,
                             ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier,
-                            String algorithm, DelegatingKeyManager delegatingKeyManager) throws StartException {
+                            String algorithm, boolean generateSelfSigned,
+                            Supplier<KeyStoreService> keyStoreServiceSupplier,
+                            KeyStoreDefinition.KeyStoreDoohickey keyStoreDoohickey) throws StartException {
                         KeyManagerFactory keyManagerFactory = createKeyManagerFactory(providers, providerName, algorithm);
 
                         char[] password;
@@ -622,11 +633,8 @@ class SSLDefinitions {
                             throw new StartException(e);
                         }
 
-                        if ((keyStoreService instanceof KeyStoreService)
-                                && ((KeyStoreService) keyStoreService).shouldAutoGenerateSelfSignedCertificate(generateSelfSignedCertificateHost)) {
-                            ROOT_LOGGER.selfSignedCertificateWillBeCreated(
-                                    ((KeyStoreService) keyStoreService).getResolvedAbsolutePath(), generateSelfSignedCertificateHost);
-                            return new LazyDelegatingKeyManager(keyStoreService, password, keyManagerFactory,
+                        if (generateSelfSigned) {
+                            return new LazyDelegatingKeyManager(keyStoreServiceSupplier, keyStoreDoohickey, password, keyManagerFactory,
                                     generateSelfSignedCertificateHost, aliasFilter);
                         } else {
                             try {
@@ -729,6 +737,7 @@ class SSLDefinitions {
                     private volatile boolean preferCrls;
                     // CRL file info — resolved at construction time, stored for both service and early paths
                     private volatile List<CrlFile> crlFiles;
+                    private final DelegatingTrustManager delegatingTrustManager = new DelegatingTrustManager();
 
                     @Override
                     protected void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException {
@@ -816,7 +825,6 @@ class SSLDefinitions {
                                     KeyStore.class, responderStoreInjector);
                         }
 
-                        final DelegatingTrustManager delegatingTrustManager = new DelegatingTrustManager();
                         return () -> buildTrustManager(
                                 providersInjector.getOptionalValue(),
                                 keyStoreInjector.getOptionalValue(),
@@ -858,17 +866,20 @@ class SSLDefinitions {
 
                         final String algorithm = algorithmName != null ? algorithmName : TrustManagerFactory.getDefaultAlgorithm();
 
-                        // Resolve CRL file paths via PathManager from the service registry.
+                        // Match the service path: PathManager is needed only for a CRL with relative-to.
                         List<CrlFile> resolvedCrlFiles = new ArrayList<>();
                         if (hasRevocation && crlNode != null) {
-                            PathManager pathManager = (PathManager) foreignContext.getServiceRegistry(false)
-                                    .getRequiredService(PathManagerService.SERVICE_NAME).getValue();
+                            PathManager pathManager = null;
                             if (crlNode.isDefined()) {
                                 String crlPath = PATH.resolveModelAttribute(foreignContext, crlNode).asStringOrNull();
                                 String crlRelativeTo = RELATIVE_TO.resolveModelAttribute(foreignContext, crlNode).asStringOrNull();
                                 if (crlPath != null) {
                                     InjectedValue<PathManager> pmInjector = new InjectedValue<>();
-                                    pmInjector.inject(pathManager);
+                                    if (crlRelativeTo != null) {
+                                        pathManager = (PathManager) foreignContext.getServiceRegistry(false)
+                                                .getRequiredService(PathManagerService.SERVICE_NAME).getValue();
+                                        pmInjector.inject(pathManager);
+                                    }
                                     resolvedCrlFiles.add(new CrlFile(crlPath, crlRelativeTo, pmInjector));
                                 }
                             } else if (multipleCrlsNode != null && multipleCrlsNode.isDefined()) {
@@ -877,7 +888,13 @@ class SSLDefinitions {
                                     String crlRelativeTo = RELATIVE_TO.resolveModelAttribute(foreignContext, crl).asStringOrNull();
                                     if (crlPath != null) {
                                         InjectedValue<PathManager> pmInjector = new InjectedValue<>();
-                                        pmInjector.inject(pathManager);
+                                        if (crlRelativeTo != null) {
+                                            if (pathManager == null) {
+                                                pathManager = (PathManager) foreignContext.getServiceRegistry(false)
+                                                        .getRequiredService(PathManagerService.SERVICE_NAME).getValue();
+                                            }
+                                            pmInjector.inject(pathManager);
+                                        }
                                         resolvedCrlFiles.add(new CrlFile(crlPath, crlRelativeTo, pmInjector));
                                     }
                                 }
@@ -885,7 +902,8 @@ class SSLDefinitions {
                         }
 
                         try {
-                            TrustManager tm = buildTrustManager(providers, keyStore, responderStore, algorithm, resolvedCrlFiles, null, null);
+                            TrustManager tm = buildTrustManager(providers, keyStore, responderStore, algorithm,
+                                    resolvedCrlFiles, null, delegatingTrustManager);
                             setValue(tm);
                             return tm;
                         } catch (StartException e) {
@@ -921,7 +939,9 @@ class SSLDefinitions {
                                             "TrustManager supplying:  providers = %s  provider = %s  algorithm = %s  trustManagerFactory = %s  keyStoreName = %s  keyStore = %s  aliasFilter = %s  keyStoreSize = %d",
                                             Arrays.toString(providers), providerName, algorithm, trustManagerFactory, keyStoreName, filteredKeyStore, aliasFilter, filteredKeyStore != null ? filteredKeyStore.size() : 0);
                                 }
-                                trustManagerFactory.init(filteredKeyStore);
+                                // Preserve the existing service behavior for the simple trust manager:
+                                // alias-filter was parsed, but the factory received the original store.
+                                trustManagerFactory.init(keyStore);
                             } catch (Exception e) {
                                 throw new StartException(e);
                             }
@@ -1192,17 +1212,21 @@ class SSLDefinitions {
         }
     }
 
-    private static class LazyDelegatingKeyManager extends DelegatingKeyManager {
-        private ModifiableKeyStoreService keyStoreService;
-        private char[] password;
-        private KeyManagerFactory keyManagerFactory;
-        private String generateSelfSignedCertificateHostName;
-        private String aliasFilter;
+    static class LazyDelegatingKeyManager extends DelegatingKeyManager {
+        private final Supplier<KeyStoreService> keyStoreServiceSupplier;
+        private final KeyStoreDefinition.KeyStoreDoohickey keyStoreDoohickey;
+        private final char[] password;
+        private final KeyManagerFactory keyManagerFactory;
+        private final String generateSelfSignedCertificateHostName;
+        private final String aliasFilter;
         private volatile boolean init = false;
 
-        private LazyDelegatingKeyManager(ModifiableKeyStoreService keyStoreService, char[] password, KeyManagerFactory keyManagerFactory,
+        LazyDelegatingKeyManager(Supplier<KeyStoreService> keyStoreServiceSupplier,
+                                         KeyStoreDefinition.KeyStoreDoohickey keyStoreDoohickey,
+                                         char[] password, KeyManagerFactory keyManagerFactory,
                                          String generateSelfSignedCertificateHostName, String aliasFilter) {
-            this.keyStoreService = keyStoreService;
+            this.keyStoreServiceSupplier = keyStoreServiceSupplier;
+            this.keyStoreDoohickey = keyStoreDoohickey;
             this.password = password;
             this.keyManagerFactory = keyManagerFactory;
             this.generateSelfSignedCertificateHostName = generateSelfSignedCertificateHostName;
@@ -1210,20 +1234,42 @@ class SSLDefinitions {
         }
 
         private void doInit() {
-            if(! init) {
-                synchronized (this) {
-                    if(! init) {
-                        try {
-                            ((KeyStoreService) keyStoreService).generateAndSaveSelfSignedCertificate(generateSelfSignedCertificateHostName, password);
-                            if (! initKeyManagerFactory(keyStoreService.getValue(), this, aliasFilter, password, keyManagerFactory)) {
-                                throw ROOT_LOGGER.noTypeFoundForLazyInitKeyManager(X509ExtendedKeyManager.class.getSimpleName());
-                            }
-                        } catch (Exception e) {
-                            throw ROOT_LOGGER.failedToLazilyInitKeyManager(e);
-                        } finally {
-                            init = true;
+            if (!init) {
+                try {
+                    DoohickeySimultaneity.withLockForLifecycle(() -> {
+                        if (init) {
+                            return null;
                         }
-                    }
+                        KeyStoreService ks = keyStoreServiceSupplier.get();
+                        KeyStore keyStore;
+                        if (ks != null && ks.getValue() != null) {
+                            if (ks.shouldAutoGenerateSelfSignedCertificate(generateSelfSignedCertificateHostName)) {
+                                ROOT_LOGGER.selfSignedCertificateWillBeCreated(
+                                        ks.getResolvedAbsolutePath(), generateSelfSignedCertificateHostName);
+                            }
+                            ks.generateAndSaveSelfSignedCertificate(generateSelfSignedCertificateHostName, password);
+                            keyStore = ks.getValue();
+                        } else if (keyStoreDoohickey != null) {
+                            if (keyStoreDoohickey.shouldAutoGenerateSelfSignedCertificate(generateSelfSignedCertificateHostName)) {
+                                ROOT_LOGGER.selfSignedCertificateWillBeCreated(
+                                        keyStoreDoohickey.getCachedResolvedAbsolutePath(), generateSelfSignedCertificateHostName);
+                            }
+                            keyStoreDoohickey.generateAndSaveSelfSignedCertificate(generateSelfSignedCertificateHostName, password);
+                            keyStore = keyStoreDoohickey.cachedValue();
+                        } else {
+                            throw new IllegalStateException("Key-store value is not available for self-signed certificate generation");
+                        }
+                        if (keyStore == null) {
+                            throw new IllegalStateException("Key-store value is no longer available for self-signed certificate generation");
+                        }
+                        if (!initKeyManagerFactory(keyStore, this, aliasFilter, password, keyManagerFactory)) {
+                            throw ROOT_LOGGER.noTypeFoundForLazyInitKeyManager(X509ExtendedKeyManager.class.getSimpleName());
+                        }
+                        init = true;
+                        return null;
+                    });
+                } catch (Exception e) {
+                    throw ROOT_LOGGER.failedToLazilyInitKeyManager(e);
                 }
             }
         }
@@ -1414,10 +1460,102 @@ class SSLDefinitions {
                 PRE_REALM_PRINCIPAL_TRANSFORMER, POST_REALM_PRINCIPAL_TRANSFORMER, FINAL_PRINCIPAL_TRANSFORMER, REALM_MAPPER,
                 providersDefinition, PROVIDER_NAME};
 
-        AbstractAddStepHandler add = new DoohickeyAddHandler<SSLContext>(SSL_CONTEXT_RUNTIME_CAPABILITY, SSL_CONTEXT_API_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.PASSIVE, SSL_CONTEXT_RUNTIME_CAPABILITY) {
 
             @Override
-            protected Resource createResourceForAdd(OperationContext context) {
+            protected ValueSupplier<SSLContext> getValueSupplier(ServiceBuilder<SSLContext> serviceBuilder,
+                                                                 OperationContext context, ModelNode model) throws OperationFailedException {
+
+                final InjectedValue<SecurityDomain> securityDomainInjector = addDependency(SECURITY_DOMAIN_CAPABILITY, SECURITY_DOMAIN, SecurityDomain.class, serviceBuilder, context, model);
+                final InjectedValue<KeyManager> keyManagerInjector = addDependency(KEY_MANAGER_CAPABILITY, KEY_MANAGER, KeyManager.class, serviceBuilder, context, model);
+                final InjectedValue<TrustManager> trustManagerInjector = addDependency(TRUST_MANAGER_CAPABILITY, TRUST_MANAGER, TrustManager.class, serviceBuilder, context, model);
+                final InjectedValue<PrincipalTransformer> preRealmPrincipalTransformerInjector = addDependency(PRINCIPAL_TRANSFORMER_CAPABILITY, PRE_REALM_PRINCIPAL_TRANSFORMER, PrincipalTransformer.class, serviceBuilder, context, model);
+                final InjectedValue<PrincipalTransformer> postRealmPrincipalTransformerInjector = addDependency(PRINCIPAL_TRANSFORMER_CAPABILITY, POST_REALM_PRINCIPAL_TRANSFORMER, PrincipalTransformer.class, serviceBuilder, context, model);
+                final InjectedValue<PrincipalTransformer> finalPrincipalTransformerInjector = addDependency(PRINCIPAL_TRANSFORMER_CAPABILITY, FINAL_PRINCIPAL_TRANSFORMER, PrincipalTransformer.class, serviceBuilder, context, model);
+                final InjectedValue<RealmMapper> realmMapperInjector = addDependency(REALM_MAPPER_CAPABILITY, REALM_MAPPER, RealmMapper.class, serviceBuilder, context, model);
+                final InjectedValue<Provider[]> providersInjector = addDependency(PROVIDERS_CAPABILITY, providersDefinition, Provider[].class, serviceBuilder, context, model);
+
+                final String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
+                final List<String> protocols = PROTOCOLS.unwrap(context, model);
+                final String cipherSuiteFilter = CIPHER_SUITE_FILTER.resolveModelAttribute(context, model).asString();
+                final String cipherSuiteNames = CIPHER_SUITE_NAMES.resolveModelAttribute(context, model).asStringOrNull();
+                final boolean wantClientAuth = WANT_CLIENT_AUTH.resolveModelAttribute(context, model).asBoolean();
+                final boolean needClientAuth = NEED_CLIENT_AUTH.resolveModelAttribute(context, model).asBoolean();
+                final boolean authenticationOptional = AUTHENTICATION_OPTIONAL.resolveModelAttribute(context, model).asBoolean();
+                final boolean useCipherSuitesOrder = USE_CIPHER_SUITES_ORDER.resolveModelAttribute(context, model).asBoolean();
+                final int maximumSessionCacheSize = MAXIMUM_SESSION_CACHE_SIZE.resolveModelAttribute(context, model).asInt();
+                final int sessionTimeout = SESSION_TIMEOUT.resolveModelAttribute(context, model).asInt();
+                final boolean wrap = WRAP.resolveModelAttribute(context, model).asBoolean();
+
+                return () -> {
+                    SecurityDomain securityDomain = securityDomainInjector.getOptionalValue();
+                    X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagerInjector.getOptionalValue());
+                    X509ExtendedTrustManager trustManager = getX509TrustManager(trustManagerInjector.getOptionalValue());
+                    PrincipalTransformer preRealmRewriter = preRealmPrincipalTransformerInjector.getOptionalValue();
+                    PrincipalTransformer postRealmRewriter = postRealmPrincipalTransformerInjector.getOptionalValue();
+                    PrincipalTransformer finalRewriter = finalPrincipalTransformerInjector.getOptionalValue();
+                    RealmMapper realmMapper = realmMapperInjector.getOptionalValue();
+                    Provider[] providers = filterProviders(providersInjector.getOptionalValue(), providerName);
+
+                    SSLContextBuilder builder = new SSLContextBuilder();
+                    if (securityDomain != null)
+                        builder.setSecurityDomain(securityDomain);
+                    if (keyManager != null)
+                        builder.setKeyManager(keyManager);
+                    if (trustManager != null)
+                        builder.setTrustManager(trustManager);
+                    if (providers != null)
+                        builder.setProviderSupplier(() -> providers);
+                    builder.setCipherSuiteSelector(CipherSuiteSelector.aggregate(cipherSuiteNames != null ? CipherSuiteSelector.fromNamesString(cipherSuiteNames) : null, CipherSuiteSelector.fromString(cipherSuiteFilter)));
+                    if (!protocols.isEmpty()) {
+                        List<Protocol> list = new ArrayList<>();
+                        for (String protocol : protocols) {
+                            Protocol forName = Protocol.forName(protocol);
+                            list.add(forName);
+                        }
+                        builder.setProtocolSelector(ProtocolSelector.empty().add(EnumSet.copyOf(list)));
+                    }
+                    if (preRealmRewriter != null || postRealmRewriter != null || finalRewriter != null || realmMapper != null) {
+                        MechanismConfiguration.Builder mechBuilder = MechanismConfiguration.builder();
+                        if (preRealmRewriter != null)
+                            mechBuilder.setPreRealmRewriter(preRealmRewriter);
+                        if (postRealmRewriter != null)
+                            mechBuilder.setPostRealmRewriter(postRealmRewriter);
+                        if (finalRewriter != null)
+                            mechBuilder.setFinalRewriter(finalRewriter);
+                        if (realmMapper != null)
+                            mechBuilder.setRealmMapper(realmMapper);
+                        builder.setMechanismConfigurationSelector(
+                                MechanismConfigurationSelector.constantSelector(mechBuilder.build()));
+                    }
+                    builder.setWantClientAuth(wantClientAuth)
+                            .setNeedClientAuth(needClientAuth)
+                            .setAuthenticationOptional(authenticationOptional)
+                            .setUseCipherSuitesOrder(useCipherSuitesOrder)
+                            .setSessionCacheSize(maximumSessionCacheSize)
+                            .setSessionTimeout(sessionTimeout)
+                            .setWrap(wrap);
+
+                    if (ROOT_LOGGER.isTraceEnabled()) {
+                        ROOT_LOGGER.tracef(
+                                "ServerSSLContext supplying:  securityDomain = %s  keyManager = %s  trustManager = %s  "
+                                        + "providers = %s  cipherSuiteFilter = %s  cipherSuiteNames = %s protocols = %s  wantClientAuth = %s  needClientAuth = %s  "
+                                        + "authenticationOptional = %s  maximumSessionCacheSize = %s  sessionTimeout = %s wrap = %s",
+                                securityDomain, keyManager, trustManager, Arrays.toString(providers), cipherSuiteFilter, cipherSuiteNames,
+                                Arrays.toString(protocols.toArray()), wantClientAuth, needClientAuth, authenticationOptional,
+                                maximumSessionCacheSize, sessionTimeout, wrap);
+                    }
+
+                    try {
+                        return builder.build().create();
+                    } catch (GeneralSecurityException e) {
+                        throw new StartException(e);
+                    }
+                };
+            }
+
+            @Override
+            protected Resource createResource(OperationContext context) {
                 SSLContextResource resource = new SSLContextResource(Resource.Factory.create(), true);
                 context.addResource(PathAddress.EMPTY_ADDRESS, resource);
                 return resource;
@@ -1428,212 +1566,6 @@ class SSLDefinitions {
                 ((SSLContextResource) resource).setSSLContextServiceController(serviceController);
             }
 
-            @Override
-            protected ServiceController.Mode getInitialMode() {
-                return ServiceController.Mode.ACTIVE;
-            }
-
-            @Override
-            protected ElytronDoohickey<SSLContext> createDoohickey(PathAddress resourceAddress) {
-                return new ElytronDoohickey<SSLContext>(resourceAddress) {
-
-                    private volatile String keyManagerName;
-                    private volatile String trustManagerName;
-                    private volatile String providerLoader;
-                    private volatile String providerName;
-                    private volatile String securityDomainName;
-                    private volatile List<String> protocols;
-                    private volatile String cipherSuiteFilter;
-                    private volatile String cipherSuiteNames;
-                    private volatile boolean wantClientAuth;
-                    private volatile boolean needClientAuth;
-                    private volatile boolean authenticationOptional;
-                    private volatile boolean useCipherSuitesOrder;
-                    private volatile int maximumSessionCacheSize;
-                    private volatile int sessionTimeout;
-                    private volatile boolean wrap;
-                    private volatile String preRealmTransformerName;
-                    private volatile String postRealmTransformerName;
-                    private volatile String finalTransformerName;
-                    private volatile String realmMapperName;
-
-                    @Override
-                    protected void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException {
-                        keyManagerName = KEY_MANAGER.resolveModelAttribute(context, model).asStringOrNull();
-                        trustManagerName = TRUST_MANAGER.resolveModelAttribute(context, model).asStringOrNull();
-                        providerLoader = providersDefinition.resolveModelAttribute(context, model).asStringOrNull();
-                        providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
-                        securityDomainName = SECURITY_DOMAIN.resolveModelAttribute(context, model).asStringOrNull();
-                        protocols = PROTOCOLS.unwrap(context, model);
-                        cipherSuiteFilter = CIPHER_SUITE_FILTER.resolveModelAttribute(context, model).asString();
-                        cipherSuiteNames = CIPHER_SUITE_NAMES.resolveModelAttribute(context, model).asStringOrNull();
-                        wantClientAuth = WANT_CLIENT_AUTH.resolveModelAttribute(context, model).asBoolean();
-                        needClientAuth = NEED_CLIENT_AUTH.resolveModelAttribute(context, model).asBoolean();
-                        authenticationOptional = AUTHENTICATION_OPTIONAL.resolveModelAttribute(context, model).asBoolean();
-                        useCipherSuitesOrder = USE_CIPHER_SUITES_ORDER.resolveModelAttribute(context, model).asBoolean();
-                        maximumSessionCacheSize = MAXIMUM_SESSION_CACHE_SIZE.resolveModelAttribute(context, model).asInt();
-                        sessionTimeout = SESSION_TIMEOUT.resolveModelAttribute(context, model).asInt();
-                        wrap = WRAP.resolveModelAttribute(context, model).asBoolean();
-                        preRealmTransformerName = PRE_REALM_PRINCIPAL_TRANSFORMER.resolveModelAttribute(context, model).asStringOrNull();
-                        postRealmTransformerName = POST_REALM_PRINCIPAL_TRANSFORMER.resolveModelAttribute(context, model).asStringOrNull();
-                        finalTransformerName = FINAL_PRINCIPAL_TRANSFORMER.resolveModelAttribute(context, model).asStringOrNull();
-                        realmMapperName = REALM_MAPPER.resolveModelAttribute(context, model).asStringOrNull();
-                    }
-
-                    @Override
-                    protected ExceptionSupplier<SSLContext, StartException> prepareServiceSupplier(OperationContext context,
-                            CapabilityServiceBuilder<?> serviceBuilder) throws OperationFailedException {
-                        final InjectedValue<SecurityDomain> securityDomainInjector = new InjectedValue<>();
-                        if (securityDomainName != null) {
-                            serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                    SECURITY_DOMAIN_CAPABILITY, securityDomainName, SecurityDomain.class),
-                                    SecurityDomain.class, securityDomainInjector);
-                        }
-                        final InjectedValue<KeyManager> keyManagerInjector = new InjectedValue<>();
-                        if (keyManagerName != null) {
-                            serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                    buildDynamicCapabilityName(KEY_MANAGER_CAPABILITY, keyManagerName), KeyManager.class),
-                                    KeyManager.class, keyManagerInjector);
-                        }
-                        final InjectedValue<TrustManager> trustManagerInjector = new InjectedValue<>();
-                        if (trustManagerName != null) {
-                            serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                    buildDynamicCapabilityName(TRUST_MANAGER_CAPABILITY, trustManagerName), TrustManager.class),
-                                    TrustManager.class, trustManagerInjector);
-                        }
-                        final InjectedValue<Provider[]> providersInjector = new InjectedValue<>();
-                        if (providerLoader != null) {
-                            serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                    buildDynamicCapabilityName(PROVIDERS_CAPABILITY, providerLoader), Provider[].class),
-                                    Provider[].class, providersInjector);
-                        }
-                        final InjectedValue<PrincipalTransformer> preRealmInjector = new InjectedValue<>();
-                        if (preRealmTransformerName != null) {
-                            serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                    buildDynamicCapabilityName(PRINCIPAL_TRANSFORMER_CAPABILITY, preRealmTransformerName), PrincipalTransformer.class),
-                                    PrincipalTransformer.class, preRealmInjector);
-                        }
-                        final InjectedValue<PrincipalTransformer> postRealmInjector = new InjectedValue<>();
-                        if (postRealmTransformerName != null) {
-                            serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                    buildDynamicCapabilityName(PRINCIPAL_TRANSFORMER_CAPABILITY, postRealmTransformerName), PrincipalTransformer.class),
-                                    PrincipalTransformer.class, postRealmInjector);
-                        }
-                        final InjectedValue<PrincipalTransformer> finalInjector = new InjectedValue<>();
-                        if (finalTransformerName != null) {
-                            serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                    buildDynamicCapabilityName(PRINCIPAL_TRANSFORMER_CAPABILITY, finalTransformerName), PrincipalTransformer.class),
-                                    PrincipalTransformer.class, finalInjector);
-                        }
-                        final InjectedValue<RealmMapper> realmMapperInjector = new InjectedValue<>();
-                        if (realmMapperName != null) {
-                            serviceBuilder.addDependency(context.getCapabilityServiceName(
-                                    buildDynamicCapabilityName(REALM_MAPPER_CAPABILITY, realmMapperName), RealmMapper.class),
-                                    RealmMapper.class, realmMapperInjector);
-                        }
-                        return () -> buildServerSSLContext(
-                                securityDomainInjector.getOptionalValue(),
-                                keyManagerInjector.getOptionalValue(),
-                                trustManagerInjector.getOptionalValue(),
-                                providersInjector.getOptionalValue(),
-                                preRealmInjector.getOptionalValue(),
-                                postRealmInjector.getOptionalValue(),
-                                finalInjector.getOptionalValue(),
-                                realmMapperInjector.getOptionalValue());
-                    }
-
-                    @Override
-                    protected SSLContext createImmediately(OperationContext foreignContext) throws OperationFailedException {
-                        // security-domain: not supported in early path (no SecurityDomain API capability); treated as absent.
-                        KeyManager keyManager = null;
-                        if (keyManagerName != null) {
-                            @SuppressWarnings("unchecked")
-                            ExceptionFunction<OperationContext, KeyManager, OperationFailedException> kmApi =
-                                    foreignContext.getCapabilityRuntimeAPI(KEY_MANAGER_API_CAPABILITY, keyManagerName, ExceptionFunction.class);
-                            keyManager = kmApi.apply(foreignContext);
-                        }
-                        TrustManager trustManager = null;
-                        if (trustManagerName != null) {
-                            @SuppressWarnings("unchecked")
-                            ExceptionFunction<OperationContext, TrustManager, OperationFailedException> tmApi =
-                                    foreignContext.getCapabilityRuntimeAPI(TRUST_MANAGER_API_CAPABILITY, trustManagerName, ExceptionFunction.class);
-                            trustManager = tmApi.apply(foreignContext);
-                        }
-                        Provider[] providers = null;
-                        if (providerLoader != null) {
-                            @SuppressWarnings("unchecked")
-                            ExceptionFunction<OperationContext, Provider[], OperationFailedException> provApi =
-                                    foreignContext.getCapabilityRuntimeAPI(PROVIDERS_API_CAPABILITY, providerLoader, ExceptionFunction.class);
-                            providers = provApi.apply(foreignContext);
-                        }
-                        // principal-transformer and realm-mapper are security-domain ancillary; not resolved early.
-                        try {
-                            SSLContext ctx = buildServerSSLContext(null, keyManager, trustManager, providers,
-                                    null, null, null, null);
-                            setValue(ctx);
-                            return ctx;
-                        } catch (StartException e) {
-                            throw new OperationFailedException(e);
-                        }
-                    }
-
-                    private SSLContext buildServerSSLContext(SecurityDomain securityDomain,
-                            KeyManager keyManager, TrustManager trustManager, Provider[] providers,
-                            PrincipalTransformer preRealmRewriter, PrincipalTransformer postRealmRewriter,
-                            PrincipalTransformer finalRewriter, RealmMapper realmMapper) throws StartException {
-                        X509ExtendedKeyManager x509KeyManager = getX509KeyManager(keyManager);
-                        X509ExtendedTrustManager x509TrustManager = getX509TrustManager(trustManager);
-                        Provider[] filteredProviders = filterProviders(providers, providerName);
-
-                        SSLContextBuilder builder = new SSLContextBuilder();
-                        if (securityDomain != null) builder.setSecurityDomain(securityDomain);
-                        if (x509KeyManager != null) builder.setKeyManager(x509KeyManager);
-                        if (x509TrustManager != null) builder.setTrustManager(x509TrustManager);
-                        if (filteredProviders != null) builder.setProviderSupplier(() -> filteredProviders);
-                        builder.setCipherSuiteSelector(CipherSuiteSelector.aggregate(
-                                cipherSuiteNames != null ? CipherSuiteSelector.fromNamesString(cipherSuiteNames) : null,
-                                CipherSuiteSelector.fromString(cipherSuiteFilter)));
-                        if (!protocols.isEmpty()) {
-                            List<Protocol> list = new ArrayList<>();
-                            for (String protocol : protocols) {
-                                list.add(Protocol.forName(protocol));
-                            }
-                            builder.setProtocolSelector(ProtocolSelector.empty().add(EnumSet.copyOf(list)));
-                        }
-                        if (preRealmRewriter != null || postRealmRewriter != null || finalRewriter != null || realmMapper != null) {
-                            MechanismConfiguration.Builder mechBuilder = MechanismConfiguration.builder();
-                            if (preRealmRewriter != null) mechBuilder.setPreRealmRewriter(preRealmRewriter);
-                            if (postRealmRewriter != null) mechBuilder.setPostRealmRewriter(postRealmRewriter);
-                            if (finalRewriter != null) mechBuilder.setFinalRewriter(finalRewriter);
-                            if (realmMapper != null) mechBuilder.setRealmMapper(realmMapper);
-                            builder.setMechanismConfigurationSelector(MechanismConfigurationSelector.constantSelector(mechBuilder.build()));
-                        }
-                        builder.setWantClientAuth(wantClientAuth)
-                                .setNeedClientAuth(needClientAuth)
-                                .setAuthenticationOptional(authenticationOptional)
-                                .setUseCipherSuitesOrder(useCipherSuitesOrder)
-                                .setSessionCacheSize(maximumSessionCacheSize)
-                                .setSessionTimeout(sessionTimeout)
-                                .setWrap(wrap);
-
-                        if (ROOT_LOGGER.isTraceEnabled()) {
-                            ROOT_LOGGER.tracef(
-                                    "ServerSSLContext supplying:  securityDomain = %s  keyManager = %s  trustManager = %s  "
-                                            + "providers = %s  cipherSuiteFilter = %s  cipherSuiteNames = %s protocols = %s  wantClientAuth = %s  needClientAuth = %s  "
-                                            + "authenticationOptional = %s  maximumSessionCacheSize = %s  sessionTimeout = %s wrap = %s",
-                                    securityDomain, x509KeyManager, x509TrustManager, Arrays.toString(filteredProviders),
-                                    cipherSuiteFilter, cipherSuiteNames, Arrays.toString(protocols.toArray()),
-                                    wantClientAuth, needClientAuth, authenticationOptional,
-                                    maximumSessionCacheSize, sessionTimeout, wrap);
-                        }
-                        try {
-                            return builder.build().create();
-                        } catch (GeneralSecurityException e) {
-                            throw new StartException(e);
-                        }
-                    }
-                };
-            }
         };
 
         return createSSLContextDefinition(ElytronDescriptionConstants.SERVER_SSL_CONTEXT, true, add, attributes,
@@ -1644,81 +1576,41 @@ class SSLDefinitions {
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { DEFAULT_SSL_CONTEXT, HOST_CONTEXT_MAP };
 
-        AbstractAddStepHandler add = new DoohickeyAddHandler<SSLContext>(SSL_CONTEXT_RUNTIME_CAPABILITY, SSL_CONTEXT_API_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, SSL_CONTEXT_RUNTIME_CAPABILITY) {
 
             @Override
-            protected ElytronDoohickey<SSLContext> createDoohickey(PathAddress resourceAddress) {
-                return new ElytronDoohickey<SSLContext>(resourceAddress) {
+            protected ValueSupplier<SSLContext> getValueSupplier(ServiceBuilder<SSLContext> serviceBuilder,
+                                                                 OperationContext context, ModelNode model) throws OperationFailedException {
 
-                    private volatile String defaultContextName;
-                    // Map from SNI hostname to referenced ssl-context name
-                    private volatile Map<String, String> hostContextNames;
+                final InjectedValue<SSLContext> defaultContext = new InjectedValue<>();
 
-                    @Override
-                    protected void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException {
-                        defaultContextName = DEFAULT_SSL_CONTEXT.resolveModelAttribute(context, model).asString();
-                        ModelNode hostContextMap = HOST_CONTEXT_MAP.resolveModelAttribute(context, model);
-                        if (hostContextMap.isDefined() && !hostContextMap.keys().isEmpty()) {
-                            hostContextNames = new HashMap<>();
-                            for (String host : hostContextMap.keys()) {
-                                hostContextNames.put(host, hostContextMap.require(host).asString());
-                            }
-                        } else {
-                            hostContextNames = null;
-                        }
+                ModelNode defaultContextName = DEFAULT_SSL_CONTEXT.resolveModelAttribute(context, model);
+                serviceBuilder.addDependency(SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(defaultContextName.asString()), SSLContext.class, defaultContext);
+
+                ModelNode hostContextMap = HOST_CONTEXT_MAP.resolveModelAttribute(context, model);
+
+                Set<String> keys;
+                if (hostContextMap.isDefined() && !(keys = hostContextMap.keys()).isEmpty()) {
+                    final Map<String, InjectedValue<SSLContext>> sslContextMap = new HashMap<>(keys.size());
+                    for (String host : keys) {
+                        String sslContextName = hostContextMap.require(host).asString();
+                        final InjectedValue<SSLContext> injector = new InjectedValue<>();
+                        serviceBuilder.addDependency(SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(sslContextName), SSLContext.class, injector);
+                        sslContextMap.put(host, injector);
                     }
 
-                    @Override
-                    protected ExceptionSupplier<SSLContext, StartException> prepareServiceSupplier(OperationContext context,
-                            CapabilityServiceBuilder<?> serviceBuilder) throws OperationFailedException {
-                        final InjectedValue<SSLContext> defaultContextInjector = new InjectedValue<>();
-                        serviceBuilder.addDependency(SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(defaultContextName),
-                                SSLContext.class, defaultContextInjector);
-
-                        if (hostContextNames != null) {
-                            final Map<String, InjectedValue<SSLContext>> sslContextMap = new HashMap<>(hostContextNames.size());
-                            for (Map.Entry<String, String> e : hostContextNames.entrySet()) {
-                                final InjectedValue<SSLContext> injector = new InjectedValue<>();
-                                serviceBuilder.addDependency(SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(e.getValue()),
-                                        SSLContext.class, injector);
-                                sslContextMap.put(e.getKey(), injector);
-                            }
-                            return () -> {
-                                SNIContextMatcher.Builder builder = new SNIContextMatcher.Builder();
-                                for (Map.Entry<String, InjectedValue<SSLContext>> e : sslContextMap.entrySet()) {
-                                    builder.addMatch(e.getKey(), e.getValue().getValue());
-                                }
-                                return new SNISSLContext(builder.setDefaultContext(defaultContextInjector.getValue()).build());
-                            };
-                        } else {
-                            return () -> defaultContextInjector.getValue();
+                    return () -> {
+                        SNIContextMatcher.Builder builder = new SNIContextMatcher.Builder();
+                        for(Map.Entry<String, InjectedValue<SSLContext>> e : sslContextMap.entrySet()) {
+                            builder.addMatch(e.getKey(), e.getValue().getValue());
                         }
-                    }
-
-                    @Override
-                    protected SSLContext createImmediately(OperationContext foreignContext) throws OperationFailedException {
-                        @SuppressWarnings("unchecked")
-                        ExceptionFunction<OperationContext, SSLContext, OperationFailedException> defaultApi =
-                                foreignContext.getCapabilityRuntimeAPI(SSL_CONTEXT_API_CAPABILITY, defaultContextName, ExceptionFunction.class);
-                        SSLContext defaultCtx = defaultApi.apply(foreignContext);
-
-                        SSLContext result;
-                        if (hostContextNames != null) {
-                            SNIContextMatcher.Builder builder = new SNIContextMatcher.Builder();
-                            for (Map.Entry<String, String> e : hostContextNames.entrySet()) {
-                                @SuppressWarnings("unchecked")
-                                ExceptionFunction<OperationContext, SSLContext, OperationFailedException> hostApi =
-                                        foreignContext.getCapabilityRuntimeAPI(SSL_CONTEXT_API_CAPABILITY, e.getValue(), ExceptionFunction.class);
-                                builder.addMatch(e.getKey(), hostApi.apply(foreignContext));
-                            }
-                            result = new SNISSLContext(builder.setDefaultContext(defaultCtx).build());
-                        } else {
-                            result = defaultCtx;
-                        }
-                        setValue(result);
-                        return result;
-                    }
-                };
+                        return new SNISSLContext(builder
+                                .setDefaultContext(defaultContext.getValue())
+                                .build());
+                    };
+                } else {
+                    return () -> defaultContext.getValue();
+                }
             }
         };
 
@@ -1741,7 +1633,7 @@ class SSLDefinitions {
         AttributeDefinition[] attributes = new AttributeDefinition[]{CIPHER_SUITE_FILTER, CIPHER_SUITE_NAMES, PROTOCOLS,
                 KEY_MANAGER, TRUST_MANAGER, providersDefinition, PROVIDER_NAME};
 
-        AbstractAddStepHandler add = new DoohickeyAddHandler<SSLContext>(SSL_CONTEXT_RUNTIME_CAPABILITY, SSL_CONTEXT_API_CAPABILITY) {
+        AbstractAddStepHandler add = new DoohickeyAddHandler<SSLContext>(SSL_CONTEXT_RUNTIME_CAPABILITY, CLIENT_SSL_CONTEXT_API_CAPABILITY) {
 
             @Override
             protected Resource createResourceForAdd(OperationContext context) {
@@ -1882,10 +1774,19 @@ class SSLDefinitions {
     static ResourceDefinition getDynamicClientSSLContextDefinition() {
 
         AttributeDefinition[] attributes = new AttributeDefinition[]{AUTHENTICATION_CONTEXT_ATTRIBUTE};
-        AbstractAddStepHandler add = new DoohickeyAddHandler<SSLContext>(SSL_CONTEXT_RUNTIME_CAPABILITY, SSL_CONTEXT_API_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, SSL_CONTEXT_RUNTIME_CAPABILITY) {
+            @Override
+            protected ValueSupplier<SSLContext> getValueSupplier(ServiceBuilder<SSLContext> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
+                final String authenticationContextName = AUTHENTICATION_CONTEXT_ATTRIBUTE.resolveModelAttribute(context, model).asString();
+                String authenticationContextCapability = buildDynamicCapabilityName(AUTHENTICATION_CONTEXT_CAPABILITY, authenticationContextName);
+                ServiceName acServiceName = context.getCapabilityServiceName(authenticationContextCapability, AuthenticationContext.class);
+                Supplier<AuthenticationContext> authenticationContextSupplier = serviceBuilder.requires(acServiceName);
+
+                return () -> DynamicSSLContextHelper.getDynamicSSLContextInstance(authenticationContextSupplier.get());
+            }
 
             @Override
-            protected Resource createResourceForAdd(OperationContext context) {
+            protected Resource createResource(OperationContext context) {
                 SSLContextResource resource = new SSLContextResource(Resource.Factory.create(), false);
                 context.addResource(PathAddress.EMPTY_ADDRESS, resource);
                 return resource;
@@ -1894,40 +1795,6 @@ class SSLDefinitions {
             @Override
             protected void installedForResource(ServiceController<SSLContext> serviceController, Resource resource) {
                 ((SSLContextResource) resource).setSSLContextServiceController(serviceController);
-            }
-
-            @Override
-            protected ElytronDoohickey<SSLContext> createDoohickey(PathAddress resourceAddress) {
-                return new ElytronDoohickey<SSLContext>(resourceAddress) {
-
-                    private volatile String authenticationContextName;
-
-                    @Override
-                    protected void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException {
-                        authenticationContextName = AUTHENTICATION_CONTEXT_ATTRIBUTE.resolveModelAttribute(context, model).asString();
-                    }
-
-                    @Override
-                    protected ExceptionSupplier<SSLContext, StartException> prepareServiceSupplier(OperationContext context,
-                            CapabilityServiceBuilder<?> serviceBuilder) throws OperationFailedException {
-                        String acCapability = buildDynamicCapabilityName(AUTHENTICATION_CONTEXT_CAPABILITY, authenticationContextName);
-                        ServiceName acServiceName = context.getCapabilityServiceName(acCapability, AuthenticationContext.class);
-                        Supplier<AuthenticationContext> acSupplier = serviceBuilder.requires(acServiceName);
-                        return () -> DynamicSSLContextHelper.getDynamicSSLContextInstance(acSupplier.get());
-                    }
-
-                    @Override
-                    protected SSLContext createImmediately(OperationContext foreignContext) throws OperationFailedException {
-                        @SuppressWarnings("unchecked")
-                        ExceptionFunction<OperationContext, AuthenticationContext, OperationFailedException> acApi =
-                                foreignContext.getCapabilityRuntimeAPI(AUTHENTICATION_CONTEXT_API_CAPABILITY,
-                                        authenticationContextName, ExceptionFunction.class);
-                        AuthenticationContext authCtx = acApi.apply(foreignContext);
-                        SSLContext ctx = DynamicSSLContextHelper.getDynamicSSLContextInstance(authCtx);
-                        setValue(ctx);
-                        return ctx;
-                    }
-                };
             }
         };
 
