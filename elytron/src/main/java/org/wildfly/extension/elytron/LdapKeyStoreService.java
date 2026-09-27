@@ -53,6 +53,10 @@ class LdapKeyStoreService implements ModifiableKeyStoreService {
     private volatile KeyStore modifiableKeyStore = null;
     private volatile KeyStore unmodifiableKeyStore = null;
 
+    // Set by LdapKeyStoreDefinition.KeyStoreAddHandler.performRuntime to enable single-instantiation
+    // coordination between the early API path and the MSC service start path.
+    private volatile ElytronDoohickey<KeyStore> doohickey = null;
+
     LdapKeyStoreService(String searchPath, String filterAlias, String filterCertificate,
                         String filterIterate, LdapName createPath, String createRdn, Attributes createAttributes,
                         String aliasAttribute, String certificateAttribute, String certificateType,
@@ -78,12 +82,31 @@ class LdapKeyStoreService implements ModifiableKeyStoreService {
         return dirContextSupplierInjector;
     }
 
+    void setDoohickey(ElytronDoohickey<KeyStore> doohickey) {
+        this.doohickey = doohickey;
+    }
+
     /*
      * Service Lifecycle Related Methods
      */
 
     @Override
     public void start(StartContext startContext) throws StartException {
+        // If the early API path has already built the KeyStore, reuse the cached instance rather than
+        // opening a second LDAP connection.  Otherwise build from scratch and publish via the doohickey.
+        if (doohickey != null && doohickey.hasValue()) {
+            KeyStore cached = doohickey.cachedValue();
+            // The cached value is already an UnmodifiableKeyStore wrapper — unwrap to get the modifiable
+            // underlying store.  LdapKeyStore has no separate modifiable wrapper class so we store the same
+            // unmodifiable instance for both fields (runtime ops go through LdapKeyStoreRuntimeOnlyHandler
+            // which accesses this service directly and can call the underlying LdapKeyStore via the supplier).
+            this.unmodifiableKeyStore = cached;
+            // There is no separate modifiable view for LDAP — callers that need write access already use
+            // LdapKeyStoreService directly rather than going through ModifiableKeyStoreService.getValue().
+            this.modifiableKeyStore = cached;
+            return;
+        }
+
         try {
             LdapKeyStore.Builder builder = LdapKeyStore.builder()
                     .setDirContextSupplier(dirContextSupplierInjector.getValue())
@@ -107,6 +130,9 @@ class LdapKeyStoreService implements ModifiableKeyStoreService {
             keyStore.load(null); // initialize
             this.modifiableKeyStore = keyStore;
             this.unmodifiableKeyStore = UnmodifiableKeyStore.unmodifiableKeyStore(keyStore);
+            if (doohickey != null) {
+                doohickey.setValue(this.unmodifiableKeyStore);
+            }
         } catch (GeneralSecurityException | IOException e) {
             throw ROOT_LOGGER.unableToStartService(e);
         }
@@ -116,6 +142,9 @@ class LdapKeyStoreService implements ModifiableKeyStoreService {
     public void stop(StopContext stopContext) {
         this.modifiableKeyStore = null;
         this.unmodifiableKeyStore = null;
+        if (doohickey != null) {
+            doohickey.reset();
+        }
     }
 
     @Override

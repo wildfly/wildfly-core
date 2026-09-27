@@ -133,6 +133,65 @@ abstract class ElytronDoohickey<T> implements ExceptionFunction<OperationContext
         return resolved;
     }
 
+    /**
+     * Returns {@code true} if this doohickey already holds an initialised value, {@code false} otherwise.
+     * Package-private so that service implementations can check whether early-access initialisation has
+     * already run before deciding whether to skip their own load.
+     */
+    boolean hasValue() {
+        return value != null;
+    }
+
+    /**
+     * Updates the cached value held by this doohickey.  Package-private so that a service implementation
+     * that creates the canonical resource instance (e.g. the unmodifiable wrapper around an
+     * {@code AtomicLoadKeyStore}) can ensure the API and the service return the same object once the
+     * service has started.
+     *
+     * @param canonicalValue the canonical instance to cache; must not be {@code null}
+     */
+    void setValue(T canonicalValue) {
+        this.value = canonicalValue;
+    }
+
+    /**
+     * Returns the currently cached value without triggering initialization.
+     * Returns {@code null} if the value has not yet been set.
+     * Package-private; symmetric with {@link #hasValue()}.
+     */
+    T cachedValue() {
+        return value;
+    }
+
+    /**
+     * Clears the cached value so that the next call to {@link #get()} re-invokes the service-path supplier.
+     * Package-private so that the {@code init} operation can reset the value when stop+start is used
+     * to re-initialise the service (e.g. after the underlying key-store has been reloaded).
+     */
+    void reset() {
+        this.value = null;
+    }
+
+    /**
+     * Returns a {@link TrivialService.ValueSupplier} whose {@code get()} delegates to {@link #get()}
+     * and whose {@code dispose()} calls {@link #reset()}.  Used by {@link DoohickeyAddHandler} so that
+     * a normal MSC dependency restart (stop then start) invalidates the cached value and forces the
+     * next start to rebuild from the wired MSC suppliers rather than returning stale state.
+     */
+    TrivialService.ValueSupplier<T> asValueSupplier() {
+        return new TrivialService.ValueSupplier<T>() {
+            @Override
+            public T get() throws StartException {
+                return ElytronDoohickey.this.get();
+            }
+
+            @Override
+            public void dispose() {
+                ElytronDoohickey.this.reset();
+            }
+        };
+    }
+
     protected abstract void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException;
 
     protected abstract ExceptionSupplier<T, StartException> prepareServiceSupplier(OperationContext context, CapabilityServiceBuilder<?> serviceBuilder) throws OperationFailedException;

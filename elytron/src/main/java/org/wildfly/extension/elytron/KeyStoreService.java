@@ -76,6 +76,20 @@ class KeyStoreService implements ModifiableKeyStoreService {
     private final boolean required;
     private final String aliasFilter;
 
+    /*
+     * Optional reference to the doohickey for this resource.  When set and already holding a value
+     * (i.e. early-access initialisation has already run) the file load in start() is skipped and the
+     * pre-loaded AtomicLoadKeyStore is reused, avoiding a double-load.
+     */
+    private ElytronDoohickey<KeyStore> doohickey;
+
+    /*
+     * The AtomicLoadKeyStore built by the doohickey early path.  Set by the doohickey via
+     * setPreloadedKeyStore() after createImmediately() runs; cleared in stop() so that a service
+     * restart re-reads the backing file from scratch.
+     */
+    private volatile AtomicLoadKeyStore preloadedAtomicKeyStore;
+
     private final InjectedValue<PathManager> pathManager = new InjectedValue<>();
     private final InjectedValue<Provider[]> providers = new InjectedValue<>();
     private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplier = new InjectedValue<>();
@@ -105,6 +119,14 @@ class KeyStoreService implements ModifiableKeyStoreService {
         return new KeyStoreService(provider, type, relativeTo, path, required, aliasFilter);
     }
 
+    void setDoohickey(ElytronDoohickey<KeyStore> doohickey) {
+        this.doohickey = doohickey;
+    }
+
+    void setPreloadedKeyStore(AtomicLoadKeyStore preloaded) {
+        this.preloadedAtomicKeyStore = preloaded;
+    }
+
     /*
      * Service Lifecycle Related Methods
      */
@@ -112,77 +134,104 @@ class KeyStoreService implements ModifiableKeyStoreService {
     @Override
     public void start(StartContext startContext) throws StartException {
         try {
-            AtomicLoadKeyStore keyStore = null;
+            AtomicLoadKeyStore keyStore;
+            if (preloadedAtomicKeyStore != null) {
+                // Early-access initialisation already ran — reuse the pre-loaded store to avoid
+                // reading the file a second time.
+                ROOT_LOGGER.tracef("starting KeyStore %s: reusing pre-loaded AtomicLoadKeyStore from doohickey", path);
+                keyStore = preloadedAtomicKeyStore;
+                // Resolve the path resolver so that subsequent load()/save() operations work.
+                if (path != null) {
+                    pathResolver = pathResolver();
+                    resolvedPath = getResolvedPath(pathResolver, path, relativeTo);
+                }
+            } else {
+                // Normal service-start path: load the keystore from scratch.
+                keyStore = null;
 
-            if (type != null) {
-                Provider provider = resolveProvider();
-                keyStore = AtomicLoadKeyStore.newInstance(type, provider);
-            }
+                if (type != null) {
+                    Provider p = resolveProvider();
+                    keyStore = AtomicLoadKeyStore.newInstance(type, p);
+                }
 
-            if (path != null) {
-                pathResolver = pathResolver();
-                resolvedPath = getResolvedPath(pathResolver, path, relativeTo);
+                if (path != null) {
+                    pathResolver = pathResolver();
+                    resolvedPath = getResolvedPath(pathResolver, path, relativeTo);
+                }
+
+                if (resolvedPath != null && ! resolvedPath.exists()) {
+                    if (required) {
+                        if (type == null) {
+                            throw ROOT_LOGGER.nonexistingKeyStoreMissingType();
+                        } else {
+                            throw ROOT_LOGGER.keyStoreFileNotExists(resolvedPath.getAbsolutePath());
+                        }
+                    } else {
+                        ROOT_LOGGER.keyStoreFileNotExistsButIgnored(resolvedPath.getAbsolutePath());
+                    }
+                }
+
+                try (FileInputStream is = (resolvedPath != null && resolvedPath.exists()) ? new FileInputStream(resolvedPath) : null) {
+                    char[] password = resolvePassword();
+
+                    ROOT_LOGGER.tracef(
+                            "starting:  type = %s  provider = %s  path = %s  resolvedPath = %s  password = %b  aliasFilter = %s",
+                            type, provider, path, resolvedPath, password != null, aliasFilter
+                    );
+
+                    if (is != null) {
+                        if (type != null) {
+                            keyStore.load(is, password);
+                        } else {
+                            Provider[] resolvedProviders = providers.getOptionalValue();
+                            if (resolvedProviders == null) {
+                                resolvedProviders = Security.getProviders();
+                            }
+                            final Provider[] finalProviders = resolvedProviders;
+                            KeyStore detected = KeyStoreUtil.loadKeyStore(() -> finalProviders, this.provider, is, resolvedPath.getPath(), password);
+
+                            if (detected == null) {
+                                throw ROOT_LOGGER.unableToDetectKeyStore(resolvedPath.getPath());
+                            }
+
+                            keyStore = AtomicLoadKeyStore.atomize(detected);
+                        }
+                    } else {
+                        if (keyStore == null) {
+                            String defaultType = KeyStore.getDefaultType();
+                            ROOT_LOGGER.debugf(
+                                    "KeyStore: provider = %s  path = %s  resolvedPath = %s  password = %b  aliasFilter = %s does not exist. New keystore of %s type will be created.",
+                                    provider, path, resolvedPath, password != null, aliasFilter, defaultType
+                            );
+                            keyStore = AtomicLoadKeyStore.newInstance(defaultType);
+                        }
+
+                        synchronized (EmptyProvider.getInstance()) {
+                            keyStore.load(null, password);
+                        }
+                    }
+                    checkCertificatesValidity(keyStore);
+                }
             }
 
             synched = System.currentTimeMillis();
-            if (resolvedPath != null && ! resolvedPath.exists()) {
-                if (required) {
-                    if (type == null) {
-                        throw ROOT_LOGGER.nonexistingKeyStoreMissingType();
-                    } else {
-                        throw ROOT_LOGGER.keyStoreFileNotExists(resolvedPath.getAbsolutePath());
-                    }
-                } else {
-                    ROOT_LOGGER.keyStoreFileNotExistsButIgnored(resolvedPath.getAbsolutePath());
-                }
-            }
-
-            try (FileInputStream is = (resolvedPath != null && resolvedPath.exists()) ? new FileInputStream(resolvedPath) : null) {
-                char[] password = resolvePassword();
-
-                ROOT_LOGGER.tracef(
-                        "starting:  type = %s  provider = %s  path = %s  resolvedPath = %s  password = %b  aliasFilter = %s",
-                        type, provider, path, resolvedPath, password != null, aliasFilter
-                );
-
-                if (is != null) {
-                    if (type != null) {
-                        keyStore.load(is, password);
-                    } else {
-                        Provider[] resolvedProviders = providers.getOptionalValue();
-                        if (resolvedProviders == null) {
-                            resolvedProviders = Security.getProviders();
-                        }
-                        final Provider[] finalProviders = resolvedProviders;
-                        KeyStore detected = KeyStoreUtil.loadKeyStore(() -> finalProviders, this.provider, is, resolvedPath.getPath(), password);
-
-                        if (detected == null) {
-                            throw ROOT_LOGGER.unableToDetectKeyStore(resolvedPath.getPath());
-                        }
-
-                        keyStore = AtomicLoadKeyStore.atomize(detected);
-                    }
-                } else {
-                    if (keyStore == null) {
-                        String defaultType = KeyStore.getDefaultType();
-                        ROOT_LOGGER.debugf(
-                                "KeyStore: provider = %s  path = %s  resolvedPath = %s  password = %b  aliasFilter = %s does not exist. New keystore of %s type will be created.",
-                                provider, path, resolvedPath, password != null, aliasFilter, defaultType
-                        );
-                        keyStore = AtomicLoadKeyStore.newInstance(defaultType);
-                    }
-
-                    synchronized (EmptyProvider.getInstance()) {
-                        keyStore.load(null, password);
-                    }
-                }
-                checkCertificatesValidity(keyStore);
-            }
-
             this.keyStore = keyStore;
-            KeyStore intermediate = aliasFilter != null ? FilteringKeyStore.filteringKeyStore(keyStore, AliasFilter.fromString(aliasFilter)) :  keyStore;
+            KeyStore intermediate = aliasFilter != null ? FilteringKeyStore.filteringKeyStore(keyStore, AliasFilter.fromString(aliasFilter)) : keyStore;
             this.trackingKeyStore = ModifyTrackingKeyStore.modifyTrackingKeyStore(intermediate);
-            this.unmodifiableKeyStore = UnmodifiableKeyStore.unmodifiableKeyStore(intermediate);
+
+            // Honour the single-creation contract: if the early API path already built and published
+            // the canonical UnmodifiableKeyStore wrapper, reuse it so all holders see the same instance.
+            // Otherwise build it now and publish it so any subsequent API call also gets the same object.
+            final KeyStore unmodifiable;
+            if (doohickey != null && doohickey.hasValue()) {
+                unmodifiable = doohickey.cachedValue();
+            } else {
+                unmodifiable = UnmodifiableKeyStore.unmodifiableKeyStore(intermediate);
+                if (doohickey != null) {
+                    doohickey.setValue(unmodifiable);
+                }
+            }
+            this.unmodifiableKeyStore = unmodifiable;
         } catch (Exception e) {
             throw ROOT_LOGGER.unableToStartService(e);
         }
@@ -235,6 +284,12 @@ class KeyStoreService implements ModifiableKeyStoreService {
         if (pathResolver != null) {
             pathResolver.clear();
             pathResolver = null;
+        }
+        // Clear the pre-loaded store and the doohickey cached value so that a service restart
+        // re-reads the file and publishes a fresh instance rather than reusing stale state.
+        preloadedAtomicKeyStore = null;
+        if (doohickey != null) {
+            doohickey.reset();
         }
     }
 

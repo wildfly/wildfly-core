@@ -58,11 +58,23 @@ class Capabilities {
 
     static final String AUTHENTICATION_CONFIGURATION_CAPABILITY = CAPABILITY_BASE + "authentication-configuration";
 
+    /*
+     * A variant of the authentication-configuration capability which also provides access to the underlying
+     * {@code AuthenticationConfiguration} as a runtime API from a {@code ExceptionFunction<OperationContext, AuthenticationConfiguration, OperationFailedException>}.
+     */
+    static final String AUTHENTICATION_CONFIGURATION_API_CAPABILITY = CAPABILITY_BASE + "authentication-configuration-api";
+
     static final RuntimeCapability<Void> AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY = RuntimeCapability
             .Builder.of(AUTHENTICATION_CONFIGURATION_CAPABILITY, true, AuthenticationConfiguration.class)
             .build();
 
     static final String AUTHENTICATION_CONTEXT_CAPABILITY = CAPABILITY_BASE + "authentication-context";
+
+    /*
+     * A variant of the authentication-context capability which also provides access to the underlying
+     * {@code AuthenticationContext} as a runtime API from a {@code ExceptionFunction<OperationContext, AuthenticationContext, OperationFailedException>}.
+     */
+    static final String AUTHENTICATION_CONTEXT_API_CAPABILITY = CAPABILITY_BASE + "authentication-context-api";
 
     static final RuntimeCapability<Void> AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY = RuntimeCapability
             .Builder.of(AUTHENTICATION_CONTEXT_CAPABILITY, true, AuthenticationContext.class)
@@ -122,11 +134,23 @@ class Capabilities {
 
     static final String KEY_MANAGER_CAPABILITY = CAPABILITY_BASE + "key-manager";
 
+    /*
+     * A variant of the key-manager capability which also provides access to the underlying
+     * {@code KeyManager} as a runtime API from a {@code ExceptionFunction<OperationContext, KeyManager, OperationFailedException>}.
+     */
+    static final String KEY_MANAGER_API_CAPABILITY = CAPABILITY_BASE + "key-manager-api";
+
     static final RuntimeCapability<Void> KEY_MANAGER_RUNTIME_CAPABILITY =  RuntimeCapability
             .Builder.of(KEY_MANAGER_CAPABILITY, true, KeyManager.class)
             .build();
 
     static final String KEY_STORE_CAPABILITY = CAPABILITY_BASE + "key-store";
+
+    /*
+     * A variant of the key-store capability which also provides access to the underlying
+     * {@code KeyStore} as a runtime API from a {@code ExceptionFunction<OperationContext, KeyStore, OperationFailedException>}.
+     */
+    static final String KEY_STORE_API_CAPABILITY = CAPABILITY_BASE + "key-store-api";
 
     static final RuntimeCapability<Void> KEY_STORE_RUNTIME_CAPABILITY =  RuntimeCapability
         .Builder.of(KEY_STORE_CAPABILITY, true, KeyStore.class)
@@ -226,6 +250,12 @@ class Capabilities {
 
     static final String SECURITY_FACTORY_CREDENTIAL_CAPABILITY = SECURITY_FACTORY_CAPABILITY_BASE + "credential";
 
+    /*
+     * A variant of the security-factory.credential capability which also provides access to the underlying
+     * {@code CredentialSecurityFactory} as a runtime API from a {@code ExceptionFunction<OperationContext, CredentialSecurityFactory, OperationFailedException>}.
+     */
+    static final String SECURITY_FACTORY_CREDENTIAL_API_CAPABILITY = SECURITY_FACTORY_CAPABILITY_BASE + "credential-api";
+
     static final RuntimeCapability<Void> SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY = RuntimeCapability
             .Builder.of(SECURITY_FACTORY_CREDENTIAL_CAPABILITY, true, CredentialSecurityFactory.class)
             .build();
@@ -244,17 +274,31 @@ class Capabilities {
 
     static final String SSL_CONTEXT_CAPABILITY = CAPABILITY_BASE + "ssl-context";
 
+    /*
+     * A variant of the ssl-context capability which also provides access to the underlying
+     * {@code SSLContext} as a runtime API from a {@code ExceptionFunction<OperationContext, SSLContext, OperationFailedException>}.
+     */
+    static final String SSL_CONTEXT_API_CAPABILITY = CAPABILITY_BASE + "ssl-context-api";
+
     static final RuntimeCapability<Void> SSL_CONTEXT_RUNTIME_CAPABILITY = RuntimeCapability
         .Builder.of(SSL_CONTEXT_CAPABILITY, true, SSLContext.class)
         .build();
 
     static final String TRUST_MANAGER_CAPABILITY = CAPABILITY_BASE + "trust-manager";
 
+    /*
+     * A variant of the trust-manager capability which also provides access to the underlying
+     * {@code TrustManager} as a runtime API from a {@code ExceptionFunction<OperationContext, TrustManager, OperationFailedException>}.
+     */
+    static final String TRUST_MANAGER_API_CAPABILITY = CAPABILITY_BASE + "trust-manager-api";
+
     static final RuntimeCapability<Void> TRUST_MANAGER_RUNTIME_CAPABILITY =  RuntimeCapability
             .Builder.of(TRUST_MANAGER_CAPABILITY, true, TrustManager.class)
             .build();
 
     static final String DIR_CONTEXT_CAPABILITY = CAPABILITY_BASE + "dir-context";
+
+    static final String DIR_CONTEXT_API_CAPABILITY = CAPABILITY_BASE + "dir-context-api";
 
     static final RuntimeCapability<Void> DIR_CONTEXT_RUNTIME_CAPABILITY = RuntimeCapability
             .Builder.of(DIR_CONTEXT_CAPABILITY, true, DirContextSupplier.class)

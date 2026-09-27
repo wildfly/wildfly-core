@@ -30,9 +30,16 @@ class FilteringKeyStoreService implements ModifiableKeyStoreService {
     KeyStore filteringKeyStore;
     KeyStore modifiableFilteringKeyStore;
 
+    // Cross-link to the doohickey for single-creation coordination.
+    private volatile ElytronDoohickey<KeyStore> doohickey;
+
     FilteringKeyStoreService(InjectedValue<KeyStore> keyStoreInjector, String aliasFilter) {
         this.keyStoreInjector = keyStoreInjector;
         this.aliasFilter = aliasFilter;
+    }
+
+    void setDoohickey(ElytronDoohickey<KeyStore> doohickey) {
+        this.doohickey = doohickey;
     }
 
     /*
@@ -44,17 +51,24 @@ class FilteringKeyStoreService implements ModifiableKeyStoreService {
         try {
             KeyStore keyStore = keyStoreInjector.getValue();
             AliasFilter filter = AliasFilter.fromString(aliasFilter);
-            KeyStore unmodifiable = UnmodifiableKeyStore.unmodifiableKeyStore(keyStore);
             KeyStore modifiable = keyStore;
+            modifiableFilteringKeyStore = FilteringKeyStore.filteringKeyStore(modifiable, filter);
+
+            // Honour the single-creation contract: reuse the instance from the early API path if
+            // it already ran, otherwise build and publish it now.
+            if (doohickey != null && doohickey.hasValue()) {
+                filteringKeyStore = doohickey.cachedValue();
+            } else {
+                KeyStore unmodifiable = UnmodifiableKeyStore.unmodifiableKeyStore(keyStore);
+                filteringKeyStore = FilteringKeyStore.filteringKeyStore(unmodifiable, filter);
+                if (doohickey != null) {
+                    doohickey.setValue(filteringKeyStore);
+                }
+            }
 
             ROOT_LOGGER.tracef(
-                    "starting:  aliasFilter = %s  filter = %s  unmodifiable = %s  modifiable = %s",
-                    aliasFilter, filter, unmodifiable, modifiable);
-
-            filteringKeyStore = FilteringKeyStore.filteringKeyStore(unmodifiable, filter);
-            if (modifiableFilteringKeyStore == null) {
-                modifiableFilteringKeyStore = FilteringKeyStore.filteringKeyStore(modifiable, filter);
-            }
+                    "starting:  aliasFilter = %s  filter = %s  filteringKeyStore = %s  modifiableFilteringKeyStore = %s",
+                    aliasFilter, filter, filteringKeyStore, modifiableFilteringKeyStore);
         } catch (Exception e) {
             throw new StartException(e);
         }
@@ -70,6 +84,9 @@ class FilteringKeyStoreService implements ModifiableKeyStoreService {
 
         filteringKeyStore = null;
         modifiableFilteringKeyStore = null;
+        if (doohickey != null) {
+            doohickey.reset();
+        }
     }
 
     @Override
