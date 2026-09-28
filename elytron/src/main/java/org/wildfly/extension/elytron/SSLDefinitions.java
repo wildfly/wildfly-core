@@ -761,7 +761,7 @@ class SSLDefinitions {
                             @SuppressWarnings("deprecation")
                             Integer crlCertPath = MAXIMUM_CERT_PATH_CRL.resolveModelAttribute(context, crlNode).asIntOrNull();
                             if (crlCertPath != null) {
-                                ROOT_LOGGER.warn("maximum-cert-path in certificate-revocation-list is for legacy support. Please use only the one in trust-manager!");
+                                ROOT_LOGGER.legacyMaximumCertPathInCrl();
                                 if (maxCertPath != null) throw ROOT_LOGGER.multipleMaximumCertPathDefinitions();
                                 maxCertPath = crlCertPath;
                             }
