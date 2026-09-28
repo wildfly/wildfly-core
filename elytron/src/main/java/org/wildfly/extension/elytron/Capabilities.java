@@ -256,6 +256,13 @@ class Capabilities {
 
     static final String SSL_CONTEXT_CAPABILITY = CAPABILITY_BASE + "ssl-context";
 
+    /**
+     * A dedicated capability advertised only by {@code client-ssl-context} resources, distinct from the generic
+     * {@code ssl-context} capability.  External extensions (e.g. the HashiCorp Vault feature pack) can depend on
+     * this capability to reference outbound TLS without pulling in the full {@code authentication-context} chain.
+     */
+    static final String CLIENT_SSL_CONTEXT_CAPABILITY = CAPABILITY_BASE + "client-ssl-context";
+
     /*
      * A dedicated capability for the client-ssl-context resource which also provides access to the underlying
      * {@code SSLContext} as a runtime API from a {@code ExceptionFunction<OperationContext, SSLContext, OperationFailedException>}.
@@ -266,6 +273,10 @@ class Capabilities {
 
     static final RuntimeCapability<Void> SSL_CONTEXT_RUNTIME_CAPABILITY = RuntimeCapability
         .Builder.of(SSL_CONTEXT_CAPABILITY, true, SSLContext.class)
+        .build();
+
+    static final RuntimeCapability<Void> CLIENT_SSL_CONTEXT_RUNTIME_CAPABILITY = RuntimeCapability
+        .Builder.of(CLIENT_SSL_CONTEXT_CAPABILITY, true, SSLContext.class)
         .build();
 
     static final String TRUST_MANAGER_CAPABILITY = CAPABILITY_BASE + "trust-manager";

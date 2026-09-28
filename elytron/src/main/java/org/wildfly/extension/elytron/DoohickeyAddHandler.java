@@ -17,6 +17,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
+import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.function.ExceptionFunction;
 
 /**
@@ -76,6 +77,11 @@ abstract class DoohickeyAddHandler<T> extends BaseAddHandler {
 
         CapabilityServiceBuilder<?> serviceBuilder = context.getCapabilityServiceTarget().addCapability(runtimeCapability);
 
+        ServiceName[] aliases = getAdditionalServiceAliases(context);
+        if (aliases.length > 0) {
+            serviceBuilder.addAliases(aliases);
+        }
+
         doohickey.prepareService(context, serviceBuilder);
 
         final TrivialService<T> trivialService = new TrivialService<>();
@@ -85,6 +91,16 @@ abstract class DoohickeyAddHandler<T> extends BaseAddHandler {
         ServiceController<T> serviceController = (ServiceController<T>) commonDependencies(
                 serviceBuilder.setInitialMode(getInitialMode()).setInstance(trivialService), true, dependOnProviderRegistration()).install();
         installedForResource(serviceController, resource);
+    }
+
+    /**
+     * Returns additional MSC service alias names to register alongside the primary capability service.
+     * Subclasses that advertise a second {@link RuntimeCapability} (e.g. {@code client-ssl-context}) should
+     * override this to return the corresponding service names so lookups via either capability name succeed.
+     * The default implementation returns an empty array.
+     */
+    protected ServiceName[] getAdditionalServiceAliases(OperationContext context) {
+        return new ServiceName[0];
     }
 
     /**
@@ -116,6 +132,7 @@ abstract class DoohickeyAddHandler<T> extends BaseAddHandler {
      */
     AbstractRemoveStepHandler createRemoveHandler(RuntimeCapability<?>... runtimeCapabilities) {
         final String capabilityName = apiCapabilityName;
+        final String[] extraCapabilityNames = getAdditionalDynamicCapabilityNames();
         return new TrivialCapabilityServiceRemoveHandler(this, runtimeCapabilities) {
             @Override
             protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource)
@@ -124,9 +141,22 @@ abstract class DoohickeyAddHandler<T> extends BaseAddHandler {
                 if (requiresRuntime(context)) {
                     context.deregisterCapability(
                             RuntimeCapability.buildDynamicCapabilityName(capabilityName, context.getCurrentAddressValue()));
+                    for (String extraName : extraCapabilityNames) {
+                        context.deregisterCapability(
+                                RuntimeCapability.buildDynamicCapabilityName(extraName, context.getCurrentAddressValue()));
+                    }
                 }
             }
         };
+    }
+
+    /**
+     * Returns the names of any additional dynamic capabilities (beyond the API capability) that were registered
+     * in {@link #recordCapabilitiesAndRequirements} and must be explicitly deregistered on remove.
+     * The default implementation returns an empty array.
+     */
+    protected String[] getAdditionalDynamicCapabilityNames() {
+        return new String[0];
     }
 
 }

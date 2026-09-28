@@ -10,6 +10,8 @@ import static org.jboss.as.controller.security.CredentialReference.handleCredent
 import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CLIENT_SSL_CONTEXT_API_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.CLIENT_SSL_CONTEXT_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.CLIENT_SSL_CONTEXT_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_API_CAPABILITY;
@@ -1655,6 +1657,27 @@ class SSLDefinitions {
         DoohickeyAddHandler<SSLContext> add = new DoohickeyAddHandler<SSLContext>(SSL_CONTEXT_RUNTIME_CAPABILITY, CLIENT_SSL_CONTEXT_API_CAPABILITY) {
 
             @Override
+            protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource)
+                    throws OperationFailedException {
+                super.recordCapabilitiesAndRequirements(context, operation, resource);
+                if (requiresRuntime(context)) {
+                    context.registerCapability(CLIENT_SSL_CONTEXT_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue()));
+                }
+            }
+
+            @Override
+            protected ServiceName[] getAdditionalServiceAliases(OperationContext context) {
+                return new ServiceName[] {
+                    CLIENT_SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(context.getCurrentAddressValue())
+                };
+            }
+
+            @Override
+            protected String[] getAdditionalDynamicCapabilityNames() {
+                return new String[] { CLIENT_SSL_CONTEXT_CAPABILITY };
+            }
+
+            @Override
             protected Resource createResourceForAdd(OperationContext context) {
                 SSLContextResource resource = new SSLContextResource(Resource.Factory.create(), false);
                 context.addResource(PathAddress.EMPTY_ADDRESS, resource);
@@ -1788,7 +1811,7 @@ class SSLDefinitions {
         };
 
         return createSSLContextDefinition(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, false, add,
-                add.createRemoveHandler(SSL_CONTEXT_RUNTIME_CAPABILITY), attributes, serverOrHostController);
+                add.createRemoveHandler(SSL_CONTEXT_RUNTIME_CAPABILITY, CLIENT_SSL_CONTEXT_RUNTIME_CAPABILITY), attributes, serverOrHostController);
     }
 
     static ResourceDefinition getDynamicClientSSLContextDefinition() {
