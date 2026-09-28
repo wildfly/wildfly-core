@@ -122,7 +122,7 @@ public final class DoohickeySimultaneity {
     }
 
     /** Invalidates a cached value under the same lock used to construct it. */
-    static void withLockForReset(Runnable action) {
+    public static void withLockForReset(Runnable action) {
         GLOBAL_LOCK.lock();
         try {
             action.run();
