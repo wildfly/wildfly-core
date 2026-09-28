@@ -160,7 +160,17 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
     private static final AttributeDefinition[] CONFIG_ATTRIBUTES = new AttributeDefinition[] { TYPE, PROVIDER_NAME, PROVIDERS, CREDENTIAL_REFERENCE, PATH, RELATIVE_TO, REQUIRED, ALIAS_FILTER };
 
     private static final KeyStoreAddHandler ADD = new KeyStoreAddHandler();
-    private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, KEY_STORE_RUNTIME_CAPABILITY);
+    private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, KEY_STORE_RUNTIME_CAPABILITY) {
+        @Override
+        protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource)
+                throws OperationFailedException {
+            super.recordCapabilitiesAndRequirements(context, operation, resource);
+            if (requiresRuntime(context)) {
+                context.deregisterCapability(
+                        RuntimeCapability.buildDynamicCapabilityName(KEY_STORE_API_CAPABILITY, context.getCurrentAddressValue()));
+            }
+        }
+    };
 
     KeyStoreDefinition() {
         super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE), RESOURCE_RESOLVER)

@@ -10,6 +10,7 @@ import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
@@ -103,5 +104,29 @@ abstract class DoohickeyAddHandler<T> extends BaseAddHandler {
     }
 
     protected abstract ElytronDoohickey<T> createDoohickey(final PathAddress resourceAddress);
+
+    /**
+     * Returns a {@link TrivialCapabilityServiceRemoveHandler} that, in addition to deregistering
+     * the primary {@code runtimeCapability}, also deregisters the dynamic API capability registered
+     * by {@link #recordCapabilitiesAndRequirements} — preventing the "already registered" error if
+     * the same resource name is added again after removal.
+     *
+     * @param runtimeCapabilities the capabilities passed to {@link TrivialCapabilityServiceRemoveHandler}
+     * @return a correctly wired remove handler for this doohickey-backed resource
+     */
+    AbstractRemoveStepHandler createRemoveHandler(RuntimeCapability<?>... runtimeCapabilities) {
+        final String capabilityName = apiCapabilityName;
+        return new TrivialCapabilityServiceRemoveHandler(this, runtimeCapabilities) {
+            @Override
+            protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource)
+                    throws OperationFailedException {
+                super.recordCapabilitiesAndRequirements(context, operation, resource);
+                if (requiresRuntime(context)) {
+                    context.deregisterCapability(
+                            RuntimeCapability.buildDynamicCapabilityName(capabilityName, context.getCurrentAddressValue()));
+                }
+            }
+        };
+    }
 
 }

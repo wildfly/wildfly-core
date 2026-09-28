@@ -39,7 +39,6 @@ import java.util.Properties;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.ListAttributeDefinition;
@@ -109,7 +108,7 @@ class ProviderDefinitions {
     static ResourceDefinition getProviderLoaderDefinition(boolean serverOrHostController) {
         AttributeDefinition[] attributes = new AttributeDefinition[] { MODULE, CLASS_NAMES, PATH, RELATIVE_TO, ARGUMENT, CONFIGURATION };
 
-        AbstractAddStepHandler add = new DoohickeyAddHandler<Provider[]>(PROVIDERS_RUNTIME_CAPABILITY, PROVIDERS_API_CAPABILITY) {
+        DoohickeyAddHandler<Provider[]> add = new DoohickeyAddHandler<Provider[]>(PROVIDERS_RUNTIME_CAPABILITY, PROVIDERS_API_CAPABILITY) {
 
             @Override
             protected ElytronDoohickey<Provider[]> createDoohickey(PathAddress resourceAddress) {
@@ -302,6 +301,7 @@ class ProviderDefinitions {
         Builder builder = TrivialResourceDefinition.builder()
                 .setPathKey(ElytronDescriptionConstants.PROVIDER_LOADER)
                 .setAddHandler(add)
+                .setRemoveHandler(add.createRemoveHandler(PROVIDERS_RUNTIME_CAPABILITY))
                 .setAttributes(attributes)
                 .setRuntimeCapabilities(PROVIDERS_RUNTIME_CAPABILITY);
 

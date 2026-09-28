@@ -77,6 +77,7 @@ import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.MapAttributeDefinition;
@@ -496,7 +497,7 @@ class SSLDefinitions {
 
         AttributeDefinition[] attributes = new AttributeDefinition[]{ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, credentialReferenceDefinition, GENERATE_SELF_SIGNED_CERTIFICATE_HOST};
 
-        AbstractAddStepHandler add = new DoohickeyAddHandler<KeyManager>(KEY_MANAGER_RUNTIME_CAPABILITY, KEY_MANAGER_API_CAPABILITY) {
+        DoohickeyAddHandler<KeyManager> add = new DoohickeyAddHandler<KeyManager>(KEY_MANAGER_RUNTIME_CAPABILITY, KEY_MANAGER_API_CAPABILITY) {
 
             @Override
             protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
@@ -681,6 +682,7 @@ class SSLDefinitions {
         return TrivialResourceDefinition.builder()
                 .setPathKey(ElytronDescriptionConstants.KEY_MANAGER)
                 .setAddHandler(add)
+                .setRemoveHandler(add.createRemoveHandler(KEY_MANAGER_RUNTIME_CAPABILITY))
                 .setAttributes(attributes)
                 .setRuntimeCapabilities(KEY_MANAGER_RUNTIME_CAPABILITY)
                 .addOperation(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.INIT, RESOURCE_RESOLVER)
@@ -711,7 +713,7 @@ class SSLDefinitions {
 
         AttributeDefinition[] attributes = new AttributeDefinition[]{ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, CERTIFICATE_REVOCATION_LIST, CERTIFICATE_REVOCATION_LISTS, OCSP, SOFT_FAIL, ONLY_LEAF_CERT, MAXIMUM_CERT_PATH};
 
-        AbstractAddStepHandler add = new DoohickeyAddHandler<TrustManager>(TRUST_MANAGER_RUNTIME_CAPABILITY, TRUST_MANAGER_API_CAPABILITY) {
+        DoohickeyAddHandler<TrustManager> add = new DoohickeyAddHandler<TrustManager>(TRUST_MANAGER_RUNTIME_CAPABILITY, TRUST_MANAGER_API_CAPABILITY) {
 
             @Override
             protected ElytronDoohickey<TrustManager> createDoohickey(PathAddress resourceAddress) {
@@ -1102,6 +1104,7 @@ class SSLDefinitions {
                 .setPathKey(ElytronDescriptionConstants.TRUST_MANAGER)
                 .setResourceDescriptionResolver(resolver)
                 .setAddHandler(add)
+                .setRemoveHandler(add.createRemoveHandler(TRUST_MANAGER_RUNTIME_CAPABILITY))
                 .setAttributes(attributes)
                 .setRuntimeCapabilities(TRUST_MANAGER_RUNTIME_CAPABILITY)
                 .addOperation(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST, resolver)
@@ -1387,14 +1390,26 @@ class SSLDefinitions {
     }
 
     private static ResourceDefinition createSSLContextDefinition(String pathKey, boolean server, AbstractAddStepHandler addHandler, AttributeDefinition[] attributes, boolean serverOrHostController) {
-        return createSSLContextDefinition(pathKey, server, addHandler, attributes, serverOrHostController, Stability.DEFAULT);
+        return createSSLContextDefinition(pathKey, server, addHandler, null, attributes, serverOrHostController, Stability.DEFAULT);
+    }
+
+    private static ResourceDefinition createSSLContextDefinition(String pathKey, boolean server, AbstractAddStepHandler addHandler, AbstractRemoveStepHandler removeHandler, AttributeDefinition[] attributes, boolean serverOrHostController) {
+        return createSSLContextDefinition(pathKey, server, addHandler, removeHandler, attributes, serverOrHostController, Stability.DEFAULT);
     }
 
     private static ResourceDefinition createSSLContextDefinition(String pathKey, boolean server, AbstractAddStepHandler addHandler, AttributeDefinition[] attributes, boolean serverOrHostController, Stability stability) {
-        return createSSLContextDefinition(pathKey, server, addHandler, attributes, serverOrHostController, stability, null);
+        return createSSLContextDefinition(pathKey, server, addHandler, null, attributes, serverOrHostController, stability, null);
+    }
+
+    private static ResourceDefinition createSSLContextDefinition(String pathKey, boolean server, AbstractAddStepHandler addHandler, AbstractRemoveStepHandler removeHandler, AttributeDefinition[] attributes, boolean serverOrHostController, Stability stability) {
+        return createSSLContextDefinition(pathKey, server, addHandler, removeHandler, attributes, serverOrHostController, stability, null);
     }
 
     private static ResourceDefinition createSSLContextDefinition(String pathKey, boolean server, AbstractAddStepHandler addHandler, AttributeDefinition[] attributes, boolean serverOrHostController, Stability stability, String dependencyPackageName) {
+        return createSSLContextDefinition(pathKey, server, addHandler, null, attributes, serverOrHostController, stability, dependencyPackageName);
+    }
+
+    private static ResourceDefinition createSSLContextDefinition(String pathKey, boolean server, AbstractAddStepHandler addHandler, AbstractRemoveStepHandler removeHandler, AttributeDefinition[] attributes, boolean serverOrHostController, Stability stability, String dependencyPackageName) {
 
         Builder builder = TrivialResourceDefinition.builder()
                 .setPathKey(pathKey)
@@ -1403,6 +1418,10 @@ class SSLDefinitions {
                 .setRuntimeCapabilities(SSL_CONTEXT_RUNTIME_CAPABILITY)
                 .setStability(stability)
                 .setDependencyPackageName(dependencyPackageName);
+
+        if (removeHandler != null) {
+            builder.setRemoveHandler(removeHandler);
+        }
 
         if (serverOrHostController) {
             builder.addReadOnlyAttribute(ACTIVE_SESSION_COUNT, new SSLContextRuntimeHandler() {
@@ -1633,7 +1652,7 @@ class SSLDefinitions {
         AttributeDefinition[] attributes = new AttributeDefinition[]{CIPHER_SUITE_FILTER, CIPHER_SUITE_NAMES, PROTOCOLS,
                 KEY_MANAGER, TRUST_MANAGER, providersDefinition, PROVIDER_NAME};
 
-        AbstractAddStepHandler add = new DoohickeyAddHandler<SSLContext>(SSL_CONTEXT_RUNTIME_CAPABILITY, CLIENT_SSL_CONTEXT_API_CAPABILITY) {
+        DoohickeyAddHandler<SSLContext> add = new DoohickeyAddHandler<SSLContext>(SSL_CONTEXT_RUNTIME_CAPABILITY, CLIENT_SSL_CONTEXT_API_CAPABILITY) {
 
             @Override
             protected Resource createResourceForAdd(OperationContext context) {
@@ -1768,7 +1787,8 @@ class SSLDefinitions {
             }
         };
 
-        return createSSLContextDefinition(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, false, add, attributes, serverOrHostController);
+        return createSSLContextDefinition(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, false, add,
+                add.createRemoveHandler(SSL_CONTEXT_RUNTIME_CAPABILITY), attributes, serverOrHostController);
     }
 
     static ResourceDefinition getDynamicClientSSLContextDefinition() {
