@@ -360,13 +360,13 @@
         </certificate-authorities>
         <certificate-authority-accounts>
             <certificate-authority-account name="MyCA" certificate-authority="LetsEncrypt">
-                <account-key key-store="accounts.keystore" alias="server">
-                    <credential-reference clear-text="elytron"/>
-                </account-key>
                 <external-account-binding>
                     <key-identifier>kid-from-ca</key-identifier>
                     <credential-reference clear-text="eab-secret"/>
                 </external-account-binding>
+                <account-key key-store="accounts.keystore" alias="server">
+                    <credential-reference clear-text="elytron"/>
+                </account-key>
             </certificate-authority-account>
             <certificate-authority-account name="MyCA2" certificate-authority="testCA">
                 <account-key key-store="accounts.keystore" alias="server">

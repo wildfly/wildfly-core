@@ -71,7 +71,7 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
     private static final String KEYSTORE_PASSWORD = "elytron";
     private static final String EXTERNAL_ACCOUNT_BINDING_KEY_ID = "kid-from-ca";
     private static final String EXTERNAL_ACCOUNT_BINDING_HMAC_KEY_ALIAS = "eab-hmac-key-alias";
-    private static final String EXTERNAL_ACCOUNT_BINDING_HMAC_KEY = "bWFjLXNlY3JldA";
+    private static final String EXTERNAL_ACCOUNT_BINDING_HMAC_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
     private static final PathAddress ROOT_ADDRESS = PathAddress.pathAddress(SUBSYSTEM, ElytronExtension.SUBSYSTEM_NAME);
     private static final PathAddress CERT_AUTHORITY_ACCOUNT_ADDRESS = ROOT_ADDRESS.append(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT, CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
 
