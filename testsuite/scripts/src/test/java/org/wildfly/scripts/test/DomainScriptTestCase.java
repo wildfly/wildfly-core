@@ -43,7 +43,7 @@ public class DomainScriptTestCase extends ScriptTestCase {
 
     @Parameterized.Parameters
     public static Collection<Object> data() {
-        return List.of(Map.of(), Map.of("SECMGR", SECMGR_VALUE));
+        return List.of(Map.of());
     }
 
     @Override
@@ -54,11 +54,7 @@ public class DomainScriptTestCase extends ScriptTestCase {
         Assert.assertTrue("The process is not running and should be", script.isAlive());
 
         final var stdout = script.getStdoutAsString();
-        if (supportsEnhancedSecurityManager() && env.containsKey("SECMGR")) {
-            Assert.assertTrue("Expected to find -Djava.security.manager=allow in the JVM parameters.", stdout.contains("-Djava.security.manager=allow"));
-        } else {
-            Assert.assertFalse("Did not expect to find -Djava.security.manager=allow in the JVM parameters.", stdout.contains("-Djava.security.manager=allow"));
-        }
+        Assert.assertFalse("Did not expect to find -Djava.security.manager=allow in the JVM parameters.", stdout.contains("-Djava.security.manager=allow"));
 
         ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
         ServerHelper.checkBootErrors(client, PRIMARY_HOST);

@@ -27,12 +27,6 @@ if (-Not(Test-Path variable:HOST_CONTROLLER_JAVA_OPTS)) {
     $HOST_CONTROLLER_JAVA_OPTS = Get-Java-Opts
 }
 
-Write-Debug "sec mgr: $SECMGR"
-
-if ($SECMGR) {
-    $MODULE_OPTS +="-secmgr";
-}
-
 if (!$PRESERVE_JAVA_OPTS) {
     if (-Not(Test-Path variable:DISABLE_JDK_SERIAL_FILTER)) {
         $DISABLE_JDK_SERIAL_FILTER = Get-Env-Boolean DISABLE_JDK_SERIAL_FILTER $false
@@ -74,14 +68,6 @@ foreach($p in $HOST_CONTROLLER_OPTS){
 	}
 }
 
-# If the -Djava.security.manager is found, enable the -secmgr and include a bogus security manager for JBoss Modules to replace
-# Note that HOST_CONTROLLER_JAVA_OPTS will not need to be handled here
-
-if ( $PROCESS_CONTROLLER_JAVA_OPTS -contains 'java.security.manager') {
-    echo "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
-    exit
-}
-
 $PROCESS_CONTROLLER_DEFAULT_MODULAR_JVM_OPTS = Get-Default-Modular-Jvm-Options -opts $PROCESS_CONTROLLER_JAVA_OPTS
 $HOST_CONTROLLER_DEFAULT_MODULAR_JVM_OPTS = Get-Default-Modular-Jvm-Options -opts $HOST_CONTROLLER_JAVA_OPTS
 
@@ -90,15 +76,6 @@ if ($PROCESS_CONTROLLER_DEFAULT_MODULAR_JVM_OPTS -ne $null){
 }
 if ($HOST_CONTROLLER_DEFAULT_MODULAR_JVM_OPTS -ne $null){
 	$HOST_CONTROLLER_JAVA_OPTS += $HOST_CONTROLLER_DEFAULT_MODULAR_JVM_OPTS
-}
-if ($SECMGR) {
-    $ENHANCED_SM = SetEnhancedSecurityManager
-    $SECURITY_MANAGER_CONFIG_OPTION = Get-Security-Manager-Default -enhancedSM $ENHANCED_SM
-}
-
-if ($SECURITY_MANAGER_CONFIG_OPTION -ne $null){
-	$PROCESS_CONTROLLER_JAVA_OPTS += $SECURITY_MANAGER_CONFIG_OPTION
-	$HOST_CONTROLLER_JAVA_OPTS += $SECURITY_MANAGER_CONFIG_OPTION
 }
 
 Display-Environment $PROCESS_CONTROLLER_JAVA_OPTS

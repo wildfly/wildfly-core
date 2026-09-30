@@ -42,19 +42,15 @@ import org.wildfly.common.test.ServerHelper;
  */
 public abstract class ScriptTestCase {
 
-    // [WFCORE-7064] Setting SM is not allowed on JDK24+
-    static final String SECMGR_VALUE = Runtime.version().feature() < 24 ? "true" : "false";
+    static final String SECMGR_VALUE = "true";
     static final Map<String, String> MAVEN_JAVA_OPTS = new LinkedHashMap<>();
 
     private final String scriptBaseName;
-    private final boolean enhancedSecurityManager;
     private ExecutorService service;
 
 
     ScriptTestCase(final String scriptBaseName) {
         this.scriptBaseName = scriptBaseName;
-        final int version = Runtime.version().feature();
-        enhancedSecurityManager = version >= 17 && version < 24;
     }
 
     @BeforeClass
@@ -123,10 +119,6 @@ public abstract class ScriptTestCase {
         } else {
             Assert.fail(script.getErrorMessage("The script process did not exit within " + ServerHelper.TIMEOUT.toSeconds() + " seconds."));
         }
-    }
-
-    boolean supportsEnhancedSecurityManager() {
-        return enhancedSecurityManager;
     }
 
     static ModelNode executeOperation(final ModelControllerClient client, final ModelNode op) throws IOException {

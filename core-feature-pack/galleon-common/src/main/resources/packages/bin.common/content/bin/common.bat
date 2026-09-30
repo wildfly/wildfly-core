@@ -21,18 +21,6 @@ goto :eof
     "%JAVA%" --add-opens=%~1=ALL-UNNAMED -version 2>&1 | findstr /i /c:"WARNING" >nul 2>&1 && (set PACKAGE_AVAILABLE=false) || (set PACKAGE_AVAILABLE=true)
 goto :eof
 
-:setEnhancedSecurityManager
-    "%JAVA%" -Djava.security.manager=allow -version >nul 2>&1 && (set ENHANCED_SM=true) || (set ENHANCED_SM=false)
-goto :eof
-
-:setSecurityManagerDefault
-  call :setEnhancedSecurityManager
-  if "%ENHANCED_SM%" == "true" (
-    rem Needed to be able to install Security Manager dynamically since JDK18
-    set "SECURITY_MANAGER_CONFIG_OPTION=-Djava.security.manager=allow"
-  )
-goto:eof
-
 :setDefaultModularJvmOptions
   setlocal EnableDelayedExpansion
   echo %* | findstr /I "\-\-add\-modules" > nul
@@ -63,7 +51,7 @@ goto:eof
     set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.io=ALL-UNNAMED"
     rem Needed by WildFly Http Client
     set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.net=ALL-UNNAMED"
-    rem Needed by WildFly Security Manager
+    rem Needed by java.security access
     set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.security=ALL-UNNAMED"
     rem Needed for marshalling of collections
     set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.util=ALL-UNNAMED"
