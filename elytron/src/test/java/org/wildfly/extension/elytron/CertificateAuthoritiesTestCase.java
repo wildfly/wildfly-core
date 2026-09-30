@@ -13,9 +13,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,6 +29,7 @@ import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
@@ -35,6 +40,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceName;
@@ -63,6 +69,9 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
     private static final String CERTIFICATE_AUTHORITY_TEST_URL = "http://www.test.com";
     private static final String ACCOUNTS_KEYSTORE_NAME = "AccountsKeyStore";
     private static final String KEYSTORE_PASSWORD = "elytron";
+    private static final String EXTERNAL_ACCOUNT_BINDING_KEY_ID = "kid-from-ca";
+    private static final String EXTERNAL_ACCOUNT_BINDING_HMAC_KEY_ALIAS = "eab-hmac-key-alias";
+    private static final String EXTERNAL_ACCOUNT_BINDING_HMAC_KEY = "bWFjLXNlY3JldA";
     private static final PathAddress ROOT_ADDRESS = PathAddress.pathAddress(SUBSYSTEM, ElytronExtension.SUBSYSTEM_NAME);
     private static final PathAddress CERT_AUTHORITY_ACCOUNT_ADDRESS = ROOT_ADDRESS.append(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT, CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
 
@@ -70,7 +79,7 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
 
 
     public CertificateAuthoritiesTestCase() {
-        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
+        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension(), Stability.PREVIEW);
     }
 
     private KernelServices services = null;
@@ -100,6 +109,7 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
         csUtil = new CredentialStoreUtility("target/tlstest.keystore", CS_PASSWORD);
         csUtil.addEntry("the-key-alias", "Elytron");
         csUtil.addEntry("primary-password-alias", "Elytron");
+        csUtil.addEntry(EXTERNAL_ACCOUNT_BINDING_HMAC_KEY_ALIAS, EXTERNAL_ACCOUNT_BINDING_HMAC_KEY);
     }
 
     @AfterClass
@@ -125,7 +135,7 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
         } else {
             subsystemXml = JdkUtils.getJavaSpecVersion() <= 12 ? "tls-sun.xml" : "tls-oracle13plus.xml";
         }
-        services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource(subsystemXml).build();
+        services = super.createKernelServicesBuilder(new TestEnvironment(Stability.PREVIEW)).setSubsystemXmlResource(subsystemXml).build();
         if (!services.isSuccessfulBoot()) {
             if (services.getBootError() != null) {
                 Assert.fail(services.getBootError().toString());
@@ -199,6 +209,68 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
     }
 
     @Test
+    public void testAddCertificateAuthorityAccountWithExternalAccountBinding() throws Exception {
+        assumeTrue(isAcmeExternalAccountBindingSupported());
+        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
+        addCertificateAuthorityAccountWithExternalAccountBinding("alias");
+        try {
+            ModelNode result = readResourceNode();
+            ModelNode externalAccountBinding = result.get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING);
+            assertEquals(EXTERNAL_ACCOUNT_BINDING_KEY_ID, externalAccountBinding.get(ElytronDescriptionConstants.KEY_IDENTIFIER).asString());
+            ModelNode credentialReference = externalAccountBinding.get(CredentialReference.CREDENTIAL_REFERENCE);
+            assertEquals("test", credentialReference.get(CredentialReference.STORE).asString());
+            assertEquals(EXTERNAL_ACCOUNT_BINDING_HMAC_KEY_ALIAS, credentialReference.get(CredentialReference.ALIAS).asString());
+            assertFalse(credentialReference.hasDefined(CredentialReference.CLEAR_TEXT));
+        } finally {
+            removeCertificateAuthorityAccount();
+            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
+        }
+    }
+
+    @Test
+    public void testAddCertificateAuthorityAccountWithExternalAccountBindingClearTextCredentialReference() throws Exception {
+        assumeTrue(isAcmeExternalAccountBindingSupported());
+        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
+        try {
+            ModelNode operation = createAddCertificateAuthorityAccountOperation("alias");
+            operation.get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING).get(ElytronDescriptionConstants.KEY_IDENTIFIER).set(EXTERNAL_ACCOUNT_BINDING_KEY_ID);
+            operation.get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING).get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT)
+                    .set(EXTERNAL_ACCOUNT_BINDING_HMAC_KEY);
+            assertSuccess(services.executeOperation(operation));
+            assertNotNull(getAcmeAccount());
+        } finally {
+            removeCertificateAuthorityAccount();
+            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
+        }
+    }
+
+    @Test
+    public void testAddCertificateAuthorityAccountWithExternalAccountBindingKeyIdOnly() throws Exception {
+        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
+        try {
+            ModelNode operation = createAddCertificateAuthorityAccountOperation("alias");
+            operation.get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING).get(ElytronDescriptionConstants.KEY_IDENTIFIER).set(EXTERNAL_ACCOUNT_BINDING_KEY_ID);
+            assertFailed(services.executeOperation(operation));
+        } finally {
+            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
+        }
+    }
+
+    @Test
+    public void testAddCertificateAuthorityAccountWithExternalAccountBindingCredentialReferenceOnly() throws Exception {
+        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
+        try {
+            ModelNode operation = createAddCertificateAuthorityAccountOperation("alias");
+            operation.get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING).get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT)
+                    .set(EXTERNAL_ACCOUNT_BINDING_HMAC_KEY);
+            ModelNode result = assertFailed(services.executeOperation(operation));
+            assertFalse(result.get(FAILURE_DESCRIPTION).asString().contains(EXTERNAL_ACCOUNT_BINDING_HMAC_KEY));
+        } finally {
+            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
+        }
+    }
+
+    @Test
     public void testChangeKeystoreAttributeOnly() throws Exception {
         addKeyStore(ACCOUNTS_KEYSTORE_NAME);
         addCertificateAuthorityAccount("alias");
@@ -226,6 +298,34 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
         addCertificateAuthorityWithoutStagingUrl();
         addCertificateAuthorityAccountWithCustomCA("account1v2");
         server = setupTestCreateAccount();
+        AcmeAccount acmeAccount = getAcmeAccount();
+        final String NEW_ACCT_LOCATION = "http://localhost:4001/acme/acct/384";
+        try {
+            assertNull(acmeAccount.getAccountUrl());
+            ModelNode operation = new ModelNode();
+            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
+            operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.CREATE_ACCOUNT);
+            operation.get(ElytronDescriptionConstants.AGREE_TO_TERMS_OF_SERVICE).set(true);
+            assertSuccess(services.executeOperation(operation));
+            assertEquals(NEW_ACCT_LOCATION, acmeAccount.getAccountUrl());
+        } finally {
+            removeCertificateAuthorityAccount();
+            removeCertificateAuthority();
+            removeKeyStore(ACCOUNTS_KEYSTORE_NAME);
+        }
+    }
+
+    @Test
+    public void testCreateAccountWithExternalAccountBinding() throws Exception {
+        assumeTrue(isAcmeExternalAccountBindingSupported());
+        addKeyStore(ACCOUNTS_KEYSTORE_NAME);
+        addCertificateAuthorityWithoutStagingUrl();
+        ModelNode addAccount = createAddCertificateAuthorityAccountWithCustomCAOperation("account1v2");
+        addAccount.get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING).get(ElytronDescriptionConstants.KEY_IDENTIFIER).set(EXTERNAL_ACCOUNT_BINDING_KEY_ID);
+        addAccount.get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING).get(CredentialReference.CREDENTIAL_REFERENCE)
+                .get(CredentialReference.CLEAR_TEXT).set(EXTERNAL_ACCOUNT_BINDING_HMAC_KEY);
+        assertSuccess(services.executeOperation(addAccount));
+        server = setupTestCreateAccountWithExternalAccountBinding();
         AcmeAccount acmeAccount = getAcmeAccount();
         final String NEW_ACCT_LOCATION = "http://localhost:4001/acme/acct/384";
         try {
@@ -657,12 +757,34 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
         return (AcmeAccount) services.getContainer().getService(serviceName).getValue();
     }
 
+    private static boolean isAcmeExternalAccountBindingSupported() {
+        try {
+            Method method = AcmeAccount.Builder.class.getMethod("setExternalAccountBinding", String.class, String.class);
+            return method != null;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
     private KeyStore getKeyStore(String keyStoreName) {
         ServiceName serviceName = Capabilities.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(keyStoreName);
         return (KeyStore) services.getContainer().getService(serviceName).getValue();
     }
 
     private void addCertificateAuthorityAccount(String alias) throws Exception {
+        assertSuccess(services.executeOperation(createAddCertificateAuthorityAccountOperation(alias)));
+    }
+
+    private void addCertificateAuthorityAccountWithExternalAccountBinding(String alias) throws Exception {
+        ModelNode operation = createAddCertificateAuthorityAccountOperation(alias);
+        operation.get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING).get(ElytronDescriptionConstants.KEY_IDENTIFIER).set(EXTERNAL_ACCOUNT_BINDING_KEY_ID);
+        operation.get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING).get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.STORE).set("test");
+        operation.get(ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING).get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.ALIAS)
+                .set(EXTERNAL_ACCOUNT_BINDING_HMAC_KEY_ALIAS);
+        assertSuccess(services.executeOperation(operation));
+    }
+
+    private ModelNode createAddCertificateAuthorityAccountOperation(String alias) {
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
@@ -672,20 +794,18 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
         operation.get(ElytronDescriptionConstants.KEY_STORE).set(ACCOUNTS_KEYSTORE_NAME);
         operation.get(ElytronDescriptionConstants.ALIAS).set(alias);
         operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set(KEYSTORE_PASSWORD);
-        assertSuccess(services.executeOperation(operation));
+        return operation;
     }
 
     private void addCertificateAuthorityAccountWithCustomCA(String alias) throws Exception {
-        ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("certificate-authority-account", CERTIFICATE_AUTHORITY_ACCOUNT_NAME);
-        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronDescriptionConstants.CONTACT_URLS).add("mailto:admin@anexample.com");
-        operation.get(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY).set(CERTIFICATE_AUTHORITY_NAME);
-        operation.get(ElytronDescriptionConstants.KEY_STORE).set(ACCOUNTS_KEYSTORE_NAME);
-        operation.get(ElytronDescriptionConstants.ALIAS).set(alias);
-        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set(KEYSTORE_PASSWORD);
+        ModelNode operation = createAddCertificateAuthorityAccountWithCustomCAOperation(alias);
         assertSuccess(services.executeOperation(operation));
+    }
+
+    private ModelNode createAddCertificateAuthorityAccountWithCustomCAOperation(String alias) {
+        ModelNode operation = createAddCertificateAuthorityAccountOperation(alias);
+        operation.get(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY).set(CERTIFICATE_AUTHORITY_NAME);
+        return operation;
     }
 
     private void addCertificateAuthorityAccountWithCustomCA(String alias, String[] contactUrlsList) throws Exception {
@@ -781,6 +901,68 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
                 .addNewNonceResponse(NEW_NONCE_RESPONSE)
                 .addNewAccountRequestAndResponse(NEW_ACCT_REQUEST_BODY, NEW_ACCT_RESPONSE_BODY, NEW_ACCT_REPLAY_NONCE, NEW_ACCT_LOCATION, 201)
                 .build();
+    }
+
+    private ClientAndServer setupTestCreateAccountWithExternalAccountBinding() {
+
+        // set up a mock Let's Encrypt server
+        final String DIRECTORY_RESPONSE_BODY = "{" + System.lineSeparator()  +
+                "  \"wnR-SBn2GN4\": \"https://community.letsencrypt.org/t/adding-random-entries-to-the-directory/33417\"," + System.lineSeparator()  +
+                "  \"keyChange\": \"http://localhost:4001/acme/key-change\"," + System.lineSeparator()  +
+                "  \"meta\": {" + System.lineSeparator()  +
+                "    \"caaIdentities\": [" + System.lineSeparator()  +
+                "      \"happy-hacker-ca.invalid\"" + System.lineSeparator()  +
+                "    ]," + System.lineSeparator()  +
+                "    \"termsOfService\": \"https://boulder:4431/terms/v7\"," + System.lineSeparator()  +
+                "    \"website\": \"https://github.com/letsencrypt/boulder\"" + System.lineSeparator()  +
+                "  }," + System.lineSeparator()  +
+                "  \"newAccount\": \"http://localhost:4001/acme/new-acct\"," + System.lineSeparator()  +
+                "  \"newNonce\": \"http://localhost:4001/acme/new-nonce\"," + System.lineSeparator()  +
+                "  \"newOrder\": \"http://localhost:4001/acme/new-order\"," + System.lineSeparator()  +
+                "  \"revokeCert\": \"http://localhost:4001/acme/revoke-cert\"" + System.lineSeparator()  +
+                "}";
+
+        final String NEW_NONCE_RESPONSE = "zincwl_lThkXLp0V7HAAcQEbIrx1R-gTI_ZQ8INAsrR5aQU";
+
+        final String NEW_ACCT_RESPONSE_BODY = "{" + System.lineSeparator()  +
+                "  \"key\": {" + System.lineSeparator()  +
+                "    \"kty\": \"RSA\"," + System.lineSeparator()  +
+                "    \"n\": \"h8Oee5beDRgxNPe_eME9H6Vo74Fug8HgrikfbfCaU3lKF648QG1X1kGDZThAy8daqJ8bv6c3PJdnx2Hr8jOzl509bnM6cCWfywTpcIZoUzQQZLY_K8GMDAyglsQrItgCiQalIqbuJEkoc3WQAIxJ23xv9bK5xnVQkTW4rVBAcYNQwoBjGYOWSizTGfjgmQqTXloaamFZJn97Hnb1qjy5VYm06buyqwAaGHs1CLu3cLZgQpVHQ4kFszk8YO5UAEjiodugWpZURu9TtRKzN0bkEdeQPYVpaupUq1cq47Rp2jqVUXdiQLekyxrQbt8A2uG4LzDQu-b4cZppmzc3hlhSGw\"," + System.lineSeparator()  +
+                "    \"e\": \"AQAB\"" + System.lineSeparator()  +
+                "  }," + System.lineSeparator()  +
+                "  \"contact\": [" + System.lineSeparator()  +
+                "    \"mailto:admin@anexample.com\"" + System.lineSeparator()  +
+                "  ]," + System.lineSeparator()  +
+                "  \"initialIp\": \"10.77.77.1\"," + System.lineSeparator()  +
+                "  \"createdAt\": \"2019-07-12T16:52:19.171896513Z\"," + System.lineSeparator()  +
+                "  \"status\": \"valid\"" + System.lineSeparator()  +
+                "}";
+
+        final String NEW_ACCT_REPLAY_NONCE = "taroOQPjumKybWIQEmqmB2DZ8ouIQ5uBoaDQZosCDyUzbJs";
+        final String NEW_ACCT_LOCATION = "http://localhost:4001/acme/acct/384";
+
+        return new AcmeMockServerBuilder(server)
+                .addDirectoryResponseBody(DIRECTORY_RESPONSE_BODY)
+                .addNewNonceResponse(NEW_NONCE_RESPONSE)
+                .addNewAccountRequestValidatorAndResponse(this::assertExternalAccountBindingNewAccountRequest, NEW_ACCT_RESPONSE_BODY,
+                        NEW_ACCT_REPLAY_NONCE, NEW_ACCT_LOCATION, 201)
+                .build();
+    }
+
+    private void assertExternalAccountBindingNewAccountRequest(String requestBody) {
+        ModelNode newAccountJws = ModelNode.fromJSONString(requestBody);
+        ModelNode newAccountPayload = ModelNode.fromJSONString(decodeBase64Url(newAccountJws.get("payload").asString()));
+        ModelNode externalAccountBinding = newAccountPayload.get("externalAccountBinding");
+        assertTrue(externalAccountBinding.isDefined());
+        assertTrue(externalAccountBinding.hasDefined("protected"));
+        assertTrue(externalAccountBinding.hasDefined("payload"));
+        assertTrue(externalAccountBinding.hasDefined("signature"));
+        ModelNode externalAccountBindingProtectedHeader = ModelNode.fromJSONString(decodeBase64Url(externalAccountBinding.get("protected").asString()));
+        assertEquals(EXTERNAL_ACCOUNT_BINDING_KEY_ID, externalAccountBindingProtectedHeader.get("kid").asString());
+    }
+
+    private static String decodeBase64Url(String encoded) {
+        return new String(Base64.getUrlDecoder().decode(encoded), StandardCharsets.UTF_8);
     }
 
     private ClientAndServer setupTestCreateAccountNonExistingAlias() {
