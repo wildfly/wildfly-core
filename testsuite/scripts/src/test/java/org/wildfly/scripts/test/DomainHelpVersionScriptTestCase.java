@@ -7,7 +7,9 @@ package org.wildfly.scripts.test;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -39,7 +41,13 @@ public class DomainHelpVersionScriptTestCase extends ScriptTestCase {
 
     @Override
     void testScript(final ScriptProcess script) throws InterruptedException, TimeoutException, IOException {
-        script.start(null, MAVEN_JAVA_OPTS, new String [] {arg});
+        final Map<String, String> env = new LinkedHashMap<>();
+        final String localRepo = System.getProperty("maven.repo.local");
+        if (localRepo != null) {
+            env.put("JDK_JAVA_OPTIONS", "-Dmaven.repo.local=" + localRepo);
+        }
+
+        script.start(null, env, new String [] {arg});
         if (!script.waitFor(TimeoutUtil.adjust(10), TimeUnit.SECONDS)) {
             throw new TimeoutException("Timeout waiting for script to finish. Last executed command: " + script.getLastExecutedCmd() + "\nThe server output was: \n" + script.getStdoutAsString());
         }
@@ -48,5 +56,10 @@ public class DomainHelpVersionScriptTestCase extends ScriptTestCase {
         boolean ok = stdout.contains("-Xmx16m") && !stdout.replaceFirst("-Xmx", "").contains("-Xmx");
         Assert.assertTrue("Expected to find -Xmx16m in the JVM parameters for a server started with " + script.getLastExecutedCmd() + "\nThe server output was: \n" + stdout, ok);
         Assert.assertFalse("Did not expect to find gc.log in the JVM parameters for a server started with " + script.getLastExecutedCmd() + "\nThe server output was: \n" + stdout, stdout.contains("gc.log"));
+        if ("--help".equals(arg) || "-h".equals(arg)) {
+            Assert.assertTrue("Expected help output containing 'Usage:' for " + script.getLastExecutedCmd() + "\nThe server output was: \n" + stdout, stdout.contains("Usage:"));
+        } else if ("-v".equals(arg) || "-V".equals(arg) || "--version".equals(arg)) {
+            Assert.assertTrue("Expected version output containing 'WildFly Core' for " + script.getLastExecutedCmd() + "\nThe server output was: \n" + stdout, stdout.contains("WildFly Core"));
+        }
     }
 }
