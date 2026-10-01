@@ -22,6 +22,7 @@ class InstMgrCandidateStatus {
 
     public static final String INST_MGR_STATUS_KEY = "INST_MGR_STATUS";
     public static final String INST_MGR_COMMAND_KEY = "INST_MGR_COMMAND";
+    public static final String INST_MGR_LOCK_HELD_KEY = "INST_MGR_LOCK_HELD";
 
     public enum Status {ERROR, CLEAN, PREPARING, PREPARED}
 
@@ -51,16 +52,33 @@ class InstMgrCandidateStatus {
         setStatus(Status.ERROR);
     }
 
+    /**
+     * Commits the candidate with the given command.
+     * Maintains backward compatibility by not including lock status.
+     */
     void commit(String command) throws IOException {
-        setStatus(Status.PREPARED, command);
+        commit(command, null);
+    }
+
+    /**
+     * Commits the candidate with the given command and lock status.
+     * @param command the command to execute
+     * @param lockHeld whether the server running lock was acquired (null for unknown/not applicable)
+     */
+    void commit(String command, Boolean lockHeld) throws IOException {
+        setStatus(Status.PREPARED, command, lockHeld);
     }
 
     private void setStatus(Status status) throws IOException {
-        setStatus(status, "");
+        setStatus(status, "", null);
     }
 
     private void setStatus(Status status, String command) throws IOException {
-        InstMgrLogger.ROOT_LOGGER.debugf("Setting Installation Manager Status to %s and command %s", status.name(), command);
+        setStatus(status, command, null);
+    }
+
+    private void setStatus(Status status, String command, Boolean lockHeld) throws IOException {
+        InstMgrLogger.ROOT_LOGGER.debugf("Setting Installation Manager Status to %s, command %s, lock held %s", status.name(), command, lockHeld);
 
         final Properties prop = new Properties();
         if (status != Status.CLEAN) {
@@ -72,6 +90,10 @@ class InstMgrCandidateStatus {
         try (FileOutputStream out = new FileOutputStream(properties.toString())) {
             prop.setProperty(INST_MGR_COMMAND_KEY, command);
             prop.setProperty(INST_MGR_STATUS_KEY, status.name());
+            // Only set lock status if explicitly provided (not null)
+            if (lockHeld != null) {
+                prop.setProperty(INST_MGR_LOCK_HELD_KEY, String.valueOf(lockHeld));
+            }
             prop.store(out, null);
         }
     }

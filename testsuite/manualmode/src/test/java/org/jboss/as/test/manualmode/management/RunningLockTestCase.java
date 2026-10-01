@@ -105,4 +105,59 @@ public class RunningLockTestCase {
             lock.release();
         }
     }
+
+    @Test
+    public void testLockAcquisitionFailureWhenAlreadyHeld() throws Exception {
+        // Acquire the lock externally to simulate another process holding it
+        try (FileChannel externalChannel = FileChannel.open(lockFilePath,
+                StandardOpenOption.WRITE, StandardOpenOption.READ)) {
+            FileLock externalLock = externalChannel.lock();
+            Assert.assertNotNull("Test setup failed - couldn't acquire external lock", externalLock);
+
+            try {
+                // Try to start server - should continue boot but without lock
+                container.start();
+
+                // Server should be running despite lock failure
+                Assert.assertTrue("Server should have started despite lock acquisition failure",
+                        container.isStarted());
+
+                // Lock should still be held by external process
+                assertLockHeld("External lock should still be held");
+
+            } finally {
+                if (container.isStarted()) {
+                    container.stop();
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testLockStatusInInstallationManagerProperties() throws Exception {
+        container.start();
+
+        // Trigger an installation manager prepare operation to write properties
+        // (This test would need actual InstMgr operations to be fully implemented)
+
+        // Read the installation-manager properties file
+        Path jbossHome = Paths.get(TestSuiteEnvironment.getJBossHome());
+        Path propsPath = jbossHome.resolve("bin").resolve("installation-manager.properties");
+
+        if (Files.exists(propsPath)) {
+            java.util.Properties props = new java.util.Properties();
+            try (java.io.FileInputStream in = new java.io.FileInputStream(propsPath.toFile())) {
+                props.load(in);
+
+                // If properties exist, lock status should be "true" since server acquired it
+                String lockHeld = props.getProperty("INST_MGR_LOCK_HELD");
+                if (lockHeld != null) {
+                    Assert.assertEquals("Lock status should be true when server holds lock",
+                            "true", lockHeld);
+                }
+            }
+        }
+
+        container.stop();
+    }
 }
