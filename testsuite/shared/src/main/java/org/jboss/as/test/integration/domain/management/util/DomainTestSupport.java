@@ -5,6 +5,8 @@
 
 package org.jboss.as.test.integration.domain.management.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
@@ -27,7 +29,6 @@ import org.jboss.as.test.shared.FileUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.exporter.StreamExporter;
-import org.junit.Assert;
 
 /**
  * Utilities for running tests of domain mode.
@@ -241,11 +242,11 @@ public class DomainTestSupport implements AutoCloseable {
         if(! SUCCESS.equals(response.get(OUTCOME).asString())) {
             System.out.println("Failed response:");
             System.out.println(response);
-            Assert.fail(response.get(FAILURE_DESCRIPTION).toString());
+            fail(response.get(FAILURE_DESCRIPTION).toString());
         }
 
         if (getResult) {
-            Assert.assertTrue("result exists", response.has(RESULT));
+            assertThat(response.has(RESULT)).as("result exists").isTrue();
             return response.get(RESULT);
         }
         return null;
@@ -256,10 +257,10 @@ public class DomainTestSupport implements AutoCloseable {
         if(! FAILED.equals(response.get(OUTCOME).asString())) {
             System.out.println("Response succeeded:");
             System.out.println(response);
-            Assert.fail(response.get(OUTCOME).toString());
+            fail(response.get(OUTCOME).toString());
         }
 
-        Assert.assertTrue("failure description exists", response.has(FAILURE_DESCRIPTION));
+        assertThat(response.has(FAILURE_DESCRIPTION)).as("failure description exists").isTrue();
         return response.get(FAILURE_DESCRIPTION);
     }
 

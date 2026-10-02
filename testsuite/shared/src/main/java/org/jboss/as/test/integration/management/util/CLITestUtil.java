@@ -4,7 +4,7 @@
  */
 package org.jboss.as.test.integration.management.util;
 
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.fail;
 
 import java.io.File;
 import java.io.InputStream;

@@ -5,6 +5,8 @@
 
 package org.jboss.as.test.integration.management.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OUTCOME;
 import static org.jboss.as.controller.client.helpers.ClientConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
@@ -12,7 +14,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -24,7 +25,6 @@ import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
-import org.junit.Assert;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetupTask;
 import org.xnio.IoUtils;
@@ -107,7 +107,7 @@ public class ServerReload {
     private static void executeReload(ModelControllerClient client, ModelNode reloadOp) {
         try {
             ModelNode result = client.execute(reloadOp);
-            Assert.assertEquals(SUCCESS, result.get(ClientConstants.OUTCOME).asString());
+            assertThat(result.get(ClientConstants.OUTCOME).asString()).isEqualTo(SUCCESS);
         } catch (IOException e) {
             final Throwable cause = e.getCause();
             if (!(cause instanceof ExecutionException) && !(cause instanceof CancellationException)) {
@@ -135,7 +135,7 @@ public class ServerReload {
         if ("reload-required".equalsIgnoreCase(runningState)) {
             executeReloadAndWaitForCompletion(controllerClient);
         } else {
-            Assert.assertEquals("Server state 'running' is expected", "running", runningState);
+            assertThat(runningState).as("Server state 'running' is expected").isEqualTo("running");
         }
     }
 
