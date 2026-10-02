@@ -20,12 +20,20 @@ if ($global:VERSION) {
     . $DOMAIN_CONF
 }
 
+# Check if SECMGR was enabled via environment variable or conf file
+if (Get-Env-Boolean SECMGR $false) {
+    Write-Warning "ERROR: The SECMGR option has been removed. The Security Manager is no longer supported."
+    exit 1
+}
+
 if (-Not(Test-Path variable:PROCESS_CONTROLLER_JAVA_OPTS)) {
     $PROCESS_CONTROLLER_JAVA_OPTS = Get-Java-Opts
 }
 if (-Not(Test-Path variable:HOST_CONTROLLER_JAVA_OPTS)) {
     $HOST_CONTROLLER_JAVA_OPTS = Get-Java-Opts
 }
+$PROCESS_CONTROLLER_JAVA_OPTS = Process-Java-Opts-Parameters -Params $PROCESS_CONTROLLER_JAVA_OPTS
+$HOST_CONTROLLER_JAVA_OPTS = Process-Java-Opts-Parameters -Params $HOST_CONTROLLER_JAVA_OPTS
 
 if (!$PRESERVE_JAVA_OPTS) {
     if (-Not(Test-Path variable:DISABLE_JDK_SERIAL_FILTER)) {

@@ -40,7 +40,6 @@ if ([System.IO.File]::Exists($COMMOM_CONF_FILE)) {
     }
 }
 
-$global:SECMGR = Get-Env-Boolean SECMGR $false
 $global:DEBUG_MODE=Get-Env DEBUG $false
 $global:DEBUG_PORT=Get-Env DEBUG_PORT 8787
 $global:RUN_IN_BACKGROUND=$false
@@ -48,11 +47,6 @@ $global:VERSION=$false
 $GC_LOG=Get-Env GC_LOG
 #module opts that are passed to jboss modules
 $global:MODULE_OPTS = @()
-
-if ($SECMGR) {
-    Write-Warning "ERROR: The SECMGR option has been removed. The Security Manager is no longer supported."
-    exit
-}
 
 Function Get-String {
   $value = ''
@@ -271,12 +265,12 @@ Param(
 				$i++
 				continue
 			}
-		}elseif ($arg -contains '-Djava.security.manager'){
+		}elseif ($arg -like '-Djava.security.manager*'){
 			Write-Warning "ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed."
-			exit
+			exit 1
 		}elseif ($arg -eq '-secmgr'){
 			Write-Warning "ERROR: The -secmgr option has been removed. The Security Manager is no longer supported."
-			exit
+			exit 1
 		}elseif ($arg -eq '--background'){
 			$global:RUN_IN_BACKGROUND = $true
 		}elseif ($arg -eq '-v' -or $arg -eq '-V' -or $arg -eq '--version' -or $arg -eq '-h' -or $arg -eq '--help'){
@@ -298,9 +292,9 @@ Param(
     $res = @()
 	for($i=0; $i -lt $Params.Count; $i++){
 		$arg = $Params[$i]
-		if ($arg -contains '-Djava.security.manager'){
+		if ($arg -like '-Djava.security.manager*'){
 			Write-Warning "ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed."
-			exit
+			exit 1
 		}else{
 			$res+=$arg
 		}

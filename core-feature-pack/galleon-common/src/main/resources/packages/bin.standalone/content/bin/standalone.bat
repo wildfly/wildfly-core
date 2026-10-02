@@ -42,7 +42,7 @@ rem check for the security manager system property
 echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager" > nul
 if not errorlevel 1 (
     echo ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed.
-    GOTO :EOF
+    exit /b 1
 )
 setlocal DisableDelayedExpansion
 
@@ -54,7 +54,7 @@ if "%~1" == "" (
    goto READ-DEBUG-PORT
 ) else if "%~1" == "-secmgr" (
    echo ERROR: The -secmgr option has been removed. The Security Manager is no longer supported.
-   GOTO :EOF
+   exit /b 1
 ) else if "%~1" == "-v" (
    goto READ-VERSION
 ) else if "%~1" == "-V" (
@@ -230,7 +230,7 @@ for %%a in (!CONSOLIDATED_OPTS!) do (
 rem If the -Djava.security.manager is found, fail the launch
 echo("!JAVA_OPTS!" | findstr /r /c:"-Djava.security.manager" > nul && (
     echo ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed.
-    GOTO :EOF
+    exit /b 1
 )
 
 rem Set default module root paths
@@ -314,7 +314,7 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
 rem Check if SECMGR was enabled via environment variable or conf file
 if "%SECMGR%" == "true" (
     echo ERROR: The SECMGR option has been removed. The Security Manager is no longer supported.
-    GOTO :EOF
+    exit /b 1
 )
 
 rem Set the module options
