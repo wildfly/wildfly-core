@@ -1500,6 +1500,12 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 316, value = "Server started as %s. If this user has elevated privileges, it is discouraged to run the server under this account, as it can compromise system security. You can dismiss this warning by starting the server with: -Djboss.ignore.root.username.warning=true")
     void startedWithRootUser(String userName);
 
+    @Message(id = 317, value = "Cannot start server - another server instance is already running (lock file held at %s)")
+    StartException cannotStartServerLockHeld(String lockPath);
+
+    @Message(id = 318, value = "Cannot start server - failed to acquire running lock at %s")
+    StartException cannotStartServerLockError(String lockPath, @Cause IOException cause);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

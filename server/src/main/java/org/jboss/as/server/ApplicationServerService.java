@@ -226,7 +226,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         return futureContainer;
     }
 
-    private static void acquireRunningLock(File homeDir) {
+    private static void acquireRunningLock(File homeDir) throws StartException {
         if (runningLockChannel != null) {
             // Lock already held from a previous start (e.g. server reload); keep it for JVM lifetime.
             return;
@@ -238,11 +238,13 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
             if (lock != null) {
                 runningLockChannel = channel;
                 runningLock = lock;
+                ServerLogger.AS_ROOT_LOGGER.debugf("Server running lock acquired at %s", lockPath);
             } else {
                 channel.close();
+                throw ServerLogger.AS_ROOT_LOGGER.cannotStartServerLockHeld(lockPath.toString());
             }
         } catch (IOException e) {
-            ServerLogger.AS_ROOT_LOGGER.debugf(e, "Failed to acquire server running lock");
+            throw ServerLogger.AS_ROOT_LOGGER.cannotStartServerLockError(lockPath.toString(), e);
         }
     }
 

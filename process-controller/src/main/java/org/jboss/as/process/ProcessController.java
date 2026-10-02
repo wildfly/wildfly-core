@@ -242,19 +242,17 @@ public final class ProcessController {
         }
     }
 
-    void acquireRunningLock(String jbossHome) {
-        try {
-            Path lockPath = Paths.get(jbossHome, ".installation", "running.lock");
-            FileChannel channel = FileChannel.open(lockPath,
-                    StandardOpenOption.WRITE, StandardOpenOption.READ);
-            FileLock lock = channel.tryLock();
-            if (lock != null) {
-                this.runningLockChannel = channel;
-            } else {
-                channel.close();
-            }
-        } catch (IOException e) {
-            ProcessLogger.ROOT_LOGGER.debugf(e, "Failed to acquire process controller running lock");
+    void acquireRunningLock(String jbossHome) throws IOException {
+        Path lockPath = Paths.get(jbossHome, ".installation", "running.lock");
+        FileChannel channel = FileChannel.open(lockPath,
+                StandardOpenOption.WRITE, StandardOpenOption.READ);
+        FileLock lock = channel.tryLock();
+        if (lock != null) {
+            this.runningLockChannel = channel;
+            ProcessLogger.ROOT_LOGGER.debugf("Process controller running lock acquired at %s", lockPath);
+        } else {
+            channel.close();
+            throw ProcessLogger.ROOT_LOGGER.cannotStartProcessControllerLockHeld(lockPath.toString());
         }
     }
 

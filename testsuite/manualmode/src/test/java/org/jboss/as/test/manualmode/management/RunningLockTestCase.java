@@ -105,4 +105,30 @@ public class RunningLockTestCase {
             lock.release();
         }
     }
+
+    @Test
+    public void testServerFailsToStartWhenLockAlreadyHeld() throws Exception {
+        // Acquire the lock externally to simulate another server instance holding it
+        try (FileChannel externalChannel = FileChannel.open(lockFilePath,
+                StandardOpenOption.WRITE, StandardOpenOption.READ)) {
+            FileLock externalLock = externalChannel.lock();
+            Assert.assertNotNull("Test setup failed - couldn't acquire external lock", externalLock);
+
+            try {
+                // Try to start server - should FAIL because lock is already held
+                container.start();
+                Assert.fail("Server should have failed to start when lock is already held");
+            } catch (Exception e) {
+                // Expected - server boot should fail with an exception
+                // Verify the exception message mentions the lock
+                String message = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                Assert.assertTrue("Exception should mention lock being held, but was: " + e.getMessage(),
+                        message.contains("lock") || message.contains("running"));
+            }
+
+            // Verify server is NOT running
+            Assert.assertFalse("Server should not be running after failed start",
+                    container.isStarted());
+        }
+    }
 }
