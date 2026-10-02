@@ -238,16 +238,11 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
             if (lock != null) {
                 runningLockChannel = channel;
                 runningLock = lock;
-                RunningLockUtil.setLockAcquired(true);
-                ServerLogger.AS_ROOT_LOGGER.debugf("Server running lock acquired at %s", lockPath);
             } else {
                 channel.close();
-                RunningLockUtil.setLockAcquired(false);
-                ServerLogger.AS_ROOT_LOGGER.warnf("Failed to acquire server running lock - lock already held by another process");
             }
         } catch (IOException e) {
-            RunningLockUtil.setLockAcquired(false);
-            ServerLogger.AS_ROOT_LOGGER.warnf(e, "Failed to acquire server running lock due to I/O error");
+            ServerLogger.AS_ROOT_LOGGER.debugf(e, "Failed to acquire server running lock");
         }
     }
 

@@ -43,7 +43,6 @@ import org.wildfly.installationmanager.spi.InstallationManagerFactory;
  */
 class InstMgrService implements Service {
     private static final Logger LOG = Logger.getLogger(InstMgrService.class);
-    private static final String LOCK_ACQUIRED_PROPERTY = "org.wildfly.core.running.lock.acquired";
 
     private final InstallationManagerFactory imf;
     private final Supplier<PathManager> pathManagerSupplier;
@@ -192,16 +191,7 @@ class InstMgrService implements Service {
     }
 
     void commitCandidateServer(String command) throws IOException {
-        // Query whether the server running lock was successfully acquired
-        // This allows Prospero to know whether it can rely on advisory lock detection
-        // or must fall back to temp file checking
-        boolean lockHeld = Boolean.parseBoolean(System.getProperty(LOCK_ACQUIRED_PROPERTY, "false"));
-
-        if (!lockHeld) {
-            LOG.warnf("Server running lock was not acquired - Prospero will fall back to temp file detection");
-        }
-
-        this.candidateStatus.commit(command, lockHeld);
+        this.candidateStatus.commit(command);
     }
 
     void resetCandidateStatus() throws IOException {

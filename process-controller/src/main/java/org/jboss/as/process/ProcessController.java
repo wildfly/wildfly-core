@@ -55,7 +55,6 @@ public final class ProcessController {
 
     private static final short AUTH_BYTES_LENGTH = 16;
     public static final short AUTH_BYTES_ENCODED_LENGTH = 24;
-    private static final String LOCK_ACQUIRED_PROPERTY = "org.wildfly.core.running.lock.acquired";
 
     private final PrintStream stdout;
     private final PrintStream stderr;
@@ -251,16 +250,11 @@ public final class ProcessController {
             FileLock lock = channel.tryLock();
             if (lock != null) {
                 this.runningLockChannel = channel;
-                System.setProperty(LOCK_ACQUIRED_PROPERTY, "true");
-                ProcessLogger.ROOT_LOGGER.debugf("Process controller running lock acquired");
             } else {
                 channel.close();
-                System.setProperty(LOCK_ACQUIRED_PROPERTY, "false");
-                ProcessLogger.ROOT_LOGGER.warnf("Failed to acquire process controller running lock - lock already held");
             }
         } catch (IOException e) {
-            System.setProperty(LOCK_ACQUIRED_PROPERTY, "false");
-            ProcessLogger.ROOT_LOGGER.warnf(e, "Failed to acquire process controller running lock due to I/O error");
+            ProcessLogger.ROOT_LOGGER.debugf(e, "Failed to acquire process controller running lock");
         }
     }
 
