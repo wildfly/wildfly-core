@@ -20,6 +20,12 @@ if ($global:VERSION) {
     . $STANDALONE_CONF_FILE
 }
 
+# Check if SECMGR was enabled via environment variable or conf file
+if (Get-Env-Boolean SECMGR $false) {
+    Write-Warning "ERROR: The SECMGR option has been removed. The Security Manager is no longer supported."
+    exit 1
+}
+
 if (-Not(Test-Path variable:JAVA_OPTS)) {
     $JAVA_OPTS = Get-Java-Opts
 }

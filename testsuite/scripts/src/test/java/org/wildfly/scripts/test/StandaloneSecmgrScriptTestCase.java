@@ -27,6 +27,7 @@ public class StandaloneSecmgrScriptTestCase extends ScriptTestCase {
             throw new TimeoutException("Script did not exit after SECMGR error. Last executed command: "
                     + script.getLastExecutedCmd() + "\nThe server output was: \n" + script.getStdoutAsString());
         }
+        Assert.assertEquals("Expected exit code 1", 1, script.exitValue());
         final var stdout = script.getStdoutAsString();
         Assert.assertTrue("Expected SECMGR removal error message for a server started with "
                         + script.getLastExecutedCmd() + "\nThe server output was: \n" + stdout,
