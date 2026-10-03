@@ -5,6 +5,7 @@
 package org.jboss.as.server.controller.resources;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHENTICATION_CONTEXT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_DEPLOYED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_UNDEPLOYED_NOTIFICATION;
@@ -424,14 +425,17 @@ public class DeploymentAttributes {
             .addArbitraryDescriptor(WEB_URL, ModelNode.TRUE)
             .setAlternatives()
             .build();
+    public static final SimpleAttributeDefinition URL_AUTHENTICATION_CONTEXT = SimpleAttributeDefinitionBuilder.create(AUTHENTICATION_CONTEXT, ModelType.STRING, true)
+            .setValidator(new StringLengthValidator(1, true))
+            .build();
     public static final OperationDefinition UPLOAD_URL_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.UPLOAD_DEPLOYMENT_URL, DEPLOYMENT_RESOLVER)
-            .setParameters(URL_NOT_NULL)
+            .setParameters(URL_NOT_NULL, URL_AUTHENTICATION_CONTEXT)
             .setReplyParameters(UPLOAD_HASH_REPLY)
             .setRuntimeOnly()
             .addAccessConstraint(ApplicationTypeAccessConstraintDefinition.DEPLOYMENT)
             .build();
     public static final OperationDefinition DOMAIN_UPLOAD_URL_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.UPLOAD_DEPLOYMENT_URL, DEPLOYMENT_RESOLVER)
-            .setParameters(URL_NOT_NULL)
+            .setParameters(URL_NOT_NULL, URL_AUTHENTICATION_CONTEXT)
             .setReplyParameters(UPLOAD_HASH_REPLY)
             .withFlag(Flag.MASTER_HOST_CONTROLLER_ONLY)
             .setRuntimeOnly()
