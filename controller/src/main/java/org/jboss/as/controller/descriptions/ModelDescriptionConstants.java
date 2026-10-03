@@ -352,6 +352,7 @@ public class ModelDescriptionConstants {
     public static final String OPTIONAL = "optional";
     public static final String OPTIONS = "options";
     public static final String OPERATOR = "operator";
+    public static final String ORDERED_CHILDREN = "ordered-children";
     public static final String OUTBOUND_CONNECTION = "outbound-connection";
     /** Use this standard operation address field in the operation *description* ModelNode */
     public static final String OUTCOME = "outcome";

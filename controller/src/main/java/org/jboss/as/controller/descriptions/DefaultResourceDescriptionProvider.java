@@ -16,6 +16,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MOD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ORDERED_CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STABILITY;
 import static org.wildfly.common.Assert.checkNotNullParam;
@@ -194,6 +195,11 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
                 childNode.get(DESCRIPTION).set(descriptionResolver.getChildTypeDescription(key, locale, bundle));
                 childNode.get(MODEL_DESCRIPTION); // placeholder
             }
+        }
+
+        final ModelNode orderedChildren = result.get(ORDERED_CHILDREN).setEmptyList();
+        for (String orderedChildType : registration.getOrderedChildTypes()) {
+            orderedChildren.add(orderedChildType);
         }
 
         return result;

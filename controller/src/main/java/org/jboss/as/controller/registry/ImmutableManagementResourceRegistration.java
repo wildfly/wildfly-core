@@ -303,17 +303,17 @@ public interface ImmutableManagementResourceRegistration extends FeatureRegistry
 
 
     /**
-     * Return @code true} if a child resource registration was registered using
-     * {@link ManagementResourceRegistration#registerSubModel(ResourceDefinition)}, and {@code false} otherwise
+     * Returns {@code true} if a child resource registration was registered using
+     * {@link ManagementResourceRegistration#registerSubModel(ResourceDefinition)}, and {@code false} otherwise.
      *
      * @return whether this is an ordered child or not
      */
     boolean isOrderedChildResource();
 
     /**
-     * Return the names of the child types registered to be ordered.
+     * Return the names of the child types registered to be ordered, sorted by child type name.
      *
-     * @return the set of ordered child types, and and empty set if there are none
+     * @return the set of ordered child types, and an empty set if there are none
      */
     Set<String> getOrderedChildTypes();
 

@@ -42,6 +42,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NO_SERVICES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ORDERED_CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REASON;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
@@ -106,6 +107,7 @@ public class ModelTestModelDescriptionValidator {
         validResourceKeys.put(OPERATIONS, NullDescriptorValidator.INSTANCE);
         validResourceKeys.put(NOTIFICATIONS, NullDescriptorValidator.INSTANCE);
         validResourceKeys.put(CHILDREN, NullDescriptorValidator.INSTANCE);
+        validResourceKeys.put(ORDERED_CHILDREN, StringListValidator.INSTANCE);
         validResourceKeys.put(DEPRECATED, DeprecatedDescriptorValidator.INSTANCE);
         validResourceKeys.put(ACCESS_CONSTRAINTS, AccessConstraintValidator.INSTANCE);
         validResourceKeys.put(STORAGE, NullDescriptorValidator.INSTANCE);

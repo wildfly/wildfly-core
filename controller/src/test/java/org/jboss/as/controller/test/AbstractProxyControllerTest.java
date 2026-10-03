@@ -470,7 +470,7 @@ public abstract class AbstractProxyControllerTest {
 
     private void checkHostSubModelDescription(ModelNode result, boolean operations, boolean notifications) {
 
-        assertEquals(result.toString(), 7, result.keys().size());
+        assertEquals(result.toString(), 8, result.keys().size());
         assertEquals("description", result.get(DESCRIPTION).asString());
         assertEquals("serverchild", result.get(CHILDREN, "serverchild", DESCRIPTION).asString());
         assertEquals(1, result.get(CHILDREN, "serverchild", MODEL_DESCRIPTION).keys().size());
@@ -505,7 +505,7 @@ public abstract class AbstractProxyControllerTest {
     }
 
     private void checkHostChildSubModelDescription(ModelNode result, boolean operations, boolean notifications) {
-        assertEquals(6, result.keys().size());
+        assertEquals(7, result.keys().size());
         assertEquals(1, result.get(ATTRIBUTES).keys().size());
         assertEquals(ModelType.STRING, result.get(ATTRIBUTES, "name", TYPE).asType());
         assertEquals("name", result.get(ATTRIBUTES, "name", DESCRIPTION).asString());
@@ -548,7 +548,7 @@ public abstract class AbstractProxyControllerTest {
     }
 
     private void checkHostChildChildSubModelDescription(ModelNode result, boolean operations, boolean notifications) {
-        assertEquals(6, result.keys().size());
+        assertEquals(7, result.keys().size());
         assertEquals(3, result.get(ATTRIBUTES).keys().size());
         assertEquals(ModelType.STRING, result.get(ATTRIBUTES, "name", TYPE).asType());
         assertEquals("name", result.get(ATTRIBUTES, "name", DESCRIPTION).asString());
