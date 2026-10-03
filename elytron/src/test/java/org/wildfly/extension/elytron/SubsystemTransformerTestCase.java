@@ -28,6 +28,7 @@ import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
+import org.jboss.as.version.Stability;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
@@ -43,7 +44,7 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
     private static final PathAddress SUBSYSTEM_ADDRESS = PathAddress.pathAddress(ModelDescriptionConstants.SUBSYSTEM, ElytronExtension.SUBSYSTEM_NAME);
 
     public SubsystemTransformerTestCase() {
-        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
+        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension(), Stability.COMMUNITY);
     }
 
     @Override
@@ -170,10 +171,14 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
     }
 
     private void testRejectingTransformers(ModelTestControllerVersion controllerVersion, final String subsystemXmlFile, final FailedOperationTransformationConfig config) throws Exception {
+        testRejectingTransformers(controllerVersion, controllerVersion.getStability(), subsystemXmlFile, config);
+    }
+
+    private void testRejectingTransformers(ModelTestControllerVersion controllerVersion, Stability stability, final String subsystemXmlFile, final FailedOperationTransformationConfig config) throws Exception {
         ModelVersion elytronVersion = controllerVersion.getSubsystemModelVersion(getMainSubsystemName());
 
         //Boot up empty controllers with the resources needed for the ops coming from the xml to work
-        KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.withCapabilities(controllerVersion.getStability(),
+        KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.withCapabilities(stability,
                         RuntimeCapability.buildDynamicCapabilityName(Capabilities.DATA_SOURCE_CAPABILITY_NAME, "ExampleDS")
         ));
         builder.createLegacyKernelServicesBuilder(AdditionalInitialization.MANAGEMENT, controllerVersion, elytronVersion)

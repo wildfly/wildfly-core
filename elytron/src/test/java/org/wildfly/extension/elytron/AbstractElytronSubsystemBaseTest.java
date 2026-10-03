@@ -11,6 +11,7 @@ import java.security.Security;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
+import org.jboss.as.version.Stability;
 import org.junit.BeforeClass;
 
 /**
@@ -21,6 +22,10 @@ abstract class AbstractElytronSubsystemBaseTest extends AbstractSubsystemBaseTes
 
     public AbstractElytronSubsystemBaseTest(String mainSubsystemName, Extension mainExtension) {
         super(mainSubsystemName, mainExtension);
+    }
+
+    public AbstractElytronSubsystemBaseTest(String mainSubsystemName, Extension mainExtension, Stability stability) {
+        super(mainSubsystemName, mainExtension, stability);
     }
 
     @BeforeClass
