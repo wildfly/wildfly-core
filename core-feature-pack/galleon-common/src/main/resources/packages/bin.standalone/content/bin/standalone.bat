@@ -41,11 +41,8 @@ setlocal EnableDelayedExpansion
 rem check for the security manager system property
 echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager" > nul
 if not errorlevel 1 (
-    echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager=allow" > nul
-    if errorlevel 1 (
-        echo ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable.
-        GOTO :EOF
-    )
+    echo ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed.
+    exit /b 1
 )
 setlocal DisableDelayedExpansion
 
@@ -56,7 +53,8 @@ if "%~1" == "" (
 ) else if "%~1" == "--debug" (
    goto READ-DEBUG-PORT
 ) else if "%~1" == "-secmgr" (
-   set SECMGR=true
+   echo ERROR: The -secmgr option has been removed. The Security Manager is no longer supported.
+   exit /b 1
 ) else if "%~1" == "-v" (
    goto READ-VERSION
 ) else if "%~1" == "-V" (
@@ -229,10 +227,10 @@ for %%a in (!CONSOLIDATED_OPTS!) do (
    )
 )
 
-rem If the -Djava.security.manager is found, enable the -secmgr and include a bogus security manager for JBoss Modules to replace
+rem If the -Djava.security.manager is found, fail the launch
 echo("!JAVA_OPTS!" | findstr /r /c:"-Djava.security.manager" > nul && (
-    echo ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable.
-    GOTO :EOF
+    echo ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed.
+    exit /b 1
 )
 
 rem Set default module root paths
@@ -295,13 +293,6 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
     set JAVA_OPTS=!JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!
     setlocal DisableDelayedExpansion
 
-    rem Set default Security Manager configuration value
-    if "%SECMGR%" == "true" (
-        call "%DIRNAME%common.bat" :setSecurityManagerDefault
-        setlocal EnableDelayedExpansion
-        set JAVA_OPTS=!JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!
-        setlocal DisableDelayedExpansion
-    )
 )
 
 if not "%PRESERVE_JAVA_OPTS%" == "true" (
@@ -320,11 +311,14 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
   setlocal DisableDelayedExpansion
 )
 
+rem Check if SECMGR was enabled via environment variable or conf file
+if "%SECMGR%" == "true" (
+    echo ERROR: The SECMGR option has been removed. The Security Manager is no longer supported.
+    exit /b 1
+)
+
 rem Set the module options
 set "MODULE_OPTS=%MODULE_OPTS%"
-if "%SECMGR%" == "true" (
-    set "MODULE_OPTS=%MODULE_OPTS% -secmgr"
-)
 setlocal EnableDelayedExpansion
 rem Add -client to the JVM options, if supported (32 bit VM), and not overridden
 echo "!MODULE_OPTS!" | findstr /I \-javaagent: > nul

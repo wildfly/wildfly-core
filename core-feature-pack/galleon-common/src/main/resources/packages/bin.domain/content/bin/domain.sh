@@ -17,10 +17,11 @@ while [ "$#" -gt 0 ]
 do
     case "$1" in
       -secmgr)
-          SECMGR="true"
+          echo "ERROR: The -secmgr option has been removed. The Security Manager is no longer supported."
+          exit 1
           ;;
       -Djava.security.manager=*)
-          echo "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
+          echo "ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed."
           exit 1
           ;;
       -v|-V|--version|-h|--help)
@@ -211,19 +212,21 @@ if $cygwin; then
     JBOSS_MODULEPATH=`cygpath --path --windows "$JBOSS_MODULEPATH"`
 fi
 
-# If the -Djava.security.manager is found, enable the -secmgr and include a bogus security manager for JBoss Modules to replace
-# Note that HOST_CONTROLLER_JAVA_OPTS will not need to be handled here
+# If the -Djava.security.manager is found, fail the launch
 SECURITY_MANAGER_SET=`echo $PROCESS_CONTROLLER_JAVA_OPTS | $GREP "java\.security\.manager"`
 if [ "x$SECURITY_MANAGER_SET" != "x" ]; then
-    echo "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
+    echo "ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed."
+    exit 1
+fi
+
+# Check if SECMGR was enabled via environment variable or conf file
+if [ "$SECMGR" = "true" ]; then
+    echo "ERROR: The SECMGR option has been removed. The Security Manager is no longer supported."
     exit 1
 fi
 
 # Set up the module arguments
 MODULE_OPTS=""
-if [ "$SECMGR" = "true" ]; then
-    MODULE_OPTS="$MODULE_OPTS -secmgr";
-fi
 
 # Check If jdk.serialFilter is specified
 JDK_FILTER_SET=`echo "$JAVA_OPTS $SERVER_OPTS $JDK_JAVA_OPTIONS" | $GREP "\-Djdk.serialFilter"`
@@ -242,13 +245,6 @@ setDefaultModularJvmOptions $PROCESS_CONTROLLER_JAVA_OPTS
 PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS $DEFAULT_MODULAR_JVM_OPTIONS"
 setDefaultModularJvmOptions $HOST_CONTROLLER_JAVA_OPTS
 HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS $DEFAULT_MODULAR_JVM_OPTIONS"
-
-# Set default Security Manager configuration value
-if [ "$SECMGR" = "true" ]; then
-    setSecurityManagerDefault
-    PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS $SECURITY_MANAGER_CONFIG_OPTION"
-    HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS $SECURITY_MANAGER_CONFIG_OPTION"
-fi
 
 # Display our environment
 echo "========================================================================="

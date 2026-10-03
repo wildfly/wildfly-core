@@ -89,14 +89,11 @@ if ((!$JAVA_OPTS) -or (!$PRESERVE_JAVA_OPTS)) {
     # $DISABLE_JDK_SERIAL_FILTER=$true
 }
 
-# Uncomment this to run with a security manager enabled
-# $SECMGR=$true
-
 # Uncomment this out to control garbage collection logging
 # $GC_LOG=$true
 
 # Uncomment to add a Java agent. If an agent is added to the module options, then jboss-modules.jar is added as an agent
-# on the JVM. This allows things like the log manager or security manager to be configured before the agent is invoked.
+# on the JVM. This allows things like the log manager to be configured before the agent is invoked.
 # $MODULE_OPTS="-javaagent:agent.jar"
 
 # Uncomment the following line to configure the grace period (in seconds) before applying a candidate server

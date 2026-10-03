@@ -77,9 +77,6 @@ rem # Uncomment to run server in debug mode
 rem set "DEBUG_MODE=true"
 rem set "DEBUG_PORT=8787"
 
-rem # Uncomment this to run with a security manager enabled
-rem set "SECMGR=true"
-
 rem # Uncomment this out to control garbage collection logging
 rem set "GC_LOG=true"
 
@@ -92,7 +89,7 @@ rem set "DISABLE_JDK_SERIAL_FILTER=true"
 :JAVA_OPTS_SET
 
 rem # Uncomment to add a Java agent. If an agent is added to the module options, then jboss-modules.jar is added as an agent
-rem # on the JVM. This allows things like the log manager or security manager to be configured before the agent is invoked.
+rem # on the JVM. This allows things like the log manager to be configured before the agent is invoked.
 rem set "MODULE_OPTS=-javaagent:agent.jar"
 
 rem # Uncomment the following line to enable debug traces for the Management CLI script file

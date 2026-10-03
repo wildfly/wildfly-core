@@ -63,8 +63,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         return List.of(
                 Map.of(),
                 Map.of("GC_LOG", "true"),
-                Map.of("MODULE_OPTS", "-javaagent:logging-agent-tests.jar=" + LoggingAgent.DEBUG_ARG),
-                Map.of("SECMGR", SECMGR_VALUE)
+                Map.of("MODULE_OPTS", "-javaagent:logging-agent-tests.jar=" + LoggingAgent.DEBUG_ARG)
         );
     }
 
@@ -122,11 +121,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         ServerHelper.checkInputArgs(client, PathAddress.EMPTY_ADDRESS, DEFAULT_EXPECTED_INPUT_ARGS);
 
         final var stdout = script.getStdoutAsString();
-        if (supportsEnhancedSecurityManager() && env.containsKey("SECMGR")) {
-            Assert.assertTrue("Expected to find -Djava.security.manager=allow in the JVM parameters.", stdout.contains("-Djava.security.manager=allow"));
-        } else {
-            Assert.assertFalse("Did not expect to find -Djava.security.manager=allow in the JVM parameters.", stdout.contains("-Djava.security.manager=allow"));
-        }
+        Assert.assertFalse("Did not expect to find -Djava.security.manager=allow in the JVM parameters.", stdout.contains("-Djava.security.manager=allow"));
 
         // test WFCORE-5917
         if (!script.getContainerHome().toString().trim().contains(" ")) {
