@@ -7,11 +7,11 @@ package org.jboss.as.domain.controller.transformers;
 
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createBuilder;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createBuilderFromCurrent;
-import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createChainFromCurrent;
 
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilderFactory;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
@@ -31,10 +31,10 @@ class ManagementTransformers {
         // prevent instantiation
     }
 
-    static ChainedTransformationDescriptionBuilder buildTransformerChain() {
+    static ChainedTransformationDescriptionBuilder buildTransformerChain(ChainedTransformationDescriptionBuilderFactory factory) {
         // Discard the domain level core-service=management resource and its children unless RBAC is enabled
         // Configuring rbac details is OK (i.e. discarable), so long as the provider is not enabled
-        ChainedTransformationDescriptionBuilder chainedBuilder = createChainFromCurrent(CoreManagementResourceDefinition.PATH_ELEMENT);
+        ChainedTransformationDescriptionBuilder chainedBuilder = factory.createChainedTransformationDescriptionBuilder(CoreManagementResourceDefinition.PATH_ELEMENT);
 
         ResourceTransformationDescriptionBuilder builder18To17 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_1_8, KernelAPIVersion.VERSION_1_7);
         builder18To17.addChildResource(AccessAuthorizationResourceDefinition.PATH_ELEMENT)
