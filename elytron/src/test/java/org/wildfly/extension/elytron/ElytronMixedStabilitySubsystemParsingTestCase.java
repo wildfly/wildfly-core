@@ -63,8 +63,7 @@ public class ElytronMixedStabilitySubsystemParsingTestCase extends AbstractSubsy
                         });
                 if (!isCurrent) {
                     // older versions use legacy-elytron-subsystem-*.xml
-                    String resourceName = name.contains("community-18.0") ? name.replace("elytron", "elytron-subsystem") : name.replace("elytron", "legacy-elytron-subsystem");
-                    return ModelTestUtils.readResource(getClass(), resourceName);
+                    return ModelTestUtils.readResource(getClass(), name.replace("elytron", "legacy-elytron-subsystem"));
                 } else {
                     return ModelTestUtils.readResource(getClass(), name.replace("elytron", "elytron-subsystem"));
                 }

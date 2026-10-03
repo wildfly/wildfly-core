@@ -17,13 +17,19 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static org.jboss.as.version.Stability.COMMUNITY;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
+import org.jboss.as.controller.client.helpers.MeasurementUnit;
+import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceBuilder;
@@ -69,6 +75,57 @@ class RealmDefinitions {
             .build();
 
     static final AttributeDefinition[] IDENTITY_REALM_ATTRIBUTES = { IDENTITY, ATTRIBUTE_NAME, ATTRIBUTE_VALUES };
+
+    // Brute force protection nested field definitions
+    static final SimpleAttributeDefinition BF_ENABLED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENABLED, ModelType.BOOLEAN)
+            .setRequired(false)
+            .setDefaultValue(ModelNode.TRUE)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition BF_MAX_FAILED_ATTEMPTS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAX_FAILED_ATTEMPTS, ModelType.INT)
+            .setRequired(false)
+            .setAllowExpression(true)
+            .setValidator(new IntRangeValidator(-1, Integer.MAX_VALUE, true, true))
+            .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition BF_LOCKOUT_INTERVAL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LOCKOUT_INTERVAL, ModelType.INT)
+            .setRequired(false)
+            .setAllowExpression(true)
+            .setMeasurementUnit(MeasurementUnit.MINUTES)
+            .setValidator(new IntRangeValidator(-1, Integer.MAX_VALUE, true, true))
+            .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition BF_SESSION_TIMEOUT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SESSION_TIMEOUT, ModelType.INT)
+            .setRequired(false)
+            .setAllowExpression(true)
+            .setMeasurementUnit(MeasurementUnit.MINUTES)
+            .setValidator(new IntRangeValidator(-1, Integer.MAX_VALUE, true, true))
+            .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition BF_MAX_CACHED_SESSIONS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAX_CACHED_SESSIONS, ModelType.INT)
+            .setRequired(false)
+            .setAllowExpression(true)
+            .setValidator(new IntRangeValidator(-1, Integer.MAX_VALUE, true, true))
+            .setRestartAllServices()
+            .build();
+
+    // Brute force protection OBJECT attribute containing all nested fields
+    static final ObjectTypeAttributeDefinition BRUTE_FORCE_PROTECTION = new ObjectTypeAttributeDefinition.Builder(
+            ElytronDescriptionConstants.BRUTE_FORCE_PROTECTION,
+            BF_ENABLED,
+            BF_MAX_FAILED_ATTEMPTS,
+            BF_LOCKOUT_INTERVAL,
+            BF_SESSION_TIMEOUT,
+            BF_MAX_CACHED_SESSIONS)
+            .setRequired(false)
+            .setStability(COMMUNITY)
+            .setRestartAllServices()
+            .build();
 
     static ResourceDefinition getIdentityRealmDefinition() {
         AbstractAddStepHandler add = new TrivialAddHandler<SecurityRealm>(SecurityRealm.class, SECURITY_REALM_RUNTIME_CAPABILITY) {
@@ -127,15 +184,41 @@ class RealmDefinitions {
                 .wrap(clazz);
     }
 
-    static <T extends SecurityRealm> Function<T, T> createBruteForceRealmTransformer(String name, Class<T> clazz, ServiceBuilder<?> serviceBuilder) {
+    static <T extends SecurityRealm> Function<T, T> createBruteForceRealmTransformer(String name, Class<T> clazz, ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
             Function<T, T> transformer;
-            if (isBruteForceProtectionEnabled(name)) {
+
+            // Determine configuration values with priority: model → system property → default
+            boolean enabled;
+            int maxAttempts, lockoutInterval, sessionTimeout, maxCachedSessions;
+
+            if (model.hasDefined(BRUTE_FORCE_PROTECTION.getName())) {
+                // Read from management model
+                ModelNode bfp = BRUTE_FORCE_PROTECTION.resolveModelAttribute(context, model);
+                enabled = bfp.hasDefined(BF_ENABLED.getName()) ? bfp.get(BF_ENABLED.getName()).asBoolean() : true;
+                maxAttempts = bfp.hasDefined(BF_MAX_FAILED_ATTEMPTS.getName()) ?
+                    bfp.get(BF_MAX_FAILED_ATTEMPTS.getName()).asInt() :
+                    getBruteForceConfigValue(name, BRUTE_FORCE_MAX_FAILED_ATTEMPTS);
+                lockoutInterval = bfp.hasDefined(BF_LOCKOUT_INTERVAL.getName()) ?
+                    bfp.get(BF_LOCKOUT_INTERVAL.getName()).asInt() :
+                    getBruteForceConfigValue(name, BRUTE_FORCE_LOCKOUT_INTERVAL);
+                sessionTimeout = bfp.hasDefined(BF_SESSION_TIMEOUT.getName()) ?
+                    bfp.get(BF_SESSION_TIMEOUT.getName()).asInt() :
+                    getBruteForceConfigValue(name, BRUTE_FORCE_SESSION_TIMEOUT);
+                maxCachedSessions = bfp.hasDefined(BF_MAX_CACHED_SESSIONS.getName()) ?
+                    bfp.get(BF_MAX_CACHED_SESSIONS.getName()).asInt() :
+                    getBruteForceConfigValue(name, BRUTE_FORCE_MAX_CACHED_SESSIONS);
+            } else {
+                // Fall back to system properties
+                enabled = isBruteForceProtectionEnabled(name);
+                maxAttempts = getBruteForceConfigValue(name, BRUTE_FORCE_MAX_FAILED_ATTEMPTS);
+                lockoutInterval = getBruteForceConfigValue(name, BRUTE_FORCE_LOCKOUT_INTERVAL);
+                sessionTimeout = getBruteForceConfigValue(name, BRUTE_FORCE_SESSION_TIMEOUT);
+                maxCachedSessions = getBruteForceConfigValue(name, BRUTE_FORCE_MAX_CACHED_SESSIONS);
+            }
+
+            if (enabled) {
                 final Supplier<ScheduledExecutorService> executorSupplier =
                         serviceBuilder.requires(SCHEDULED_EXECUTOR_RUNTIME_CAPABILITY.getCapabilityServiceName());
-                int maxAttempts = getBruteForceConfigValue(name, BRUTE_FORCE_MAX_FAILED_ATTEMPTS);
-                int lockoutInterval = getBruteForceConfigValue(name, BRUTE_FORCE_LOCKOUT_INTERVAL);
-                int sessionTimeout = getBruteForceConfigValue(name, BRUTE_FORCE_SESSION_TIMEOUT);
-                int maxCachedSessions = getBruteForceConfigValue(name, BRUTE_FORCE_MAX_CACHED_SESSIONS);
 
                 ROOT_LOGGER.tracef("Applying brute force protection to '%s' security realm. maxAttempts=%d, lockoutTimeout=%d, sessionTimeout=%d, maxCachedSessions=%d",
                     name, maxAttempts, lockoutInterval, sessionTimeout, maxCachedSessions);
@@ -158,8 +241,10 @@ class RealmDefinitions {
         }
 
         @Override
-        public Object prepareTransformer(String name, ServiceBuilder<?> serviceBuilder) {
-            return createBruteForceRealmTransformer(name, securityRealmClazz, serviceBuilder);
+        public Object prepareTransformer(String name, ServiceBuilder<?> serviceBuilder,
+                                          OperationContext context, ModelNode model)
+                throws OperationFailedException {
+            return createBruteForceRealmTransformer(name, securityRealmClazz, serviceBuilder, context, model);
         }
 
         @Override

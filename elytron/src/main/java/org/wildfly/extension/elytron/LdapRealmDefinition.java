@@ -14,6 +14,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BASE64;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HEX;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.extension.elytron.RealmDefinitions.BRUTE_FORCE_PROTECTION;
 import static org.wildfly.extension.elytron.RealmDefinitions.createBruteForceRealmTransformer;
 
 import java.nio.charset.Charset;
@@ -407,7 +408,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
             .build();
 
     static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {IdentityMappingObjectDefinition.OBJECT_DEFINITION, DIR_CONTEXT, DIRECT_VERIFICATION, ALLOW_BLANK_PASSWORD,
-                                                                                HASH_ENCODING, HASH_CHARSET};
+                                                                                HASH_ENCODING, HASH_CHARSET, BRUTE_FORCE_PROTECTION};
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -466,7 +467,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
             Consumer<ModifiableSecurityRealm> modifiableConsumer = serviceBuilder.provides(modifiableServiceName);
 
             Function<ModifiableSecurityRealm, ModifiableSecurityRealm> realmTransformer =
-                createBruteForceRealmTransformer(context.getCurrentAddressValue(), ModifiableSecurityRealm.class, serviceBuilder);
+                createBruteForceRealmTransformer(context.getCurrentAddressValue(), ModifiableSecurityRealm.class, serviceBuilder, context, model);
 
             TrivialService<SecurityRealm> ldapRealmService =
                     new TrivialService<>(() -> {
