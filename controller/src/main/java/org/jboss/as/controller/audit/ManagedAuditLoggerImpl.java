@@ -58,7 +58,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
 
     public ManagedAuditLoggerImpl(String asVersion, boolean server) {
         config = new CoreAuditLogConfiguration(asVersion, server);
-        childImpls = new ArrayList<ManagedAuditLoggerImpl>();
+        childImpls = new ArrayList<>();
     }
 
     private ManagedAuditLoggerImpl(ManagedAuditLoggerImpl src, boolean manualCommit) {
@@ -69,7 +69,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
 
     @Override
     public void log(boolean readOnly, ResultAction resultAction, String userId, String domainUUID, AccessMechanism accessMechanism,
-            InetAddress remoteAddress, Resource resultantModel, List<ModelNode> operations) {
+            InetAddress remoteAddress, Resource resultantModel, List<ModelNode> operations, List<ModelNode> redactedOperations) {
         if (runDisabledFastPath.get())
             return;
 
@@ -77,6 +77,9 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
         try {
             if (skipLogging(readOnly)) {
                 return;
+            }
+            if (this.isRedacted()) {
+                operations = redactedOperations;
             }
             storeLogItem(
                     AuditLogItem.createModelControllerItem(config.getAsVersion(), readOnly, config.isBooting(), resultAction, userId, domainUUID,
@@ -144,6 +147,26 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
         config.lock();
         try {
             config.setLogReadOnly(logReadOnly);
+        } finally {
+            config.unlock();
+        }
+    }
+
+    @Override
+    public boolean isRedacted() {
+        config.lock();
+        try {
+            return config.isRedacted();
+        } finally {
+            config.unlock();
+        }
+    }
+
+    @Override
+    public void setRedacted(boolean maskOperationParameters) {
+        config.lock();
+        try {
+            config.setRedacted(maskOperationParameters);
         } finally {
             config.unlock();
         }
@@ -524,6 +547,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
         private volatile Status status = Status.QUEUEING;
         private volatile boolean logBoot = true;
         private volatile boolean logReadOnly;
+        private volatile boolean redacted;
 
 
         /** Guarded by auditLock - the configured handlers we should use */
@@ -608,6 +632,16 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
         }
 
         /** Call with lock taken */
+        public boolean isRedacted(){
+            return this.redacted;
+        }
+
+        /** Call with lock taken */
+        public void setRedacted(boolean redacted) {
+            this.redacted = redacted;
+        }
+
+        /** Call with lock taken */
         boolean isLogBoot() {
             return logBoot;
         }
@@ -677,7 +711,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
     /**
      * The configuration for other audit loggers, e.g. jmx
      */
-    private static class NewAuditLogConfiguration  extends ManagedAuditLogConfiguration {
+    private static class NewAuditLogConfiguration extends ManagedAuditLogConfiguration {
 
         NewAuditLogConfiguration(CoreAuditLogConfiguration core, boolean manualCommit) {
             super(core.sharedConfiguration, false, manualCommit);
