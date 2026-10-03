@@ -4,6 +4,8 @@
  */
 package org.jboss.as.test.integration.management.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -22,7 +24,6 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.test.http.Authentication;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
-import org.junit.Assert;
 
 
 /**
@@ -112,7 +113,7 @@ public class CLIWrapper implements AutoCloseable {
         if (!connect) {
             return;
         }
-        Assert.assertTrue(sendConnect(cliAddress));
+        assertThat(sendConnect(cliAddress)).isTrue();
     }
 
     /**
@@ -140,7 +141,7 @@ public class CLIWrapper implements AutoCloseable {
         if (!connect) {
             return;
         }
-        Assert.assertTrue(sendConnect());
+        assertThat(sendConnect()).isTrue();
     }
 
     public CommandContext getCommandContext() {
@@ -202,7 +203,7 @@ public class CLIWrapper implements AutoCloseable {
             } catch (CommandLineException e) {
                 StringWriter stackTrace = new StringWriter();
                 e.printStackTrace(new PrintWriter(stackTrace));
-                Assert.fail(String.format("Failed to execute line '%s'%n%s", line, stackTrace.toString()));
+                fail(String.format("Failed to execute line '%s'%n%s", line, stackTrace.toString()));
             }
         }
         return true;
@@ -273,7 +274,7 @@ public class CLIWrapper implements AutoCloseable {
         try {
             return Util.isValidPath(ctx.getModelControllerClient(), node);
         } catch (CommandLineException e) {
-            Assert.fail("Failed to validate path: " + e.getLocalizedMessage());
+            fail("Failed to validate path: " + e.getLocalizedMessage());
             return false;
         }
     }

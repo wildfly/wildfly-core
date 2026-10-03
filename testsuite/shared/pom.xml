@@ -81,6 +81,11 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-elytron-integration</artifactId>
         </dependency>
