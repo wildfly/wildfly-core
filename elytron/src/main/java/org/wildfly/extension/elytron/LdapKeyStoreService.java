@@ -85,31 +85,36 @@ class LdapKeyStoreService implements ModifiableKeyStoreService {
     @Override
     public void start(StartContext startContext) throws StartException {
         try {
-            LdapKeyStore.Builder builder = LdapKeyStore.builder()
-                    .setDirContextSupplier(dirContextSupplierInjector.getValue())
-                    .setSearchPath(searchPath);
-
-            if (filterAlias != null) builder.setFilterAlias(filterAlias);
-            if (filterCertificate != null) builder.setFilterCertificate(filterCertificate);
-            if (filterIterate != null) builder.setFilterIterate(filterIterate);
-            if (createPath != null) builder.setCreatePath(createPath);
-            if (createRdn != null) builder.setCreateRdn(createRdn);
-            if (createAttributes != null) builder.setCreateAttributes(createAttributes);
-            if (aliasAttribute != null) builder.setAliasAttribute(aliasAttribute);
-            if (certificateAttribute != null) builder.setCertificateAttribute(certificateAttribute);
-            if (certificateType != null) builder.setCertificateType(certificateType);
-            if (certificateChainAttribute != null) builder.setCertificateChainAttribute(certificateChainAttribute);
-            if (certificateChainEncoding != null) builder.setCertificateChainEncoding(certificateChainEncoding);
-            if (keyAttribute != null) builder.setKeyAttribute(keyAttribute);
-            if (keyType != null) builder.setKeyType(keyType);
-
-            KeyStore keyStore = builder.build();
-            keyStore.load(null); // initialize
+            KeyStore keyStore = buildLdapKeyStore();
             this.modifiableKeyStore = keyStore;
             this.unmodifiableKeyStore = UnmodifiableKeyStore.unmodifiableKeyStore(keyStore);
         } catch (GeneralSecurityException | IOException e) {
             throw ROOT_LOGGER.unableToStartService(e);
         }
+    }
+
+    private KeyStore buildLdapKeyStore() throws GeneralSecurityException, IOException {
+        LdapKeyStore.Builder builder = LdapKeyStore.builder()
+                .setDirContextSupplier(dirContextSupplierInjector.getValue())
+                .setSearchPath(searchPath);
+
+        if (filterAlias != null) builder.setFilterAlias(filterAlias);
+        if (filterCertificate != null) builder.setFilterCertificate(filterCertificate);
+        if (filterIterate != null) builder.setFilterIterate(filterIterate);
+        if (createPath != null) builder.setCreatePath(createPath);
+        if (createRdn != null) builder.setCreateRdn(createRdn);
+        if (createAttributes != null) builder.setCreateAttributes(createAttributes);
+        if (aliasAttribute != null) builder.setAliasAttribute(aliasAttribute);
+        if (certificateAttribute != null) builder.setCertificateAttribute(certificateAttribute);
+        if (certificateType != null) builder.setCertificateType(certificateType);
+        if (certificateChainAttribute != null) builder.setCertificateChainAttribute(certificateChainAttribute);
+        if (certificateChainEncoding != null) builder.setCertificateChainEncoding(certificateChainEncoding);
+        if (keyAttribute != null) builder.setKeyAttribute(keyAttribute);
+        if (keyType != null) builder.setKeyType(keyType);
+
+        KeyStore keyStore = builder.build();
+        keyStore.load(null); // initialize the LDAP connection
+        return keyStore;
     }
 
     @Override
