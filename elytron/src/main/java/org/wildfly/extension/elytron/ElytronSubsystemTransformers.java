@@ -16,9 +16,11 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZ
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTOFLUSH;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DISTRIBUTED_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.EXTERNAL_ACCOUNT_BINDING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILESYSTEM_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FROM;
@@ -55,6 +57,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_16_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_17_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_18_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_19_0_0;
+import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_20_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_1_2_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_2_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_3_0_0;
@@ -106,6 +109,8 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
+        // 20.0.0 (WildFly 42) to 19.0.0 (WildFly 32)
+        from20(chainedBuilder);
         // 19.0.0 (WildFly 32) to 18.0.0 (WildFly 29)
         from19(chainedBuilder);
         // 18.0.0 (WildFly 29) to 17.0.0 (WildFly 28)
@@ -149,11 +154,23 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 ELYTRON_8_0_0, ELYTRON_7_0_0, ELYTRON_6_0_0, ELYTRON_5_0_0, ELYTRON_4_0_0, ELYTRON_3_0_0, ELYTRON_2_0_0, ELYTRON_1_2_0 });
     }
 
+    private static void from20(ChainedTransformationDescriptionBuilder chainedBuilder) {
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_20_0_0, ELYTRON_19_0_0);
+
+    }
+
     private static void from19(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_19_0_0, ELYTRON_18_0_0);
 
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXTS));
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.DYNAMIC_CLIENT_SSL_CONTEXT));
+        // external-account-binding is only parsed by the preview 19.0 schema, but still needs rejecting when
+        // transforming to 18.0.
+        builder.addChildResource(PathElement.pathElement(CERTIFICATE_AUTHORITY_ACCOUNT))
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, EXTERNAL_ACCOUNT_BINDING)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, EXTERNAL_ACCOUNT_BINDING)
+                .end();
     }
 
     private static void from18(ChainedTransformationDescriptionBuilder chainedBuilder) {

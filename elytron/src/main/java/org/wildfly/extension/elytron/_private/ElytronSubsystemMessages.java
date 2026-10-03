@@ -632,6 +632,12 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1069, value = "Invalid %s loaded, expected %s but received %s.")
     IllegalStateException invalidImplementationLoaded(String type, String expected, String actual);
 
+    @Message(id = 1070, value = "The attributes '%s' and '%s' must be configured together.")
+    OperationFailedException externalAccountBindingAttributesMustBeConfiguredTogether(String keyId, String credentialReference);
+
+    @Message(id = 1071, value = "External Account Binding requires an ACME client that supports AcmeAccount.Builder#setExternalAccountBinding(String, String).")
+    IllegalStateException externalAccountBindingNotSupportedByAcmeClient(@Cause Exception cause);
+
     @Message(id = 1079, value = "Unable to load module '%s'.")
     RuntimeException unableToLoadModuleRuntime(String module, @Cause Exception cause);
 

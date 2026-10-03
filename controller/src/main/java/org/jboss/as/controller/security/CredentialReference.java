@@ -379,7 +379,7 @@ public final class CredentialReference {
         ModelNode value = credentialReferenceAttributeDefinition.resolveModelAttribute(context, model);
 
         if (dependencyConsumer == null) {
-            handleCredentialReferenceUpdate(context, value, credentialReferenceAttributeDefinition.getName());
+            handleCredentialReferenceUpdate(context, value, credentialReferenceAttributeDefinition.getName(), keySuffix);
         }
 
         final String credentialStoreName;
@@ -401,7 +401,7 @@ public final class CredentialReference {
                     secret = null;
                 } else {
                     credentialStoreUpdateInfo = credentialStoreUpdateInfoMap.get(key);
-                    secret = credentialStoreUpdateInfo.getClearText();
+                    secret = credentialStoreUpdateInfo != null ? credentialStoreUpdateInfo.getClearText() : null;
                 }
             }
         } else {
@@ -636,11 +636,15 @@ public final class CredentialReference {
     }
 
     public static void rollbackCredentialStoreUpdate(AttributeDefinition credentialReferenceAD, OperationContext context, final ModelNode resolvedValue) {
+        rollbackCredentialStoreUpdate(credentialReferenceAD, context, resolvedValue, null);
+    }
+
+    public static void rollbackCredentialStoreUpdate(AttributeDefinition credentialReferenceAD, OperationContext context, final ModelNode resolvedValue, String keySuffix) {
         if (resolvedValue.isDefined()) {
             try {
                 final String store = CredentialReference.credentialReferencePartAsStringIfDefined(resolvedValue, STORE);
                 final String alias = CredentialReference.credentialReferencePartAsStringIfDefined(resolvedValue, ALIAS);
-                rollbackCredentialStoreUpdate(credentialReferenceAD, context, store, alias);
+                rollbackCredentialStoreUpdate(credentialReferenceAD, context, store, alias, keySuffix);
             } catch (OperationFailedException e) {
                 throw new RuntimeException(e);
             }
@@ -648,9 +652,13 @@ public final class CredentialReference {
     }
 
     public static void rollbackCredentialStoreUpdate(AttributeDefinition credentialReferenceAD, OperationContext context, String store, String alias) {
+        rollbackCredentialStoreUpdate(credentialReferenceAD, context, store, alias, null);
+    }
+
+    public static void rollbackCredentialStoreUpdate(AttributeDefinition credentialReferenceAD, OperationContext context, String store, String alias, String keySuffix) {
         try {
             Map<String, CredentialStoreUpdateInfo> credentialStoreUpdateInfoMap = context.getAttachment(CREDENTIAL_STORE_UPDATE_INFO);
-            CredentialStoreUpdateInfo credentialStoreUpdateInfo = credentialStoreUpdateInfoMap != null ? credentialStoreUpdateInfoMap.get(getAttachmentMapKey(context, credentialReferenceAD.getName())) : null;
+            CredentialStoreUpdateInfo credentialStoreUpdateInfo = credentialStoreUpdateInfoMap != null ? credentialStoreUpdateInfoMap.get(getAttachmentMapKey(context, keySuffix, credentialReferenceAD.getName())) : null;
             if (store != null && credentialStoreUpdateInfo != null && credentialStoreUpdateInfo.getClearText() != null) {
                 final String credentialStoreCapabilityName = RuntimeCapability.buildDynamicCapabilityName(CREDENTIAL_STORE_CAPABILITY, store);
                 final ServiceName credentialStoreServiceName = context.getCapabilityServiceName(credentialStoreCapabilityName, CredentialStore.class);
@@ -672,6 +680,10 @@ public final class CredentialReference {
     }
 
     public static void handleCredentialReferenceUpdate(OperationContext context, ModelNode credentialReference, String credentialReferenceAttributeName) throws OperationFailedException {
+        handleCredentialReferenceUpdate(context, credentialReference, credentialReferenceAttributeName, null);
+    }
+
+    public static void handleCredentialReferenceUpdate(OperationContext context, ModelNode credentialReference, String credentialReferenceAttributeName, String keySuffix) throws OperationFailedException {
         final String credentialStoreName;
         final String credentialType;
         final String secret;
@@ -704,7 +716,7 @@ public final class CredentialReference {
                     credentialStoreUpdateInfoMap = Collections.synchronizedMap(new HashMap<>());
                     context.attach(CREDENTIAL_STORE_UPDATE_INFO, credentialStoreUpdateInfoMap);
                 }
-                credentialStoreUpdateInfoMap.put(getAttachmentMapKey(context, credentialReferenceAttributeName), new CredentialStoreUpdateInfo(secret));
+                credentialStoreUpdateInfoMap.put(getAttachmentMapKey(context, keySuffix, credentialReferenceAttributeName), new CredentialStoreUpdateInfo(secret));
                 credentialReference.get(CLEAR_TEXT).set(new ModelNode());
             }
         }
@@ -713,6 +725,12 @@ public final class CredentialReference {
     public static boolean applyCredentialReferenceUpdateToRuntime(OperationContext context, ModelNode operation,
                                                                   ModelNode resolvedValue, ModelNode currentValue,
                                                                   String attributeName) throws OperationFailedException {
+        return applyCredentialReferenceUpdateToRuntime(context, operation, resolvedValue, currentValue, attributeName, null);
+    }
+
+    public static boolean applyCredentialReferenceUpdateToRuntime(OperationContext context, ModelNode operation,
+                                                                  ModelNode resolvedValue, ModelNode currentValue,
+                                                                  String attributeName, String keySuffix) throws OperationFailedException {
         if (resolvedValue.isDefined()) {
             final String store = CredentialReference.credentialReferencePartAsStringIfDefined(resolvedValue, STORE);
             final String alias = CredentialReference.credentialReferencePartAsStringIfDefined(resolvedValue, ALIAS);
@@ -724,7 +742,8 @@ public final class CredentialReference {
                 final CredentialStore credentialStore = getCredentialStore(context.getServiceRegistry(true), credentialStoreServiceName);
                 try {
                     Map<String, CredentialStoreUpdateInfo> credentialStoreUpdateInfoMap = context.getAttachment(CREDENTIAL_STORE_UPDATE_INFO);
-                    CredentialStoreUpdateInfo credentialStoreUpdateInfo = credentialStoreUpdateInfoMap.get(getAttachmentMapKey(context, attributeName));
+                    CredentialStoreUpdateInfo credentialStoreUpdateInfo = credentialStoreUpdateInfoMap != null
+                            ? credentialStoreUpdateInfoMap.get(getAttachmentMapKey(context, keySuffix, attributeName)) : null;
                     updateCredentialStore(credentialStore, alias, secret, context.getResult(), credentialStoreUpdateInfo);
                 } catch (CredentialStoreException e) {
                     throw new OperationFailedException(e);
