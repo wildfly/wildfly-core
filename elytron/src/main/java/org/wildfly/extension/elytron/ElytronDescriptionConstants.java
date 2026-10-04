@@ -430,6 +430,7 @@ interface ElytronDescriptionConstants {
     String PROVIDER_VERSION = "provider-version";
     String PROVIDERS = "providers";
     String PUBLIC_KEY = "public-key";
+    String PUBLIC_KEY_URL = "public-key-url";
 
     String RDN_IDENTIFIER = "rdn-identifier";
     String READ_ALIAS = "read-alias";
