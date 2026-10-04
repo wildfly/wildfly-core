@@ -58,6 +58,7 @@ public class JwtSecurityRealmTestCase extends AbstractElytronSubsystemBaseTest {
     private static final Provider wildFlyElytronProvider = new WildFlyElytronProvider();
     private static final String JWT_REALM_TEST = "jwt-realm-test.xml";
     private static final MockWebServer server = new MockWebServer();
+    private static final MockWebServer publicKeyUrlServer = new MockWebServer();
     private static final String JKU_ALLOWED_VALUES_PROPERTY = "wildfly.elytron.jwt.allowed.jku.values.JwtRealm";
 
     private static KeyPair keyPair1;
@@ -88,6 +89,7 @@ public class JwtSecurityRealmTestCase extends AbstractElytronSubsystemBaseTest {
 
         server.setDispatcher(createTokenDispatcher(jwksResponse));
         server.start(50831);
+        publicKeyUrlServer.start(50833);
 
         System.setProperty(JKU_ALLOWED_VALUES_PROPERTY, "https://localhost:50832 https://localhost:50831");
     }
@@ -96,6 +98,7 @@ public class JwtSecurityRealmTestCase extends AbstractElytronSubsystemBaseTest {
     public static void cleanUp() throws IOException {
         System.clearProperty(JKU_ALLOWED_VALUES_PROPERTY);
         server.shutdown();
+        publicKeyUrlServer.shutdown();
     }
 
     @Override
@@ -156,6 +159,20 @@ public class JwtSecurityRealmTestCase extends AbstractElytronSubsystemBaseTest {
         // token validation should succeed
         assertTrue(identityExists(securityRealm, evidence1));
         assertTrue(identityExists(securityRealm, evidence2));
+    }
+
+    @Test
+    public void testPublicKeyUrl() throws Exception {
+        KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        publicKeyUrlServer.setDispatcher(createPemDispatcher(getPemStringFromPublicKey(keyPair)));
+
+        KernelServices services = createKernelServices();
+        SecurityRealm securityRealm = assertSecurityRealmNotNull(services, "JwtRealmWithPublicKeyUrl");
+
+        // Verify the realm can be created with a public-key-url attribute (WFCORE-7347).
+        // Full signature-verification behaviour is pending the wildfly-elytron library
+        // shipping JwtValidator.Builder.publicKeyUrl() (see performRuntime TODO in TokenRealmDefinition).
+        assertNotNull(securityRealm);
     }
 
     private SecurityRealm assertSecurityRealmNotNull(KernelServices services, String securityRealmName) {
@@ -227,5 +244,14 @@ public class JwtSecurityRealmTestCase extends AbstractElytronSubsystemBaseTest {
         pemWriter.flush();
         pemWriter.close();
         return writer.toString();
+    }
+
+    private static okhttp3.mockwebserver.Dispatcher createPemDispatcher(String pem) {
+        return new okhttp3.mockwebserver.Dispatcher() {
+            @Override
+            public okhttp3.mockwebserver.MockResponse dispatch(okhttp3.mockwebserver.RecordedRequest request) {
+                return new okhttp3.mockwebserver.MockResponse().setBody(pem);
+            }
+        };
     }
 }
