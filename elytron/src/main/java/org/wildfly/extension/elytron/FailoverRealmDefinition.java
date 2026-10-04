@@ -8,6 +8,7 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
+import static org.wildfly.extension.elytron.RealmDefinitions.BRUTE_FORCE_PROTECTION;
 import static org.wildfly.extension.elytron.RealmDefinitions.createBruteForceRealmTransformer;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -70,7 +71,7 @@ class FailoverRealmDefinition extends SimpleResourceDefinition {
             .setDefaultValue(ModelNode.TRUE)
             .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { DELEGATE_REALM, FAILOVER_REALM, EMIT_EVENTS};
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { DELEGATE_REALM, FAILOVER_REALM, EMIT_EVENTS, BRUTE_FORCE_PROTECTION};
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -116,7 +117,7 @@ class FailoverRealmDefinition extends SimpleResourceDefinition {
             Consumer<SecurityRealm> valueConsumer = serviceBuilder.provides(realmName);
 
             final Function<SecurityRealm, SecurityRealm> realmTransformer =
-                createBruteForceRealmTransformer(context.getCurrentAddressValue(), SecurityRealm.class, serviceBuilder);
+                createBruteForceRealmTransformer(context.getCurrentAddressValue(), SecurityRealm.class, serviceBuilder, context, model);
 
             TrivialService<SecurityRealm> failoverRealmService = new TrivialService<SecurityRealm>(() ->
             {
