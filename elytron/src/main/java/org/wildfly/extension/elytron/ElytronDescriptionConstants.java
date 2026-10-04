@@ -187,6 +187,8 @@ interface ElytronDescriptionConstants {
     String EVIDENCE_DECODER = "evidence-decoder";
     String EVIDENCE_DECODERS = "evidence-decoders";
     String EXPIRATION = "expiration";
+    String EXPIRATION_CHECK_DELAY = "expiration-check-delay";
+    String EXPIRATION_WATERMARK = "expiration-watermark";
     String EXPORT_CERTIFICATE = "export-certificate";
     String EXPORT_SECRET_KEY = "export-secret-key";
     String EXPRESSION = "expression";
