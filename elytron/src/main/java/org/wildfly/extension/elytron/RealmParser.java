@@ -110,13 +110,15 @@ class RealmParser {
             .build();
 
     private final PersistentResourceXMLDescription tokenRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM))
-            .addAttributes(TokenRealmDefinition.ATTRIBUTES)
+            .addAttribute(TokenRealmDefinition.PRINCIPAL_CLAIM)
+            .addAttribute(TokenRealmDefinition.JwtValidatorAttributes.JWT_VALIDATOR)
+            .addAttribute(TokenRealmDefinition.OAuth2IntrospectionValidatorAttributes.OAUTH2_INTROSPECTION_VALIDATOR)
             .build();
 
     private final PersistentResourceXMLDescription tokenRealmParser_19_0_community =
         builder(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM))
-                .addAttributes(TokenRealmDefinition.ATTRIBUTES)
-                .build();
+            .addAttributes(TokenRealmDefinition.ATTRIBUTES)
+            .build();
 
     private final PersistentResourceXMLDescription cachingRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.CACHING_REALM))
             .addAttributes(CachingRealmDefinition.ATTRIBUTES)

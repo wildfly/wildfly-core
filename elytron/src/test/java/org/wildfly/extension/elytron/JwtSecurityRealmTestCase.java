@@ -212,7 +212,6 @@ public class JwtSecurityRealmTestCase extends AbstractElytronSubsystemBaseTest {
     private boolean identityExists(SecurityRealm realm, Evidence evidence) throws RealmUnavailableException {
         RealmIdentity identity = realm.getRealmIdentity(evidence);
         assertNotNull(identity);
-        System.out.println("Identity: "+ identity.getRealmIdentityPrincipal());
         return identity.exists();
     }
 
