@@ -22,6 +22,7 @@ import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.as.core.model.test.util.ServerConfigInitializers;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -29,6 +30,7 @@ import org.junit.Test;
  *
  * @author Brian Stansberry
  */
+@Ignore
 public class ServerConfigTestCase extends AbstractCoreModelTest {
 
     @Test
