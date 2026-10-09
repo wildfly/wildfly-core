@@ -25,7 +25,6 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.wildfly.common.function.Functions;
 import org.wildfly.service.BlockingLifecycle;
@@ -481,7 +480,7 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
     static Builder builder(Runnable startTask, Runnable stopTask) {
         return new DefaultBuilder(new Service() {
             @Override
-            public void start(StartContext context) throws StartException {
+            public void start(StartContext context) {
                 startTask.run();
             }
 

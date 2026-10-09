@@ -232,7 +232,7 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T>, 
         }
 
         @Override
-        public ServiceDependency<T> resolve(OperationContext context, Resource resource) throws OperationFailedException {
+        public ServiceDependency<T> resolve(OperationContext context, Resource resource) {
             if (this.predicate.test(context, resource)) {
                 Map.Entry<String, String[]> resolved = this.resolve(context, resource, "");
                 return ServiceDependency.on(resolved.getKey(), this.getRequirement().getType(), resolved.getValue());
@@ -241,7 +241,7 @@ public interface ResourceCapabilityReference<T> extends CapabilityReference<T>, 
         }
 
         @Override
-        public ServiceDependency<T> resolve(OperationContext context, ModelNode model) throws OperationFailedException {
+        public ServiceDependency<T> resolve(OperationContext context, ModelNode model) {
             return this.resolve(context, new SimpleResource(model));
         }
 

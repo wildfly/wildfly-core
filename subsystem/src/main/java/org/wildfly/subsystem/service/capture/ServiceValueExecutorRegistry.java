@@ -6,12 +6,12 @@ package org.wildfly.subsystem.service.capture;
 
 import java.util.function.Consumer;
 
+import org.jboss.msc.service.ServiceName;
 import org.wildfly.service.capture.FunctionExecutor;
 import org.wildfly.service.capture.ValueExecutorRegistry;
-import org.wildfly.subsystem.service.ServiceDependency;
 
 /**
- * A registry of captured values.
+ * A registry of captured values with {@link ServiceValueRegistry provider-side} and {@link FunctionExecutorRegistry consumer-side} interfaces.
  * @author Paul Ferraro
  * @param <V> the captured value type
  */
@@ -23,21 +23,21 @@ public interface ServiceValueExecutorRegistry<V> extends ServiceValueRegistry<V>
      * @return a new value executor registry
      */
     static <V> ServiceValueExecutorRegistry<V> newInstance() {
-        ValueExecutorRegistry<ServiceDependency<V>, V> registry = ValueExecutorRegistry.newInstance();
+        ValueExecutorRegistry<ServiceName, V> registry = ValueExecutorRegistry.newInstance();
         return new ServiceValueExecutorRegistry<>() {
             @Override
-            public Consumer<V> add(ServiceDependency<V> dependency) {
-                return registry.add(dependency);
+            public Consumer<V> add(ServiceName name) {
+                return registry.add(name);
             }
 
             @Override
-            public void remove(ServiceDependency<V> dependency) {
-                registry.remove(dependency);
+            public void remove(ServiceName name) {
+                registry.remove(name);
             }
 
             @Override
-            public FunctionExecutor<V> getExecutor(ServiceDependency<V> dependency) {
-                return registry.getExecutor(dependency);
+            public FunctionExecutor<V> getExecutor(ServiceName name) {
+                return registry.getExecutor(name);
             }
         };
     }
