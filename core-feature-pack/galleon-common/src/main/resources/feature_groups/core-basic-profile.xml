@@ -14,5 +14,4 @@
         <feature-group name="elytron-app"/>
     </feature>
     <feature spec="subsystem.request-controller"/>
-    <feature-group name="security-manager"/>
 </feature-group-spec>

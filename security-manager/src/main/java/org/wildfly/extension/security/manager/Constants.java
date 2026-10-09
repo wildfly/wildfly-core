@@ -13,7 +13,6 @@ package org.wildfly.extension.security.manager;
 public class Constants {
 
     public static final String SUBSYSTEM_NAME = "security-manager";
-    public static final String SECURITY_MANAGER_SERVICE = "security-manager-service";
     public static final String DEPLOYMENT_PERMISSIONS = "deployment-permissions";
     public static final String MINIMUM_SET = "minimum-set";
     public static final String MAXIMUM_SET = "maximum-set";
