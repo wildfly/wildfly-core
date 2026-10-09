@@ -45,6 +45,9 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-http-spnego}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http-sso}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http-util}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-jose-jwk}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-jose-jwks}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-jose-util}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-json-util}"/>
         <!-- <artifact name="${org.wildfly.security:wildfly-elytron-jwt}"/> To be added as independent module in WildFly -->
         <artifact name="${org.wildfly.security:wildfly-elytron-keystore}"/>
@@ -105,6 +108,9 @@
         <module name="jakarta.xml.ws.api" optional="true"/>
         <module name="org.jboss.ws.spi" optional="true"/>
         <module name="org.apache.sshd"/>
+        <module name="com.fasterxml.jackson.core.jackson-core" optional="true"/>
+        <module name="com.fasterxml.jackson.core.jackson-annotations" optional="true"/>
+        <module name="com.fasterxml.jackson.core.jackson-databind" optional="true"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs" optional="true"/>
         <!--
         This is only exported because some of the ElytronXmlParser methods throw an exception in this module. If other
