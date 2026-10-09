@@ -35,6 +35,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
@@ -79,6 +80,7 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(false)
             .setMinSize(1)
             .setRestartAllServices()
+            .setFlags(AttributeAccess.Flag.REDACTABLE)
             .build();
 
     private static final ObjectTypeAttributeDefinition RESOLVER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.RESOLVER, NAME, CREDENTIAL_STORE, SECRET_KEY)
@@ -116,6 +118,7 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition CLEAR_TEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CLEAR_TEXT, ModelType.STRING, false)
             .setMinSize(1)
+            .setFlags(AttributeAccess.Flag.REDACTABLE)
             .build();
 
     static final SimpleOperationDefinition CREATE_EXPRESSION = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.CREATE_EXPRESSION, RESOURCE_RESOLVER)

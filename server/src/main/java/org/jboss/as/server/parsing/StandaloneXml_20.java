@@ -115,7 +115,7 @@ final class StandaloneXml_20 extends CommonXml implements ManagementXmlDelegate 
         this.namespace = namespace.getUri();
         this.stability = namespace.getStability();
         this.accessControlXml = AccessControlXml.newInstance(this.namespace);
-        this.auditLogDelegate = AuditLogXml.newInstance(version, false);
+        this.auditLogDelegate = AuditLogXml.newInstance(version, false, this.stability);
         this.deferredExtensionContext = deferredExtensionContext;
         this.parsingOptions = options;
     }

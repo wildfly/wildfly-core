@@ -37,7 +37,7 @@ public interface AuditLogger {
     }
 
     void log(boolean readOnly, OperationContext.ResultAction resultAction, String userId, String domainUUID,
-             AccessMechanism accessMechanism, InetAddress remoteAddress, final Resource resultantModel, List<ModelNode> operations);
+             AccessMechanism accessMechanism, InetAddress remoteAddress, final Resource resultantModel, List<ModelNode> operations,  List<ModelNode> redactedOperations);
 
     void logJmxMethodAccess(final boolean readOnly, final String userId, final String domainUUID, final AccessMechanism accessMechanism, InetAddress remoteAddress,
              final String methodName, final String[] methodSignature, final Object[] methodParams, final Throwable error);
@@ -55,6 +55,15 @@ public interface AuditLogger {
         }
 
         @Override
+        public boolean isRedacted() {
+            return false;
+        }
+
+        @Override
+        public void setRedacted(boolean maskOperationParameters) {
+        }
+
+        @Override
         public boolean isLogBoot() {
             return false;
         }
@@ -68,7 +77,7 @@ public interface AuditLogger {
         }
 
         @Override
-        public void log(boolean readOnly, OperationContext.ResultAction resultAction, String userId, String domainUUID, AccessMechanism accessMechanism, InetAddress remoteAddress, Resource resultantModel, List<ModelNode> operations) {
+        public void log(boolean readOnly, OperationContext.ResultAction resultAction, String userId, String domainUUID, AccessMechanism accessMechanism, InetAddress remoteAddress, Resource resultantModel, List<ModelNode> operations, List<ModelNode> redactedOperations) {
         }
 
         @Override

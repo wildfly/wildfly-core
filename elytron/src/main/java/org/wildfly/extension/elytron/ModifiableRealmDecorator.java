@@ -19,6 +19,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -325,6 +326,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
     static class SetPasswordHandler extends ElytronRuntimeOnlyHandler {
 
         static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD, ModelType.STRING, false)
+                .setFlags(AttributeAccess.Flag.REDACTABLE)
                 .build();
 
         static class Bcrypt {

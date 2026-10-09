@@ -5,7 +5,7 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<server xmlns="urn:jboss:domain:community:20.0">
+<server xmlns="urn:jboss:domain:community:21.0">
     <management>
         <management-interfaces>
             <http-interface http-authentication-factory="management-http" allowed-origins="http://www.example.com http://localhost"

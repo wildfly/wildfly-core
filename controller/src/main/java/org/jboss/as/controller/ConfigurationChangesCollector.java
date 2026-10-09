@@ -43,10 +43,15 @@ public interface ConfigurationChangesCollector {
 
     void deactivate();
 
-    static class ConfigurationChangesCollectorImpl implements ConfigurationChangesCollector {
+    boolean isRedacted();
+
+    void setRedacted(boolean redacted);
+
+    class ConfigurationChangesCollectorImpl implements ConfigurationChangesCollector {
 
         private final Deque<ConfigurationChange> history = new ArrayDeque<>();
         private int maxHistory;
+        private boolean redacted;
 
         private ConfigurationChangesCollectorImpl(final int maxHistory) {
             this.maxHistory = maxHistory;
@@ -102,9 +107,19 @@ public interface ConfigurationChangesCollector {
                 this.history.clear();
             }
         }
+
+        @Override
+        public void setRedacted(boolean redacted) {
+            this.redacted = redacted;
+        }
+
+        @Override
+        public boolean isRedacted() {
+            return this.redacted;
+        }
     }
 
-    static final class ConfigurationChange {
+    final class ConfigurationChange {
 
         private static final DateTimeFormatter DATE_FORMAT = new DateTimeFormatterBuilder().appendInstant(3).toFormatter(Locale.ENGLISH);
         private final OperationContext.ResultAction resultAction;
