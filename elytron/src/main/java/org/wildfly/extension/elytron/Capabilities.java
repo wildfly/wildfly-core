@@ -122,11 +122,23 @@ class Capabilities {
 
     static final String KEY_MANAGER_CAPABILITY = CAPABILITY_BASE + "key-manager";
 
+    /*
+     * A variant of the key-manager capability which also provides access to the underlying
+     * {@code KeyManager} as a runtime API from a {@code ExceptionFunction<OperationContext, KeyManager, OperationFailedException>}.
+     */
+    static final String KEY_MANAGER_API_CAPABILITY = CAPABILITY_BASE + "key-manager-api";
+
     static final RuntimeCapability<Void> KEY_MANAGER_RUNTIME_CAPABILITY =  RuntimeCapability
             .Builder.of(KEY_MANAGER_CAPABILITY, true, KeyManager.class)
             .build();
 
     static final String KEY_STORE_CAPABILITY = CAPABILITY_BASE + "key-store";
+
+    /*
+     * A variant of the key-store capability which also provides access to the underlying
+     * {@code KeyStore} as a runtime API from a {@code ExceptionFunction<OperationContext, KeyStore, OperationFailedException>}.
+     */
+    static final String KEY_STORE_API_CAPABILITY = CAPABILITY_BASE + "key-store-api";
 
     static final RuntimeCapability<Void> KEY_STORE_RUNTIME_CAPABILITY =  RuntimeCapability
         .Builder.of(KEY_STORE_CAPABILITY, true, KeyStore.class)
@@ -244,11 +256,36 @@ class Capabilities {
 
     static final String SSL_CONTEXT_CAPABILITY = CAPABILITY_BASE + "ssl-context";
 
+    /**
+     * A dedicated capability advertised only by {@code client-ssl-context} resources, distinct from the generic
+     * {@code ssl-context} capability.  External extensions (e.g. the HashiCorp Vault feature pack) can depend on
+     * this capability to reference outbound TLS without pulling in the full {@code authentication-context} chain.
+     */
+    static final String CLIENT_SSL_CONTEXT_CAPABILITY = CAPABILITY_BASE + "client-ssl-context";
+
+    /*
+     * A dedicated capability for the client-ssl-context resource which also provides access to the underlying
+     * {@code SSLContext} as a runtime API from a {@code ExceptionFunction<OperationContext, SSLContext, OperationFailedException>}.
+     * This is distinct from the generic ssl-context capability so external extensions can reference outbound TLS
+     * via client-ssl-context specifically.
+     */
+    static final String CLIENT_SSL_CONTEXT_API_CAPABILITY = CAPABILITY_BASE + "client-ssl-context-api";
+
     static final RuntimeCapability<Void> SSL_CONTEXT_RUNTIME_CAPABILITY = RuntimeCapability
         .Builder.of(SSL_CONTEXT_CAPABILITY, true, SSLContext.class)
         .build();
 
+    static final RuntimeCapability<Void> CLIENT_SSL_CONTEXT_RUNTIME_CAPABILITY = RuntimeCapability
+        .Builder.of(CLIENT_SSL_CONTEXT_CAPABILITY, true, SSLContext.class)
+        .build();
+
     static final String TRUST_MANAGER_CAPABILITY = CAPABILITY_BASE + "trust-manager";
+
+    /*
+     * A variant of the trust-manager capability which also provides access to the underlying
+     * {@code TrustManager} as a runtime API from a {@code ExceptionFunction<OperationContext, TrustManager, OperationFailedException>}.
+     */
+    static final String TRUST_MANAGER_API_CAPABILITY = CAPABILITY_BASE + "trust-manager-api";
 
     static final RuntimeCapability<Void> TRUST_MANAGER_RUNTIME_CAPABILITY =  RuntimeCapability
             .Builder.of(TRUST_MANAGER_CAPABILITY, true, TrustManager.class)

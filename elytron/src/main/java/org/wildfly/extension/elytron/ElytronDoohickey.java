@@ -6,15 +6,13 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.extension.elytron.DoohickeySimultaneity.withLock;
+import static org.wildfly.extension.elytron.DoohickeySimultaneity.withLockForService;
+import static org.wildfly.extension.elytron.DoohickeySimultaneity.withLockForReset;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.io.File;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
@@ -27,7 +25,6 @@ import org.jboss.msc.service.StartException;
 import org.wildfly.common.function.ExceptionFunction;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
-import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 
 /**
  * The {@code Doohickey} is the central point for resource initialisation allowing a resource to be
@@ -36,20 +33,6 @@ import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 abstract class ElytronDoohickey<T> implements ExceptionFunction<OperationContext, T, OperationFailedException> {
-
-    private static final ThreadLocal<Deque<PathAddress>> CALL_STACK = new ThreadLocal() {
-        @Override
-        protected Deque<PathAddress> initialValue() {
-            return new ArrayDeque<>();
-        }
-    };
-
-    /*
-     * As each Thread tracks the addresses of the relevent resources we could likely implement some form of
-     * deadlock detection that does not rely on taking a global lock.
-     */
-
-    private static final Lock GLOBAL_LOCK = new ReentrantLock();
 
     private final PathAddress resourceAddress;
 
@@ -65,54 +48,73 @@ abstract class ElytronDoohickey<T> implements ExceptionFunction<OperationContext
     @Override
     public final T apply(final OperationContext foreignContext) throws OperationFailedException {
         // The apply method is assumed to be called from the runtime API - i.e. MSC dependencies are not available.
-        if (value == null) {
-            GLOBAL_LOCK.lock();
-            try {
-                checkCycle();
-                try {
-                    if (value == null) {
-                        if (foreignContext == null) {
-                            // If a caller that can't provide an OperationContext needs to initialize,
-                            // there's a programming bug as this object should be initialized
-                            // before any call paths are executed that don't come through
-                            // the OperationStepHandlers that provide a context.
-                            throw ElytronSubsystemMessages.ROOT_LOGGER.illegalNonManagementInitialization(getClass());
-                        }
-                        resolveRuntime(foreignContext, true);
-                        value = createImmediately(foreignContext);
-                    }
-                } finally {
-                    CALL_STACK.get().removeFirst();
-                }
-            } finally {
-                GLOBAL_LOCK.unlock();
-            }
+        T current = value;
+        if (current != null) {
+            return current;
         }
-
-        return value;
+        return withLock(resourceAddress, () -> {
+            if (value == null) {
+                if (foreignContext == null) {
+                    // If a caller that can't provide an OperationContext needs to initialize,
+                    // there's a programming bug as this object should be initialized
+                    // before any call paths are executed that don't come through
+                    // the OperationStepHandlers that provide a context.
+                    throw ROOT_LOGGER.illegalNonManagementInitialization(getClass());
+                }
+                resolveRuntime(foreignContext, true);
+                value = createImmediately(foreignContext);
+            }
+            return value;
+        });
     }
 
     public final T get() throws StartException {
         // The get method is assumed to be called as part of the MSC lifecycle.
-        if (value == null) {
-            GLOBAL_LOCK.lock();
-            try {
-                checkCycle();
-                try {
-                    if (value == null) {
-                        value = serviceValueSupplier.get();
-                    }
-                } finally {
-                    CALL_STACK.get().removeFirst();
-                }
-            } catch (OperationFailedException e) {
-                throw new StartException(e);
-            } finally {
-                GLOBAL_LOCK.unlock();
-            }
+        T current = value;
+        if (current != null) {
+            return current;
         }
+        try {
+            return withLockForService(resourceAddress, () -> {
+                if (value == null) {
+                    value = serviceValueSupplier.get();
+                }
+                return value;
+            });
+        } catch (OperationFailedException e) {
+            throw new StartException(e);
+        }
+    }
 
-        return value;
+    /**
+     * Called by custom service {@code start()} implementations that manage their own construction
+     * rather than delegating to a {@link TrivialService}.  Executes the provided {@code builder}
+     * under the same global lock used by {@link #apply(OperationContext)} and {@link #get()},
+     * guaranteeing that exactly one of the two paths constructs and caches the value.
+     *
+     * <p>The {@code builder} is only invoked if no value has been cached yet.  If a value is
+     * already present (because the early API ran first) the builder is skipped and the cached
+     * value is returned, allowing the service to reuse it.</p>
+     *
+     * @param builder the construction logic to run if the value is not yet initialised
+     * @return the canonical cached value (either pre-existing or freshly built by {@code builder})
+     * @throws StartException if {@code builder} throws, or if cycle detection fires
+     */
+    T getForService(ExceptionSupplier<T, StartException> builder) throws StartException {
+        T current = value;
+        if (current != null) {
+            return current;
+        }
+        try {
+            return withLockForService(resourceAddress, () -> {
+                if (value == null) {
+                    value = builder.get();
+                }
+                return value;
+            });
+        } catch (OperationFailedException e) {
+            throw new StartException(e);
+        }
     }
 
     public final void prepareService(OperationContext context, CapabilityServiceBuilder<?> serviceBuilder) throws OperationFailedException {
@@ -124,28 +126,26 @@ abstract class ElytronDoohickey<T> implements ExceptionFunction<OperationContext
         resolveRuntime(foreignContext, false);
     }
 
-    private final void resolveRuntime(final OperationContext foreignContext, final boolean skipCycleCheck) throws OperationFailedException {
+    private void resolveRuntime(final OperationContext foreignContext, final boolean skipCycleCheck) throws OperationFailedException {
         // The OperationContext may not be foreign but treat it as though it is.
         if (modelResolved == false) {
             if (value == null) {
-                GLOBAL_LOCK.lock();
-                try {
-                    if (!skipCycleCheck) {
-                        checkCycle();
+                if (skipCycleCheck) {
+                    // Already holding the lock and already pushed our address — just resolve.
+                    if (modelResolved == false) {
+                        ModelNode model = foreignContext.readResourceFromRoot(resourceAddress).getModel();
+                        resolveRuntime(model, foreignContext);
+                        modelResolved = true;
                     }
-                    try {
+                } else {
+                    withLock(resourceAddress, () -> {
                         if (modelResolved == false) {
                             ModelNode model = foreignContext.readResourceFromRoot(resourceAddress).getModel();
                             resolveRuntime(model, foreignContext);
                             modelResolved = true;
                         }
-                    } finally {
-                        if (!skipCycleCheck) {
-                            CALL_STACK.get().removeFirst();
-                        }
-                    }
-                } finally {
-                    GLOBAL_LOCK.unlock();
+                        return null;
+                    });
                 }
             }
         }
@@ -165,24 +165,77 @@ abstract class ElytronDoohickey<T> implements ExceptionFunction<OperationContext
         return resolved;
     }
 
-    private void checkCycle() throws OperationFailedException {
-        Deque<PathAddress> currentStack = CALL_STACK.get();
-        if (currentStack.contains(resourceAddress)) {
-            StringBuilder sb = new StringBuilder();
-            Iterator<PathAddress> iterator = currentStack.descendingIterator();
-            boolean foundStart = false;
-            while (iterator.hasNext()) {
-                PathAddress current = iterator.next();
-                foundStart = foundStart || current.equals(resourceAddress);
-                if (foundStart) {
-                    sb.append('{').append(current.toString()).append("}->");
-                }
-            }
-            sb.append('{').append(resourceAddress.toString()).append('}');
+    /**
+     * Returns {@code true} if this doohickey already holds an initialised value, {@code false} otherwise.
+     * Package-private so that service implementations can check whether early-access initialisation has
+     * already run before deciding whether to skip their own load.
+     */
+    boolean hasValue() {
+        return value != null;
+    }
 
-            throw ROOT_LOGGER.cycleDetected(sb.toString());
-        }
-        currentStack.addFirst(resourceAddress);
+    /**
+     * Updates the cached value held by this doohickey.  Package-private so that a service implementation
+     * that creates the canonical resource instance (e.g. the unmodifiable wrapper around an
+     * {@code AtomicLoadKeyStore}) can ensure the API and the service return the same object once the
+     * service has started.
+     *
+     * @param canonicalValue the canonical instance to cache; must not be {@code null}
+     */
+    void setValue(T canonicalValue) {
+        this.value = canonicalValue;
+    }
+
+    /**
+     * Returns the currently cached value without triggering initialization.
+     * Returns {@code null} if the value has not yet been set.
+     * Package-private; symmetric with {@link #hasValue()}.
+     */
+    T cachedValue() {
+        return value;
+    }
+
+    /**
+     * Clears the cached value so that the next call to {@link #get()} re-invokes the service-path supplier,
+     * then delegates to {@link #onReset()} so that subclasses can clear any additional derived state they
+     * cache alongside the primary value (e.g. an unwrapped {@code AtomicLoadKeyStore}).
+     *
+     * <p>Package-private so that service {@code stop()} implementations can call it without casting.</p>
+     */
+    void reset() {
+        withLockForReset(() -> {
+            this.value = null;
+            onReset();
+        });
+    }
+
+    /**
+     * Called by {@link #reset()} after the primary cached value has been cleared.  Subclasses that
+     * maintain additional derived state (e.g. {@code KeyStoreDoohickey} caches an
+     * {@code AtomicLoadKeyStore} alongside the unmodifiable wrapper) override this to clear that state
+     * in lockstep with the primary value.  The default implementation does nothing.
+     */
+    protected void onReset() {
+    }
+
+    /**
+     * Returns a {@link TrivialService.ValueSupplier} whose {@code get()} delegates to {@link #get()}
+     * and whose {@code dispose()} calls {@link #reset()}.  Used by {@link DoohickeyAddHandler} so that
+     * a normal MSC dependency restart (stop then start) invalidates the cached value and forces the
+     * next start to rebuild from the wired MSC suppliers rather than returning stale state.
+     */
+    TrivialService.ValueSupplier<T> asValueSupplier() {
+        return new TrivialService.ValueSupplier<T>() {
+            @Override
+            public T get() throws StartException {
+                return ElytronDoohickey.this.get();
+            }
+
+            @Override
+            public void dispose() {
+                ElytronDoohickey.this.reset();
+            }
+        };
     }
 
     protected abstract void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException;

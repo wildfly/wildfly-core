@@ -634,6 +634,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.INIT);
         Assert.assertEquals(SUCCESS, services.executeOperation(operation).get(OUTCOME).asString());
 
+        Assert.assertSame(trustManager, services.getContainer().getService(serviceName).getValue());
         Assert.assertEquals(1, trustManager.getAcceptedIssuers().length);
 
         // See if the trust manager contains the new certificate
