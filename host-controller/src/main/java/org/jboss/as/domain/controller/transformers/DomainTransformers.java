@@ -37,11 +37,11 @@ import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.controller.transform.TransformersSubRegistration;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilderFactory;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescription;
-import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.resources.HostExcludeResourceDefinition;
@@ -66,11 +66,12 @@ public class DomainTransformers {
         //For JBoss EAP: 8.0.0 -> 5.0.0 -> 4.0.0 -> 1.8.0 -> 1.7.0 -> 1.6.0 -> 1.5.0
 
         registerRootTransformers(registry);
-        registerChainedManagementTransformers(registry);
-        registerChainedServerGroupTransformers(registry);
+        ChainedTransformationDescriptionBuilderFactory factory = KernelAPIVersion.createChainedTransformationDescriptionBuilderFactory(registry);
+        registerChainedManagementTransformers(registry, factory);
+        registerChainedServerGroupTransformers(registry, factory);
         registerProfileTransformers(registry);
-        registerSocketBindingGroupTransformers(registry);
-        registerDeploymentTransformers(registry);
+        registerSocketBindingGroupTransformers(registry, factory);
+        registerDeploymentTransformers(registry, factory);
     }
 
     private static void registerRootTransformers(TransformerRegistry registry) {
@@ -91,7 +92,7 @@ public class DomainTransformers {
         // FIRST: versions with special transformations
 
         //todo we should use ChainedTransformationDescriptionBuilder but it doesn't work properly with "root" resources
-        ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(null);
+        ResourceTransformationDescriptionBuilder builder = registry.createResourceTransformationDescriptionBuilder();
         // discard host-exclude
         builder.discardChildResource(HostExcludeResourceDefinition.PATH_ELEMENT);
 
@@ -109,7 +110,7 @@ public class DomainTransformers {
 
         // NEXT:  We've registered all the versions that have special transformation needs.
         // Now, we register a transformer for every other version that discards host-exclude
-        builder = TransformationDescriptionBuilder.Factory.createInstance(null);
+        builder = registry.createResourceTransformationDescriptionBuilder();
         builder.discardChildResource(HostExcludeResourceDefinition.PATH_ELEMENT);
         for (KernelAPIVersion version : allOthers) {
             TransformersSubRegistration domain = registry.getDomainRegistration(version.modelVersion);
@@ -125,13 +126,13 @@ public class DomainTransformers {
         }
     }
 
-    private static void registerChainedManagementTransformers(TransformerRegistry registry) {
-        ChainedTransformationDescriptionBuilder builder = ManagementTransformers.buildTransformerChain();
+    private static void registerChainedManagementTransformers(TransformerRegistry registry, ChainedTransformationDescriptionBuilderFactory factory) {
+        ChainedTransformationDescriptionBuilder builder = ManagementTransformers.buildTransformerChain(factory);
         registerChainedTransformer(registry, builder, VERSION_1_7, VERSION_1_8, VERSION_4_1);
     }
 
-    private static void registerChainedServerGroupTransformers(TransformerRegistry registry) {
-        ChainedTransformationDescriptionBuilder builder = ServerGroupTransformers.buildTransformerChain();
+    private static void registerChainedServerGroupTransformers(TransformerRegistry registry, ChainedTransformationDescriptionBuilderFactory factory) {
+        ChainedTransformationDescriptionBuilder builder = ServerGroupTransformers.buildTransformerChain(factory);
         registerChainedTransformer(registry, builder, VERSION_15_0, VERSION_13_0, VERSION_10_0, VERSION_8_0, VERSION_7_0,
                 VERSION_6_0, VERSION_5_0, VERSION_4_1, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8,
                 VERSION_1_7);
@@ -145,8 +146,7 @@ public class DomainTransformers {
         //but it is very handy for testing the 'clone' behaviour
         final KernelAPIVersion[] PRE_PROFILE_CLONE_VERSIONS = new KernelAPIVersion[]{VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7};
         for (KernelAPIVersion version : PRE_PROFILE_CLONE_VERSIONS) {
-            ResourceTransformationDescriptionBuilder builder =
-                    ResourceTransformationDescriptionBuilder.Factory.createInstance(ProfileResourceDefinition.PATH);
+            ResourceTransformationDescriptionBuilder builder = registry.createResourceTransformationDescriptionBuilder(ProfileResourceDefinition.PATH);
             builder.getAttributeBuilder()
                     .addRejectCheck(RejectAttributeChecker.DEFINED, ProfileResourceDefinition.INCLUDES)
                     .setDiscard(DiscardAttributeChecker.UNDEFINED, ProfileResourceDefinition.INCLUDES)
@@ -158,8 +158,8 @@ public class DomainTransformers {
         }
     }
 
-    private static void registerSocketBindingGroupTransformers(TransformerRegistry registry) {
-        ChainedTransformationDescriptionBuilder builder = SocketBindingGroupTransformers.buildTransformerChain();
+    private static void registerSocketBindingGroupTransformers(TransformerRegistry registry, ChainedTransformationDescriptionBuilderFactory factory) {
+        ChainedTransformationDescriptionBuilder builder = SocketBindingGroupTransformers.buildTransformerChain(factory);
         registerChainedTransformer(registry, builder, VERSION_1_8, VERSION_1_7);
     }
 
@@ -170,8 +170,8 @@ public class DomainTransformers {
         }
     }
 
-    private static void registerDeploymentTransformers(TransformerRegistry registry) {
-        ChainedTransformationDescriptionBuilder builder = DeploymentTransformers.buildTransformerChain();
+    private static void registerDeploymentTransformers(TransformerRegistry registry, ChainedTransformationDescriptionBuilderFactory factory) {
+        ChainedTransformationDescriptionBuilder builder = DeploymentTransformers.buildTransformerChain(factory);
         registerChainedTransformer(registry, builder, VERSION_4_1, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7);
     }
 
