@@ -24,11 +24,12 @@ do
           fi
           ;;
       -Djava.security.manager*)
-          echo "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
+          echo "ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed."
           exit 1
           ;;
       -secmgr)
-          SECMGR="true"
+          echo "ERROR: The -secmgr option has been removed. The Security Manager is no longer supported."
+          exit 1
           ;;
       -v|-V|--version|-h|--help)
           JAVA_OPTS="-Xmx16m"
@@ -296,30 +297,24 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
     setDefaultModularJvmOptions $JAVA_OPTS
     JAVA_OPTS="$JAVA_OPTS $DEFAULT_MODULAR_JVM_OPTIONS"
 
-    # Set default Security Manager configuration value
-    if [ "$SECMGR" = "true" ]; then
-        setSecurityManagerDefault
-        JAVA_OPTS="$JAVA_OPTS $SECURITY_MANAGER_CONFIG_OPTION"
-    fi
-
     JAVA_OPTS="$PREPEND_JAVA_OPTS $JAVA_OPTS"
 fi
 
-# Process the JAVA_OPTS and fail the script of a java.security.manager was found
+# Process the JAVA_OPTS and fail the script if a java.security.manager was found
 SECURITY_MANAGER_SET=`echo $JAVA_OPTS | $GREP "java\.security\.manager"`
 if [ "x$SECURITY_MANAGER_SET" != "x" ]; then
-    SECURITY_MANAGER_SET_TO_ALLOW=`echo $JAVA_OPTS | $GREP "java\.security\.manager=allow"`
-    if [ "x$SECURITY_MANAGER_SET_TO_ALLOW" = "x" ]; then
-        echo "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
-        exit 1
-    fi
+    echo "ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed."
+    exit 1
+fi
+
+# Check if SECMGR was enabled via environment variable or conf file
+if [ "$SECMGR" = "true" ]; then
+    echo "ERROR: The SECMGR option has been removed. The Security Manager is no longer supported."
+    exit 1
 fi
 
 # Set up the module arguments
 MODULE_OPTS="$MODULE_OPTS"
-if [ "$SECMGR" = "true" ]; then
-    MODULE_OPTS="$MODULE_OPTS -secmgr";
-fi
 AGENT_SET=$(echo "$MODULE_OPTS" | $GREP "\-javaagent:")
 if [ "x$AGENT_SET" != "x" ]; then
   JAVA_OPTS="-javaagent:\"${JBOSS_HOME}/jboss-modules.jar\" ${JAVA_OPTS}"

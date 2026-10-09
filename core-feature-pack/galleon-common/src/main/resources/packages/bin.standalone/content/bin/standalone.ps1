@@ -20,22 +20,25 @@ if ($global:VERSION) {
     . $STANDALONE_CONF_FILE
 }
 
+# Check if SECMGR was enabled via environment variable or conf file
+if (Get-Env-Boolean SECMGR $false) {
+    Write-Warning "ERROR: The SECMGR option has been removed. The Security Manager is no longer supported."
+    exit 1
+}
+
 if (-Not(Test-Path variable:JAVA_OPTS)) {
     $JAVA_OPTS = Get-Java-Opts
 }
+$JAVA_OPTS = Process-Java-Opts-Parameters -Params $JAVA_OPTS
 
 Write-Debug "debug is: $global:DEBUG_MODE"
 Write-Debug "debug port: $global:DEBUG_PORT"
-Write-Debug "sec mgr: $SECMGR"
 
 $MODULE_OPTS = String-To-Array -value $env:MODULE_OPTS
 if ("$MODULE_OPTS" -like "*-javaagent:*") {
     $JAVA_OPTS += "-javaagent:$JBOSS_HOME\jboss-modules.jar"
 }
 Write-Debug "MODULE_OPTS: $MODULE_OPTS"
-if ($SECMGR) {
-    $MODULE_OPTS +="-secmgr";
-}
 
 # Set debug settings if not already set
 if ($global:DEBUG_MODE) {

@@ -29,8 +29,8 @@ setlocal EnableDelayedExpansion
 rem check for the security manager system property
 echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager" > nul
 if not errorlevel 1 (
-    echo ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable.
-    GOTO :EOF
+    echo ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed.
+    exit /b 1
 )
 setlocal DisableDelayedExpansion
 
@@ -39,7 +39,8 @@ rem Read command-line args.
 if "%~1" == "" (
    goto MAIN
 ) else if "%~1" == "-secmgr" (
-   set SECMGR=true
+   echo ERROR: The -secmgr option has been removed. The Security Manager is no longer supported.
+   exit /b 1
 ) else if "%~1" == "-v" (
    set "PROCESS_CONTROLLER_JAVA_OPTS=-Xmx16m"
    set SKIP_CONF=true
@@ -128,19 +129,18 @@ setlocal EnableDelayedExpansion
 set HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!
 setlocal DisableDelayedExpansion
 
-rem If the -Djava.security.manager is found, enable the -secmgr and include a bogus security manager for JBoss Modules to replace
+setlocal EnableDelayedExpansion
+rem If the -Djava.security.manager is found, fail the launch
 echo(!PROCESS_CONTROLLER_JAVA_OPTS! | findstr /r /c:"-Djava.security.manager" > nul && (
-    echo "ERROR: Support for using -Djava.security.manager has been removed. Please use -secmgr or set the environment variable SECMGR=true"
-    GOTO :EOF
+    echo ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed.
+    exit /b 1
 )
+setlocal DisableDelayedExpansion
 
-rem Set default Security Manager configuration value
+rem Check if SECMGR was enabled via environment variable or conf file
 if "%SECMGR%" == "true" (
-    call "%DIRNAME%common.bat" :setSecurityManagerDefault
-    setlocal EnableDelayedExpansion
-    set PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!
-    set HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!
-    setlocal DisableDelayedExpansion
+    echo ERROR: The SECMGR option has been removed. The Security Manager is no longer supported.
+    exit /b 1
 )
 
 rem Find run.jar, or we can't continue
@@ -206,9 +206,6 @@ if "x%JBOSS_CONFIG_DIR%" == "x" (
 
 rem Set the module options
 set "MODULE_OPTS="
-if "%SECMGR%" == "true" (
-    set "MODULE_OPTS=-secmgr"
-)
 
 rem Add -Djdk.serialFilter if not specified
 echo "%JAVA_OPTS% %SERVER_OPTS% %JDK_JAVA_OPTIONS%" | findstr /I "\-Djdk.serialFilter" > nul

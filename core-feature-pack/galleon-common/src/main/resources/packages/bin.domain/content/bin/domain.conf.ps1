@@ -69,9 +69,6 @@ if ((!$JAVA_OPTS) -or (!$PRESERVE_JAVA_OPTS)) {
 
 }
 
-# Uncomment this to run with a security manager enabled
-# $SECMGR=$true
-
 
 
 # The ProcessController process uses its own set of java options

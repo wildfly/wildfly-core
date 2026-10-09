@@ -23,18 +23,6 @@ setPackageAvailable() {
   fi
 }
 
-setEnhancedSecurityManager() {
-  "$JAVA" -Djava.security.manager=allow -version > /dev/null 2>&1 && ENHANCED_SM=true || ENHANCED_SM=false
-}
-
-setSecurityManagerDefault() {
-  setEnhancedSecurityManager
-  if [ "$ENHANCED_SM" = "true" ]; then
-    # Needed to be able to install Security Manager dynamically since JDK18
-    SECURITY_MANAGER_CONFIG_OPTION="-Djava.security.manager=allow"
-  fi
-}
-
 setDefaultModularJvmOptions() {
   DEFAULT_MODULAR_JVM_OPTIONS=`echo $* | $GREP "\--add-modules"`
   if [ "x$DEFAULT_MODULAR_JVM_OPTIONS" = "x" ]; then
@@ -65,7 +53,7 @@ setDefaultModularJvmOptions() {
     DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.base/java.io=ALL-UNNAMED"
     # Needed by WildFly Http Client
     DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.base/java.net=ALL-UNNAMED"
-    # Needed by WildFly Security Manager
+    # Needed by java.security access
     DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.base/java.security=ALL-UNNAMED"
     # Needed for marshalling of collections
     DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.base/java.util=ALL-UNNAMED"

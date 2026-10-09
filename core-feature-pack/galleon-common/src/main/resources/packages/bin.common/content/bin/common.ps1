@@ -40,7 +40,6 @@ if ([System.IO.File]::Exists($COMMOM_CONF_FILE)) {
     }
 }
 
-$global:SECMGR = Get-Env-Boolean SECMGR $false
 $global:DEBUG_MODE=Get-Env DEBUG $false
 $global:DEBUG_PORT=Get-Env DEBUG_PORT 8787
 $global:RUN_IN_BACKGROUND=$false
@@ -120,31 +119,6 @@ Function SetPackageAvailable($packageName) {
     return $PACKAGE_AVAILABLE
 }
 
-Function SetEnhancedSecurityManager {
-    $ENHANCED_SM = $false
-    & $JAVA "-Djava.security.manager=allow" -version >$null 2>&1
-    if ($LastExitCode -eq 0){
-        $ENHANCED_SM = $true
-    }
-    return $ENHANCED_SM
-}
-
-Function Get-Security-Manager-Default {
-Param(
-   [bool]$enhancedSM
-
-) #end param
-    if($PRESERVE_JAVA_OPTS -eq 'true') {
-        return $null
-    }
-    $SECURITY_MANAGER_CONFIG_OPTION = @()
-    if ($enhancedSM) {
-        # Needed to be able to install Security Manager dynamically since JDK18
-        $SECURITY_MANAGER_CONFIG_OPTION += "-Djava.security.manager=allow"
-    }
-    return $SECURITY_MANAGER_CONFIG_OPTION
-}
-
 Function Get-Default-Modular-Jvm-Options {
 Param(
    [string[]]$opts
@@ -187,7 +161,7 @@ Param(
     $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.io=ALL-UNNAMED"
     # Needed by WildFly Http Client
     $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.net=ALL-UNNAMED"
-    # Needed by WildFly Security Manager
+    # Needed by java.security access
     $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.security=ALL-UNNAMED"
     # Needed for marshalling of collections
     $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.util=ALL-UNNAMED"
@@ -221,10 +195,6 @@ Param(
 
 ) #end param
   $DEFAULT_MODULAR_JVM_OPTS = Get-Default-Modular-Jvm-Options -opts $JAVA_OPTS
-  if ($SECMGR) {
-      $ENHANCED_SM = SetEnhancedSecurityManager
-      $SECURITY_MANAGER_CONFIG_OPT = Get-Security-Manager-Default -enhancedSM $ENHANCED_SM
-  }
 
   $PROG_ARGS = @()
   if ($JAVA_OPTS) {
@@ -236,9 +206,6 @@ Param(
     ForEach ($opt in $DEFAULT_MODULAR_JVM_OPTS) {
       $PROG_ARGS += $opt
     }
-  }
-  if ($SECURITY_MANAGER_CONFIG_OPT -ne $null){
-  	$PROG_ARGS += $SECURITY_MANAGER_CONFIG_OPT
   }
   if ($logFile){
     $PROG_ARGS += "-Dorg.jboss.boot.log.file=$logFile"
@@ -298,11 +265,12 @@ Param(
 				$i++
 				continue
 			}
-		}elseif ($arg -contains '-Djava.security.manager'){
-			Write-Warning "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
-			exit
+		}elseif ($arg -like '-Djava.security.manager*'){
+			Write-Warning "ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed."
+			exit 1
 		}elseif ($arg -eq '-secmgr'){
-			$global:SECMGR = $true
+			Write-Warning "ERROR: The -secmgr option has been removed. The Security Manager is no longer supported."
+			exit 1
 		}elseif ($arg -eq '--background'){
 			$global:RUN_IN_BACKGROUND = $true
 		}elseif ($arg -eq '-v' -or $arg -eq '-V' -or $arg -eq '--version' -or $arg -eq '-h' -or $arg -eq '--help'){
@@ -324,9 +292,9 @@ Param(
     $res = @()
 	for($i=0; $i -lt $Params.Count; $i++){
 		$arg = $Params[$i]
-		if ($arg -contains '-Djava.security.manager'){
-			Write-Warning "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
-			exit
+		if ($arg -like '-Djava.security.manager*'){
+			Write-Warning "ERROR: The use of -Djava.security.manager is not supported. The Security Manager has been removed."
+			exit 1
 		}else{
 			$res+=$arg
 		}
