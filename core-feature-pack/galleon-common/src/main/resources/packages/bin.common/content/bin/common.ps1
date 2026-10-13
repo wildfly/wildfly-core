@@ -119,6 +119,16 @@ Function SetPackageAvailable($packageName) {
     return $PACKAGE_AVAILABLE
 }
 
+Function SetJvmOptionAvailable($jvmOption) {
+    # Probes a full JVM option, e.g. --enable-native-access=ALL-UNNAMED
+    # An option the JVM doesn't recognize makes it exit with an error, while a deprecated or ignored one prints a WARNING.
+    # Both mean the option is not usable, so check the exit status as well as the output.
+    $output = & $JAVA $jvmOption -version 2>&1
+    $statusCode = $LASTEXITCODE
+    $hasWarning = $output | Out-String -Stream | Select-String 'WARNING' -SimpleMatch -Quiet
+    return ($statusCode -eq 0 -and -not $hasWarning)
+}
+
 Function Get-Default-Modular-Jvm-Options {
 Param(
    [string[]]$opts
@@ -173,6 +183,18 @@ Param(
     $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.management/javax.management=ALL-UNNAMED"
     # InitialContext proxy generation requires deep reflection in javax.naming
     $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.naming/javax.naming=ALL-UNNAMED"
+    # Allows native access (e.g. the Foreign Function & Memory API) by code on the class path without a warning
+    $jvmOption = "--enable-native-access=ALL-UNNAMED"
+    $JVM_OPTION_AVAILABLE = SetJvmOptionAvailable($jvmOption)
+    if($JVM_OPTION_AVAILABLE) {
+        $DEFAULT_MODULAR_JVM_OPTIONS += $jvmOption
+    }
+    # Allows sun.misc.Unsafe memory-access methods, which later JDKs deprecate and warn about. Only JDK 23+ knows this option
+    $jvmOption = "--sun-misc-unsafe-memory-access=allow"
+    $JVM_OPTION_AVAILABLE = SetJvmOptionAvailable($jvmOption)
+    if($JVM_OPTION_AVAILABLE) {
+        $DEFAULT_MODULAR_JVM_OPTIONS += $jvmOption
+    }
     return $DEFAULT_MODULAR_JVM_OPTIONS
 }
 
