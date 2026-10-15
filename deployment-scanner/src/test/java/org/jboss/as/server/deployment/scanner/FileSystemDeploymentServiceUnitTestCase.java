@@ -198,6 +198,100 @@ public class FileSystemDeploymentServiceUnitTestCase {
         assertTrue(deployed.exists());
     }
 
+    @BMRule(name = "Round deployed marker timestamp up",
+            targetClass = "org.jboss.as.server.deployment.scanner.FileSystemDeploymentService$ContentAddingTask",
+            targetMethod = "handleSuccessResult",
+            targetLocation = "AFTER INVOKE java.io.File.setLastModified",
+            action = "$deployedMarker.setLastModified($deployedMarker.lastModified() + 1)")
+    @Test
+    public void testAutoDeployWithRoundedUpMarkerTimestamp() throws Exception {
+        testAutoDeployWithRoundedMarkerTimestamp(false, 1);
+    }
+
+    @BMRule(name = "Round deployed marker timestamp down",
+            targetClass = "org.jboss.as.server.deployment.scanner.FileSystemDeploymentService$ContentAddingTask",
+            targetMethod = "handleSuccessResult",
+            targetLocation = "AFTER INVOKE java.io.File.setLastModified",
+            action = "$deployedMarker.setLastModified($deployedMarker.lastModified() - 1)")
+    @Test
+    public void testAutoDeployWithRoundedDownMarkerTimestamp() throws Exception {
+        testAutoDeployWithRoundedMarkerTimestamp(false, -1);
+    }
+
+    @BMRule(name = "Round XML deployed marker timestamp up",
+            targetClass = "org.jboss.as.server.deployment.scanner.FileSystemDeploymentService$ContentAddingTask",
+            targetMethod = "handleSuccessResult",
+            targetLocation = "AFTER INVOKE java.io.File.setLastModified",
+            action = "$deployedMarker.setLastModified($deployedMarker.lastModified() + 1)")
+    @Test
+    public void testAutoXmlDeployWithRoundedMarkerTimestamp() throws Exception {
+        testAutoDeployWithRoundedMarkerTimestamp(true, 1);
+    }
+
+    private void testAutoDeployWithRoundedMarkerTimestamp(boolean xml, long rounding) throws Exception {
+        File deployment;
+        if (xml) {
+            deployment = createXmlFile("foo.xml", "<rootElement/>");
+        } else {
+            deployment = new File(tmpDir, "foo.war");
+            testSupport.createZip(deployment, 0, false, false, false, false);
+        }
+        assertTrue(deployment.setLastModified(1700000000123L));
+        long timestamp = deployment.lastModified();
+        File marker = new File(tmpDir, deployment.getName() + FileSystemDeploymentService.DEPLOYED);
+        TesteeSet ts = createTestee();
+        ts.testee.setAutoDeployZippedContent(!xml);
+        ts.testee.setAutoDeployXMLContent(xml);
+        ts.controller.addCompositeSuccessResponse(1);
+        ts.testee.scan();
+
+        assertTrue(marker.exists());
+        assertEquals(timestamp + rounding, marker.lastModified());
+        assertStableScanning(ts);
+
+        // A real timestamp change must still replace the deployment, even by one millisecond.
+        assertTrue(deployment.setLastModified(timestamp + 1));
+        ts.controller.addCompositeSuccessResponse(1);
+        long operations = compositeOperations(ts);
+        ts.testee.scan();
+        assertEquals(operations + 1, compositeOperations(ts));
+        assertEquals(timestamp + 1 + rounding, marker.lastModified());
+        assertStableScanning(ts);
+    }
+
+    @Test
+    public void testTouchDeployedMarkerWithAutoDeploy() throws Exception {
+        File deployment = new File(tmpDir, "foo.war");
+        testSupport.createZip(deployment, 0, false, false, false, false);
+        File marker = new File(tmpDir, "foo.war" + FileSystemDeploymentService.DEPLOYED);
+        TesteeSet ts = createTestee();
+        ts.testee.setAutoDeployZippedContent(true);
+        ts.controller.addCompositeSuccessResponse(1);
+        ts.testee.scan();
+        assertStableScanning(ts);
+
+        assertTrue(marker.setLastModified(marker.lastModified() + 1000));
+        ts.controller.addCompositeSuccessResponse(1);
+        long operations = compositeOperations(ts);
+        ts.testee.scan();
+        assertEquals(operations + 1, compositeOperations(ts));
+        ModelNode request = ts.controller.requests.get(ts.controller.requests.size() - 1);
+        assertEquals(REDEPLOY, request.get(STEPS).get(0).get(OP).asString());
+        assertStableScanning(ts);
+    }
+
+    private void assertStableScanning(TesteeSet ts) {
+        long operations = compositeOperations(ts);
+        for (int i = 0; i < 3; i++) {
+            ts.testee.scan();
+            assertEquals("Unchanged deployment must not be redeployed", operations, compositeOperations(ts));
+        }
+    }
+
+    private long compositeOperations(TesteeSet ts) {
+        return ts.controller.requests.stream().filter(op -> COMPOSITE.equals(op.get(OP).asString())).count();
+    }
+
 
     /**
      * Tests that an incomplete XML deployment does not

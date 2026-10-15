@@ -220,7 +220,8 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                 if (Files.exists(deploymentFile)) {
                     Files.setLastModifiedTime(deployedMarker, Files.getLastModifiedTime(deploymentFile));
                 }
-                deployed.put(runtimeName, new DeploymentMarker(Files.getLastModifiedTime(deployedMarker).toMillis(), isArchive, dir.toFile()));
+                deployed.put(runtimeName, new DeploymentMarker(getDeploymentTimestamp(deploymentFile.toFile()),
+                        Files.getLastModifiedTime(deployedMarker).toMillis(), isArchive, dir.toFile()));
             } catch (IOException ioex) {
                 ROOT_LOGGER.errorWritingDeploymentMarker(ioex, deployedMarker.toString());
             }
@@ -447,7 +448,8 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                 final String deploymentName = fileName.substring(0, fileName.length() - DEPLOYED.length());
                 if (deploymentNames.contains(deploymentName)) {
                     File deployment = new File(dir, deploymentName);
-                    deployed.put(deploymentName, new DeploymentMarker(child.lastModified(), !deployment.isDirectory(), dir));
+                    final long timestamp = child.lastModified();
+                    deployed.put(deploymentName, new DeploymentMarker(timestamp, timestamp, !deployment.isDirectory(), dir));
                 } else {
                     if (!child.delete()) {
                         ROOT_LOGGER.cannotRemoveDeploymentMarker(fileName);
@@ -877,9 +879,9 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                     final File deploymentFile = new File(directory, deploymentName);
                     if (deploymentFile.exists()) {
                         scanContext.toRemove.remove(deploymentName);
-                        if (deployed.get(deploymentName).lastModified != child.lastModified()) {
-                            scanContext.scannerTasks.add(new RedeployTask(deploymentName, child.lastModified(), directory,
-                                    !child.isDirectory()));
+                        if (deploymentMarker.markerLastModified != child.lastModified()) {
+                            scanContext.scannerTasks.add(new RedeployTask(deploymentName,
+                                    deploymentMarker.deploymentLastModified, child.lastModified(), directory, !child.isDirectory()));
                         } else {
                             // AS7-784 check for undeploy or removal of the deployment via another management client
                             Boolean isDeployed = scanContext.registeredDeployments.get(deploymentName);
@@ -954,7 +956,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                         }
 
                         DeploymentMarker marker = deployed.get(fileName);
-                        if (marker == null || marker.lastModified != timestamp) {
+                        if (marker == null || marker.deploymentLastModified != timestamp) {
                             try {
                                 if (isZipComplete(child)) {
                                     final String path = relativeTo == null ? child.getAbsolutePath() : relativePath + fileName;
@@ -990,7 +992,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                         }
 
                         DeploymentMarker marker = deployed.get(fileName);
-                        if (marker == null || marker.lastModified != timestamp) {
+                        if (marker == null || marker.deploymentLastModified != timestamp) {
                             if (isXmlComplete(child)) {
                                 final String path = relativeTo == null ? child.getAbsolutePath() : relativePath + fileName;
                                 if(firstScan){
@@ -1066,9 +1068,12 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                     final File deployedMarker = new File(directory, fileName + DEPLOYED);
                     deployedMarker.createNewFile();
                     boolean isArchive = false;
-                    if (deployed.containsKey(fileName)) {
-                        isArchive = deployed.get(fileName).archive;
-                        deployedMarker.setLastModified(deployed.get(fileName).lastModified);
+                    long deploymentLastModified = timestamp;
+                    DeploymentMarker marker = deployed.get(fileName);
+                    if (marker != null) {
+                        isArchive = marker.archive;
+                        deploymentLastModified = marker.deploymentLastModified;
+                        deployedMarker.setLastModified(deploymentLastModified);
                     } else {
                         final File deploymentFile = new File(directory, fileName);
                         isArchive = deploymentFile.exists() && deploymentFile.isFile();
@@ -1076,7 +1081,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                             deployedMarker.setLastModified(deploymentFile.lastModified());
                         }
                     }
-                    deployed.put(fileName, new DeploymentMarker(deployedMarker.lastModified(), isArchive, directory));
+                    deployed.put(fileName, new DeploymentMarker(deploymentLastModified, deployedMarker.lastModified(), isArchive, directory));
                 } catch (IOException ex) {
                     ROOT_LOGGER.failedStatusSynchronization(ex, fileName);
                 }
@@ -1514,7 +1519,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
             if (deployed.containsKey(deploymentName)) {
                 deployed.remove(deploymentName);
             }
-            deployed.put(deploymentName, new DeploymentMarker(doDeployTimestamp, archive, parentFolder));
+            deployed.put(deploymentName, new DeploymentMarker(doDeployTimestamp, deployedMarker.lastModified(), archive, parentFolder));
 
             // Remove the in-progress marker - save this until the deployment is really complete.
             removeInProgressMarker();
@@ -1575,11 +1580,14 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     }
 
     private final class RedeployTask extends ScannerTask {
+        private final long deploymentLastModified;
         private final long markerLastModified;
         private final boolean archive;
 
-        private RedeployTask(final String deploymentName, final long markerLastModified, final File parent, boolean archive) {
+        private RedeployTask(final String deploymentName, final long deploymentLastModified, final long markerLastModified,
+                             final File parent, boolean archive) {
             super(deploymentName, parent, DEPLOYING);
+            this.deploymentLastModified = deploymentLastModified;
             this.markerLastModified = markerLastModified;
             this.archive = archive;
         }
@@ -1599,7 +1607,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
             removeInProgressMarker();
 
             deployed.remove(deploymentName);
-            deployed.put(deploymentName, new DeploymentMarker(markerLastModified, archive, new File(parent)));
+            deployed.put(deploymentName, new DeploymentMarker(deploymentLastModified, markerLastModified, archive, new File(parent)));
 
         }
 
@@ -1663,12 +1671,16 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     }
 
     private class DeploymentMarker {
-        private final long lastModified;
+        // The filesystem may round the timestamp written to the marker independently of the deployment content.
+        private final long deploymentLastModified;
+        private final long markerLastModified;
         private final boolean archive;
         private final File parentFolder;
 
-        private DeploymentMarker(final long lastModified, boolean archive, File parentFolder) {
-            this.lastModified = lastModified;
+        private DeploymentMarker(final long deploymentLastModified, final long markerLastModified, boolean archive,
+                                 File parentFolder) {
+            this.deploymentLastModified = deploymentLastModified;
+            this.markerLastModified = markerLastModified;
             this.archive = archive;
             this.parentFolder = parentFolder;
         }
