@@ -6,8 +6,13 @@
   -->
 
 <layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="security-manager">
-     <dependencies>
-        <layer name="base-server"/> 
+    <dependencies>
+        <layer name="base-server"/>
     </dependencies>
-    <feature-group name="security-manager"/>
+    <!--
+        The security manager layer is no longer usable as of Jakarta EE 11. We have retained the layer name to avoid
+        breaking existing setups that declare this Galleon layer in their configurations. Note that we no longer provide
+        the org.wildfly.extension.security.manager package, aligning with our approach for the WildFly Jakarta EE 11
+        feature pack variant.
+     -->
 </layer-spec>

@@ -392,24 +392,17 @@ public class ProcessStateListenerTestCase extends AbstractLoggingTestCase {
     }
 
     private void forceReloadRequired() throws UnsuccessfulOperationException {
-        ModelNode op = Operations
-                .createOperation("list-add",
-                        PathAddress.pathAddress(SUBSYSTEM, "security-manager")
-                                .append("deployment-permissions", "default")
-                                .toModelNode());
-        op.get("name").set("minimum-permissions");
-        op.get("value").set("class", "java.security.AllPermission");
+        ModelNode op = Operations.createWriteAttributeOperation(
+                PathAddress.pathAddress(SUBSYSTEM, "jmx").append("expose-model", "resolved").toModelNode(),
+                "proper-property-format", false);
         controller.getClient().executeForResult(op);
     }
 
     private static void cleanupAfterReloadRequired()
             throws UnsuccessfulOperationException {
-        ModelNode op = Operations
-                .createOperation("list-clear",
-                        PathAddress.pathAddress(SUBSYSTEM, "security-manager")
-                                .append("deployment-permissions", "default")
-                                .toModelNode());
-        op.get("name").set("minimum-permissions");
+        ModelNode op = Operations.createWriteAttributeOperation(
+                PathAddress.pathAddress(SUBSYSTEM, "jmx").append("expose-model", "resolved").toModelNode(),
+                "proper-property-format", true);
         controller.getClient().executeForResult(op);
     }
 

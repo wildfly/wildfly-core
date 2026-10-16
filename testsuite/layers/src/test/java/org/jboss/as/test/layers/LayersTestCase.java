@@ -72,7 +72,10 @@ public class LayersTestCase {
             "org.jboss.as.threads",
             "org.wildfly.event.logger",
             // Special support status -- wildfly-elytron-http-stateful-basic
-            "org.wildfly.security.http.sfbasic"
+            "org.wildfly.security.http.sfbasic",
+            // Model-only extension that is not configured by default in our configuration, and we do not provision
+            // in its galleon layer
+            "org.wildfly.extension.security.manager"
     };
 
     /**

@@ -13,7 +13,6 @@
         <include name="logging"/>
         <include name="core-management"/>
         <include name="request-controller"/>
-        <include name="security-manager"/>
         <include name="discovery"/>
         <include name="core-tools"/>
     </layers>
