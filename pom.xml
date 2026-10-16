@@ -113,6 +113,7 @@
 
         <!-- Standard client-side JPMS settings identified as meeting
              the needs of WildFly libraries meant for use in clients. -->
+        <modular.jdk.unsafe.args></modular.jdk.unsafe.args>
         <standard.client.modular.jdk.args>
             --add-exports=java.desktop/sun.awt=ALL-UNNAMED
             --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED
@@ -129,6 +130,8 @@
             --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
             --add-opens=java.management/javax.management=ALL-UNNAMED
             --add-opens=java.naming/javax.naming=ALL-UNNAMED
+            --enable-native-access=ALL-UNNAMED
+            ${modular.jdk.unsafe.args}
         </standard.client.modular.jdk.args>
         <!-- JPMS arguments used when launching processes during builds.
              Defaults to the standard client-side args to cover client side cases (e.g. test clients).
@@ -1908,6 +1911,20 @@
 
     <!-- Profiles -->
     <profiles>
+        <!--
+          Name: jdk23+
+          Descr: JDK 23+ specific settings
+        -->
+        <profile>
+            <id>jdk23+</id>
+            <activation>
+                <jdk>[23,)</jdk>
+            </activation>
+            <properties>
+                <modular.jdk.unsafe.args>--sun-misc-unsafe-memory-access=allow</modular.jdk.unsafe.args>
+            </properties>
+        </profile>
+
         <!--
           Name: jpda
           Descr: Enable JPDA remote debuging
