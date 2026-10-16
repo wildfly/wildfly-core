@@ -140,8 +140,8 @@ public interface BootableJarLogger extends BasicLogger {
     @Message(id = Message.NONE, value = "Print version and exit")
     String argVersion();
 
-    @Message(id = Message.NONE, value = "Activate the SecurityManager")
-    String argSecurityManager();
+//    @Message(id = Message.NONE, value = "Activate the SecurityManager")
+//    String argSecurityManager();
 
     @Message(id = Message.NONE, value = "Runs the server using a specific stability level. Possible values: %s, Default = %s")
     String argStability(Set<Stability> levels, Stability defaultLevel);

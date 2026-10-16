@@ -17,11 +17,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
-import java.security.Policy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
@@ -61,7 +59,12 @@ public final class Main {
 
     private static final String INSTALL_DIR = "--install-dir";
     private static final String SECMGR = "-secmgr";
+    private static final String JAVA_SECURITY_MANAGER_PROPERTY = "java.security.manager";
+    private static final String JAVA_SECURITY_MANAGER_OPTION = "-D" + JAVA_SECURITY_MANAGER_PROPERTY;
     private static final String DISPLAY_GALLEON_CONFIG = "--display-galleon-config";
+
+    private static final String SECMGR_REMOVED_MESSAGE = "The -secmgr option has been removed. The Security Manager is no longer supported.";
+    private static final String JAVA_SECURITY_MANAGER_NOT_SUPPORTED_MESSAGE = "The use of -Djava.security.manager is not supported. The Security Manager has been removed.";
 
     private static final String WILDFLY_RESOURCE = "/wildfly.zip";
 
@@ -86,19 +89,24 @@ public final class Main {
 
         List<String> filteredArgs = new ArrayList<>();
         Path installDir = null;
-        boolean securityManager = false;
         boolean displayGalleonConfig = false;
 
         for (String arg : args) {
             if (arg.startsWith(INSTALL_DIR)) {
                 installDir = Paths.get(getValue(arg));
             } else if (SECMGR.equals(arg)) {
-                securityManager = true;
+                throw new Exception(SECMGR_REMOVED_MESSAGE);
+            } else if (arg.startsWith(JAVA_SECURITY_MANAGER_OPTION)) {
+                throw new Exception(JAVA_SECURITY_MANAGER_NOT_SUPPORTED_MESSAGE);
             } else if (DISPLAY_GALLEON_CONFIG.equals(arg)) {
                 displayGalleonConfig = true;
             } else {
                 filteredArgs.add(arg);
             }
+        }
+
+        if (System.getProperty(JAVA_SECURITY_MANAGER_PROPERTY) != null) {
+            throw new Exception(JAVA_SECURITY_MANAGER_NOT_SUPPORTED_MESSAGE);
         }
 
         if (displayGalleonConfig) {
@@ -114,11 +122,6 @@ public final class Main {
                 }
             }
             return;
-        }
-
-        final SecurityManager existingSecMgr = System.getSecurityManager();
-        if (existingSecMgr != null) {
-            throw new Exception("An existing security manager was detected.  You must use the -secmgr switch to start with a security manager.");
         }
 
         installDir = installDir == null ? Files.createTempDirectory(WILDFLY_BOOTABLE_TMP_DIR_PREFIX) : installDir;
@@ -148,7 +151,7 @@ public final class Main {
             extension.boot(filteredArgs, installDir);
         }
 
-        runBootableJar(installDir, filteredArgs, System.currentTimeMillis() - t, securityManager);
+        runBootableJar(installDir, filteredArgs, System.currentTimeMillis() - t);
     }
 
     private static String getValue(String arg) {
@@ -159,7 +162,7 @@ public final class Main {
         return arg.substring(sep + 1);
     }
 
-    private static void runBootableJar(Path jbossHome, List<String> arguments, Long unzipTime, boolean securityManager) throws Exception {
+    private static void runBootableJar(Path jbossHome, List<String> arguments, Long unzipTime) throws Exception {
         final String modulePath = jbossHome.resolve(JBOSS_MODULES_DIR_NAME).toAbsolutePath().toString();
         ModuleLoader moduleLoader = setupModuleLoader(modulePath);
 
@@ -217,19 +220,6 @@ public final class Main {
             runMethod = bjFactoryClass.getMethod(BOOTABLE_JAR_RUN_METHOD, Path.class, List.class, ModuleLoader.class, ModuleClassLoader.class, Long.class, List.class);
         } catch (final NoSuchMethodException nsme) {
             throw new Exception(nsme);
-        }
-
-        // Wait until the last moment and install the SecurityManager.
-        if (securityManager) {
-            final BootablePolicy policy = new BootablePolicy(Policy.getPolicy());
-            Policy.setPolicy(policy);
-
-            final Iterator<SecurityManager> iterator = bootableJarModule.loadService(SecurityManager.class).iterator();
-            if (iterator.hasNext()) {
-                System.setSecurityManager(iterator.next());
-            } else {
-                throw new IllegalStateException("No SecurityManager found to install.");
-            }
         }
 
         runMethod.invoke(null, jbossHome, arguments, moduleLoader, moduleCL, unzipTime, cliCmds);
