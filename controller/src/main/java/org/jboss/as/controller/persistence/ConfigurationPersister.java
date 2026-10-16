@@ -103,7 +103,7 @@ public interface ConfigurationPersister {
     /**
      * Take a snapshot of the current configuration.
      *
-     * @param message optionnal message
+     * @param message optional message
      * @return the file location of the snapshot
      * @throws ConfigurationPersistenceException if a problem happened when creating the snapshot
      */
