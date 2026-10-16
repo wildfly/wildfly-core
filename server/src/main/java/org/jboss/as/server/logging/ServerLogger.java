@@ -640,14 +640,14 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 75, value = "Unable to load properties from URL '%s'")
     String unableToLoadProperties(URL url);
 
-    /**
-     * Creates an error message indicating creating a security vault failed.
-     *
-     * @param cause the problem
-     * @param msg the problem (for use in the message)
-     *
-     * @return a RuntimeException wrapper
-     */
+//    /**
+//     * Creates an error message indicating creating a security vault failed.
+//     *
+//     * @param cause the problem
+//     * @param msg the problem (for use in the message)
+//     *
+//     * @return a RuntimeException wrapper
+//     */
 //    @Message(id = 76, value = "Error initializing vault --  %s")
 //    VaultReaderException cannotCreateVault(@Param Throwable cause, Throwable msg);
 
@@ -1499,6 +1499,9 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 316, value = "Server started as %s. If this user has elevated privileges, it is discouraged to run the server under this account, as it can compromise system security. You can dismiss this warning by starting the server with: -Djboss.ignore.root.username.warning=true")
     void startedWithRootUser(String userName);
+
+    @Message(id = 317, value = "Deployment name %s contains illegal path traversal sequences")
+    IllegalArgumentException illegalPathTraversalInDeploymentName(String deploymentManagementName);
 
     ////////////////////////////////////////////////
     //Messages without IDs

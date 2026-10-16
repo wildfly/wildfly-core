@@ -416,7 +416,8 @@ public class DeploymentHandlerUtil {
     }
 
     static Path getExplodedDeploymentRoot(ServerEnvironment serverEnvironment, String deploymentManagementName) {
-        return Paths.get(serverEnvironment.getServerDataDir().getAbsolutePath()).resolve(MANAGED_CONTENT).resolve(deploymentManagementName);
+        Path managedContent = Paths.get(serverEnvironment.getServerDataDir().getAbsolutePath()).resolve(MANAGED_CONTENT);
+        return resolveSecurely(managedContent, deploymentManagementName);
     }
 
     @SuppressWarnings("deprecation")
@@ -490,5 +491,33 @@ public class DeploymentHandlerUtil {
             context.attach(ANNOTATION_INDEX_SUPPORT, result);
         }
         return result;
+    }
+
+    /**
+     * Resolve a path from the rootPath checking that it doesn't go out of the rootPath.
+     * @param rootPath the starting point for resolution.
+     * @param path the path we want to resolve.
+     * @return the resolved path.
+     * @throws IllegalArgumentException if the resolved path is out of the rootPath or if the resolution failed.
+     */
+    private static Path resolveSecurely(Path rootPath, String path) {
+        Path resolvedPath;
+        if (path == null || path.isEmpty()) {
+            resolvedPath = rootPath.normalize();
+        } else {
+            String relativePath = removeSuperfluousSlashes(path);
+            resolvedPath = rootPath.resolve(relativePath).normalize();
+        }
+        if (!resolvedPath.startsWith(rootPath)) {
+            throw ServerLogger.ROOT_LOGGER.illegalPathTraversalInDeploymentName(path);
+        }
+        return resolvedPath;
+    }
+
+    private static String removeSuperfluousSlashes(String path) {
+        if (path.startsWith("/")) {
+            return removeSuperfluousSlashes(path.substring(1));
+        }
+        return path;
     }
 }
