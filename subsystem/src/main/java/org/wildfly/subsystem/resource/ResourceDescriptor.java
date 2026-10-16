@@ -24,6 +24,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceRegistration;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -34,11 +35,10 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.dmr.ModelNode;
-import org.wildfly.common.iteration.CompositeIterable;
+import org.wildfly.service.capture.ValueRegistry;
 import org.wildfly.subsystem.resource.capability.ResourceCapabilityReference;
 import org.wildfly.subsystem.resource.operation.AddResourceOperationStepHandlerDescriptor;
 import org.wildfly.subsystem.resource.operation.DescribedOperationStepHandler;
-import org.wildfly.subsystem.resource.operation.OperationStepHandlerDescriptor;
 import org.wildfly.subsystem.resource.operation.ResourceOperationRuntimeHandler;
 import org.wildfly.subsystem.resource.operation.WriteAttributeOperationStepHandler;
 
@@ -163,7 +163,8 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         private final Optional<ResourceOperationRuntimeHandler> runtimeHandler;
         private final Map<RuntimeCapability<?>, BiPredicate<OperationContext, Resource>> capabilities;
         private final Map<AttributeDefinition, OperationStepHandler> readWriteAttributes = new HashMap<>();
-        private final Iterable<? extends AttributeDefinition> readOnlyAttributes;
+        private final Map<AttributeDefinition, ValueRegistry<PathAddress, ModelNode>> references;
+        private final Collection<AttributeDefinition> readOnlyAttributes;
         private final Map<PathElement, ResourceRegistration> requiredChildren;
         private final Map<PathElement, ResourceRegistration> requiredSingletonChildren;
         private final Map<AttributeDefinition, AttributeTranslation> attributeTranslations;
@@ -179,22 +180,25 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
             this.descriptionResolver = builder.descriptionResolver;
             this.runtimeHandler = builder.runtimeHandler;
             this.capabilities = builder.capabilities;
+            this.references = builder.references;
             Collection<? extends AttributeDefinition> attributes = builder.attributes;
-            if (!attributes.isEmpty()) {
+            if (!attributes.isEmpty() || !this.references.isEmpty()) {
                 OperationStepHandler handler = new WriteAttributeOperationStepHandler(this);
                 for (AttributeDefinition attribute : attributes) {
+                    this.readWriteAttributes.put(attribute, handler);
+                }
+                for (AttributeDefinition attribute : this.references.keySet()) {
                     this.readWriteAttributes.put(attribute, handler);
                 }
             }
             Collection<? extends AttributeDefinition> modelOnlyAttributes = builder.modelOnlyAttributes;
             if (!modelOnlyAttributes.isEmpty()) {
-                OperationStepHandlerDescriptor descriptor = new OperationStepHandlerDescriptor() {
+                OperationStepHandler handler = new WriteAttributeOperationStepHandler(this) {
                     @Override
-                    public BiPredicate<OperationContext, Resource> getCapabilityFilter(RuntimeCapability<?> capability) {
-                        return DefaultResourceDescriptor.this.getCapabilityFilter(capability);
+                    protected boolean requiresRuntime(OperationContext context) {
+                        return false;
                     }
                 };
-                OperationStepHandler handler = new WriteAttributeOperationStepHandler(descriptor);
                 for (AttributeDefinition attribute : modelOnlyAttributes) {
                     this.readWriteAttributes.put(attribute, handler);
                 }
@@ -264,7 +268,8 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
 
         @Override
         public Iterable<AttributeDefinition> getAttributes() {
-            return new CompositeIterable<>(this.attributeTranslations.keySet(), this.readWriteAttributes.keySet(), this.readOnlyAttributes);
+            List<Collection<AttributeDefinition>> groups = List.of(this.attributeTranslations.keySet(), this.readWriteAttributes.keySet(), this.readOnlyAttributes);
+            return () -> groups.stream().flatMap(Collection::stream).iterator();
         }
 
         @Override
@@ -275,6 +280,11 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         @Override
         public OperationStepHandler getWriteAttributeOperationStepHandler(AttributeDefinition attribute) {
             return this.readWriteAttributes.get(attribute);
+        }
+
+        @Override
+        public ValueRegistry<PathAddress, ModelNode> getValueRegistry(AttributeDefinition attribute) {
+            return this.references.get(attribute);
         }
 
         @Override
@@ -348,6 +358,25 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          */
         C addAttribute(AttributeDefinition attribute, OperationStepHandler writeAttributeHandler);
+
+        /**
+         * Adds the attribute with the specified value registry.
+         * @param attribute an attribute
+         * @param registry a value registry
+         * @return a reference to this configurator
+         */
+        C addAttribute(AttributeDefinition attribute, ValueRegistry<PathAddress, ModelNode> registry);
+
+        /**
+         * Adds the attribute with the specified value registry.
+         * @param <T> the attribute resolution type
+         * @param attribute an attribute
+         * @param registry a value registry
+         * @return a reference to this configurator
+         */
+        default <T> C addAttribute(ResolvableAttributeDefinition<T> attribute, ValueRegistry<PathAddress, T> registry) {
+            return this.addAttribute(attribute, registry.compose(Function.identity(), attribute.getResolver()));
+        }
 
         /**
          * Adds the specified model-only attributes (i.e. with no runtime handling) to this resource descriptor.
@@ -646,6 +675,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         private Collection<AttributeDefinition> modelOnlyAttributes = List.of();
         private Collection<AttributeDefinition> readOnlyAttributes = List.of();
         private Map<AttributeDefinition, OperationStepHandler> customAttributes = Map.of();
+        private Map<AttributeDefinition, ValueRegistry<PathAddress, ModelNode>> references = Map.of();
         private Map<PathElement, ResourceRegistration> requiredChildren = Map.of();
         private Map<PathElement, ResourceRegistration> requiredSingletonChildren = Map.of();
         private Map<AttributeDefinition, AttributeTranslation> attributeTranslations = Map.of();
@@ -697,6 +727,12 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
         @Override
         public C addAttribute(AttributeDefinition attribute, OperationStepHandler writeAttributeHandler) {
             this.customAttributes = concat(this.customAttributes, attribute, writeAttributeHandler);
+            return this.self();
+        }
+
+        @Override
+        public C addAttribute(AttributeDefinition attribute, ValueRegistry<PathAddress, ModelNode> values) {
+            this.references = concat(this.references, attribute, values);
             return this.self();
         }
 
@@ -806,7 +842,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
 
         private static <T> Collection<T> copyOf(Collection<T> collection) {
             // Create defensive copy, if collection was not already immutable
-            return (collection instanceof Set) ? Set.copyOf((Set<T>) collection) : List.copyOf(collection);
+            return (collection instanceof Set set) ? Set.copyOf(set) : List.copyOf(collection);
         }
 
         private static <T> Collection<T> concat(Collection<T> collection, Stream<? extends T> additions) {

@@ -4,6 +4,7 @@
  */
 package org.wildfly.subsystem.resource.operation;
 
+import java.util.Objects;
 import java.util.Set;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
@@ -18,6 +19,7 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.service.capture.ValueRegistry;
 
 /**
  * Generic remove operation step handler that delegates service removal/recovery to a dedicated {@link ResourceOperationRuntimeHandler}.
@@ -33,7 +35,8 @@ public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandle
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return super.requiresRuntime(context) && this.descriptor.getRuntimeHandler().isPresent();
+        // Require runtime if a runtime handler exists or a value registry exists for any attribute.
+        return super.requiresRuntime(context) && this.descriptor.getRuntimeHandler().isPresent() || context.getResourceRegistration().getAttributes(PathAddress.EMPTY_ADDRESS).values().stream().map(AttributeAccess::getAttributeDefinition).map(this.descriptor::getValueRegistry).anyMatch(Objects::nonNull);
     }
 
     @Override
@@ -86,11 +89,19 @@ public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandle
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        Set<OperationEntry.Flag> flags = context.getResourceRegistration().getOperationFlags(PathAddress.EMPTY_ADDRESS, context.getCurrentOperationName());
+        ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
+        Set<OperationEntry.Flag> flags = registration.getOperationFlags(PathAddress.EMPTY_ADDRESS, context.getCurrentOperationName());
         if (flags.contains(OperationEntry.Flag.RESTART_NONE) || (flags.contains(OperationEntry.Flag.RESTART_RESOURCE_SERVICES) && context.isResourceServiceRestartAllowed())) {
             ResourceOperationRuntimeHandler handler = this.descriptor.getRuntimeHandler().orElse(null);
             if (handler != null) {
                 handler.removeRuntime(context, model);
+            }
+            PathAddress address = context.getCurrentAddress();
+            for (AttributeAccess attribute : registration.getAttributes(PathAddress.EMPTY_ADDRESS).values()) {
+                ValueRegistry<PathAddress, ModelNode> registry = this.descriptor.getValueRegistry(attribute.getAttributeDefinition());
+                if (registry != null) {
+                    registry.remove(address);
+                }
             }
         } else if (flags.contains(OperationEntry.Flag.RESTART_JVM)) {
             context.restartRequired();
@@ -101,8 +112,16 @@ public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandle
 
     @Override
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        Set<OperationEntry.Flag> flags = context.getResourceRegistration().getOperationFlags(PathAddress.EMPTY_ADDRESS, context.getCurrentOperationName());
+        ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
+        Set<OperationEntry.Flag> flags = registration.getOperationFlags(PathAddress.EMPTY_ADDRESS, context.getCurrentOperationName());
         if (flags.contains(OperationEntry.Flag.RESTART_NONE) || (flags.contains(OperationEntry.Flag.RESTART_RESOURCE_SERVICES) && context.isResourceServiceRestartAllowed())) {
+            PathAddress address = context.getCurrentAddress();
+            for (AttributeAccess attribute : registration.getAttributes(PathAddress.EMPTY_ADDRESS).values()) {
+                ValueRegistry<PathAddress, ModelNode> registry = this.descriptor.getValueRegistry(attribute.getAttributeDefinition());
+                if (registry != null) {
+                    registry.add(address).accept(attribute.getAttributeDefinition().resolveModelAttribute(context, model));
+                }
+            }
             ResourceOperationRuntimeHandler handler = this.descriptor.getRuntimeHandler().orElse(null);
             if (handler != null) {
                 handler.addRuntime(context, model);
@@ -115,7 +134,7 @@ public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandle
     }
 
     @Override
-    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) {
         // We already unregistered our capabilities in performRemove(...)
     }
 }
