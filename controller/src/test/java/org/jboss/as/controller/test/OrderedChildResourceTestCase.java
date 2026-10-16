@@ -11,11 +11,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODEL_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ORDERED_CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
+
+import java.util.Collections;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ManagementModel;
@@ -44,6 +47,7 @@ public class OrderedChildResourceTestCase extends AbstractControllerTestBase {
 
     private static final PathElement PARENT_MAIN = PathElement.pathElement("parent", "main");
     private static final PathElement CHILD = PathElement.pathElement("child");
+    private static final PathElement NON_ORDERED_CHILD = PathElement.pathElement("non-ordered-child");
     private static final AttributeDefinition ATTR = new SimpleAttributeDefinitionBuilder("attr", ModelType.STRING, true).build();
     private static final AttributeDefinition[] REQUEST_ATTRIBUTES = new AttributeDefinition[]{ATTR};
 
@@ -76,6 +80,21 @@ public class OrderedChildResourceTestCase extends AbstractControllerTestBase {
         attributes = result.get(CHILDREN, "child", MODEL_DESCRIPTION, "*", ATTRIBUTES);
         Assert.assertTrue(attributes.hasDefined("attr"));
         Assert.assertFalse(attributes.hasDefined("index"));
+
+        //The parent registers an ordered child type, so it must list it, and only it
+        Assert.assertTrue("Parent description should have " + ORDERED_CHILDREN, result.hasDefined(ORDERED_CHILDREN));
+        Assert.assertEquals(Collections.singletonList(new ModelNode(CHILD.getKey())),
+                result.get(ORDERED_CHILDREN).asList());
+
+        //The non-ordered child type of the same parent must not be listed
+        Assert.assertTrue(result.hasDefined(CHILDREN, NON_ORDERED_CHILD.getKey()));
+
+        //The root registers 'parent' as a non-ordered child type, so its list must be present but empty
+        ModelNode rootRrd = createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, PathAddress.EMPTY_ADDRESS);
+        ModelNode rootResult = executeForResult(rootRrd);
+        Assert.assertTrue(rootResult.hasDefined(CHILDREN, PARENT_MAIN.getKey()));
+        Assert.assertEquals(ModelType.LIST, rootResult.get(ORDERED_CHILDREN).getType());
+        Assert.assertEquals(Collections.emptyList(), rootResult.get(ORDERED_CHILDREN).asList());
     }
 
     @Test
@@ -153,6 +172,16 @@ public class OrderedChildResourceTestCase extends AbstractControllerTestBase {
         @Override
         public void registerChildren(ManagementResourceRegistration resourceRegistration) {
             resourceRegistration.registerSubModel(new OrderedChildResourceDefinition());
+            resourceRegistration.registerSubModel(new NonOrderedChildResourceDefinition());
+        }
+    }
+
+    private static class NonOrderedChildResourceDefinition extends SimpleResourceDefinition {
+
+        NonOrderedChildResourceDefinition() {
+            super(new Parameters(NON_ORDERED_CHILD, NonResolvingResourceDescriptionResolver.INSTANCE)
+                    .setAddHandler(ModelOnlyAddStepHandler.INSTANCE)
+                    .setRemoveHandler(ModelOnlyRemoveStepHandler.INSTANCE));
         }
     }
 
