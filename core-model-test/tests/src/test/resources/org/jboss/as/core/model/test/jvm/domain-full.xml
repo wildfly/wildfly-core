@@ -5,7 +5,7 @@
   ~ SPDX-License-Identifier: Apache-2.0
   -->
 
-<domain xmlns="urn:jboss:domain:20.0">
+<domain xmlns="urn:jboss:domain:21.0">
    <server-groups>
 	  <server-group name="test" profile="test">
          <jvm name="full" java-home="javaHome" type="SUN" env-classpath-ignored="true">
