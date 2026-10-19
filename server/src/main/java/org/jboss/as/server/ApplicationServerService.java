@@ -13,6 +13,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
@@ -233,7 +234,8 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         }
         Path lockPath = homeDir.toPath().resolve(".installation").resolve("running.lock");
         try {
-            FileChannel channel = FileChannel.open(lockPath, StandardOpenOption.WRITE, StandardOpenOption.READ);
+            Files.createDirectories(lockPath.getParent());
+            FileChannel channel = FileChannel.open(lockPath, StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.CREATE);
             FileLock lock = channel.tryLock();
             if (lock != null) {
                 runningLockChannel = channel;

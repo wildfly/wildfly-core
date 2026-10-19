@@ -12,6 +12,7 @@ import java.io.PrintStream;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -244,8 +245,9 @@ public final class ProcessController {
 
     void acquireRunningLock(String jbossHome) throws IOException {
         Path lockPath = Paths.get(jbossHome, ".installation", "running.lock");
+        Files.createDirectories(lockPath.getParent());
         FileChannel channel = FileChannel.open(lockPath,
-                StandardOpenOption.WRITE, StandardOpenOption.READ);
+                StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.CREATE);
         FileLock lock = channel.tryLock();
         if (lock != null) {
             this.runningLockChannel = channel;
