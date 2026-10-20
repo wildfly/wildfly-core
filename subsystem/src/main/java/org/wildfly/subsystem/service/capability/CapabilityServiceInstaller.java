@@ -5,6 +5,7 @@
 package org.wildfly.subsystem.service.capability;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,10 +40,13 @@ public interface CapabilityServiceInstaller extends ResourceServiceInstaller, In
     @Override
     default Consumer<OperationContext> install(OperationContext context) {
         ServiceController<?> controller = this.install(context.getCapabilityServiceTarget());
+        Set<ServiceName> provides = controller.provides();
         return new Consumer<>() {
             @Override
             public void accept(OperationContext context) {
-                context.removeService(controller);
+                for (ServiceName sn : provides) {
+                    context.removeService(sn);
+                }
             }
         };
     }
