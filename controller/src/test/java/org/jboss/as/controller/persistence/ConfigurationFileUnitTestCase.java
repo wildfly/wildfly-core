@@ -42,7 +42,7 @@ public class ConfigurationFileUnitTestCase {
     }
 
     /**
-     * Create directory in parent one.</br>
+     * Create directory in parent one.<br>
      * If parent directory does not exist set fail
      * @param parent parent directory
      * @param name name of new directory
@@ -86,9 +86,9 @@ public class ConfigurationFileUnitTestCase {
     }
 
     /**
-     * Test crating instance of ConfigurationFile. </br>
+     * Test crating instance of ConfigurationFile. <br>
      * A configuration file that does not match the snapshot naming pattern is present in the snapshot directory.
-     * Constructor should not throw an exception.</br>
+     * Constructor should not throw an exception.<br>
      * For more information visit <a href="issues.jboss.org/browse/WFCORE-3513">https://issues.jboss.org/browse/WFCORE-3513</a>
      */
     @Test

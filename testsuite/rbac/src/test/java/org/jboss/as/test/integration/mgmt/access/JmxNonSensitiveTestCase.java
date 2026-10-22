@@ -12,7 +12,7 @@ import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 @RunWith(WildFlyRunner.class)
 @ServerSetup({StandardExtensionSetupTask.class, StandardUsersSetupTask.class, JMXServiceDeploymentSetupTask.class})

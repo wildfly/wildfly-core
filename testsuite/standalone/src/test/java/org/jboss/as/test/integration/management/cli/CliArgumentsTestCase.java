@@ -21,7 +21,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="dpospisi@redhat.com">Dominik Pospisil</a>
  * @author Alexey Loubyansky
  */
 @RunWith(WildFlyRunner.class)

@@ -35,7 +35,7 @@ import org.junit.BeforeClass;
 /**
  * Tests of the standard roles authorized against .properties file using the "rbac" access control provider.
  *
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 public class PropertiesRoleMappingStandardRolesTestCase extends AbstractStandardRolesTestCase {
     @BeforeClass

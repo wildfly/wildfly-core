@@ -13,7 +13,7 @@ import org.jboss.dmr.ModelNode;
 
 /**
  * @author jcechace
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 final class JmxInterfaceStringUtils {
     private JmxInterfaceStringUtils() {}

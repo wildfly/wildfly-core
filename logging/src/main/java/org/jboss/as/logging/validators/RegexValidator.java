@@ -13,7 +13,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
- * A validator that accepts a pattern to test the {@link org.jboss.dmr.ModelNode#asString() string value parameter.
+ * A validator that accepts a pattern to test the {@link org.jboss.dmr.ModelNode#asString() string value} parameter.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */

@@ -39,7 +39,7 @@ import org.apache.http.util.EntityUtils;
 import org.jboss.dmr.ModelNode;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 public class HttpManagementInterface implements ManagementInterface {
     public static final String MANAGEMENT_REALM = "ManagementRealm";

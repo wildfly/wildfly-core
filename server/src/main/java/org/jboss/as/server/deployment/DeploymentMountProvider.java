@@ -41,7 +41,7 @@ public interface DeploymentMountProvider {
 
     /**
      * Standard ServiceName under which a service controller for an instance of
-     * {@code Service<ServerDeploymentRepository> would be registered.
+     * {@code Service<ServerDeploymentRepository>} would be registered.
      */
     ServiceName SERVICE_NAME = ServiceName.JBOSS.append("deployment-mount-provider");
 

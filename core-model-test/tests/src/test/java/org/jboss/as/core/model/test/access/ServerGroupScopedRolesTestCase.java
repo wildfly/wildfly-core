@@ -43,7 +43,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 public class ServerGroupScopedRolesTestCase extends AbstractCoreModelTest {
     private static final String FOO = "foo";

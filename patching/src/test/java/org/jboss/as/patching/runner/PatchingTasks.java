@@ -29,10 +29,10 @@ class PatchingTasks {
 
     /**
      * Process multiple patches for rollback, trying to determine the current and target state for this applying this combination.
-     * <p/>
+     * <p>
      * This will track changes by location, trying to merge multiple changes per location and recording whether conflicts
      * were detected or not. It's up to the user to skip the content validation steps.
-     * </p>
+     * <p>
      * Compare the recorded rollback history and the original patch - to detect conflicts.
      *
      * @param patchId       the patch id

@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests all management operation types which are available via HTTP POST requests.
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="dpospisi@redhat.com">Dominik Pospisil</a>
  */
 @RunWith(WildFlyRunner.class)
 public class HttpPostMgmtOpsTestCase {

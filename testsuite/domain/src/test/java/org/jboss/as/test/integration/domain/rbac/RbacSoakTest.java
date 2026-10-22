@@ -20,7 +20,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 public class RbacSoakTest extends AbstractRbacTestCase {
     private static final Logger log = Logger.getLogger(RbacSoakTest.class);

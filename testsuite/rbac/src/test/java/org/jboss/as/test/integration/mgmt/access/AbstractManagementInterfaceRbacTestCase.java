@@ -22,7 +22,7 @@ import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 public abstract class AbstractManagementInterfaceRbacTestCase {
     private static final Logger logger = Logger.getLogger(AbstractManagementInterfaceRbacTestCase.class);

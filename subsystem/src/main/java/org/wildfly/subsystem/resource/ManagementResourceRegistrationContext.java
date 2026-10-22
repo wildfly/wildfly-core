@@ -20,7 +20,7 @@ public interface ManagementResourceRegistrationContext {
      * method before registering such "runtime only" resources, attributes or operations. This
      * method is intended to avoid registering resources, attributes or operations on process types that
      * can not install runtime services.
-     * @see {@link org.jboss.as.controller.ExtensionContext#isRuntimeOnlyRegistrationValid()}.
+     * @see org.jboss.as.controller.ExtensionContext#isRuntimeOnlyRegistrationValid()
      * @return whether it is valid to register runtime resources, attributes, or operations.
      */
     boolean isRuntimeOnlyRegistrationValid();

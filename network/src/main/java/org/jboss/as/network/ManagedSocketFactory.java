@@ -25,7 +25,7 @@ public abstract class ManagedSocketFactory extends SocketFactory {
      * @param name the socket name
      * @return the socket
      * @throws IOException
-     * @see {@linkplain SocketFactory#createSocket()}
+     * @see SocketFactory#createSocket()
      */
     public abstract Socket createSocket(String name) throws IOException;
 
@@ -38,7 +38,7 @@ public abstract class ManagedSocketFactory extends SocketFactory {
      * @return the socket
      * @throws IOException
      * @throws java.net.UnknownHostException
-     * @see {@linkplain SocketFactory#createSocket(String, int)}
+     * @see SocketFactory#createSocket(String, int)
      */
     public abstract Socket createSocket(String name, String host, int port) throws IOException;
 
@@ -50,7 +50,7 @@ public abstract class ManagedSocketFactory extends SocketFactory {
      * @param port the port
      * @return the socket
      * @throws IOException
-     * @see {@linkplain SocketFactory#createSocket(InetAddress, int)}
+     * @see SocketFactory#createSocket(InetAddress, int)
      */
     public abstract Socket createSocket(String name, InetAddress host, int port) throws IOException;
 
@@ -65,7 +65,7 @@ public abstract class ManagedSocketFactory extends SocketFactory {
      * @return the socket
      * @throws IOException
      * @throws java.net.UnknownHostException
-     * @see {@linkplain SocketFactory#createSocket(String, int, java.net.InetAddress, int)}
+     * @see SocketFactory#createSocket(String, int, java.net.InetAddress, int)
      */
     public abstract Socket createSocket(String name, String host, int port, InetAddress localHost, int localPort) throws IOException;
 
@@ -79,7 +79,7 @@ public abstract class ManagedSocketFactory extends SocketFactory {
      * @param localPort the local port
      * @return the socket
      * @throws IOException
-     * @see {@linkplain SocketFactory#createSocket(java.net.InetAddress, int, java.net.InetAddress, int)}
+     * @see SocketFactory#createSocket(java.net.InetAddress, int, java.net.InetAddress, int)
      */
     public abstract Socket createSocket(String name, InetAddress address, int port, InetAddress localAddress, int localPort) throws IOException;
 

@@ -24,7 +24,7 @@ import org.wildfly.security.sasl.SaslMechanismSelector;
 
 /**
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="dpospisi@redhat.com">Dominik Pospisil</a>
  */
 @RunWith(WildFlyRunner.class)
 public class BasicOpsTestCase {

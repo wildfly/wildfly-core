@@ -50,7 +50,7 @@ import org.junit.Assert;
 /**
  * Common base for tests of SSL secured communication between primary and secondary.
  *
- * @author Ondrej Kotek <okotek@redhat.com>
+ * @author <a href="okotek@redhat.com">Ondrej Kotek</a>
  */
 public abstract class AbstractSSLPrimarySecondaryTestCase {
 

@@ -30,7 +30,7 @@ import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
- * @author Petr Křemenský <pkremens@redhat.com>
+ * @author <a href="pkremens@redhat.com">Petr Křemenský</a>
  */
 @ServerSetup(NonExistingProfileTestCase.NonExistingProfileTestCaseSetup.class)
 @RunWith(WildFlyRunner.class)

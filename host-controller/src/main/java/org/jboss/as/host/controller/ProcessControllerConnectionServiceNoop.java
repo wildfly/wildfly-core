@@ -14,7 +14,7 @@ import org.jboss.msc.service.StopContext;
 /**
  * Provides a no-op client for (not) interacting with the process controller.
  *
- * @author Ken Wills <kwills@redhat.com>
+ * @author <a href="kwills@redhat.com">Ken Wills</a>
  */
 class ProcessControllerConnectionServiceNoop extends ProcessControllerConnectionService {
 

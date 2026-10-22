@@ -15,7 +15,7 @@ import org.junit.Test;
 /**
  * Unit tests of {@link ModelControllerLock}.
  *
- * @author Ken Wills <kwills@redhat.com> (c) 2016 Red Hat
+ * @author <a href="kwills@redhat.com">Ken Wills</a> (c) 2016 Red Hat
  */
 public class ModelControllerLockTestCase {
 

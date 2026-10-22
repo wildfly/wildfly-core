@@ -17,13 +17,13 @@ import org.wildfly.subsystem.service.AsyncServiceBuilder;
 /**
  * A {@link CapabilityServiceBuilder} decorator whose installed service will start and/or stop asynchronously.
  * e.g.
- * <code><![CDATA[
+ * <pre>{@code
  * CapabilityServiceTarget target = ...;
  * RuntimeCapability<?> capability = ...;
  * Service service = ...;
  * CapabilityServiceBuilder<?> builder = new AsyncCapabilityServiceBuilder<>(target.addCapability(capability));
  * builder.setInstance(service).install();
- * ]]></code>
+ * }</pre>
  * @author Paul Ferraro
  */
 @Deprecated(forRemoval = true, since = "32.0")

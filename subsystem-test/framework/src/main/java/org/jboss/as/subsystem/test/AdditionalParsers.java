@@ -17,7 +17,7 @@ import org.jboss.staxmapper.XMLMapper;
 public class AdditionalParsers {
 
     /**
-     * Allows you to {@link ExtensionRegistry#getExtensionParsingContext(String, XMLMapper) access an
+     * Allows you to {@link ExtensionRegistry#getExtensionParsingContext(String, XMLMapper)} access an
      * {@link org.jboss.as.controller.parsing.ExtensionParsingContext} and use it to add subsystem parsers.
      *
      * @param registry the extension registry

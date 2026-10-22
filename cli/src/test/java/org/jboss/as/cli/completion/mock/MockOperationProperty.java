@@ -6,7 +6,7 @@
 package org.jboss.as.cli.completion.mock;
 
 /**
- * Created by Marek Marusic <mmarusic@redhat.com> on 3/2/18.
+ * Created by <a href="mmarusic@redhat.com">Marek Marusic</a> on 3/2/18.
  */
 public class MockOperationProperty {
     private String name;

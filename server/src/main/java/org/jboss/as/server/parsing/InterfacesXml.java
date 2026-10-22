@@ -144,7 +144,7 @@ class InterfacesXml {
      * of the element. Failure to do so will result in a configuration that can be read, but not written out.
      *
      * @throws javax.xml.stream.XMLStreamException if an error occurs
-     * @see {@link #writeInterfaceCriteria(org.jboss.staxmapper.XMLExtendedStreamWriter, org.jboss.dmr.ModelNode, boolean)}
+     * @see #writeInterfaceCriteria(org.jboss.staxmapper.XMLExtendedStreamWriter, org.jboss.dmr.ModelNode, boolean)
      */
     private void parseSimpleInterfaceCriterion(final XMLExtendedStreamReader reader, final ModelNode subModel, boolean nested)
             throws XMLStreamException {

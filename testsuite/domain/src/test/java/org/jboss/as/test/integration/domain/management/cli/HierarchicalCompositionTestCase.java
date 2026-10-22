@@ -21,10 +21,10 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Test for logical hierarchical composition of Profiles and Socket Binding Groups.
+ * <p>
+ * <a href=https://issues.jboss.org/browse/WFCORE-844>https://issues.jboss.org/browse/WFCORE-844</a>
  *
- * https://issues.jboss.org/browse/WFCORE-844
- *
- * @author Marek Kopecky <mkopecky@redhat.com>
+ * @author <a href="mkopecky@redhat.com">Marek Kopecky</a>
  */
 public class HierarchicalCompositionTestCase extends AbstractCliTestBase {
 

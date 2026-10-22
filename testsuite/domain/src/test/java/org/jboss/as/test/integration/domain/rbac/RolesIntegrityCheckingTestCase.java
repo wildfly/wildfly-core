@@ -37,7 +37,7 @@ import org.junit.Test;
 /**
  * WFLY-2270
  *
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 public class RolesIntegrityCheckingTestCase extends AbstractRbacTestCase {
     private static final String NEW_ROLE = "NewScopedRole";
