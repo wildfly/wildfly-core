@@ -53,17 +53,60 @@ public class AsyncEventLoggerTestCase extends AbstractEventLoggerTestCase {
         }
     }
 
+    /**
+     * Verifies that the async logger functions correctly under a write flood.
+     *
+     * <p>With a bounded queue, events that cannot be queued are dropped.  The test verifies
+     * that every event which <em>was</em> written is structurally valid JSON and that the
+     * conservation invariant holds: written + dropped = submitted.
+     */
     @Test
     public void testMultiFloodLogger() throws Exception {
-        final ExecutorService executor = createExecutor();
+        final int logCount = 10000;
+        final ExecutorService loggerExecutor = createExecutor();
+        final QueuedJsonWriter writer = new QueuedJsonWriter();
+        final EventLogger logger =
+                EventLogger.createAsyncLogger("test=multi-async-flood-logger", writer, loggerExecutor);
+
+        // Submit all events from a separate pool.
+        final ExecutorService submitExecutor = createExecutor();
         try {
-            final QueuedJsonWriter writer = new QueuedJsonWriter();
-            final EventLogger logger = EventLogger.createAsyncLogger("test=multi-async-logger", writer, executor);
-            testMultiLogger(logger, writer, 10000, false);
+            for (int i = 0; i < logCount; i++) {
+                final int idx = i;
+                submitExecutor.submit(() -> {
+                    final Map<String, Object> m = new HashMap<>();
+                    m.put("eventSource", logger.getEventSource());
+                    m.put("count", idx);
+                    logger.log(m);
+                });
+            }
         } finally {
-            executor.shutdown();
-            Assert.assertTrue(String.format("Executed did not complete within %d seconds", TIMEOUT),
-                    executor.awaitTermination(TIMEOUT, TimeUnit.SECONDS));
+            submitExecutor.shutdown();
+            Assert.assertTrue("Submit executor timed out",
+                    submitExecutor.awaitTermination(TIMEOUT, TimeUnit.SECONDS));
+        }
+
+        // close() drains whatever remains in the queue synchronously.
+        logger.close();
+        final long droppedAfterClose = logger.getDroppedCount();
+
+        // Wait for any in-flight background write to complete.
+        loggerExecutor.shutdown();
+        Assert.assertTrue("Logger executor timed out",
+                loggerExecutor.awaitTermination(TIMEOUT, TimeUnit.SECONDS));
+
+        final long written = writer.events.size();
+        Assert.assertEquals("written + dropped must equal submitted",
+                (long) logCount, written + droppedAfterClose);
+
+        // Every written record must be structurally valid.
+        String jsonString;
+        while ((jsonString = writer.events.poll()) != null) {
+            try (JsonReader reader = Json.createReader(new StringReader(jsonString))) {
+                final JsonObject obj = reader.readObject();
+                Assert.assertNotNull("eventSource must be present", obj.getString("eventSource"));
+                Assert.assertTrue("count must be present", obj.containsKey("count"));
+            }
         }
     }
 
