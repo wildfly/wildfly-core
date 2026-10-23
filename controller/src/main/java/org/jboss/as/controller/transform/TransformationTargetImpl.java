@@ -17,6 +17,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.global.QueryOperationHandler;
 import org.jboss.as.controller.registry.OperationTransformerRegistry;
 import org.jboss.as.controller.registry.OperationTransformerRegistry.PlaceholderResolver;
+import org.jboss.as.version.Stability;
 
 
 /**
@@ -62,8 +63,13 @@ public class TransformationTargetImpl implements TransformationTarget {
         this.placeholderResolver = placeholderResolver;
     }
 
+    @Deprecated(forRemoval = true, since = "27.0.0")
     public static TransformationTarget createLocal() {
-        TransformerRegistry registry = new TransformerRegistry();
+        return createLocal(Stability.DEFAULT);
+    }
+
+    public static TransformationTarget createLocal(Stability stability) {
+        TransformerRegistry registry = new TransformerRegistry(stability);
         OperationTransformerRegistry r2 = registry.resolveHost(ModelVersion.create(0), new HashMap<PathAddress, ModelVersion>());
         return new TransformationTargetImpl(null, registry, ModelVersion.create(0), new HashMap<PathAddress, ModelVersion>(),
                 r2, TransformationTargetType.SERVER, Transformers.OperationExcludedTransformationRegistry.DEFAULT, null);

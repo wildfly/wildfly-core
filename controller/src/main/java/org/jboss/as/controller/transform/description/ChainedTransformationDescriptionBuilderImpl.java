@@ -13,28 +13,32 @@ import java.util.Map;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
+import org.jboss.as.version.Stability;
 
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 class ChainedTransformationDescriptionBuilderImpl implements ChainedTransformationDescriptionBuilder {
+    private final Stability stability;
     private final ModelVersion currentVersion;
     private final Map<ModelVersionPair, TransformationDescriptionBuilder> builders = new HashMap<>();
 
     private final PathElement element;
-    ChainedTransformationDescriptionBuilderImpl(ModelVersion currentVersion, PathElement element) {
+    ChainedTransformationDescriptionBuilderImpl(ModelVersion currentVersion, Stability stability, PathElement element) {
         this.currentVersion = currentVersion;
+        this.stability = stability;
         this.element = element;
     }
 
     @Override
     public ResourceTransformationDescriptionBuilder createBuilder(ModelVersion fromVersion, ModelVersion toVersion) {
-        ResourceTransformationDescriptionBuilder builder = new ResourceTransformationDescriptionBuilderImpl(element);
+        ResourceTransformationDescriptionBuilder builder = new ResourceTransformationDescriptionBuilderImpl(this.stability, element);
         builders.put(new ModelVersionPair(fromVersion, toVersion), builder);
         return builder;
     }
 
+    @Override
     public Map<ModelVersion, TransformationDescription> build(ModelVersion...versions) {
         ModelVersion[] allVersions = new ModelVersion[versions.length + 1];
         allVersions[0] = currentVersion;
@@ -66,7 +70,7 @@ class ChainedTransformationDescriptionBuilderImpl implements ChainedTransformati
             TransformationDescriptionBuilder builder = builders.get(pair);
             if (builder == null) {
                 //Insert an empty builder in the chain for version deltas which don't have one registered
-                builder = new ResourceTransformationDescriptionBuilderImpl(element);
+                builder = new ResourceTransformationDescriptionBuilderImpl(this.stability, element);
             }
             placeholderResolvers.put(pair, ChainedPlaceholderResolver.create(builder.build()));
             TransformationDescription desc = new ChainedTransformingDescription(element, new LinkedHashMap<>(placeholderResolvers));

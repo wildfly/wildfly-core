@@ -15,7 +15,9 @@ import org.jboss.as.controller.transform.description.TransformationDescription;
 
 /**
  * Registers transformers for a single subsystem.
+ * @deprecated Superseded by {@link SubsystemModelTransformerRegistration}.
  */
+@Deprecated(since = "33.0")
 public class SubsystemExtensionTransformerRegistration implements ExtensionTransformerRegistration {
 
     private final String name;
