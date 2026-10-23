@@ -14,6 +14,8 @@ import org.jboss.as.cli.CommandContextFactory;
 import static org.jboss.as.cli.Util.RESULT;
 import org.jboss.as.cli.impl.CommandContextConfiguration;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
+import static org.junit.Assert.fail;
+
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
@@ -97,6 +99,8 @@ public class ReloadSASLFactoryTestCase {
         ModelNode res = ctx.getModelControllerClient().execute(getSaslFactory);
         if (res.hasDefined(RESULT) && res.get(RESULT).hasDefined("sasl-authentication-factory")) {
             existingSaslManagementUpgrade = res.get(RESULT);
+        } else {
+            fail();
         }
     }
 
@@ -175,7 +179,7 @@ public class ReloadSASLFactoryTestCase {
         ctx.handle("/socket-binding-group=standard-sockets/socket-binding=management-native:"
                 + "add(port=" + MANAGEMENT_NATIVE_PORT + ",interface=management");
         ctx.handle("/core-service=management/management-interface=native-interface:"
-                + "add(socket-binding=management-native");
+                + "add(socket-binding=management-native, sasl-authentication-factory=management-sasl-authentication)");
         ctx.handle("reload");
 
         // Build the cleaner
@@ -190,7 +194,12 @@ public class ReloadSASLFactoryTestCase {
     private static void cleanConfig(CommandContext context) throws Exception {
         Exception e = null;
         try {
-            eraseFactory(context);
+            if (existingSaslManagementUpgrade != null) {
+                ModelNode resetFactory = createOpNode("core-service=management/management-interface=http-interface", "write-attribute");
+                resetFactory.get("name").set("http-upgrade");
+                resetFactory.get("value").set(existingSaslManagementUpgrade);
+                context.getModelControllerClient().execute(resetFactory);
+            }
         } catch (Exception ex) {
             e = ex;
         } finally {
@@ -209,17 +218,6 @@ public class ReloadSASLFactoryTestCase {
                     }
                 } finally {
                     try {
-                        if (existingSaslManagementUpgrade != null) {
-                            ModelNode resetFactory = createOpNode("core-service=management/management-interface=http-interface", "write-attribute");
-                            resetFactory.get("name").set("http-upgrade");
-                            resetFactory.get("value").set(existingSaslManagementUpgrade);
-                            context.getModelControllerClient().execute(resetFactory);
-                        }
-                    } catch (Exception ex) {
-                        if (e == null) {
-                            e = ex;
-                        }
-                    } finally {
                         try {
                             // make the http-interface usable again for ctx context.
                             context.handle("reload");
@@ -245,6 +243,10 @@ public class ReloadSASLFactoryTestCase {
                                     }
                                 }
                             }
+                        }
+                    } catch (Exception ex) {
+                        if (e == null) {
+                            e = ex;
                         }
                     }
                 }

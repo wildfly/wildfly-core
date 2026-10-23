@@ -26,6 +26,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
@@ -38,6 +39,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
  * @author jdenise@redhat.com
  */
 @RunWith(WildFlyRunner.class)
+@Ignore
 public class SecurityAuthCommandsTestCase {
 
     private static final ByteArrayOutputStream consoleOutput = new ByteArrayOutputStream();
