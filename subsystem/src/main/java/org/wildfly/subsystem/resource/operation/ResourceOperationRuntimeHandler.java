@@ -163,7 +163,7 @@ public interface ResourceOperationRuntimeHandler {
         }
 
         @Override
-        public void removeRuntime(OperationContext context, ModelNode model) throws OperationFailedException {
+        public void removeRuntime(OperationContext context, ModelNode model) {
             Consumer<OperationContext> remover = this.removers.remove(context.getCurrentAddress());
             if (remover != null) {
                 remover.accept(context);

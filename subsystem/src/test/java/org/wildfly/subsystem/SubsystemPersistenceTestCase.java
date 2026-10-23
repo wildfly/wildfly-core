@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.xml.stream.XMLStreamException;
-
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -90,11 +88,11 @@ public class SubsystemPersistenceTestCase {
         }
 
         @Override
-        public void readElement(XMLExtendedStreamReader reader, List<ModelNode> value) throws XMLStreamException {
+        public void readElement(XMLExtendedStreamReader reader, List<ModelNode> value) {
         }
 
         @Override
-        public void writeContent(XMLExtendedStreamWriter streamWriter, SubsystemMarshallingContext value) throws XMLStreamException {
+        public void writeContent(XMLExtendedStreamWriter streamWriter, SubsystemMarshallingContext value) {
         }
     }
 }

@@ -28,16 +28,17 @@ public class ServiceValueExecutorRegistryTestCase {
         Object value1 = UUID.randomUUID();
         Object value2 = UUID.randomUUID();
 
-        Assert.assertNull(this.registry.getExecutor(service1));
-        Assert.assertNull(this.registry.getExecutor(service2));
-
+        FunctionExecutor<Object> executor1 = this.registry.getExecutor(service1);
+        FunctionExecutor<Object> executor2 = this.registry.getExecutor(service2);
         ExceptionFunction<Object, Object, RuntimeException> function = value -> value;
+
+        Assert.assertNotNull(executor1);
+        Assert.assertNotNull(executor2);
+        Assert.assertNull(executor1.execute(function));
+        Assert.assertNull(executor2.execute(function));
 
         Consumer<Object> captor1 = this.registry.add(service1);
         Consumer<Object> captor2 = this.registry.add(service2);
-
-        FunctionExecutor<Object> executor1 = this.registry.getExecutor(service1);
-        FunctionExecutor<Object> executor2 = this.registry.getExecutor(service2);
 
         Assert.assertNull(executor1.execute(function));
         Assert.assertNull(executor2.execute(function));
@@ -60,9 +61,6 @@ public class ServiceValueExecutorRegistryTestCase {
         // Once removed, executor should return null
         this.registry.remove(service1);
         this.registry.remove(service2);
-
-        Assert.assertNull(this.registry.getExecutor(service1));
-        Assert.assertNull(this.registry.getExecutor(service2));
 
         Assert.assertNull(executor1.execute(function));
         Assert.assertNull(executor2.execute(function));
