@@ -52,6 +52,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.management.Capabilities;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.notification.NotificationSupport;
+import org.jboss.as.controller.registry.NotificationHandlerRegistration;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.ConfigurationExtension;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
@@ -132,6 +133,9 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
     /** Capability in-vm users of the controller use to register notification handlers */
     protected static final RuntimeCapability<Void> NOTIFICATION_REGISTRY_CAPABILITY = RuntimeCapability.Builder.of(NotificationHandlerRegistry.SERVICE_DESCRIPTOR).build();
+
+    /** Capability in-vm users of the controller use to both register notification handlers and find matching handlers */
+    protected static final RuntimeCapability<Void> NOTIFICATION_HANDLER_REGISTRATION_CAPABILITY = RuntimeCapability.Builder.of(NotificationHandlerRegistration.SERVICE_DESCRIPTOR).build();
 
     /**
      * Capability users of the controller use to coordinate changes to paths.
@@ -331,10 +335,13 @@ public abstract class AbstractControllerService implements Service<ModelControll
                     new RuntimeCapabilityRegistration(CLIENT_FACTORY_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
             capabilityRegistry.registerCapability(
                     new RuntimeCapabilityRegistration(NOTIFICATION_REGISTRY_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+            capabilityRegistry.registerCapability(
+                    new RuntimeCapabilityRegistration(NOTIFICATION_HANDLER_REGISTRATION_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
             // Record the core capabilities with the root MRR so reads of it will show it as their provider
             // This also gets them recorded as 'possible capabilities' in the capability registry
             rootResourceRegistration.registerCapability(CLIENT_FACTORY_CAPABILITY);
             rootResourceRegistration.registerCapability(NOTIFICATION_REGISTRY_CAPABILITY);
+            rootResourceRegistration.registerCapability(NOTIFICATION_HANDLER_REGISTRATION_CAPABILITY);
             final ServiceName clientFactorySN = CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName();
             final ServiceBuilder<?> clientFactorySB = target.addService(clientFactorySN);
             clientFactorySB.setInstance(new SimpleService(clientFactorySB.provides(clientFactorySN,
@@ -344,6 +351,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
             final ServiceBuilder<?> notifyRegistrySB = target.addService(notifyRegistrySN);
             notifyRegistrySB.setInstance(new SimpleService(notifyRegistrySB.provides(notifyRegistrySN), controller.getNotificationRegistry()));
             notifyRegistrySB.install();
+            final ServiceName notifyRegistrationSN = NOTIFICATION_HANDLER_REGISTRATION_CAPABILITY.getCapabilityServiceName();
+            final ServiceBuilder<?> notifyRegistrationSB = target.addService(notifyRegistrationSN);
+            notifyRegistrationSB.setInstance(new SimpleService(notifyRegistrationSB.provides(notifyRegistrationSN), controller.getNotificationRegistry()));
+            notifyRegistrationSB.install();
         }
         capabilityRegistry.publish();  // These are visible immediately; no waiting for finishBoot
                                        // We publish even if we didn't register anything in case parent services did

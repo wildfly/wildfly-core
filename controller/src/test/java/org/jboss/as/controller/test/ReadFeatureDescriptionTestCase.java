@@ -56,6 +56,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PAS
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
+import org.jboss.as.controller.registry.NotificationHandlerRegistration;
 import org.jboss.as.controller.operations.global.ReadFeatureDescriptionHandler;
 import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.jboss.as.controller.registry.AliasEntry;
@@ -396,8 +397,8 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
 
         // capabilities
         ModelNode provides = feature.require(PROVIDES);
-        Assert.assertEquals(4, provides.asList().size());
-        Set<String> providedCaps = new HashSet<>(4);
+        Assert.assertEquals(5, provides.asList().size());
+        Set<String> providedCaps = new HashSet<>(5);
         for(ModelNode providedCap : provides.asList()) {
             providedCaps.add(providedCap.asString());
         }
@@ -405,6 +406,7 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         Assert.assertTrue(providedCaps.contains(DYNAMIC_CAPABILITY_NAME));
         Assert.assertTrue(providedCaps.contains(ModelControllerClientFactory.SERVICE_DESCRIPTOR.getName()));
         Assert.assertTrue(providedCaps.contains(NotificationHandlerRegistry.SERVICE_DESCRIPTOR.getName()));
+        Assert.assertTrue(providedCaps.contains(NotificationHandlerRegistration.SERVICE_DESCRIPTOR.getName()));
     }
 
     /**
