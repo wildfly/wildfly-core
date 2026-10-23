@@ -21,6 +21,23 @@ goto :eof
     "%JAVA%" --add-opens=%~1=ALL-UNNAMED -version 2>&1 | findstr /i /c:"WARNING" >nul 2>&1 && (set PACKAGE_AVAILABLE=false) || (set PACKAGE_AVAILABLE=true)
 goto :eof
 
+:setJvmOptionAvailable
+    rem Probes a full JVM option, e.g. --enable-native-access=ALL-UNNAMED
+    rem An option the JVM doesn't recognize makes it exit with an error, while a deprecated or ignored one prints a WARNING.
+    rem Both mean the option is not usable, so capture java's exit status via a temp file before checking for WARNING.
+    set JVM_OPTION_AVAILABLE=false
+    set "JVM_OPT_TMP=%TEMP%"
+    if "%JVM_OPT_TMP%" == "" set "JVM_OPT_TMP=%TMP%"
+    if "%JVM_OPT_TMP%" == "" set "JVM_OPT_TMP=."
+    set "JVM_OPT_TMP=%JVM_OPT_TMP%\wf_opt_%RANDOM%_%RANDOM%.txt"
+    "%JAVA%" %~1 -version > "%JVM_OPT_TMP%" 2>&1
+    if not errorlevel 1 (
+      findstr /i /c:"WARNING" "%JVM_OPT_TMP%" >nul 2>&1 || (set JVM_OPTION_AVAILABLE=true)
+    )
+    if exist "%JVM_OPT_TMP%" del /f /q "%JVM_OPT_TMP%" >nul 2>&1
+    set "JVM_OPT_TMP="
+goto :eof
+
 :setDefaultModularJvmOptions
   setlocal EnableDelayedExpansion
   echo %* | findstr /I "\-\-add\-modules" > nul
@@ -63,6 +80,18 @@ goto :eof
     set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.management/javax.management=ALL-UNNAMED"
     rem InitialContext proxy generation requires deep reflection in javax.naming
     set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.naming/javax.naming=ALL-UNNAMED"
+    rem Allows native access (e.g. the Foreign Function & Memory API) by code on the class path without a warning
+    set "JVM_OPTION=--enable-native-access=ALL-UNNAMED"
+    call :setJvmOptionAvailable "!JVM_OPTION!"
+    if "!JVM_OPTION_AVAILABLE!" == "true" (
+      set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! !JVM_OPTION!"
+    )
+    rem Allows sun.misc.Unsafe memory-access methods, which later JDKs deprecate and warn about. Only JDK 23+ knows this option
+    set "JVM_OPTION=--sun-misc-unsafe-memory-access=allow"
+    call :setJvmOptionAvailable "!JVM_OPTION!"
+    if "!JVM_OPTION_AVAILABLE!" == "true" (
+      set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! !JVM_OPTION!"
+    )
   ) else (
     set "DEFAULT_MODULAR_JVM_OPTIONS="
   )
