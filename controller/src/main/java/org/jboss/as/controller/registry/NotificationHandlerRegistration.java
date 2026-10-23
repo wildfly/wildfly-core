@@ -10,6 +10,7 @@ import java.util.Collection;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationHandler;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
+import org.wildfly.service.descriptor.NullaryServiceDescriptor;
 
 /**
  * The NotificationHandlerRegistration is used to register and unregister notification handlers.
@@ -27,6 +28,8 @@ import org.jboss.as.controller.notification.NotificationHandlerRegistry;
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2014 Red Hat inc.
  */
 public interface NotificationHandlerRegistration extends NotificationHandlerRegistry {
+
+    NullaryServiceDescriptor<NotificationHandlerRegistration> SERVICE_DESCRIPTOR = NullaryServiceDescriptor.of("org.wildfly.management.notification-handler-registration", NotificationHandlerRegistration.class);
 
     /**
      * Return all the {@code NotificationHandler} that where registered to listen to the notification's source address (either directly
