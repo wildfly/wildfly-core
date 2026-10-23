@@ -11,15 +11,15 @@ import java.util.function.Function;
 /**
  * An {@link Iterable} decorator whose {@link Iterator} returns elements from mapping function without the need for an intermediate collection.
  * e.g.
- * <code>
+ * <pre>{@code
  * Iterable<T> foo = ...;
  * Function<T, R> mapper = ...;
  * Iterable<R> bar = new MappedIterable<>(foo, mapper);
- * </code>
+ * }</pre>
  * Effectively a light-weight equivalent to:
- * <code>
+ * <pre>{@code
  * Iterable<R> bar = StreamSupport.stream(foo.spliterator(), false).map(mapper)::iterator;
- * </code>
+ * }</pre>
  *
  * @author Paul Ferraro
  */

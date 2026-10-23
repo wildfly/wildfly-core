@@ -19,9 +19,9 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 /**
  * CLI should show the real value of expression properties in addition to the expression
  *
- * https://issues.jboss.org/browse/WFCORE-729
+ * <a href=https://issues.jboss.org/browse/WFCORE-729>https://issues.jboss.org/browse/WFCORE-729</a>
  *
- * @author Marek Kopecky <mkopecky@redhat.com>
+ * @author <a href="mkopecky@redhat.com">Marek Kopecky</a>
  */
 @RunWith(WildFlyRunner.class)
 public class RealValueExpressionTestCase extends AbstractCliTestBase {

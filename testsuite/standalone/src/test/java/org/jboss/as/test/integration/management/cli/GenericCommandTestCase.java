@@ -16,7 +16,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test generic command features of CLI.
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="dpospisi@redhat.com">Dominik Pospisil</a>
  */
 @RunWith(WildFlyRunner.class)
 public class GenericCommandTestCase extends AbstractCliTestBase {

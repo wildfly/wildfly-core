@@ -28,7 +28,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 public class PermissionsCoverageTestUtil {
     public static void assertTheEntireDomainTreeHasPermissionsDefined(ModelControllerClient client) throws IOException {

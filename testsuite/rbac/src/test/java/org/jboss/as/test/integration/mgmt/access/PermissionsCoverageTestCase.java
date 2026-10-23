@@ -15,7 +15,7 @@ import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 @RunWith(WildFlyRunner.class)
 public class PermissionsCoverageTestCase {

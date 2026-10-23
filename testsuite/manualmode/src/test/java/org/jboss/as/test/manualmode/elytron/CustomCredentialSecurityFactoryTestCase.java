@@ -38,7 +38,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
  * custom-credential-security-factory is called.
  *
  * @author olukas
- * @author Hynek Švábek <hsvabek@redhat.com>
+ * @author <a href="hsvabek@redhat.com">Hynek Švábek</a>
  */
 @RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)

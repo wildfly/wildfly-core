@@ -21,7 +21,7 @@ import org.junit.runners.Suite;
  * test cases using the same full-RBAC-provider-enabled domain configuration
  * with authorization against .properties file.
  *
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses ({

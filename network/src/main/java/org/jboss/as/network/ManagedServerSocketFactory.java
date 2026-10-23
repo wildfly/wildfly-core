@@ -35,7 +35,7 @@ public abstract class ManagedServerSocketFactory extends ServerSocketFactory {
      * @param port the port
      * @return the server socket
      * @throws IOException
-     * @see {@linkplain ServerSocketFactory#createServerSocket(int)}
+     * @see ServerSocketFactory#createServerSocket(int)
      */
     public abstract ServerSocket createServerSocket(String name, int port) throws IOException;
 
@@ -47,7 +47,7 @@ public abstract class ManagedServerSocketFactory extends ServerSocketFactory {
      * @param backlog the backlog
      * @return the server socket
      * @throws IOException
-     * @see {@linkplain ServerSocketFactory#createServerSocket(int, int)}
+     * @see ServerSocketFactory#createServerSocket(int, int)
      */
     public abstract ServerSocket createServerSocket(String name, int port, int backlog) throws IOException;
 
@@ -60,7 +60,7 @@ public abstract class ManagedServerSocketFactory extends ServerSocketFactory {
      * @param ifAddress the interface address
      * @return the server socket
      * @throws IOException
-     * @see {@linkplain ServerSocketFactory#createServerSocket(int, int)}
+     * @see ServerSocketFactory#createServerSocket(int, int)
      */
     public abstract ServerSocket createServerSocket(String name, int port, int backlog, InetAddress ifAddress) throws IOException;
 

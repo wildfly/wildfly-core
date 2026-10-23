@@ -8,7 +8,7 @@ package org.jboss.as.test.integration.domain.rbac;
 import java.io.IOException;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 interface RbacDomainRolesTests {
     void testMonitor() throws Exception;

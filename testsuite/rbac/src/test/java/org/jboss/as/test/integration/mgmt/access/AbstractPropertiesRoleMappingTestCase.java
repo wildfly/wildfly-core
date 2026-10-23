@@ -36,7 +36,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 /**
  * This class is also used in the LDAP test cases.
  *
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 @RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)

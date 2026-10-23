@@ -13,7 +13,7 @@ import org.productivity.java.syslog4j.server.SyslogServerEventIF;
 import org.productivity.java.syslog4j.server.SyslogServerIF;
 
 /**
- * Implementation of {@link SyslogServerEventHandlerIF} which is backed by a static/final Map<String,BlockingQueue>.
+ * Implementation of {@link SyslogServerEventHandlerIF} which is backed by a static/final Map&lt;String, BlockingQueue&gt;.
  *
  * @author olukas
  */

@@ -39,7 +39,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 /**
- * @author Ken Wills <kwills@redhat.com>
+ * @author <a href="kwills@redhat.com">Ken Wills</a>
  *
  * Basic tests for domain server auth when local realm authentication is removed.
  */

@@ -56,11 +56,11 @@ public interface PathManager {
         /**
          * Called when a path is modified in the model. This happens before any changes are made to the path
          * in the path manager. If {@link PathEventContext#reloadRequired()} or {@link PathEventContext#restartRequired()}
-         * are called the path will not get updated in the path manager, and {@code pathEvent) does not get
+         * are called the path will not get updated in the path manager, and {@code pathEvent} does not get
          * called.
          *
          * @param eventContext the event
-         * @param the name of the path being modified
+         * @param name the name of the path being modified
          */
         void pathModelEvent(PathEventContext eventContext, String name);
 

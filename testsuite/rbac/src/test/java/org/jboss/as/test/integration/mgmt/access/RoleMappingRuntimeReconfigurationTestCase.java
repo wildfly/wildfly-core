@@ -49,7 +49,7 @@ import org.wildfly.security.WildFlyElytronProvider;
 
 /**
  * @author jcechace
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 @RunWith(WildFlyRunner.class)
 @ServerSetup(RoleMappingRuntimeReconfigurationTestCase.BasicUsersSetup.class)

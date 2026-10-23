@@ -241,7 +241,7 @@ public class TestSuiteEnvironment {
      * <ul>
      * <li>{@code jboss.bind.address}</li>
      * <li>{@code management.address}</li>
-     * <li>{@code node0</li>
+     * <li>{@code node0}</li>
      * </ul>
      * <p/>
      * If neither system property is set {@code 0.0.0.0} is returned.

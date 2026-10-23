@@ -55,7 +55,7 @@ public interface ResourceRegistrationXMLElement extends ResourceXMLElement, Reso
 
         /**
          * Overrides the logic used to determine the local name of the XML element for this resource.
-         * @see {@link ResourceXMLElementLocalName} for common implementations.
+         * @see ResourceXMLElementLocalName for common implementations.
          * @param localName a function returning the element local name for a given path.
          * @return a reference to this builder.
          */
@@ -77,7 +77,7 @@ public interface ResourceRegistrationXMLElement extends ResourceXMLElement, Reso
 
         /**
          * Overrides the logic used to determine the element local name of this resource.
-         * @see {@link ResourceXMLElementLocalName}
+         * @see ResourceXMLElementLocalName
          * @param name a function returning the qualified element name for a given path.
          * @return a reference to this builder.
          */

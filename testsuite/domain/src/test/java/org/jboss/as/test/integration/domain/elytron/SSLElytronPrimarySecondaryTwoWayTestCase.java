@@ -17,7 +17,7 @@ import org.junit.Test;
 /**
  * Tests two way SSL secured communication between primary and secondary, using Elytron.
  *
- * @author Richard Janík <rjanik@redhat.com>
+ * @author <a href="rjanik@redhat.com">Richard Janík</a>
  */
 public class SSLElytronPrimarySecondaryTwoWayTestCase extends AbstractSSLPrimarySecondaryTestCase {
 

@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
- * @author Petr Křemenský <pkremens@redhat.com>
+ * @author <a href="pkremens@redhat.com">Petr Křemenský</a>
  */
 @RunWith(WildFlyRunner.class)
 public class JBossLoggingPropertiesTestCase extends DeploymentBaseTestCase {

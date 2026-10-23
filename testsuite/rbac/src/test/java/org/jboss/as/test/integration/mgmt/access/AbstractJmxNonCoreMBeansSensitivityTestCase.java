@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.wildfly.core.testrunner.ManagementClient;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 public abstract class AbstractJmxNonCoreMBeansSensitivityTestCase {
     @Inject

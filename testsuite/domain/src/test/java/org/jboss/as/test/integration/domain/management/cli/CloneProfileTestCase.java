@@ -40,9 +40,9 @@ import org.xml.sax.SAXException;
  *
  * Test clone "default" profile to "clone-profile-test-case-default" profile.
  *
- * https://issues.jboss.org/browse/WFCORE-797
+ * <a href=https://issues.jboss.org/browse/WFCORE-797>https://issues.jboss.org/browse/WFCORE-797</a>
  *
- * @author Marek Kopecky <mkopecky@redhat.com>
+ * @author <a href="mkopecky@redhat.com">Marek Kopecky</a>
  */
 public class CloneProfileTestCase extends AbstractCliTestBase {
 

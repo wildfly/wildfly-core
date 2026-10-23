@@ -19,11 +19,11 @@ import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 
 /**
- * Represents simple key=value map equivalent of java.util.Map<String,String>()
+ * Represents simple key=value map equivalent of java.util.Map&lt;String, String&gt;()
  *
  * @author Jason T. Greene
- * @author Tomaz Cerar<
- * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
+ * @author Tomaz Cerar
+ * @author <a href="tadamski@redhat.com">Tomasz Adamski</a>
  */
 //todo maybe replace with SimpleMapAttributeDefinition?
 public final class PropertiesAttributeDefinition extends MapAttributeDefinition {

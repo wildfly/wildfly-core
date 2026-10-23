@@ -19,7 +19,7 @@ import org.jboss.as.controller.test.AbstractControllerTestBase;
 import org.jboss.dmr.ModelNode;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 public abstract class AbstractRbacTestBase extends AbstractControllerTestBase {
     protected ModelNode executeWithRole(ModelNode operation, StandardRole role) {

@@ -10,7 +10,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPE
 import org.jboss.dmr.ModelNode;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 public class MultipleRolesBasicRbacTestCase extends BasicRbacTestCase {
     @Override

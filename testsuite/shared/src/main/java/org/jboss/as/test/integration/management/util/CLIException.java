@@ -6,7 +6,7 @@ package org.jboss.as.test.integration.management.util;
 
 /**
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="dpospisi@redhat.com">Dominik Pospisil</a>
  */
 public class CLIException extends RuntimeException {
 

@@ -26,7 +26,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  *
- * @author Jean-François Denise <jdenise@redhat.com>
+ * @author <a href="jdenise@redhat.com">Jean-François Denise</a>
  */
 // Required by Bootable JAR in order to create the installation directory
 @RunWith(WildFlyRunner.class)

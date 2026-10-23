@@ -20,7 +20,7 @@ import org.junit.BeforeClass;
 /**
  * Tests of host scoped roles authorized against .properties file using the "rbac" access control provider.
  *
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 public class PropertiesRoleMappingHostScopedRolesTestCase extends AbstractHostScopedRolesTestCase {
     @BeforeClass

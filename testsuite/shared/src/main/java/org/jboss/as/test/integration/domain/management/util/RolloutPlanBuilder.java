@@ -24,7 +24,7 @@ import org.jboss.dmr.ModelNode;
  *
  * Helper class building rollout plan model node.
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="dpospisi@redhat.com">Dominik Pospisil</a>
  */
 public class RolloutPlanBuilder  {
 

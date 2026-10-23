@@ -30,7 +30,7 @@ import org.junit.Test;
 import org.wildfly.core.testrunner.ManagementClient;
 
 /**
- * @author Petr Křemenský <pkremens@redhat.com>
+ * @author <a href="pkremens@redhat.com">Petr Křemenský</a>
  */
 abstract class AbstractLoggingProfilesTestCase extends AbstractLoggingTestCase {
 

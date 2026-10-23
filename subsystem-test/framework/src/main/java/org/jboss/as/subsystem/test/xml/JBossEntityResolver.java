@@ -42,7 +42,7 @@ public class JBossEntityResolver implements EntityResolver, LSResourceResolver {
     private static final Logger log = Logger.getLogger(JBossEntityResolver.class);
 
     /**
-     * A class wide Map<String, String> of publicId/systemId to dtd/xsd file
+     * A class wide Map&lt;String, String&gt; of publicId/systemId to dtd/xsd file
      */
     private static Map entities = new ConcurrentHashMap();
     /**
@@ -191,7 +191,7 @@ public class JBossEntityResolver implements EntityResolver, LSResourceResolver {
     /**
      * Obtain a read-only view of the current entity map.
      *
-     * @return Map<String, String> of the publicID/systemID to dtd/schema file name
+     * @return Map&lt;String, String&gt; of the publicID/systemID to dtd/schema file name
      */
     public static Map getEntityMap() {
         return Collections.unmodifiableMap(entities);

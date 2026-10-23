@@ -21,7 +21,7 @@ import org.jboss.dmr.ModelNode;
 
 /**
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="dpospisi@redhat.com">Dominik Pospisil</a>
  */
 public class AbstractCliTestBase {
     public static final long WAIT_TIMEOUT = 30000;

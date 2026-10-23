@@ -49,7 +49,7 @@ import org.junit.Test;
 /**
  * Tests filtering of output from {@code read-resource} requests.
  *
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="lthon@redhat.com">Ladislav Thon</a>
  */
 public class FilteredReadResourceTestCase extends AbstractRbacTestBase {
     public static final String UNCONSTRAINED_RESOURCE = "unconstrained-resource";
