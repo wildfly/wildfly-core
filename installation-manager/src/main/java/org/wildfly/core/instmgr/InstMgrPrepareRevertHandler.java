@@ -139,7 +139,7 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
                             imService.getPreparedServerDir(), repositories, revision);
                     Files.createDirectories(imService.getPreparedServerDir());
                     im.prepareRevert(revision, imService.getPreparedServerDir(), repositories);
-                    final String applyRevert = im.generateApplyRevertCommand(homeDir.resolve("bin"), imService.getPreparedServerDir(), getOsShell());
+                    final String applyRevert = im.generateApplyRevertCommand(homeDir.resolve("bin"), imService.getPreparedServerDir(), getOsShell(), false);
                     InstMgrLogger.ROOT_LOGGER.debug("Apply Revert Command: " + applyRevert);
                     imService.commitCandidateServer(applyRevert);
 
