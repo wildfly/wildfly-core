@@ -100,8 +100,8 @@ class AggregateComponentDefinition<T> extends SimpleResourceDefinition {
             .setRestartAllServices()
             .build();
 
-        AbstractAddStepHandler add = new AggregateApiComponentAddHandler<T>(aggregationType, aggregator, aggregateReferences, runtimeCapability, apiCapabilityName, dependOnProviderRegistration);
-        OperationStepHandler remove = new TrivialCapabilityServiceRemoveHandler(add, runtimeCapability);
+        AggregateApiComponentAddHandler<T> add = new AggregateApiComponentAddHandler<T>(aggregationType, aggregator, aggregateReferences, runtimeCapability, apiCapabilityName, dependOnProviderRegistration);
+        OperationStepHandler remove = add.createRemoveHandler(runtimeCapability);
 
         return new AggregateComponentDefinition<T>(aggregationType, componentName, add, remove, aggregateReferences, ElytronReloadRequiredWriteAttributeHandler.INSTANCE, runtimeCapability);
     }

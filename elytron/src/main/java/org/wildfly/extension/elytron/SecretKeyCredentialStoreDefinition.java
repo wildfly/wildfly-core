@@ -22,7 +22,6 @@ import java.util.function.Supplier;
 
 import javax.crypto.SecretKey;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
@@ -109,8 +108,8 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
 
     static final AttributeDefinition[] CONFIG_ATTRIBUTES = new AttributeDefinition[] { RELATIVE_TO, PATH, CREATE, POPULATE, KEY_SIZE, DEFAULT_ALIAS };
 
-    private static final AbstractAddStepHandler ADD = new SecretKeyCredentialStoreAddHandler();
-    private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, CREDENTIAL_STORE_RUNTIME_CAPABILITY);
+    private static final SecretKeyCredentialStoreAddHandler ADD = new SecretKeyCredentialStoreAddHandler();
+    private static final OperationStepHandler REMOVE = ADD.createRemoveHandler(CREDENTIAL_STORE_RUNTIME_CAPABILITY);
 
     // Operation Definitions and Parameters
 
