@@ -712,30 +712,24 @@ final class OperationContextImpl extends AbstractOperationContext {
     private void doRemove(final ServiceController<?> controller) {
         final Step removalStep = activeStep;
         removalStep.hasRemovals();
-        final UninterruptibleCountDownLatch latch = new UninterruptibleCountDownLatch(1);
-        controller.addListener(new LifecycleListener() {
-            public void handleEvent(final ServiceController<?> controller, final LifecycleEvent event) {
-                latch.awaitUninterruptibly();
-                if (event == LifecycleEvent.REMOVED) {
-                    synchronized (realRemovingControllers) {
-                        if (realRemovingControllers.remove(controller)) {
-                            for (ServiceName sn : controller.provides()) {
-                                removalSteps.put(sn, removalStep);
+        final ServiceController<?> realController = unwrap(controller);
+        synchronized (realRemovingControllers) {
+            realRemovingControllers.add(realController);
+            realController.addListener(new LifecycleListener() {
+                public void handleEvent(final ServiceController<?> controller, final LifecycleEvent event) {
+                    if (event == LifecycleEvent.REMOVED) {
+                        synchronized (realRemovingControllers) {
+                            if (realRemovingControllers.remove(controller)) {
+                                for (ServiceName sn : controller.provides()) {
+                                    removalSteps.put(sn, removalStep);
+                                }
+                                realRemovingControllers.notifyAll();
                             }
-                            realRemovingControllers.notifyAll();
                         }
                     }
                 }
-            }
-        });
-        try {
-            final ServiceController<?> realController = unwrap(controller);
-            synchronized (realRemovingControllers) {
-                realRemovingControllers.add(realController);
-                realController.setMode(ServiceController.Mode.REMOVE);
-            }
-        } finally {
-            latch.countDown();
+            });
+            realController.setMode(ServiceController.Mode.REMOVE);
         }
     }
 
