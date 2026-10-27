@@ -101,7 +101,7 @@
         <linkXRef>false</linkXRef>
 
         <!-- Keep consistent with README.md and .mvn/wrapper/maven-wrapper.properties -->
-        <maven.min.version>3.6.0</maven.min.version>
+        <maven.min.version>3.9</maven.min.version>
         <!-- Require Java 17 -->
         <maven.compiler.release>17</maven.compiler.release>
 
