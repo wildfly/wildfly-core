@@ -27,7 +27,7 @@ import java.util.Collection;
 
 /**
  * Undertow handler for CORS headers.
- * @see http://www.w3.org/TR/cors
+ * @see <a href="http://www.w3.org/TR/cors">CORS</a>
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2014 Red Hat, inc.
  */
 public class CorsHttpHandler implements HttpHandler {

@@ -22,7 +22,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="mailto:dpospisi@redhat.com">Dominik Pospisil</a>
  */
 @RunWith(WildFlyRunner.class)
 public class GlobalOpsTestCase extends AbstractCliTestBase {

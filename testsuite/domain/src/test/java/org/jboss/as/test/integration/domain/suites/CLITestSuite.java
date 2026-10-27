@@ -28,7 +28,7 @@ import org.junit.runners.Suite;
 
 /**
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="mailto:dpospisi@redhat.com">Dominik Pospisil</a>
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({

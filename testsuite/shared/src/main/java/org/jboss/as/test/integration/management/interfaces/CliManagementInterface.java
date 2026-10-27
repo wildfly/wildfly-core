@@ -15,7 +15,7 @@ import org.jboss.dmr.Property;
 
 /**
  * @author jcechace
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="mailto:lthon@redhat.com">Ladislav Thon</a>
  */
 public class CliManagementInterface implements ManagementInterface {
     private final CLI client;

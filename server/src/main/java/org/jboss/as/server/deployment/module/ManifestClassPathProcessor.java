@@ -39,10 +39,7 @@ import org.jboss.vfs.VirtualFile;
 
 /**
  * A processor which adds class path entries for each manifest entry.
- * <p/>
- * <p/>
- * <p/>
- * </li>
+ * <ul>
  * <li>
  * If the Class-Path entry is external to the deployment then it is handled by the external jar service.</li>
  * <li>

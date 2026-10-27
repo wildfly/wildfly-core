@@ -11,7 +11,7 @@ import org.junit.BeforeClass;
 /**
  * Starts WildFly before running the tests.
  *
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="mailto:lthon@redhat.com">Ladislav Thon</a>
  */
 public class PropertiesRoleMappingTestCase extends AbstractPropertiesRoleMappingTestCase {
 

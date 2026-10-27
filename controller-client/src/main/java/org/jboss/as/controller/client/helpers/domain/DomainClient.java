@@ -32,7 +32,7 @@ public interface DomainClient extends ModelControllerClient {
 
     /**
      * Add the content for a deployment to the domain controller. Note that
-     * {@link #getDeploymentManager() the DomainDeploymentManager offers a
+     * {@link #getDeploymentManager() the DomainDeploymentManager} offers a
      * more convenient API for manipulating domain deployments.
      *
      * @param stream the data stream for the deployment

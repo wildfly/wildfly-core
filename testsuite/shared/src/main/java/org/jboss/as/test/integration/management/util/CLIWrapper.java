@@ -28,8 +28,8 @@ import org.jboss.dmr.ModelNode;
 
 /**
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
- * @author Alexey Loubyansky <olubyans@redhat.com>
+ * @author <a href="mailto:dpospisi@redhat.com">Dominik Pospisil</a>
+ * @author <a href="mailto:olubyans@redhat.com">Alexey Loubyansky</a>
  */
 public class CLIWrapper implements AutoCloseable {
 

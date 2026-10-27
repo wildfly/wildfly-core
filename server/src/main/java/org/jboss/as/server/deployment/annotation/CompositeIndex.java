@@ -39,7 +39,7 @@ public class CompositeIndex {
     }
 
     /**
-     * @see {@link Index#getAnnotations(org.jboss.jandex.DotName)}
+     * @see Index#getAnnotations(DotName)
      */
     public List<AnnotationInstance> getAnnotations(final DotName annotationName) {
         final List<AnnotationInstance> allInstances = new ArrayList<AnnotationInstance>();
@@ -53,7 +53,7 @@ public class CompositeIndex {
     }
 
     /**
-     * @see {@link Index#getKnownDirectSubclasses(org.jboss.jandex.DotName)}
+     * @see Index#getKnownDirectSubclasses(DotName)
      */
     public Set<ClassInfo> getKnownDirectSubclasses(final DotName className) {
         final Set<ClassInfo> allKnown = new HashSet<ClassInfo>();
@@ -109,7 +109,7 @@ public class CompositeIndex {
     }
 
     /**
-     * @see {@link Index#getKnownDirectImplementors(DotName)}
+     * @see Index#getKnownDirectImplementors(DotName)
      */
     public Set<ClassInfo> getKnownDirectImplementors(final DotName className) {
         final Set<ClassInfo> allKnown = new HashSet<ClassInfo>();
@@ -171,7 +171,7 @@ public class CompositeIndex {
     }
 
     /**
-     * @see {@link Index#getClassByName(org.jboss.jandex.DotName)}
+     * @see Index#getClassByName(DotName)
      */
     public ClassInfo getClassByName(final DotName className) {
         for (Index index : indexes) {
@@ -184,7 +184,7 @@ public class CompositeIndex {
     }
 
     /**
-     * @see {@link org.jboss.jandex.Index#getKnownClasses()}
+     * @see Index#getKnownClasses()
      */
     public Collection<ClassInfo> getKnownClasses() {
         final List<ClassInfo> allKnown = new ArrayList<ClassInfo>();

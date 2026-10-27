@@ -18,7 +18,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 /**
  * Tests all management operation types which are available via HTTP GET requests.
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="mailto:dpospisi@redhat.com">Dominik Pospisil</a>
  */
 @RunWith(WildFlyRunner.class)
 public class HttpMgmtPrettyTestCase {

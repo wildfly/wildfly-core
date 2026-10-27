@@ -25,7 +25,7 @@ import org.wildfly.test.api.Authentication;
 
 /**
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="mailto:dpospisi@redhat.com">Dominik Pospisil</a>
  */
 public class CLITestUtil {
     private static final Duration DEFAULT_TIMEOUT = TimeoutUtil.adjust(Duration.ofMinutes(2));

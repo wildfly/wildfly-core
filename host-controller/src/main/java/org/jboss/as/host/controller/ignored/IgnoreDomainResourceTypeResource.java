@@ -54,7 +54,7 @@ public class IgnoreDomainResourceTypeResource extends PlaceholderResource.Placeh
         return false;
     }
 
-    /** {@inheritDoc */
+    /** {@inheritDoc} */
     @Override
     public ModelNode getModel() {
         synchronized (model) {
@@ -74,7 +74,7 @@ public class IgnoreDomainResourceTypeResource extends PlaceholderResource.Placeh
         }
     }
 
-    /** {@inheritDoc */
+    /** {@inheritDoc} */
     @Override
     public void writeModel(ModelNode newModel) {
         synchronized (model) {
@@ -85,13 +85,13 @@ public class IgnoreDomainResourceTypeResource extends PlaceholderResource.Placeh
         }
     }
 
-    /** {@inheritDoc */
+    /** {@inheritDoc} */
     @Override
     public boolean isModelDefined() {
         return true;
     }
 
-    /** {@inheritDoc */
+    /** {@inheritDoc} */
     @Override
     public IgnoreDomainResourceTypeResource clone() {
         return new IgnoreDomainResourceTypeResource(this);

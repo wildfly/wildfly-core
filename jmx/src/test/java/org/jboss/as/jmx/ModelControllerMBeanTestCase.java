@@ -95,7 +95,7 @@ import org.xnio.OptionMap;
 /**
  *
  * This test modifies the {@link java.lang.management.ManagementFactory#getPlatformMBeanServer()} by setting the
- * @{code javax.management.builder.initial} system property.
+ * {@code javax.management.builder.initial} system property.
  *
  * The jmx module runs its test target in Maven by always forking the JVM (and not reuse one) to ensure that the
  * platform mbean server is not modified outside of this test case.

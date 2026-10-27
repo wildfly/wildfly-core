@@ -25,7 +25,7 @@ import org.jboss.dmr.ModelNode;
 
 /**
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="mailto:dpospisi@redhat.com">Dominik Pospisil</a>
  */
 public class HttpMgmtProxy {
 

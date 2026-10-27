@@ -16,7 +16,7 @@ import javax.management.MBeanOperationInfo;
 import javax.management.ReflectionException;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="mailto:lthon@redhat.com">Ladislav Thon</a>
  */
 public class Dynamic implements DynamicMBean {
     @Override

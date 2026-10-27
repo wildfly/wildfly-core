@@ -16,9 +16,9 @@ import static org.junit.Assert.assertTrue;
 /**
  * Test for enhanced help for CLI
  *
- * https://issues.jboss.org/browse/WFCORE-3220
+ * <a href="https://issues.jboss.org/browse/WFCORE-3220">https://issues.jboss.org/browse/WFCORE-3220</a>
  *
- * @author Marek Kopecky <mkopecky@redhat.com>
+ * @author <a href="mailto:mkopecky@redhat.com">Marek Kopecky</a>
  */
 public class HelpTestCase extends AbstractCliTestBase {
 

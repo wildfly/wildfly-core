@@ -26,7 +26,7 @@ import org.xml.sax.SAXParseException;
 
 /**
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="mailto:dpospisi@redhat.com">Dominik Pospisil</a>
  */
 // Required by Bootable JAR in order to create the installation directory
 @RunWith(WildFlyRunner.class)

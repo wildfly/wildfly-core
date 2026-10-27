@@ -19,7 +19,7 @@ import java.util.List;
 
 /**
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="mailto:dpospisi@redhat.com">Dominik Pospisil</a>
  */
 public class BasicOpsTestCase {
 

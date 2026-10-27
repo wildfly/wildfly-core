@@ -74,7 +74,7 @@ import org.w3c.dom.ls.LSSerializer;
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2015 Red Hat inc.
  * @author Tomaz Cerar
- * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
+ * @author <a href="mailto:tadamski@redhat.com">Tomasz Adamski</a>
  */
 public class PersistentResourceXMLParserTestCase {
 

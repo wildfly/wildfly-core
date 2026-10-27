@@ -38,7 +38,7 @@ import org.wildfly.core.embedded.spi.EmbeddedProcessBootstrapConfiguration;
  * has the effect of this run not polluting later runs of the embedded server.
  * </p>
  *
- * @author Ken Wills <kwills@redhat.com>
+ * @author <a href="mailto:kwills@redhat.com">Ken Wills</a>
  * @see EmbeddedProcessFactory
  */
 
@@ -198,7 +198,3 @@ public class EmbeddedHostControllerFactory {
     }
 
 }
-
-
-
-

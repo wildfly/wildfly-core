@@ -42,7 +42,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 /**
  * Handler for the "embed-host-controller" command.
  *
- * @author Ken Wills <kwills@redhat.com> (c) 2015 Red Hat Inc.
+ * @author <a href="mailto:kwills@redhat.com">Ken Wills</a> (c) 2015 Red Hat Inc.
  */
 class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 

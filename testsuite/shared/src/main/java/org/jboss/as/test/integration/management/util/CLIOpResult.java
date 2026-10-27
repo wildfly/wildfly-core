@@ -17,7 +17,7 @@ import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 /**
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="mailto:dpospisi@redhat.com">Dominik Pospisil</a>
  * @author baranowb
  */
 public class CLIOpResult {

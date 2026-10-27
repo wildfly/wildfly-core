@@ -9,7 +9,7 @@ import java.util.Locale;
 /**
  * Utility class handling low-level parsing of Locale string tag.
  *
- * @author Romain Pelisse - <romain@redhat.com>
+ * @author <a href="mailto:romain@redhat.com">Romain Pelisse</a>
  */
 public final class LocaleResolver {
 

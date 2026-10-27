@@ -32,7 +32,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 /**
  * Tests that the deployment scanner can be added and removed using management APIs
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="mailto:dpospisi@redhat.com">Dominik Pospisil</a>
  * @author Jaikiran Pai - Updated to fix intermittent failures as reported in https://issues.jboss.org/browse/WFLY-1554
  */
 @RunWith(WildFlyRunner.class)
