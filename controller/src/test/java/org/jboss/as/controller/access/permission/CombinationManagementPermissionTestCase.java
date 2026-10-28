@@ -17,7 +17,7 @@ import org.jboss.as.controller.access.CombinationPolicy;
 import org.junit.Test;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="mailto:lthon@redhat.com">Ladislav Thon</a>
  */
 public class CombinationManagementPermissionTestCase {
     private static final ManagementPermission ACCESS_1 = new TestManagementPermission(Action.ActionEffect.ADDRESS, 1);

@@ -13,7 +13,7 @@ import org.jboss.as.controller.access.constraint.Constraint;
 import org.junit.Test;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="mailto:lthon@redhat.com">Ladislav Thon</a>
  */
 public class SimpleManagementPermissionTestCase {
     private static final SimpleManagementPermission ACCESS_ALLOWED = new SimpleManagementPermission(Action.ActionEffect.ADDRESS, new TestConstraint(true));

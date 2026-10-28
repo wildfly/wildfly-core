@@ -56,21 +56,21 @@ public interface Installer<ST extends ServiceTarget> {
          * Indicates that a service and its dependencies should start when required by another service that wants to start.
          * Once started, the service will automatically stop when there are no longer any services requiring it.
          * This is the default start condition.
-         * @see {@link ServiceController.Mode#ON_DEMAND}
+         * @see ServiceController.Mode#ON_DEMAND
          */
         REQUIRED(ServiceController.Mode.ON_DEMAND),
         /**
          * Indicates that a service should start automatically after all of its dependencies have started.
          * Once started, the service will automatically stop when any of its dependencies wants to stop.
          * This condition does not prompt any dependencies to start.
-         * @see {@link ServiceController.Mode#PASSIVE}
+         * @see ServiceController.Mode#PASSIVE
          */
         AVAILABLE(ServiceController.Mode.PASSIVE),
         /**
          * Indicates that a service and its dependencies should start automatically after it is installed.
          * Once started, the service will only stop if removed.
          * Ideally, we only want services to start when necessary, thus this condition should be used sparingly.
-         * @see {@link ServiceController.Mode#ACTIVE}
+         * @see ServiceController.Mode#ACTIVE
          */
         INSTALLED(ServiceController.Mode.ACTIVE),
         ;

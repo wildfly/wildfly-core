@@ -14,7 +14,7 @@
  *  This feature needs JUnit 4.7+, and Surefire/Failsafe 2.12.4+
  *
  *  Examples of categories:
-    <code>
+    <pre>{@code
         interface AllTests;
         interface ATests extends AllTests;
         interface BTests extends AllTests;
@@ -23,14 +23,14 @@
         @Category(ATests.class) public void ATest();
         @Category(AaTests.class) public void AaTest();
         @Category(BTests.class) public void BTest();
-    </code>
+    }</pre>
 
     As is apparent, interfaces inheritance can be leveraged to create a hierarchy.
 
     A test can belong into multiple categories:
-    <code>
+    <pre>{@code
         @Categories({Foo.class, Bar.class})
-    </code>
+    }</pre>
 
     The tagged tests can be run in groups using Surefire's
     <code>&lt;includedGroups></code> and <code>&lt;excludedGroups></code> options in pom.xml,

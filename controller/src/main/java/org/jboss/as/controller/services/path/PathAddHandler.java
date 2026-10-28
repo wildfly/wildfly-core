@@ -74,7 +74,7 @@ public class PathAddHandler implements OperationStepHandler {  // TODO make this
     }
 
 
-    /** {@inheritDoc */
+    /** {@inheritDoc} */
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         final Resource resource = context.createResource(PathAddress.EMPTY_ADDRESS);
 

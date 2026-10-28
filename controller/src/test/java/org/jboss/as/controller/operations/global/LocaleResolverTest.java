@@ -10,7 +10,7 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 
 /**
- * @author Romain Pelisse <belaran@gredhat.com>
+ * @author <a href="mailto:belaran@gredhat.com">Romain Pelisse</a>
  */
 public class LocaleResolverTest {
 

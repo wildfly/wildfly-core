@@ -38,7 +38,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="mailto:lthon@redhat.com">Ladislav Thon</a>
  */
 public class IncludeAllRoleTestCase extends AbstractRbacTestCase {
     private static final String NEW_ROLE = "NewTestRole";

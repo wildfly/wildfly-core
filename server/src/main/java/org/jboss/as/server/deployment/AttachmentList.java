@@ -25,7 +25,7 @@ import java.util.stream.Stream;
  * but if reads can occur concurrently with writes it is imperative that the user manually synchronize on the list
  * when iterating over it:
  * <pre>
- * AttachmentList<String></String> list = new AttachmentList<>()</>;
+ * AttachmentList&lt;String&gt; list = new AttachmentList&lt;&gt;(String.class);
  * ...
  * synchronized (list) {
  *      Iterator i = list.iterator(); // Must be in synchronized block

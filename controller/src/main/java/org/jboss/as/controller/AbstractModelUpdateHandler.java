@@ -15,7 +15,7 @@ import org.jboss.dmr.ModelNode;
  */
 public abstract class AbstractModelUpdateHandler implements OperationStepHandler {
 
-    /** {@inheritDoc */
+    /** {@inheritDoc} */
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         final Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
         updateModel(operation, resource);

@@ -491,9 +491,8 @@ public interface ServerLogger extends BasicLogger {
     String argSystem();
 
     /**
-     * Instructions for the {@link CommandLineConstants#SHORT_VERSION}, {@link
-     * CommandLineConstants#OLD_SHORT_VERSION or {@link CommandLineConstants#VERSION}
-     * command line argument.
+     * Instructions for the {@link CommandLineConstants#SHORT_VERSION}, {@link CommandLineConstants#OLD_SHORT_VERSION}, or
+     * {@link CommandLineConstants#VERSION} command line argument.
      *
      * @return the message.
      */

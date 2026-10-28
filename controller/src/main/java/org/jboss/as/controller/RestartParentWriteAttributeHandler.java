@@ -128,7 +128,7 @@ public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAt
      * @param parentModel the current configuration model for the parent resource and its children
      *
      * @throws OperationFailedException if there is a problem installing the services
-     * @deprecated Use {@link #recreateParentService(OperationContext, ModelNode) instead
+     * @deprecated Use {@link #recreateParentService(OperationContext, ModelNode)} instead
      */
     @Deprecated(forRemoval = true)
     protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {

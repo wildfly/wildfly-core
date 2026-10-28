@@ -116,7 +116,7 @@ public final class DomainHostExcludeRegistry {
 
     private final Map<VersionKey, VersionExcludeData> registry = Collections.synchronizedMap(new HashMap<>());
 
-    /** Creates a new {@code DomainHostIgnoreRegistry */
+    /** Creates a new {@code DomainHostExcludeRegistry}. */
     public DomainHostExcludeRegistry() {
 
     }

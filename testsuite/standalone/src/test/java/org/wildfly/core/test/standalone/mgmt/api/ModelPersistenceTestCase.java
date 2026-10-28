@@ -31,7 +31,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 /**
  * Tests both automated and manual configuration model persistence snapshot generation.
  *
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="mailto:dpospisi@redhat.com">Dominik Pospisil</a>
  */
 @RunWith(WildFlyRunner.class)
 public class ModelPersistenceTestCase extends ContainerResourceMgmtTestBase {

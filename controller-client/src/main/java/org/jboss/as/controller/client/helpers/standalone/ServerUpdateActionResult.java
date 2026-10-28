@@ -69,7 +69,7 @@ public interface ServerUpdateActionResult {
     Throwable getDeploymentException();
 
     /**
-     * If the {@link #getResult() result was {@link Result#ROLLED_BACK} or
+     * If the {@link #getResult() result} was {@link Result#ROLLED_BACK} or
      * {@link Result#FAILED} and the update plan allows rollback,
      * gets the result of rolling back the action.
      *

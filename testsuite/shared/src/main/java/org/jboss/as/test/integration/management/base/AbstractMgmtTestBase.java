@@ -46,7 +46,7 @@ import org.jboss.staxmapper.XMLMapper;
 import org.junit.Assert;
 
 /**
- * @author Dominik Pospisil <dpospisi@redhat.com>
+ * @author <a href="mailto:dpospisi@redhat.com">Dominik Pospisil</a>
  */
 public abstract class AbstractMgmtTestBase {
 

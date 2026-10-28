@@ -45,7 +45,7 @@ import org.junit.Test;
 /**
  * Basic tests of outbound LDAP connection in a domain.
  *
- * @author Ondrej Kotek <okotek@redhat.com>
+ * @author <a href="mailto:okotek@redhat.com">Ondrej Kotek</a>
  */
 public class OutboundLdapConnectionTestCase {
 

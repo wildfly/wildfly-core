@@ -47,7 +47,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="mailto:lthon@redhat.com">Ladislav Thon</a>
  */
 public class RuntimeSensitivityReconfigurationTestCase extends AbstractCoreModelTest {
     private static final String SOCKET_CONFIG = SensitivityClassification.SOCKET_CONFIG.getName();

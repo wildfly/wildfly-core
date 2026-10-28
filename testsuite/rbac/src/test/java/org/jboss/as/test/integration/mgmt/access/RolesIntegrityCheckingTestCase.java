@@ -31,7 +31,7 @@ import org.wildfly.core.testrunner.WildFlyRunner;
 /**
  * WFLY-2270
  *
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="mailto:lthon@redhat.com">Ladislav Thon</a>
  */
 @RunWith(WildFlyRunner.class)
 @ServerSetup(StandardUsersSetupTask.class)

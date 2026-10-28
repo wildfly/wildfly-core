@@ -7,7 +7,7 @@ package org.wildfly.core.embedded;
 /**
  * The embedded host controller interface.
  *
- * @author Ken Wills <kwills@redhat.com>
+ * @author <a href="mailto:kwills@redhat.com">Ken Wills</a>
  *
  */
 public interface HostController extends EmbeddedManagedProcess {

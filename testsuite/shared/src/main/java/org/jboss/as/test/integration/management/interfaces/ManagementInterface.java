@@ -10,7 +10,7 @@ import java.io.IOException;
 import org.jboss.dmr.ModelNode;
 
 /**
- * @author Ladislav Thon <lthon@redhat.com>
+ * @author <a href="mailto:lthon@redhat.com">Ladislav Thon</a>
  */
 public interface ManagementInterface {
     ModelNode execute(ModelNode operation);
