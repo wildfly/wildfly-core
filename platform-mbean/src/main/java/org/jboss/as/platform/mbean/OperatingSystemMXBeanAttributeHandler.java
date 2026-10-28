@@ -6,6 +6,7 @@
 package org.jboss.as.platform.mbean;
 
 import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -35,10 +36,10 @@ class OperatingSystemMXBeanAttributeHandler extends AbstractPlatformMBeanAttribu
             if ((PlatformMBeanConstants.OBJECT_NAME.getName().equals(name))
                     || OperatingSystemResourceDefinition.OPERATING_SYSTEM_READ_ATTRIBUTES.contains(name)
                     || OperatingSystemResourceDefinition.OPERATING_SYSTEM_METRICS.contains(name)) {
-                storeResult(name, context.getResult());
+                context.getResult().set(getResult(name, ManagementFactory.getOperatingSystemMXBean()));
             } else {
                 if (OperatingSystemResourceDefinition.OPERATING_SYSTEM_EXTENDED_METRICS.contains(name)) {
-                    storeExtendedResult(name, context.getResult());
+                    context.getResult().set(getExtendedResult(name, null));
                 } else {
                     // Shouldn't happen; the global handler should reject
                     throw unknownAttribute(operation);
@@ -57,8 +58,9 @@ class OperatingSystemMXBeanAttributeHandler extends AbstractPlatformMBeanAttribu
 
     }
 
-    static void storeExtendedResult(String name, ModelNode store) {
+    static ModelNode getExtendedResult(String name, final OperatingSystemMXBean ignored) {
         ExtendedOperatingSystemMBean ext = new ExtendedOperatingSystemMBean();
+        ModelNode store = new ModelNode();
         if (PlatformMBeanConstants.COMMITTED_VIRTUAL_MEMORY_SIZE.equals(name)) {
             if (ext.isAttributeDefined(ExtendedOperatingSystemMBean.COMMITTED_VIRTUAL_MEMORY_SIZE_ATTRIBUTE)) {
                 store.set(ext.getCommittedVirtualMemorySize());
@@ -103,26 +105,34 @@ class OperatingSystemMXBeanAttributeHandler extends AbstractPlatformMBeanAttribu
             // Bug
             throw PlatformMBeanLogger.ROOT_LOGGER.badReadAttributeImpl(name);
         }
+        return store;
     }
 
-    static void storeResult(final String name, final ModelNode store) {
+    static ModelNode getResult(final String name, final OperatingSystemMXBean mbean) {
 
+        ModelNode store;
         if (PlatformMBeanConstants.OBJECT_NAME.getName().equals(name)) {
-            store.set(ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME);
+            store = new ModelNode(ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME);
         } else if (ModelDescriptionConstants.NAME.equals(name)) {
-            store.set(ManagementFactory.getOperatingSystemMXBean().getName());
+            store = new ModelNode(mbean.getName());
         } else if (PlatformMBeanConstants.ARCH.equals(name)) {
-            store.set(ManagementFactory.getOperatingSystemMXBean().getArch());
+            store = new ModelNode(mbean.getArch());
         } else if (PlatformMBeanConstants.VERSION.equals(name)) {
-            store.set(ManagementFactory.getOperatingSystemMXBean().getVersion());
+            store = new ModelNode(mbean.getVersion());
         } else if (PlatformMBeanConstants.AVAILABLE_PROCESSORS.equals(name)) {
-            store.set(ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors());
+            store = new ModelNode(mbean.getAvailableProcessors());
         } else if (PlatformMBeanConstants.SYSTEM_LOAD_AVERAGE.equals(name)) {
-            store.set(ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage());
+            store = new ModelNode(mbean.getSystemLoadAverage());
         } else if (OperatingSystemResourceDefinition.OPERATING_SYSTEM_READ_ATTRIBUTES.contains(name)
                 || OperatingSystemResourceDefinition.OPERATING_SYSTEM_METRICS.contains(name)) {
             // Bug
             throw PlatformMBeanLogger.ROOT_LOGGER.badReadAttributeImpl(name);
+        } else {
+            // TODO should not happen and we should fail, but historically this would have resulted
+            //  in an undefined node, so we keep it that way
+            // throw new IllegalArgumentException(name);
+            store = new ModelNode();
         }
+        return store;
     }
 }

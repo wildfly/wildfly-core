@@ -8,6 +8,7 @@ package org.jboss.as.platform.mbean;
 import static org.jboss.as.platform.mbean.CompilationResourceDefinition.COMPILATION_METRICS;
 import static org.jboss.as.platform.mbean.CompilationResourceDefinition.COMPILATION_READ_ATTRIBUTES;
 
+import java.lang.management.CompilationMXBean;
 import java.lang.management.ManagementFactory;
 
 import org.jboss.as.controller.OperationContext;
@@ -38,7 +39,7 @@ class CompilationMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHa
             if ((PlatformMBeanConstants.OBJECT_NAME.getName().equals(name))
                     || COMPILATION_READ_ATTRIBUTES.contains(name)
                     || COMPILATION_METRICS.contains(name)) {
-                storeResult(name, context.getResult());
+                context.getResult().set(getResult(name, ManagementFactory.getCompilationMXBean()));
             } else {
                 // Shouldn't happen; the global handler should reject
                 throw unknownAttribute(operation);
@@ -49,21 +50,26 @@ class CompilationMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHa
 
     }
 
-    static void storeResult(final String attributeName, final ModelNode store) throws OperationFailedException {
+    static ModelNode getResult(final String attributeName, final CompilationMXBean mbean) {
+        final ModelNode store;
         if (PlatformMBeanConstants.OBJECT_NAME.getName().equals(attributeName)) {
-            store.set(ManagementFactory.COMPILATION_MXBEAN_NAME);
+            store = new ModelNode(ManagementFactory.COMPILATION_MXBEAN_NAME);
         } else if (ModelDescriptionConstants.NAME.equals(attributeName)) {
-            store.set(ManagementFactory.getCompilationMXBean().getName());
+            store = new ModelNode(mbean.getName());
         } else if (PlatformMBeanConstants.COMPILATION_TIME_MONITORING_SUPPORTED.equals(attributeName)) {
-            store.set(ManagementFactory.getCompilationMXBean().isCompilationTimeMonitoringSupported());
+            store = new ModelNode(mbean.isCompilationTimeMonitoringSupported());
         } else if (PlatformMBeanConstants.TOTAL_COMPILATION_TIME.equals(attributeName)) {
-            store.set(ManagementFactory.getCompilationMXBean().getTotalCompilationTime());
-        } else {
-            if (COMPILATION_READ_ATTRIBUTES.contains(attributeName)|| COMPILATION_METRICS.contains(attributeName)) {
+            store = new ModelNode(mbean.getTotalCompilationTime());
+        } else if (COMPILATION_READ_ATTRIBUTES.contains(attributeName)|| COMPILATION_METRICS.contains(attributeName)) {
                 // Bug
                 throw PlatformMBeanLogger.ROOT_LOGGER.badReadAttributeImpl(attributeName);
-            }
+        } else {
+            // TODO should not happen and we should fail, but historically this would have resulted
+            //  in an undefined node, so we keep it that way
+            // throw new IllegalArgumentException(attributeName);
+            store = new ModelNode();
         }
+        return store;
     }
 
     @Override

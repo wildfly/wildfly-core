@@ -175,7 +175,8 @@ class RuntimeResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
-        resourceRegistration.registerOperationHandler(ReadResourceHandler.DEFINITION, RuntimeMXBeanReadResourceHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(ReadResourceHandler.DEFINITION,
+                new RuntimeMXBeanReadResourceHandler(getAccessConstraints()));
     }
 }
 
