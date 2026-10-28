@@ -1277,7 +1277,9 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
         try (FileInputStream in = new FileInputStream(scriptPropertiesFile.toFile())) {
             final Properties prop = new Properties();
             prop.load(in);
-            Assert.assertEquals(JBOSS_HOME.resolve("bin") + TestInstallationManager.APPLY_UPDATE_BASE_GENERATED_COMMAND + instMgrService.getPreparedServerDir(), prop.get(InstMgrCandidateStatus.INST_MGR_COMMAND_KEY));
+            Assert.assertEquals(JBOSS_HOME.resolve("bin") + TestInstallationManager.APPLY_UPDATE_BASE_GENERATED_COMMAND + instMgrService.getPreparedServerDir(),
+                    prop.get(InstMgrCandidateStatus.INST_MGR_COMMAND_KEY)
+            );
         }
     }
 

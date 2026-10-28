@@ -198,7 +198,7 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                         // Operations executed which could have been set this flag.
                         context.getResult().set(imService.getPreparedServerDir().normalize().toAbsolutePath().toString());
 
-                        final String applyUpdate = im.generateApplyUpdateCommand(homeDir.resolve("bin"), imService.getPreparedServerDir(), getOsShell());
+                        final String applyUpdate = im.generateApplyUpdateCommand(homeDir.resolve("bin"), imService.getPreparedServerDir(), getOsShell(), false);
                         InstMgrLogger.ROOT_LOGGER.debug("Apply Update Command: " + applyUpdate);
 
                         imService.commitCandidateServer(applyUpdate);

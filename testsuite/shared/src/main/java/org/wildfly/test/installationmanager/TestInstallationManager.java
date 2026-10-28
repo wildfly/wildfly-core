@@ -271,15 +271,6 @@ public class TestInstallationManager implements InstallationManager {
         return true;
     }
 
-    @Override
-    public List<ArtifactChange> findUpdates(List<Repository> repositories) throws Exception {
-        if (noUpdatesFound) {
-            return new ArrayList<>();
-        }
-        findUpdatesRepositories = new ArrayList<>(repositories);
-        return findUpdatesChanges;
-    }
-
     public InstallationUpdates findInstallationUpdates(List<Repository> repositories) throws Exception {
         if (noUpdatesFound) {
             return new InstallationUpdates(Collections.emptyList(), Collections.emptyList());
@@ -349,33 +340,13 @@ public class TestInstallationManager implements InstallationManager {
     }
 
     @Override
-    public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath) throws OperationNotAvailableException {
-        return scriptHome + APPLY_UPDATE_BASE_GENERATED_COMMAND + candidatePath.toString();
-    }
-
-    @Override
-    public String generateApplyRevertCommand(Path scriptHome, Path candidatePath) throws OperationNotAvailableException {
-        return scriptHome + APPLY_REVERT_BASE_GENERATED_COMMAND + candidatePath.toString();
-    }
-
-    @Override
-    public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath, OsShell shell) throws OperationNotAvailableException {
-        return scriptHome + APPLY_UPDATE_BASE_GENERATED_COMMAND + candidatePath.toString();
-    }
-
-    @Override
-    public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell) throws OperationNotAvailableException {
-        return scriptHome + APPLY_REVERT_BASE_GENERATED_COMMAND + candidatePath.toString();
-    }
-
-    @Override
     public String generateApplyUpdateCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
-        return generateApplyUpdateCommand(scriptHome, candidatePath, shell) + noConflictsOnly;
+        return scriptHome + APPLY_UPDATE_BASE_GENERATED_COMMAND + candidatePath.toString();
     }
 
     @Override
     public String generateApplyRevertCommand(Path scriptHome, Path candidatePath, OsShell shell, boolean noConflictsOnly) throws OperationNotAvailableException {
-        return generateApplyRevertCommand( scriptHome, candidatePath, shell) + noConflictsOnly;
+        return scriptHome + APPLY_REVERT_BASE_GENERATED_COMMAND + candidatePath.toString();
     }
 
     @Override
