@@ -178,7 +178,7 @@
 
         <!-- Non-default maven plugin versions and configuration -->
         <version.buildhelper.plugin>3.4.0</version.buildhelper.plugin>
-        <version.jacoco.plugin>0.8.10</version.jacoco.plugin>
+        <version.jacoco.plugin>0.8.16</version.jacoco.plugin>
         <version.org.jboss.galleon>7.0.11.Final</version.org.jboss.galleon>
         <!-- Overrides parent Runtime CheckStyle version which is based on the min JDK in use, see compatibility at https://checkstyle.org/index.html#JRE_and_JDK -->
         <version.checkstyle>12.3.1</version.checkstyle>
