@@ -343,17 +343,17 @@ public abstract class AbstractControllerService implements Service<ModelControll
             rootResourceRegistration.registerCapability(NOTIFICATION_REGISTRY_CAPABILITY);
             rootResourceRegistration.registerCapability(NOTIFICATION_HANDLER_REGISTRATION_CAPABILITY);
             final ServiceName clientFactorySN = CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName();
-            final ServiceBuilder<?> clientFactorySB = target.addService(clientFactorySN);
-            clientFactorySB.setInstance(new SimpleService(clientFactorySB.provides(clientFactorySN,
+            final ServiceBuilder<?> clientFactorySB = target.addService();
+            clientFactorySB.setInstance(new SimpleService<>(clientFactorySB.provides(clientFactorySN,
                     EmbeddedModelControllerClientFactory.SERVICE_NAME), clientFactory));
             clientFactorySB.install();
             final ServiceName notifyRegistrySN = NOTIFICATION_REGISTRY_CAPABILITY.getCapabilityServiceName();
-            final ServiceBuilder<?> notifyRegistrySB = target.addService(notifyRegistrySN);
-            notifyRegistrySB.setInstance(new SimpleService(notifyRegistrySB.provides(notifyRegistrySN), controller.getNotificationRegistry()));
+            final ServiceBuilder<?> notifyRegistrySB = target.addService();
+            notifyRegistrySB.setInstance(new SimpleService<>(notifyRegistrySB.provides(notifyRegistrySN), controller.getNotificationRegistry()));
             notifyRegistrySB.install();
             final ServiceName notifyRegistrationSN = NOTIFICATION_HANDLER_REGISTRATION_CAPABILITY.getCapabilityServiceName();
-            final ServiceBuilder<?> notifyRegistrationSB = target.addService(notifyRegistrationSN);
-            notifyRegistrationSB.setInstance(new SimpleService(notifyRegistrationSB.provides(notifyRegistrationSN), controller.getNotificationRegistry()));
+            final ServiceBuilder<?> notifyRegistrationSB = target.addService();
+            notifyRegistrationSB.setInstance(new SimpleService<>(notifyRegistrationSB.provides(notifyRegistrationSN), controller.getNotificationRegistry()));
             notifyRegistrationSB.install();
         }
         capabilityRegistry.publish();  // These are visible immediately; no waiting for finishBoot
