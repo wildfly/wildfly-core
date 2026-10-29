@@ -1027,7 +1027,7 @@ public class SecurityCommandsTestCase {
 
     public static void enableNative(CommandContext ctx) throws Exception {
         ctx.handle("/socket-binding-group=standard-sockets/socket-binding=management-native:add(port=9999,interface=management)");
-        ctx.handle("/core-service=management/management-interface=native-interface:add(socket-binding=management-native)");
+        ctx.handle("/core-service=management/management-interface=native-interface:add(socket-binding=management-native, sasl-authentication-factory=management-sasl-authentication)");
     }
 
     public static void disableNative(CommandContext ctx) throws CommandLineException {

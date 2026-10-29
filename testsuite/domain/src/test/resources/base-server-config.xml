@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<server xmlns="urn:jboss:domain:20.0">
+<server xmlns="urn:jboss:domain:21.0">
     <extensions>
         <extension module="org.jboss.as.jmx"/>
         <extension module="org.jboss.as.logging"/>
