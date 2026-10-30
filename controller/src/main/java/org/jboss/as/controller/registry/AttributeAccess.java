@@ -155,7 +155,12 @@ public class AttributeAccess {
          *
          * {@link #GAUGE_METRIC} and {@link #COUNTER_METRIC} are mutually exclusive.
          */
-        COUNTER_METRIC;
+        COUNTER_METRIC,
+
+        /**
+         * The attribute is susceptible to be redacted when it is shown in the management audit log or configuration history.
+         */
+        REDACTABLE;
 
         private static final Map<EnumSet<AttributeAccess.Flag>, Set<AttributeAccess.Flag>> flagSets = new ConcurrentHashMap<>(16);
         public static Set<AttributeAccess.Flag> immutableSetOf(AttributeAccess.Flag... flags) {
