@@ -34,7 +34,7 @@ public final class JvmType {
     private static final String OS_NAME_SYS_PROP = "os.name";
     /** Packages being exported or opened are available on all JVMs */
     private static final Collection<String> DEFAULT_MODULAR_JVM_ARGUMENTS;
-    /** Packages being exported or opened may not be available on all JVMs */
+    /** Packages being exported or opened or JVM options that may not be available on all JVMs */
     private static final Collection<String> DEFAULT_OPTIONAL_MODULAR_JVM_ARGUMENTS;
     private static final String JAVA_EXECUTABLE;
     private static final String JAVA_UNIX_EXECUTABLE = "java";
@@ -70,6 +70,10 @@ public final class JvmType {
         DEFAULT_MODULAR_JVM_ARGUMENTS = Collections.unmodifiableList(modularJavaOpts);
         final ArrayList<String> modularOptionalJavaOpts = new ArrayList<>();
         modularOptionalJavaOpts.add("--add-opens=java.base/com.sun.net.ssl.internal.ssl=ALL-UNNAMED");
+        // Enable native access for code in unnamed modules (JEP 454)
+        modularOptionalJavaOpts.add("--enable-native-access=ALL-UNNAMED");
+        // Allow sun.misc.Unsafe memory access without warnings (JEP 471, JDK 23+)
+        modularOptionalJavaOpts.add("--sun-misc-unsafe-memory-access=allow");
         DEFAULT_OPTIONAL_MODULAR_JVM_ARGUMENTS = Collections.unmodifiableList(modularOptionalJavaOpts);
     }
 
