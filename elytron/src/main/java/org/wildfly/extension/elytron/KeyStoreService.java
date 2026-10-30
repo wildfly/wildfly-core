@@ -9,6 +9,8 @@ import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolve
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 import static org.wildfly.security.provider.util.ProviderUtil.findProvider;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -238,16 +240,7 @@ class KeyStoreService implements ModifiableKeyStoreService {
                 if (type != null) {
                     keyStore.load(is, password);
                 } else {
-                    Provider[] resolvedProviders = providers.getOptionalValue();
-                    if (resolvedProviders == null) {
-                        resolvedProviders = Security.getProviders();
-                    }
-                    final Provider[] finalProviders = resolvedProviders;
-                    KeyStore detected = KeyStoreUtil.loadKeyStore(() -> finalProviders, this.provider, is, resolvedPath.getPath(), password);
-                    if (detected == null) {
-                        throw ROOT_LOGGER.unableToDetectKeyStore(resolvedPath.getPath());
-                    }
-                    keyStore = AtomicLoadKeyStore.atomize(detected);
+                    keyStore = AtomicLoadKeyStore.atomize(detectKeyStore(is, resolvedPath, password));
                 }
             } else {
                 if (keyStore == null) {
@@ -309,16 +302,7 @@ class KeyStoreService implements ModifiableKeyStoreService {
                 if (type != null) {
                     keyStore.load(is, password);
                 } else {
-                    Provider[] resolvedProviders = providers.getOptionalValue();
-                    if (resolvedProviders == null) {
-                        resolvedProviders = Security.getProviders();
-                    }
-                    final Provider[] finalProviders = resolvedProviders;
-                    KeyStore detected = KeyStoreUtil.loadKeyStore(() -> finalProviders, this.provider, is, resolvedPath.getPath(), password);
-                    if (detected == null) {
-                        throw ROOT_LOGGER.unableToDetectKeyStore(resolvedPath.getPath());
-                    }
-                    keyStore = AtomicLoadKeyStore.atomize(detected);
+                    keyStore = AtomicLoadKeyStore.atomize(detectKeyStore(is, resolvedPath, password));
                 }
             } else {
                 if (keyStore == null) {
@@ -348,12 +332,56 @@ class KeyStoreService implements ModifiableKeyStoreService {
         return identified;
     }
 
+    /**
+     * Loads the file into the existing key-store, detecting its format when no type is configured.
+     *
+     * @param keyStore the key-store to reload
+     * @return the key for reverting the load
+     * @throws Exception if the file cannot be loaded or its certificates cannot be checked
+     */
     private AtomicLoadKeyStore.LoadKey load(AtomicLoadKeyStore keyStore) throws Exception {
-        try (InputStream is = resolvedPath != null ? new FileInputStream(resolvedPath) : null) {
-            AtomicLoadKeyStore.LoadKey loadKey = keyStore.revertibleLoad(is, resolvePassword());
+        try (FileInputStream is = resolvedPath != null ? new FileInputStream(resolvedPath) : null) {
+            char[] password = resolvePassword();
+            // Without a configured type, detect the file format as on start. The AtomicLoadKeyStore cannot parse every
+            // detectable format, e.g. PEM, so pass it the detected KeyStore in that KeyStore's own encoding.
+            InputStream content = type == null && is != null ? encode(detectKeyStore(is, resolvedPath, password), password) : is;
+            AtomicLoadKeyStore.LoadKey loadKey = keyStore.revertibleLoad(content, password);
             checkCertificatesValidity(keyStore);
             return loadKey;
         }
+    }
+
+    /**
+     * Detects the format of the key-store file and loads it using the configured providers.
+     *
+     * @param is the stream of the resolved key-store file
+     * @param file the resolved key-store file
+     * @param password the key-store password
+     * @return the detected key-store
+     * @throws Exception if the file format cannot be detected or the key-store cannot be loaded
+     */
+    private KeyStore detectKeyStore(FileInputStream is, File file, char[] password) throws Exception {
+        Provider[] resolvedProviders = providers.getOptionalValue();
+        Provider[] candidates = resolvedProviders != null ? resolvedProviders : Security.getProviders();
+        KeyStore detected = KeyStoreUtil.loadKeyStore(() -> candidates, provider, is, file.getPath(), password);
+        if (detected == null) {
+            throw ROOT_LOGGER.unableToDetectKeyStore(file.getPath());
+        }
+        return detected;
+    }
+
+    /**
+     * Encodes a detected key-store in its own format for the existing atomic key-store to load.
+     *
+     * @param keyStore the detected key-store
+     * @param password the password used to store and reload its content
+     * @return a stream containing the encoded key-store
+     * @throws Exception if the key-store cannot be stored
+     */
+    private static InputStream encode(KeyStore keyStore, char[] password) throws Exception {
+        ByteArrayOutputStream encoded = new ByteArrayOutputStream();
+        keyStore.store(encoded, password);
+        return new ByteArrayInputStream(encoded.toByteArray());
     }
 
     private void checkCertificatesValidity(KeyStore keyStore) throws KeyStoreException {
