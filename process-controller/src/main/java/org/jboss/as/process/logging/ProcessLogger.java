@@ -801,4 +801,7 @@ public interface ProcessLogger extends BasicLogger {
             "using java.lang.Process.destroyForcibly()")
     void destroyingProcess(String process, long timeout);
 
+    @Message(id = 68, value = "Cannot start process controller - another instance is already running (lock file held at %s)")
+    IOException cannotStartProcessControllerLockHeld(String lockPath);
+
 }
