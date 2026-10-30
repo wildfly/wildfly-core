@@ -33,11 +33,11 @@ public interface FunctionExecutor<V> {
     }
 
     /**
-     * Executes the specified function, using a value provided by an associated {@link ValueRegistry}.
+     * Returns the result of the specified function applied to the value, as provided by an associated {@link ValueRegistry}, if one exists; or null otherwise.
      * @param <R> the return type
      * @param <E> the exception type
      * @param function a function to execute
-     * @return the result of the function
+     * @return the result of the specified function applied to the value, as provided by an associated {@link ValueRegistry}, if one exists; or null otherwise.
      * @throws E if the function fails to execute
      */
     <R, E extends Exception> R execute(ExceptionFunction<? super V, ? extends R, E> function) throws E;
