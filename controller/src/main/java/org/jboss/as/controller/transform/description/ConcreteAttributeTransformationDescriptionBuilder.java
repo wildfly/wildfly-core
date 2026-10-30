@@ -20,5 +20,4 @@ class ConcreteAttributeTransformationDescriptionBuilder extends AttributeTransfo
     protected AttributeTransformationDescriptionBuilder thisBuilder() {
         return this;
     }
-
 }
