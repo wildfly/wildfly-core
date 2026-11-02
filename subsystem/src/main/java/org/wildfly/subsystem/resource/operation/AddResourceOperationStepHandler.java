@@ -246,6 +246,9 @@ public class AddResourceOperationStepHandler extends AbstractAddStepHandler impl
         Set<OperationEntry.Flag> flags = registration.getOperationFlags(PathAddress.EMPTY_ADDRESS, context.getCurrentOperationName());
         // Delegate to runtime handler, if we are booting or restart level allows it
         if (context.isBooting() || flags.contains(OperationEntry.Flag.RESTART_NONE) || (flags.contains(OperationEntry.Flag.RESTART_RESOURCE_SERVICES) && context.isResourceServiceRestartAllowed())) {
+            if (resource instanceof ResourceOperationRuntimeHandler resourceHandler) {
+                resourceHandler.addRuntime(context, resource);
+            }
             ResourceOperationRuntimeHandler handler = this.descriptor.getRuntimeHandler().orElse(null);
             if (handler != null) {
                 handler.addRuntime(context, resource);
@@ -274,6 +277,13 @@ public class AddResourceOperationStepHandler extends AbstractAddStepHandler impl
             if (handler != null) {
                 try {
                     handler.removeRuntime(context, resource);
+                } catch (OperationFailedException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+            if (resource instanceof ResourceOperationRuntimeHandler resourceHandler) {
+                try {
+                    resourceHandler.removeRuntime(context, resource);
                 } catch (OperationFailedException e) {
                     throw new IllegalStateException(e);
                 }
