@@ -44,16 +44,22 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import javax.security.auth.x500.X500Principal;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.Service;
+import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -61,7 +67,13 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockserver.integration.ClientAndServer;
+import org.wildfly.common.bytes.ByteStringBuilder;
 import org.wildfly.security.WildFlyElytronProvider;
+import org.wildfly.security.auth.server.IdentityCredentials;
+import org.wildfly.security.credential.PasswordCredential;
+import org.wildfly.security.credential.source.CredentialSource;
+import org.wildfly.security.password.interfaces.ClearPassword;
+import org.wildfly.security.pem.Pem;
 import org.wildfly.security.x500.GeneralName;
 import org.wildfly.security.x500.X500;
 import org.wildfly.security.x500.cert.BasicConstraintsExtension;
@@ -104,6 +116,9 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
     private static final File TEST_TRUSTED_FILE = new File(WORKING_DIRECTORY_LOCATION, "test-trusted.cert");
     private static final File TEST_UNTRUSTED_FILE = new File(WORKING_DIRECTORY_LOCATION, "test-untrusted.cert");
     private static final File TEST_UNTRUSTED_CERT_CHAIN_REPLY_FILE = new File(WORKING_DIRECTORY_LOCATION, "test-untrusted-cert-chain-reply.cert");
+    private static final File AUTOMATIC_RELOAD_FILE = new File(WORKING_DIRECTORY_LOCATION, "automatic-reload.keystore");
+    private static final File AUTOMATIC_RELOAD_SECOND_FILE = new File(WORKING_DIRECTORY_LOCATION,
+            "automatic-reload-second.keystore");
 
     private static void createServerEnvironment() {
         File home = new File("target/wildfly");
@@ -149,6 +164,32 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         try (FileOutputStream fos = new FileOutputStream(outputFile, true)){
             fos.write(certificate.getEncoded());
         }
+    }
+
+    /**
+     * Writes a single certificate in PEM format, replacing any previous file content.
+     *
+     * @param certificate the certificate to write
+     * @param outputFile the file to replace
+     * @throws Exception if the certificate cannot be encoded or written
+     */
+    private static void createTemporaryPemFile(X509Certificate certificate, File outputFile) throws Exception {
+        ByteStringBuilder pem = new ByteStringBuilder();
+        Pem.generatePemX509Certificate(pem, certificate);
+        Files.write(outputFile.toPath(), pem.toArray());
+    }
+
+    /**
+     * Writes a JKS file containing only the given certificate.
+     *
+     * @param certificate the certificate to store
+     * @param outputFile the file to replace
+     * @throws Exception if the key-store cannot be created or written
+     */
+    private static void createTemporaryJksFile(X509Certificate certificate, File outputFile) throws Exception {
+        KeyStore keyStore = loadKeyStore();
+        keyStore.setCertificateEntry("jks", certificate);
+        createTemporaryKeyStoreFile(keyStore, outputFile);
     }
 
     private static KeyStore createFireflyKeyStore() throws Exception {
@@ -299,7 +340,9 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
                 TEST_EXPORTED_FILE,
                 TEST_TRUSTED_FILE,
                 TEST_UNTRUSTED_FILE,
-                TEST_UNTRUSTED_CERT_CHAIN_REPLY_FILE
+                TEST_UNTRUSTED_CERT_CHAIN_REPLY_FILE,
+                AUTOMATIC_RELOAD_FILE,
+                AUTOMATIC_RELOAD_SECOND_FILE
         };
         for (File file : testFiles) {
             if (file.exists()) {
@@ -614,6 +657,200 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         ModelNode ca = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
         assertEquals("ca", ca.get(ElytronDescriptionConstants.ALIAS).asString());
         assertEquals(KeyStore.TrustedCertificateEntry.class.getSimpleName(), ca.get(ElytronDescriptionConstants.ENTRY_TYPE).asString());
+    }
+
+    /**
+     * Verifies PEM replacement through the retained service value, rollback after a later composite step fails,
+     * and preservation of the loaded certificate when a subsequent file cannot be parsed.
+     *
+     * @throws Exception if the test certificates or files cannot be created or inspected
+     */
+    @Test
+    public void testAutomaticKeystoreReload() throws Exception {
+        X509Certificate original = createCertRoot(ROOT_DN).getSelfSignedCertificate();
+        X509Certificate replacement = createCertRoot(ANOTHER_ROOT_DN).getSelfSignedCertificate();
+        createTemporaryPemFile(original, AUTOMATIC_RELOAD_FILE);
+        createTemporaryPemFile(original, AUTOMATIC_RELOAD_SECOND_FILE);
+        KeyStore keyStore = addAutomaticKeyStore("AutomaticReload", AUTOMATIC_RELOAD_FILE);
+        addAutomaticKeyStore("AutomaticReloadSecond", AUTOMATIC_RELOAD_SECOND_FILE);
+        assertContainsOnly(keyStore, original);
+
+        // The second step fails at runtime, so the rollback has to revert the first, successful step.
+        createTemporaryPemFile(replacement, AUTOMATIC_RELOAD_FILE);
+        Files.write(AUTOMATIC_RELOAD_SECOND_FILE.toPath(), new byte[] { 0, 1, 2 });
+        ModelNode composite = Operations.createCompositeOperation();
+        composite.get(ClientConstants.STEPS).add(loadKeyStoreOperation("AutomaticReload"));
+        composite.get(ClientConstants.STEPS).add(loadKeyStoreOperation("AutomaticReloadSecond"));
+        ModelNode result = assertFailed(services.executeOperation(composite)).get(ClientConstants.RESULT);
+        assertFalse(result.get("step-1").toJSONString(false), result.get("step-1").hasDefined(FAILURE_DESCRIPTION));
+        assertTrue(result.get("step-2").hasDefined(FAILURE_DESCRIPTION));
+        assertContainsOnly(keyStore, original);
+
+        assertSuccess(services.executeOperation(loadKeyStoreOperation("AutomaticReload")));
+        assertContainsOnly(keyStore, replacement);
+
+        Files.write(AUTOMATIC_RELOAD_FILE.toPath(), new byte[] { 0, 1, 2 });
+        assertFailed(services.executeOperation(loadKeyStoreOperation("AutomaticReload")));
+        assertContainsOnly(keyStore, replacement);
+    }
+
+    /**
+     * Verifies that a key-store without a configured type can reload JKS after starting from PEM and PEM after
+     * starting from JKS, using the JDK's default JKS/PKCS12 compatibility setting.
+     *
+     * @throws Exception if the test certificates or files cannot be created or inspected
+     */
+    @Test
+    public void testAutomaticKeystoreReloadAfterFormatChange() throws Exception {
+        X509Certificate pemCertificate = createCertRoot(ROOT_DN).getSelfSignedCertificate();
+        X509Certificate jksCertificate = createCertRoot(ANOTHER_ROOT_DN).getSelfSignedCertificate();
+
+        createTemporaryPemFile(pemCertificate, AUTOMATIC_RELOAD_FILE);
+        KeyStore startedFromPem = addAutomaticKeyStore("StartedFromPem", AUTOMATIC_RELOAD_FILE);
+        createTemporaryJksFile(jksCertificate, AUTOMATIC_RELOAD_FILE);
+        assertSuccess(services.executeOperation(loadKeyStoreOperation("StartedFromPem")));
+        assertContainsOnly(startedFromPem, jksCertificate);
+
+        createTemporaryJksFile(jksCertificate, AUTOMATIC_RELOAD_SECOND_FILE);
+        KeyStore startedFromJks = addAutomaticKeyStore("StartedFromJks", AUTOMATIC_RELOAD_SECOND_FILE);
+        createTemporaryPemFile(pemCertificate, AUTOMATIC_RELOAD_SECOND_FILE);
+        assertSuccess(services.executeOperation(loadKeyStoreOperation("StartedFromJks")));
+        assertContainsOnly(startedFromJks, pemCertificate);
+    }
+
+    /**
+     * Verifies that a key-store without a configured type reports ELY02035 for a replacement file with a different
+     * password and keeps the loaded certificate.
+     *
+     * @throws Exception if the test certificates or files cannot be created or inspected
+     */
+    @Test
+    public void testAutomaticKeystoreReloadWithWrongPassword() throws Exception {
+        X509Certificate original = createCertRoot(ROOT_DN).getSelfSignedCertificate();
+        createTemporaryJksFile(original, AUTOMATIC_RELOAD_FILE);
+        KeyStore keyStore = addAutomaticKeyStore("AutomaticReloadWrongPassword", AUTOMATIC_RELOAD_FILE);
+
+        KeyStore replacement = loadKeyStore();
+        replacement.setCertificateEntry("jks", createCertRoot(ANOTHER_ROOT_DN).getSelfSignedCertificate());
+        try (FileOutputStream fos = new FileOutputStream(AUTOMATIC_RELOAD_FILE)) {
+            replacement.store(fos, "another-password".toCharArray());
+        }
+        ModelNode result = assertFailed(services.executeOperation(loadKeyStoreOperation("AutomaticReloadWrongPassword")));
+        assertTrue(result.toJSONString(false), result.get(FAILURE_DESCRIPTION).asString().contains("ELY02035"));
+        assertContainsOnly(keyStore, original);
+    }
+
+    /**
+     * Verifies that a key-store without a configured type, whose optional file is missing on start, loads a PEM file
+     * created later.
+     *
+     * @throws Exception if the test certificate or file cannot be created or inspected
+     */
+    @Test
+    public void testAutomaticKeystoreReloadAfterFileCreated() throws Exception {
+        X509Certificate certificate = createCertRoot(ROOT_DN).getSelfSignedCertificate();
+        Files.deleteIfExists(AUTOMATIC_RELOAD_FILE.toPath());
+        ModelNode operation = Util.createAddOperation(keyStoreAddress("AutomaticReloadCreated"));
+        operation.get(ElytronDescriptionConstants.PATH).set(AUTOMATIC_RELOAD_FILE.getAbsolutePath());
+        operation.get(ElytronDescriptionConstants.REQUIRED).set(false);
+        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT)
+                .set(String.valueOf(KEYSTORE_PASSWORD));
+        assertSuccess(services.executeOperation(operation));
+        KeyStore keyStore = getKeyStore("AutomaticReloadCreated");
+        assertEquals(0, keyStore.size());
+
+        createTemporaryPemFile(certificate, AUTOMATIC_RELOAD_FILE);
+        assertSuccess(services.executeOperation(loadKeyStoreOperation("AutomaticReloadCreated")));
+        assertContainsOnly(keyStore, certificate);
+    }
+
+    /**
+     * Verifies that reloading a key-store without a file and without a configured type skips format detection.
+     * The subsystem rejects this configuration, so the service is created directly.
+     *
+     * @throws Exception if the service cannot be started or loaded
+     */
+    @Test
+    public void testAutomaticKeystoreReloadWithoutFile() throws Exception {
+        KeyStoreService service = KeyStoreService.createFileLessKeyStoreService(null, null, null);
+        CredentialSource credentialSource = IdentityCredentials.NONE.withCredential(new PasswordCredential(
+                ClearPassword.createRaw(ClearPassword.ALGORITHM_CLEAR, KEYSTORE_PASSWORD)));
+        service.getCredentialSourceSupplierInjector().inject(() -> credentialSource);
+        service.start(null);
+        try {
+            service.load();
+            assertEquals(0, service.getValue().size());
+        } finally {
+            service.stop(null);
+        }
+    }
+
+    /**
+     * Verifies that a key-store without a file can be reloaded; the load receives no input stream.
+     *
+     * @throws Exception if the key-store cannot be added, loaded or inspected
+     */
+    @Test
+    public void testFilelessKeystoreReload() throws Exception {
+        ModelNode operation = Util.createAddOperation(keyStoreAddress("FilelessReload"));
+        operation.get(ElytronDescriptionConstants.TYPE).set("JKS");
+        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT)
+                .set(String.valueOf(KEYSTORE_PASSWORD));
+        assertSuccess(services.executeOperation(operation));
+        KeyStore keyStore = getKeyStore("FilelessReload");
+        assertSuccess(services.executeOperation(loadKeyStoreOperation("FilelessReload")));
+        assertEquals(0, keyStore.size());
+    }
+
+    /**
+     * Adds a required file-based key-store without a configured type.
+     *
+     * @param keyStoreName the resource name
+     * @param file the key-store file
+     * @return the value exposed by the key-store service
+     * @throws InterruptedException if interrupted while waiting for the test consumer service
+     */
+    private KeyStore addAutomaticKeyStore(String keyStoreName, File file) throws InterruptedException {
+        ModelNode operation = Util.createAddOperation(keyStoreAddress(keyStoreName));
+        operation.get(ElytronDescriptionConstants.PATH).set(file.getAbsolutePath());
+        operation.get(ElytronDescriptionConstants.REQUIRED).set(true);
+        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT)
+                .set(String.valueOf(KEYSTORE_PASSWORD));
+        assertSuccess(services.executeOperation(operation));
+        return getKeyStore(keyStoreName);
+    }
+
+    /**
+     * Creates a load operation for a key-store resource.
+     *
+     * @param keyStoreName the resource name
+     * @return the load operation
+     */
+    private static ModelNode loadKeyStoreOperation(String keyStoreName) {
+        return Util.createEmptyOperation(ElytronDescriptionConstants.LOAD, keyStoreAddress(keyStoreName));
+    }
+
+    /**
+     * Returns the address of a key-store resource in the Elytron subsystem.
+     *
+     * @param keyStoreName the resource name
+     * @return the resource address
+     */
+    private static PathAddress keyStoreAddress(String keyStoreName) {
+        return PathAddress.pathAddress(ElytronExtension.SUBSYSTEM_PATH)
+                .append(ElytronDescriptionConstants.KEY_STORE, keyStoreName);
+    }
+
+    /**
+     * Asserts that the key-store contains exactly the given certificate.
+     *
+     * @param keyStore the key-store to inspect
+     * @param certificate the expected certificate
+     * @throws Exception if the key-store cannot be inspected
+     */
+    private static void assertContainsOnly(KeyStore keyStore, X509Certificate certificate) throws Exception {
+        assertEquals(1, keyStore.size());
+        assertNotNull(keyStore.getCertificateAlias(certificate));
     }
 
     @Test
@@ -1332,9 +1569,25 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         assertSuccess(services.executeOperation(operation));
     }
 
-    private KeyStore getKeyStore(String keyStoreName) {
+    /**
+     * Obtains the key-store value through a temporary consumer service using the MSC dependency API.
+     *
+     * @param keyStoreName the resource name
+     * @return the value exposed by the key-store service
+     * @throws InterruptedException if interrupted while waiting for the test consumer service
+     */
+    private KeyStore getKeyStore(String keyStoreName) throws InterruptedException {
         ServiceName serviceName = Capabilities.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName(keyStoreName);
-        return (KeyStore) services.getContainer().getService(serviceName).getValue();
+        ServiceBuilder<?> builder = services.getContainer().addService();
+        Supplier<KeyStore> keyStore = builder.requires(serviceName);
+        ServiceController<?> controller = builder.setInstance(Service.NULL).install();
+        try {
+            assertTrue("Key-store consumer service did not stabilize",
+                    services.getContainer().awaitStability(30, TimeUnit.SECONDS));
+            return keyStore.get();
+        } finally {
+            controller.setMode(ServiceController.Mode.REMOVE);
+        }
     }
 
     private void addOriginalKeyStore() throws Exception {
