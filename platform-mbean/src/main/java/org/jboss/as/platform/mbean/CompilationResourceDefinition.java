@@ -75,7 +75,8 @@ class CompilationResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
-        resourceRegistration.registerOperationHandler(ReadResourceHandler.DEFINITION, CompilationMXBeanReadResourceHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(ReadResourceHandler.DEFINITION,
+                new CompilationMXBeanReadResourceHandler(getAccessConstraints()));
     }
 }
 

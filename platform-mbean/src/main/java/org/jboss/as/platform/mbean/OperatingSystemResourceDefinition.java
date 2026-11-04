@@ -189,7 +189,8 @@ class OperatingSystemResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
-        resourceRegistration.registerOperationHandler(ReadResourceHandler.DEFINITION, OperatingSystemMXBeanReadResourceHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(ReadResourceHandler.DEFINITION,
+                new OperatingSystemMXBeanReadResourceHandler(getAccessConstraints()));
     }
 }
 

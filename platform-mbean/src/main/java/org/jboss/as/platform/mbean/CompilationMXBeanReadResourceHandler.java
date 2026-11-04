@@ -5,47 +5,54 @@
 
 package org.jboss.as.platform.mbean;
 
+import java.lang.management.CompilationMXBean;
+import java.lang.management.ManagementFactory;
+import java.util.List;
+import java.util.Map;
+
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.operations.global.FilteredData;
+import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Handles read-resource for the resource representing {@link java.lang.management.CompilationMXBean}.
+ * Handles {@code read-resource} for the resource representing {@link java.lang.management.CompilationMXBean}.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class CompilationMXBeanReadResourceHandler implements OperationStepHandler {
+class CompilationMXBeanReadResourceHandler extends AbstractPlatformMBeanReadResourceHandler<CompilationMXBean> {
 
-    public static final CompilationMXBeanReadResourceHandler INSTANCE = new CompilationMXBeanReadResourceHandler();
-
-    private CompilationMXBeanReadResourceHandler() {
+    CompilationMXBeanReadResourceHandler(List<AccessConstraintDefinition> resourceConstaints) {
+        super(resourceConstaints);
     }
 
     @Override
-    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+    CompilationMXBean getPlatformMBean() {
+        return ManagementFactory.getCompilationMXBean();
+    }
 
-        final ModelNode result = context.getResult();
+    @Override
+    void executeAttributeReads(OperationContext context,
+                               ModelNode operation,
+                               Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metrics,
+                               Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes,
+                               FilteredData filteredData,
+                               CompilationMXBean mbean) {
+
 
         for (String attribute : CompilationResourceDefinition.COMPILATION_READ_ATTRIBUTES) {
-            final ModelNode store = result.get(attribute);
-            try {
-                CompilationMXBeanAttributeHandler.storeResult(attribute, store);
-            } catch (UnsupportedOperationException ignored) {
-                // just leave it undefined
-            }
+            executeAttributeRead(context, operation, attribute, CompilationMXBeanAttributeHandler::getResult,
+                    mbean, otherAttributes, filteredData);
         }
 
         for (String attribute : CompilationResourceDefinition.COMPILATION_METRICS) {
-            final ModelNode store = result.get(attribute);
-            try {
-                CompilationMXBeanAttributeHandler.storeResult(attribute, store);
-            } catch (UnsupportedOperationException ignored) {
-                // just leave it undefined
-            }
+            executeAttributeRead(context, operation, attribute, CompilationMXBeanAttributeHandler::getResult,
+                    mbean, metrics, filteredData);
         }
 
-        final ModelNode store = result.get(PlatformMBeanConstants.OBJECT_NAME.getName());
-        CompilationMXBeanAttributeHandler.storeResult(PlatformMBeanConstants.OBJECT_NAME.getName(), store);
+        executeAttributeRead(context, operation, PlatformMBeanConstants.OBJECT_NAME.getName(),
+                CompilationMXBeanAttributeHandler::getResult, mbean, otherAttributes, filteredData);
     }
 }

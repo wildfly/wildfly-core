@@ -210,7 +210,7 @@ class ThreadResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration threads) {
         super.registerOperations(threads);
-        threads.registerOperationHandler(ReadResourceHandler.DEFINITION, ThreadMXBeanReadResourceHandler.INSTANCE);
+        threads.registerOperationHandler(ReadResourceHandler.DEFINITION, new ThreadMXBeanReadResourceHandler(getAccessConstraints()));
         threads.registerOperationHandler(ThreadMXBeanResetPeakThreadCountHandler.DEFINITION, ThreadMXBeanResetPeakThreadCountHandler.INSTANCE);
         threads.registerOperationHandler(ThreadMXBeanFindDeadlockedThreadsHandler.DEFINITION, ThreadMXBeanFindDeadlockedThreadsHandler.INSTANCE);
         threads.registerOperationHandler(ThreadMXBeanFindMonitorDeadlockedThreadsHandler.DEFINITION, ThreadMXBeanFindMonitorDeadlockedThreadsHandler.INSTANCE);

@@ -5,9 +5,17 @@
 
 package org.jboss.as.platform.mbean;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+import java.util.List;
+import java.util.Map;
+
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
+import org.jboss.as.controller.operations.global.FilteredData;
+import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -15,85 +23,50 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class ThreadMXBeanReadResourceHandler implements OperationStepHandler {
+public class ThreadMXBeanReadResourceHandler extends AbstractPlatformMBeanReadResourceHandler<ThreadMXBean> {
 
-    public static final ThreadMXBeanReadResourceHandler INSTANCE = new ThreadMXBeanReadResourceHandler();
-
-    private ThreadMXBeanReadResourceHandler() {
+    ThreadMXBeanReadResourceHandler(List<AccessConstraintDefinition> resourceConstaints) {
+        super(resourceConstaints);
     }
 
     @Override
-    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+    ThreadMXBean getPlatformMBean() {
+        return ManagementFactory.getThreadMXBean();
+    }
 
-        final ModelNode result = context.getResult();
-
+    @Override
+    void executeAttributeReads(OperationContext context, ModelNode operation, Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> metrics, Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> otherAttributes, FilteredData filteredData, ThreadMXBean mbean) throws OperationFailedException {
         for (String attribute : ThreadResourceDefinition.THREADING_READ_ATTRIBUTES) {
-            final ModelNode store = result.get(attribute);
-            try {
-                ThreadMXBeanAttributeHandler.storeResult(attribute, store);
-            } catch (SecurityException ignored) {
-                // just leave it undefined
-            } catch (UnsupportedOperationException ignored) {
-                // just leave it undefined
-            }
+            executeAttributeRead(context, operation, attribute, ThreadMXBeanAttributeHandler::getResult,
+                    mbean, otherAttributes, filteredData);
         }
 
         for (String attribute : ThreadResourceDefinition.THREADING_READ_WRITE_ATTRIBUTES) {
-            final ModelNode store = result.get(attribute);
-            try {
-                ThreadMXBeanAttributeHandler.storeResult(attribute, store);
-            } catch (SecurityException ignored) {
-                // just leave it undefined
-            } catch (UnsupportedOperationException ignored) {
-                // just leave it undefined
-            }
+            executeAttributeRead(context, operation, attribute, ThreadMXBeanAttributeHandler::getResult,
+                    mbean, otherAttributes, filteredData);
         }
 
         for (String attribute : ThreadResourceDefinition.THREADING_EXTENDED_READ_ATTRIBUTES) {
-            final ModelNode store = result.get(attribute);
-            try {
-                ThreadMXBeanAttributeHandler.storeExtendedResult(attribute, store);
-            } catch (SecurityException ignored) {
-                // just leave it undefined
-            } catch (UnsupportedOperationException ignored) {
-                // just leave it undefined
-            }
+            executeAttributeRead(context, operation, attribute, ThreadMXBeanAttributeHandler::getExtendedResult,
+                    mbean, otherAttributes, filteredData);
         }
 
         for (String attribute : ThreadResourceDefinition.THREADING_EXTENDED_READ_WRITE_ATTRIBUTES) {
-            final ModelNode store = result.get(attribute);
-            try {
-                ThreadMXBeanAttributeHandler.storeExtendedResult(attribute, store);
-            } catch (SecurityException ignored) {
-                // just leave it undefined
-            } catch (UnsupportedOperationException ignored) {
-                // just leave it undefined
-            }
+            executeAttributeRead(context, operation, attribute, ThreadMXBeanAttributeHandler::getExtendedResult,
+                    mbean, otherAttributes, filteredData);
         }
 
         for (String attribute : ThreadResourceDefinition.THREADING_METRICS) {
-            final ModelNode store = result.get(attribute);
-            try {
-                ThreadMXBeanAttributeHandler.storeResult(attribute, store);
-            } catch (SecurityException ignored) {
-                // just leave it undefined
-            } catch (UnsupportedOperationException ignored) {
-                // just leave it undefined
-            }
+            executeAttributeRead(context, operation, attribute, ThreadMXBeanAttributeHandler::getResult,
+                    mbean, metrics, filteredData);
         }
 
         for (String attribute : ThreadResourceDefinition.THREADING_EXTENDED_METRICS) {
-            final ModelNode store = result.get(attribute);
-            try {
-                ThreadMXBeanAttributeHandler.storeExtendedResult(attribute, store);
-            } catch (SecurityException ignored) {
-                // just leave it undefined
-            } catch (UnsupportedOperationException ignored) {
-                // just leave it undefined
-            }
+            executeAttributeRead(context, operation, attribute, ThreadMXBeanAttributeHandler::getExtendedResult,
+                    mbean, metrics, filteredData);
         }
 
-        final ModelNode store = result.get(PlatformMBeanConstants.OBJECT_NAME.getName());
-        ThreadMXBeanAttributeHandler.storeResult(PlatformMBeanConstants.OBJECT_NAME.getName(), store);
+        executeAttributeRead(context, operation, PlatformMBeanConstants.OBJECT_NAME.getName(),
+                ThreadMXBeanAttributeHandler::getResult, mbean, otherAttributes, filteredData);
     }
 }

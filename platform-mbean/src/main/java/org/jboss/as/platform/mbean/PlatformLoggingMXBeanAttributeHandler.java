@@ -39,7 +39,7 @@ class PlatformLoggingMXBeanAttributeHandler extends AbstractPlatformMBeanAttribu
         try {
             if ((PlatformMBeanConstants.OBJECT_NAME.getName().equals(name))
                     || PlatformLoggingResourceDefinition.PLATFORM_LOGGING_READ_ATTRIBUTES.contains(name)) {
-                storeResult(name, context.getResult());
+                context.getResult().set(getResult(name, ManagementFactory.getPlatformMXBean(PlatformLoggingMXBean.class)));
             } else {
                 // Shouldn't happen; the global handler should reject
                 throw unknownAttribute(operation);
@@ -50,18 +50,26 @@ class PlatformLoggingMXBeanAttributeHandler extends AbstractPlatformMBeanAttribu
 
     }
 
-    static void storeResult(final String name, final ModelNode store) {
+    static ModelNode getResult(final String name, PlatformLoggingMXBean mbean) {
 
+        ModelNode store;
         if (PlatformMBeanConstants.OBJECT_NAME.getName().equals(name)) {
-            store.set(PlatformMBeanConstants.PLATFORM_LOGGING_MXBEAN_NAME);
+            store = new ModelNode(PlatformMBeanConstants.PLATFORM_LOGGING_MXBEAN_NAME);
         } else if (PlatformMBeanConstants.LOGGER_NAMES.equals(name)) {
+            store = new ModelNode();
             store.setEmptyList();
-            for (String loggerName : ManagementFactory.getPlatformMXBean(PlatformLoggingMXBean.class).getLoggerNames()) {
+            for (String loggerName : mbean.getLoggerNames()) {
                 store.add(loggerName);
             }
         } else if (PlatformLoggingResourceDefinition.PLATFORM_LOGGING_READ_ATTRIBUTES.contains(name)) {
             // Bug
             throw PlatformMBeanLogger.ROOT_LOGGER.badReadAttributeImpl(name);
+        } else {
+            // TODO should not happen and we should fail, but historically this would have resulted
+            //  in an undefined node, so we keep it that way
+            // throw new IllegalArgumentException(name);
+            store = new ModelNode();
         }
+        return store;
     }
 }

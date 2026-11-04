@@ -26,16 +26,22 @@ import org.jboss.dmr.Property;
  *
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
-class FilteredData {
+public final class FilteredData {
 
     private final int baseAddressLength;
     private Map<PathAddress, ResourceData> map;
 
-    FilteredData(PathAddress baseAddress) {
+    public FilteredData(PathAddress baseAddress) {
         this.baseAddressLength = baseAddress.size();
     }
 
-    void addReadRestrictedAttribute(PathAddress fullAddress, String attribute) {
+    /**
+     * Record that a read of an attribute is denied.
+     *
+     * @param fullAddress the full address of the attribute's resource. Cannot be {@code null}.
+     * @param attribute the name of the attribute. Cannot be {@code null}.
+     */
+    public void addReadRestrictedAttribute(PathAddress fullAddress, String attribute) {
         ResourceData rd = getResourceData(fullAddress);
         if (rd.attributes == null) {
             rd.attributes = new HashSet<String>();
@@ -43,7 +49,12 @@ class FilteredData {
         rd.attributes.add(attribute);
     }
 
-    void addReadRestrictedResource(PathAddress fullAddress) {
+    /**
+     * Record that a read of a resource is denied.
+     *
+     * @param fullAddress the full address of the resource. Cannot be {@code null}.
+     */
+    public void addReadRestrictedResource(PathAddress fullAddress) {
         assert fullAddress.size() > 0 : "cannot filter root resource";
         ResourceData rd = getResourceData(fullAddress.subAddress(0, fullAddress.size() - 1));
         if (rd.children == null) {
@@ -53,7 +64,12 @@ class FilteredData {
 
     }
 
-    void addAccessRestrictedResource(PathAddress fullAddress) {
+    /**
+     * Record that visibility to the existence of a resource is denied.
+     *
+     * @param fullAddress the full address of the resource. Cannot be {@code null}.
+     */
+    public void addAccessRestrictedResource(PathAddress fullAddress) {
         assert fullAddress.size() > 0 : "cannot filter root resource";
         ResourceData rd = getResourceData(fullAddress.subAddress(0, fullAddress.size() - 1));
         if (rd.childTypes == null) {
