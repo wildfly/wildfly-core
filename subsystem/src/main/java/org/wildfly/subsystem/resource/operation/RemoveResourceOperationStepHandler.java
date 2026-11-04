@@ -11,6 +11,7 @@ import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.AttachmentKey;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -26,6 +27,7 @@ import org.wildfly.service.capture.ValueRegistry;
  * @author Paul Ferraro
  */
 public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandler {
+    private static final AttachmentKey<ResourceOperationRuntimeHandler> RUNTIME_HANDLER_KEY = AttachmentKey.create(ResourceOperationRuntimeHandler.class);
 
     private final OperationStepHandlerDescriptor descriptor;
 
@@ -70,6 +72,10 @@ public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandle
             }
         }
 
+        // If resource provides runtime behaviour, use OperationContext attachment to propagate the removed resource, which is otherwise not available to performRuntime(...) and recoverServices(...) methods
+        if (resource instanceof ResourceOperationRuntimeHandler handler) {
+            context.attach(RUNTIME_HANDLER_KEY, handler);
+        }
         super.performRemove(context, operation, model);
     }
 
@@ -96,6 +102,10 @@ public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandle
             if (handler != null) {
                 handler.removeRuntime(context, model);
             }
+            ResourceOperationRuntimeHandler attachedHandler = context.getAttachment(RUNTIME_HANDLER_KEY);
+            if (attachedHandler != null) {
+                attachedHandler.removeRuntime(context, model);
+            }
             PathAddress address = context.getCurrentAddress();
             for (AttributeAccess attribute : registration.getAttributes(PathAddress.EMPTY_ADDRESS).values()) {
                 ValueRegistry<PathAddress, ModelNode> registry = this.descriptor.getValueRegistry(attribute.getAttributeDefinition());
@@ -121,6 +131,10 @@ public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandle
                 if (registry != null) {
                     registry.add(address).accept(attribute.getAttributeDefinition().resolveModelAttribute(context, model));
                 }
+            }
+            ResourceOperationRuntimeHandler attachedHandler = context.getAttachment(RUNTIME_HANDLER_KEY);
+            if (attachedHandler != null) {
+                attachedHandler.addRuntime(context, model);
             }
             ResourceOperationRuntimeHandler handler = this.descriptor.getRuntimeHandler().orElse(null);
             if (handler != null) {
