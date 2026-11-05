@@ -1029,10 +1029,10 @@ abstract class AbstractOperationContext implements OperationContext, AutoCloseab
                 attach(ReadResourceHandler.ROLLBACKED_FAILURE_DESC, activeStep.response.get(FAILURE_DESCRIPTION));
             }
 
-            if (getAttachment(ServiceVerificationHelper.DEFFERED_ROLLBACK_ATTACHMENT) == null) {
+            if (getAttachment(ServiceVerificationHelper.DEFERRED_ROLLBACK_ATTACHMENT) == null) {
                 resultAction = ResultAction.ROLLBACK;
             } else {
-                detach(ServiceVerificationHelper.DEFFERED_ROLLBACK_ATTACHMENT);
+                detach(ServiceVerificationHelper.DEFERRED_ROLLBACK_ATTACHMENT);
             }
             ControllerLogger.MGMT_OP_LOGGER.tracef("Rolling back on failed response %s to operation %s on address %s in stage %s",
                     activeStep.response, activeStep.operationId.name, activeStep.operationId.address, currentStage);
