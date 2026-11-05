@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
@@ -29,6 +30,7 @@ import org.jboss.msc.service.StartException;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
+ * @author Radoslav Husar
  */
 class ServiceVerificationHelper implements OperationStepHandler {
 
@@ -105,6 +107,13 @@ class ServiceVerificationHelper implements OperationStepHandler {
             // print out list of services depending on missing services
             reportImmediateDependants(problemList, failureDescription);
 
+            // None of the above applied and the failure description is still empty
+            // e.g. the unavailable dependencies are installed but not tracked by this operation, or became available after stability was reached
+            // Thus report the problem services otherwise rollback is left unexplained!
+            if (!failureDescription.isDefined()) {
+                reportUnexplainedProblems(problems, registry, failureDescription);
+            }
+
             if (context.isRollbackOnRuntimeFailure()) {
                 // Registering new VERIFY step to be executed after all ServiceVerificationHandlers.
                 // This way other failing services have a chance to report missing dependencies before rollback.
@@ -141,6 +150,26 @@ class ServiceVerificationHelper implements OperationStepHandler {
             for (String problem : problemList) {
                 problemListNode.add(problem);
             }
+        }
+    }
+
+    private static void reportUnexplainedProblems(Set<ServiceController<?>> problems, ServiceRegistry registry, ModelNode failureDescription) {
+        ModelNode problemsNode = failureDescription.get(ControllerLogger.ROOT_LOGGER.servicesWithUnresolvedProblems());
+        for (ServiceController<?> controller : problems) {
+            StringBuilder missing = new StringBuilder();
+            for (ServiceName missingSvc : controller.missing()) {
+                if (!missing.isEmpty()) {
+                    missing.append(", ");
+                }
+                missing.append(missingSvc.getCanonicalName());
+                ServiceController<?> depController = registry.getService(missingSvc);
+                if (depController != null) {
+                    missing.append(" (").append(depController.getState()).append(", ").append(depController.getMode()).append(')');
+                }
+            }
+            // Report all provided values, or a placeholder for a service that provides none, so that no problem service is omitted
+            String names = controller.provides().isEmpty() ? "<anonymous>" : controller.provides().stream().map(ServiceName::getCanonicalName).collect(Collectors.joining(", "));
+            problemsNode.add(names + " (" + controller.getState() + ") " + ControllerLogger.ROOT_LOGGER.servicesMissing(missing));
         }
     }
 
