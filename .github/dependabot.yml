@@ -20,6 +20,8 @@ updates:
       # Only allow for patch release upgrades
       - dependency-name: '*'
         update-types: ['version-update:semver-major', 'version-update:semver-minor']
+        # See https://redhat.atlassian.net/browse/WFCORE-7752
+      - dependency-name: 'org.jacoco:jacoco-maven-plugin'
     rebase-strategy: "disabled"
     open-pull-requests-limit: 8
     registries:
