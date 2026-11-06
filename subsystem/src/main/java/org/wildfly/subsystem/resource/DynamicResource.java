@@ -50,7 +50,8 @@ public class DynamicResource extends DelegatingResource implements ResourceOpera
     private final Map<String, ChildResourceProvider> providers;
     private final BiFunction<Resource, Map<String, ChildResourceProvider>, Resource> factory;
     private final AtomicReference<NotificationConfiguration> configuration = new AtomicReference<>();
-    private final ResourceOperationRuntimeHandler handler = ResourceOperationRuntimeHandler.configureService(new ResourceServiceConfigurator() {
+    // Tracks the services it installs, so this must be shared with any clone of this resource, e.g. the one seen by a remove operation
+    private ResourceOperationRuntimeHandler handler = ResourceOperationRuntimeHandler.configureService(new ResourceServiceConfigurator() {
         @Override
         public ResourceServiceInstaller configure(OperationContext context, ModelNode model) {
             PathAddress address = context.getCurrentAddress();
@@ -128,7 +129,11 @@ public class DynamicResource extends DelegatingResource implements ResourceOpera
 
     @Override
     public Resource clone() {
-        return this.factory.apply(super.clone(), this.providers);
+        Resource clone = this.factory.apply(super.clone(), this.providers);
+        if (clone instanceof DynamicResource resource) {
+            resource.handler = this.handler;
+        }
+        return clone;
     }
 
     @Override
