@@ -4,6 +4,8 @@
  */
 package org.wildfly.subsystem.resource.operation;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -27,7 +29,8 @@ import org.wildfly.service.capture.ValueRegistry;
  * @author Paul Ferraro
  */
 public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandler {
-    private static final AttachmentKey<ResourceOperationRuntimeHandler> RUNTIME_HANDLER_KEY = AttachmentKey.create(ResourceOperationRuntimeHandler.class);
+    // Attachments span the whole operation, which may remove multiple resources (e.g. a composite or recursive remove), so handlers must be tracked per resource
+    private static final AttachmentKey<Map<PathAddress, ResourceOperationRuntimeHandler>> RUNTIME_HANDLERS_KEY = AttachmentKey.create(Map.class);
 
     private final OperationStepHandlerDescriptor descriptor;
 
@@ -74,7 +77,12 @@ public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandle
 
         // If resource provides runtime behaviour, use OperationContext attachment to propagate the removed resource, which is otherwise not available to performRuntime(...) and recoverServices(...) methods
         if (resource instanceof ResourceOperationRuntimeHandler handler) {
-            context.attach(RUNTIME_HANDLER_KEY, handler);
+            Map<PathAddress, ResourceOperationRuntimeHandler> handlers = context.getAttachment(RUNTIME_HANDLERS_KEY);
+            if (handlers == null) {
+                handlers = new HashMap<>();
+                context.attach(RUNTIME_HANDLERS_KEY, handlers);
+            }
+            handlers.put(context.getCurrentAddress(), handler);
         }
         super.performRemove(context, operation, model);
     }
@@ -93,6 +101,11 @@ public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandle
         return true;
     }
 
+    private static ResourceOperationRuntimeHandler getAttachedRuntimeHandler(OperationContext context) {
+        Map<PathAddress, ResourceOperationRuntimeHandler> handlers = context.getAttachment(RUNTIME_HANDLERS_KEY);
+        return (handlers != null) ? handlers.get(context.getCurrentAddress()) : null;
+    }
+
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
@@ -102,7 +115,7 @@ public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandle
             if (handler != null) {
                 handler.removeRuntime(context, model);
             }
-            ResourceOperationRuntimeHandler attachedHandler = context.getAttachment(RUNTIME_HANDLER_KEY);
+            ResourceOperationRuntimeHandler attachedHandler = getAttachedRuntimeHandler(context);
             if (attachedHandler != null) {
                 attachedHandler.removeRuntime(context, model);
             }
@@ -132,7 +145,7 @@ public class RemoveResourceOperationStepHandler extends AbstractRemoveStepHandle
                     registry.add(address).accept(attribute.getAttributeDefinition().resolveModelAttribute(context, model));
                 }
             }
-            ResourceOperationRuntimeHandler attachedHandler = context.getAttachment(RUNTIME_HANDLER_KEY);
+            ResourceOperationRuntimeHandler attachedHandler = getAttachedRuntimeHandler(context);
             if (attachedHandler != null) {
                 attachedHandler.addRuntime(context, model);
             }
