@@ -255,6 +255,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+            final String name = context.getCurrentAddressValue();
             ModelNode model = resource.getModel();
 
             String dirContextName = DIR_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
@@ -316,7 +317,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
                     keyAttribute, keyType);
 
             ServiceTarget serviceTarget = context.getServiceTarget();
-            RuntimeCapability<Void> runtimeCapability = KEY_STORE_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
+            RuntimeCapability<Void> runtimeCapability = KEY_STORE_RUNTIME_CAPABILITY.fromBaseCapability(name);
             ServiceName serviceName = runtimeCapability.getCapabilityServiceName(KeyStore.class);
             ServiceBuilder<KeyStore> serviceBuilder = serviceTarget.addService(serviceName, keyStoreService).setInitialMode(Mode.ACTIVE);
 
@@ -327,6 +328,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             commonDependencies(serviceBuilder).install();
         }
     }
+
 
     static class NewItemTemplateAttributeObjectDefinition {
         static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
