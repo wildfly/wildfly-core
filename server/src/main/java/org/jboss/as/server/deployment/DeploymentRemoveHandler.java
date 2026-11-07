@@ -78,7 +78,7 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
                                             registration, mutableRegistration);
                                 }
 
-                                if (enabled && context.hasFailureDescription()) {
+                                if (enabled && DeploymentHandlerUtil.hasDefinedFailureDescription(context)) {
                                     ServerLogger.ROOT_LOGGER.undeploymentRolledBack(runtimeName, context.getFailureDescription().asString());
                                 } else if (enabled) {
                                     ServerLogger.ROOT_LOGGER.undeploymentRolledBackWithNoMessage(runtimeName);

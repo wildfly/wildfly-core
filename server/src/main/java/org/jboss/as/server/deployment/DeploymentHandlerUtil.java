@@ -161,7 +161,7 @@ public class DeploymentHandlerUtil {
                             @Override
                             public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                                 if(resultAction == OperationContext.ResultAction.ROLLBACK) {
-                                    if (context.hasFailureDescription()) {
+                                    if (hasDefinedFailureDescription(context)) {
                                         ServerLogger.ROOT_LOGGER.deploymentRolledBack(deploymentUnitName, getFormattedFailureDescription(context));
                                     } else {
                                         ServerLogger.ROOT_LOGGER.deploymentRolledBackWithNoMessage(deploymentUnitName);
@@ -255,7 +255,7 @@ public class DeploymentHandlerUtil {
                                 @Override
                                 public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                                     if (resultAction == OperationContext.ResultAction.ROLLBACK) {
-                                        if (context.hasFailureDescription()) {
+                                        if (hasDefinedFailureDescription(context)) {
                                             ServerLogger.ROOT_LOGGER.redeployRolledBack(deploymentUnitName, getFormattedFailureDescription(context));
                                             logged.set(true);
                                         } else {
@@ -275,7 +275,7 @@ public class DeploymentHandlerUtil {
                         public void handleRollback(OperationContext context, ModelNode operation) {
                             doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, contents);
                             if (!logged.get()) {
-                                if (context.hasFailureDescription()) {
+                                if (hasDefinedFailureDescription(context)) {
                                     ServerLogger.ROOT_LOGGER.undeploymentRolledBack(deploymentUnitName, context.getFailureDescription().asString());
                                 } else {
                                     ServerLogger.ROOT_LOGGER.undeploymentRolledBackWithNoMessage(deploymentUnitName);
@@ -334,7 +334,7 @@ public class DeploymentHandlerUtil {
                                 final DeploymentHandlerUtil.ContentItem[] contents = getContents(originalDeployment.require(CONTENT));
                                 doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, contents);
 
-                                if (context.hasFailureDescription()) {
+                                if (hasDefinedFailureDescription(context)) {
                                     ServerLogger.ROOT_LOGGER.replaceRolledBack(replacedDeploymentUnitName, deploymentUnitName, getFormattedFailureDescription(context));
                                 } else {
                                     ServerLogger.ROOT_LOGGER.replaceRolledBackWithNoMessage(replacedDeploymentUnitName, deploymentUnitName);
@@ -388,7 +388,7 @@ public class DeploymentHandlerUtil {
                                 final DeploymentHandlerUtil.ContentItem[] contents = getContents(model.require(CONTENT));
                                 doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, contents);
 
-                                if (context.hasFailureDescription()) {
+                                if (hasDefinedFailureDescription(context)) {
                                     ServerLogger.ROOT_LOGGER.undeploymentRolledBack(runtimeName, getFormattedFailureDescription(context));
                                 } else {
                                     ServerLogger.ROOT_LOGGER.undeploymentRolledBackWithNoMessage(runtimeName);
@@ -448,6 +448,11 @@ public class DeploymentHandlerUtil {
             }
         }
         return result;
+    }
+
+    // OperationContext.hasFailureDescription() is also true for an undefined failure description, e.g. one created by getFailureDescription()
+    static boolean hasDefinedFailureDescription(OperationContext context) {
+        return context.hasFailureDescription() && context.getFailureDescription().isDefined();
     }
 
     private static String getFormattedFailureDescription(OperationContext context) {
