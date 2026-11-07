@@ -1502,6 +1502,14 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 317, value = "Deployment name %s contains illegal path traversal sequences")
     IllegalArgumentException illegalPathTraversalInDeploymentName(String deploymentManagementName);
 
+    @LogMessage(level = WARN)
+    @Message(id = 318, value = "Another server instance may already be running (lock file held at %s). Continuing startup.")
+    void cannotAcquireServerRunningLock(String lockPath);
+
+    @LogMessage(level = WARN)
+    @Message(id = 319, value = "Failed to acquire running lock at %s. Continuing startup anyway.")
+    void cannotAcquireServerRunningLockError(String lockPath, @Cause IOException cause);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 
