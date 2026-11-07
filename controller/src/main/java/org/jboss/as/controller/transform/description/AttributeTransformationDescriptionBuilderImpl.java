@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.version.Stability;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -29,59 +30,55 @@ abstract class AttributeTransformationDescriptionBuilderImpl<T extends BaseAttri
     }
 
     @Override
+    public Stability getStability() {
+        return this.builder.getStability();
+    }
+
+    @Override
     public ResourceTransformationDescriptionBuilder end() {
         return builder;
     }
 
     @Override
-    public T setDiscard(DiscardAttributeChecker discardChecker, AttributeDefinition...discardedAttributes) {
-        AttributeDefinition[] useDefs = discardedAttributes;
-        for (AttributeDefinition attribute : useDefs) {
-            String attrName = getAttributeName(attribute);
-            registry.setDiscardedAttribute(discardChecker, attrName);
-        }
-        return thisBuilder();
-    }
-
-    @Override
     public T setDiscard(DiscardAttributeChecker discardChecker, Collection<AttributeDefinition> discardedAttributes) {
-        for (AttributeDefinition attribute : discardedAttributes) {
-            String attrName = getAttributeName(attribute);
-            registry.setDiscardedAttribute(discardChecker, attrName);
+        for (AttributeDefinition discardedAttribute : discardedAttributes) {
+            if (this.enables(discardedAttribute)) {
+                this.registry.setDiscardedAttribute(discardChecker, discardedAttribute.getName());
+            }
         }
-        return thisBuilder();
+        return this.thisBuilder();
     }
 
     @Override
     public T setDiscard(DiscardAttributeChecker discardChecker, String... discardedAttributes) {
-        String[] useDefs = discardedAttributes;
-        for (String attrName : useDefs) {
-            registry.setDiscardedAttribute(discardChecker, attrName);
+        for (String discardedAttribute : discardedAttributes) {
+            this.registry.setDiscardedAttribute(discardChecker, discardedAttribute);
         }
         return thisBuilder();
     }
 
     @Override
-    public T addRejectCheck(final RejectAttributeChecker checker, final AttributeDefinition...rejectedAttributes){
-        for (AttributeDefinition attribute : rejectedAttributes) {
-            String attrName = getAttributeName(attribute);
-            registry.addAttributeCheck(attrName, checker);
+    public T addRejectCheck(final RejectAttributeChecker checker, final AttributeDefinition... rejectedAttributes){
+        for (AttributeDefinition rejectedAttribute : rejectedAttributes) {
+            if (this.enables(rejectedAttribute)) {
+                this.registry.addAttributeCheck(rejectedAttribute.getName(), checker);
+            }
         }
-        return thisBuilder();
+        return this.thisBuilder();
     }
 
     @Override
     public T addRejectCheck(RejectAttributeChecker rejectChecker, String... rejectedAttributes) {
-        for (String attribute : rejectedAttributes) {
-            registry.addAttributeCheck(attribute, rejectChecker);
+        for (String rejectedAttribute : rejectedAttributes) {
+            this.registry.addAttributeCheck(rejectedAttribute, rejectChecker);
         }
-        return thisBuilder();
+        return this.thisBuilder();
     }
 
     @Override
     public T addRejectChecks(List<RejectAttributeChecker> rejectCheckers, AttributeDefinition...rejectedAttributes) {
         for (RejectAttributeChecker rejectChecker : rejectCheckers) {
-            addRejectCheck(rejectChecker, rejectedAttributes);
+            this.addRejectCheck(rejectChecker, rejectedAttributes);
         }
         return thisBuilder();
     }
@@ -89,14 +86,16 @@ abstract class AttributeTransformationDescriptionBuilderImpl<T extends BaseAttri
     @Override
     public T addRejectChecks(List<RejectAttributeChecker> rejectCheckers, String... rejectedAttributes) {
         for (RejectAttributeChecker rejectChecker : rejectCheckers) {
-            addRejectCheck(rejectChecker, rejectedAttributes);
+            this.addRejectCheck(rejectChecker, rejectedAttributes);
         }
         return thisBuilder();
     }
 
     @Override
-    public T addRename(AttributeDefinition attributeName, String newName) {
-        registry.addRenamedAttribute(getAttributeName(attributeName), newName);
+    public T addRename(AttributeDefinition attribute, String newName) {
+        if (this.enables(attribute)) {
+            this.addRename(attribute.getName(), newName);
+        }
         return thisBuilder();
     }
 
@@ -106,9 +105,10 @@ abstract class AttributeTransformationDescriptionBuilderImpl<T extends BaseAttri
         return thisBuilder();
     }
 
+    @Override
     public T addRenames(Map<String, String> renames) {
         for (Map.Entry<String, String> rename : renames.entrySet()) {
-            registry.addRenamedAttribute(rename.getKey(), rename.getValue());
+            this.addRename(rename.getKey(), rename.getValue());
         }
         return thisBuilder();
     }
@@ -122,9 +122,10 @@ abstract class AttributeTransformationDescriptionBuilderImpl<T extends BaseAttri
 
     @Override
     public T setValueConverter(AttributeConverter attributeConverter, AttributeDefinition...convertedAttributes) {
-        for (AttributeDefinition attribute : convertedAttributes) {
-            String attrName = getAttributeName(attribute);
-            registry.addAttributeConverter(attrName, attributeConverter);
+        for (AttributeDefinition convertedAttribute : convertedAttributes) {
+            if (this.enables(convertedAttribute)) {
+                this.registry.addAttributeConverter(convertedAttribute.getName(), attributeConverter);
+            }
         }
         return thisBuilder();
     }
@@ -135,10 +136,6 @@ abstract class AttributeTransformationDescriptionBuilderImpl<T extends BaseAttri
             registry.addAttributeConverter(attribute, attributeConverter);
         }
         return thisBuilder();
-    }
-
-    protected String getAttributeName(AttributeDefinition attr) {
-        return attr.getName();
     }
 
     protected AttributeTransformationDescriptionBuilderRegistry getLocalRegistry() {
