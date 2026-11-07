@@ -67,11 +67,8 @@ class ServiceVerificationHelper implements OperationStepHandler {
                 if (failedList == null) {
                     failedList = failureDescription.get(ControllerLogger.ROOT_LOGGER.failedServices());
                 }
-                for (ServiceName serviceName : controller.provides()) {
-                    failedSet.add(serviceName);
-                    failedList.get(serviceName.getCanonicalName()).set(getServiceFailureDescription(controller.getStartException()));
-                    break; // it is sufficient to report just first provided value
-                }
+                failedSet.addAll(controller.provides());
+                failedList.get(controller.provides().stream().findFirst().map(ServiceName::getCanonicalName).orElse("<anonymous>")).set(getServiceFailureDescription(controller.getStartException()));
             }
             ServiceRegistry registry = context.getServiceRegistry(false);
             // generate lists of problems and missing services
