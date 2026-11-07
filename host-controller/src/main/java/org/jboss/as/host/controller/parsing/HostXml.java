@@ -88,6 +88,8 @@ public final class HostXml implements ManagementXmlReaderWriter {
             case 19:
                 new HostXml_18(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, version, namespaceUri).readElement(reader, operationList);
                 break;
+            case 20:
+            case 21:
             default:
                 new HostXml_20(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, namespace).readElement(reader, operationList);
         }
