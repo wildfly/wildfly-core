@@ -336,7 +336,22 @@ public class DynamicResource extends DelegatingResource implements ResourceOpera
 
                 @Override
                 public boolean containsAll(Collection<?> elements) {
-                    return children.containsAll(children);
+                    return children.containsAll(elements);
+                }
+
+                @Override
+                public int hashCode() {
+                    return children.hashCode();
+                }
+
+                @Override
+                public boolean equals(Object object) {
+                    return children.equals(object);
+                }
+
+                @Override
+                public String toString() {
+                    return children.toString();
                 }
 
                 // Optional methods, which cannot be implemented atomically
