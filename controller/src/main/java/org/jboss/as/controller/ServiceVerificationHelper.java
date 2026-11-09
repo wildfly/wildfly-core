@@ -11,9 +11,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
@@ -24,16 +24,17 @@ import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.StartException;
 
 /**
- * Tracks the status of a service installed by an {@link OperationStepHandler}, recording a failure desription
+ * Tracks the status of a service installed by an {@link OperationStepHandler}, recording a failure description
  * if the service has a problems starting.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
- * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a> *
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
+ * @author Radoslav Husar
  */
 class ServiceVerificationHelper implements OperationStepHandler {
 
-    static final OperationContext.AttachmentKey<Boolean> DEFFERED_ROLLBACK_ATTACHMENT = OperationContext.AttachmentKey.create(Boolean.class);
+    static final OperationContext.AttachmentKey<Boolean> DEFERRED_ROLLBACK_ATTACHMENT = OperationContext.AttachmentKey.create(Boolean.class);
 
     private final StabilityMonitor monitor = new StabilityMonitor();
 
@@ -59,7 +60,6 @@ class ServiceVerificationHelper implements OperationStepHandler {
         if (!failed.isEmpty() || !problems.isEmpty()) {
             final ModelNode failureDescription = context.getFailureDescription();
             Set<ServiceName> unavailableServices = new HashSet<>();
-            Set<ServiceName> failedSet = new HashSet<>();
 
             // generate a list of failedServices
             ModelNode failedList = null;
@@ -68,7 +68,6 @@ class ServiceVerificationHelper implements OperationStepHandler {
                     failedList = failureDescription.get(ControllerLogger.ROOT_LOGGER.failedServices());
                 }
                 for (ServiceName serviceName : controller.provides()) {
-                    failedSet.add(serviceName);
                     failedList.get(serviceName.getCanonicalName()).set(getServiceFailureDescription(controller.getStartException()));
                     break; // it is sufficient to report just first provided value
                 }
@@ -80,13 +79,12 @@ class ServiceVerificationHelper implements OperationStepHandler {
                 Collection<ServiceName> immediatelyUnavailable = controller.missing();
                 StringBuilder missing = new StringBuilder();
                 boolean direct = false;
-                for (Iterator<ServiceName> i = immediatelyUnavailable.iterator(); i.hasNext(); ) {
-                    ServiceName missingSvc = i.next();
+                for (ServiceName missingSvc : immediatelyUnavailable) {
                     ServiceController<?> depController = registry.getService(missingSvc);
                     if (depController == null || depController.getMode() == ServiceController.Mode.NEVER) {
                         unavailableServices.add(missingSvc);
                         direct = true;
-                        if (missing.length() != 0) {
+                        if (!missing.isEmpty()) {
                             missing.append(", ");
                         }
                         missing.append(missingSvc.getCanonicalName());
@@ -109,13 +107,20 @@ class ServiceVerificationHelper implements OperationStepHandler {
             // print out list of services depending on missing services
             reportImmediateDependants(problemList, failureDescription);
 
+            // None of the above applied and the failure description is still empty
+            // e.g. the unavailable dependencies are installed but not tracked by this operation, or became available after stability was reached
+            // Thus report the problem services otherwise rollback is left unexplained!
+            if (!failureDescription.isDefined()) {
+                reportUnexplainedProblems(problems, registry, failureDescription);
+            }
+
             if (context.isRollbackOnRuntimeFailure()) {
-                // Registering new VERIFY step to be executed after all ServiceVerificationHadlers.
+                // Registering new VERIFY step to be executed after all ServiceVerificationHandlers.
                 // This way other failing services have a chance to report missing dependencies before rollback.
-                // DEFFERED_ROLLBACK_ATTACHMENT notifies AbstractOperationContext that the operation will be
+                // DEFERRED_ROLLBACK_ATTACHMENT notifies AbstractOperationContext that the operation will be
                 // rolled back at later point so that it doesn't force rollback due to failure description
                 // being present.
-                context.attach(DEFFERED_ROLLBACK_ATTACHMENT, Boolean.TRUE);
+                context.attach(DEFERRED_ROLLBACK_ATTACHMENT, Boolean.TRUE);
                 context.addStep(new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -148,6 +153,26 @@ class ServiceVerificationHelper implements OperationStepHandler {
         }
     }
 
+    private static void reportUnexplainedProblems(Set<ServiceController<?>> problems, ServiceRegistry registry, ModelNode failureDescription) {
+        ModelNode problemsNode = failureDescription.get(ControllerLogger.ROOT_LOGGER.servicesWithUnresolvedProblems());
+        for (ServiceController<?> controller : problems) {
+            StringBuilder missing = new StringBuilder();
+            for (ServiceName missingSvc : controller.missing()) {
+                if (!missing.isEmpty()) {
+                    missing.append(", ");
+                }
+                missing.append(missingSvc.getCanonicalName());
+                ServiceController<?> depController = registry.getService(missingSvc);
+                if (depController != null) {
+                    missing.append(" (").append(depController.getState()).append(", ").append(depController.getMode()).append(')');
+                }
+            }
+            // Report all provided values, or a placeholder for a service that provides none, so that no problem service is omitted
+            String names = controller.provides().isEmpty() ? "<anonymous>" : controller.provides().stream().map(ServiceName::getCanonicalName).collect(Collectors.joining(", "));
+            problemsNode.add(names + " (" + controller.getState() + ") " + ControllerLogger.ROOT_LOGGER.servicesMissing(missing));
+        }
+    }
+
     private static ModelNode getServiceFailureDescription(final StartException exception) {
         final ModelNode result = new ModelNode();
         if (exception != null) {
@@ -155,14 +180,14 @@ class ServiceVerificationHelper implements OperationStepHandler {
             // the main data with 'org...StartException in org.foo.bar: " stuff that
             // will be redundant in the overall output we are creating so we omit that if we can.
             String msg = exception.getLocalizedMessage();
-            if (msg == null || msg.length() == 0) {
+            if (msg == null || msg.isEmpty()) {
                 msg = exception.toString();
             }
             StringBuilder sb = new StringBuilder(msg);
             Throwable cause = exception.getCause();
             while (cause != null) {
                 sb.append("\n    Caused by: ");
-                sb.append(cause.toString());
+                sb.append(cause);
                 cause = cause.getCause();
             }
             result.set(sb.toString());

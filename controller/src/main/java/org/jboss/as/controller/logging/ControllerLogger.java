@@ -3881,4 +3881,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 536, value = "Value for parameter '%1$s' must be less than or equal to '%3$s': '%2$s'")
     OperationFailedException inclusiveUpperBoundExceeded(String name, Object value, Object upperBound);
+
+    @Message(id = 537, value = "Services with unresolved problems after reaching stability")
+    String servicesWithUnresolvedProblems();
 }
