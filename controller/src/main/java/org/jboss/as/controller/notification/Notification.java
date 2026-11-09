@@ -27,13 +27,24 @@ public class Notification {
     private final long timestamp;
     private final ModelNode data;
 
+    /**
+     * Creates a notification without any contextual data.
+     *
+     * @param type the type of notification
+     * @param source the address of the resource that emitted the notification
+     * @param message a human-readable i18ned description of the notification, can be {@code null}
+     */
     public Notification(String type, PathAddress source, String message) {
         this(type, source, message, null);
     }
 
     /**
+     * Creates a notification with the specified contextual data.
      *
-     * @param data can be {@code null}
+     * @param type the type of notification
+     * @param source the address of the resource that emitted the notification
+     * @param message a human-readable i18ned description of the notification, can be {@code null}
+     * @param data data contextual to the notification, can be {@code null}
      */
     public Notification(String type, PathAddress source, String message, ModelNode data) {
         this(type, source, message, System.currentTimeMillis(), data);
@@ -62,14 +73,14 @@ public class Notification {
     }
 
     /**
-     * @return a human-readable i18end description of the notification
+     * @return a human-readable i18end description of the notification or {@code null}
      */
     public String getMessage() {
         return message;
     }
 
     /**
-     * The timestamp is set when the notification is instantiaged.
+     * The timestamp is set when the notification is instantiated.
      *
      * @return the timestamp (in ms since the Unix Epoch) of the notification.
      */
@@ -92,7 +103,9 @@ public class Notification {
         node.get(TYPE).set(type);
         node.get(SOURCE).set(source.toModelNode());
         node.get(TIMESTAMP).set(timestamp);
-        node.get(MESSAGE).set(message);
+        if (message != null) {
+            node.get(MESSAGE).set(message);
+        }
         if (data != null) {
             node.get(DATA).set(data);
         }
@@ -107,8 +120,8 @@ public class Notification {
         String type = node.require(TYPE).asString();
         PathAddress source = PathAddress.pathAddress(node.require(SOURCE));
         long timestamp = node.require(TIMESTAMP).asLong();
-        String message = node.require(MESSAGE).asString();
-        ModelNode data = node.hasDefined(DATA)? node.get(DATA): null;
+        String message = node.hasDefined(MESSAGE) ? node.get(MESSAGE).asString() : null;
+        ModelNode data = node.hasDefined(DATA) ? node.get(DATA) : null;
         return new Notification(type, source, message, timestamp, data);
     }
 
