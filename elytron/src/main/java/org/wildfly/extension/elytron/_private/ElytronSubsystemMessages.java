@@ -675,6 +675,10 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @LogMessage(level = WARN)
     void settingPolicyNotSupported();
 
+    @Message(id = 1092, value = "The maximum-cert-path attribute within certificate-revocation-list is for legacy support only, please use the maximum-cert-path attribute directly on trust-manager instead.")
+    @LogMessage(level = WARN)
+    void legacyMaximumCertPathInCrl();
+
     /*
      * Expression Resolver Section
      */
