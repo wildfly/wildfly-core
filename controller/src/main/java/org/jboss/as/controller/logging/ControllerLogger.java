@@ -3882,9 +3882,6 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 536, value = "Value for parameter '%1$s' must be less than or equal to '%3$s': '%2$s'")
     OperationFailedException inclusiveUpperBoundExceeded(String name, Object value, Object upperBound);
 
-    @Message(id = 537, value = "Services with unresolved problems after reaching stability")
-    String servicesWithUnresolvedProblems();
-
     @Message(id = 537, value = "URL scheme '%s' is not permitted for deployment content sources. Allowed schemes: %s. " +
             "To override, set system property jboss.deployment.source.allow to a regex matching permitted URLs.")
     OperationFailedException deploymentSourceSchemeNotAllowed(String scheme, String allowedSchemes);
@@ -3908,4 +3905,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 542, value = "Path '%s' cannot be resolved.")
     OperationFailedException cannotResolvePath(String path, @Cause Throwable cause);
+
+    @Message(id = 543, value = "Services with unresolved problems after reaching stability")
+    String servicesWithUnresolvedProblems();
 }
