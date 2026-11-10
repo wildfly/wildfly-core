@@ -35,6 +35,7 @@ import org.jboss.msc.service.StartException;
 class ServiceVerificationHelper implements OperationStepHandler {
 
     static final OperationContext.AttachmentKey<Boolean> DEFERRED_ROLLBACK_ATTACHMENT = OperationContext.AttachmentKey.create(Boolean.class);
+    static final String ANONYMOUS_SERVICE_NAME = "<anonymous>";
 
     private final StabilityMonitor monitor = new StabilityMonitor();
 
@@ -67,10 +68,7 @@ class ServiceVerificationHelper implements OperationStepHandler {
                 if (failedList == null) {
                     failedList = failureDescription.get(ControllerLogger.ROOT_LOGGER.failedServices());
                 }
-                for (ServiceName serviceName : controller.provides()) {
-                    failedList.get(serviceName.getCanonicalName()).set(getServiceFailureDescription(controller.getStartException()));
-                    break; // it is sufficient to report just first provided value
-                }
+                failedList.get(controller.provides().stream().findFirst().map(ServiceName::getCanonicalName).orElse(ANONYMOUS_SERVICE_NAME)).add(getServiceFailureDescription(controller.getStartException()));
             }
             ServiceRegistry registry = context.getServiceRegistry(false);
             // generate lists of problems and missing services
@@ -168,7 +166,7 @@ class ServiceVerificationHelper implements OperationStepHandler {
                 }
             }
             // Report all provided values, or a placeholder for a service that provides none, so that no problem service is omitted
-            String names = controller.provides().isEmpty() ? "<anonymous>" : controller.provides().stream().map(ServiceName::getCanonicalName).collect(Collectors.joining(", "));
+            String names = controller.provides().isEmpty() ? ANONYMOUS_SERVICE_NAME : controller.provides().stream().map(ServiceName::getCanonicalName).collect(Collectors.joining(", "));
             problemsNode.add(names + " (" + controller.getState() + ") " + ControllerLogger.ROOT_LOGGER.servicesMissing(missing));
         }
     }
