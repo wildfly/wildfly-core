@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.jboss.as.controller.OperationContext;
@@ -50,37 +51,7 @@ public class DynamicResource extends DelegatingResource implements ResourceOpera
     private final Map<String, ChildResourceProvider> providers;
     private final BiFunction<Resource, Map<String, ChildResourceProvider>, Resource> factory;
     private final AtomicReference<NotificationConfiguration> configuration = new AtomicReference<>();
-    private final ResourceOperationRuntimeHandler handler = ResourceOperationRuntimeHandler.configureService(new ResourceServiceConfigurator() {
-        @Override
-        public ResourceServiceInstaller configure(OperationContext context, ModelNode model) {
-            PathAddress address = context.getCurrentAddress();
-            ServiceDependency<NotificationHandlerRegistration> registration = ServiceDependency.on(NotificationHandlerRegistration.SERVICE_DESCRIPTOR);
-            ServiceDependency<Executor> executor = ServiceDependency.on(Capabilities.MANAGEMENT_EXECUTOR);
-            BiFunction<NotificationHandlerRegistration, Executor, NotificationConfiguration> factory = new BiFunction<>() {
-                @Override
-                public NotificationConfiguration apply(NotificationHandlerRegistration registration, Executor executor) {
-                    return new NotificationConfiguration() {
-                        @Override
-                        public PathAddress getParentAddress() {
-                            return address;
-                        }
-
-                        @Override
-                        public NotificationHandlerRegistration getNotificationHandlerRegistration() {
-                            return registration;
-                        }
-
-                        @Override
-                        public Executor getExecutor() {
-                            return executor;
-                        }
-                    };
-                }
-            };
-            // Create installer of service that captures values provided by services needed for notifications
-            return ServiceInstaller.BlockingBuilder.of(registration.combine(executor, factory)).withCaptor(DynamicResource.this.configuration::set).build();
-        }
-    });
+    private final ResourceOperationRuntimeHandler handler;
 
     /**
      * Constructs a new resource.
@@ -99,6 +70,37 @@ public class DynamicResource extends DelegatingResource implements ResourceOpera
      */
     protected DynamicResource(Resource resource, Map<String, ChildResourceProvider> providers, BiFunction<Resource, Map<String, ChildResourceProvider>, Resource> factory) {
         super(resource);
+        this.handler = (resource instanceof RuntimeHandlerProvider provider) ? provider.get() : ResourceOperationRuntimeHandler.configureService(new ResourceServiceConfigurator() {
+            @Override
+            public ResourceServiceInstaller configure(OperationContext context, ModelNode model) {
+                PathAddress address = context.getCurrentAddress();
+                ServiceDependency<NotificationHandlerRegistration> registration = ServiceDependency.on(NotificationHandlerRegistration.SERVICE_DESCRIPTOR);
+                ServiceDependency<Executor> executor = ServiceDependency.on(Capabilities.MANAGEMENT_EXECUTOR);
+                BiFunction<NotificationHandlerRegistration, Executor, NotificationConfiguration> factory = new BiFunction<>() {
+                    @Override
+                    public NotificationConfiguration apply(NotificationHandlerRegistration registration, Executor executor) {
+                        return new NotificationConfiguration() {
+                            @Override
+                            public PathAddress getParentAddress() {
+                                return address;
+                            }
+
+                            @Override
+                            public NotificationHandlerRegistration getNotificationHandlerRegistration() {
+                                return registration;
+                            }
+
+                            @Override
+                            public Executor getExecutor() {
+                                return executor;
+                            }
+                        };
+                    }
+                };
+                // Create installer of service that captures values provided by services needed for notifications
+                return ServiceInstaller.BlockingBuilder.of(registration.combine(executor, factory)).withCaptor(DynamicResource.this.configuration::set).build();
+            }
+        });
         // Decorate the providers of child resources, so that notifications are sent when children are dynamically added or removed
         this.providers = providers.entrySet().stream().collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, this::wrap));
         this.factory = factory;
@@ -128,7 +130,7 @@ public class DynamicResource extends DelegatingResource implements ResourceOpera
 
     @Override
     public Resource clone() {
-        return this.factory.apply(super.clone(), this.providers);
+        return this.factory.apply(new RuntimeHandlerProviderResource(super.clone(), this.handler), this.providers);
     }
 
     @Override
@@ -375,6 +377,24 @@ public class DynamicResource extends DelegatingResource implements ResourceOpera
                     throw new UnsupportedOperationException();
                 }
             } : children;
+        }
+    }
+
+    interface RuntimeHandlerProvider extends Supplier<ResourceOperationRuntimeHandler> {
+    }
+
+    class RuntimeHandlerProviderResource extends DelegatingResource implements RuntimeHandlerProvider {
+
+        private final ResourceOperationRuntimeHandler handler;
+
+        RuntimeHandlerProviderResource(Resource resource, ResourceOperationRuntimeHandler handler) {
+            super(resource);
+            this.handler = handler;
+        }
+
+        @Override
+        public ResourceOperationRuntimeHandler get() {
+            return this.handler;
         }
     }
 }
