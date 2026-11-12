@@ -146,10 +146,10 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
                     context.getResult().set(imService.getPreparedServerDir().normalize().toAbsolutePath().toString());
                 } catch (ZipException e) {
                     throw new OperationFailedException(e.getLocalizedMessage());
-                } catch (OperationFailedException | RuntimeException e) {
+                } catch (OperationFailedException e) {
                     throw e;
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException(getDiagnosticsOfThrowable(e), e);
                 }
             }
         }, OperationContext.Stage.RUNTIME);

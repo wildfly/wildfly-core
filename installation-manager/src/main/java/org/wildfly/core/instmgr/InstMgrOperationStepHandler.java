@@ -14,11 +14,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -37,12 +41,51 @@ import org.wildfly.installationmanager.spi.InstallationManagerFactory;
  * Base class for installation-manager operation handlers.
  */
 abstract class InstMgrOperationStepHandler implements OperationStepHandler {
+    private static final Pattern EXCEPTION_PREFIX_PATTERN = Pattern.compile("^[a-zA-Z0-9_.]+(Exception|Error):\\s*");
+
     protected final InstMgrService imService;
     protected final InstallationManagerFactory imf;
 
     InstMgrOperationStepHandler(InstMgrService imService, InstallationManagerFactory imf) {
         this.imService = imService;
         this.imf = imf;
+    }
+
+    protected static String getDiagnosticsOfThrowable(Throwable t) {
+        StringBuilder sb = new StringBuilder(t.toString());
+        Throwable cause = t.getCause();
+        Set<Throwable> seenThrowables = Collections.newSetFromMap(new IdentityHashMap<>());
+        seenThrowables.add(t);
+
+        List<String> seenMessages = new ArrayList<>();
+        String topMsg = t.getLocalizedMessage();
+        if (topMsg != null && !topMsg.trim().isEmpty()) {
+            seenMessages.add(topMsg.trim());
+        }
+
+        while (cause != null && seenThrowables.add(cause)) {
+            String causeMsg = cause.getLocalizedMessage();
+            boolean duplicate = false;
+            if (causeMsg != null && !causeMsg.trim().isEmpty()) {
+                String trimmedCause = causeMsg.trim();
+                String cleanCause = EXCEPTION_PREFIX_PATTERN.matcher(trimmedCause).replaceAll("");
+                for (String seen : seenMessages) {
+                    String cleanSeen = EXCEPTION_PREFIX_PATTERN.matcher(seen).replaceAll("");
+                    if (cleanSeen.contains(cleanCause)) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if (!duplicate) {
+                    seenMessages.add(trimmedCause);
+                }
+            }
+            if (!duplicate) {
+                sb.append("\nCaused by: ").append(cause.toString());
+            }
+            cause = cause.getCause();
+        }
+        return sb.toString();
     }
 
     protected void deleteDirIfExits(Path dir, boolean skipRootDir) throws IOException {
