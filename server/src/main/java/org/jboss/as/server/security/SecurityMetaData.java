@@ -35,9 +35,9 @@ public class SecurityMetaData {
     }
 
     /**
-     * Get the {@code ServiceName} of the {@code SecurityDomain} selected for use with this deployment.
+     * Set the {@code ServiceName} of the {@code SecurityDomain} selected for use with this deployment.
      *
-     * @return the {@code ServiceName} of the {@code SecurityDomain} selected for use with this deployment.
+     * @param securityDomain the {@code ServiceName} of the {@code SecurityDomain} selected for use with this deployment.
      */
     public void setSecurityDomain(ServiceName securityDomain) {
         this.securityDomain = securityDomain;
