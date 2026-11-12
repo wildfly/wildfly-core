@@ -19,6 +19,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.operations.validation.DeploymentSourceValidator;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.repository.ContentRepository;
@@ -36,6 +37,7 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
     private final ContentRepository contentRepository;
     private final HostFileRepository fileRepository;
     private final boolean backup;
+    private final DeploymentSourceValidator deploymentSourceValidator;
 
     /**
      * Constructor for a slave Host Controller
@@ -47,6 +49,7 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
         this.contentRepository = contentRepository;
         this.fileRepository = fileRepository;
         this.backup = backup;
+        this.deploymentSourceValidator = DeploymentSourceValidator.forDomain();
     }
 
     /**
@@ -60,6 +63,7 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
         this.contentRepository = contentRepository;
         this.fileRepository = null;
         this.backup = false;
+        this.deploymentSourceValidator = DeploymentSourceValidator.forDomain();
     }
 
     @Override
@@ -81,7 +85,7 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
         final byte[] newHash;
         if (fileRepository == null && contentRepository != null) { //Master DC
             try {
-                newHash = DeploymentUploadUtil.addContentToExplodedAndTransformOperation(context, operation, contentRepository);
+                newHash = DeploymentUploadUtil.addContentToExplodedAndTransformOperation(context, operation, contentRepository, deploymentSourceValidator);
             } catch (ExplodedContentException e) {
                 throw new OperationFailedException(e.getMessage(), e);
             }

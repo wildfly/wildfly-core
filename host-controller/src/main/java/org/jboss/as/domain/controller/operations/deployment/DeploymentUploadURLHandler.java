@@ -58,6 +58,7 @@ extends AbstractDeploymentUploadHandler {
     protected InputStream getContentInputStream(OperationContext operationContext, ModelNode operation) throws OperationFailedException {
 
         String urlSpec = operation.get(URL).asString();
+        deploymentSourceValidator.validateUrl(urlSpec);
         try {
             URL url = new URL(urlSpec);
             return url.openStream();

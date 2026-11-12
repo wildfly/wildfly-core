@@ -29,6 +29,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.BytesValidator;
+import org.jboss.as.controller.operations.validation.DeploymentSourceValidator;
 import org.jboss.as.controller.operations.validation.MinMaxValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
@@ -94,13 +95,13 @@ public class DeploymentOverlayContentDefinition extends SimpleResourceDefinition
         return  ATTRIBUTES.clone();
     }
 
-    public DeploymentOverlayContentDefinition(final ContentRepository contentRepository, final DeploymentFileRepository remoteRepository) {
+    public DeploymentOverlayContentDefinition(final ContentRepository contentRepository, final DeploymentFileRepository remoteRepository, final DeploymentSourceValidator deploymentSourceValidator) {
         super(DeploymentOverlayModel.CONTENT_PATH,
                 ControllerResolver.getResolver(ModelDescriptionConstants.DEPLOYMENT_OVERLAY, ModelDescriptionConstants.CONTENT),
                 null,
                 new DeploymentOverlayContentRemove(contentRepository));
         this.contentRepository = contentRepository;
-        addHandler = new DeploymentOverlayContentAdd(contentRepository, remoteRepository);
+        addHandler = new DeploymentOverlayContentAdd(contentRepository, remoteRepository, deploymentSourceValidator);
     }
 
     @Override
