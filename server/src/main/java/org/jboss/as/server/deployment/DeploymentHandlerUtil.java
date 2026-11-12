@@ -16,6 +16,8 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNE
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getInputStream;
+
+import org.jboss.as.controller.operations.validation.DeploymentSourceValidator;
 import static org.jboss.msc.service.ServiceController.Mode.REMOVE;
 
 import java.io.IOException;
@@ -427,7 +429,7 @@ public class DeploymentHandlerUtil {
     }
 
     @SuppressWarnings("deprecation")
-    static InputStream transformDeploymentBytes(OperationContext context, ModelNode contentItemNode, String name, InputStream in, DeploymentTransformer deploymentTransformer) throws IOException, OperationFailedException {
+    static InputStream transformDeploymentBytes(OperationContext context, ModelNode contentItemNode, String name, InputStream in, DeploymentTransformer deploymentTransformer, DeploymentSourceValidator deploymentSourceValidator) throws IOException, OperationFailedException {
         InputStream result = in;
         if (deploymentTransformer != null) {
             try {
@@ -441,7 +443,7 @@ public class DeploymentHandlerUtil {
                         t.getCause().getCause() instanceof IOException &&
                         t.getCause().getCause().getMessage().contains("during transformation. Error code 3")) {
                     ServerLogger.ROOT_LOGGER.tracef(t, "Ignoring transformation error and using original archive %s", name);
-                    result = getInputStream(context, contentItemNode);
+                    result = getInputStream(context, contentItemNode, deploymentSourceValidator);
                 } else {
                     throw t;
                 }

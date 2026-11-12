@@ -19,6 +19,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.operations.validation.DeploymentSourceValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.DeploymentFileRepository;
@@ -38,9 +39,10 @@ public class DeploymentOverlayDefinition extends SimpleResourceDefinition {
     private final DeploymentFileRepository fileRepository;
     private final boolean domainLevel;
     private final Map<OperationDefinition, OperationStepHandler> operations = new HashMap<>();
+    private final DeploymentSourceValidator deploymentSourceValidator;
 
 
-    public DeploymentOverlayDefinition(boolean domainLevel,ContentRepository contentRepo, DeploymentFileRepository fileRepository) {
+    public DeploymentOverlayDefinition(boolean domainLevel,ContentRepository contentRepo, DeploymentFileRepository fileRepository, DeploymentSourceValidator deploymentSourceValidator) {
         super(new Parameters(DeploymentOverlayModel.DEPLOYMENT_OVERRIDE_PATH,
                 ControllerResolver.getResolver(ModelDescriptionConstants.DEPLOYMENT_OVERLAY))
                 .setAddHandler(DeploymentOverlayAdd.INSTANCE)
@@ -49,6 +51,7 @@ public class DeploymentOverlayDefinition extends SimpleResourceDefinition {
         this.contentRepo = contentRepo;
         this.fileRepository = fileRepository;
         this.domainLevel = domainLevel;
+        this.deploymentSourceValidator = deploymentSourceValidator;
         addOperation(DeploymentOverlayRedeployLinksHandler.REDEPLOY_LINKS_DEFINITION, new DeploymentOverlayRedeployLinksHandler());
     }
 
@@ -74,7 +77,7 @@ public class DeploymentOverlayDefinition extends SimpleResourceDefinition {
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         if (contentRepo != null) {
-            resourceRegistration.registerSubModel(new DeploymentOverlayContentDefinition(contentRepo, fileRepository));
+            resourceRegistration.registerSubModel(new DeploymentOverlayContentDefinition(contentRepo, fileRepository, deploymentSourceValidator));
         }
         if (!domainLevel) {
             resourceRegistration.registerSubModel(new DeploymentOverlayDeploymentDefinition());
