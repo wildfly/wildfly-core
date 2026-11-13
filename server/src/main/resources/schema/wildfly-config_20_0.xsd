@@ -1502,6 +1502,14 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="connection-timeout" type="xs:long" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The timeout in milliseconds for each connection attempt to the remote Domain Controller.
+                    Defaults to 5000 milliseconds if not set. Can be increased for slow network connections.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:simpleType name="admin-only-policyType">

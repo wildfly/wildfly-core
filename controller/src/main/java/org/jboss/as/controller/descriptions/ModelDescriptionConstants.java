@@ -98,6 +98,7 @@ public class ModelDescriptionConstants {
     public static final String CONFIGURATION_CHANGES="configuration-changes";
     public static final String CONNECTION_HIGH_WATER = "connection-high-water";
     public static final String CONNECTION_LOW_WATER = "connection-low-water";
+    public static final String CONNECTION_TIMEOUT = "connection-timeout";
     public static final String CONSTRAINT = "constraint";
     public static final String CONCURRENT_GROUPS = "concurrent-groups";
     public static final String CONFIGURED_APPLICATION = "configured-application";

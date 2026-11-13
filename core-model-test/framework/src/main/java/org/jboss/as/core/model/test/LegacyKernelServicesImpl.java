@@ -260,6 +260,11 @@ public class LegacyKernelServicesImpl extends AbstractKernelServicesImpl {
             public ProductConfig getProductConfig() {
                 return null;
             }
+
+            @Override
+            public long getRemoteDomainControllerConnectionTimeout() {
+                return 0;
+            }
         });
 
         for (IgnoreDomainResourceTypeResource resource : ignoredResources) {

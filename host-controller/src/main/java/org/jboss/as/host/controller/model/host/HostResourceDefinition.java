@@ -211,7 +211,8 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
                 DomainControllerWriteAttributeHandler.AUTHENTICATION_CONTEXT,
                 DomainControllerWriteAttributeHandler.USERNAME,
                 DomainControllerWriteAttributeHandler.IGNORE_UNUSED_CONFIG,
-                DomainControllerWriteAttributeHandler.ADMIN_ONLY_POLICY)
+                DomainControllerWriteAttributeHandler.ADMIN_ONLY_POLICY,
+                DomainControllerWriteAttributeHandler.CONNECTION_TIMEOUT)
             .build();
 
     public static final ObjectTypeAttributeDefinition DOMAIN_CONTROLLER = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.DOMAIN_CONTROLLER, DC_LOCAL, DC_REMOTE)

@@ -42,6 +42,7 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     private volatile int httpManagementSecurePort;
     private volatile AdminOnlyDomainConfigPolicy adminOnlyDomainConfigPolicy = AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG;
     private volatile boolean overrideLocalHostName = false;
+    private volatile long remoteDomainControllerConnectionTimeout;
 
     /** Constructor solely for test cases */
     protected LocalHostControllerInfoImpl(final ControlledProcessState processState, final String localHostName) {
@@ -210,5 +211,14 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
 
     void setRemoteDomainControllerIgnoreUnaffectedConfiguration(boolean ignore) {
         this.remoteIgnoreUnaffectedConfiguration = ignore;
+    }
+
+    @Override
+    public long getRemoteDomainControllerConnectionTimeout() {
+        return remoteDomainControllerConnectionTimeout;
+    }
+
+    void setRemoteDomainControllerConnectionTimeout(long connectionTimeout) {
+        this.remoteDomainControllerConnectionTimeout = connectionTimeout;
     }
 }
