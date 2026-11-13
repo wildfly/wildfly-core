@@ -893,6 +893,10 @@ final class HostXml_20 extends CommonXml implements ManagementXmlDelegate {
                         }
                         break;
                     }
+                    case CONNECTION_TIMEOUT: {
+                        DomainControllerWriteAttributeHandler.CONNECTION_TIMEOUT.parseAndSetParameter(value, updateDc, reader);
+                        break;
+                    }
                     default:
                         throw unexpectedAttribute(reader, i);
                 }
@@ -1535,6 +1539,7 @@ final class HostXml_20 extends CommonXml implements ManagementXmlDelegate {
             RemoteDomainControllerAddHandler.USERNAME.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.IGNORE_UNUSED_CONFIG.marshallAsAttribute(remote, writer);
             RemoteDomainControllerAddHandler.ADMIN_ONLY_POLICY.marshallAsAttribute(remote, writer);
+            RemoteDomainControllerAddHandler.CONNECTION_TIMEOUT.marshallAsAttribute(remote, writer);
 
             if (ignoredResources != null) {
                 writeIgnoredResources(writer, ignoredResources);

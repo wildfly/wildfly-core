@@ -25,6 +25,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
+import org.jboss.as.controller.operations.validation.LongRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.Resource;
@@ -95,8 +96,15 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .setDefaultValue(new ModelNode(AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG.toString()))
             .build();
 
+    public static final SimpleAttributeDefinition CONNECTION_TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CONNECTION_TIMEOUT, ModelType.LONG, true)
+            .setAllowExpression(true)
+            .setValidator(new LongRangeValidator(1, Long.MAX_VALUE, true, true))
+            .setDefaultValue(new ModelNode(5000L))
+            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .build();
+
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host"))
-            .setParameters(PROTOCOL, PORT, HOST, AUTHENTICATION_CONTEXT, USERNAME, IGNORE_UNUSED_CONFIG, ADMIN_ONLY_POLICY)
+            .setParameters(PROTOCOL, PORT, HOST, AUTHENTICATION_CONTEXT, USERNAME, IGNORE_UNUSED_CONFIG, ADMIN_ONLY_POLICY, CONNECTION_TIMEOUT)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.DOMAIN_CONTROLLER)
             .setDeprecated(ModelVersion.create(5, 0, 0))
             .build();
@@ -122,6 +130,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
         USERNAME.validateAndSet(operation, remoteDC);
         IGNORE_UNUSED_CONFIG.validateAndSet(operation, remoteDC);
         ADMIN_ONLY_POLICY.validateAndSet(operation, remoteDC);
+        CONNECTION_TIMEOUT.validateAndSet(operation, remoteDC);
 
         if (remoteDC.hasDefined(ADMIN_ONLY_POLICY.getName())) {
             ModelNode current = ADMIN_ONLY_POLICY.resolveModelAttribute(context, remoteDC);

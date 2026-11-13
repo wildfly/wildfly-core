@@ -499,6 +499,11 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         public ProductConfig getProductConfig() {
             return null;
         }
+
+        @Override
+        public long getRemoteDomainControllerConnectionTimeout() {
+            return 0;
+        }
     }
 
     private static class ServerInventoryMock implements ServerInventory {

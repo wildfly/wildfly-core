@@ -95,8 +95,10 @@ class RemoteDomainConnection extends FutureManagementChannel {
     private final List<DiscoveryOption> discoveryOptions;
     private final RunningMode runningMode;
     private URI uri;
+    private final long connectionTimeout;
 
     RemoteDomainConnection(final String localHostName, final ProtocolConnectionConfiguration configuration, final AuthenticationContext authenticationContext,
+                           final long connectionTimeout,
                            final List<DiscoveryOption> discoveryOptions,
                            final ExecutorService executorService,
                            final ScheduledExecutorService scheduledExecutorService,
@@ -112,6 +114,7 @@ class RemoteDomainConnection extends FutureManagementChannel {
         this.scheduledExecutorService = scheduledExecutorService;
         this.runningMode = runningMode;
         this.connectionManager = ProtocolConnectionManager.create(new InitialConnectTask());
+        this.connectionTimeout = connectionTimeout;
     }
 
     /**
@@ -186,6 +189,7 @@ class RemoteDomainConnection extends FutureManagementChannel {
         config.setCallbackHandler(callbackHandler);
         config.setSslContext(sslContext);
         config.setUri(uri);
+        config.setConnectionTimeout(this.connectionTimeout);
 
         AuthenticationContext authenticationContext = this.authenticationContext != null ? this.authenticationContext : AuthenticationContext.captureCurrent();
 
