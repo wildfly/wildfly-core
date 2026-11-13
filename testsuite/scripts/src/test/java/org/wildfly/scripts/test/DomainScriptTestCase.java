@@ -56,16 +56,17 @@ public class DomainScriptTestCase extends ScriptTestCase {
         final var stdout = script.getStdoutAsString();
         Assert.assertFalse("Did not expect to find -Djava.security.manager=allow in the JVM parameters.", stdout.contains("-Djava.security.manager=allow"));
 
-        ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
-        ServerHelper.checkBootErrors(client, PRIMARY_HOST);
-        ServerHelper.checkInputArgs(client, PRIMARY_HOST, DEFAULT_EXPECTED_INPUT_ARGS);
+        try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
+            ServerHelper.checkBootErrors(client, PRIMARY_HOST);
+            ServerHelper.checkInputArgs(client, PRIMARY_HOST, DEFAULT_EXPECTED_INPUT_ARGS);
+        }
 
         // Shutdown the server
         @SuppressWarnings("Convert2Lambda")
         final Callable<ModelNode> callable = new Callable<ModelNode>() {
             @Override
             public ModelNode call() throws Exception {
-                try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+                try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
                     return executeOperation(client, Operations.createOperation("shutdown", ServerHelper.determineHostAddress(client)));
                 }
             }

@@ -129,7 +129,7 @@ public class PreparedResponseTestCase {
     }
 
     static ManagementClient getManagementClient() {
-        final ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
+        final ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient();
         return new ManagementClient(client, TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort(), "remote+http");
     }
 }

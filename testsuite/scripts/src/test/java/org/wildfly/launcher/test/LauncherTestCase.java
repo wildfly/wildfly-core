@@ -73,7 +73,7 @@ public class LauncherTestCase {
             msg = lines.get(1);
             Assert.assertEquals(LoggingAgent.MSG, msg.getString("message"));
             Assert.assertEquals("INFO", msg.getString("level"));
-            try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+            try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
                 ServerHelper.shutdownStandalone(client);
             }
             process.waitFor(ServerHelper.TIMEOUT.toSeconds(), TimeUnit.SECONDS);
@@ -109,7 +109,7 @@ public class LauncherTestCase {
             ServerHelper.waitForDomain(process, LauncherTestCase::readStdout);
 
             // Start server-three, configure it, then stop it
-            try (DomainClient client = DomainClient.Factory.create(TestSuiteEnvironment.getModelControllerClient())) {
+            try (DomainClient client = DomainClient.Factory.create(TestSuiteEnvironment.createModelControllerClient())) {
                 final String hostName = ServerHelper.determineHostName(client);
 
 

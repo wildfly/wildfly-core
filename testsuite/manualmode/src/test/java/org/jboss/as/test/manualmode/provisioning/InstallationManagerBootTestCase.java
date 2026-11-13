@@ -74,7 +74,7 @@ public class InstallationManagerBootTestCase {
 
         TestInstallationManager.initialized = false;
 
-        try (ModelControllerClient modelControllerClient = TestSuiteEnvironment.getModelControllerClient()) {
+        try (ModelControllerClient modelControllerClient = TestSuiteEnvironment.createModelControllerClient()) {
 
             // Validate the manifest information in server boot logging.
             LogHandlerSetup logHandlerSetup = new LogHandlerSetup("org.wildfly.core.installationmanager");
