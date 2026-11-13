@@ -48,7 +48,7 @@ public class DeploymentScannerNotificationUnitTestCase extends AbstractDeploymen
 
         container.start();
         try {
-            try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+            try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
 
                 final File deploymentOne = new File(getDeployDir(), "deployment-one.jar");
                 createDeployment(deploymentOne, "org.jboss.modules");

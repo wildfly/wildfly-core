@@ -37,7 +37,7 @@ public class DeploymentScannerRedeploymentTestCase extends AbstractDeploymentSca
     public void testRedeployment() throws Exception {
         container.start();
         try {
-            try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+            try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
 
                 final File deployment = new File(getDeployDir(), "deployment-test.jar");
 

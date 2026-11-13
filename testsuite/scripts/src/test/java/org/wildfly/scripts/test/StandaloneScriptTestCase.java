@@ -116,9 +116,10 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         Assert.assertNotNull("The process is null and may have failed to start.", script);
         Assert.assertTrue("The process is not running and should be", script.isAlive());
 
-        ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
-        ServerHelper.checkBootErrors(client, PathAddress.EMPTY_ADDRESS);
-        ServerHelper.checkInputArgs(client, PathAddress.EMPTY_ADDRESS, DEFAULT_EXPECTED_INPUT_ARGS);
+        try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
+            ServerHelper.checkBootErrors(client, PathAddress.EMPTY_ADDRESS);
+            ServerHelper.checkInputArgs(client, PathAddress.EMPTY_ADDRESS, DEFAULT_EXPECTED_INPUT_ARGS);
+        }
 
         final var stdout = script.getStdoutAsString();
         Assert.assertFalse("Did not expect to find -Djava.security.manager=allow in the JVM parameters.", stdout.contains("-Djava.security.manager=allow"));
@@ -179,7 +180,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         final Callable<ModelNode> callable = new Callable<ModelNode>() {
             @Override
             public ModelNode call() throws Exception {
-                try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+                try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
                     return executeOperation(client, Operations.createOperation("shutdown"));
                 }
             }

@@ -96,7 +96,7 @@ public class ServerConfigurator {
                     .launch();
             ServerHelper.waitForStandalone(process, () -> readStdout(stdout));
 
-            try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+            try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
                 final CompositeOperationBuilder opBuilder = CompositeOperationBuilder.create();
                 ModelNode address = Operations.createAddress("subsystem", "logging", "custom-formatter", "json");
                 ModelNode op = Operations.createAddOperation(address);
@@ -161,7 +161,7 @@ public class ServerConfigurator {
             ServerHelper.waitForDomain(process, () -> readStdout(stdout));
 
             // Start server-three, configure it, then stop it
-            try (DomainClient client = DomainClient.Factory.create(TestSuiteEnvironment.getModelControllerClient())) {
+            try (DomainClient client = DomainClient.Factory.create(TestSuiteEnvironment.createModelControllerClient())) {
                 final String hostName = ServerHelper.determineHostName(client);
                 // Configure server-three to launch with an agent
                 final CompositeOperationBuilder opBuilder = CompositeOperationBuilder.create();
