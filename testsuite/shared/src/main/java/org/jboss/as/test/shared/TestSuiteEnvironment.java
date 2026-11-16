@@ -36,35 +36,40 @@ public class TestSuiteEnvironment {
                     || System.getProperty("java.vm.vendor").contains("OpenJ9") || IS_IBM_JVM;
     }
 
-    public static ModelControllerClient getModelControllerClient() {
-        return getModelControllerClient(null);
-    }
-
     /**
-     * Creates a client based on the {@linkplain #getServerAddress() server address} and
-     * {@linkplain #getServerPort() port}. If the {@code authConfigUri} is not {@code null} the it will be used to
-     * authenticate the client.
+     * Creates a management client connected to the {@linkplain #getServerAddress() default server address} and
+     * {@linkplain #getServerPort() port}. The caller owns the returned client and must close it.
      *
-     * @param authConfigUri the path too the authentication configuration or {@code null}
-     *
-     * @return the client
+     * @return a new client; the caller is responsible for closing it
      */
-    public static ModelControllerClient getModelControllerClient(final URI authConfigUri) {
-        return getModelControllerClient(authConfigUri, getServerAddress(), getServerPort());
+    public static ModelControllerClient createModelControllerClient() {
+        return createModelControllerClient(null);
     }
 
     /**
-     * Creates a client based on the {@linkplain #getServerAddress() server address} and
-     * {@linkplain #getServerPort() port}. If the {@code authConfigUri} is not {@code null} the it will be used to
-     * authenticate the client.
+     * Creates a management client connected to the {@linkplain #getServerAddress() default server address} and
+     * {@linkplain #getServerPort() port}. If {@code authConfigUri} is not {@code null} it will be used to
+     * authenticate the client. The caller owns the returned client and must close it.
      *
-     * @param authConfigUri the path too the authentication configuration or {@code null}
-     * @param address of the server
+     * @param authConfigUri the path to the authentication configuration, or {@code null}
+     *
+     * @return a new client; the caller is responsible for closing it
+     */
+    public static ModelControllerClient createModelControllerClient(final URI authConfigUri) {
+        return createModelControllerClient(authConfigUri, getServerAddress(), getServerPort());
+    }
+
+    /**
+     * Creates a management client connected to the given address and port. If {@code authConfigUri} is not {@code null}
+     * it will be used to authenticate the client. The caller owns the returned client and must close it.
+     *
+     * @param authConfigUri the path to the authentication configuration, or {@code null}
+     * @param address the server address
      * @param port the management port of the server
      *
-     * @return the client
+     * @return a new client; the caller is responsible for closing it
      */
-    public static ModelControllerClient getModelControllerClient(final URI authConfigUri, String address, int port) {
+    public static ModelControllerClient createModelControllerClient(final URI authConfigUri, String address, int port) {
         final ModelControllerClientConfiguration.Builder builder = new ModelControllerClientConfiguration.Builder()
                 .setHostName(address)
                 .setPort(port);
@@ -74,6 +79,37 @@ public class TestSuiteEnvironment {
             builder.setAuthenticationConfigUri(authConfigUri);
         }
         return ModelControllerClient.Factory.create(builder.build());
+    }
+
+    /**
+     * Creates a management client connected to the default server address and port.
+     *
+     * @deprecated Use {@link #createModelControllerClient()} instead; this method is a factory despite the {@code get} prefix.
+     */
+    @Deprecated(forRemoval = true)
+    public static ModelControllerClient getModelControllerClient() {
+        return createModelControllerClient();
+    }
+
+    /**
+     * Creates a management client connected to the default server address and port.
+     *
+     * @deprecated Use {@link #createModelControllerClient(URI)} instead; this method is a factory despite the {@code get} prefix.
+     */
+    @Deprecated(forRemoval = true)
+    public static ModelControllerClient getModelControllerClient(final URI authConfigUri) {
+        return createModelControllerClient(authConfigUri);
+    }
+
+    /**
+     * Creates a management client connected to the given address and port.
+     *
+     * @deprecated Use {@link #createModelControllerClient(URI, String, int)} instead; this method is a factory despite
+     *             the {@code get} prefix.
+     */
+    @Deprecated(forRemoval = true)
+    public static ModelControllerClient getModelControllerClient(final URI authConfigUri, String address, int port) {
+        return createModelControllerClient(authConfigUri, address, port);
     }
 
     public static String getJavaPath() {

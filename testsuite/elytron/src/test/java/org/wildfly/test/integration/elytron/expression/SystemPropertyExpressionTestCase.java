@@ -159,7 +159,7 @@ public class SystemPropertyExpressionTestCase {
     public void testEncryptedSystemProperties() throws Exception {
 
         PathAddress propAddress = PathAddress.pathAddress(SYSTEM_PROPERTY, PROP);
-        try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+        try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
 
             assertNull(getSystemProperty(client, PROP));
             assertNull(getSystemProperty(client, MISSING_PROP));

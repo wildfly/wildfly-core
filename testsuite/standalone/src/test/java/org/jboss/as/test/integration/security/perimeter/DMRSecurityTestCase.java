@@ -31,7 +31,7 @@ public class DMRSecurityTestCase {
      */
     @Test(expected = java.io.IOException.class)
     public void testConnect() throws Exception {
-        try (ModelControllerClient modelControllerClient = TestSuiteEnvironment.getModelControllerClient()) {
+        try (ModelControllerClient modelControllerClient = TestSuiteEnvironment.createModelControllerClient()) {
 
             modelControllerClient.execute(Operations.createReadAttributeOperation(new ModelNode().setEmptyList(), "server-state"));
             Assert.fail("Operation should have failed, but was successful");

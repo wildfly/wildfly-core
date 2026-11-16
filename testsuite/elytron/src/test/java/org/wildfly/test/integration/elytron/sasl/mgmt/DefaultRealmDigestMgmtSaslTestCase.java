@@ -15,6 +15,7 @@ import static org.wildfly.test.integration.elytron.sasl.mgmt.AbstractMgmtSaslTes
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -86,7 +87,9 @@ public class DefaultRealmDigestMgmtSaslTestCase {
                     "/subsystem=elytron/sasl-authentication-factory=%s:write-attribute(name=mechanism-configurations, value=[{mechanism-name=%s}])",
                     NAME, mechanism));
         }
-        ServerReload.reloadIfRequired(TestSuiteEnvironment.getModelControllerClient());
+        try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
+            ServerReload.reloadIfRequired(client);
+        }
 
         AuthenticationConfiguration authnCfg = AuthenticationConfiguration.empty()
                 .setSaslMechanismSelector(SaslMechanismSelector.fromString(mechanism)).useName(USERNAME)

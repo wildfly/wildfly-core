@@ -74,7 +74,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
         final Path oneDeployed = deployDir.resolve(JAR_ONE + ".deployed");
         final Path twoFailed = deployDir.resolve(JAR_TWO + ".failed");
         container.start();
-        ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
+        ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient();
         try {
             //set the logging to debug
             addDebugDeploymentLogger(client);
@@ -106,7 +106,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
                     client.close();
                     container.stop();
                     container.start();
-                    client = TestSuiteEnvironment.getModelControllerClient();
+                    client = TestSuiteEnvironment.createModelControllerClient();
 
                     // Wait until started ...
                     timeout = System.currentTimeMillis() + TIMEOUT.toMillis();
@@ -164,7 +164,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
     public void testFailedDeploymentWithPersistentDeployment() throws Exception {
         container.start();
         try {
-            try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+            try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
 
                 Path deployDir = getDeployDirPath();
 
@@ -212,7 +212,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
     public void testReplaceDeploymentWithPersistentDeployment() throws Exception {
         container.start();
         try {
-            try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient())  {
+            try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient())  {
                 final PathAddress persistentDeploymentAddress = PathAddress.pathAddress(DEPLOYMENT, JAR_ONE);
                 addDeploymentScanner(client, 0, true, true);
                 try {
@@ -250,7 +250,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
     public void testFailedFileSystemDeploymentDuringBoot() throws Exception {
         container.start();
         try {
-            try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+            try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
 
                 addDeploymentScanner(client, 0, true, true);
                 try {
@@ -276,7 +276,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
     public void testFailedDeploymentWithCorrectDeploymentDuringBoot() throws Exception {
         container.start();
         try {
-            try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+            try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
 
                 addDeploymentScanner(client, 0, true, true);
                 try {

@@ -141,7 +141,7 @@ public class ServerHelper {
      */
     public static void waitForStandalone(final Process process, final Supplier<String> failureDescription)
             throws InterruptedException, IOException {
-        try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+        try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
             waitForStart(process, failureDescription, () -> ServerHelper.isStandaloneRunning(client));
         }
     }
@@ -251,7 +251,7 @@ public class ServerHelper {
      */
     public static void waitForDomain(final Process process, final Supplier<String> failureDescription)
             throws InterruptedException, IOException {
-        try (DomainClient client = DomainClient.Factory.create(TestSuiteEnvironment.getModelControllerClient())) {
+        try (DomainClient client = DomainClient.Factory.create(TestSuiteEnvironment.createModelControllerClient())) {
             waitForStart(process, failureDescription, () -> ServerHelper.isDomainRunning(client));
         }
     }
@@ -282,7 +282,7 @@ public class ServerHelper {
         addr.add(logFileName);
         final ModelNode address = Operations.createAddress(addr);
         final ModelNode op = Operations.createReadAttributeOperation(address, "stream");
-        try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+        try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
             final OperationResponse response = client.executeOperation(Operation.Factory.create(op), OperationMessageHandler.logging);
             final ModelNode result = response.getResponseNode();
             if (Operations.isSuccessfulOutcome(result)) {

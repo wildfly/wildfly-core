@@ -38,6 +38,7 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.wildfly.core.testrunner.ServerController;
@@ -60,7 +61,15 @@ public abstract class AbstractLoggingTestCase {
 
     @BeforeClass
     public static void configureClient() {
-        client = TestSuiteEnvironment.getModelControllerClient();
+        client = TestSuiteEnvironment.createModelControllerClient();
+    }
+
+    @AfterClass
+    public static void closeClient() throws IOException {
+        if (client != null) {
+            client.close();
+            client = null;
+        }
     }
 
     static JavaArchive createDeployment() {

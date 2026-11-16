@@ -768,7 +768,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
     private void validateRemoteConnection(boolean expectSuccess) {
         ModelControllerClient mcc = null;
         try {
-            mcc = TestSuiteEnvironment.getModelControllerClient();
+            mcc = TestSuiteEnvironment.createModelControllerClient();
             ModelNode op = new ModelNode();
             op.get(OP).set(READ_RESOURCE_OPERATION);
             ModelNode response = mcc.execute(op);

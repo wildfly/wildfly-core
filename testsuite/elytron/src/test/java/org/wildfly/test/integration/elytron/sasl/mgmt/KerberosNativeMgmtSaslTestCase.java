@@ -78,7 +78,9 @@ public class KerberosNativeMgmtSaslTestCase extends AbstractKerberosMgmtSaslTest
                     NAME) : "/core-service=management/management-interface=native-interface:write-attribute(name=ssl-context)";
             cli.sendLine(sslContextCli);
         }
-        ServerReload.reloadIfRequired(TestSuiteEnvironment.getModelControllerClient());
+        try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
+            ServerReload.reloadIfRequired(client);
+        }
         return ()->LOGGER.debug("No cleanup needed after the test.");
     }
 

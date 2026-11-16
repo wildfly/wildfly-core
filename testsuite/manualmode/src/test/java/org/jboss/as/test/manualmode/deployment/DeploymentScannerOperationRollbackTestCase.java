@@ -50,7 +50,7 @@ public class DeploymentScannerOperationRollbackTestCase extends AbstractDeployme
     public void testRollBackAfterOperationfailure() throws Exception {
         container.start();
         try {
-            try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+            try (ModelControllerClient client = TestSuiteEnvironment.createModelControllerClient()) {
                 final File deploymentOne = new File(getDeployDir(), "deployment-one.jar");
                 createDeployment(deploymentOne, "org.jboss.modules");
                 addDeploymentScanner(client, 0, false, false);
