@@ -36,7 +36,7 @@ public class ReloadRequiredAddStepHandler extends AbstractAddStepHandler {
     /**
      * @deprecated Use {@link #INSTANCE} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public ReloadRequiredAddStepHandler(AttributeDefinition... attributes) {
         super(attributes);
     }
@@ -44,7 +44,7 @@ public class ReloadRequiredAddStepHandler extends AbstractAddStepHandler {
     /**
      * @deprecated Use {@link #INSTANCE} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public ReloadRequiredAddStepHandler(Collection<AttributeDefinition> attributes) {
         super(attributes);
     }
@@ -52,7 +52,7 @@ public class ReloadRequiredAddStepHandler extends AbstractAddStepHandler {
     /**
      * @deprecated Use {@link #INSTANCE} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public ReloadRequiredAddStepHandler(Parameters parameters) {
         super(parameters);
     }

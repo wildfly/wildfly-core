@@ -23,7 +23,7 @@ import org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttribute
  */
 class RealmParser {
 
-    @Deprecated
+    @Deprecated(since = "10.0")
     private final PersistentResourceXMLDescription aggregateRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_REALM))
             .addAttributes(AggregateRealmDefinition.ATTRIBUTES)
             .build();
@@ -42,7 +42,7 @@ class RealmParser {
             .addAttributes(RealmDefinitions.IDENTITY_REALM_ATTRIBUTES)
             .setUseElementsForGroups(false)
             .build();
-    @Deprecated
+    @Deprecated(since = "9.0")
     private final PersistentResourceXMLDescription jdbcRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM))
             .addAttribute(PrincipalQueryAttributes.PRINCIPAL_QUERIES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();

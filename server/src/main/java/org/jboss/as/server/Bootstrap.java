@@ -237,7 +237,7 @@ public interface Bootstrap {
          *
          * @deprecated Use {@link #getServerEnvironment()}.{@link ServerEnvironment#getStartTime() getStartTime()}
          */
-        @Deprecated(forRemoval = true)
+        @Deprecated(forRemoval = true, since = "25.0")
         public long getStartTime() {
             return serverEnvironment.getStartTime();
         }

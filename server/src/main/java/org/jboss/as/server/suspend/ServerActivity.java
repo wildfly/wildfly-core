@@ -14,7 +14,7 @@ import java.util.concurrent.CompletionStage;
  * @author Stuart Douglas
  * @deprecated Use {@link SuspendableActivity} instead.
  */
-@Deprecated(forRemoval = true, since = "26.0.0")
+@Deprecated(forRemoval = true, since = "26.0")
 public interface ServerActivity extends SuspendableActivity {
 
     /**

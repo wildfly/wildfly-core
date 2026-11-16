@@ -163,7 +163,7 @@ public interface ManagementRequestContext<A> {
      * @deprecated this is a bit of a hack, plus we can move this method into AsyncTask with a default impl
      *             once this module no longer requires JDK 6 source level
      */
-    @Deprecated
+    @Deprecated(since = "2.0")
     interface MultipleResponseAsyncTask<A> extends AsyncTask<A> {
         /**
          * Gets the current request header for which an error response should be sent

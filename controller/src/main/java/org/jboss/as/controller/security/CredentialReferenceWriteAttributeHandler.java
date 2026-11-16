@@ -33,14 +33,14 @@ public class CredentialReferenceWriteAttributeHandler extends ReloadRequiredWrit
     /**
      * @deprecated Use {@link #INSTANCE} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0")
     public CredentialReferenceWriteAttributeHandler(AttributeDefinition... attributes) {
     }
 
     /**
      * @deprecated Use {@link #INSTANCE} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0")
     public CredentialReferenceWriteAttributeHandler(AttributeDefinition attribute) {
     }
 

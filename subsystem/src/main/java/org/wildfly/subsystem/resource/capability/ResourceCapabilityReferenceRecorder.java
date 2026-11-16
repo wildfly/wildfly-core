@@ -31,7 +31,7 @@ import org.wildfly.subsystem.service.ServiceDependency;
  * @param <T> the requirement type
  * @deprecated Replaced by {@link ResourceCapabilityReference}.
  */
-@Deprecated(forRemoval = true, since = "26.0.0")
+@Deprecated(forRemoval = true, since = "26.0")
 public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabilityReference<T> {
 
     /**
@@ -40,7 +40,7 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
      * @param requirement the requirement of the specified capability
      * @deprecated Superseded by {@link ResourceCapabilityReference#builder(RuntimeCapability, NullaryServiceDescriptor)}
      */
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     static <T> Builder<T> builder(RuntimeCapability<Void> capability, NullaryServiceDescriptor<T> requirement) {
         return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), ResourceCapabilityReference.ResourceCapabilityServiceDescriptorReference.EMPTY_RESOLVER);
     }
@@ -52,7 +52,7 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
      * @param requirement the requirement of the specified capability
      * @deprecated Superseded by {@link ResourceCapabilityReference#builder(RuntimeCapability, UnaryServiceDescriptor)}
      */
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, UnaryServiceDescriptor<T> requirement) {
         return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), UnaryCapabilityNameResolver.DEFAULT);
     }
@@ -64,7 +64,7 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
      * @param requirement the requirement of the specified capability
      * @deprecated Superseded by {@link ResourceCapabilityReference#builder(RuntimeCapability, BinaryServiceDescriptor)}
      */
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, BinaryServiceDescriptor<T> requirement) {
         return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), BinaryCapabilityNameResolver.PARENT_CHILD);
     }
@@ -76,7 +76,7 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
      * @param requirement the requirement of the specified capability
      * @deprecated Superseded by {@link ResourceCapabilityReference#builder(RuntimeCapability, NullaryServiceDescriptor)}
      */
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, TernaryServiceDescriptor<T> requirement) {
         return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), TernaryCapabilityNameResolver.GRANDPARENT_PARENT_CHILD);
     }
@@ -88,12 +88,12 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
      * @param requirement the requirement of the specified capability
      * @deprecated Superseded by {@link ResourceCapabilityReference#builder(RuntimeCapability, QuaternaryServiceDescriptor)}
      */
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     static <T> NaryBuilder<T> builder(RuntimeCapability<Void> capability, QuaternaryServiceDescriptor<T> requirement) {
         return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement), QuaternaryCapabilityNameResolver.GREATGRANDPARENT_GRANDPARENT_PARENT_CHILD);
     }
 
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     interface Builder<T> extends ResourceCapabilityReference.Builder<T> {
         /**
          * Only reference the provided capability if value of the specified attribute complies with the specified predicate.
@@ -112,7 +112,7 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
         org.wildfly.subsystem.resource.capability.ResourceCapabilityReferenceRecorder<T> build();
     }
 
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     interface NaryBuilder<T> extends ResourceCapabilityReference.NaryBuilder<T>, Builder<T> {
         /**
          * Overrides the default requirement name resolver.
@@ -123,7 +123,7 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
         Builder<T> withRequirementNameResolver(Function<PathAddress, String[]> requirementNameResolver);
     }
 
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     static class DefaultBuilder<T> extends ResourceCapabilityReference.DefaultBuilder<T> implements NaryBuilder<T> {
 
         DefaultBuilder(RuntimeCapability<Void> capability, NaryServiceDescriptor<T> requirement, Function<PathAddress, String[]> defaultRequirementNameResolver) {
@@ -148,7 +148,7 @@ public interface ResourceCapabilityReferenceRecorder<T> extends ResourceCapabili
         }
     }
 
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     class ResourceCapabilityServiceDescriptorReference<T> extends CapabilityReferenceRecorder.CapabilityServiceDescriptorReferenceRecorder<T> implements org.wildfly.subsystem.resource.capability.ResourceCapabilityReferenceRecorder<T> {
         private final ResourceCapabilityReference<T> reference;
 

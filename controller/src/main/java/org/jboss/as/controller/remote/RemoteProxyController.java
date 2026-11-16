@@ -78,7 +78,7 @@ public class RemoteProxyController implements ProxyController {
      *
      * @deprecated only present for test case use
      */
-    @Deprecated(forRemoval = false)
+    @Deprecated(forRemoval = false, since = "2.0")
     public static RemoteProxyController create(final ManagementChannelHandler channelAssociation, final PathAddress pathAddress, final ProxyOperationAddressTranslator addressTranslator) {
         final TransactionalProtocolClient client = TransactionalProtocolHandlers.createClient(channelAssociation);
         // the remote proxy

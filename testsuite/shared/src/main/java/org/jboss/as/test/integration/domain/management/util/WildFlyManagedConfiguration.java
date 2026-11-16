@@ -198,7 +198,7 @@ public class WildFlyManagedConfiguration {
     /**
      * @deprecated Use {@link #setStartupTimeout(Duration)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "34.0")
     public WildFlyManagedConfiguration setStartupTimeoutInSeconds(int startupTimeoutInSeconds) {
         this.startupTimeout = Duration.ofSeconds(startupTimeoutInSeconds);
         return this;
@@ -207,7 +207,7 @@ public class WildFlyManagedConfiguration {
     /**
      * @deprecated Use {@link #getStartupTimeout()} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "34.0")
     public int getStartupTimeoutInSeconds() {
         return (int) startupTimeout.toSeconds();
     }

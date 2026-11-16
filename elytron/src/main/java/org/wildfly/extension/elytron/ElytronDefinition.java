@@ -372,12 +372,12 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerAdditionalRuntimePackages(RuntimePackageDependency.required("org.wildfly.security.elytron"));
     }
 
-    @Deprecated
+    @Deprecated(since = "6.0")
     static <T> ServiceBuilder<T>  commonDependencies(ServiceBuilder<T> serviceBuilder) {
         return commonDependencies(serviceBuilder, true, true);
     }
 
-    @Deprecated
+    @Deprecated(since = "6.0")
     static <T> ServiceBuilder<T>  commonDependencies(ServiceBuilder<T> serviceBuilder, boolean dependOnProperties, boolean dependOnProviderRegistration) {
         if (dependOnProperties) serviceBuilder.requires(SecurityPropertyService.SERVICE_NAME);
         if (dependOnProviderRegistration) serviceBuilder.requires(ProviderRegistrationService.SERVICE_NAME);

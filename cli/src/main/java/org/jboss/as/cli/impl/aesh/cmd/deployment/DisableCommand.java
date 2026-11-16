@@ -22,7 +22,7 @@ public class DisableCommand extends UndeployCommand {
         super(ctx, permissions);
     }
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     public DisableCommand(CommandContext ctx) {
         this(ctx, null);
     }

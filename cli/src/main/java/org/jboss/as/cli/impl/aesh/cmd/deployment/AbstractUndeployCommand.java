@@ -46,7 +46,7 @@ import org.jboss.as.cli.impl.aesh.cmd.deployment.security.OptionActivators;
 public abstract class AbstractUndeployCommand extends CommandWithPermissions
         implements Command<CLICommandInvocation>, BatchCompliantCommand, LegacyBridge {
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     @Option(hasValue = false, activator = HideOptionActivator.class)
     private boolean help;
 

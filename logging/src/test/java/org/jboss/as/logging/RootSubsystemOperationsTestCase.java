@@ -126,7 +126,7 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
     }
 
     @Test
-    @Deprecated
+    @Deprecated(since = "1.0")
     public void testListLogFiles() throws Exception {
         final KernelServices kernelServices = boot();
 
@@ -180,7 +180,7 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
     }
 
     @Test
-    @Deprecated
+    @Deprecated(since = "1.0")
     public void testReadLogFile() throws Exception {
         final KernelServices kernelServices = boot();
 

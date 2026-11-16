@@ -167,7 +167,7 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
      * @throws OperationFailedException if there is a problem installing the services
      * @deprecated Use {@link #recreateParentService(OperationContext, ModelNode)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "21.0")
     protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
     }
 

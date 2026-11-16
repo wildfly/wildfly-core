@@ -53,7 +53,7 @@ public class DeployArchiveCommand extends CommandWithPermissions implements Comm
 
     private static final String CLI_ARCHIVE_SUFFIX = ".cli";
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     @Option(hasValue = false, activator = HideOptionActivator.class)
     private boolean help;
 
@@ -67,7 +67,7 @@ public class DeployArchiveCommand extends CommandWithPermissions implements Comm
         super(ctx, AccessRequirements.deployArchiveAccess(permissions), permissions);
     }
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     public DeployArchiveCommand(CommandContext ctx) {
         this(ctx, null);
     }

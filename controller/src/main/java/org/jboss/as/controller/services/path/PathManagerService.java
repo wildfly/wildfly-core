@@ -45,7 +45,7 @@ import org.jboss.msc.service.StopContext;
 public abstract class PathManagerService implements PathManager, Service<PathManager> {
 
     /** @deprecated ServiceName should be obtained from capability 'org.wildfly.management.path-manager'.*/
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "3.0")
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("path", "manager");
 
     //@GuardedBy(pathEntries)

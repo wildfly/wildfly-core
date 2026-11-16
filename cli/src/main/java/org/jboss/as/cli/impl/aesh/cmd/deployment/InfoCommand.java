@@ -72,7 +72,7 @@ public class InfoCommand extends CommandWithPermissions implements DMRCommand {
     private static final String STATE = "STATE";
     private static final String STATUS = "STATUS";
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     @Option(hasValue = false, activator = HideOptionActivator.class)
     protected boolean help;
 
@@ -96,7 +96,7 @@ public class InfoCommand extends CommandWithPermissions implements DMRCommand {
         super(ctx, AccessRequirements.infoAccess(permissions), permissions);
     }
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     public InfoCommand(CommandContext ctx) {
         this(ctx, null);
     }

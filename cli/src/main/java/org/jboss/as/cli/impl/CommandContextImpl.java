@@ -1330,7 +1330,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public void connectController(String host, int port) throws CommandLineException {
         try {
             connectController(new URI(null, null, host, port, null, null, null).toString().substring(2));
@@ -1549,13 +1549,13 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public String getDefaultControllerHost() {
         return config.getDefaultControllerHost();
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public int getDefaultControllerPort() {
         return config.getDefaultControllerPort();
     }

@@ -26,7 +26,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
  *
  * @deprecated the code module containing this extension only exists to support use of particular resource definition classes in other subsystems.
  */
-@Deprecated(forRemoval = true)
+@Deprecated(forRemoval = true, since = "25.0")
 public class ThreadsExtension extends AbstractLegacyExtension {
 
     public static final String SUBSYSTEM_NAME = "threads";

@@ -75,7 +75,7 @@ public class ManagementClient implements AutoCloseable, Closeable {
      * @return The base URI or the web subsystem. Usually http://localhost:8080
      * @deprecated check if it is even used anywhere
      */
-    @Deprecated
+    @Deprecated(since = "3.0")
     public URI getWebUri() {
         if (webUri == null) {
             try {
@@ -254,7 +254,7 @@ public class ManagementClient implements AutoCloseable, Closeable {
     /**
      * @deprecated check if it is even used anywhere
      */
-    @Deprecated
+    @Deprecated(since = "3.0")
     public URI getRemoteEjbURL() {
         if (ejbUri == null) {
             URI webUri = getWebUri();

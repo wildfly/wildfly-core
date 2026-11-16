@@ -22,7 +22,7 @@ public abstract class RestartParentResourceRemoveHandler extends RestartParentRe
         super(parentKeyName);
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "21.0")
     protected RestartParentResourceRemoveHandler(String parentKeyName, RuntimeCapability ... capabilities) {
         super(parentKeyName);
     }

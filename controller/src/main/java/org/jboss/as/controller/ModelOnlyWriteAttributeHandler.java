@@ -24,7 +24,7 @@ public class ModelOnlyWriteAttributeHandler extends AbstractWriteAttributeHandle
     /**
      * @deprecated Use {@link #INSTANCE} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public ModelOnlyWriteAttributeHandler(AttributeDefinition... attributeDefinitions) {
         super(attributeDefinitions);
     }
@@ -32,7 +32,7 @@ public class ModelOnlyWriteAttributeHandler extends AbstractWriteAttributeHandle
     /**
      * @deprecated Use {@link #INSTANCE} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public ModelOnlyWriteAttributeHandler(Collection<AttributeDefinition> attributeDefinitions) {
         super(attributeDefinitions);
     }

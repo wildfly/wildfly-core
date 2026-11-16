@@ -27,13 +27,13 @@ public class MockCliConfig implements CliConfig {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public String getDefaultControllerHost() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public int getDefaultControllerPort() {
         throw new UnsupportedOperationException();
     }

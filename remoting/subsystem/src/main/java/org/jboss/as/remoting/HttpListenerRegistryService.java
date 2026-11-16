@@ -25,12 +25,12 @@ import java.util.function.Consumer;
  */
 public class HttpListenerRegistryService implements Service<ListenerRegistry> {
 
-    @Deprecated
+    @Deprecated(since = "7.0")
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("http", "listener", "registry");
 
     private final Consumer<ListenerRegistry> serviceConsumer;
 
-    @Deprecated
+    @Deprecated(since = "11.0")
     public HttpListenerRegistryService() {
         this(null);
     }

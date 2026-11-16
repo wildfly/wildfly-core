@@ -47,17 +47,17 @@ public abstract class BaseMBeanServerPlugin implements MBeanServerPlugin {
         throw ROOT_LOGGER.cannotCreateMBeansInReservedDomain(name.getDomain());
     }
 
-    @Deprecated
+    @Deprecated(since = "1.0")
     public ObjectInputStream deserialize(ObjectName name, byte[] data) throws OperationsException {
         throw ROOT_LOGGER.dontKnowHowToDeserialize();
     }
 
-    @Deprecated
+    @Deprecated(since = "1.0")
     public ObjectInputStream deserialize(String className, byte[] data) throws OperationsException, ReflectionException {
         throw ROOT_LOGGER.dontKnowHowToDeserialize();
     }
 
-    @Deprecated
+    @Deprecated(since = "1.0")
     public ObjectInputStream deserialize(String className, ObjectName loaderName, byte[] data) throws OperationsException,
             ReflectionException {
         throw ROOT_LOGGER.dontKnowHowToDeserialize();

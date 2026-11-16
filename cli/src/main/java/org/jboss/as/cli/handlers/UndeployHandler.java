@@ -39,7 +39,7 @@ import org.jboss.dmr.ModelType;
  *
  * @author Alexey Loubyansky
  */
-@Deprecated
+@Deprecated(since = "4.0")
 public class UndeployHandler extends DeploymentHandler {
 
     private final ArgumentWithoutValue l;

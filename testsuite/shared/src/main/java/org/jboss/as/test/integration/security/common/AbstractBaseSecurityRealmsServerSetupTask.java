@@ -84,12 +84,12 @@ public abstract class AbstractBaseSecurityRealmsServerSetupTask implements Serve
     }
 
     // just for compatibilty reasons until full is updated to newer core
-    @Deprecated
+    @Deprecated(since = "1.0")
     public void tearDown(final ModelControllerClient modelControllerClient, String containerId) throws Exception {
             tearDown(modelControllerClient);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.0")
     public void setup(final ModelControllerClient modelControllerClient, String containerId) throws Exception {
         setup(modelControllerClient);
     }

@@ -30,7 +30,7 @@ public abstract class PersistentResourceXMLParser implements XMLStreamConstants,
 
     /** @deprecated Experimental; for internal use only. May be removed at any time. */
     @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated(forRemoval = false)
+    @Deprecated(forRemoval = false, since = "4.0")
     public final void cacheXMLDescription() {
         this.cachedDescription.updateAndGet(this);
     }

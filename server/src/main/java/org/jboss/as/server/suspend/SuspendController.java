@@ -270,7 +270,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
     /**
      * @deprecated Superseded by {@link #resume(ServerResumeContext)}.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0")
     public void nonGracefulStart() {
         this.resume(Context.STARTUP).toCompletableFuture().join();
     }
@@ -278,7 +278,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
     /**
      * @deprecated Superseded by {@link #resume(ServerResumeContext)}.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0")
     public void resume() {
         this.resume(Context.RUNNING).toCompletableFuture().join();
     }
@@ -286,7 +286,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
     /**
      * @deprecated Superseded by {@link #suspend(ServerSuspendContext)} using {@link CompletableFuture#completeOnTimeout(Object, long, TimeUnit)}.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0")
     public void suspend(long timeoutMillis) {
         ServerLogger.ROOT_LOGGER.suspendingServer(timeoutMillis, TimeUnit.MILLISECONDS);
         CompletableFuture<Void> suspend = this.suspend(Context.RUNNING).toCompletableFuture();
@@ -340,7 +340,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
         this.listeners.remove(listener);
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0")
     public void setStartSuspended(boolean startSuspended) {
         this.reset();
     }
@@ -353,7 +353,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
      *                                  returns a value outside of that method's documented legal range.
      * @deprecated Superseded by {@link #registerActivity(SuspendableActivity)}.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0")
     public void registerActivity(final ServerActivity activity) {
         this.registerActivity(activity, SuspendPriority.of(activity.getExecutionGroup()));
     }
@@ -361,7 +361,7 @@ public class SuspendController implements ServerSuspendController, SuspendableAc
     /**
      * @deprecated Superseded by {@link #unregisterActivity(SuspendableActivity)}.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0")
     public void unRegisterActivity(final ServerActivity activity) {
         this.unregisterActivity(activity);
     }

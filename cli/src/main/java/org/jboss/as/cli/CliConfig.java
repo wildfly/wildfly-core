@@ -19,7 +19,7 @@ public interface CliConfig {
      *
      * @return default server controller host to connect to
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     String getDefaultControllerHost();
 
     /**
@@ -29,7 +29,7 @@ public interface CliConfig {
      *
      * @return  default server controller port to connect to
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     int getDefaultControllerPort();
 
     /**

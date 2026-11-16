@@ -16,7 +16,7 @@ import java.util.Map;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-@Deprecated
+@Deprecated(since = "6.0")
 public interface Configurable {
 
     /**

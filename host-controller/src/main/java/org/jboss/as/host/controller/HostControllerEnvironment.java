@@ -79,7 +79,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      *
      * @deprecated  has no useful meaning
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     public static final String MODULES_DIR = "jboss.modules.dir";
 
     /**
@@ -119,7 +119,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      *
      * @deprecated use {@link #DOMAIN_CONTENT_DIR}
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     public static final String DOMAIN_DEPLOYMENT_DIR = "jboss.domain.deployment.dir";
 
     /**
@@ -638,7 +638,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      *
      * @deprecated has no reliable meaning
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     public File getModulesDir() {
         return modulesDir;
     }
@@ -692,7 +692,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      *
      * @deprecated use {@link #getDomainContentDir()}
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     public File getDomainDeploymentDir() {
         return domainContentDir;
     }

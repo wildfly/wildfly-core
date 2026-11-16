@@ -301,7 +301,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public ObjectInputStream deserialize(ObjectName name, byte[] data) throws OperationsException {
         Throwable error = null;
         MBeanServerPlugin delegate = null;
@@ -323,7 +323,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public ObjectInputStream deserialize(String className, byte[] data) throws OperationsException, ReflectionException {
         Throwable error = null;
         MBeanServerPlugin delegate = rootMBeanServer;
@@ -345,7 +345,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public ObjectInputStream deserialize(String className, ObjectName loaderName, byte[] data) throws OperationsException, ReflectionException {
         Throwable error = null;
         MBeanServerPlugin delegate = rootMBeanServer;
@@ -1378,19 +1378,19 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         }
 
         @Override
-        @Deprecated
+        @Deprecated(since = "1.0")
         public ObjectInputStream deserialize(ObjectName name, byte[] data) throws OperationsException {
             return delegate.deserialize(name, data);
         }
 
         @Override
-        @Deprecated
+        @Deprecated(since = "1.0")
         public ObjectInputStream deserialize(String className, byte[] data) throws OperationsException, ReflectionException {
             return delegate.deserialize(className, data);
         }
 
         @Override
-        @Deprecated
+        @Deprecated(since = "1.0")
         public ObjectInputStream deserialize(String className, ObjectName loaderName, byte[] data) throws OperationsException,
                 ReflectionException {
             return delegate.deserialize(className, loaderName, data);

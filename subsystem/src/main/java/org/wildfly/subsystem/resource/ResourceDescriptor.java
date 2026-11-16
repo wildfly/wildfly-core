@@ -88,7 +88,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
      * @return an operation handler transformer.
      * @deprecated Superseded by {@link #getOperationTransformation(String)}.
      */
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     default UnaryOperator<OperationStepHandler> getResourceOperationTransformation() {
         return this.getOperationTransformation(""); // Returns default operation transformer
     }
@@ -132,7 +132,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
      * @return an operation handler transformer.
      * @deprecated Superseded by {@link #getOperationTransformation(String)}
      */
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     default UnaryOperator<OperationStepHandler> getAddOperationTransformation() {
         return this.getOperationTransformation(ModelDescriptionConstants.ADD);
     }
@@ -450,7 +450,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          * @deprecated Superseded by {@link #requireChildResource(ResourceRegistration)}.
          */
-        @Deprecated(forRemoval = true, since = "26.0.0")
+        @Deprecated(forRemoval = true, since = "26.0")
         default C requireChild(PathElement path) {
             return this.requireChildResources(Set.of(ResourceRegistration.of(path)));
         }
@@ -461,7 +461,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          * @deprecated Superseded by {@link #requireChildResources(Set)}.
          */
-        @Deprecated(forRemoval = true, since = "26.0.0")
+        @Deprecated(forRemoval = true, since = "26.0")
         default C requireChildren(Set<PathElement> paths) {
             return this.requireChildResources(paths.stream().map(ResourceRegistration::of).collect(Collectors.toUnmodifiableSet()));
         }
@@ -488,7 +488,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          * @deprecated Superseded by {@link #requireSingletonChildResource(ResourceRegistration)}.
          */
-        @Deprecated(forRemoval = true, since = "26.0.0")
+        @Deprecated(forRemoval = true, since = "26.0")
         default C requireSingletonChild(PathElement path) {
             return this.requireSingletonChildResources(Set.of(ResourceRegistration.of(path)));
         }
@@ -499,7 +499,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          * @deprecated Superseded by {@link #requireSingletonChildResources(Set)}.
          */
-        @Deprecated(forRemoval = true, since = "26.0.0")
+        @Deprecated(forRemoval = true, since = "26.0")
         default C requireSingletonChild(Set<PathElement> paths) {
             return this.requireSingletonChildResources(paths.stream().map(ResourceRegistration::of).collect(Collectors.toUnmodifiableSet()));
         }
@@ -542,7 +542,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          * @deprecated Superseded by {@link #withOperationTransformation(String, UnaryOperator)}.
          */
-        @Deprecated(forRemoval = true, since = "26.0.0")
+        @Deprecated(forRemoval = true, since = "26.0")
         default C withAddResourceOperationTransformation(UnaryOperator<OperationStepHandler> transformation) {
             return this.withOperationTransformation(ModelDescriptionConstants.ADD, transformation);
         }
@@ -628,7 +628,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          * @deprecated Use {@link #requireChildResources(Set)} instead.
          */
-        @Deprecated(forRemoval = true, since = "26.0.0")
+        @Deprecated(forRemoval = true, since = "26.0")
         default <P extends Supplier<PathElement>> C provideRequiredChildren(Collection<P> providers) {
             return this.requireChildResources(providers.stream().map(Supplier::get).map(ResourceRegistration::of).collect(Collectors.toUnmodifiableSet()));
         }
@@ -639,7 +639,7 @@ public interface ResourceDescriptor extends AddResourceOperationStepHandlerDescr
          * @return a reference to this configurator
          * @deprecated Use {@link #requireSingletonChildResources(Set)} instead.
          */
-        @Deprecated(forRemoval = true, since = "26.0.0")
+        @Deprecated(forRemoval = true, since = "26.0")
         default <P extends Supplier<PathElement>> C provideRequiredSingletonChildren(Collection<P> providers) {
             return this.requireSingletonChildResources(providers.stream().map(Supplier::get).map(ResourceRegistration::of).collect(Collectors.toUnmodifiableSet()));
         }

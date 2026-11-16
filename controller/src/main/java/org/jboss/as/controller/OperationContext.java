@@ -495,7 +495,7 @@ public interface OperationContext extends ExpressionResolver, CapabilityServiceD
      * @throws UnsupportedOperationException if the calling step is not a runtime operation step
      * @deprecated Use {@link #getCapabilityServiceTarget()} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     default ServiceTarget getServiceTarget() throws UnsupportedOperationException {
         return this.getCapabilityServiceTarget();
     }

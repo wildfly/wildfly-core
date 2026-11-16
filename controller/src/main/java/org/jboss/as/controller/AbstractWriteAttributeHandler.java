@@ -43,12 +43,12 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
         this.attributeDefinitions = Map.of();
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     protected AbstractWriteAttributeHandler(final AttributeDefinition... definitions) {
         this(Arrays.asList(definitions));
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     protected AbstractWriteAttributeHandler(final Collection<AttributeDefinition> definitions) {
         if (definitions.isEmpty()) {
             this.attributeDefinitions = Collections.emptyMap();
@@ -250,7 +250,7 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
      * @return the attribute definition of {@code attributeName}
      * @deprecated No longer used.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     protected AttributeDefinition getAttributeDefinition(final String attributeName) {
         AttributeDefinition response = attributeDefinitions.get(attributeName);
         if (response == null) {

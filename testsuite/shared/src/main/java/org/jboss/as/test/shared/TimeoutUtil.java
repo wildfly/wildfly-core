@@ -33,7 +33,7 @@ public class TimeoutUtil {
      * @return given timeout adjusted by ratio from system property "ts.timeout.factor"
      * @deprecated Use {@link #adjust(Duration)} for more granular adjustment; simple integer-based adjustment loses precision.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "33.0")
     public static int adjust(int amount) {
        if(amount<0){
           throw new IllegalArgumentException("amount must be non-negative");

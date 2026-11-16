@@ -239,7 +239,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      *
      * @deprecated for internal us only, may change or be removed at any time without notice
      */
-    @Deprecated(forRemoval = false)
+    @Deprecated(forRemoval = false, since = "1.0")
     public static final String JBOSS_PERSIST_SERVER_CONFIG = "jboss.server.persist.config";
 
     public static final String DOMAIN_BASE_DIR = "jboss.domain.base.dir";
@@ -314,7 +314,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     }
 
     /** @deprecated use the variant that takes an {@link ElapsedTime elapsedTime} parameter instead of {@code long startTime}*/
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "25.0")
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
                              final ConfigurationFile.InteractionPolicy configurationInteractionPolicy, final LaunchType launchType,
                              final RunningMode initialRunningMode, ProductConfig productConfig, long startTime, boolean startSuspended,

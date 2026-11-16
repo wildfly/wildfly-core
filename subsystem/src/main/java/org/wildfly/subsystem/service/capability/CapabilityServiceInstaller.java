@@ -632,7 +632,7 @@ public interface CapabilityServiceInstaller extends ResourceServiceInstaller, In
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "32.0")
     class LegacyBlockingBuilder<T, V> extends AbstractAsyncBlockingLifecycleBuilder<Builder<T, V>, CapabilityServiceInstaller, CapabilityServiceTarget, CapabilityServiceBuilder<?>, T, V> implements Builder<T, V> {
         private static final Supplier<Executor> DEFAULT_EXECUTOR = Functions.constantSupplier(Runnable::run);
 

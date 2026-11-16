@@ -39,7 +39,7 @@ public class ContentCleanerService implements Service {
      * @deprecated DON'T USE IT.
      */
     @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "2.0")
     private static final String UNSUPPORTED_PROPERTY = "org.wildfly.unsupported.content.repository.obsolescence";
     /**
      * The conten repository cleaner will test content for clean-up every 5 minutes.

@@ -24,7 +24,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Alexey Loubyansky
  */
-@Deprecated
+@Deprecated(since = "4.0")
 public class DeploymentInfoHandler extends BaseOperationCommand {
 
     private final ArgumentWithValue name;

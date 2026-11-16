@@ -86,7 +86,7 @@ public class TestSuiteEnvironment {
      *
      * @deprecated Use {@link #createModelControllerClient()} instead; this method is a factory despite the {@code get} prefix.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "35.0")
     public static ModelControllerClient getModelControllerClient() {
         return createModelControllerClient();
     }
@@ -96,7 +96,7 @@ public class TestSuiteEnvironment {
      *
      * @deprecated Use {@link #createModelControllerClient(URI)} instead; this method is a factory despite the {@code get} prefix.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "35.0")
     public static ModelControllerClient getModelControllerClient(final URI authConfigUri) {
         return createModelControllerClient(authConfigUri);
     }
@@ -107,7 +107,7 @@ public class TestSuiteEnvironment {
      * @deprecated Use {@link #createModelControllerClient(URI, String, int)} instead; this method is a factory despite
      *             the {@code get} prefix.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "35.0")
     public static ModelControllerClient getModelControllerClient(final URI authConfigUri, String address, int port) {
         return createModelControllerClient(authConfigUri, address, port);
     }

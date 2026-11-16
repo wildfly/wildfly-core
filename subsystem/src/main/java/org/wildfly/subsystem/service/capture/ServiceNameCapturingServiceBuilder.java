@@ -94,13 +94,13 @@ class ServiceNameCapturingServiceBuilder implements RequirementServiceBuilder<Ob
         return null;
     }
 
-    @Deprecated
+    @Deprecated(since = "35.0")
     @Override
     public <I> ServiceBuilder<Object> addDependency(ServiceName dependency, Class<I> type, Injector<I> target) {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "35.0")
     @Override
     public ServiceBuilder<Object> addMonitor(StabilityMonitor monitor) {
         return this;
