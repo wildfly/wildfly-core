@@ -98,7 +98,16 @@
             <file path="filesystem-realm" relative-to="jboss.server.config.dir"/>
         </filesystem-realm>
         <token-realm name="TokenRealmWithTransformer" principal-claim="sub" principal-transformer="myCasePrincipalTransformerUpper">
-            <jwt issuer="elytron-oauth2-realm" audience="my-app-valid"/>
+            <jwt issuer="elytron-oauth2-realm" audience="my-app-valid" connection-timeout="1000" read-timeout="2000"/>
+        </token-realm>
+        <token-realm name="TokenRealmWithExpressions" principal-claim="sub">
+            <jwt issuer="elytron-oauth2-realm" audience="my-app-valid" connection-timeout="${exp.jwt.connection-timeout:1500}" read-timeout="${exp.jwt.read-timeout:2500}"/>
+        </token-realm>
+        <token-realm name="OAuth2Realm" principal-claim="sub">
+            <oauth2-introspection client-id="service-client" client-secret="service-secret" introspection-url="https://localhost:8080/introspect" client-ssl-context="client" host-name-verification-policy="ANY" connection-timeout="3000" read-timeout="4000"/>
+        </token-realm>
+        <token-realm name="OAuth2RealmWithExpressions" principal-claim="sub">
+            <oauth2-introspection client-id="service-client" client-secret="service-secret" introspection-url="https://localhost:8080/introspect" client-ssl-context="client" host-name-verification-policy="ANY" connection-timeout="${exp.oauth.connection-timeout:3500}" read-timeout="${exp.oauth.read-timeout:4500}"/>
         </token-realm>
         <distributed-realm name="DistributedRealm" realms="FileRealm PropRealm"/>
         <failover-realm name="FailoverRealm" delegate-realm="JdbcRealm" failover-realm="PropRealm"/>
