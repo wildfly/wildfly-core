@@ -317,7 +317,7 @@ public interface RejectAttributeChecker {
     RejectAttributeChecker ALL = new DefaultRejectAttributeChecker() {
         @Override
         public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
-            return ControllerLogger.ROOT_LOGGER.attributesMustBeDefined(attributes.keySet());
+            return ControllerLogger.ROOT_LOGGER.attributesRejectedRegardlessOfValue(attributes.keySet());
         }
 
         @Override
