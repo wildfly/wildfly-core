@@ -35,7 +35,6 @@
 	!org.hibernate.property.access.spi.GetterMethodImpl;\
 	!org.hibernate.property.access.spi.SetterFieldImpl;\
 	!org.hibernate.property.access.spi.SetterMethodImpl;\
-	!org.jboss.as.connector.subsystems.datasources.WildFlyDataSource;\
 	!org.mozilla.javascript.**;\
 	!org.python.core.PyBytecode;\
 	!org.python.core.PyFunction;\
