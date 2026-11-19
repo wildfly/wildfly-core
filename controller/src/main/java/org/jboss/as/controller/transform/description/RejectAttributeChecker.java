@@ -314,6 +314,11 @@ public interface RejectAttributeChecker {
     };
 
 
+    /**
+     * @deprecated use {@link DefaultRejectAttributeChecker} with a {@link #getRejectionLogMessage(Map) rejection log message}
+     *             tailored to the specific use case
+     */
+    @Deprecated(forRemoval = true, since = "35.0")
     RejectAttributeChecker ALL = new DefaultRejectAttributeChecker() {
         @Override
         public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
