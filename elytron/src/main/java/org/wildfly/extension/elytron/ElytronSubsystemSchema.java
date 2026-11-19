@@ -56,7 +56,7 @@ public enum ElytronSubsystemSchema implements PersistentSubsystemSchema<ElytronS
     VERSION_18_0_COMMUNITY(18, Stability.COMMUNITY),
     VERSION_19_0(19),
     VERSION_19_0_COMMUNITY(19, Stability.COMMUNITY), // WildFly 42.0-onwards
-    VERSION_19_0_PREVIEW(19, Stability.PREVIEW), // WildFly 42.0-onwards
+    VERSION_19_0_PREVIEW(19, Stability.PREVIEW), // WildFly 43.0-onwards
     ;
     static final Map<Stability, ElytronSubsystemSchema> CURRENT = Feature.map(EnumSet.of(VERSION_19_0, VERSION_19_0_COMMUNITY, VERSION_19_0_PREVIEW));
 
