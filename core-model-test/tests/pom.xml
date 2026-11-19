@@ -18,6 +18,10 @@
     <artifactId>wildfly-core-model-test-tests</artifactId>
     <name>WildFly: Core Model Tests</name>
 
+    <properties>
+        <central.skipPublishing>true</central.skipPublishing>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>

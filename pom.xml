@@ -2133,5 +2133,15 @@
                 <release.assembly.skip>false</release.assembly.skip>
             </properties>
         </profile>
+        <profile>
+            <id>central-release</id>
+            <properties>
+                <!-- Maven Central release properties; overrides of jboss-parent's 'central-release' profile settings -->
+                <central.autoPublish>false</central.autoPublish>
+                <central.deploymentName>wildfly-core-${project.version}</central.deploymentName>
+                <central.waitUntil>validated</central.waitUntil>
+                <release.assembly.skip>false</release.assembly.skip>
+            </properties>
+        </profile>
     </profiles>
 </project>
