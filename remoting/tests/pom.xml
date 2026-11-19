@@ -21,6 +21,10 @@
     <name>WildFly: Remoting Subsystem Test</name>
     <description>This is not in the remoting subsystem as it introduces circular dependencies</description>
 
+    <properties>
+        <central.skipPublishing>true</central.skipPublishing>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
