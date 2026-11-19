@@ -227,8 +227,6 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .setRestartAllServices()
                 .build();
 
-        static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{CLIENT_ID, CLIENT_SECRET, INTROSPECTION_URL, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY, CONNECTION_TIMEOUT, READ_TIMEOUT};
-
         static final ObjectTypeAttributeDefinition OAUTH2_INTROSPECTION_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(OAUTH2_INTROSPECTION, CLIENT_ID, CLIENT_SECRET, INTROSPECTION_URL, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY, CONNECTION_TIMEOUT, READ_TIMEOUT)
                 .setRequired(false)
                 .setRestartAllServices()
