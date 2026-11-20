@@ -495,6 +495,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
             final AuthenticationContext authenticationContext = authenticationContextInjector.getOptionalValue();
             // Create the remote domain channel strategy
             connection = new RemoteDomainConnection(localHostInfo.getLocalHostName(), configuration, authenticationContext,
+                    localHostInfo.getRemoteDomainControllerConnectionTimeout(),
                     localHostInfo.getRemoteDomainControllerDiscoveryOptions(), executor, scheduledExecutorService,
                     new RemoteDomainConnection.HostRegistrationCallback() {
                 /**

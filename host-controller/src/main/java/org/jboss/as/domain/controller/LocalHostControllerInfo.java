@@ -118,6 +118,13 @@ public interface LocalHostControllerInfo extends FeatureRegistry {
     boolean isRemoteDomainControllerIgnoreUnaffectedConfiguration();
 
     /**
+     * Gets the connection timeout in milliseconds for the remote domain controller connection.
+     *
+     * @return the connection timeout in milliseconds
+     */
+    long getRemoteDomainControllerConnectionTimeout();
+
+    /**
      * Gets the current state of the host controller process.
      * @return the state
      */

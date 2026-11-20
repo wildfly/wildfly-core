@@ -47,6 +47,7 @@ public enum Attribute {
     CONNECTION("connection"),
     CONNECTION_HIGH_WATER("connection-high-water"),
     CONNECTION_LOW_WATER("connection-low-water"),
+    CONNECTION_TIMEOUT("connection-timeout"),
     CONNECTOR("connector"),
     CONSOLE_ENABLED("console-enabled"),
     CONTENT("content"),
