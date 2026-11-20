@@ -3908,4 +3908,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 543, value = "Services with unresolved problems after reaching stability")
     String servicesWithUnresolvedProblems();
+
+    @Message(id = 544, value = "The following attributes are rejected by the target model version regardless of their value: %s")
+    String attributesRejectedRegardlessOfValue(Set<String> attributeNames);
 }

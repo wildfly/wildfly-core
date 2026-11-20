@@ -26,6 +26,8 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
@@ -106,6 +108,30 @@ public class AttributesTestCase {
         ModelNode write = Util.getWriteAttributeOperation(PathAddress.pathAddress(PATH), "reject", new ModelNode().set(new ValueExpression("${expr}")));
         OperationTransformer.TransformedOperation transformedWrite = transformOperation(write);
         Assert.assertTrue(transformedWrite.rejectOperation(success()));
+    }
+
+    @Test
+    public void testRejectAllAndUndefined() throws Exception {
+        SimpleAttributeDefinition rejectAllAttr = SimpleAttributeDefinitionBuilder.create("reject-all", ModelType.STRING).build();
+        SimpleAttributeDefinition requiredAttr = SimpleAttributeDefinitionBuilder.create("required", ModelType.STRING).build();
+
+        final ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(PATH);
+        builder.getAttributeBuilder()
+                .addRejectCheck(RejectAttributeChecker.ALL, rejectAllAttr)
+                .addRejectCheck(RejectAttributeChecker.UNDEFINED, requiredAttr)
+                .end();
+        TransformationDescription.Tools.register(builder.build(), transformersSubRegistration);
+
+        ModelNode add = Util.createAddOperation(PathAddress.pathAddress(PATH));
+        add.get(rejectAllAttr.getName()).set("value");
+        OperationTransformer.TransformedOperation transformedAdd = transformOperation(add);
+        Assert.assertTrue(transformedAdd.rejectOperation(success()));
+        Assert.assertTrue(transformedAdd.getFailureDescription().contains("WFLYCTL0544:"));
+
+        ModelNode write = Util.getWriteAttributeOperation(PathAddress.pathAddress(PATH), requiredAttr.getName(), new ModelNode());
+        OperationTransformer.TransformedOperation transformedWrite = transformOperation(write);
+        Assert.assertTrue(transformedWrite.rejectOperation(success()));
+        Assert.assertTrue(transformedWrite.getFailureDescription().contains("WFLYCTL0336:"));
     }
 
     @Test
