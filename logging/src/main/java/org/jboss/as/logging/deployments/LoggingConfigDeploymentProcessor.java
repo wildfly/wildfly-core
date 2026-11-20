@@ -39,7 +39,7 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
     /**
      * @deprecated use the {@code use-deployment-logging-config} on the root resource
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     public static final String PER_DEPLOYMENT_LOGGING = "org.jboss.as.logging.per-deployment";
 
     private static final Charset ENCODING = StandardCharsets.UTF_8;

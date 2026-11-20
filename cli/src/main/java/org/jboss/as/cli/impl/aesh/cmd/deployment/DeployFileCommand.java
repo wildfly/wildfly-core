@@ -49,7 +49,7 @@ public class DeployFileCommand extends AbstractDeployContentCommand {
         super(ctx, permissions);
     }
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     public DeployFileCommand(CommandContext ctx, String replaceName) {
         super(ctx, null, replaceName);
     }

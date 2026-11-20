@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 public final class RemotingConnectorBindingInfoService implements Service {
 
     /** Deprecated. Use the 'org.wildfly.remoting.connector' capability */
-    @Deprecated
+    @Deprecated(since = "13.0")
     private static final ServiceName SERVICE_NAME = RemotingServices.REMOTING_BASE.append("remotingConnectorInfoService");
 
     private final Consumer<ProtocolSocketBinding> serviceConsumer;
@@ -43,7 +43,7 @@ public final class RemotingConnectorBindingInfoService implements Service {
     }
 
     /** Deprecated. Use a {@link ProtocolSocketBinding} provided by the {@code org.wildfly.remoting.connector} capability */
-    @Deprecated
+    @Deprecated(since = "13.0")
     public static ServiceName serviceName(final String connectorName) {
         return SERVICE_NAME.append(connectorName);
     }
@@ -71,12 +71,12 @@ public final class RemotingConnectorBindingInfoService implements Service {
     }
 
     /** @deprecated Use {@link ProtocolSocketBinding} */
-    @Deprecated
+    @Deprecated(since = "13.0")
     public static final class RemotingConnectorInfo {
         private final ProtocolSocketBinding protocolSocketBinding;
 
         /** @deprecated there is no need for a public constructor so it will be removed */
-        @Deprecated
+        @Deprecated(since = "13.0")
         public RemotingConnectorInfo(SocketBinding socketBinding, Protocol protocol) {
             this(new ProtocolSocketBinding(protocol.toString(), socketBinding));
         }

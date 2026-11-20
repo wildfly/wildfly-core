@@ -27,7 +27,7 @@ public class SystemExiter extends org.jboss.as.server.SystemExiter {
     }
 
     /** @deprecated use {@link org.jboss.as.server.SystemExiter.Exiter}*/
-    @Deprecated
+    @Deprecated(since = "3.0")
     public interface Exiter extends org.jboss.as.server.SystemExiter.Exiter {
     }
 }

@@ -145,7 +145,7 @@ public final class ModuleDependency implements Serializable {
      *
      * @deprecated Use a {@link Builder}
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0")
     public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified) {
         this(moduleLoader, ModuleIdentifierUtil.parseCanonicalModuleIdentifier(identifier), null, optional, export, importServices, userSpecified);
     }
@@ -163,7 +163,7 @@ public final class ModuleDependency implements Serializable {
      *
      * @deprecated Use a {@link Builder}
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0")
     public ModuleDependency(final ModuleLoader moduleLoader, final String identifier, final boolean optional, final boolean export, final boolean importServices, final boolean userSpecified, String reason) {
         this(moduleLoader, ModuleIdentifierUtil.parseCanonicalModuleIdentifier(identifier), reason, optional, export, importServices, userSpecified);
     }

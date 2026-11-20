@@ -20,7 +20,7 @@ import org.xnio.OptionMap;
  * @deprecated Replaced by org.wildfly.io.OptionAttributeDefinition
 */
 //TODO Remove this once references are removed in WildFly full
-@Deprecated(forRemoval = true)
+@Deprecated(forRemoval = true, since = "24.0")
 public class OptionList {
     private OptionList() {
 

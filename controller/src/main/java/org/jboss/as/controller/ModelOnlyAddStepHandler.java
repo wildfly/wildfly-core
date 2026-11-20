@@ -26,7 +26,7 @@ public class ModelOnlyAddStepHandler extends AbstractAddStepHandler {
     /**
      * @deprecated Use {@link #INSTANCE} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public ModelOnlyAddStepHandler(AttributeDefinition... attributes) {
         super(attributes);
     }
@@ -34,7 +34,7 @@ public class ModelOnlyAddStepHandler extends AbstractAddStepHandler {
     /**
      * @deprecated Use {@link #INSTANCE} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public ModelOnlyAddStepHandler(Parameters parameters) {
         super(parameters);
     }

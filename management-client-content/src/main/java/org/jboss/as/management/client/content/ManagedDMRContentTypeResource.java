@@ -49,7 +49,7 @@ public class ManagedDMRContentTypeResource implements Resource.ResourceEntry {
     private final ModelNode model = new ModelNode();
     private final MessageDigest messageDigest;
 
-    @Deprecated
+    @Deprecated(since = "1.0")
     public ManagedDMRContentTypeResource(final PathElement pathElement, final String childType,
                                          final byte[] initialHash, final ContentRepository contentRepository) {
         this(PathAddress.pathAddress(pathElement), childType, initialHash, contentRepository);

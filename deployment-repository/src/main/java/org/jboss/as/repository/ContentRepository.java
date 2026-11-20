@@ -160,7 +160,7 @@ public interface ContentRepository {
          * For testing purpose only.
          * @deprecated DON'T USE IT.
          */
-        @Deprecated
+        @Deprecated(since = "3.0")
         private static final String UNSUPPORTED_PROPERTY = "org.wildfly.unsupported.content.repository.obsolescence";
 
         public static void addService(final ServiceTarget serviceTarget, final File repoRoot) {

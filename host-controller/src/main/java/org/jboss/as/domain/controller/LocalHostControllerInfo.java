@@ -99,7 +99,7 @@ public interface LocalHostControllerInfo extends FeatureRegistry {
      * @return the user name.
      * @deprecated Client side security configuration should be obtained from an AuthenticationContext.
      */
-    @Deprecated
+    @Deprecated(since = "3.0")
     String getRemoteDomainControllerUsername();
 
     /**

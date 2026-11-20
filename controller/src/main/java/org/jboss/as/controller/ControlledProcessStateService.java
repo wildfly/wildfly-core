@@ -25,7 +25,7 @@ import org.wildfly.core.embedded.spi.EmbeddedProcessState;
 public class ControlledProcessStateService implements ProcessStateNotifier, org.wildfly.core.embedded.spi.ProcessStateNotifier {
 
     /** @deprecated use the 'org.wildfly.management.process-state-notifier' capability to obtain a {@link ProcessStateNotifier}*/
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "11.0")
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("controlled-process-state");
     /** Only for use within the WildFly Core kernel; may change or be removed at any time */
     public static final ServiceName INTERNAL_SERVICE_NAME = AbstractControllerService.PROCESS_STATE_NOTIFIER_CAPABILITY.getCapabilityServiceName();

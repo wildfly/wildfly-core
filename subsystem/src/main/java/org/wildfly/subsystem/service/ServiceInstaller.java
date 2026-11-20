@@ -758,7 +758,7 @@ public interface ServiceInstaller extends ResourceServiceInstaller, DeploymentSe
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "32.0")
     class LegacyBlockingBuilder<T, V> extends AbstractAsyncBlockingLifecycleBuilder<UnaryBuilder<T, V>, ServiceInstaller, RequirementServiceTarget, RequirementServiceBuilder<?>, T, V> implements UnaryBuilder<T, V> {
         private static final Supplier<Executor> DEFAULT_EXECUTOR = Functions.constantSupplier(Runnable::run);
 

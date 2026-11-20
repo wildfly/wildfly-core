@@ -25,7 +25,7 @@ public interface ServiceValueRegistry<V> extends ValueRegistry<ServiceName, V>, 
     /**
      * @deprecated Superseded by {@link #add(Object)}.
      */
-    @Deprecated
+    @Deprecated(since = "35.0")
     default Consumer<V> add(ServiceDependency<V> key) {
         AtomicReference<ServiceName> reference = new AtomicReference<>();
         key.accept(new ServiceNameCapturingServiceBuilder(reference));
@@ -35,7 +35,7 @@ public interface ServiceValueRegistry<V> extends ValueRegistry<ServiceName, V>, 
     /**
      * @deprecated Superseded by {@link #remove(Object)}.
      */
-    @Deprecated
+    @Deprecated(since = "35.0")
     default void remove(ServiceDependency<V> key) {
         AtomicReference<ServiceName> reference = new AtomicReference<>();
         key.accept(new ServiceNameCapturingServiceBuilder(reference));
@@ -45,7 +45,7 @@ public interface ServiceValueRegistry<V> extends ValueRegistry<ServiceName, V>, 
     /**
      * @deprecated Superseded by {@link #capture(Object)}.
      */
-    @Deprecated
+    @Deprecated(since = "35.0")
     default ServiceInstaller capture(ServiceDependency<V> key) {
         AtomicReference<ServiceName> reference = new AtomicReference<>();
         key.accept(new ServiceNameCapturingServiceBuilder(reference));

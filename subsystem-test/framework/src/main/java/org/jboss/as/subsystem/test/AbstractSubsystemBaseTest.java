@@ -80,7 +80,7 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
      * In that case, you will have to make sure that the corresponding expressions have resolved properties
      * returned by #getResolvedProperties.
      */
-    @Deprecated
+    @Deprecated(since = "20.0")
     protected String[] getSubsystemTemplatePaths() throws IOException {
         return new String[0];
     }
@@ -157,7 +157,7 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
      * To enable a test for validation of the subsystem templates, override both {@link #getSubsystemXsdPath()} and {@link #getSubsystemTemplatePaths()}
      * then add a new test just calling this method.
      */
-    @Deprecated
+    @Deprecated(since = "20.0")
     protected void testSchemaOfSubsystemTemplates() throws Exception {
         throw new AssumptionViolatedException("testSchemaOfSubsystemTemplates is deprecated");
     }

@@ -21,7 +21,7 @@ import org.jboss.msc.service.StopContext;
  * @author Paul Ferraro
  * @deprecated Superseded by {@link ServiceInstaller.BlockingBuilder#of(Supplier, ServiceDependency)}.
  */
-@Deprecated(forRemoval = true)
+@Deprecated(forRemoval = true, since = "32.0")
 public class AsyncServiceBuilder<T> extends DelegatingServiceBuilder<T> {
 
     /**

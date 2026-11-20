@@ -220,7 +220,7 @@ public class MockCommandContext implements CommandContext {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public void connectController(String host, int port) throws CommandLineException {
         throw new UnsupportedOperationException();
     }
@@ -237,13 +237,13 @@ public class MockCommandContext implements CommandContext {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public String getDefaultControllerHost() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.0")
     public int getDefaultControllerPort() {
         throw new UnsupportedOperationException();
     }

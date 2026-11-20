@@ -388,7 +388,7 @@ class Base64 extends BaseNCodec {
      *         {@code false}, otherwise
      * @deprecated 1.5 Use {@link #isBase64(byte[])}, will be removed in 2.0.
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     public static boolean isArrayByteBase64(final byte[] arrayOctet) {
         return isBase64(arrayOctet);
     }

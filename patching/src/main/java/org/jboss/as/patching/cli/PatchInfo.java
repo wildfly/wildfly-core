@@ -74,7 +74,7 @@ public class PatchInfo extends AbstractDistributionCommand {
     @Option(hasValue = false, required = false, activator = NoPatchIdActivator.class)
     boolean streams;
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     @Option(name = "json-output", hasValue = false, required = false, activator = HideOptionActivator.class)
     boolean jsonOutput;
 

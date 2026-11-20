@@ -24,7 +24,7 @@ import org.wildfly.core.cli.command.aesh.activator.HideOptionActivator;
             PatchInfo.class, PatchInspect.class,}, activator = PatchCommand.PatchCommandActivator.class)
 public class PatchCommand implements Command<CLICommandInvocation> {
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     @Option(hasValue = false, activator = HideOptionActivator.class)
     private boolean help;
 

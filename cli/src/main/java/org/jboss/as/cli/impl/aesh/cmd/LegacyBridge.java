@@ -14,7 +14,7 @@ import org.jboss.as.cli.CommandContext;
  *
  * @author jdenise@redhat.com
  */
-@Deprecated
+@Deprecated(since = "4.0")
 public interface LegacyBridge {
     CommandResult execute(CommandContext ctx) throws CommandException;
 }

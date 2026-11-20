@@ -82,7 +82,7 @@ public class LayersTest {
      *
      * @deprecated the method aggregates the other public test methods, which should be used directly
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public static void test(String root, Set<String> unreferenced, Set<String> unused) throws Exception {
         testLayersBoot(root);
         ScanContext context = new ScanContext(root);
@@ -247,7 +247,7 @@ public class LayersTest {
     /**
      * @deprecated use {@link #testLayersBoot(String)}; this method just calls that one.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "24.0")
     public static void testExecution(String root) throws Exception {
         testLayersBoot(root);
     }

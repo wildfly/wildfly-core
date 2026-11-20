@@ -25,7 +25,7 @@ public class ServerEnvironmentService {
      * Standard ServiceName under which a ServerEnvironmentService would be registered
      * @deprecated Generate ServiceName via {@link ServerEnvironment#SERVICE_DESCRIPTOR} instead.
      */
-    @Deprecated
+    @Deprecated(since = "22.0")
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("server", "environment");
 
     /**

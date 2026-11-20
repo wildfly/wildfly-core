@@ -90,7 +90,7 @@ abstract class AbstractInstMgrUpdateHandler extends InstMgrOperationStepHandler 
     /**
      * @deprecated Use USE_DEFAULT_LOCAL_CACHE instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "23.0")
     protected static final AttributeDefinition NO_RESOLVE_LOCAL_CACHE = SimpleAttributeDefinitionBuilder.create(InstMgrConstants.NO_RESOLVE_LOCAL_CACHE, ModelType.BOOLEAN)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()

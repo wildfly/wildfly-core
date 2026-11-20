@@ -25,7 +25,7 @@ import org.wildfly.service.descriptor.UnaryServiceDescriptor;
  * @param <T> the requirement type
  * @deprecated Replaced by {@link CapabilityReference}.
  */
-@Deprecated(forRemoval = true, since = "26.0.0")
+@Deprecated(forRemoval = true, since = "26.0")
 public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
 
     /**
@@ -34,7 +34,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
      * @param requirement the requirement of the specified capability
      * @deprecated Superseded by {@link CapabilityReference#builder(RuntimeCapability, UnaryServiceDescriptor)}
      */
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     static <T> Builder<T> builder(RuntimeCapability<Void> capability, UnaryServiceDescriptor<T> requirement) {
         return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement));
     }
@@ -46,7 +46,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
      * @param requirement the requirement of the specified capability
      * @deprecated Superseded by {@link CapabilityReference#builder(RuntimeCapability, BinaryServiceDescriptor)}
      */
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     static <T> ParentPathProvider<T> builder(RuntimeCapability<Void> capability, BinaryServiceDescriptor<T> requirement) {
         return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement));
     }
@@ -58,7 +58,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
      * @param requirement the requirement of the specified capability
      * @deprecated Superseded by {@link CapabilityReference#builder(RuntimeCapability, TernaryServiceDescriptor)}
      */
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     static <T> GrandparentPathProvider<T> builder(RuntimeCapability<Void> capability, TernaryServiceDescriptor<T> requirement) {
         return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement));
     }
@@ -70,12 +70,12 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
      * @param requirement the requirement of the specified capability
      * @deprecated Superseded by {@link CapabilityReference#builder(RuntimeCapability, QuaternaryServiceDescriptor)}
      */
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     static <T> GreatGrandparentPathProvider<T> builder(RuntimeCapability<Void> capability, QuaternaryServiceDescriptor<T> requirement) {
         return new DefaultBuilder<>(capability, NaryServiceDescriptor.of(requirement));
     }
 
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     interface Builder<T> extends CapabilityReference.Builder<T> {
         /**
          * Builds a capability reference recorder.
@@ -85,7 +85,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
         CapabilityReferenceRecorder<T> build();
     }
 
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     interface ParentAttributeProvider<T> extends CapabilityReference.ParentAttributeProvider<T> {
         /**
          * Specifies the attribute used to resolves the parent segment of the requirement.
@@ -96,7 +96,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
         Builder<T> withParentAttribute(AttributeDefinition attribute);
     }
 
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     interface ParentPathProvider<T> extends CapabilityReference.ParentPathProvider<T>, ParentAttributeProvider<T> {
         /**
          * Specifies the path for the parent segment of the requirement.
@@ -118,7 +118,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
         Builder<T> withParentPath(PathElement path, Function<PathAddress, PathElement> resolver);
     }
 
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     interface GrandparentAttributeProvider<T> extends CapabilityReference.GrandparentAttributeProvider<T>{
         /**
          * Specifies the attribute used to resolves the grandparent segment of the requirement.
@@ -129,7 +129,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
         ParentAttributeProvider<T> withGrandparentAttribute(AttributeDefinition attribute);
     }
 
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     interface GrandparentPathProvider<T> extends CapabilityReference.GrandparentPathProvider<T>, GrandparentAttributeProvider<T> {
         /**
          * Specifies the path for the grandparent segment of the requirement.
@@ -151,7 +151,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
         ParentPathProvider<T> withGrandparentPath(PathElement path, Function<PathAddress, PathElement> resolver);
     }
 
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     interface GreatGrandparentAttributeProvider<T> extends CapabilityReference.GreatGrandparentAttributeProvider<T> {
         /**
          * Specifies the attribute used to resolves the great-grandparent segment of the requirement.
@@ -162,7 +162,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
         GrandparentAttributeProvider<T> withGreatGrandparentAttribute(AttributeDefinition attribute);
     }
 
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     interface GreatGrandparentPathProvider<T> extends CapabilityReference.GreatGrandparentPathProvider<T>, GreatGrandparentAttributeProvider<T> {
         /**
          * Specifies the path for the great-grandparent segment of the requirement.
@@ -184,7 +184,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
         GrandparentPathProvider<T> withGreatGrandparentPath(PathElement path, Function<PathAddress, PathElement> resolver);
     }
 
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     class DefaultBuilder<T> extends CapabilityReference.DefaultBuilder<T> implements GreatGrandparentPathProvider<T>, GrandparentPathProvider<T>, ParentPathProvider<T>, Builder<T> {
 
         DefaultBuilder(RuntimeCapability<Void> capability, NaryServiceDescriptor<T> requirement) {
@@ -233,7 +233,7 @@ public interface CapabilityReferenceRecorder<T> extends CapabilityReference<T> {
         }
     }
 
-    @Deprecated(forRemoval = true, since = "26.0.0")
+    @Deprecated(forRemoval = true, since = "26.0")
     class CapabilityServiceDescriptorReferenceRecorder<T> implements CapabilityReferenceRecorder<T> {
         private final CapabilityReference<T> reference;
 

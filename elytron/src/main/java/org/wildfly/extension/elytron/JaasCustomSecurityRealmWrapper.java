@@ -47,7 +47,7 @@ import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.RO
  *
  * @deprecated Use a jaas-realm resource instead
  */
-@Deprecated
+@Deprecated(since = "24.0")
 public class JaasCustomSecurityRealmWrapper implements SecurityRealm {
     private JaasSecurityRealm jaasSecurityRealm;
 

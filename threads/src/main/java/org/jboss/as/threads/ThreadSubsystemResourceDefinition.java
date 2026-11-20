@@ -16,7 +16,7 @@ import org.jboss.as.controller.registry.OperationEntry;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-@Deprecated(forRemoval = true)
+@Deprecated(forRemoval = true, since = "1.0")
 @SuppressWarnings({"removal", "DeprecatedIsStillUsed"})
 class ThreadSubsystemResourceDefinition extends SimpleResourceDefinition {
     private final boolean registerRuntimeOnly;

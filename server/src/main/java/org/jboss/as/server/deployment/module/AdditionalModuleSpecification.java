@@ -41,14 +41,14 @@ public class AdditionalModuleSpecification extends ModuleSpecification implement
 
 
     /** @deprecated unused method will be removed */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "27.0")
     public void addResourceRoot(ResourceRoot resourceRoot) {
         this.resourceRoots.add(resourceRoot);
     }
 
 
     /** @deprecated unused method will be removed */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "27.0")
     public void addResourceRoots(Collection<ResourceRoot> resourceRoots) {
         this.resourceRoots.addAll(resourceRoots);
     }

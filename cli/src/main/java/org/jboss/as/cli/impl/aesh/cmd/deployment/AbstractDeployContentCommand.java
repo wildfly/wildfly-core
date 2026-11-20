@@ -35,7 +35,7 @@ import org.wildfly.core.cli.command.aesh.activator.HideOptionActivator;
 @CommandDefinition(name = "deployment-deploy-content", description = "")
 public abstract class AbstractDeployContentCommand extends AbstractDeployCommand implements LegacyBridge {
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     @Option(hasValue = false, activator = HideOptionActivator.class)
     private boolean help;
 

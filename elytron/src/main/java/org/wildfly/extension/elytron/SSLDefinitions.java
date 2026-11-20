@@ -319,7 +319,7 @@ class SSLDefinitions {
             .setRestartAllServices()
             .build();
 
-    @Deprecated
+    @Deprecated(since = "10.0")
     static final SimpleAttributeDefinition MAXIMUM_CERT_PATH_CRL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, ModelType.INT, true)
             .setAllowExpression(true)
             .setValidator(IntRangeValidator.POSITIVE)

@@ -269,7 +269,7 @@ public interface CommandContext {
      * @param port the port to connect on
      * @throws CommandLineException  in case the attempt to connect failed
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     void connectController(String host, int port) throws CommandLineException;
 
     /**
@@ -290,7 +290,7 @@ public interface CommandContext {
      *
      * @return  the default host the controller client will be connected to.
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     String getDefaultControllerHost();
 
     /**
@@ -300,7 +300,7 @@ public interface CommandContext {
      *
      * @return  the default port the controller client will be connected to.
      */
-    @Deprecated
+    @Deprecated(since = "1.0")
     int getDefaultControllerPort();
 
     /**

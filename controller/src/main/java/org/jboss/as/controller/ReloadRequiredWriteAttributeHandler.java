@@ -26,7 +26,7 @@ public class ReloadRequiredWriteAttributeHandler extends AbstractWriteAttributeH
     /**
      * @deprecated Use {@link #INSTANCE} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public ReloadRequiredWriteAttributeHandler(final AttributeDefinition... definitions) {
         super(definitions);
     }
@@ -34,7 +34,7 @@ public class ReloadRequiredWriteAttributeHandler extends AbstractWriteAttributeH
     /**
      * @deprecated Use {@link #INSTANCE} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "22.0")
     public ReloadRequiredWriteAttributeHandler(final Collection<AttributeDefinition> definitions) {
         super(definitions);
     }

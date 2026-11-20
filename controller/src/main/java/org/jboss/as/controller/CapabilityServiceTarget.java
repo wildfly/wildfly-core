@@ -29,13 +29,13 @@ public interface CapabilityServiceTarget extends RequirementServiceTarget {
      * @throws IllegalArgumentException if capability does not provide a service
      * @deprecated Use {@link #addService()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "22.0")
     CapabilityServiceBuilder<?> addCapability(final RuntimeCapability<?> capability) throws IllegalArgumentException;
 
     @Override
     CapabilityServiceBuilder<?> addService();
 
-    @Deprecated
+    @Deprecated(since = "22.0")
     @Override
     CapabilityServiceBuilder<?> addService(ServiceName name);
 

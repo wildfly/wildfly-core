@@ -98,7 +98,7 @@ public class ControlPoint {
      * @param requestCountListener The listener to invoke
      * @deprecated Superseded by {@link #pause()}.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(forRemoval = true, since = "26.0")
     public void pause(org.jboss.as.server.suspend.ServerActivityCallback requestCountListener) {
         this.pause().whenComplete((ignore, exception) -> requestCountListener.done());
     }

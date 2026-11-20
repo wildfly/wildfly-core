@@ -46,7 +46,7 @@ public class DeploymentCommand extends CommandWithPermissions
         registry.addCommand(deploy);
     }
 
-    @Deprecated
+    @Deprecated(since = "4.0")
     @Override
     public CommandResult execute(CLICommandInvocation commandInvocation)
             throws CommandException, InterruptedException {

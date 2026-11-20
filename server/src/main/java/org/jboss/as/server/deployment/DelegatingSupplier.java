@@ -14,7 +14,7 @@ import java.util.function.Supplier;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  * @deprecated To be removed without replacement.
  */
-@Deprecated(forRemoval = true)
+@Deprecated(forRemoval = true, since = "25.0")
 public final class DelegatingSupplier<T> implements Supplier<T> {
 
     private volatile Supplier<T> delegate;

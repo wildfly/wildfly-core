@@ -30,7 +30,7 @@ public class ServerController {
     /**
      * @deprecated use the startMode variant instead
      */
-    @Deprecated
+    @Deprecated(since = "3.0")
     public void start(final String serverConfig, boolean adminMode) {
         start(serverConfig, adminMode ? Server.StartMode.ADMIN_ONLY : Server.StartMode.NORMAL);
     }
