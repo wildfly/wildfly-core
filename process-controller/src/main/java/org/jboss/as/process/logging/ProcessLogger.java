@@ -801,4 +801,12 @@ public interface ProcessLogger extends BasicLogger {
             "using java.lang.Process.destroyForcibly()")
     void destroyingProcess(String process, long timeout);
 
+    @LogMessage(level = WARN)
+    @Message(id = 68, value = "Another instance may already be running (lock file held at %s). Continuing process controller startup.")
+    void cannotAcquireProcessControllerRunningLock(String lockPath);
+
+    @LogMessage(level = WARN)
+    @Message(id = Message.NONE, value = "Failed to acquire process controller running lock at %s. Continuing startup anyway.")
+    void cannotAcquireProcessControllerRunningLockError(String lockPath, @Cause IOException cause);
+
 }
