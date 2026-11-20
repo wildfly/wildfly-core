@@ -10,10 +10,9 @@ import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
 
 /**
- * A builder used to create chained transformers. Created using
- * {@link TransformationDescriptionBuilder.Factory#createChainedInstance(org.jboss.as.controller.PathElement, ModelVersion)} or
- * {@link TransformationDescriptionBuilder.Factory#createChainedSubystemInstance(ModelVersion)}. The {@code ModelVersion} parameter
- * to these operations is the 'current' model version.
+ * A builder used to create chained transformers.
+ * Created using {@link ResourceTransformationDescriptionBuilderFactory#createChainedTransformationDescriptionBuilder(ModelVersion)}.
+ * The {@link ModelVersion} parameter to these operations is the 'current' model version.
  * Internally this uses a {@link org.jboss.as.controller.registry.OperationTransformerRegistry.PlaceholderResolver} so
  * if this is used, all children must also use chained transformers. Typically you should create a chain for the subsystem
  * and add child transformations using the chained builder.

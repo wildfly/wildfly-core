@@ -7,6 +7,8 @@ package org.jboss.as.controller.transform;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.ModelVersionRange;
+import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilderFactory;
+import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilderFactory;
 
 /**
  * Subsystem transformers registration API
@@ -15,7 +17,7 @@ import org.jboss.as.controller.ModelVersionRange;
  *
  * @author Tomaz Cerar (c) 2016 Red Hat Inc.
  */
-public interface SubsystemTransformerRegistration {
+public interface SubsystemTransformerRegistration extends ResourceTransformationDescriptionBuilderFactory, ChainedTransformationDescriptionBuilderFactory {
 
     /**
      * Register transformers for a specific model versions.
@@ -50,7 +52,10 @@ public interface SubsystemTransformerRegistration {
      * Get the version of the subsystem
      *
      * @return the version
+     * @deprecated Superseded by {@link #getCurrentVersion()}
      */
-    ModelVersion getCurrentSubsystemVersion();
-
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default ModelVersion getCurrentSubsystemVersion() {
+        return this.getCurrentVersion();
+    }
 }
