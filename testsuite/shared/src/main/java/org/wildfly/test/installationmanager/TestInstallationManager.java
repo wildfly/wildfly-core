@@ -63,6 +63,8 @@ public class TestInstallationManager implements InstallationManager {
 
     public static List<Repository> prepareRevertRepositories;
     public static Path prepareRevertTargetDir;
+    public static Exception prepareRevertException;
+    public static Exception findUpdatesException;
     public static boolean noUpdatesFound;
     public static InstallationChanges installationChanges;
     public static HashMap<String, HistoryResult> history;
@@ -239,6 +241,9 @@ public class TestInstallationManager implements InstallationManager {
 
     @Override
     public void prepareRevert(String revision, Path targetDir, List<Repository> repositories) throws Exception {
+        if (prepareRevertException != null) {
+            throw prepareRevertException;
+        }
         prepareRevertTargetDir = targetDir;
         prepareRevertRepositories = new ArrayList<>(repositories);
         Files.createTempFile(targetDir, "server-prepare-marker-", null);
@@ -272,6 +277,9 @@ public class TestInstallationManager implements InstallationManager {
     }
 
     public InstallationUpdates findInstallationUpdates(List<Repository> repositories) throws Exception {
+        if (findUpdatesException != null) {
+            throw findUpdatesException;
+        }
         if (noUpdatesFound) {
             return new InstallationUpdates(Collections.emptyList(), Collections.emptyList());
         }

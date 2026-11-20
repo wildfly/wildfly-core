@@ -126,6 +126,8 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
     @After
     public void shutdownServiceContainer() throws IOException {
         super.shutdownServiceContainer();
+        TestInstallationManager.prepareRevertException = null;
+        TestInstallationManager.findUpdatesException = null;
         if (JBOSS_HOME.toFile().exists()) {
             try (Stream<Path> walk = Files.walk(JBOSS_HOME)) {
                 walk.sorted(Comparator.reverseOrder())
@@ -1808,5 +1810,106 @@ public class InstMgrResourceTestCase extends AbstractControllerTestBase {
 
     public String getCauseLogFailure(String description, String expectedLogCode) {
         return "Unexpected Error Code. Got " + description + " It was expected: " + expectedLogCode;
+    }
+
+    @Test
+    public void prepareRevertNestedExceptionFailure() throws Exception {
+        TestInstallationManager.prepareRevertException = new UnresolvedRequiredManifestException(
+                "Manifest with ID org.test:test-manifest is not available",
+                new Exception("Could not find artifact org.test:test-manifest:yaml:manifest:1.0.0 in id0 (file:/tmp/test-repo)")
+        );
+
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrPrepareRevertHandler.OPERATION_NAME, pathElements);
+        op.get(InstMgrConstants.REVISION).set("hashcode");
+
+        ModelNode failed = executeCheckForFailure(op);
+        String failureDesc = failed.get(FAILURE_DESCRIPTION).asString();
+
+        Assert.assertTrue(failureDesc, failureDesc.contains("WFLYCTL0158"));
+        Assert.assertTrue(failureDesc, failureDesc.contains("java.lang.RuntimeException"));
+        Assert.assertTrue(failureDesc, failureDesc.contains("UnresolvedRequiredManifestException: Manifest with ID org.test:test-manifest is not available"));
+        Assert.assertTrue(failureDesc, failureDesc.contains("Caused by: java.lang.Exception: Could not find artifact org.test:test-manifest:yaml:manifest:1.0.0 in id0 (file:/tmp/test-repo)"));
+    }
+
+    @Test
+    public void diagnosticsOfThrowableSkipsDuplicateCauses() {
+        ArtifactNotFoundException cause4 = new ArtifactNotFoundException(
+                "Could not find artifact org.test:test-manifest:yaml:manifest:1.0.0 in id0 (file:/tmp/test-repo)"
+        );
+        ArtifactResolutionException cause3 = new ArtifactResolutionException(
+                "The following artifacts could not be resolved: org.test:test-manifest:yaml:manifest:1.0.0 (absent): Could not find artifact org.test:test-manifest:yaml:manifest:1.0.0 in id0 (file:/tmp/test-repo)",
+                cause4
+        );
+        ArtifactTransferException cause2 = new ArtifactTransferException(
+                "The following artifacts could not be resolved: org.test:test-manifest:yaml:manifest:1.0.0 (absent): Could not find artifact org.test:test-manifest:yaml:manifest:1.0.0 in id0 (file:/tmp/test-repo)",
+                cause3
+        );
+        UnresolvedRequiredManifestException top = new UnresolvedRequiredManifestException(
+                "Manifest with ID org.test:test-manifest is not available",
+                cause2
+        );
+
+        String diagnostics = InstMgrOperationStepHandler.getDiagnosticsOfThrowable(top);
+
+        // Verify the top level message is present
+        Assert.assertTrue(diagnostics, diagnostics.contains("UnresolvedRequiredManifestException: Manifest with ID org.test:test-manifest is not available"));
+        // Verify the distinct root cause (with /tmp/test-repo) is present
+        Assert.assertTrue(diagnostics, diagnostics.contains("ArtifactTransferException: The following artifacts could not be resolved"));
+        // Verify that duplicates are omitted and not repeated redundantly
+        Assert.assertFalse(diagnostics, diagnostics.contains("ArtifactResolutionException"));
+        Assert.assertFalse(diagnostics, diagnostics.contains("ArtifactNotFoundException"));
+
+        // Verify that \n is used as a line separator
+        Assert.assertTrue(diagnostics, diagnostics.contains("\nCaused by: "));
+    }
+
+    @Test
+    public void listUpdatesNestedExceptionFailure() throws Exception {
+        TestInstallationManager.findUpdatesException = new UnresolvedChannelMetadataException(
+                "PRSP000228: Unable to resolve artifact",
+                new Exception("Unable to resolve the latest version of channel metadata org.test:test-manifest")
+        );
+
+        PathAddress pathElements = PathAddress.pathAddress(CORE_SERVICE, InstMgrConstants.TOOL_NAME);
+        ModelNode op = Util.createEmptyOperation(InstMgrListUpdatesHandler.OPERATION_NAME, pathElements);
+
+        ModelNode failed = executeCheckForFailure(op);
+        String failureDesc = failed.get(FAILURE_DESCRIPTION).asString();
+
+        Assert.assertTrue(failureDesc, failureDesc.contains("WFLYCTL0158"));
+        Assert.assertTrue(failureDesc, failureDesc.contains("java.lang.RuntimeException"));
+        Assert.assertTrue(failureDesc, failureDesc.contains("UnresolvedChannelMetadataException: PRSP000228: Unable to resolve artifact"));
+        Assert.assertTrue(failureDesc, failureDesc.contains("Caused by: java.lang.Exception: Unable to resolve the latest version of channel metadata org.test:test-manifest"));
+    }
+
+    private static class UnresolvedRequiredManifestException extends RuntimeException {
+        public UnresolvedRequiredManifestException(String msg, Throwable cause) {
+            super(msg, cause);
+        }
+    }
+
+    private static class ArtifactTransferException extends Exception {
+        public ArtifactTransferException(String msg, Throwable cause) {
+            super(msg, cause);
+        }
+    }
+
+    private static class ArtifactResolutionException extends Exception {
+        public ArtifactResolutionException(String msg, Throwable cause) {
+            super(msg, cause);
+        }
+    }
+
+    private static class ArtifactNotFoundException extends Exception {
+        public ArtifactNotFoundException(String msg) {
+            super(msg);
+        }
+    }
+
+    private static class UnresolvedChannelMetadataException extends Exception {
+        public UnresolvedChannelMetadataException(String msg, Throwable cause) {
+            super(msg, cause);
+        }
     }
 }
