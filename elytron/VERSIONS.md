@@ -4,6 +4,7 @@
 
 | Model Version | WildFly Version | Notes |
 |---------------|-----------------|-------|
+| 21.0.0        | 43.0+           | Version bump for WildFly 43 features (WFCORE-5691) |
 | 20.0.0        | 42.0+           | Pure version bump for WildFly 42 features |
 | 19.0.0        | 32.0+           | Dynamic SSL context support (WFCORE-6756) |
 | 18.0.0        | 29.0+           | Added audit log encoding (WFCORE-6312) |
@@ -31,7 +32,9 @@ Schema versions are maintained independently from model versions and may exist a
 
 ### PREVIEW Stability
 
-No current PREVIEW schema versions.
+| Schema Version | WildFly Version | Notes |
+|----------------|-----------------|-------|
+| 19.0           | 43.0+           | Version bump for WildFly 43 features (WFCORE-5691) |
 
 ## Version Bump Guidelines
 
