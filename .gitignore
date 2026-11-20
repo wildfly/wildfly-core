@@ -62,3 +62,5 @@ build.metadata
 # shaded jars
 **/dependency-reduced-pom.xml
 
+# JBang downloaded by jbang-maven-plugin
+dist/.jbang/
