@@ -72,6 +72,26 @@ public interface EventLogger {
     }
 
     /**
+     * Creates a new asynchronous event logger with a specified queue capacity.
+     * <p>
+     * Note that the background drain loop processes up to 1000 events per pass.
+     * A queue capacity below 1000 leaves less than one cycle of headroom before
+     * arriving events begin to be dropped if the writer stalls.
+     * </p>
+     *
+     * @param eventSource   the identifier for the source of the event this logger is used for
+     * @param writer        the writer this logger will write to
+     * @param executor      the executor to execute the threads in
+     * @param queueCapacity the maximum number of pending events before new arrivals are dropped; must be at least 1
+     *
+     * @return a new event logger
+     * @throws IllegalArgumentException if {@code queueCapacity} is less than 1
+     */
+    static EventLogger createAsyncLogger(final String eventSource, final EventWriter writer, final Executor executor, final int queueCapacity) {
+        return new AsyncEventLogger(eventSource, writer, executor, queueCapacity);
+    }
+
+    /**
      * Logs the event.
      *
      * @param event the event to log
@@ -100,4 +120,32 @@ public interface EventLogger {
      * @return the event source
      */
     String getEventSource();
+
+    /**
+     * Returns the number of events that were dropped by this logger.
+     *
+     * <p>For synchronous loggers this always returns {@code 0}. For asynchronous
+     * loggers ({@link #createAsyncLogger}) this returns the total number of events
+     * that could not be processed because the internal queue was full or because
+     * the logger had already been closed.
+     *
+     * @return the number of dropped events
+     */
+    default long getDroppedCount() {
+        return 0L;
+    }
+
+    /**
+     * Stops this logger, draining any buffered events before returning.
+     *
+     * <p>For synchronous loggers this is a no-op.  For asynchronous loggers
+     * ({@link #createAsyncLogger}) it drains the pending queue on the calling
+     * thread so that no events are lost during an orderly shutdown.
+     *
+     * <p>After {@code close()} returns, calls to {@link #log} are silently
+     * discarded.
+     */
+    default void close() {
+        // no-op for synchronous loggers
+    }
 }
